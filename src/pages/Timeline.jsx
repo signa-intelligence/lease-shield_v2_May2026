@@ -611,7 +611,7 @@ export default function Timeline() {
                 <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <TrendingUp className="w-5 h-5" style={{ color: FEATURE_COLORS.leases.accent }} />
                   {strings.upcomingDeadlines}
-                  <Badge className="bg-blue-100 text-blue-800">{strings.next30Days || (language === 'th' ? '30 วันข้างหน้า' : language === 'ru' ? 'Следующие 30 дней' : 'Next 30 Days')}</Badge>
+                  <Badge className="bg-blue-100 text-blue-800">{strings.next30Days}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>

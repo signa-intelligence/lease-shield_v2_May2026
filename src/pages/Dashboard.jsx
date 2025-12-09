@@ -906,6 +906,24 @@ function DashboardContent() {
       upgradeForMemberRate: "Upgrade to any paid plan for member pricing",
       startResolve: "Start Resolve",
       continueCase: "Continue",
+      completeCaseSubmission: "Complete your case submission",
+      continueYourCase: "Continue Your Case",
+      getStartedTitle: "Get started with Lease Shield",
+      overdueOnly: "Overdue Only",
+      fair: "Fair.",
+      transparent: "Transparent.",
+      protected: "Protected.",
+      recentLeases: "Recent Leases",
+      myNotifications: "My Notifications",
+      depositAlerts: "Deposit Alerts",
+      allDepositsOnTrack: "All deposits on track",
+      noPropertiesAdded: "No properties added yet",
+      addFirstProperty: "Add your first property to start tracking deposits, rent schedules and maintenance in one place.",
+      addProperty: "Add property",
+      upgradeForAdvancedTracking: "Upgrade for advanced tracking",
+      alerts: "Alerts",
+      manage: "Manage",
+      items: "items",
     },
     th: {
       welcome: "ยินดีต้อนรับกลับมา",
@@ -978,6 +996,24 @@ function DashboardContent() {
       upgradeForMemberRate: "อัปเกรดเป็นแผนชำระเงินใดๆ เพื่อราคาสมาชิก",
       startResolve: "เริ่ม Resolve",
       continueCase: "ดำเนินการต่อ",
+      completeCaseSubmission: "กรอกข้อมูลคดีของคุณให้เสร็จสิ้น",
+      continueYourCase: "ดำเนินการต่อ",
+      getStartedTitle: "เริ่มต้นกับ Lease Shield",
+      overdueOnly: "เฉพาะที่เกินกำหนด",
+      fair: "ยุติธรรม.",
+      transparent: "โปร่งใส.",
+      protected: "ปลอดภัย.",
+      recentLeases: "สัญญาเช่าล่าสุด",
+      myNotifications: "การแจ้งเตือนของฉัน",
+      depositAlerts: "การแจ้งเตือนเงินมัดจำ",
+      allDepositsOnTrack: "เงินมัดจำทั้งหมดอยู่ในการติดตาม",
+      noPropertiesAdded: "ยังไม่มีการเพิ่มทรัพย์สิน",
+      addFirstProperty: "เพิ่มทรัพย์สินแรกของคุณเพื่อเริ่มติดตามเงินมัดจำ, กำหนดการเช่า, และการบำรุงรักษาในที่เดียว",
+      addProperty: "เพิ่มทรัพย์สิน",
+      upgradeForAdvancedTracking: "อัปเกรดเพื่อการติดตามขั้นสูง",
+      alerts: "การแจ้งเตือน",
+      manage: "จัดการ",
+      items: "รายการ",
     },
     zh: {
       welcome: "欢迎回来",
@@ -1049,8 +1085,26 @@ function DashboardContent() {
       upgradeForMemberRate: "升级到任何付费计划以获得会员定价",
       startResolve: "开始 Resolve",
       continueCase: "继续",
+      completeCaseSubmission: "完成您的案件提交",
+      continueYourCase: "继续您的案件",
+      getStartedTitle: "开始使用 Lease Shield",
+      overdueOnly: "仅限逾期",
+      fair: "公平。",
+      transparent: "透明。",
+      protected: "受保护。",
+      recentLeases: "最近的租约",
+      myNotifications: "我的通知",
+      depositAlerts: "押金提醒",
+      allDepositsOnTrack: "所有押金都在追踪中",
+      noPropertiesAdded: "尚未添加物业",
+      addFirstProperty: "添加您的第一个物业，开始在一个地方追踪押金、租金计划和维护。",
+      addProperty: "添加物业",
+      upgradeForAdvancedTracking: "升级以进行高级追踪",
+      alerts: "提醒",
+      manage: "管理",
+      items: "项",
     },
-    ja: {
+ja: {
       welcome: "おかえりなさい",
       subtitle: "賃貸問題を未然に防ぎます",
       activeLeases: "アクティブな賃貸契約",
@@ -1120,6 +1174,24 @@ function DashboardContent() {
       upgradeForMemberRate: "有料プランにアップグレードしてメンバー価格を利用",
       startResolve: "Resolveを開始",
       continueCase: "続ける",
+      completeCaseSubmission: "ケースの提出を完了してください",
+      continueYourCase: "ケースを続ける",
+      getStartedTitle: "Lease Shieldを始める",
+      overdueOnly: "期限切れのみ",
+      fair: "公正。",
+      transparent: "透明。",
+      protected: "保護。",
+      recentLeases: "最近の賃貸契約",
+      myNotifications: "マイ通知",
+      depositAlerts: "敷金アラート",
+      allDepositsOnTrack: "すべての敷金は順調です",
+      noPropertiesAdded: "まだ物件が追加されていません",
+      addFirstProperty: "最初の物件を追加して、敷金、家賃スケジュール、メンテナンスを一元管理しましょう。",
+      addProperty: "物件を追加",
+      upgradeForAdvancedTracking: "高度な追跡のためにアップグレード",
+      alerts: "アラート",
+      manage: "管理",
+      items: "件",
     },
     ru: {
       welcome: "Добро пожаловать",
@@ -1190,6 +1262,24 @@ function DashboardContent() {
       upgradeForMemberRate: "Обновитесь до любого платного плана для тарифов участника",
       startResolve: "Начать Resolve",
       continueCase: "Продолжить",
+      completeCaseSubmission: "Завершите подачу вашего дела",
+      continueYourCase: "Продолжить ваше дело",
+      getStartedTitle: "Начните с Lease Shield",
+      overdueOnly: "Только просроченные",
+      fair: "Справедливо.",
+      transparent: "Прозрачно.",
+      protected: "Защищено.",
+      recentLeases: "Недавние договоры",
+      myNotifications: "Мои уведомления",
+      depositAlerts: "Оповещения о депозитах",
+      allDepositsOnTrack: "Все депозиты отслеживаются",
+      noPropertiesAdded: "Объекты еще не добавлены",
+      addFirstProperty: "Добавьте свой первый объект, чтобы начать отслеживать депозиты, графики аренды и техническое обслуживание в одном месте.",
+      addProperty: "Добавить объект",
+      upgradeForAdvancedTracking: "Обновитесь для расширенного отслеживания",
+      alerts: "Оповещения",
+      manage: "Управлять",
+      items: "шт.",
     },
     ko: {
       welcome: "환영합니다",
@@ -1260,6 +1350,24 @@ function DashboardContent() {
       upgradeForMemberRate: "회원 가격을 위해 유료 플랜으로 업그레이드",
       startResolve: "Resolve 시작",
       continueCase: "계속",
+      completeCaseSubmission: "사건 제출 완료",
+      continueYourCase: "사건 계속하기",
+      getStartedTitle: "Lease Shield 시작하기",
+      overdueOnly: "연체만",
+      fair: "공정.",
+      transparent: "투명.",
+      protected: "보호.",
+      recentLeases: "최근 임대 계약",
+      myNotifications: "내 알림",
+      depositAlerts: "보증금 알림",
+      allDepositsOnTrack: "모든 보증금이 정상적으로 추적 중입니다",
+      noPropertiesAdded: "아직 등록된 숙소가 없습니다",
+      addFirstProperty: "첫 번째 숙소를 추가하여 보증금, 임대료 일정 및 유지보수를 한 곳에서 추적하세요.",
+      addProperty: "숙소 추가",
+      upgradeForAdvancedTracking: "고급 추적을 위해 업그레이드",
+      alerts: "알림",
+      manage: "관리",
+      items: "개",
     }
   };
 
@@ -1608,12 +1716,12 @@ function DashboardContent() {
                         {checkingOverdue ? (
                           <>
                             <Loader2 className="w-3 h-3 animate-spin" />
-                            Overdue Only
+                            {strings.overdueOnly}
                           </>
                         ) : (
                           <>
                             <AlertCircle className="w-3 h-3" />
-                            Overdue Only
+                            {strings.overdueOnly}
                           </>
                         )}
                       </button>
@@ -2137,12 +2245,12 @@ function DashboardContent() {
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
                         {awaitingCase 
-                          ? (language === 'ru' ? 'Продолжить дело' : 'Continue Your Case')
+                          ? strings.continueYourCase
                           : strings.resolveDispute
                         }
                       </h4>
                       <p className="text-xs" style={{ color: isDarkMode ? '#F87171' : '#B91C1C' }}>
-                        {pricingMessage}
+                        {awaitingCase ? strings.completeCaseSubmission : pricingMessage}
                       </p>
                     </div>
                   </div>
@@ -2334,10 +2442,10 @@ function DashboardContent() {
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
-                          {language === 'th' ? 'สัญญาเช่าล่าสุด' : language === 'zh' ? '最近的租约' : language === 'ja' ? '最近の賃貸契約' : language === 'ko' ? '최근 임대 계약' : language === 'ru' ? 'Последние договоры' : 'Recent Leases'}
+                          {strings.recentLeases}
                         </h3>
                         <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {leases.length} {language === 'th' ? 'รายการ' : language === 'zh' ? '项' : language === 'ja' ? '件' : language === 'ko' ? '항목' : language === 'ru' ? 'элементов' : 'items'}
+                          {leases.length} {strings.items}
                         </p>
                       </div>
                     </div>
@@ -2376,7 +2484,7 @@ function DashboardContent() {
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
-                          {language === 'th' ? 'การแจ้งเตือนของฉัน' : language === 'zh' ? '我的通知' : language === 'ja' ? 'マイ通知' : language === 'ko' ? '내 알림' : language === 'ru' ? 'Мои уведомления' : 'My Notifications'}
+                          {strings.myNotifications}
                         </h3>
                         <p className="text-xs text-gray-600 dark:text-gray-400">
                           {unreadNotifications} {language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '通知' : language === 'ja' ? '通知' : language === 'ko' ? '알림' : language === 'ru' ? 'уведомлений' : 'notifications'}
@@ -2418,12 +2526,12 @@ function DashboardContent() {
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
-                          {language === 'th' ? 'การแจ้งเตือนเงินมัดจำ' : language === 'zh' ? '押金提醒' : language === 'ja' ? '敷金アラート' : language === 'ko' ? '보증금 알림' : language === 'ru' ? 'Уведомления о депозитах' : 'Deposit Alerts'}
+                          {strings.depositAlerts}
                         </h3>
                         <p className="text-xs text-gray-600 dark:text-gray-400">
                           {urgentDeposits > 0 
-                            ? `${urgentDeposits} ${language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'уведомлений' : 'alerts'}`
-                            : (language === 'th' ? 'ทุกอย่างเรียบร้อย' : language === 'zh' ? '一切正常' : language === 'ja' ? 'すべて正常' : language === 'ko' ? '모두 정상' : language === 'ru' ? 'Все депозиты в порядке' : 'All deposits on track')
+                            ? `${urgentDeposits} ${strings.alerts}`
+                            : strings.allDepositsOnTrack
                           }
                         </p>
                       </div>

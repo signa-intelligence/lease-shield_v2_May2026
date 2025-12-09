@@ -146,7 +146,7 @@ function MaintenanceRequestCard({
                       }}
                     >
                       <Mic className="w-3 h-3 text-purple-600" />
-                      Voice Note {index + 1}
+                      {strings.voiceNote} {index + 1}
                     </a>
                   ))}
                 </div>
@@ -174,7 +174,7 @@ function MaintenanceRequestCard({
                       }}
                     >
                       <Video className="w-3 h-3 text-red-600" />
-                      Video {index + 1}
+                      {strings.video} {index + 1}
                     </a>
                   ))}
                 </div>
@@ -638,7 +638,27 @@ function PropertyTrackerContent() {
       maxVideoReached: "Maximum 3 videos per request",
       fileTooLarge: "File too large",
       voiceMaxSize: "Voice notes must be under 5MB",
-      videoMaxSize: "Videos must be under 80MB"
+      videoMaxSize: "Videos must be under 80MB",
+      day: "Day",
+      alertsOn: "Alerts ON",
+      statusReported: "Reported",
+      statusAcknowledged: "Acknowledged",
+      statusInProgress: "In Progress",
+      statusCompleted: "Completed",
+      statusRejected: "Rejected",
+      categoryPlumbing: "Plumbing",
+      categoryElectrical: "Electrical",
+      categoryStructural: "Structural",
+      categoryAppliance: "Appliance",
+      categoryHvac: "HVAC",
+      categoryPest: "Pest",
+      categoryOther: "Other",
+      priorityLow: "Low",
+      priorityMedium: "Medium",
+      priorityHigh: "High",
+      priorityUrgent: "Urgent",
+      voiceNote: "Voice Note",
+      video: "Video",
     },
     th: {
       title: "ติดตามทรัพย์สิน",
@@ -715,7 +735,27 @@ function PropertyTrackerContent() {
       maxVideoReached: "สูงสุด 3 วิดีโอต่อคำขอ",
       fileTooLarge: "ไฟล์ใหญ่เกินไป",
       voiceMaxSize: "บันทึกเสียงต้องน้อยกว่า 5MB",
-      videoMaxSize: "วิดีโอต้องน้อยกว่า 80MB"
+      videoMaxSize: "วิดีโอต้องน้อยกว่า 80MB",
+      day: "วัน",
+      alertsOn: "เปิดการแจ้งเตือน",
+      statusReported: "รายงานแล้ว",
+      statusAcknowledged: "รับทราบแล้ว",
+      statusInProgress: "กำลังดำเนินการ",
+      statusCompleted: "เสร็จสิ้น",
+      statusRejected: "ถูกปฏิเสธ",
+      categoryPlumbing: "ประปา",
+      categoryElectrical: "ไฟฟ้า",
+      categoryStructural: "โครงสร้าง",
+      categoryAppliance: "เครื่องใช้ไฟฟ้า",
+      categoryHvac: "HVAC",
+      categoryPest: "สัตว์รบกวน",
+      categoryOther: "อื่นๆ",
+      priorityLow: "ต่ำ",
+      priorityMedium: "ปานกลาง",
+      priorityHigh: "สูง",
+      priorityUrgent: "เร่งด่วน",
+      voiceNote: "บันทึกเสียง",
+      video: "วิดีโอ",
     },
     zh: {
       title: "物业追踪器",
@@ -792,7 +832,27 @@ function PropertyTrackerContent() {
       maxVideoReached: "每个请求最多 3 个视频",
       fileTooLarge: "文件过大",
       voiceMaxSize: "语音备忘录必须小于 5MB",
-      videoMaxSize: "视频必须小于 80MB"
+      videoMaxSize: "视频必须小于 80MB",
+      day: "日",
+      alertsOn: "提醒开启",
+      statusReported: "已报告",
+      statusAcknowledged: "已确认",
+      statusInProgress: "进行中",
+      statusCompleted: "已完成",
+      statusRejected: "已拒绝",
+      categoryPlumbing: "管道",
+      categoryElectrical: "电气",
+      categoryStructural: "结构",
+      categoryAppliance: "电器",
+      categoryHvac: "暖通空调",
+      categoryPest: "虫害",
+      categoryOther: "其他",
+      priorityLow: "低",
+      priorityMedium: "中",
+      priorityHigh: "高",
+      priorityUrgent: "紧急",
+      voiceNote: "语音备忘录",
+      video: "视频",
     },
     ja: {
       title: "物件トラッカー",
@@ -869,7 +929,27 @@ function PropertyTrackerContent() {
       maxVideoReached: "1リクエストにつき最大3件の動画",
       fileTooLarge: "ファイルが大きすぎます",
       voiceMaxSize: "音声メモは5MB未満である必要があります",
-      videoMaxSize: "動画は80MB未満である必要があります"
+      videoMaxSize: "動画は80MB未満である必要があります",
+      day: "日",
+      alertsOn: "アラートオン",
+      statusReported: "報告済み",
+      statusAcknowledged: "承認済み",
+      statusInProgress: "進行中",
+      statusCompleted: "完了",
+      statusRejected: "拒否",
+      categoryPlumbing: "配管",
+      categoryElectrical: "電気",
+      categoryStructural: "構造",
+      categoryAppliance: "家電",
+      categoryHvac: "HVAC",
+      categoryPest: "害虫",
+      categoryOther: "その他",
+      priorityLow: "低",
+      priorityMedium: "中",
+      priorityHigh: "高",
+      priorityUrgent: "緊急",
+      voiceNote: "音声メモ",
+      video: "動画",
     },
     ko: {
       title: "부동산 추적기",
@@ -946,7 +1026,27 @@ function PropertyTrackerContent() {
       maxVideoReached: "요청당 최대 3개의 동영상",
       fileTooLarge: "파일이 너무 큼",
       voiceMaxSize: "음성 메모는 5MB 미만이어야 합니다",
-      videoMaxSize: "동영상은 80MB 미만이어야 합니다"
+      videoMaxSize: "동영상은 80MB 미만이어야 합니다",
+      day: "일",
+      alertsOn: "알림 켜짐",
+      statusReported: "보고됨",
+      statusAcknowledged: "확인됨",
+      statusInProgress: "진행 중",
+      statusCompleted: "완료됨",
+      statusRejected: "거부됨",
+      categoryPlumbing: "배관",
+      categoryElectrical: "전기",
+      categoryStructural: "구조",
+      categoryAppliance: "가전제품",
+      categoryHvac: "HVAC",
+      categoryPest: "해충",
+      categoryOther: "기타",
+      priorityLow: "낮음",
+      priorityMedium: "중간",
+      priorityHigh: "높음",
+      priorityUrgent: "긴급",
+      voiceNote: "음성 메모",
+      video: "비디오",
     },
     ru: {
       title: "Управление недвижимостью",
@@ -1023,7 +1123,27 @@ function PropertyTrackerContent() {
       maxVideoReached: "Максимум 3 видео на запрос",
       fileTooLarge: "Файл слишком большой",
       voiceMaxSize: "Голосовые заметки должны быть менее 5 МБ",
-      videoMaxSize: "Видео должны быть менее 80 МБ"
+      videoMaxSize: "Видео должны быть менее 80 МБ",
+      day: "День",
+      alertsOn: "Уведомления ВКЛ",
+      statusReported: "Сообщено",
+      statusAcknowledged: "Подтверждено",
+      statusInProgress: "В процессе",
+      statusCompleted: "Завершено",
+      statusRejected: "Отклонено",
+      categoryPlumbing: "Сантехника",
+      categoryElectrical: "Электрика",
+      categoryStructural: "Конструкция",
+      categoryAppliance: "Бытовая техника",
+      categoryHvac: "ОВК",
+      categoryPest: "Вредители",
+      categoryOther: "Другое",
+      priorityLow: "Низкий",
+      priorityMedium: "Средний",
+      priorityHigh: "Высокий",
+      priorityUrgent: "Срочный",
+      voiceNote: "Голосовая заметка",
+      video: "Видео",
     }
   };
 
@@ -1958,7 +2078,7 @@ function PropertyTrackerContent() {
                     {deposit?.rent_amount && deposit?.rent_due_day && (
                       <div className="text-sm font-normal mt-1">
                         <Badge style={{ backgroundColor: `${colors.rentAccent}20`, color: colors.rentAccent, border: `1px solid ${colors.rentAccent}` }}>
-                          Day {deposit.rent_due_day} - ฿{deposit.rent_amount.toLocaleString()}
+                          {strings.day} {deposit.rent_due_day} - ฿{deposit.rent_amount.toLocaleString()}
                         </Badge>
                       </div>
                     )}
@@ -2108,12 +2228,12 @@ function PropertyTrackerContent() {
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.alertDaysBefore}</p>
                       </div>
                       <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                        {deposit.rent_alert_days_before || 3} days
+                        {deposit.rent_alert_days_before || 3} {strings.days}
                       </p>
                       {deposit.rent_alerts_enabled && (
                         <Badge className="bg-emerald-100 text-emerald-800 mt-2">
                           <Bell className="w-3 h-3 mr-1" />
-                          Alerts ON
+                          {strings.alertsOn}
                         </Badge>
                       )}
                     </div>
@@ -2216,11 +2336,11 @@ function PropertyTrackerContent() {
                         </SelectTrigger>
                         <SelectContent style={{ backgroundColor: colors.cardBg }}>
                           <SelectItem value="all">{strings.allStatuses}</SelectItem>
-                          <SelectItem value="reported">Reported</SelectItem>
-                          <SelectItem value="acknowledged">Acknowledged</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
+                          <SelectItem value="reported">{strings.statusReported}</SelectItem>
+                          <SelectItem value="acknowledged">{strings.statusAcknowledged}</SelectItem>
+                          <SelectItem value="in_progress">{strings.statusInProgress}</SelectItem>
+                          <SelectItem value="completed">{strings.statusCompleted}</SelectItem>
+                          <SelectItem value="rejected">{strings.statusRejected}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -2545,13 +2665,13 @@ function PropertyTrackerContent() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent style={{ backgroundColor: colors.cardBg }}>
-                              <SelectItem value="plumbing">Plumbing</SelectItem>
-                              <SelectItem value="electrical">Electrical</SelectItem>
-                              <SelectItem value="structural">Structural</SelectItem>
-                              <SelectItem value="appliance">Appliance</SelectItem>
-                              <SelectItem value="hvac">HVAC</SelectItem>
-                              <SelectItem value="pest">Pest</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
+                              <SelectItem value="plumbing">{strings.categoryPlumbing}</SelectItem>
+                              <SelectItem value="electrical">{strings.categoryElectrical}</SelectItem>
+                              <SelectItem value="structural">{strings.categoryStructural}</SelectItem>
+                              <SelectItem value="appliance">{strings.categoryAppliance}</SelectItem>
+                              <SelectItem value="hvac">{strings.categoryHvac}</SelectItem>
+                              <SelectItem value="pest">{strings.categoryPest}</SelectItem>
+                              <SelectItem value="other">{strings.categoryOther}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -2573,10 +2693,10 @@ function PropertyTrackerContent() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent style={{ backgroundColor: colors.cardBg }}>
-                              <SelectItem value="low">Low</SelectItem>
-                              <SelectItem value="medium">Medium</SelectItem>
-                              <SelectItem value="high">High</SelectItem>
-                              <SelectItem value="urgent">Urgent</SelectItem>
+                              <SelectItem value="low">{strings.priorityLow}</SelectItem>
+                              <SelectItem value="medium">{strings.priorityMedium}</SelectItem>
+                              <SelectItem value="high">{strings.priorityHigh}</SelectItem>
+                              <SelectItem value="urgent">{strings.priorityUrgent}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

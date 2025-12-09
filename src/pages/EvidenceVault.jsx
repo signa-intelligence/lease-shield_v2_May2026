@@ -469,10 +469,17 @@ function EvidenceVaultContent() {
           docType = 'video';
         }
 
+        const typeLabel = language === 'zh' ? DOC_TYPE_CONFIG[docType]?.label_zh :
+                          language === 'ja' ? DOC_TYPE_CONFIG[docType]?.label_ja :
+                          language === 'ko' ? DOC_TYPE_CONFIG[docType]?.label_ko :
+                          language === 'th' ? DOC_TYPE_CONFIG[docType]?.label_th :
+                          language === 'ru' ? DOC_TYPE_CONFIG[docType]?.label_ru :
+                          DOC_TYPE_CONFIG[docType]?.label_en;
+
         return createDocumentMutation.mutateAsync({
           type: docType,
           file_url: result.file_url,
-          label: uploadLabel || `${docType} - ${new Date().toLocaleDateString()}`,
+          label: uploadLabel || strings.defaultDocLabel.replace('{docType}', typeLabel).replace('{date}', new Date().toLocaleDateString()),
         });
       });
 
@@ -695,35 +702,18 @@ function EvidenceVaultContent() {
       const fullText = (htmlDoc.body.textContent || htmlDoc.body.innerText || '').trim();
 
       // Extract English letter: Start from "Dear" to closing
-      let englishMatch = fullText.match(/Dear\s+[^,]+,[\s\S]*?(Warm regards|Best regards|Sincerely|Yours truly),?/i);
+      let englishMatch = fullText.match(new RegExp(`${strings.dear}[\s\S]*?(${strings.closingRegards})`, 'i'));
       let englishLetter = englishMatch ? englishMatch[0].trim() : '';
-
-      // Extract Thai letter: Start from "เรียน" to Thai closing
-      let thaiMatch = fullText.match(/เรียน[^,]+,[\s\S]*?(ขอแสดงความนับถือ|ด้วยความเคารพ|ขอแสดงความเคารพ),?/);
-      let thaiLetter = thaiMatch ? thaiMatch[0].trim() : '';
-
-      // Build email body: Thai header + Thai content + separator + English content
-      let letterContent = 'ภาษาไทยด้านล่าง\n\n';
-
-      if (thaiLetter) {
-        letterContent += thaiLetter;
-      }
-
-      if (englishLetter) {
-        if (thaiLetter) {
-          letterContent += '\n\n---\n\n';
-        }
-        letterContent += englishLetter;
-      }
+      
+      let letterContent = englishLetter;
 
       // If no letters extracted, fallback
-      if (!thaiLetter && !englishLetter) {
-        letterContent += '[Letter content could not be extracted]';
+      if (!letterContent) {
+        letterContent += strings.letterExtractionFailed;
       }
 
       // Format final email with footer
-      const createdByText = language === 'zh' ? '创建者' : language === 'ja' ? '作成者' : language === 'ko' ? '생성자' : language === 'th' ? 'สร้างโดย' : 'Created by';
-      body = `${letterContent}\n\n---\n\n${createdByText} Lease Shield - https://www.leaseshield.asia`;
+      body = `${letterContent}\n\n---\n\n${strings.createdBy} Lease Shield - https://www.leaseshield.asia`;
     } else {
       // For other document types
       const documentText = language === 'zh' ? '文档' : language === 'ja' ? 'ドキュメント' : language === 'ko' ? '문서' : language === 'th' ? 'เอกสาร' : 'Document';
@@ -898,7 +888,14 @@ function EvidenceVaultContent() {
       voiceMaxSize: "Voice notes must be under 5MB",
       videoMaxSize: "Videos must be under 80MB",
       uploadVideo: "Upload Video",
-      recordVideo: "Record Video"
+      recordVideo: "Record Video",
+      defaultDocLabel: "{docType} - {date}",
+      dear: "Dear",
+      closingRegards: "Warm regards",
+      letterExtractionFailed: "[Letter content could not be extracted]",
+      createdBy: "Created by",
+      selectFromDevice: "Select from device",
+      useCameraToRecord: "Use camera to record",
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -990,7 +987,14 @@ function EvidenceVaultContent() {
       voiceMaxSize: "บันทึกเสียงต้องน้อยกว่า 5MB",
       videoMaxSize: "วิดีโอต้องน้อยกว่า 80MB",
       uploadVideo: "อัปโหลดวิดีโอ",
-      recordVideo: "บันทึกวิดีโอ"
+      recordVideo: "บันทึกวิดีโอ",
+      defaultDocLabel: "{docType} - {date}",
+      dear: "เรียน",
+      closingRegards: "ขอแสดงความนับถือ",
+      letterExtractionFailed: "[ไม่สามารถดึงเนื้อหาจดหมายได้]",
+      createdBy: "สร้างโดย",
+      selectFromDevice: "เลือกจากอุปกรณ์",
+      useCameraToRecord: "ใช้กล้องเพื่อบันทึก",
     },
     zh: {
       back: "返回仪表板",
@@ -1082,7 +1086,14 @@ function EvidenceVaultContent() {
       voiceMaxSize: "语音备忘录必须小于 5MB",
       videoMaxSize: "视频必须小于 80MB",
       uploadVideo: "上传视频",
-      recordVideo: "录制视频"
+      recordVideo: "录制视频",
+      defaultDocLabel: "{docType} - {date}",
+      dear: "亲爱的",
+      closingRegards: "诚挚的问候",
+      letterExtractionFailed: "[无法提取信件内容]",
+      createdBy: "创建者",
+      selectFromDevice: "从设备选择",
+      useCameraToRecord: "使用相机录制",
     },
     ja: {
       back: "ダッシュボードに戻る",
@@ -1174,7 +1185,14 @@ function EvidenceVaultContent() {
       voiceMaxSize: "音声メモは5MB未満である必要があります",
       videoMaxSize: "動画は80MB未満である必要があります",
       uploadVideo: "動画をアップロード",
-      recordVideo: "動画を録画"
+      recordVideo: "動画を録画",
+      defaultDocLabel: "{docType} - {date}",
+      dear: "拝啓",
+      closingRegards: "敬具",
+      letterExtractionFailed: "[手紙の内容を抽出できませんでした]",
+      createdBy: "作成者",
+      selectFromDevice: "デバイスから選択",
+      useCameraToRecord: "カメラで録画",
     },
     ko: {
       back: "대시보드로 돌아가기",
@@ -1266,7 +1284,14 @@ function EvidenceVaultContent() {
       voiceMaxSize: "음성 메모는 5MB 미만이어야 합니다",
       videoMaxSize: "동영상은 80MB 미만이어야 합니다",
       uploadVideo: "동영상 업로드",
-      recordVideo: "동영상 녹화"
+      recordVideo: "동영상 녹화",
+      defaultDocLabel: "{docType} - {date}",
+      dear: "에게",
+      closingRegards: "안부를 전하며",
+      letterExtractionFailed: "[편지 내용을 추출할 수 없습니다]",
+      createdBy: "작성자",
+      selectFromDevice: "기기에서 선택",
+      useCameraToRecord: "카메라로 녹화",
     },
     ru: {
       back: "Назад к панели",
@@ -1358,7 +1383,14 @@ function EvidenceVaultContent() {
       voiceMaxSize: "Голосовые заметки должны быть менее 5 МБ",
       videoMaxSize: "Видео должны быть менее 80 МБ",
       uploadVideo: "Загрузить видео",
-      recordVideo: "Записать видео"
+      recordVideo: "Записать видео",
+      defaultDocLabel: "{docType} - {date}",
+      dear: "Уважаемый",
+      closingRegards: "С уважением",
+      letterExtractionFailed: "[Не удалось извлечь содержимое письма]",
+      createdBy: "Создано",
+      selectFromDevice: "Выбрать с устройства",
+      useCameraToRecord: "Записать с помощью камеры",
     }
   }[language] || {
     back: "Back to Dashboard",
@@ -1716,7 +1748,7 @@ function EvidenceVaultContent() {
                 <div>
                   <p className="font-bold text-sm">{strings.uploadVideo}</p>
                   <p className="text-xs" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'เลือกจากอุปกรณ์' : language === 'zh' ? '从设备选择' : language === 'ja' ? 'デバイスから選択' : language === 'ko' ? '기기에서 선택' : language === 'ru' ? 'Выбрать с устройства' : 'Select from device'}
+                    {strings.selectFromDevice}
                   </p>
                 </div>
               </div>
@@ -1738,7 +1770,7 @@ function EvidenceVaultContent() {
                 <div>
                   <p className="font-bold text-sm">{strings.recordVideo}</p>
                   <p className="text-xs" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'ใช้กล้องเพื่อบันทึก' : language === 'zh' ? '使用相机录制' : language === 'ja' ? 'カメラで録画' : language === 'ko' ? '카메라로 녹화' : language === 'ru' ? 'Записать камерой' : 'Use camera to record'}
+                    {strings.useCameraToRecord}
                   </p>
                 </div>
               </div>
@@ -1794,8 +1826,8 @@ function EvidenceVaultContent() {
                       <div className="flex-1">
                         <p className="font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
                           {language === 'th'
-                            ? `${compressionStats.compressedCount} รูป • ประหยัด ${compressionStats.savedMB} MB`
-                            : `${compressionStats.compressedCount} images • Saved ${compressionStats.savedMB} MB`
+                            ? strings.imagesOptimizedDesc.replace('{count}', compressionStats.compressedCount).replace('{saved}', compressionStats.savedMB)
+                            : strings.imagesOptimizedDesc.replace('{count}', compressionStats.compressedCount).replace('{saved}', compressionStats.savedMB)
                           }
                         </p>
                       </div>

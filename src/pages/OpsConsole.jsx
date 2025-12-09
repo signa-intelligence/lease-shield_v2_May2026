@@ -68,8 +68,9 @@ function OpsConsoleContent() {
   const { data: cases = [] } = useQuery({
     queryKey: ['allCases'],
     queryFn: async () => {
-      const rawResult = await base44.entities.Case.list('-created_date', 100);
-      return rawResult;
+      const result = await base44.entities.Case.list('-created_date', 100);
+      // Filter out soft-deleted cases
+      return result.filter(c => !c.is_deleted);
     },
     enabled: hasOpsAccess,
   });

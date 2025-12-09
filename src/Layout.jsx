@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
+import PWAInstallPrompt from "./components/shared/PWAInstallPrompt";
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -595,6 +596,8 @@ export default function Layout({ children, currentPageName }) {
       >
         {children}
       </main>
+
+      <PWAInstallPrompt language={language} isDarkMode={isDarkMode} />
 
       {/* Bottom Navigation */}
       <nav 
