@@ -29,6 +29,7 @@ import AdminTemplates from './pages/AdminTemplates';
 import RecycleBin from './pages/RecycleBin';
 import Welcome from './pages/Welcome';
 import CookieSync from './pages/CookieSync';
+import cookieSync from './pages/cookie-sync';
 import __Layout from './Layout.jsx';
 
 
@@ -64,6 +65,7 @@ export const PAGES = {
     "RecycleBin": RecycleBin,
     "Welcome": Welcome,
     "CookieSync": CookieSync,
+    "cookie-sync": cookieSync,
 }
 
 export const pagesConfig = {
