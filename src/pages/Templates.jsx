@@ -724,6 +724,12 @@ export default function Templates() {
     );
   };
 
+  // Organize templates by category - define after renderTemplateCard
+  const preSigningTemplates = [...TEMPLATES.filter(tmpl => tmpl.preSigning), ...(customTemplates || []).filter(tmpl => tmpl.category === 'pre_signing')];
+  const liteTemplates = [...TEMPLATES.filter(tmpl => ['deposit', 'deductions', 'reminder'].includes(tmpl.id)), ...(customTemplates || []).filter(tmpl => tmpl.category === 'friendly')];
+  const protectTemplates = [...TEMPLATES.filter(tmpl => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(tmpl.id)), ...(customTemplates || []).filter(tmpl => tmpl.category === 'professional')];
+  const secureTemplates = [...TEMPLATES.filter(tmpl => ['final_opportunity', 'non_compliance', 'settlement'].includes(tmpl.id)), ...(customTemplates || []).filter(tmpl => tmpl.category === 'final')];
+
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
