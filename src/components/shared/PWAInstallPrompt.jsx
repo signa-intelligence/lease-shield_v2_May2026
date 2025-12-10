@@ -45,10 +45,22 @@ export default function PWAInstallPrompt({ language = 'en', isDarkMode = false }
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setInstallPromptEvent(e);
+      
+      // Don't show if already installed as PWA
       if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
           console.log('App is already installed.');
           return;
       }
+      
+      // Don't show if running in Android WebView or native wrapper
+      const ua = navigator.userAgent || '';
+      const isWebView = ua.includes('wv') || (ua.includes('Android') && ua.includes('LeaseShieldApp'));
+      
+      if (isWebView) {
+          console.log('Running in WebView/native wrapper. Install prompt hidden.');
+          return;
+      }
+      
       setIsVisible(true);
       console.log('✅ `beforeinstallprompt` event fired. Prompt is visible.');
     };
