@@ -48,6 +48,14 @@
   }
 }
 
+/* Block all PWA install banners */
+#install-app-banner,
+[data-testid="install-app-banner"],
+[data-component="InstallAppBanner"],
+.install-app-banner {
+  display: none !important;
+}
+
 @layer components {
   /* ========================================
      PAGE TRANSITIONS

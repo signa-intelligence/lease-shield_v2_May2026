@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
-import PWAInstallPrompt from "./components/shared/PWAInstallPrompt";
+
 
 // Animation utilities inlined
 const animationKeyframes = `
@@ -85,6 +85,16 @@ export default function Layout({ children, currentPageName }) {
       document.documentElement.classList.remove('dark');
     }
   }, [user?.theme]);
+
+  // Block all PWA install prompts
+  React.useEffect(() => {
+    const blockInstallPrompt = (e) => {
+      e.preventDefault();
+      window.__ls_blocked_pwa = true;
+    };
+    window.addEventListener('beforeinstallprompt', blockInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', blockInstallPrompt);
+  }, []);
 
   React.useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -596,8 +606,6 @@ export default function Layout({ children, currentPageName }) {
       >
         {children}
       </main>
-
-      <PWAInstallPrompt language={language} isDarkMode={isDarkMode} />
 
       {/* Bottom Navigation */}
       <nav 
