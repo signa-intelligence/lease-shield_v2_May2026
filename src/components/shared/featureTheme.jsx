@@ -8,11 +8,13 @@
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const BRAND = {
-  forest: '#0C3B2E',      // Primary green
-  gold: '#C7A338',        // Accent gold
+  forest: '#063F2C',      // Primary green (2025 refresh)
+  forestHover: '#084D38', // Hover state
+  gold: '#CFAF6A',        // Accent gold (2025 refresh)
+  goldHover: '#D9BC7E',   // Gold hover
   charcoal: '#1A1D1F',    // Dark bg
-  stone: '#F3F6F5',       // Light bg
-  stoneAlt: '#ECEFED',    // Alt light bg
+  stone: '#F8FAFC',       // Light bg (2025 refresh)
+  stoneAlt: '#F3F6F5',    // Alt light bg
   white: '#FFFFFF',       // Pure white
   
   // Extended palette for feature accents
@@ -21,7 +23,7 @@ export const BRAND = {
   amber: '#F59E0B',
   purple: '#8B5CF6',
   blue: '#3B82F6',
-  red: '#EF4444',
+  red: '#DC2626',         // Updated to match danger color
 };
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -228,34 +230,56 @@ export const CTA_COLOR = BRAND.forest; // Primary CTA green
 export const primaryCtaStyle = {
   backgroundColor: BRAND.forest,
   color: BRAND.white,
-  border: `2px solid ${BRAND.gold}`,
-  borderRadius: '10px',
-  padding: '10px 18px',
-  fontWeight: '700',
-  fontSize: '0.875rem',
+  border: 'none',
+  borderRadius: '12px',
+  padding: '12px 24px',
+  fontFamily: 'Inter, -apple-system, sans-serif',
+  fontWeight: '600',
+  fontSize: '14px',
+  minHeight: '48px',
   cursor: 'pointer',
-  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-  boxShadow: '0 4px 12px rgba(12, 59, 46, 0.25)',
+  transition: 'all 150ms ease',
+  boxShadow: '0 2px 8px rgba(6, 63, 44, 0.15)',
   display: 'inline-flex',
   alignItems: 'center',
   gap: '8px'
 };
 
 export const primaryCtaHover = {
-  transform: 'translateY(-1px)',
-  boxShadow: '0 8px 16px rgba(12, 59, 46, 0.35)'
+  backgroundColor: BRAND.forestHover,
+  boxShadow: '0 4px 12px rgba(6, 63, 44, 0.25)'
 };
 
 export const secondaryCtaStyle = {
   backgroundColor: 'transparent',
   color: BRAND.forest,
   border: `2px solid ${BRAND.forest}`,
-  borderRadius: '10px',
-  padding: '10px 18px',
+  borderRadius: '12px',
+  padding: '12px 24px',
+  fontFamily: 'Inter, -apple-system, sans-serif',
   fontWeight: '600',
-  fontSize: '0.875rem',
+  fontSize: '14px',
+  minHeight: '48px',
   cursor: 'pointer',
-  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  transition: 'all 150ms ease',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px'
+};
+
+export const accentCtaStyle = {
+  backgroundColor: BRAND.gold,
+  color: BRAND.charcoal,
+  border: 'none',
+  borderRadius: '12px',
+  padding: '12px 24px',
+  fontFamily: 'Inter, -apple-system, sans-serif',
+  fontWeight: '600',
+  fontSize: '14px',
+  minHeight: '48px',
+  cursor: 'pointer',
+  transition: 'all 150ms ease',
+  boxShadow: '0 2px 8px rgba(207, 175, 106, 0.15)',
   display: 'inline-flex',
   alignItems: 'center',
   gap: '8px'
@@ -267,16 +291,18 @@ export const secondaryCtaStyle = {
 
 export const cardStyles = {
   light: {
-    borderRadius: '14px',
-    border: `1px solid rgba(12, 59, 46, 0.08)`,
-    boxShadow: '0 6px 18px rgba(15, 23, 42, 0.06)',
-    backgroundColor: BRAND.white
+    borderRadius: '16px',
+    border: `1px solid rgba(6, 63, 44, 0.08)`,
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+    backgroundColor: BRAND.white,
+    padding: '24px'
   },
   dark: {
-    borderRadius: '14px',
+    borderRadius: '16px',
     border: `1px solid rgba(255, 255, 255, 0.08)`,
-    boxShadow: '0 6px 18px rgba(0, 0, 0, 0.3)',
-    backgroundColor: '#2A2D30'
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+    backgroundColor: '#1F2937',
+    padding: '24px'
   }
 };
 
@@ -292,25 +318,25 @@ export const getFeatureCardStyles = (feature, isDark = false) => {
   if (!theme) {
     // Fallback to default neutral theme
     return isDark ? {
-      cardBg: '#2A2D30',
-      borderColor: '#3A3D40',
-      iconBg: 'rgba(199,163,56,0.2)',
-      iconColor: '#C7A338',
-      titleColor: '#ECEFED',
-      metricColor: '#ECEFED',
-      buttonBg: '#0C3B2E',
+      cardBg: '#1F2937',
+      borderColor: '#374151',
+      iconBg: 'rgba(207,175,106,0.2)',
+      iconColor: '#D9BC7E',
+      titleColor: '#F3F6F5',
+      metricColor: '#F3F6F5',
+      buttonBg: '#063F2C',
       buttonText: '#FFFFFF',
-      accent: '#C7A338'
+      accent: '#CFAF6A'
     } : {
       cardBg: '#FFFFFF',
       borderColor: '#E5E7EB',
-      iconBg: 'rgba(12,59,46,0.1)',
-      iconColor: '#0C3B2E',
+      iconBg: 'rgba(6,63,44,0.1)',
+      iconColor: '#063F2C',
       titleColor: '#1A1D1F',
       metricColor: '#1A1D1F',
-      buttonBg: '#0C3B2E',
+      buttonBg: '#063F2C',
       buttonText: '#FFFFFF',
-      accent: '#0C3B2E'
+      accent: '#063F2C'
     };
   }
   
@@ -330,13 +356,13 @@ export const getFeatureAccent = (feature) => {
 export const getGlobalColors = (isDark = false) => {
   return isDark ? {
     bg: '#111827',
-    cardBg: '#2A2D30',
+    cardBg: '#1F2937',
     textPrimary: '#F9FAFB',
     textSecondary: '#D1D5DB',
     borderColor: 'rgba(255,255,255,0.1)',
     inputBg: '#374151',
     fieldBg: '#374151',
-    hoverBg: '#3A3D40',
+    hoverBg: '#374151',
     topBarBg: '#1F2937',
     bottomTabBg: '#1F2937'
   } : {
@@ -344,7 +370,7 @@ export const getGlobalColors = (isDark = false) => {
     cardBg: BRAND.white,
     textPrimary: '#0F172A',
     textSecondary: '#475569',
-    borderColor: 'rgba(12,59,46,0.08)',
+    borderColor: 'rgba(6,63,44,0.08)',
     inputBg: BRAND.white,
     fieldBg: '#F8FAFC',
     hoverBg: '#F1F5F9',
