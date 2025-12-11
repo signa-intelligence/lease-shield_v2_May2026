@@ -1974,7 +1974,7 @@ ja: {
                         {strings.uploadLease}
                       </button>
                       <button
-                        onClick={() => navigate(createPageUrl("propertytracker") + "#deposit")}
+                        onClick={() => navigate(createPageUrl("PropertyTracker") + "#deposit")}
                         className="btn-interaction"
                         style={{
                           padding: '8px 14px',
@@ -1994,7 +1994,7 @@ ja: {
                         {strings.trackDeposit}
                       </button>
                       <button
-                        onClick={() => navigate(createPageUrl("propertytracker") + '#maintenance')}
+                        onClick={() => navigate(createPageUrl("PropertyTracker") + '#maintenance')}
                         className="btn-interaction"
                         style={{
                           padding: '8px 14px',
@@ -2349,7 +2349,7 @@ ja: {
                         miniStats: [
                           { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
                         ],
-                        route: createPageUrl("propertytracker") + "#deposit",
+                        route: createPageUrl("PropertyTracker") + "#deposit",
                         label: strings.trackDeposit,
                       },
                       {
@@ -2375,7 +2375,7 @@ ja: {
                         miniStats: [
                           { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'Уведомления' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
                         ],
-                        route: createPageUrl("propertytracker") + "#rent",
+                        route: createPageUrl("PropertyTracker") + "#rent",
                         label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'ru' ? 'Управление' : 'จัดการ') : strings.setupRent,
                       },
                       {
