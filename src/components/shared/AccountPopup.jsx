@@ -1,8 +1,9 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { User, HelpCircle, Globe, Star } from 'lucide-react';
+import { User, HelpCircle, Globe, Star, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import React from 'react';
 
 export default function AccountPopup({ isOpen, onClose, colors, language = 'en', onLanguageClick }) {
   if (!isOpen) return null;
@@ -84,112 +85,150 @@ export default function AccountPopup({ isOpen, onClose, colors, language = 'en',
           left: 0,
           right: 0,
           bottom: 0,
-          zIndex: 9998
+          backgroundColor: 'rgba(0,0,0,0.1)',
+          zIndex: 9998,
+          animation: 'fadeIn 0.15s ease-out'
         }}
         onClick={onClose}
       />
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       <Card
         style={{
           position: 'fixed',
-          top: '70px',
+          top: '75px',
           right: '20px',
-          width: '280px',
+          width: '300px',
           maxWidth: 'calc(100vw - 40px)',
           backgroundColor: colors.cardBg,
-          borderColor: colors.borderColor,
-          boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
+          border: `1px solid ${colors.borderColor}`,
+          boxShadow: '0 16px 48px rgba(0,0,0,0.2)',
           zIndex: 9999,
-          padding: '12px'
+          padding: '8px',
+          borderRadius: '16px',
+          animation: 'slideDown 0.2s ease-out'
         }}
       >
-        <div className="space-y-2">
+        <div className="space-y-1">
           {menuItems.map((item, idx) => {
             const Icon = item.icon;
+            const isUpgrade = item.label.toLowerCase().includes('upgrade') || item.label.toLowerCase().includes('อัปเกรด');
             
             if (item.action === 'language') {
               return (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    onClose();
-                    if (onLanguageClick) onLanguageClick();
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    transition: 'all 0.2s',
-                    color: colors.textPrimary
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = colors.fieldBg;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '8px',
-                    backgroundColor: item.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="font-semibold text-sm">{item.label}</span>
-                </button>
+                <React.Fragment key={idx}>
+                  <button
+                    onClick={() => {
+                      onClose();
+                      if (onLanguageClick) onLanguageClick();
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '14px 12px',
+                      borderRadius: '12px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      transition: 'all 0.15s',
+                      color: colors.textPrimary
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = colors.fieldBg;
+                      e.currentTarget.style.transform = 'translateX(2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.transform = 'translateX(0)';
+                    }}
+                  >
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      backgroundColor: `${item.color}15`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <Icon className="w-5 h-5" style={{ color: item.color }} />
+                    </div>
+                    <span className="font-semibold text-sm flex-1">{item.label}</span>
+                    <ChevronRight className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                  </button>
+                  {idx < menuItems.length - 1 && (
+                    <div style={{
+                      height: '1px',
+                      backgroundColor: colors.borderColor,
+                      margin: '4px 12px'
+                    }} />
+                  )}
+                </React.Fragment>
               );
             }
 
             return (
-              <Link key={idx} to={item.route}>
-                <button
-                  onClick={onClose}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    transition: 'all 0.2s',
-                    color: colors.textPrimary
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = colors.fieldBg;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
+              <React.Fragment key={idx}>
+                <Link to={item.route}>
+                  <button
+                    onClick={onClose}
+                    style={{
+                      width: '100%',
+                      padding: '14px 12px',
+                      borderRadius: '12px',
+                      backgroundColor: isUpgrade ? `${item.color}10` : 'transparent',
+                      border: isUpgrade ? `2px solid ${item.color}30` : 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      transition: 'all 0.15s',
+                      color: colors.textPrimary
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = isUpgrade ? `${item.color}20` : colors.fieldBg;
+                      e.currentTarget.style.transform = 'translateX(2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = isUpgrade ? `${item.color}10` : 'transparent';
+                      e.currentTarget.style.transform = 'translateX(0)';
+                    }}
+                  >
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      backgroundColor: isUpgrade ? item.color : `${item.color}15`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <Icon className="w-5 h-5" style={{ color: isUpgrade ? 'white' : item.color }} />
+                    </div>
+                    <span className={`text-sm flex-1 ${isUpgrade ? 'font-bold' : 'font-semibold'}`}>{item.label}</span>
+                    <ChevronRight className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                  </button>
+                </Link>
+                {idx < menuItems.length - 1 && (
                   <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '8px',
-                    backgroundColor: item.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="font-semibold text-sm">{item.label}</span>
-                </button>
-              </Link>
+                    height: '1px',
+                    backgroundColor: colors.borderColor,
+                    margin: '4px 12px'
+                  }} />
+                )}
+              </React.Fragment>
             );
           })}
         </div>

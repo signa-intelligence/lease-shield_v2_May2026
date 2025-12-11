@@ -1,11 +1,11 @@
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, HelpCircle, BookOpen } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, HelpCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { haptic } from "./components/shared/HapticFeedback";
-import Lisa from "./components/shared/Lisa";
+import LisaEnhanced from "./components/shared/LisaEnhanced";
 import AccountPopup from "./components/shared/AccountPopup";
 import LanguageSelector from "./components/shared/LanguageSelector";
 
@@ -511,15 +511,21 @@ export default function Layout({ children, currentPageName }) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div style={{
+              width: '1px',
+              height: '24px',
+              backgroundColor: colors.borderColor,
+              opacity: 0.5
+            }} />
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
                 onClick={() => haptic.light()}
                 className="btn-interaction"
                 style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '40px',
+                  height: '40px',
                   borderRadius: '50%',
                   backgroundColor: isActiveTab(createPageUrl("Search")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
                   border: 'none',
@@ -531,7 +537,7 @@ export default function Layout({ children, currentPageName }) {
                 }}
               >
                 <Search 
-                  className="w-4 h-4 sm:w-5 sm:h-5" 
+                  className="w-5 h-5" 
                   style={{ 
                     color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                     transition: 'color 0.2s'
@@ -539,50 +545,16 @@ export default function Layout({ children, currentPageName }) {
                 />
               </button>
             </Link>
-            {user && user.plan_tier !== 'secure' && (
-              <Link to={createPageUrl("Account") + '?showPlans=true'}>
-                <button
-                  aria-label="Upgrade"
-                  onClick={() => haptic.medium()}
-                  className="btn-interaction hidden sm:inline-flex"
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 9999,
-                    backgroundColor: '#10B981',
-                    color: '#FFFFFF',
-                    border: '2px solid #10B981',
-                    fontWeight: 700,
-                    fontSize: '0.75rem',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                    whiteSpace: 'nowrap',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#059669';
-                    e.target.style.borderColor = '#059669';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = '#10B981';
-                    e.target.style.borderColor = '#10B981';
-                  }}
-                >
-                  {strings.upgrade}
-                </button>
-              </Link>
-            )}
             <button
-              aria-label="Quick Guide"
+              aria-label="Help & Quick Guide"
               onClick={() => {
                 haptic.light();
-                // Dispatch event to open Quick Guide from Dashboard
                 window.dispatchEvent(new CustomEvent('openQuickGuide'));
               }}
               className="btn-interaction hidden sm:flex"
               style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: '50%',
                 backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
                 border: 'none',
@@ -593,8 +565,8 @@ export default function Layout({ children, currentPageName }) {
                 boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
               }}
             >
-              <BookOpen 
-                className="w-4 h-4 sm:w-5 sm:h-5" 
+              <HelpCircle 
+                className="w-5 h-5" 
                 style={{ 
                   color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
                   transition: 'color 0.2s'
@@ -609,20 +581,21 @@ export default function Layout({ children, currentPageName }) {
               }}
               className="btn-interaction"
               style={{
-                width: '36px',
-                height: '36px',
+                width: '40px',
+                height: '40px',
                 borderRadius: '50%',
                 backgroundColor: showAccountPopup ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
-                border: 'none',
+                border: showAccountPopup ? '2px solid #C7A338' : 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+                boxShadow: showAccountPopup ? '0 0 0 4px rgba(199,163,56,0.15)' : (isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'),
+                transition: 'all 0.2s'
               }}
             >
               <User 
-                className="w-4 h-4 sm:w-5 sm:h-5" 
+                className="w-5 h-5" 
                 style={{ 
                   color: showAccountPopup ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                   transition: 'color 0.2s'
@@ -718,7 +691,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
         </nav>
 
-        <Lisa language={language} isDarkMode={isDarkMode} />
+        <LisaEnhanced language={language} isDarkMode={isDarkMode} />
 
         <AccountPopup
           isOpen={showAccountPopup}

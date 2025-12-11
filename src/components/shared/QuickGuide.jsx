@@ -146,24 +146,39 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.3)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 9999,
-        padding: '20px'
+        padding: '20px',
+        animation: 'fadeIn 0.2s ease-out'
       }}
       onClick={handleDismiss}
     >
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes modalSlideIn {
+          from { opacity: 0; transform: scale(0.95) translateY(-20px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
       <Card 
-        className="border-none shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" 
-        style={{ backgroundColor: colors.cardBg }}
+        className="border-none shadow-2xl max-w-lg w-full" 
+        style={{ 
+          backgroundColor: colors.cardBg,
+          borderRadius: '16px',
+          animation: 'modalSlideIn 0.3s ease-out'
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
             <div>
-              <CardTitle className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
+              <CardTitle className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
                 {strings.title}
               </CardTitle>
               <p className="text-sm" style={{ color: colors.textSecondary }}>
@@ -172,12 +187,23 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             </div>
             <button
               onClick={handleDismiss}
+              aria-label="Close"
               style={{
                 background: 'none',
                 border: 'none',
                 color: colors.textSecondary,
                 cursor: 'pointer',
-                padding: '4px'
+                padding: '8px',
+                borderRadius: '8px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
+                e.currentTarget.style.color = colors.textPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = colors.textSecondary;
               }}
             >
               <X className="w-5 h-5" />
@@ -185,21 +211,22 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           {steps.map((step, idx) => {
             const Icon = step.icon;
             return (
-              <Link key={idx} to={step.route}>
+              <Link key={idx} to={step.route} onClick={handleDismiss}>
                 <div
-                  className="p-4 rounded-lg transition-all cursor-pointer"
+                  className="p-5 rounded-xl transition-all cursor-pointer"
                   style={{
                     backgroundColor: colors.fieldBg,
-                    border: `2px solid ${colors.borderColor}`
+                    border: `2px solid ${colors.borderColor}`,
+                    position: 'relative'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = step.color;
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = `0 4px 12px ${step.color}30`;
+                    e.currentTarget.style.transform = 'translateY(-3px)';
+                    e.currentTarget.style.boxShadow = `0 8px 16px ${step.color}25`;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = colors.borderColor;
@@ -207,28 +234,51 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                 >
-                  <div className="flex items-start gap-3">
-                    <div style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '8px',
-                      backgroundColor: step.color,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}>
-                      <Icon className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm mb-1" style={{ color: colors.textPrimary }}>
-                        {step.title}
-                      </p>
-                      <p className="text-xs" style={{ color: colors.textSecondary }}>
-                        {step.description}
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    backgroundColor: step.color,
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    fontWeight: '700'
+                  }}>
+                    {idx + 1}
+                  </div>
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    backgroundColor: `${step.color}15`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <Icon className="w-6 h-6" style={{ color: step.color }} />
+                  </div>
+                  <p className="font-bold text-sm mb-1" style={{ color: colors.textPrimary }}>
+                    {step.title}
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
+                    {step.description}
+                  </p>
+                  <div style={{
+                    marginTop: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: step.color,
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    {language === 'th' ? 'เริ่มต้น' : language === 'zh' ? '开始' : language === 'ja' ? '始める' : language === 'ko' ? '시작하기' : language === 'ru' ? 'Начать' : 'Get started'} →
                   </div>
                 </div>
               </Link>
@@ -236,8 +286,8 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           })}
         </div>
         
-        <div className="mt-4 space-y-3">
-          <div className="flex items-center gap-2 px-2">
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center gap-3 px-1">
             <Checkbox
               id="dont-show-again"
               checked={dontShowAgain}
@@ -245,24 +295,26 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             />
             <label
               htmlFor="dont-show-again"
-              className="text-sm cursor-pointer"
-              style={{ color: colors.textSecondary }}
+              className="text-sm cursor-pointer select-none"
+              style={{ color: colors.textSecondary, fontWeight: '500' }}
             >
               {language === 'th' ? 'ไม่ต้องแสดงอีก' : language === 'zh' ? '不再显示' : language === 'ja' ? '今後表示しない' : language === 'ko' ? '다시 표시 안 함' : language === 'ru' ? 'Больше не показывать' : "Don't show this again"}
             </label>
           </div>
-          <div className="text-center">
-            <Button
-              onClick={handleDismiss}
-              style={{ 
-                backgroundColor: '#0C3B2E',
-                color: '#FFFFFF',
-                fontWeight: '600'
-              }}
-            >
-              {strings.dismiss}
-            </Button>
-          </div>
+          <Button
+            onClick={handleDismiss}
+            className="w-full"
+            style={{ 
+              backgroundColor: '#0C3B2E',
+              color: '#FFFFFF',
+              fontWeight: '700',
+              padding: '12px 32px',
+              borderRadius: '12px',
+              fontSize: '15px'
+            }}
+          >
+            {strings.dismiss}
+          </Button>
         </div>
       </CardContent>
       </Card>

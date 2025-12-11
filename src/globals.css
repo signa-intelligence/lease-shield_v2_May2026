@@ -6,10 +6,46 @@
   :root {
     /* LeaseShield Brand Palette */
     --ls-forest: #0C3B2E;
+    --ls-forest-light: #0F5A45;
     --ls-gold: #C7A338;
+    --ls-gold-light: #D4B451;
     --ls-charcoal: #1A1D1F;
     --ls-stone: #F3F6F5;
     --ls-white: #FFFFFF;
+    
+    /* Semantic Colors */
+    --success: #10B981;
+    --danger: #EF4444;
+    --warning: #F59E0B;
+    --info: #3B82F6;
+    
+    /* Typography Scale */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 2rem;
+    
+    /* Spacing Scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-6: 24px;
+    --space-8: 32px;
+    
+    /* Radius Scale */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 8px rgba(0,0,0,0.1);
+    --shadow-lg: 0 12px 24px rgba(0,0,0,0.15);
     
     /* Light mode base colors */
     --background: 243 246 245;
@@ -54,6 +90,78 @@
 [data-component="InstallAppBanner"],
 .install-app-banner {
   display: none !important;
+}
+
+/* ========================================
+   REUSABLE BUTTON STYLES
+   ======================================== */
+.btn-primary {
+  background-color: var(--ls-forest);
+  color: var(--ls-white);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--ls-forest-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 2px solid var(--ls-forest);
+  color: var(--ls-forest);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--ls-forest);
+  color: var(--ls-white);
+}
+
+.btn-accent {
+  background-color: var(--ls-gold);
+  color: var(--ls-charcoal);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  border: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btn-accent:hover {
+  background-color: var(--ls-gold-light);
+  transform: translateY(-1px);
+}
+
+/* ========================================
+   REUSABLE CARD STYLES
+   ======================================== */
+.card-standard {
+  background-color: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-6);
+  border: 1px solid rgba(12, 59, 46, 0.08);
+}
+
+.dark .card-standard {
+  background-color: #2A2D30;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 @layer components {
