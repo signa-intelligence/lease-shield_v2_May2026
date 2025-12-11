@@ -1455,14 +1455,14 @@ ja: {
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
   const isProtectPlan = user?.plan_tier === 'protect';
 
-  // Auto-show Quick Guide modal on first visit (if not previously dismissed)
+  // Auto-show Quick Guide modal on EVERY app launch (if not previously dismissed)
   React.useEffect(() => {
-    if (user && !user.quick_guide_dismissed && !showOnboarding) {
+    if (user && !user.quick_guide_dismissed) {
       setShowQuickGuide(true);
     }
-  }, [user, showOnboarding]);
+  }, [user?.id, user?.quick_guide_dismissed]);
 
-  // Listen for Quick Guide open event from nav
+  // Listen for Quick Guide open event from nav (always allow manual open)
   React.useEffect(() => {
     const handleOpenQuickGuide = () => {
       setShowQuickGuide(true);
@@ -1990,7 +1990,10 @@ ja: {
           <QuickGuide 
             user={user}
             isOpen={showQuickGuide}
-            onClose={() => setShowQuickGuide(false)}
+            onClose={() => {
+              setShowQuickGuide(false);
+              queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+            }}
             colors={{
               cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
               textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A',
