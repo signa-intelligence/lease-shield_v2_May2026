@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { X, Shield, Wallet, FileText, Wrench, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { base44 } from '@/api/base44Client';
 
-export default function QuickGuide({ user, onDismiss, colors, language = 'en' }) {
-  const [dismissed, setDismissed] = useState(false);
+export default function QuickGuide({ user, onDismiss, colors, language = 'en', isOpen, onClose }) {
+  const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  if (dismissed) return null;
+  if (!isOpen) return null;
 
-  const handleDismiss = () => {
-    setDismissed(true);
+  const handleDismiss = async () => {
+    if (dontShowAgain && user) {
+      try {
+        await base44.auth.updateMe({ quick_guide_dismissed: true });
+      } catch (error) {
+        console.error('Failed to save Quick Guide preference:', error);
+      }
+    }
+    if (onClose) onClose();
     if (onDismiss) onDismiss();
   };
 
@@ -130,32 +139,52 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en' })
   ];
 
   return (
-    <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
-              {strings.title}
-            </CardTitle>
-            <p className="text-sm" style={{ color: colors.textSecondary }}>
-              {strings.subtitle}
-            </p>
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        padding: '20px'
+      }}
+      onClick={handleDismiss}
+    >
+      <Card 
+        className="border-none shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" 
+        style={{ backgroundColor: colors.cardBg }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
+                {strings.title}
+              </CardTitle>
+              <p className="text-sm" style={{ color: colors.textSecondary }}>
+                {strings.subtitle}
+              </p>
+            </div>
+            <button
+              onClick={handleDismiss}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: colors.textSecondary,
+                cursor: 'pointer',
+                padding: '4px'
+              }}
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={handleDismiss}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: colors.textSecondary,
-              cursor: 'pointer',
-              padding: '4px'
-            }}
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
+        </CardHeader>
+        <CardContent className="pt-0">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {steps.map((step, idx) => {
             const Icon = step.icon;
@@ -207,16 +236,36 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en' })
           })}
         </div>
         
-        <div className="mt-4 text-center">
-          <Button
-            variant="ghost"
-            onClick={handleDismiss}
-            style={{ color: colors.textSecondary }}
-          >
-            {strings.dismiss}
-          </Button>
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center gap-2 px-2">
+            <Checkbox
+              id="dont-show-again"
+              checked={dontShowAgain}
+              onCheckedChange={setDontShowAgain}
+            />
+            <label
+              htmlFor="dont-show-again"
+              className="text-sm cursor-pointer"
+              style={{ color: colors.textSecondary }}
+            >
+              {language === 'th' ? 'ไม่ต้องแสดงอีก' : language === 'zh' ? '不再显示' : language === 'ja' ? '今後表示しない' : language === 'ko' ? '다시 표시 안 함' : language === 'ru' ? 'Больше не показывать' : "Don't show this again"}
+            </label>
+          </div>
+          <div className="text-center">
+            <Button
+              onClick={handleDismiss}
+              style={{ 
+                backgroundColor: '#0C3B2E',
+                color: '#FFFFFF',
+                fontWeight: '600'
+              }}
+            >
+              {strings.dismiss}
+            </Button>
+          </div>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }

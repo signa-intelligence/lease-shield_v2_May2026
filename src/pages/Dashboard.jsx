@@ -44,7 +44,7 @@ function DashboardContent() {
   });
   const [showOnboarding, setShowOnboarding] = React.useState(false);
   const [showTour, setShowTour] = React.useState(false);
-  const [showQuickGuide, setShowQuickGuide] = React.useState(true);
+  const [showQuickGuide, setShowQuickGuide] = React.useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -1939,23 +1939,20 @@ ja: {
             </div>
           )}
 
-          {/* Quick Guide - Persistent helper card */}
-          {showQuickGuide && hasAnyData && !showOnboarding && (
-            <div className="mb-6">
-              <QuickGuide 
-                user={user}
-                onDismiss={() => setShowQuickGuide(false)}
-                colors={{
-                  cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
-                  textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A',
-                  textSecondary: isDarkMode ? '#D1D5DB' : '#475569',
-                  borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)',
-                  fieldBg: isDarkMode ? '#374151' : '#F8FAFC'
-                }}
-                language={language}
-              />
-            </div>
-          )}
+          {/* Quick Guide Modal */}
+          <QuickGuide 
+            user={user}
+            isOpen={showQuickGuide}
+            onClose={() => setShowQuickGuide(false)}
+            colors={{
+              cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+              textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A',
+              textSecondary: isDarkMode ? '#D1D5DB' : '#475569',
+              borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)',
+              fieldBg: isDarkMode ? '#374151' : '#F8FAFC'
+            }}
+            language={language}
+          />
 
           {/* Quick Start Card - Shows for users with no activity yet */}
           {!isLoading && !hasAnyData && !showOnboarding && (

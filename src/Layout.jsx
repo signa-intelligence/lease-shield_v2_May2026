@@ -1,12 +1,13 @@
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, HelpCircle } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, HelpCircle, BookOpen } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
 import Lisa from "./components/shared/Lisa";
+import AccountPopup from "./components/shared/AccountPopup";
+import LanguageSelector from "./components/shared/LanguageSelector";
 
 
 // Animation utilities inlined
@@ -65,6 +66,8 @@ const createRipple = (event, element) => {
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const mainContentRef = useRef(null);
+  const [showAccountPopup, setShowAccountPopup] = React.useState(false);
+  const [showLanguageSelector, setShowLanguageSelector] = React.useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -536,7 +539,6 @@ export default function Layout({ children, currentPageName }) {
                 />
               </button>
             </Link>
-            <LanguageToggle />
             {user && user.plan_tier !== 'secure' && (
               <Link to={createPageUrl("Account") + '?showPlans=true'}>
                 <button
@@ -570,33 +572,63 @@ export default function Layout({ children, currentPageName }) {
                 </button>
               </Link>
             )}
-            <Link to={createPageUrl("Account")}>
-              <button
-                aria-label="Account Settings"
-                onClick={() => haptic.light()}
-                className="btn-interaction"
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  backgroundColor: isActiveTab(createPageUrl("Account")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+            <button
+              aria-label="Quick Guide"
+              onClick={() => {
+                haptic.light();
+                // Dispatch event to open Quick Guide from Dashboard
+                window.dispatchEvent(new CustomEvent('openQuickGuide'));
+              }}
+              className="btn-interaction hidden sm:flex"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+              }}
+            >
+              <BookOpen 
+                className="w-4 h-4 sm:w-5 sm:h-5" 
+                style={{ 
+                  color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
+                  transition: 'color 0.2s'
                 }}
-              >
-                <User 
-                  className="w-4 h-4 sm:w-5 sm:h-5" 
-                  style={{ 
-                    color: isActiveTab(createPageUrl("Account")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
-                    transition: 'color 0.2s'
-                  }}
-                />
-              </button>
-            </Link>
+              />
+            </button>
+            <button
+              aria-label="Account Menu"
+              onClick={() => {
+                haptic.light();
+                setShowAccountPopup(!showAccountPopup);
+              }}
+              className="btn-interaction"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: showAccountPopup ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+              }}
+            >
+              <User 
+                className="w-4 h-4 sm:w-5 sm:h-5" 
+                style={{ 
+                  color: showAccountPopup ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
+                  transition: 'color 0.2s'
+                }}
+              />
+            </button>
           </div>
         </div>
       </div>
@@ -687,6 +719,24 @@ export default function Layout({ children, currentPageName }) {
         </nav>
 
         <Lisa language={language} isDarkMode={isDarkMode} />
+
+        <AccountPopup
+          isOpen={showAccountPopup}
+          onClose={() => setShowAccountPopup(false)}
+          colors={colors}
+          language={language}
+          onLanguageClick={() => {
+            setShowAccountPopup(false);
+            setShowLanguageSelector(true);
+          }}
+        />
+
+        <LanguageSelector
+          isOpen={showLanguageSelector}
+          onClose={() => setShowLanguageSelector(false)}
+          colors={colors}
+          currentLanguage={language}
+        />
         </div>
         );
         }
