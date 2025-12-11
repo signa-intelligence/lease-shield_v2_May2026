@@ -27,6 +27,7 @@ import { useOptimisticUpdate } from "../components/shared/OptimisticUpdate";
 import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
+import AuthGuard from "../components/shared/AuthGuard";
 import {
   FEATURE_COLORS,
   CTA_COLOR,
