@@ -501,7 +501,7 @@ export default function Layout({ children, currentPageName }) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0" style={{ marginRight: '4px' }}>
             <div style={{
               width: '1px',
               height: '24px',
@@ -514,25 +514,38 @@ export default function Layout({ children, currentPageName }) {
                 onClick={() => haptic.light()}
                 className="btn-interaction"
                 style={{
+                  minWidth: '48px',
+                  minHeight: '48px',
+                  padding: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <div style={{
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
                   backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
                   border: '2px solid #CFAF6A',
-                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
-                }}
-              >
-                <Star 
-                  className="w-5 h-5" 
-                  style={{ 
-                    color: '#CFAF6A',
-                    transition: 'color 0.2s'
-                  }}
-                />
+                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
+                  transition: 'all 0.2s'
+                }}>
+                  <Star 
+                    className="w-5 h-5" 
+                    style={{ 
+                      color: '#CFAF6A',
+                      transition: 'color 0.2s'
+                    }}
+                  />
+                </div>
               </button>
             </Link>
             <Link to={createPageUrl("Search")}>
@@ -541,25 +554,37 @@ export default function Layout({ children, currentPageName }) {
                 onClick={() => haptic.light()}
                 className="btn-interaction"
                 style={{
-                  width: '40px',
-                  height: '40px',
+                  minWidth: '48px',
+                  minHeight: '48px',
+                  padding: '8px',
                   borderRadius: '50%',
-                  backgroundColor: isActiveTab(createPageUrl("Search")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
+                  backgroundColor: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+                  justifyContent: 'center'
                 }}
               >
-                <Search 
-                  className="w-5 h-5" 
-                  style={{ 
-                    color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
-                    transition: 'color 0.2s'
-                  }}
-                />
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: isActiveTab(createPageUrl("Search")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
+                  transition: 'all 0.2s'
+                }}>
+                  <Search 
+                    className="w-5 h-5" 
+                    style={{ 
+                      color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
+                      transition: 'color 0.2s'
+                    }}
+                  />
+                </div>
               </button>
             </Link>
             <button
@@ -570,26 +595,38 @@ export default function Layout({ children, currentPageName }) {
               }}
               className="btn-interaction"
               style={{
+                minWidth: '48px',
+                minHeight: '48px',
+                padding: '8px',
+                borderRadius: '50%',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <div style={{
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
                 backgroundColor: showQuickGuide ? '#063F2C' : (isDarkMode ? '#374151' : '#F3F4F6'),
                 border: showQuickGuide ? '2px solid #CFAF6A' : 'none',
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: showQuickGuide ? '0 0 0 4px rgba(207,175,106,0.15)' : (isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'),
                 transition: 'all 0.2s'
-              }}
-            >
-              <HelpCircle 
-                className="w-5 h-5" 
-                style={{ 
-                  color: showQuickGuide ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
-                  transition: 'color 0.2s'
-                }}
-              />
+              }}>
+                <HelpCircle 
+                  className="w-5 h-5" 
+                  style={{ 
+                    color: showQuickGuide ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
+                    transition: 'color 0.2s'
+                  }}
+                />
+              </div>
             </button>
             <button
               aria-label="Account Menu"
@@ -599,26 +636,39 @@ export default function Layout({ children, currentPageName }) {
               }}
               className="btn-interaction"
               style={{
+                minWidth: '48px',
+                minHeight: '48px',
+                padding: '8px',
+                marginRight: '4px',
+                borderRadius: '50%',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <div style={{
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
                 backgroundColor: showAccountPopup ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
                 border: showAccountPopup ? '2px solid #C7A338' : 'none',
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: showAccountPopup ? '0 0 0 4px rgba(199,163,56,0.15)' : (isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'),
                 transition: 'all 0.2s'
-              }}
-            >
-              <User 
-                className="w-5 h-5" 
-                style={{ 
-                  color: showAccountPopup ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
-                  transition: 'color 0.2s'
-                }}
-              />
+              }}>
+                <User 
+                  className="w-5 h-5" 
+                  style={{ 
+                    color: showAccountPopup ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
+                    transition: 'color 0.2s'
+                  }}
+                />
+              </div>
             </button>
           </div>
         </div>
