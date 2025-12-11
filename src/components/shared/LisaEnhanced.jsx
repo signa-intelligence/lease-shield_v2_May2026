@@ -5,7 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 
-const LISA_SYSTEM_PROMPT = `You are Lisa, the friendly AI assistant for LeaseShield - a Thai rental deposit protection service.
+const LISA_SYSTEM_PROMPT = `You are Lisa, the friendly AI assistant for Lease Shield - a rental management and protection platform for both tenants and landlords in Thailand.
+
+ABOUT LEASE SHIELD:
+Lease Shield is a neutral platform that helps BOTH tenants and landlords manage the rental journey smoothly and avoid misunderstandings. We provide:
+• Lease scanning & AI risk analysis
+• Deposit tracking for both parties
+• Timeline of all key rental events
+• Evidence management (photos, documents, receipts)
+• Maintenance request tracking
+• Professional letter templates
+• Automated reminders and alerts
+• Support guidance when issues arise
+
+The goal is prevention - keeping communication clear and avoiding disputes before they happen.
 
 SUPPORTED LANGUAGES:
 I can communicate in: English, Thai (ภาษาไทย), Japanese (日本語), Korean (한국어), Chinese (中文), and Russian (Русский).
@@ -54,50 +67,58 @@ Secure (฿990/month):
 - Advanced reminders
 
 Your personality:
-- Warm, helpful, professional
+- Warm, helpful, professional, NEUTRAL (serve both tenants and landlords)
 - Explain complex legal/rental terms simply
-- Always mention prevention (LeaseShield is about preventing problems)
-- Keep answers concise but complete
+- Always mention prevention (Lease Shield is about preventing problems)
+- Keep answers concise but complete (2-4 sentences max unless pricing/features)
 - If you don't know something, admit it and suggest contacting support@leaseshield.asia
+
+CRITICAL GUIDELINES:
+- NEVER suggest we only help tenants or only landlords - we serve BOTH
+- NEVER be biased against either party
+- Focus on prevention, clarity, documentation, and fair relationships
+- When asked "How does this work?" or "What do you do?", respond:
+  "Lease Shield helps both tenants and landlords manage the rental journey smoothly and avoid misunderstandings. You upload your lease, track your deposit, report issues, store evidence, and receive guidance at every step. The goal is to keep communication clear and prevent disputes before they happen."
 
 Common questions:
 - Pricing → Use the CURRENT PRICING above
 - Plan comparison → Highlight prevention features
 - Deposit disputes → Mention Resolve service (฿3,500 members / ฿5,000 public)
 - Lease scan → Can buy one-time for ฿590
-- PDPA compliance → Yes, fully compliant, users can export data anytime`;
+- PDPA compliance → Yes, fully compliant, users can export data anytime
+- "Who is this for?" → Both tenants and landlords who want clear records and prevention`;
 
 const QUICK_REPLIES = {
-  en: [
-    { icon: DollarSign, label: '📊 View Plans', query: 'What subscription plans do you offer?' },
-    { icon: Shield, label: '❓ How it works', query: 'How does LeaseShield protect me?' },
-    { icon: HelpCircle, label: '💰 Pricing', query: 'What are your prices?' }
-  ],
-  th: [
-    { icon: DollarSign, label: '📊 ดูแผน', query: 'มีแผนสมัครสมาชิกอะไรบ้าง?' },
-    { icon: Shield, label: '❓ ใช้งานยังไง', query: 'LeaseShield ปกป้องฉันอย่างไร?' },
-    { icon: HelpCircle, label: '💰 ราคา', query: 'ราคาเท่าไหร่?' }
-  ],
-  zh: [
-    { icon: DollarSign, label: '📊 查看计划', query: '你们提供哪些订阅计划？' },
-    { icon: Shield, label: '❓ 工作原理', query: 'LeaseShield如何保护我？' },
-    { icon: HelpCircle, label: '💰 价格', query: '价格是多少？' }
-  ],
-  ja: [
-    { icon: DollarSign, label: '📊 プラン', query: 'どのようなサブスクリプションプランがありますか？' },
-    { icon: Shield, label: '❓ 仕組み', query: 'LeaseShieldはどのように私を守りますか？' },
-    { icon: HelpCircle, label: '💰 料金', query: '料金はいくらですか？' }
-  ],
-  ko: [
-    { icon: DollarSign, label: '📊 플랜 보기', query: '어떤 구독 플랜이 있나요?' },
-    { icon: Shield, label: '❓ 작동 방식', query: 'LeaseShield가 어떻게 나를 보호하나요?' },
-    { icon: HelpCircle, label: '💰 가격', query: '가격은 얼마인가요?' }
-  ],
-  ru: [
-    { icon: DollarSign, label: '📊 Тарифы', query: 'Какие у вас подписки?' },
-    { icon: Shield, label: '❓ Как работает', query: 'Как LeaseShield меня защищает?' },
-    { icon: HelpCircle, label: '💰 Цены', query: 'Сколько это стоит?' }
-  ]
+en: [
+  { icon: DollarSign, label: '📊 View Plans', query: 'What subscription plans do you offer?' },
+  { icon: Shield, label: '❓ How it works', query: 'How does Lease Shield work?' },
+  { icon: HelpCircle, label: '💰 Pricing', query: 'What are your prices?' }
+],
+th: [
+  { icon: DollarSign, label: '📊 ดูแผน', query: 'มีแผนสมัครสมาชิกอะไรบ้าง?' },
+  { icon: Shield, label: '❓ ใช้งานยังไง', query: 'Lease Shield ทำงานอย่างไร?' },
+  { icon: HelpCircle, label: '💰 ราคา', query: 'ราคาเท่าไหร่?' }
+],
+zh: [
+  { icon: DollarSign, label: '📊 查看计划', query: '你们提供哪些订阅计划？' },
+  { icon: Shield, label: '❓ 工作原理', query: 'Lease Shield如何工作？' },
+  { icon: HelpCircle, label: '💰 价格', query: '价格是多少？' }
+],
+ja: [
+  { icon: DollarSign, label: '📊 プラン', query: 'どのようなサブスクリプションプランがありますか？' },
+  { icon: Shield, label: '❓ 仕組み', query: 'Lease Shieldはどのように機能しますか？' },
+  { icon: HelpCircle, label: '💰 料金', query: '料金はいくらですか？' }
+],
+ko: [
+  { icon: DollarSign, label: '📊 플랜 보기', query: '어떤 구독 플랜이 있나요?' },
+  { icon: Shield, label: '❓ 작동 방식', query: 'Lease Shield는 어떻게 작동하나요?' },
+  { icon: HelpCircle, label: '💰 가격', query: '가격은 얼마인가요?' }
+],
+ru: [
+  { icon: DollarSign, label: '📊 Тарифы', query: 'Какие у вас подписки?' },
+  { icon: Shield, label: '❓ Как работает', query: 'Как работает Lease Shield?' },
+  { icon: HelpCircle, label: '💰 Цены', query: 'Сколько это стоит?' }
+]
 };
 
 export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOpen: externalIsOpen = false, onClose }) {
@@ -195,7 +216,15 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
         role: 'assistant', 
         content: language === 'th' 
           ? 'ขออภัย เกิดข้อผิดพลาด กรุณาลองอีกครั้งหรือติดต่อ support@leaseshield.asia'
-          : 'Sorry, an error occurred. Please try again or contact support@leaseshield.asia',
+          : language === 'zh'
+            ? '抱歉，发生错误。请重试或联系 support@leaseshield.asia'
+            : language === 'ja'
+              ? '申し訳ございません。エラーが発生しました。再試行するか、support@leaseshield.asia までご連絡ください'
+              : language === 'ko'
+                ? '죄송합니다. 오류가 발생했습니다. 다시 시도하거나 support@leaseshield.asia로 문의하세요'
+                : language === 'ru'
+                  ? 'Извините, произошла ошибка. Попробуйте снова или свяжитесь с support@leaseshield.asia'
+                  : 'Sorry, an error occurred. Please try again or contact support@leaseshield.asia',
         timestamp: new Date()
       }]);
     } finally {
