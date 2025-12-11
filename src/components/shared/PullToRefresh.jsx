@@ -4,9 +4,13 @@ import { RefreshCw } from 'lucide-react';
 const PullToRefresh = ({ onRefresh, children, isDarkMode }) => {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState(null);
+  const [lastActiveTime, setLastActiveTime] = useState(Date.now());
   const startY = useRef(0);
   const containerRef = useRef(null);
   const threshold = 80;
+  const IDLE_THRESHOLD = 10 * 60 * 1000; // 10 minutes
+  const REFRESH_COOLDOWN = 5000; // 5 seconds
 
   const handleTouchStart = (e) => {
     if (containerRef.current?.scrollTop === 0) {
@@ -28,9 +32,19 @@ const PullToRefresh = ({ onRefresh, children, isDarkMode }) => {
 
   const handleTouchEnd = async () => {
     if (pullDistance >= threshold && !isRefreshing) {
+      const now = Date.now();
+      const timeSinceLastRefresh = lastRefreshTime ? now - lastRefreshTime : Infinity;
+      const timeSinceActive = now - lastActiveTime;
+      
+      // Only show success toast if user manually pulled AND (no recent refresh OR was idle 10+ mins)
+      const shouldShowToast = timeSinceLastRefresh > REFRESH_COOLDOWN || timeSinceActive > IDLE_THRESHOLD;
+      
       setIsRefreshing(true);
+      setLastRefreshTime(now);
+      setLastActiveTime(now);
+      
       try {
-        await onRefresh();
+        await onRefresh(shouldShowToast);
       } catch (error) {
         console.error('Refresh failed:', error);
       } finally {
@@ -41,6 +55,21 @@ const PullToRefresh = ({ onRefresh, children, isDarkMode }) => {
     setPullDistance(0);
     startY.current = 0;
   };
+
+  // Track user activity
+  React.useEffect(() => {
+    const updateActivity = () => setLastActiveTime(Date.now());
+    
+    window.addEventListener('touchstart', updateActivity);
+    window.addEventListener('click', updateActivity);
+    window.addEventListener('scroll', updateActivity);
+    
+    return () => {
+      window.removeEventListener('touchstart', updateActivity);
+      window.removeEventListener('click', updateActivity);
+      window.removeEventListener('scroll', updateActivity);
+    };
+  }, []);
 
   const rotation = (pullDistance / threshold) * 360;
   const opacity = Math.min(pullDistance / threshold, 1);
