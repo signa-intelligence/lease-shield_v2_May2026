@@ -8,6 +8,7 @@ import { haptic } from "./components/shared/HapticFeedback";
 import LisaEnhanced from "./components/shared/LisaEnhanced";
 import AccountPopup from "./components/shared/AccountPopup";
 import LanguageSelector from "./components/shared/LanguageSelector";
+import QuickGuide from "./components/shared/QuickGuide";
 
 
 // Animation utilities inlined
@@ -68,6 +69,7 @@ export default function Layout({ children, currentPageName }) {
   const mainContentRef = useRef(null);
   const [showAccountPopup, setShowAccountPopup] = React.useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = React.useState(false);
+  const [showQuickGuide, setShowQuickGuide] = React.useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -548,29 +550,30 @@ export default function Layout({ children, currentPageName }) {
               </button>
             </Link>
             <button
-              aria-label="Help & Quick Guide"
+              aria-label="Quick Guide"
               onClick={() => {
                 haptic.light();
-                window.dispatchEvent(new CustomEvent('openQuickGuide'));
+                setShowQuickGuide(true);
               }}
-              className="btn-interaction hidden sm:flex"
+              className="btn-interaction"
               style={{
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
-                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                border: 'none',
+                backgroundColor: showQuickGuide ? '#063F2C' : (isDarkMode ? '#374151' : '#F3F4F6'),
+                border: showQuickGuide ? '2px solid #CFAF6A' : 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+                boxShadow: showQuickGuide ? '0 0 0 4px rgba(207,175,106,0.15)' : (isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'),
+                transition: 'all 0.2s'
               }}
             >
               <HelpCircle 
                 className="w-5 h-5" 
                 style={{ 
-                  color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
+                  color: showQuickGuide ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                   transition: 'color 0.2s'
                 }}
               />
@@ -710,6 +713,15 @@ export default function Layout({ children, currentPageName }) {
           onClose={() => setShowLanguageSelector(false)}
           colors={colors}
           currentLanguage={language}
+        />
+
+        <QuickGuide
+          user={user}
+          isOpen={showQuickGuide}
+          onClose={() => setShowQuickGuide(false)}
+          onDismiss={() => setShowQuickGuide(false)}
+          colors={colors}
+          language={language}
         />
         </div>
         );

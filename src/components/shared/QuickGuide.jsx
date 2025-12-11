@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { X, Shield, Wallet, FileText, Wrench, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Shield, Home, Wallet, FileText, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -31,92 +28,104 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     en: {
       title: 'Quick Guide',
       step1: 'Upload your lease',
-      step1Desc: 'Get instant AI-powered risk analysis of your rental agreement',
-      step2: 'Track your deposit',
-      step2Desc: 'Never miss a return deadline with automated alerts',
-      step3: 'Upload evidence',
-      step3Desc: 'Store photos, receipts, and documents securely',
-      step4: 'Report maintenance',
-      step4Desc: 'Create timestamped maintenance requests',
+      step1Desc: 'Get instant AI-powered risk analysis of your rental agreement.',
+      step2: 'Add your property',
+      step2Desc: 'Store your property details and create a secure record of your tenancy.',
+      step3: 'Track your deposit',
+      step3Desc: 'Never lose your money again. We track all deposit deadlines automatically.',
+      step4: 'Upload move-in evidence',
+      step4Desc: 'Protect yourself from unfair charges with time-stamped condition records.',
+      step5: 'Get help anytime',
+      step5Desc: 'Chat with Lisa, your rental-law assistant, or browse FAQs instantly.',
       next: 'Next',
-      skip: 'Skip',
+      back: 'Back',
       finish: 'Get Started',
-      stepOf: 'Step'
+      dontShowAgain: "Don't show this again"
     },
     th: {
       title: 'คู่มือเริ่มต้น',
       step1: 'อัปโหลดสัญญาเช่า',
       step1Desc: 'รับการวิเคราะห์ความเสี่ยงด้วย AI ทันที',
-      step2: 'ติดตามเงินมัดจำ',
-      step2Desc: 'ไม่พลาดกำหนดคืนเงินด้วยการแจ้งเตือนอัตโนมัติ',
-      step3: 'อัปโหลดหลักฐาน',
-      step3Desc: 'เก็บรูปภาพ ใบเสร็จ และเอกสารอย่างปลอดภัย',
-      step4: 'รายงานการซ่อมบำรุง',
-      step4Desc: 'สร้างคำขอซ่อมบำรุงพร้อมประทับเวลา',
+      step2: 'เพิ่มข้อมูลทรัพย์สิน',
+      step2Desc: 'จัดเก็บรายละเอียดทรัพย์สินและสร้างบันทึกการเช่าที่ปลอดภัย',
+      step3: 'ติดตามเงินมัดจำ',
+      step3Desc: 'ไม่สูญเสียเงินของคุณอีกต่อไป เราติดตามกำหนดเวลาทั้งหมดโดยอัตโนมัติ',
+      step4: 'อัปโหลดหลักฐานก่อนเข้าอยู่',
+      step4Desc: 'ปกป้องตัวเองจากค่าใช้จ่ายที่ไม่เป็นธรรมด้วยบันทึกสภาพที่มีประทับเวลา',
+      step5: 'รับความช่วยเหลือทุกเมื่อ',
+      step5Desc: 'สนทนากับ Lisa ผู้ช่วยด้านกฎหมายการเช่า หรือค้นหา FAQ ได้ทันที',
       next: 'ถัดไป',
-      skip: 'ข้าม',
+      back: 'ก่อนหน้า',
       finish: 'เริ่มใช้งาน',
-      stepOf: 'ขั้นตอน'
+      dontShowAgain: 'ไม่ต้องแสดงอีก'
     },
     zh: {
       title: '快速指南',
       step1: '上传您的租约',
       step1Desc: '获得即时AI风险分析',
-      step2: '追踪您的押金',
-      step2Desc: '自动提醒，永不错过退款截止日期',
-      step3: '上传证据',
-      step3Desc: '安全存储照片、收据和文档',
-      step4: '报告维护',
-      step4Desc: '创建带时间戳的维护请求',
+      step2: '添加您的房产',
+      step2Desc: '存储您的房产详细信息并创建安全的租赁记录',
+      step3: '追踪您的押金',
+      step3Desc: '再也不会丢失您的钱。我们自动追踪所有押金截止日期',
+      step4: '上传入住证据',
+      step4Desc: '用带时间戳的状况记录保护自己免受不公平收费',
+      step5: '随时获得帮助',
+      step5Desc: '与Lisa（您的租赁法律助手）聊天，或即时浏览FAQ',
       next: '下一步',
-      skip: '跳过',
+      back: '上一步',
       finish: '开始使用',
-      stepOf: '步骤'
+      dontShowAgain: '不再显示'
     },
     ja: {
       title: 'クイックガイド',
       step1: 'リースをアップロード',
       step1Desc: '即座にAIリスク分析を取得',
-      step2: '敷金を追跡',
-      step2Desc: '自動アラートで返金期限を逃さない',
-      step3: '証拠をアップロード',
-      step3Desc: '写真、領収書、書類を安全に保存',
-      step4: 'メンテナンスを報告',
-      step4Desc: 'タイムスタンプ付きメンテナンスリクエストを作成',
+      step2: '物件を追加',
+      step2Desc: '物件の詳細を保存し、安全な賃貸記録を作成',
+      step3: '敷金を追跡',
+      step3Desc: 'もうお金を失うことはありません。すべての敷金期限を自動追跡',
+      step4: '入居時の証拠をアップロード',
+      step4Desc: 'タイムスタンプ付きの状態記録で不当な請求から身を守る',
+      step5: 'いつでもヘルプを受ける',
+      step5Desc: 'Lisa（賃貸法アシスタント）とチャット、またはFAQを即座に参照',
       next: '次へ',
-      skip: 'スキップ',
+      back: '戻る',
       finish: '始める',
-      stepOf: 'ステップ'
+      dontShowAgain: '今後表示しない'
     },
     ko: {
       title: '빠른 가이드',
       step1: '임대 계약 업로드',
       step1Desc: '즉시 AI 위험 분석 받기',
-      step2: '보증금 추적',
-      step2Desc: '자동 알림으로 환불 기한을 놓치지 마세요',
-      step3: '증거 업로드',
-      step3Desc: '사진, 영수증 및 문서를 안전하게 저장',
-      step4: '유지보수 보고',
-      step4Desc: '타임스탬프가 있는 유지보수 요청 생성',
+      step2: '부동산 추가',
+      step2Desc: '부동산 세부정보를 저장하고 안전한 임대 기록 생성',
+      step3: '보증금 추적',
+      step3Desc: '더 이상 돈을 잃지 마세요. 모든 보증금 마감일을 자동 추적합니다',
+      step4: '입주 증거 업로드',
+      step4Desc: '타임스탬프가 있는 상태 기록으로 부당한 요금으로부터 자신을 보호하세요',
+      step5: '언제든지 도움받기',
+      step5Desc: 'Lisa（임대법 도우미）와 채팅하거나 FAQ를 즉시 찾아보세요',
       next: '다음',
-      skip: '건너뛰기',
+      back: '이전',
       finish: '시작하기',
-      stepOf: '단계'
+      dontShowAgain: '다시 표시 안 함'
     },
     ru: {
       title: 'Краткое руководство',
       step1: 'Загрузите договор',
       step1Desc: 'Получите мгновенный анализ рисков с ИИ',
-      step2: 'Отслеживайте депозит',
-      step2Desc: 'Не пропустите срок возврата с автоматическими напоминаниями',
-      step3: 'Загрузите доказательства',
-      step3Desc: 'Храните фото, чеки и документы безопасно',
-      step4: 'Сообщите об обслуживании',
-      step4Desc: 'Создайте запросы на обслуживание с отметкой времени',
+      step2: 'Добавьте недвижимость',
+      step2Desc: 'Сохраните данные недвижимости и создайте безопасную запись аренды',
+      step3: 'Отслеживайте депозит',
+      step3Desc: 'Больше не теряйте деньги. Мы автоматически отслеживаем все сроки депозита',
+      step4: 'Загрузите доказательства при въезде',
+      step4Desc: 'Защитите себя от несправедливых обвинений с помощью записей состояния с отметкой времени',
+      step5: 'Получайте помощь в любое время',
+      step5Desc: 'Общайтесь с Lisa, вашим помощником по законам об аренде, или просматривайте FAQ мгновенно',
       next: 'Далее',
-      skip: 'Пропустить',
+      back: 'Назад',
       finish: 'Начать',
-      stepOf: 'Шаг'
+      dontShowAgain: 'Больше не показывать'
     }
   };
 
@@ -127,33 +136,31 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
       icon: Shield,
       title: strings.step1,
       description: strings.step1Desc,
-      route: createPageUrl('UploadScan'),
-      color: '#3B82F6',
-      gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+      route: createPageUrl('UploadScan')
+    },
+    {
+      icon: Home,
+      title: strings.step2,
+      description: strings.step2Desc,
+      route: createPageUrl('PropertyTracker')
     },
     {
       icon: Wallet,
-      title: strings.step2,
-      description: strings.step2Desc,
-      route: createPageUrl('PropertyTracker') + '#deposit',
-      color: '#10B981',
-      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+      title: strings.step3,
+      description: strings.step3Desc,
+      route: createPageUrl('PropertyTracker') + '#deposit'
     },
     {
       icon: FileText,
-      title: strings.step3,
-      description: strings.step3Desc,
-      route: createPageUrl('EvidenceVault'),
-      color: '#8B5CF6',
-      gradient: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)'
-    },
-    {
-      icon: Wrench,
       title: strings.step4,
       description: strings.step4Desc,
-      route: createPageUrl('PropertyTracker') + '#maintenance',
-      color: '#F59E0B',
-      gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
+      route: createPageUrl('EvidenceVault')
+    },
+    {
+      icon: HelpCircle,
+      title: strings.step5,
+      description: strings.step5Desc,
+      route: createPageUrl('FAQ')
     }
   ];
 
@@ -218,157 +225,222 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-      <Card 
-        className="border-none shadow-2xl max-w-md w-full" 
-        style={{ 
-          backgroundColor: colors.cardBg,
-          borderRadius: '20px',
-          animation: 'slideIn 0.3s ease-out',
-          maxHeight: '85vh',
+      <div
+        style={{
+          width: '360px',
+          maxWidth: 'calc(100vw - 32px)',
+          maxHeight: '80vh',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '16px',
+          boxShadow: '0px 8px 24px rgba(0,0,0,0.12)',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          animation: 'slideIn 0.3s ease-out',
+          fontFamily: 'Inter, -apple-system, sans-serif'
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div style={{
-          padding: '20px 20px 16px 20px',
-          borderBottom: `1px solid ${colors.borderColor}`,
+          padding: '20px 24px 16px 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between'
         }}>
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-              {strings.title}
-            </h2>
-            <div style={{
-              padding: '4px 12px',
-              borderRadius: '12px',
-              backgroundColor: colors.fieldBg,
-              fontSize: '12px',
-              fontWeight: '600',
-              color: colors.textSecondary
-            }}>
-              {currentStep + 1}/{steps.length}
-            </div>
+          <h2 style={{
+            fontFamily: 'Inter',
+            fontWeight: '600',
+            fontSize: '16px',
+            color: '#063F2C',
+            margin: 0
+          }}>
+            {strings.title}
+          </h2>
+          <div style={{
+            fontFamily: 'Inter',
+            fontWeight: '500',
+            fontSize: '13px',
+            color: '#6B7280'
+          }}>
+            {currentStep + 1} of {steps.length}
           </div>
           <button
             onClick={handleSkip}
             style={{
               background: 'none',
               border: 'none',
-              color: colors.textSecondary,
+              color: '#6B7280',
               cursor: 'pointer',
-              padding: '8px',
-              borderRadius: '8px',
-              transition: 'all 0.2s'
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'color 0.2s'
             }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#111827'}
+            onMouseLeave={(e) => e.currentTarget.style.color = '#6B7280'}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <CardContent style={{ 
-          padding: '32px 24px',
+        {/* Content */}
+        <div style={{
+          padding: '8px 24px 28px 24px',
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center'
+          textAlign: 'center',
+          overflowY: 'auto'
         }}>
+          {/* Icon */}
           <div style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '20px',
-            background: currentStepData.gradient,
+            width: '72px',
+            height: '72px',
+            borderRadius: '50%',
+            backgroundColor: '#063F2C',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            marginBottom: '24px',
-            boxShadow: `0 8px 16px ${currentStepData.color}30`
+            marginBottom: '20px',
+            flexShrink: 0
           }}>
-            <Icon className="w-10 h-10 text-white" />
+            <Icon className="w-9 h-9 text-white" />
           </div>
 
-          <h3 className="text-xl font-bold mb-3" style={{ color: colors.textPrimary }}>
+          {/* Title */}
+          <h3 style={{
+            fontFamily: 'Inter',
+            fontWeight: '600',
+            fontSize: '20px',
+            color: '#063F2C',
+            marginBottom: '12px',
+            lineHeight: '1.3'
+          }}>
             {currentStepData.title}
           </h3>
-          
-          <p className="text-base leading-relaxed mb-6" style={{ 
-            color: colors.textSecondary,
-            maxWidth: '320px'
+
+          {/* Subtitle */}
+          <p style={{
+            fontFamily: 'Inter',
+            fontWeight: '400',
+            fontSize: '15px',
+            color: '#444444',
+            lineHeight: '1.5',
+            maxWidth: '260px',
+            margin: '0 auto 24px auto'
           }}>
             {currentStepData.description}
           </p>
 
-          <div className="flex gap-2 mb-6">
+          {/* Progress Dots */}
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center'
+          }}>
             {steps.map((_, idx) => (
               <div
                 key={idx}
                 style={{
-                  width: idx === currentStep ? '24px' : '8px',
+                  width: '8px',
                   height: '8px',
-                  borderRadius: '4px',
-                  backgroundColor: idx === currentStep ? currentStepData.color : colors.borderColor,
-                  transition: 'all 0.3s ease'
+                  borderRadius: '50%',
+                  backgroundColor: idx === currentStep ? '#063F2C' : '#D7D7D7',
+                  transition: 'background-color 0.2s ease'
                 }}
               />
             ))}
           </div>
-        </CardContent>
+        </div>
 
+        {/* Footer */}
         <div style={{
-          padding: '16px 20px 20px 20px',
-          borderTop: `1px solid ${colors.borderColor}`
+          padding: '16px 24px 24px 24px'
         }}>
-          <div className="flex items-center gap-3 mb-3">
-            <Checkbox
-              id="dont-show-again"
+          {/* Checkbox */}
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '16px',
+            cursor: 'pointer',
+            userSelect: 'none'
+          }}>
+            <input
+              type="checkbox"
               checked={dontShowAgain}
-              onCheckedChange={setDontShowAgain}
-            />
-            <label
-              htmlFor="dont-show-again"
-              className="text-xs cursor-pointer select-none"
-              style={{ color: colors.textSecondary, fontWeight: '500' }}
-            >
-              {language === 'th' ? 'ไม่ต้องแสดงอีก' : language === 'zh' ? '不再显示' : language === 'ja' ? '今後表示しない' : language === 'ko' ? '다시 표시 안 함' : language === 'ru' ? 'Больше не показывать' : "Don't show this again"}
-            </label>
-          </div>
-
-          <div className="flex gap-2">
-            {!isFirstStep && (
-              <Button
-                onClick={handleBack}
-                variant="outline"
-                className="flex-1"
-                style={{
-                  borderColor: colors.borderColor,
-                  color: colors.textPrimary,
-                  fontWeight: '600'
-                }}
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                {language === 'th' ? 'ก่อนหน้า' : language === 'zh' ? '上一步' : language === 'ja' ? '戻る' : language === 'ko' ? '이전' : language === 'ru' ? 'Назад' : 'Back'}
-              </Button>
-            )}
-            <Button
-              onClick={handleNext}
-              className="flex-1"
+              onChange={(e) => setDontShowAgain(e.target.checked)}
               style={{
-                background: currentStepData.gradient,
-                color: '#FFFFFF',
-                fontWeight: '700',
-                border: 'none'
+                width: '16px',
+                height: '16px',
+                cursor: 'pointer',
+                accentColor: '#063F2C'
               }}
+            />
+            <span style={{
+              fontFamily: 'Inter',
+              fontWeight: '400',
+              fontSize: '13px',
+              color: '#6B7280'
+            }}>
+              {strings.dontShowAgain}
+            </span>
+          </label>
+
+          {/* Navigation Buttons */}
+          <div style={{
+            display: 'flex',
+            gap: '8px'
+          }}>
+            {!isFirstStep && (
+              <button
+                onClick={handleBack}
+                style={{
+                  flex: 1,
+                  fontFamily: 'Inter',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  color: '#063F2C',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  transition: 'background-color 0.2s',
+                  minHeight: '48px'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                ← {strings.back}
+              </button>
+            )}
+            <button
+              onClick={handleNext}
+              style={{
+                flex: isFirstStep ? 1 : 2,
+                fontFamily: 'Inter',
+                fontWeight: '600',
+                fontSize: '14px',
+                color: '#FFFFFF',
+                backgroundColor: '#063F2C',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '12px 24px',
+                borderRadius: '12px',
+                transition: 'background-color 0.2s',
+                minHeight: '48px'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#084D38'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#063F2C'}
             >
-              {isLastStep ? strings.finish : strings.next}
-              {!isLastStep && <ChevronRight className="w-4 h-4 ml-1" />}
-            </Button>
+              {isLastStep ? strings.finish : `${strings.next} →`}
+            </button>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
