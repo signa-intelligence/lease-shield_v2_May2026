@@ -312,12 +312,12 @@ function TemplatesContent() {
         credit_cost: 1,
         file: null
       });
-      success(strings.uploadSuccess);
-      haptic.success();
+      if (success) success('Template uploaded successfully!');
+      if (haptic?.success) haptic.success();
     },
     onError: () => {
-      error(strings.uploadFailed);
-      haptic.error();
+      if (error) error('Upload failed. Please try again.');
+      if (haptic?.error) haptic.error();
     }
   });
 
@@ -605,7 +605,7 @@ function TemplatesContent() {
   };
 
   const handleTemplateClick = (template) => {
-    haptic.medium();
+    if (haptic?.medium) haptic.medium();
     
     // Check if it's a built-in template (has .id) or database template (has .template_id)
     const templateId = template.id || template.template_id;
@@ -620,19 +620,19 @@ function TemplatesContent() {
         navigate(createPageUrl("TemplateForm") + `?subject=${templateId}`);
       }
     } else {
-      haptic.error();
-      error(strings.insufficientCredits);
+      if (haptic?.error) haptic.error();
+      if (error) error('Insufficient credits');
     }
   };
 
   const handleUploadTemplate = async () => {
     if (!uploadFormData.file || !uploadFormData.title_en || !uploadFormData.title_th) {
-      error(strings.fillAllFields);
-      haptic.error();
+      if (error) error('Please fill in all fields and select a file');
+      if (haptic?.error) haptic.error();
       return;
     }
 
-    haptic.medium();
+    if (haptic?.medium) haptic.medium();
     setUploadingFile(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadFormData.file });
@@ -647,8 +647,8 @@ function TemplatesContent() {
         file_url: file_url,
         is_active: true
       });
-    } catch (error) {
-      console.error('Upload failed:', error);
+    } catch (err) {
+      console.error('Upload failed:', err);
     } finally {
       setUploadingFile(false);
     }
