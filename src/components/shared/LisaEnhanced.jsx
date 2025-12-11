@@ -7,10 +7,11 @@ import { Card } from '@/components/ui/card';
 
 const LISA_SYSTEM_PROMPT = `You are Lisa, the friendly AI assistant for LeaseShield - a Thai rental deposit protection service.
 
-CRITICAL LANGUAGE INSTRUCTION:
-You MUST respond in English ONLY, unless the user's language preference is explicitly set to Thai.
-Do NOT respond in Thai unless specifically instructed.
-Ignore the language of the user's question - always use English by default.
+SUPPORTED LANGUAGES:
+I can communicate in: English, Thai (ภาษาไทย), Japanese (日本語), Korean (한국어), Chinese (中文), and Russian (Русский).
+
+When asked "What languages do you speak?" or similar, respond:
+"I can assist you in English, Thai, Japanese, Korean, Chinese, or Russian. Just tell me which language you prefer."
 
 CURRENT PRICING (ALWAYS USE THESE - NO OLD PRICES):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -76,6 +77,26 @@ const QUICK_REPLIES = {
     { icon: DollarSign, label: '📊 ดูแผน', query: 'มีแผนสมัครสมาชิกอะไรบ้าง?' },
     { icon: Shield, label: '❓ ใช้งานยังไง', query: 'LeaseShield ปกป้องฉันอย่างไร?' },
     { icon: HelpCircle, label: '💰 ราคา', query: 'ราคาเท่าไหร่?' }
+  ],
+  zh: [
+    { icon: DollarSign, label: '📊 查看计划', query: '你们提供哪些订阅计划？' },
+    { icon: Shield, label: '❓ 工作原理', query: 'LeaseShield如何保护我？' },
+    { icon: HelpCircle, label: '💰 价格', query: '价格是多少？' }
+  ],
+  ja: [
+    { icon: DollarSign, label: '📊 プラン', query: 'どのようなサブスクリプションプランがありますか？' },
+    { icon: Shield, label: '❓ 仕組み', query: 'LeaseShieldはどのように私を守りますか？' },
+    { icon: HelpCircle, label: '💰 料金', query: '料金はいくらですか？' }
+  ],
+  ko: [
+    { icon: DollarSign, label: '📊 플랜 보기', query: '어떤 구독 플랜이 있나요?' },
+    { icon: Shield, label: '❓ 작동 방식', query: 'LeaseShield가 어떻게 나를 보호하나요?' },
+    { icon: HelpCircle, label: '💰 가격', query: '가격은 얼마인가요?' }
+  ],
+  ru: [
+    { icon: DollarSign, label: '📊 Тарифы', query: 'Какие у вас подписки?' },
+    { icon: Shield, label: '❓ Как работает', query: 'Как LeaseShield меня защищает?' },
+    { icon: HelpCircle, label: '💰 Цены', query: 'Сколько это стоит?' }
   ]
 };
 
@@ -85,6 +106,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [userPreferredLanguage, setUserPreferredLanguage] = useState(null);
   const messagesEndRef = useRef(null);
 
   const colors = isDarkMode ? {
@@ -120,9 +142,37 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
     setIsLoading(true);
 
     try {
-      const languageInstruction = language === 'th' 
-        ? '\n\nIMPORTANT: The user has Thai language preference. Respond in Thai.'
-        : '\n\nIMPORTANT: Respond in English only.';
+      // Detect language switch requests
+      const lowerText = textToSend.toLowerCase();
+      const languageSwitchPatterns = {
+        th: /speak.*thai|switch.*thai|thai.*please|ภาษาไทย/i,
+        en: /speak.*english|switch.*english|english.*please/i,
+        ja: /speak.*japanese|switch.*japanese|japanese.*please|日本語/i,
+        ko: /speak.*korean|switch.*korean|korean.*please|한국어/i,
+        zh: /speak.*chinese|switch.*chinese|chinese.*please|中文/i,
+        ru: /speak.*russian|switch.*russian|russian.*please|русский/i
+      };
+
+      for (const [lang, pattern] of Object.entries(languageSwitchPatterns)) {
+        if (pattern.test(lowerText)) {
+          setUserPreferredLanguage(lang);
+          break;
+        }
+      }
+
+      // Determine response language: user preference > app language > English
+      const responseLanguage = userPreferredLanguage || language || 'en';
+      
+      const languageMap = {
+        en: 'English',
+        th: 'Thai',
+        ja: 'Japanese',
+        ko: 'Korean',
+        zh: 'Chinese',
+        ru: 'Russian'
+      };
+
+      const languageInstruction = `\n\nCRITICAL: Respond in ${languageMap[responseLanguage]} ONLY. Do not switch languages unless the user explicitly requests it.`;
       
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `${LISA_SYSTEM_PROMPT}${languageInstruction}\n\nUser question: ${textToSend}`,
@@ -178,8 +228,8 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
           width: '64px',
           height: '64px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #0C3B2E 0%, #0F5A45 100%)',
-          border: '3px solid #C7A338',
+          background: 'linear-gradient(135deg, #063F2C 0%, #0F5A45 100%)',
+          border: '3px solid #CFAF6A',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -300,11 +350,11 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
       <div
         style={{
           padding: '20px',
-          background: 'linear-gradient(135deg, #0C3B2E 0%, #0F5A45 100%)',
+          background: 'linear-gradient(135deg, #063F2C 0%, #0F5A45 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(199,163,56,0.3)'
+          borderBottom: '1px solid rgba(207,175,106,0.3)'
         }}
       >
         <div className="flex items-center gap-3">
@@ -312,7 +362,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
             width: '40px',
             height: '40px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #C7A338 0%, #D4B451 100%)',
+            background: 'linear-gradient(135deg, #CFAF6A 0%, #D9BC7E 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -397,7 +447,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
               height: '80px',
               margin: '0 auto 16px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #0C3B2E 0%, #10B981 100%)',
+              background: 'linear-gradient(135deg, #063F2C 0%, #10B981 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -414,7 +464,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
             
             {/* Quick Reply Buttons */}
             <div className="flex flex-col gap-2 px-4">
-              {(QUICK_REPLIES[language] || QUICK_REPLIES.en).map((reply, idx) => (
+              {(QUICK_REPLIES[userPreferredLanguage || language] || QUICK_REPLIES.en).map((reply, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleQuickReply(reply.query)}
@@ -434,7 +484,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
                     gap: '8px'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#0C3B2E';
+                    e.currentTarget.style.borderColor = '#063F2C';
                     e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F0FDF4';
                   }}
                   onMouseLeave={(e) => {
@@ -507,7 +557,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
                           width: '8px',
                           height: '8px',
                           borderRadius: '50%',
-                          backgroundColor: '#0C3B2E',
+                          backgroundColor: '#063F2C',
                           animation: `typingBounce 1.4s infinite ease-in-out`,
                           animationDelay: `${i * 0.2}s`
                         }}
@@ -557,7 +607,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
             onClick={() => handleSend()}
             disabled={!inputValue.trim() || isLoading}
             style={{
-              backgroundColor: '#0C3B2E',
+              backgroundColor: '#063F2C',
               color: '#FFFFFF',
               minWidth: '48px',
               height: '48px',

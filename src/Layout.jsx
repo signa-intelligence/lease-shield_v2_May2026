@@ -506,6 +506,33 @@ export default function Layout({ children, currentPageName }) {
               backgroundColor: colors.borderColor,
               opacity: 0.5
             }} />
+            <Link to={createPageUrl("Account") + '?showPlans=true'}>
+              <button
+                aria-label="Upgrade Plan"
+                onClick={() => haptic.light()}
+                className="btn-interaction"
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                  border: '2px solid #CFAF6A',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'
+                }}
+              >
+                <Star 
+                  className="w-5 h-5" 
+                  style={{ 
+                    color: '#CFAF6A',
+                    transition: 'color 0.2s'
+                  }}
+                />
+              </button>
+            </Link>
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
