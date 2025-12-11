@@ -1688,11 +1688,12 @@ function AdminConsoleContent() {
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Ref Code</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.letterCredits}</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Credits / Refs</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
                       </tr>
                     </thead>
@@ -1722,6 +1723,14 @@ function AdminConsoleContent() {
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-xs" style={{ color: colors.textSecondary }}>{u.email}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <code className="text-xs font-mono px-2 py-1 rounded" style={{
+                            backgroundColor: colors.fieldBg,
+                            color: '#C7A338'
+                          }}>
+                            {u.referral_code || '—'}
+                          </code>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-2">
@@ -1772,15 +1781,29 @@ function AdminConsoleContent() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <button
-                            onClick={() => handleOpenCreditsDialog(u)}
-                            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
-                          >
-                            <Coins className="w-4 h-4 text-amber-600" />
-                            <span className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                              {u.letter_credits || 0}
-                            </span>
-                          </button>
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => handleOpenCreditsDialog(u)}
+                              className="flex items-center gap-1 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
+                            >
+                              <Coins className="w-4 h-4 text-amber-600" />
+                              <span className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                                {u.letter_credits || 0}
+                              </span>
+                            </button>
+                            {u.referral_count > 0 && (
+                              <div className="flex items-center gap-1 text-xs" style={{ color: '#10B981' }}>
+                                <Users className="w-3 h-3" />
+                                <span>{u.referral_count} refs</span>
+                              </div>
+                            )}
+                            {(u.referral_credits_thb || 0) > 0 && (
+                              <div className="flex items-center gap-1 text-xs font-bold" style={{ color: '#C7A338' }}>
+                                <TrendingUp className="w-3 h-3" />
+                                <span>฿{u.referral_credits_thb}</span>
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-2">

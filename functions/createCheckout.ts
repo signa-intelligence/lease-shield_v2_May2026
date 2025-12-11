@@ -60,7 +60,9 @@ Deno.serve(async (req) => {
     
     console.log('[CREATE_CHECKOUT] Customer resolution:', {
       savedCustomerId: customerId?.substring(0, 20) || 'none',
-      mode: isLiveMode ? 'LIVE' : 'TEST'
+      mode: isLiveMode ? 'LIVE' : 'TEST',
+      referralCode: user.referral_code || 'none',
+      referredBy: user.referred_by || 'none'
     });
     
     // Validate customer exists in current mode
@@ -83,7 +85,11 @@ Deno.serve(async (req) => {
       const customer = await stripe.customers.create({
         email: user.email,
         name: user.full_name,
-        metadata: { user_id: user.id }
+        metadata: { 
+          user_id: user.id,
+          referral_code: user.referral_code || '',
+          referred_by: user.referred_by || ''
+        }
       });
       customerId = customer.id;
       console.log('[CREATE_CHECKOUT] ✅ Customer created:', customerId);

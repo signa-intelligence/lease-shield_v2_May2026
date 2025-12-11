@@ -435,6 +435,15 @@ function AccountContent() {
     staleTime: 0,
   });
 
+  // Generate referral code on first load if missing
+  React.useEffect(() => {
+    if (user && !user.referral_code) {
+      base44.functions.invoke('generateReferralCode')
+        .then(() => refetchUser())
+        .catch(err => console.error('[ACCOUNT] Failed to generate referral code:', err));
+    }
+  }, [user?.id, user?.referral_code, refetchUser]);
+
   // Handle post-checkout refresh
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
