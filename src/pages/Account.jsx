@@ -1753,7 +1753,7 @@ function AccountContent() {
       installInstructions: "インストール方法",
       iosInstructions: "iPhone/iPadで:\n1. Safariで共有ボタンをタップ\n2. 「ホーム画面に追加」をタップ\n3. 「追加」をタップ",
       androidInstructions: "Androidで:\n1. Chromeでメニュー (⋮) をタップ\n2. 「ホーム画面に追加」をタップ\n3. 「追加」をタップ",
-      desktopInstructions: "デスクトップで:\n1. アドレスバーのインストールアイコンをクリック\n2. またはブラウザメニュー > 「LeaseShieldをインストール」",
+      desktopInstructions: "デスクトップで:\n1. アドレスバーのインストールアイコンをクリック\n2. またはブラウザメニュー > 「Lease Shieldをインストール」",
       gotIt: "了解",
       install: "インストール",
       alreadyInstalled: "インストール済み"
@@ -1932,7 +1932,7 @@ function AccountContent() {
       installInstructions: "설치 방법",
       iosInstructions: "iPhone/iPad에서:\n1. Safari에서 공유 버튼 탭\n2. '홈 화면에 추가' 탭\n3. '추가' 탭",
       androidInstructions: "Android에서:\n1. Chrome에서 메뉴 (⋮) 탭\n2. '홈 화면에 추가' 탭\n3. '추가' 탭",
-      desktopInstructions: "데스크톱에서:\n1. 주소 표시줄의 설치 아이콘 클릭\n2. 또는 브라우저 메뉴 > 'LeaseShield 설치'",
+      desktopInstructions: "데스크톱에서:\n1. 주소 표시줄의 설치 아이콘 클릭\n2. 또는 브라우저 메뉴 > 'Lease Shield 설치'",
       gotIt: "알겠습니다",
       install: "설치",
       alreadyInstalled: "이미 설치됨"
@@ -2111,7 +2111,7 @@ function AccountContent() {
       installInstructions: "Инструкция по установке",
       iosInstructions: "На iPhone/iPad:\n1. Нажмите кнопку Поделиться в Safari\n2. Нажмите 'На экран Домой'\n3. Нажмите 'Добавить'",
       androidInstructions: "На Android:\n1. Нажмите меню (⋮) в Chrome\n2. Нажмите 'Добавить на главный экран'\n3. Нажмите 'Добавить'",
-      desktopInstructions: "На компьютере:\n1. Нажмите значок установки в адресной строке\n2. Или меню браузера > 'Установить LeaseShield'",
+      desktopInstructions: "На компьютере:\n1. Нажмите значок установки в адресной строке\n2. Или меню браузера > 'Установить Lease Shield'",
       gotIt: "Понятно",
       install: "Установить",
       alreadyInstalled: "Уже установлено"
