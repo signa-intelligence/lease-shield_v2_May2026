@@ -746,9 +746,7 @@ function ResolveCaseContent() {
           isDarkMode={isDarkMode}
         />
 
-        <div className="mb-6">
-
-          {autoFilledFromDeposit && (
+        {autoFilledFromDeposit && (
             <div className="mt-4 p-4 rounded-lg border-2 animate-pulse" style={{
               backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5',
               borderColor: '#10B981'
@@ -766,6 +764,7 @@ function ResolveCaseContent() {
               </div>
             </div>
           )}
+        </div>
 
         {/* Resolve Service Pricing */}
         <Card className="border-none shadow-xl mb-6" style={{ 
