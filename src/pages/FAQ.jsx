@@ -26,12 +26,12 @@ const FAQ_DATA = {
         questionJa: 'Lease Shieldとは何ですか？',
         questionKo: 'Lease Shield는 무엇인가요?',
         questionRu: 'Что такое Lease Shield?',
-        answerEn: 'Lease Shield is a platform that helps tenants and landlords manage the rental journey clearly, confidently, and fairly.\n\nWe provide tools for lease scanning, deposit tracking, reminders, documentation, evidence storage, and issue reporting — helping prevent problems before they happen.',
-        answerTh: 'Lease Shield คือแพลตฟอร์มที่ช่วยผู้เช่าและเจ้าของบ้านจัดการการเช่าอย่างชัดเจน มั่นใจ และเป็นธรรม\n\nเรามีเครื่องมือสำหรับการสแกนสัญญาเช่า ติดตามเงินมัดจำ การแจ้งเตือน เอกสาร การจัดเก็บหลักฐาน และรายงานปัญหา — ช่วยป้องกันปัญหาก่อนเกิดขึ้น',
-        answerZh: 'Lease Shield是一个帮助租户和房东清晰、自信、公平地管理租赁过程的平台。\n\n我们提供租约扫描、押金追踪、提醒、文档管理、证据存储和问题报告工具 — 帮助在问题发生前预防。',
-        answerJa: 'Lease Shieldは、賃借人と貸主が賃貸の過程を明確、自信を持って、公正に管理するのを支援するプラットフォームです。\n\nリーススキャン、敷金追跡、リマインダー、文書管理、証拠保存、問題報告のツールを提供し — 問題が発生する前に防ぐのを支援します。',
-        answerKo: 'Lease Shield는 임차인과 임대인이 임대 과정을 명확하고 자신감 있게 공정하게 관리할 수 있도록 돕는 플랫폼입니다。\n\n임대 계약 스캔、보증금 추적、알림、문서화、증거 저장 및 문제 보고 도구를 제공하여 문제가 발생하기 전에 예방합니다。',
-        answerRu: 'Lease Shield — это платформа, которая помогает арендаторам и арендодателям управлять процессом аренды ясно, уверенно и справедливо。\n\nМы предоставляем инструменты для сканирования договоров、отслеживания депозитов、напоминаний、документации、хранения доказательств и сообщения о проблемах — помогая предотвращать проблемы до их возникновения。'
+        answerEn: 'Lease Shield helps tenants and landlords prevent rental problems before they happen.\n\nWe provide AI lease analysis, deposit tracking, evidence storage, automated reminders, and dispute guidance — keeping records clear and relationships fair.',
+        answerTh: 'Lease Shield ช่วยผู้เช่าและเจ้าของบ้านป้องกันปัญหาการเช่าก่อนเกิดขึ้น\n\nเรามีการวิเคราะห์สัญญาด้วย AI ติดตามเงินมัดจำ จัดเก็บหลักฐาน การแจ้งเตือนอัตโนมัติ และคำแนะนำข้อพิพาท — รักษาบันทึกที่ชัดเจนและความสัมพันธ์ที่เป็นธรรม',
+        answerZh: 'Lease Shield帮助租户和房东在问题发生前预防租赁问题。\n\n我们提供AI租约分析、押金追踪、证据存储、自动提醒和纠纷指导 — 保持记录清晰，关系公平。',
+        answerJa: 'Lease Shieldは、賃借人と貸主が賃貸問題を未然に防ぐのを支援します。\n\nAIリース分析、敷金追跡、証拠保存、自動リマインダー、紛争ガイダンスを提供 — 記録を明確に、関係を公正に保ちます。',
+        answerKo: 'Lease Shield는 임차인과 임대인이 임대 문제를 사전에 예방할 수 있도록 돕습니다。\n\nAI 임대 계약 분석、보증금 추적、증거 보관、자동 알림 및 분쟁 안내를 제공 — 기록을 명확하게、관계를 공정하게 유지합니다。',
+        answerRu: 'Lease Shield помогает арендаторам и арендодателям предотвращать проблемы с арендой до их возникновения。\n\nМы предоставляем AI-анализ договоров、отслеживание депозитов、хранение доказательств、автоматические напоминания и помощь в спорах — сохраняя записи ясными、а отношения справедливыми。'
       },
       {
         questionEn: 'How does Lease Shield work?',
@@ -40,12 +40,12 @@ const FAQ_DATA = {
         questionJa: 'Lease Shieldはどのように機能しますか？',
         questionKo: 'Lease Shield는 어떻게 작동하나요?',
         questionRu: 'Как работает Lease Shield?',
-        answerEn: 'You upload your lease, track your deposit, report issues, store evidence, and receive guidance throughout your rental period.\n\nLease Shield does not take sides — it supports both tenants and landlords by improving clarity and reducing misunderstandings.',
-        answerTh: 'คุณอัปโหลดสัญญาเช่า ติดตามเงินมัดจำ รายงานปัญหา จัดเก็บหลักฐาน และรับคำแนะนำตลอดระยะเวลาการเช่า\n\nLease Shield ไม่เข้าข้างฝ่ายใด — รองรับทั้งผู้เช่าและเจ้าของบ้านด้วยการปรับปรุงความชัดเจนและลดความเข้าใจผิด',
-        answerZh: '您上传租约、追踪押金、报告问题、存储证据，并在整个租赁期间获得指导。\n\nLease Shield不偏袒任何一方 — 通过提高清晰度和减少误解来支持租户和房东。',
-        answerJa: 'リース契約をアップロードし、敷金を追跡し、問題を報告し、証拠を保存し、賃貸期間中にガイダンスを受けます。\n\nLease Shieldは立場を取りません — 明確性を向上させ、誤解を減らすことで、賃借人と貸主の両方をサポートします。',
-        answerKo: '임대 계약을 업로드하고、보증금을 추적하고、문제를 보고하고、증거를 저장하며、임대 기간 동안 안내를 받습니다。\n\nLease Shield는 편을 들지 않습니다 — 명확성을 개선하고 오해를 줄임으로써 임차인과 임대인 모두를 지원합니다。',
-        answerRu: 'Вы загружаете договор、отслеживаете депозит、сообщаете о проблемах、храните доказательства и получаете рекомендации на протяжении всего периода аренды。\n\nLease Shield не принимает чью-либо сторону — он поддерживает и арендаторов、и арендодателей、улучшая ясность и уменьшая недопонимание。'
+        answerEn: 'Upload your lease for AI analysis, track your deposit with automated reminders, store evidence (photos, documents), and receive guidance when issues arise.\n\nLease Shield serves both tenants and landlords by keeping records clear and preventing misunderstandings before they escalate.',
+        answerTh: 'อัปโหลดสัญญาเช่าเพื่อวิเคราะห์ด้วย AI ติดตามเงินมัดจำด้วยการแจ้งเตือนอัตโนมัติ จัดเก็บหลักฐาน (รูปภาพ, เอกสาร) และรับคำแนะนำเมื่อเกิดปัญหา\n\nLease Shield รองรับทั้งผู้เช่าและเจ้าของบ้านโดยรักษาบันทึกให้ชัดเจนและป้องกันความเข้าใจผิดก่อนที่จะบานปลาย',
+        answerZh: '上传租约进行AI分析，通过自动提醒追踪押金，存储证据（照片、文件），并在出现问题时获得指导。\n\nLease Shield通过保持记录清晰和防止误解升级来服务租户和房东。',
+        answerJa: 'リース契約をアップロードしてAI分析、自動リマインダー付きの敷金追跡、証拠保存（写真、文書）、問題発生時のガイダンスを受けます。\n\nLease Shieldは、記録を明確に保ち、誤解がエスカレートする前に防ぐことで、賃借人と貸主の両方に役立ちます。',
+        answerKo: 'AI 분석을 위해 임대 계약을 업로드하고、자동 알림으로 보증금을 추적하고、증거（사진、문서）를 저장하고、문제 발생 시 안내를 받습니다。\n\nLease Shield는 기록을 명확하게 유지하고 오해가 확대되기 전에 예방함으로써 임차인과 임대인 모두에게 서비스를 제공합니다。',
+        answerRu: 'Загрузите договор для AI-анализа、отслеживайте депозит с автоматическими напоминаниями、храните доказательства（фото、документы）и получайте помощь при возникновении проблем。\n\nLease Shield служит и арендаторам、и арендодателям、сохраняя записи ясными и предотвращая недопонимание до эскалации。'
       },
       {
         questionEn: 'Who is Lease Shield for — tenants or landlords?',
@@ -214,12 +214,12 @@ const FAQ_DATA = {
         questionJa: 'どのようなプランがありますか？',
         questionKo: '어떤 플랜이 있나요?',
         questionRu: 'Какие планы доступны?',
-        answerEn: 'Lite — Essentials (lease scans, emails, tracking)\nProtect — Adds LINE alerts + more scans + more storage\nSecure — Full suite with unlimited scans & premium support\n\n• Lite: ฿190/month or ฿1,900/year\n• Protect: ฿390/month or ฿3,900/year\n• Secure: ฿990/month or ฿9,900/year',
-        answerTh: 'Lite — พื้นฐาน (สแกนสัญญาเช่า, อีเมล, การติดตาม)\nProtect — เพิ่มการแจ้งเตือน LINE + สแกนเพิ่ม + พื้นที่จัดเก็บเพิ่ม\nSecure — ชุดเต็มพร้อมการสแกนไม่จำกัดและการสนับสนุนพรีเมียม\n\n• Lite: ฿190/เดือน หรือ ฿1,900/ปี\n• Protect: ฿390/เดือน หรือ ฿3,900/ปี\n• Secure: ฿990/เดือน หรือ ฿9,900/ปี',
-        answerZh: 'Lite — 基础（租约扫描、电子邮件、追踪）\nProtect — 添加LINE提醒 + 更多扫描 + 更多存储\nSecure — 完整套件，无限次扫描和高级支持\n\n• Lite：฿190/月 或 ฿1,900/年\n• Protect：฿390/月 或 ฿3,900/年\n• Secure：฿990/月 或 ฿9,900/年',
-        answerJa: 'Lite — 基本（リーススキャン、メール、追跡）\nProtect — LINE通知 + スキャン追加 + ストレージ追加\nSecure — 無制限スキャンとプレミアムサポート付きの完全版\n\n• Lite：฿190/月 または ฿1,900/年\n• Protect：฿390/月 または ฿3,900/年\n• Secure：฿990/月 または ฿9,900/年',
-        answerKo: 'Lite — 기본（임대 계약 스캔、이메일、추적）\nProtect — LINE 알림 추가 + 더 많은 스캔 + 더 많은 저장소\nSecure — 무제한 스캔 및 프리미엄 지원이 포함된 전체 제품군\n\n• Lite：฿190/월 또는 ฿1,900/년\n• Protect：฿390/월 또는 ฿3,900/년\n• Secure：฿990/월 또는 ฿9,900/년',
-        answerRu: 'Lite — Основы（сканирование договоров、email、отслеживание）\nProtect — Добавляет LINE-уведомления + больше сканирований + больше хранилища\nSecure — Полный набор с неограниченными сканированиями и премиум-поддержкой\n\n• Lite：฿190/месяц или ฿1,900/год\n• Protect：฿390/месяц или ฿3,900/год\n• Secure：฿990/месяц или ฿9,900/год'
+        answerEn: 'Lite (฿190/month or ฿1,900/year):\n• 6 lease scans/year, email alerts, 3 letter credits, 1GB storage\n\nProtect (฿390/month or ฿3,900/year):\n• Everything in Lite + 12 scans/year, LINE alerts, 5 letter credits, 5GB storage\n\nSecure (฿990/month or ฿9,900/year):\n• Everything in Protect + unlimited scans, 20GB storage, 1 Resolve case/year (included), unlimited FastTrack (complimentary)\n• Letter credits sold separately',
+        answerTh: 'Lite (฿190/เดือน หรือ ฿1,900/ปี):\n• 6 การสแกน/ปี, อีเมลแจ้งเตือน, 3 เครดิตจดหมาย, พื้นที่ 1GB\n\nProtect (฿390/เดือน หรือ ฿3,900/ปี):\n• ทุกอย่างใน Lite + 12 การสแกน/ปี, LINE แจ้งเตือน, 5 เครดิตจดหมาย, พื้นที่ 5GB\n\nSecure (฿990/เดือน หรือ ฿9,900/ปี):\n• ทุกอย่างใน Protect + สแกนไม่จำกัด, พื้นที่ 20GB, 1 คดี Resolve/ปี (รวม), FastTrack ไม่จำกัด (ฟรี)\n• เครดิตจดหมายขายแยก',
+        answerZh: 'Lite（฿190/月 或 ฿1,900/年）:\n• 每年6次扫描、电子邮件提醒、3个信件积分、1GB存储\n\nProtect（฿390/月 或 ฿3,900/年）:\n• Lite所有功能 + 每年12次扫描、LINE提醒、5个信件积分、5GB存储\n\nSecure（฿990/月 或 ฿9,900/年）:\n• Protect所有功能 + 无限扫描、20GB存储、每年1个Resolve案件（包含）、无限FastTrack（免费）\n• 信件积分单独购买',
+        answerJa: 'Lite（฿190/月 または ฿1,900/年）:\n• 年6回スキャン、メールアラート、3レタークレジット、1GBストレージ\n\nProtect（฿390/月 または ฿3,900/年）:\n• Liteの全機能 + 年12回スキャン、LINE通知、5レタークレジット、5GBストレージ\n\nSecure（฿990/月 または ฿9,900/年）:\n• Protectの全機能 + 無制限スキャン、20GBストレージ、年1件Resolveケース（含）、無制限FastTrack（無料）\n• レタークレジットは別途購入',
+        answerKo: 'Lite（฿190/월 또는 ฿1,900/년）:\n• 연간 6회 스캔、이메일 알림、3개 레터 크레딧、1GB 저장소\n\nProtect（฿390/월 또는 ฿3,900/년）:\n• Lite 모든 기능 + 연간 12회 스캔、LINE 알림、5개 레터 크레딧、5GB 저장소\n\nSecure（฿990/월 또는 ฿9,900/년）:\n• Protect 모든 기능 + 무제한 스캔、20GB 저장소、연간 1건 Resolve 케이스（포함）、무제한 FastTrack（무료）\n• 레터 크레딧 별도 구매',
+        answerRu: 'Lite（฿190/месяц или ฿1,900/год）:\n• 6 сканирований/год、email-уведомления、3 кредита писем、1GB хранилище\n\nProtect（฿390/месяц или ฿3,900/год）:\n• Всё из Lite + 12 сканирований/год、LINE-уведомления、5 кредитов писем、5GB хранилище\n\nSecure（฿990/месяц или ฿9,900/год）:\n• Всё из Protect + безлимит сканирований、20GB хранилище、1 дело Resolve/год（включено）、безлимит FastTrack（бесплатно）\n• Кредиты писем продаются отдельно'
       },
       {
         questionEn: 'Can I change or cancel my plan later?',
