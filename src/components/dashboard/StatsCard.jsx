@@ -70,17 +70,18 @@ export default function StatsCard({
               style={{ backgroundColor: cardStyles.iconBg }}
             >
               <Icon className="w-5 h-5" style={{ color: cardStyles.iconColor }} />
-            {trend && (
-            <div className="flex items-center gap-1 px-2 py-1 rounded-full" style={{ backgroundColor: trend.color + '20' }}>
-              {trend.value && String(trend.value).startsWith('-') ? (
-                <TrendingDown className="w-3 h-3" style={{ color: trend.color }} />
-              ) : (
-                <TrendingUp className="w-3 h-3" style={{ color: trend.color }} />
-              )}
-              <span className="text-xs font-semibold" style={{ color: trend.color }}>
-                {trend.value}
-              </span>
             </div>
+            {trend && (
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full" style={{ backgroundColor: trend.color + '20' }}>
+                {trend.value && String(trend.value).startsWith('-') ? (
+                  <TrendingDown className="w-3 h-3" style={{ color: trend.color }} />
+                ) : (
+                  <TrendingUp className="w-3 h-3" style={{ color: trend.color }} />
+                )}
+                <span className="text-xs font-semibold" style={{ color: trend.color }}>
+                  {trend.value}
+                </span>
+              </div>
             )}
           </div>
           <div>
