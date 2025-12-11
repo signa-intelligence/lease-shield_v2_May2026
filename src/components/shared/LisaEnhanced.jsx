@@ -69,15 +69,15 @@ Secure (฿990/month):
 REFERRAL PROGRAM:
 When friends ask about referrals, explain:
 - Share your personal referral link (found in Account page)
-- When your friend subscribes and pays their first bill, you earn credit automatically
+- CRITICAL: Credit is awarded ONLY AFTER your friend completes 3 consecutive months of paid subscription
 - Credit = THE VALUE OF THE PLAN YOUR FRIEND SUBSCRIBES TO (NOT the minimum)
 - Examples:
-  • Friend joins Lite (฿190) → you earn ฿190 credit
-  • Friend joins Protect (฿390) → you earn ฿390 credit
-  • Friend joins Secure (฿990) → you earn ฿990 credit
+  • Friend joins Lite (฿190) and stays for 3 months → you earn ฿190 credit
+  • Friend joins Protect (฿390) and stays for 3 months → you earn ฿390 credit
+  • Friend joins Secure (฿990) and stays for 3 months → you earn ฿990 credit
 - This applies regardless of your own plan tier
 - Unlimited referrals allowed
-- Credits automatically applied to your next invoice(s)
+- Credits automatically applied to your next invoice(s) once earned
 - Find your referral link in Account → Referral Program section
 
 Your personality:
@@ -328,12 +328,11 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
       className="lisa-chat-window"
       style={{
         position: 'fixed',
-        bottom: '90px',
-        right: '20px',
-        width: '400px',
-        maxWidth: 'calc(100vw - 40px)',
-        height: '600px',
-        maxHeight: 'calc(100vh - 150px)',
+        bottom: '16px',
+        right: '16px',
+        width: 'min(420px, calc(100vw - 32px))',
+        height: 'auto',
+        maxHeight: 'calc(100vh - 96px)',
         zIndex: 1000,
         backgroundColor: colors.cardBg,
         border: `1px solid ${colors.borderColor}`,
@@ -476,7 +475,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
               {language === 'th' ? 'สวัสดี! ฉันคือ Lisa 👋' : language === 'zh' ? '你好！我是Lisa 👋' : language === 'ja' ? 'こんにちは！Lisaです 👋' : language === 'ko' ? '안녕하세요! Lisa입니다 👋' : language === 'ru' ? 'Привет! Я Lisa 👋' : 'Hi! I\'m Lisa 👋'}
             </p>
             <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
-              {language === 'th' ? 'ผู้ช่วยของคุณสำหรับคำถามเกี่ยวกับการป้องกันสิทธิ์การเช่า' : language === 'zh' ? '您的租赁保护助手' : language === 'ja' ? '賃貸保護のアシスタント' : language === 'ko' ? '임대 보호 도우미' : language === 'ru' ? 'Ваш помощник по защите аренды' : 'Your rental protection assistant'}
+              {language === 'th' ? 'ที่ปรึกษา Lease Shield ของคุณ' : language === 'zh' ? '您的Lease Shield顾问' : language === 'ja' ? 'あなたのLease Shieldコンサルタント' : language === 'ko' ? '귀하의 Lease Shield 컨설턴트' : language === 'ru' ? 'Ваш консультант Lease Shield' : 'Your Lease Shield Consultant'}
             </p>
             
             {/* Quick Reply Buttons */}

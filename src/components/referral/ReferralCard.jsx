@@ -20,7 +20,7 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
   const t = {
     en: {
       title: "Refer Friends. Earn Free Months.",
-      subtitle: "Share your link. When friends subscribe and pay their first month, you earn credit toward your next invoice.",
+      subtitle: "Share your link. When friends complete 3 months of paid subscription, you earn credit toward your next invoice.",
       unlimitedReferrals: "Unlimited Referrals",
       unlimitedDesc: "No cap on invites",
       creditRule: "Earn Friend's Plan Value",
@@ -41,13 +41,13 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       converted: "Converted",
       cancelled: "Cancelled",
       noReferralsYet: "No referrals yet. Share your link to get started!",
-      example: "Example: You're on Lite. Friend joins Protect (฿390) → you earn ฿390.",
+      example: "Example: You're on Lite. Friend joins Protect (฿390) and completes 3 months → you earn ฿390.",
       earnedCredit: "Earned",
       status: "Status"
     },
     th: {
       title: "แนะนำเพื่อน รับเดือนฟรี",
-      subtitle: "แชร์ลิงก์ของคุณ เมื่อเพื่อนสมัครและชำระเดือนแรก คุณจะได้รับเครดิตสำหรับใบแจ้งหนี้ถัดไป",
+      subtitle: "แชร์ลิงก์ของคุณ เมื่อเพื่อนชำระครบ 3 เดือนติดต่อกัน คุณจะได้รับเครดิตสำหรับใบแจ้งหนี้ถัดไป",
       unlimitedReferrals: "แนะนำได้ไม่จำกัด",
       unlimitedDesc: "ไม่จำกัดจำนวนเพื่อน",
       creditRule: "ได้รับมูลค่าแผนของเพื่อน",
@@ -68,13 +68,13 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       converted: "สำเร็จ",
       cancelled: "ยกเลิก",
       noReferralsYet: "ยังไม่มีการแนะนำ แชร์ลิงก์เพื่อเริ่มต้น!",
-      example: "ตัวอย่าง: คุณใช้ Lite เพื่อนใช้ Protect (฿390) → คุณได้ ฿390",
+      example: "ตัวอย่าง: คุณใช้ Lite เพื่อนใช้ Protect (฿390) และชำระครบ 3 เดือน → คุณได้ ฿390",
       earnedCredit: "ได้รับ",
       status: "สถานะ"
     },
     zh: {
       title: "推荐好友，赚免费月份",
-      subtitle: "分享您的链接。当好友订阅并支付首月费用时，您将获得下次发票的抵扣额度。",
+      subtitle: "分享您的链接。当好友完成3个月的连续付费订阅时，您将获得下次发票的抵扣额度。",
       unlimitedReferrals: "无限推荐",
       unlimitedDesc: "邀请不设上限",
       creditRule: "获得好友计划价值",
@@ -95,13 +95,13 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       converted: "已转化",
       cancelled: "已取消",
       noReferralsYet: "还没有推荐。分享您的链接开始吧！",
-      example: "示例：您使用Lite。好友订阅Protect（฿390）→ 您获得฿390。",
+      example: "示例：您使用Lite。好友订阅Protect（฿390）并完成3个月 → 您获得฿390。",
       earnedCredit: "获得",
       status: "状态"
     },
     ja: {
       title: "友達紹介で無料月を獲得",
-      subtitle: "リンクを共有。友達が購読して最初の月を支払うと、次回請求のクレジットが得られます。",
+      subtitle: "リンクを共有。友達が3ヶ月間の連続有料購読を完了すると、次回請求のクレジットが得られます。",
       unlimitedReferrals: "無制限紹介",
       unlimitedDesc: "招待上限なし",
       creditRule: "友達のプラン価値を獲得",
@@ -122,13 +122,13 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       converted: "完了",
       cancelled: "キャンセル",
       noReferralsYet: "まだ紹介がありません。リンクを共有して始めましょう！",
-      example: "例：あなたはLite。友達がProtect（฿390）に参加 → あなたは฿390獲得。",
+      example: "例：あなたはLite。友達がProtect（฿390）に参加し3ヶ月完了 → あなたは฿390獲得。",
       earnedCredit: "獲得",
       status: "ステータス"
     },
     ko: {
       title: "친구 추천으로 무료 월 받기",
-      subtitle: "링크를 공유하세요. 친구가 구독하고 첫 달을 결제하면 다음 청구서의 크레딧을 받습니다.",
+      subtitle: "링크를 공유하세요. 친구가 3개월 연속 유료 구독을 완료하면 다음 청구서의 크레딧을 받습니다.",
       unlimitedReferrals: "무제한 추천",
       unlimitedDesc: "초대 제한 없음",
       creditRule: "친구 플랜 가치 획득",
@@ -149,13 +149,13 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       converted: "전환됨",
       cancelled: "취소됨",
       noReferralsYet: "아직 추천이 없습니다. 링크를 공유하여 시작하세요!",
-      example: "예: 귀하는 Lite. 친구가 Protect（฿390）가입 → 귀하는 ฿390 획득.",
+      example: "예: 귀하는 Lite. 친구가 Protect（฿390）가입 후 3개월 완료 → 귀하는 ฿390 획득.",
       earnedCredit: "획득",
       status: "상태"
     },
     ru: {
       title: "Пригласите друзей. Заработайте бесплатные месяцы.",
-      subtitle: "Поделитесь ссылкой. Когда друзья подпишутся и оплатят первый месяц, вы получите кредит на следующий счёт.",
+      subtitle: "Поделитесь ссылкой. Когда друзья завершат 3 месяца подряд платной подписки, вы получите кредит на следующий счёт.",
       unlimitedReferrals: "Неограниченные приглашения",
       unlimitedDesc: "Без лимита",
       creditRule: "Получаете стоимость плана друга",
@@ -176,7 +176,7 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       converted: "Конвертировано",
       cancelled: "Отменено",
       noReferralsYet: "Пока нет приглашений. Поделитесь ссылкой, чтобы начать!",
-      example: "Пример: Вы на Lite. Друг на Protect (฿390) → Вы получаете ฿390.",
+      example: "Пример: Вы на Lite. Друг на Protect (฿390) и завершает 3 месяца → Вы получаете ฿390.",
       earnedCredit: "Получено",
       status: "Статус"
     }

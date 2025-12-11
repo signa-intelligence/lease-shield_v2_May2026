@@ -8,12 +8,24 @@ import { haptic } from "./HapticFeedback";
  */
 export default function LisaFAB({ onClick, isDarkMode = false }) {
   const [isHovered, setIsHovered] = React.useState(false);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkViewport = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+    return () => window.removeEventListener('resize', checkViewport);
+  }, []);
+
+  const label = isMobile ? 'Ask Lisa' : 'Chat with Lisa';
 
   return (
     <button
       type="button"
-      aria-label="Chat with Lisa"
+      aria-label={label}
       onClick={() => {
         haptic.medium();
         if (onClick) onClick();
@@ -25,7 +37,7 @@ export default function LisaFAB({ onClick, isDarkMode = false }) {
         position: "fixed",
         bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
         right: "20px",
-        minWidth: isMobile ? "56px" : (isHovered ? "160px" : "56px"),
+        minWidth: isMobile ? "56px" : (isHovered ? "180px" : "56px"),
         height: "56px",
         borderRadius: "28px",
         backgroundColor: "#063F2C",
@@ -52,11 +64,8 @@ export default function LisaFAB({ onClick, isDarkMode = false }) {
           opacity: 1,
           animation: "fadeIn 0.2s ease-in"
         }}>
-          Chat with Lisa
+          {label}
         </span>
-      )}
-      {isMobile && (
-        <span className="sr-only">Ask Lisa</span>
       )}
       <style>{`
         @keyframes fadeIn {

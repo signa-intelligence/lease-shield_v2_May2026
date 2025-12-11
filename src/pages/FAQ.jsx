@@ -348,12 +348,12 @@ const FAQ_DATA = {
         questionJa: '紹介プログラムはどのように機能しますか？',
         questionKo: '추천 프로그램은 어떻게 작동하나요?',
         questionRu: 'Как работает реферальная программа?',
-        answerEn: 'Share your personal referral link. When your friend subscribes and pays their first bill, you receive credit automatically applied to your next invoice.',
-        answerTh: 'แชร์ลิงก์แนะนำส่วนตัวของคุณ เมื่อเพื่อนของคุณสมัครสมาชิกและชำระบิลแรก คุณจะได้รับเครดิตที่นำไปใช้กับใบแจ้งหนี้ถัดไปโดยอัตโนมัติ',
-        answerZh: '分享您的个人推荐链接。当您的朋友订阅并支付第一笔账单时，您将获得自动应用于下一张发票的积分。',
-        answerJa: '個人紹介リンクを共有します。友達がサブスクリプションを登録し、最初の請求を支払うと、次の請求書に自動的に適用されるクレジットを受け取ります。',
-        answerKo: '개인 추천 링크를 공유하세요。친구가 구독하고 첫 번째 청구서를 지불하면 다음 송장에 자동으로 적용되는 크레딧을 받습니다。',
-        answerRu: 'Поделитесь своей личной реферальной ссылкой。Когда ваш друг подпишется и оплатит первый счёт、вы получите кредит、автоматически применяемый к следующему счёту。'
+        answerEn: 'Share your personal referral link. When your friend subscribes and completes 3 consecutive months of paid subscription, you receive credit automatically applied to your next invoice.',
+        answerTh: 'แชร์ลิงก์แนะนำส่วนตัวของคุณ เมื่อเพื่อนของคุณสมัครสมาชิกและชำระครบ 3 เดือนติดต่อกัน คุณจะได้รับเครดิตที่นำไปใช้กับใบแจ้งหนี้ถัดไปโดยอัตโนมัติ',
+        answerZh: '分享您的个人推荐链接。当您的朋友订阅并完成3个月连续付费订阅时，您将获得自动应用于下一张发票的积分。',
+        answerJa: '個人紹介リンクを共有します。友達がサブスクリプションを登録し、3ヶ月間連続して支払いを完了すると、次の請求書に自動的に適用されるクレジットを受け取ります。',
+        answerKo: '개인 추천 링크를 공유하세요。친구가 구독하고 3개월 연속 유료 구독을 완료하면 다음 송장에 자동으로 적용되는 크레딧을 받습니다。',
+        answerRu: 'Поделитесь своей личной реферальной ссылкой。Когда ваш друг подпишется и завершит 3 месяца подряд платной подписки、вы получите кредит、автоматически применяемый к следующему счёту。'
       },
       {
         questionEn: 'Is there a limit to how many friends I can refer?',
@@ -376,12 +376,12 @@ const FAQ_DATA = {
         questionJa: 'どれくらいのクレジットがもらえますか？',
         questionKo: '얼마의 크레딧을 받나요?',
         questionRu: 'Сколько кредита я получаю?',
-        answerEn: 'You earn the value of the plan your friend selects (Lite, Protect, or Secure).\n\nExample: Your friend joins Protect → you receive ฿390 credit.',
-        answerTh: 'คุณจะได้รับมูลค่าของแผนที่เพื่อนของคุณเลือก (Lite, Protect หรือ Secure)\n\nตัวอย่าง: เพื่อนของคุณเข้าร่วม Protect → คุณจะได้รับเครดิต ฿390',
-        answerZh: '您获得朋友选择的计划价值（Lite、Protect或Secure）。\n\n例如：您的朋友加入Protect → 您获得฿390积分。',
-        answerJa: '友達が選択したプラン（Lite、Protect、またはSecure）の価値を獲得します。\n\n例：友達がProtectに参加 → ฿390のクレジットを受け取ります。',
-        answerKo: '친구가 선택한 플랜（Lite、Protect 또는 Secure）의 가치를 얻습니다。\n\n예：친구가 Protect에 가입 → ฿390 크레딧을 받습니다。',
-        answerRu: 'Вы зарабатываете стоимость плана、который выбрал ваш друг（Lite、Protect или Secure）。\n\nПример：ваш друг присоединяется к Protect → вы получаете ฿390 кредита。'
+        answerEn: 'You earn the value of the plan your friend subscribes to, after they complete 3 consecutive months.\n\nExample: Friend joins Protect and completes 3 months → you receive ฿390 credit.',
+        answerTh: 'คุณจะได้รับมูลค่าของแผนที่เพื่อนของคุณสมัคร หลังจากพวกเขาชำระครบ 3 เดือนติดต่อกัน\n\nตัวอย่าง: เพื่อนเข้าร่วม Protect และชำระครบ 3 เดือน → คุณได้รับเครดิต ฿390',
+        answerZh: '您获得朋友订阅的计划价值，在他们完成连续3个月后。\n\n例如：朋友加入Protect并完成3个月 → 您获得฿390积分。',
+        answerJa: '友達が購読するプランの価値を、3ヶ月連続完了後に獲得します。\n\n例：友達がProtectに参加し3ヶ月完了 → ฿390のクレジットを受け取ります。',
+        answerKo: '친구가 구독하는 플랜의 가치를 연속 3개월 완료 후에 얻습니다。\n\n예：친구가 Protect에 가입하고 3개월 완료 → ฿390 크레딧을 받습니다。',
+        answerRu: 'Вы зарабатываете стоимость плана、на который подписывается ваш друг、после того как они завершат 3 месяца подряд。\n\nПример：друг присоединяется к Protect и завершает 3 месяца → вы получаете ฿390 кредита。'
       },
       {
         questionEn: 'Where do I find my referral link?',
