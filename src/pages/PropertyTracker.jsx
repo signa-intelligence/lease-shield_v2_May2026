@@ -27,6 +27,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import DebouncedSearch from "../components/shared/DebouncedSearch";
+import AuthGuard from "../components/shared/AuthGuard";
 
 // Maintenance Request Card Component (extracted to avoid hooks in loops)
 function MaintenanceRequestCard({
