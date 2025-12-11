@@ -34,8 +34,13 @@ function TemplateFormContent() {
   const [formData, setFormData] = useState({
     subject: '',
     tenant_name: '',
+    tenant_address: '',
     landlord_name: '',
+    landlord_address: '',
     property_address: '',
+    property_name: '',
+    unit_number: '',
+    notice_period_days: '',
     contract_ref: '',
     deposit_amount: '',
     example_item_1: '',
@@ -62,6 +67,13 @@ function TemplateFormContent() {
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
+  });
+
+  const { data: dbTemplates = [] } = useQuery({
+    queryKey: ['templateLibrary'],
+    queryFn: () => base44.entities.TemplateLibrary.filter({ is_active: true }),
+    enabled: !!user,
+    initialData: []
   });
 
   const language = user?.language || 'en';
@@ -590,7 +602,9 @@ function TemplateFormContent() {
 
   const strings = t[language] || t.en;
 
+  // Build letter type labels - combine built-in and DB templates
   const letterTypeLabels = {
+    // Built-in legacy templates
     deposit: strings.depositReturn,
     deductions: language === 'th' ? 'ขอรายละเอียดการหักเงิน' : language === 'zh' ? '要求逐项扣除' : language === 'ja' ? '明細化された控除要求' : language === 'ko' ? '항목별 공제 요청' : 'Request for Itemised Deductions',
     reminder: language === 'th' ? 'จดหมายเตือนแบบมิตร' : language === 'zh' ? '友好提醒' : language === 'ja' ? '友好的なリマインダー' : language === 'ko' ? '친근한 알림' : 'Friendly Reminder',
@@ -603,6 +617,13 @@ function TemplateFormContent() {
     settlement: language === 'th' ? 'ยืนยันการตกลงชำระเงิน' : language === 'zh' ? '和解确认' : language === 'ja' ? '和解確認' : language === 'ko' ? '합의 확인' : 'Settlement Confirmation',
     general_concerns: language === 'th' ? 'ข้อกังวลทั่วไป' : language === 'zh' ? '一般关注/问题' : language === 'ja' ? '一般的な懸念/問題' : language === 'ko' ? '일반적인 우려/문제' : 'General Concerns/Issues'
   };
+
+  // Add DB templates to the dropdown
+  dbTemplates.forEach(template => {
+    if (!letterTypeLabels[template.template_id]) {
+      letterTypeLabels[template.template_id] = language === 'th' ? template.title_th : template.title_en;
+    }
+  });
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -633,19 +654,81 @@ function TemplateFormContent() {
     haptic.medium();
     setGenerating(true);
     try {
-      // Call the backend function to generate multi-language letter pack (credit is deducted here)
-      const response = await base44.functions.invoke('generatePhase1Letter', formData);
+      // Check if it's a DB template with body_en and body_th
+      const dbTemplate = dbTemplates.find(t => t.template_id === formData.subject);
+      
+      if (dbTemplate && dbTemplate.body_en && dbTemplate.body_th) {
+        // Handle bilingual template with merge fields
+        const mergeData = {
+          tenant_full_name: formData.tenant_name || '[ADD YOUR NAME]',
+          tenant_address: formData.tenant_address || '[ADD YOUR ADDRESS]',
+          landlord_name: formData.landlord_name || '[ADD LANDLORD NAME]',
+          landlord_address: formData.landlord_address || formData.property_address || '[ADD LANDLORD ADDRESS]',
+          property_name: formData.property_name || formData.property_address || '[ADD PROPERTY NAME]',
+          unit_number: formData.unit_number || '[ADD UNIT NUMBER]',
+          today_date: new Date().toLocaleDateString('en-GB'),
+          notice_period_days: formData.notice_period_days || '[ADD NOTICE PERIOD]'
+        };
 
-      if (response.data?.ok) {
+        // Replace merge fields in both languages
+        let letterContentEn = dbTemplate.body_en;
+        let letterContentTh = dbTemplate.body_th;
+        
+        Object.entries(mergeData).forEach(([key, value]) => {
+          const placeholder = `{{${key}}}`;
+          letterContentEn = letterContentEn.replace(new RegExp(placeholder, 'g'), value);
+          letterContentTh = letterContentTh.replace(new RegExp(placeholder, 'g'), value);
+        });
+
+        // Build language pack
+        const languagePack = buildLetterLanguagePack({
+          recipientType: formData.recipientType,
+          tenantLanguage: user?.language || 'en',
+          landlordLanguage: user?.landlord_language || 'th',
+          includeTenantCopy: formData.includeTenantCopy,
+          includeThaiCopy: formData.includeThaiCopy,
+          includeLandlordCopy: formData.includeLandlordCopy
+        });
+
+        // Build letter content for all languages
+        const letterContent = {};
+        languagePack.allLanguages.forEach(lang => {
+          if (lang === 'en') {
+            letterContent[lang] = letterContentEn;
+          } else if (lang === 'th') {
+            letterContent[lang] = letterContentTh;
+          } else {
+            // For other languages, use English as fallback
+            letterContent[lang] = letterContentEn;
+          }
+        });
+
+        // Deduct credit
+        const newCredits = userCredits - dbTemplate.credits_required;
+        await base44.auth.updateMe({ letter_credits: newCredits });
+
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-        setGeneratedLetter(response.data);
-        setLanguagePack(response.data.language_pack);
-        setEditedContent(response.data.letter_content || {});
+        setGeneratedLetter({ ok: true, credits_remaining: newCredits, language_pack: languagePack, letter_content: letterContent });
+        setLanguagePack(languagePack);
+        setEditedContent(letterContent);
         setReviewMode(true);
         haptic.success();
-        toast.success(strings.creditDeductedRemaining.replace('{credits_remaining}', response.data.credits_remaining || 0));
+        toast.success(strings.creditDeductedRemaining.replace('{credits_remaining}', newCredits));
       } else {
-        throw new Error(response.data?.error || strings.errorGenerationFailed);
+        // Legacy built-in template - use existing backend function
+        const response = await base44.functions.invoke('generatePhase1Letter', formData);
+
+        if (response.data?.ok) {
+          queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+          setGeneratedLetter(response.data);
+          setLanguagePack(response.data.language_pack);
+          setEditedContent(response.data.letter_content || {});
+          setReviewMode(true);
+          haptic.success();
+          toast.success(strings.creditDeductedRemaining.replace('{credits_remaining}', response.data.credits_remaining || 0));
+        } else {
+          throw new Error(response.data?.error || strings.errorGenerationFailed);
+        }
       }
     } catch (err) {
       console.error('Generation error:', err);
@@ -995,6 +1078,24 @@ function TemplateFormContent() {
               />
 
               <MobileFormInput
+                label={language === 'th' ? 'ที่อยู่ผู้เช่า' : 'Your Address'}
+                value={formData.tenant_address}
+                onChange={(e) => handleInputChange('tenant_address', e.target.value)}
+                placeholder={language === 'th' ? '456 ถนนสุขุมวิท กรุงเทพฯ' : '456 Sukhumvit Rd, Bangkok'}
+                colors={colors}
+                disabled={generating}
+              />
+
+              <MobileFormInput
+                label={language === 'th' ? 'ที่อยู่เจ้าของบ้าน' : "Landlord's Address"}
+                value={formData.landlord_address}
+                onChange={(e) => handleInputChange('landlord_address', e.target.value)}
+                placeholder={language === 'th' ? '789 ถนนพระราม 4 กรุงเทพฯ' : '789 Rama IV Rd, Bangkok'}
+                colors={colors}
+                disabled={generating}
+              />
+
+              <MobileFormInput
                 label={strings.propertyAddress}
                 value={formData.property_address}
                 onChange={(e) => handleInputChange('property_address', e.target.value)}
@@ -1002,6 +1103,38 @@ function TemplateFormContent() {
                 colors={colors}
                 disabled={generating}
               />
+
+              <div className="grid grid-cols-2 gap-3">
+                <MobileFormInput
+                  label={language === 'th' ? 'ชื่อโครงการ/อาคาร' : 'Property/Building Name'}
+                  value={formData.property_name}
+                  onChange={(e) => handleInputChange('property_name', e.target.value)}
+                  placeholder={language === 'th' ? 'เดอะ เรสซิเดนซ์' : 'The Residence'}
+                  colors={colors}
+                  disabled={generating}
+                />
+
+                <MobileFormInput
+                  label={language === 'th' ? 'หมายเลขห้อง' : 'Unit Number'}
+                  value={formData.unit_number}
+                  onChange={(e) => handleInputChange('unit_number', e.target.value)}
+                  placeholder="12A"
+                  colors={colors}
+                  disabled={generating}
+                />
+              </div>
+
+              {['notice_intent_to_vacate'].includes(formData.subject) && (
+                <MobileFormInput
+                  label={language === 'th' ? 'จำนวนวันแจ้งล่วงหน้า' : 'Notice Period (days)'}
+                  type="number"
+                  value={formData.notice_period_days}
+                  onChange={(e) => handleInputChange('notice_period_days', e.target.value)}
+                  placeholder="30"
+                  colors={colors}
+                  disabled={generating}
+                />
+              )}
 
               <MobileFormInput
                 label={strings.contractRef}
