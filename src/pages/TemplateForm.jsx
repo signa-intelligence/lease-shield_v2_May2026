@@ -740,8 +740,6 @@ function TemplateFormContent() {
             }
           />
 
-          <div className="mb-6">
-
           {error && (
             <Card className="mb-4 border-2 border-red-500" style={{ backgroundColor: colors.cardBg }}>
               <CardContent className="p-4">
@@ -761,36 +759,38 @@ function TemplateFormContent() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              {/* Multi-Language Letter Versions */}
               {languagePack && languagePack.allLanguages.map((langCode) => {
                 const label = getLanguageLabel(langCode, language);
                 return (
                   <div key={langCode}>
-                    <Label htmlFor={`letter_${langCode}`} className="text-base font-semibold mb-2 block flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                    <label htmlFor={`letter_${langCode}`} className="text-base font-semibold mb-2 block flex items-center gap-2" style={{ color: colors.textPrimary }}>
                       <Globe className="w-4 h-4" />
                       {label}
                       {langCode === languagePack.primary && (
                         <Badge className="bg-blue-100 text-blue-700 text-xs">Primary</Badge>
                       )}
-                    </Label>
-                    <Textarea
+                    </label>
+                    <textarea
                       id={`letter_${langCode}`}
                       value={editedContent[langCode] || ''}
                       onChange={(e) => setEditedContent(prev => ({ ...prev, [langCode]: e.target.value }))}
                       rows={12}
-                      className="font-sans"
+                      className="font-sans w-full"
                       style={{
-                        backgroundColor: colors.inputBg,
+                        backgroundColor: colors.fieldBg,
                         borderColor: colors.borderColor,
                         color: colors.textPrimary,
-                        whiteSpace: 'pre-wrap'
+                        whiteSpace: 'pre-wrap',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        border: `2px solid ${colors.borderColor}`,
+                        fontSize: '14px'
                       }}
                     />
                   </div>
                 );
               })}
 
-              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <Button
                   type="button"
@@ -933,325 +933,172 @@ function TemplateFormContent() {
             )}
 
             <form onSubmit={handleGenerate} className="space-y-4">
-              {/* Recipient Type Selection */}
-              <div>
-                <Label style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'ผู้รับจดหมาย' : language === 'zh' ? '收件人' : language === 'ja' ? '受取人' : language === 'ko' ? '수신자' : language === 'ru' ? 'Получатель' : 'Letter Recipient'} <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={formData.recipientType}
-                  onValueChange={(value) => handleInputChange('recipientType', value)}
-                  disabled={generating}
-                >
-                  <SelectTrigger
-                    className="w-full mt-2"
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent style={{ backgroundColor: colors.cardBg }}>
-                    <SelectItem value="tenant">{language === 'th' ? 'ผู้เช่า (ตัวเอง)' : language === 'zh' ? '租户（本人）' : language === 'ja' ? '借主（自分）' : language === 'ko' ? '임차인 (본인)' : language === 'ru' ? 'Арендатор (себе)' : 'Tenant (Myself)'}</SelectItem>
-                    <SelectItem value="landlord">{language === 'th' ? 'เจ้าของบ้าน' : language === 'zh' ? '房东' : language === 'ja' ? '家主' : language === 'ko' ? '집주인' : language === 'ru' ? 'Арендодатель' : 'Landlord'}</SelectItem>
-                    <SelectItem value="juristic">{language === 'th' ? 'นิติบุคคล' : language === 'zh' ? '法人' : language === 'ja' ? '法人' : language === 'ko' ? '법인' : language === 'ru' ? 'Юридическое лицо' : 'Juristic Office'}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <MobileFormInput
+                label={language === 'th' ? 'ผู้รับจดหมาย *' : language === 'zh' ? '收件人 *' : language === 'ja' ? '受取人 *' : language === 'ko' ? '수신자 *' : language === 'ru' ? 'Получатель *' : 'Letter Recipient *'}
+                type="select"
+                value={formData.recipientType}
+                onChange={(e) => handleInputChange('recipientType', e.target.value)}
+                colors={colors}
+                disabled={generating}
+                options={[
+                  { value: 'tenant', label: language === 'th' ? 'ผู้เช่า (ตัวเอง)' : language === 'zh' ? '租户（本人）' : language === 'ja' ? '借主（自分）' : language === 'ko' ? '임차인 (본인)' : language === 'ru' ? 'Арендатор (себе)' : 'Tenant (Myself)' },
+                  { value: 'landlord', label: language === 'th' ? 'เจ้าของบ้าน' : language === 'zh' ? '房东' : language === 'ja' ? '家主' : language === 'ko' ? '집주인' : language === 'ru' ? 'Арендодатель' : 'Landlord' },
+                  { value: 'juristic', label: language === 'th' ? 'นิติบุคคล' : language === 'zh' ? '法人' : language === 'ja' ? '法人' : language === 'ko' ? '법인' : language === 'ru' ? 'Юридическое лицо' : 'Juristic Office' }
+                ]}
+              />
 
-              {/* Letter Type Selection */}
               <div>
-                <Label htmlFor="letter_subject" style={{ color: colors.textPrimary }}>
+                <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   {strings.letterType} <span className="text-red-500">*</span>
-                </Label>
-                <Select
+                </label>
+                <select
                   value={formData.subject}
-                  onValueChange={(value) => handleInputChange('subject', value)}
-                  disabled={generating} // Disable selection while generating
+                  onChange={(e) => handleInputChange('subject', e.target.value)}
+                  disabled={generating}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    backgroundColor: colors.fieldBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary,
+                    fontSize: '16px',
+                    borderRadius: '12px',
+                    border: `2px solid ${colors.borderColor}`,
+                    minHeight: '48px'
+                  }}
                 >
-                  <SelectTrigger
-                    id="letter_subject"
-                    className="w-full"
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                  >
-                    <SelectValue placeholder={strings.selectLetterTypePlaceholder}>
-                      {formData.subject ? letterTypeLabels[formData.subject] : strings.selectLetterTypePlaceholder}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent style={{
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}>
-                    {Object.entries(letterTypeLabels).map(([key, label]) => (
-                      <SelectItem
-                        key={key}
-                        value={key}
-                        style={{
-                          backgroundColor: colors.cardBg,
-                          color: colors.textPrimary
-                        }}
-                        className="hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <option value="">{strings.selectLetterTypePlaceholder}</option>
+                  {Object.entries(letterTypeLabels).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
               </div>
 
+              <MobileFormInput
+                label={`${strings.yourName} *`}
+                value={formData.tenant_name}
+                onChange={(e) => handleInputChange('tenant_name', e.target.value)}
+                placeholder={strings.yourNamePlaceholder}
+                required
+                colors={colors}
+                disabled={generating}
+              />
 
-              {/* Common Fields */}
-              <div>
-                <Label htmlFor="tenant_name" style={{ color: colors.textPrimary }}>
-                  {strings.yourName} <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="tenant_name"
-                  value={formData.tenant_name}
-                  onChange={(e) => handleInputChange('tenant_name', e.target.value)}
-                  placeholder={strings.yourNamePlaceholder}
-                  required
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                  disabled={generating}
-                />
-              </div>
+              <MobileFormInput
+                label={`${strings.landlordName} *`}
+                value={formData.landlord_name}
+                onChange={(e) => handleInputChange('landlord_name', e.target.value)}
+                placeholder={strings.landlordNamePlaceholder}
+                required
+                colors={colors}
+                disabled={generating}
+              />
 
-              <div>
-                <Label htmlFor="landlord_name" style={{ color: colors.textPrimary }}>
-                  {strings.landlordName} <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="landlord_name"
-                  value={formData.landlord_name}
-                  onChange={(e) => handleInputChange('landlord_name', e.target.value)}
-                  placeholder={strings.landlordNamePlaceholder}
-                  required
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                  disabled={generating}
-                />
-              </div>
+              <MobileFormInput
+                label={strings.propertyAddress}
+                value={formData.property_address}
+                onChange={(e) => handleInputChange('property_address', e.target.value)}
+                placeholder={strings.propertyAddressPlaceholder}
+                colors={colors}
+                disabled={generating}
+              />
 
-              <div>
-                <Label htmlFor="property_address" style={{ color: colors.textPrimary }}>
-                  {strings.propertyAddress}
-                </Label>
-                <Input
-                  id="property_address"
-                  value={formData.property_address}
-                  onChange={(e) => handleInputChange('property_address', e.target.value)}
-                  placeholder={strings.propertyAddressPlaceholder}
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                  disabled={generating}
-                />
-              </div>
+              <MobileFormInput
+                label={strings.contractRef}
+                value={formData.contract_ref}
+                onChange={(e) => handleInputChange('contract_ref', e.target.value)}
+                placeholder={strings.contractRefPlaceholder}
+                colors={colors}
+                disabled={generating}
+              />
 
-              <div>
-                <Label htmlFor="contract_ref" style={{ color: colors.textPrimary }}>
-                  {strings.contractRef}
-                </Label>
-                <Input
-                  id="contract_ref"
-                  value={formData.contract_ref}
-                  onChange={(e) => handleInputChange('contract_ref', e.target.value)}
-                  placeholder={strings.contractRefPlaceholder}
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                  disabled={generating}
-                />
-              </div>
-
-              {/* Conditional Fields Based on Letter Type */}
               {['deposit', 'deductions'].includes(formData.subject) && (
-                <div>
-                  <Label htmlFor="deposit_amount" style={{ color: colors.textPrimary }}>
-                    {strings.depositAmount}
-                  </Label>
-                  <Input
-                    id="deposit_amount"
-                    type="number"
-                    value={formData.deposit_amount}
-                    onChange={(e) => handleInputChange('deposit_amount', e.target.value)}
-                    placeholder="25000"
-                    style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary
-                    }}
-                    disabled={generating}
-                  />
-                </div>
+                <MobileFormInput
+                  label={strings.depositAmount}
+                  type="number"
+                  value={formData.deposit_amount}
+                  onChange={(e) => handleInputChange('deposit_amount', e.target.value)}
+                  placeholder="25000"
+                  colors={colors}
+                  disabled={generating}
+                />
               )}
 
               {formData.subject === 'condition_dispute' && (
                 <>
-                  <div>
-                    <Label htmlFor="example_item_1" style={{ color: colors.textPrimary }}>
-                      {strings.exampleItem1}
-                    </Label>
-                    <Input
-                      id="example_item_1"
-                      value={formData.example_item_1}
-                      onChange={(e) => handleInputChange('example_item_1', e.target.value)}
-                      placeholder={strings.exampleItem1Placeholder}
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.borderColor,
-                        color: colors.textPrimary
-                      }}
-                      disabled={generating}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="example_item_2" style={{ color: colors.textPrimary }}>
-                      {strings.exampleItem2}
-                    </Label>
-                    <Input
-                      id="example_item_2"
-                      value={formData.example_item_2}
-                      onChange={(e) => handleInputChange('example_item_2', e.target.value)}
-                      placeholder={strings.exampleItem2Placeholder}
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.borderColor,
-                        color: colors.textPrimary
-                      }}
-                      disabled={generating}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="example_item_3" style={{ color: colors.textPrimary }}>
-                      {strings.exampleItem3}
-                    </Label>
-                    <Input
-                      id="example_item_3"
-                      value={formData.example_item_3}
-                      onChange={(e) => handleInputChange('example_item_3', e.target.value)}
-                      placeholder={strings.exampleItem3Placeholder}
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.borderColor,
-                        color: colors.textPrimary
-                      }}
-                      disabled={generating}
-                    />
-                  </div>
+                  <MobileFormInput
+                    label={strings.exampleItem1}
+                    value={formData.example_item_1}
+                    onChange={(e) => handleInputChange('example_item_1', e.target.value)}
+                    placeholder={strings.exampleItem1Placeholder}
+                    colors={colors}
+                    disabled={generating}
+                  />
+                  <MobileFormInput
+                    label={strings.exampleItem2}
+                    value={formData.example_item_2}
+                    onChange={(e) => handleInputChange('example_item_2', e.target.value)}
+                    placeholder={strings.exampleItem2Placeholder}
+                    colors={colors}
+                    disabled={generating}
+                  />
+                  <MobileFormInput
+                    label={strings.exampleItem3}
+                    value={formData.example_item_3}
+                    onChange={(e) => handleInputChange('example_item_3', e.target.value)}
+                    placeholder={strings.exampleItem3Placeholder}
+                    colors={colors}
+                    disabled={generating}
+                  />
                 </>
               )}
 
               {formData.subject === 'non_compliance' && (
-                <div>
-                  <Label htmlFor="breach_summary" style={{ color: colors.textPrimary }}>
-                    {strings.breachSummary}
-                  </Label>
-                  <Textarea
-                    id="breach_summary"
-                    value={formData.breach_summary}
-                    onChange={(e) => handleInputChange('breach_summary', e.target.value)}
-                    placeholder={strings.breachSummaryPlaceholder}
-                    rows={4}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      border: `1px solid ${colors.borderColor}`,
-                      outline: 'none',
-                      fontFamily: 'inherit'
-                    }}
-                    disabled={generating}
-                  />
-                </div>
+                <MobileFormInput
+                  label={strings.breachSummary}
+                  value={formData.breach_summary}
+                  onChange={(e) => handleInputChange('breach_summary', e.target.value)}
+                  placeholder={strings.breachSummaryPlaceholder}
+                  multiline
+                  rows={4}
+                  colors={colors}
+                  disabled={generating}
+                />
               )}
 
               {formData.subject === 'settlement' && (
                 <>
-                  <div>
-                    <Label htmlFor="settlement_amount" style={{ color: colors.textPrimary }}>
-                      {strings.settlementAmount}
-                    </Label>
-                    <Input
-                      id="settlement_amount"
-                      type="number"
-                      value={formData.settlement_amount}
-                      onChange={(e) => handleInputChange('settlement_amount', e.target.value)}
-                      placeholder={strings.settlementAmountPlaceholder}
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.borderColor,
-                        color: colors.textPrimary
-                      }}
-                      disabled={generating}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="settlement_date" style={{ color: colors.textPrimary }}>
-                      {strings.settlementDate}
-                    </Label>
-                    <Input
-                      id="settlement_date"
-                      type="date"
-                      value={formData.settlement_date}
-                      onChange={(e) => handleInputChange('settlement_date', e.target.value)}
-                      style={{
-                        backgroundColor: colors.inputBg,
-                        borderColor: colors.borderColor,
-                        color: colors.textPrimary
-                      }}
-                      disabled={generating}
-                    />
-                  </div>
+                  <MobileFormInput
+                    label={strings.settlementAmount}
+                    type="number"
+                    value={formData.settlement_amount}
+                    onChange={(e) => handleInputChange('settlement_amount', e.target.value)}
+                    placeholder={strings.settlementAmountPlaceholder}
+                    colors={colors}
+                    disabled={generating}
+                  />
+                  <MobileFormInput
+                    label={strings.settlementDate}
+                    type="date"
+                    value={formData.settlement_date}
+                    onChange={(e) => handleInputChange('settlement_date', e.target.value)}
+                    colors={colors}
+                    disabled={generating}
+                  />
                 </>
               )}
 
               {formData.subject === 'general_concerns' && (
-                <div>
-                  <Label htmlFor="concerns_list" style={{ color: colors.textPrimary }}>
-                    {strings.concernsList}
-                  </Label>
-                  <Textarea
-                    id="concerns_list"
-                    value={formData.concerns_list}
-                    onChange={(e) => handleInputChange('concerns_list', e.target.value)}
-                    placeholder={strings.concernsListPlaceholder}
-                    rows={4}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      backgroundColor: colors.inputBg,
-                      color: colors.textPrimary,
-                      border: `1px solid ${colors.borderColor}`,
-                      outline: 'none',
-                      fontFamily: 'inherit'
-                    }}
-                    disabled={generating}
-                  />
-                </div>
+                <MobileFormInput
+                  label={strings.concernsList}
+                  value={formData.concerns_list}
+                  onChange={(e) => handleInputChange('concerns_list', e.target.value)}
+                  placeholder={strings.concernsListPlaceholder}
+                  multiline
+                  rows={4}
+                  colors={colors}
+                  disabled={generating}
+                />
               )}
 
               {/* Language Options */}

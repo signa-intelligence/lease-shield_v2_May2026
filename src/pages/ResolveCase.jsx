@@ -11,7 +11,6 @@ import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricing
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
 import MobileFormInput from "../components/shared/MobileFormInput";
-import { useFormValidation, validators } from "../components/shared/FormValidation";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import ProgressBar from "../components/shared/ProgressBar";
@@ -747,24 +746,23 @@ function ResolveCaseContent() {
         />
 
         {autoFilledFromDeposit && (
-            <div className="mt-4 p-4 rounded-lg border-2 animate-pulse" style={{
-              backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5',
-              borderColor: '#10B981'
-            }}>
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                <div>
-                  <p className="font-bold text-sm" style={{ color: '#10B981' }}>
-                    🛡️ {str.autoFilled}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                    {str.autoFilledMsg}
-                  </p>
-                </div>
+          <div className="mb-6 p-4 rounded-lg border-2 animate-pulse" style={{
+            backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5',
+            borderColor: '#10B981'
+          }}>
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <div>
+                <p className="font-bold text-sm" style={{ color: '#10B981' }}>
+                  🛡️ {str.autoFilled}
+                </p>
+                <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                  {str.autoFilledMsg}
+                </p>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Resolve Service Pricing */}
         <Card className="border-none shadow-xl mb-6" style={{ 
