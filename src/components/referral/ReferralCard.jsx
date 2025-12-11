@@ -211,7 +211,15 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       : 'Lease Shield - Protect Your Rental Deposit';
     const text = language === 'th'
       ? `มาป้องกันเงินมัดจำด้วย Lease Shield กัน! ใช้โค้ดของฉัน: ${user?.referral_code}`
-      : `Join me on Lease Shield to protect your rental deposit! Use my code: ${user?.referral_code}`;
+      : language === 'zh'
+        ? `加入我在Lease Shield保护您的租赁押金！使用我的代码：${user?.referral_code}`
+        : language === 'ja'
+          ? `Lease Shieldで一緒に敷金を守りましょう！私のコードを使用：${user?.referral_code}`
+          : language === 'ko'
+            ? `Lease Shield에서 보증금을 보호하세요！내 코드 사용：${user?.referral_code}`
+            : language === 'ru'
+              ? `Присоединяйтесь ко мне в Lease Shield для защиты депозита！Используйте мой код：${user?.referral_code}`
+              : `Join me on Lease Shield to protect your rental deposit! Use my code: ${user?.referral_code}`;
 
     if (navigator.share) {
       try {

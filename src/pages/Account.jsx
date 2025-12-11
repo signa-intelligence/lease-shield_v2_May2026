@@ -990,16 +990,16 @@ function AccountContent() {
     const appUrl = 'https://app.leaseshield.asia';
     const title = 'LeaseShield';
     const text = language === 'th' 
-      ? 'ป้องกันปัญหาการเช่าด้วย LeaseShield - วิเคราะห์สัญญา ติดตามเงินมัดจำ และเปิดคดีได้ง่ายๆ'
+      ? 'ป้องกันปัญหาการเช่าด้วย Lease Shield - วิเคราะห์สัญญา ติดตามเงินมัดจำ และเปิดคดีได้ง่ายๆ'
       : language === 'zh' 
-        ? '用 LeaseShield 防止租赁问题 - 分析合同、追踪押金、轻松开案'
+        ? '用 Lease Shield 防止租赁问题 - 分析合同、追踪押金、轻松开案'
         : language === 'ja'
-          ? 'LeaseShieldで賃貸問題を防ぐ - 契約分析、敷金追跡、簡単にケース開設'
+          ? 'Lease Shieldで賃貸問題を防ぐ - 契約分析、敷金追跡、簡単にケース開設'
           : language === 'ko'
-            ? 'LeaseShield로 임대 문제 예방 - 계약 분석, 보증금 추적, 쉬운 사례 개설'
+            ? 'Lease Shield로 임대 문제 예방 - 계약 분석, 보증금 추적, 쉬운 사례 개설'
             : language === 'ru'
-              ? 'Предотвращайте проблемы аренды с LeaseShield - анализ договоров, отслеживание депозитов, простое открытие дел'
-              : 'Prevent rental problems with LeaseShield - analyze contracts, track deposits, open cases easily';
+              ? 'Предотвращайте проблемы аренды с Lease Shield - анализ договоров, отслеживание депозитов, простое открытие дел'
+              : 'Prevent rental problems with Lease Shield - analyze contracts, track deposits, open cases easily';
     
     if (navigator.share) {
       try {

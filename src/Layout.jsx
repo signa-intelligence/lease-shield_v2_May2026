@@ -128,7 +128,7 @@ export default function Layout({ children, currentPageName }) {
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
-      { name: 'apple-mobile-web-app-title', content: 'LeaseShield' },
+      { name: 'apple-mobile-web-app-title', content: 'Lease Shield' },
     ];
 
     metaTags.forEach(({ name, content }) => {
