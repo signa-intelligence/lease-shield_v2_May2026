@@ -53,7 +53,7 @@ export default function AccountPopup({ isOpen, onClose, colors, language = 'en',
       icon: User,
       label: strings.accountSettings,
       route: createPageUrl('Account'),
-      color: '#0C3B2E'
+      color: '#063F2C'
     },
     {
       icon: HelpCircle,
@@ -71,7 +71,7 @@ export default function AccountPopup({ isOpen, onClose, colors, language = 'en',
       icon: Star,
       label: strings.upgrade,
       route: createPageUrl('Account') + '?showPlans=true',
-      color: '#10B981'
+      color: '#CFAF6A'
     }
   ];
 

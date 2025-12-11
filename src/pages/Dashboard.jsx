@@ -142,10 +142,12 @@ function DashboardContent() {
     fieldBg: '#F8FAFC'
   };
 
-  const handleRefresh = async () => {
+  const handleRefresh = async (shouldShowToast = true) => {
     haptic.light();
     await queryClient.invalidateQueries();
-    toast.success(language === 'th' ? 'รีเฟรชสำเร็จ' : 'Refreshed successfully');
+    if (shouldShowToast) {
+      toast.success(language === 'th' ? 'รีเฟรชสำเร็จ' : 'Refreshed successfully');
+    }
   };
 
   React.useEffect(() => {
