@@ -1562,9 +1562,9 @@ function AccountContent() {
       shareApp: "与朋友分享应用",
       shareAppDesc: "邀请他人保护他们的押金",
       installInstructions: "安装说明",
-      iosInstructions: "在 iPhone/iPad 上:\n1. 在 Safari 中点击分享按钮\n2. 点击"添加到主屏幕"\n3. 点击"添加"",
-      androidInstructions: "在 Android 上:\n1. 在 Chrome 中点击菜单 (⋮)\n2. 点击"添加到主屏幕"\n3. 点击"添加"",
-      desktopInstructions: "在桌面上:\n1. 点击地址栏中的安装图标\n2. 或使用浏览器菜单 > "安装 LeaseShield"",
+      iosInstructions: "在 iPhone/iPad 上:\n1. 在 Safari 中点击分享按钮\n2. 点击'添加到主屏幕'\n3. 点击'添加'",
+      androidInstructions: "在 Android 上:\n1. 在 Chrome 中点击菜单 (⋮)\n2. 点击'添加到主屏幕'\n3. 点击'添加'",
+      desktopInstructions: "在桌面上:\n1. 点击地址栏中的安装图标\n2. 或使用浏览器菜单 > '安装 LeaseShield'",
       gotIt: "知道了",
       install: "安装",
       alreadyInstalled: "已安装"
