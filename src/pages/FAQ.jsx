@@ -251,69 +251,15 @@ const FAQ_DATA = {
       }
     ]
   },
-  features: {
-    icon: Shield,
-    color: '#0C3B2E',
-    titleEn: 'Features & Protection',
-    titleTh: 'ฟีเจอร์และการป้องกัน',
-    titleZh: '功能与保护',
-    titleJa: '機能と保護',
-    titleKo: '기능 및 보호',
-    titleRu: 'Функции и защита',
-    questions: [
-      {
-        questionEn: 'What is included in the Lite plan?',
-        questionTh: 'แผน Lite มีอะไรบ้าง?',
-        questionZh: 'Lite计划包含什么？',
-        questionJa: 'Liteプランには何が含まれますか？',
-        questionKo: 'Lite 플랜에는 무엇이 포함되나요?',
-        questionRu: 'Что включено в план Lite?',
-        answerEn: 'Lite plan (฿190/month) includes:\n\n• 6 Lease Scans per year\n• 5 Risks Reported per scan\n• Email Notifications\n• 3 Letter Credits\n• 1GB Document Storage\n• Maintenance Tracker\n• Deposit Tracker',
-        answerTh: 'แผน Lite (฿190/เดือน) ประกอบด้วย:\n\n• สแกนสัญญา 6 ครั้ง/ปี\n• รายงานความเสี่ยง 5 จุด/สแกน\n• การแจ้งเตือนทางอีเมล\n• เครดิตจดหมาย 3 ใบ\n• พื้นที่จัดเก็บ 1GB\n• ติดตามการซ่อมบำรุง\n• ติดตามเงินมัดจำ',
-        answerZh: 'Lite计划（฿190/月）包含：\n\n• 每年6次租约扫描\n• 每次扫描报告5个风险\n• 电子邮件通知\n• 3个信件积分\n• 1GB文档存储\n• 维护追踪器\n• 押金追踪器',
-        answerJa: 'Liteプラン（฿190/月）には：\n\n• 年6回のリーススキャン\n• スキャンごとに5つのリスク報告\n• メール通知\n• 3つのレタークレジット\n• 1GBドキュメントストレージ\n• メンテナンストラッカー\n• 敷金トラッカー',
-        answerKo: 'Lite 플랜（฿190/월）포함 사항：\n\n• 연간 6회 임대 계약 스캔\n• 스캔당 5개 위험 보고\n• 이메일 알림\n• 3개 레터 크레딧\n• 1GB 문서 저장소\n• 유지보수 추적기\n• 보증금 추적기',
-        answerRu: 'План Lite（฿190/месяц）включает：\n\n• 6 сканирований договора в год\n• 5 выявленных рисков на скан\n• Уведомления по email\n• 3 кредита на письма\n• 1 ГБ хранилища\n• Отслеживание обслуживания\n• Отслеживание депозита'
-      },
-      {
-        questionEn: 'What is included in the Protect plan?',
-        questionTh: 'แผน Protect มีอะไรบ้าง?',
-        questionZh: 'Protect计划包含什么？',
-        questionJa: 'Protectプランには何が含まれますか？',
-        questionKo: 'Protect 플랜에는 무엇이 포함되나요?',
-        questionRu: 'Что включено в план Protect?',
-        answerEn: 'Protect plan (฿390/month) includes everything in Lite PLUS:\n\n• 12 Lease Scans per year (double)\n• Full Risk Reports (unlimited depth)\n• LINE Notifications\n• 5 Letter Credits\n• 5GB Document Storage\n• Rent Payment Alerts\n• Automated Reminders\n• Deposit Shield Automation',
-        answerTh: 'แผน Protect (฿390/เดือน) รวมทุกอย่างใน Lite บวก:\n\n• สแกนสัญญา 12 ครั้ง/ปี (เพิ่มเป็นสองเท่า)\n• รายงานความเสี่ยงฉบับเต็ม\n• การแจ้งเตือนทาง LINE\n• เครดิตจดหมาย 5 ใบ\n• พื้นที่จัดเก็บ 5GB\n• แจ้งเตือนการชำระค่าเช่า\n• การแจ้งเตือนอัตโนมัติ\n• ระบบอัตโนมัติป้องกันเงินมัดจำ',
-        answerZh: 'Protect计划（฿390/月）包含Lite的所有内容加上：\n\n• 每年12次租约扫描（双倍）\n• 完整风险报告（无限深度）\n• LINE通知\n• 5个信件积分\n• 5GB文档存储\n• 租金支付提醒\n• 自动提醒\n• 押金保护自动化',
-        answerJa: 'Protectプラン（฿390/月）はLiteの全て＋：\n\n• 年12回のリーススキャン（2倍）\n• 完全なリスクレポート（無制限の深度）\n• LINE通知\n• 5つのレタークレジット\n• 5GBドキュメントストレージ\n• 家賃支払いアラート\n• 自動リマインダー\n• 敷金保護自動化',
-        answerKo: 'Protect 플랜（฿390/월）은 Lite의 모든 것 +：\n\n• 연간 12회 임대 계약 스캔（두 배）\n• 전체 위험 보고서（무제한 깊이）\n• LINE 알림\n• 5개 레터 크레딧\n• 5GB 문서 저장소\n• 임대료 납부 알림\n• 자동 알림\n• 보증금 보호 자동화',
-        answerRu: 'План Protect（฿390/месяц）включает всё из Lite плюс：\n\n• 12 сканирований договора в год（вдвое больше）\n• Полные отчёты о рисках（неограниченная глубина）\n• Уведомления LINE\n• 5 кредитов писем\n• 5 ГБ хранилища\n• Напоминания об оплате аренды\n• Автоматические напоминания\n• Автоматизация защиты депозита'
-      },
-      {
-        questionEn: 'What is included in the Secure plan?',
-        questionTh: 'แผน Secure มีอะไรบ้าง?',
-        questionZh: 'Secure计划包含什么？',
-        questionJa: 'Secureプランには何が含まれますか？',
-        questionKo: 'Secure 플랜에는 무엇이 포함되나요?',
-        questionRu: 'Что включено в план Secure?',
-        answerEn: 'Secure plan (฿990/month) is our premium tier with everything in Protect PLUS:\n\n• Unlimited Lease Scans\n• Advanced Reminders\n• 10 Letter Credits\n• 20GB Document Storage\n• Priority Case Queue (front of line)\n• Priority Scanning (expedited processing)\n• Premium Support (faster response)',
-        answerTh: 'แผน Secure (฿990/เดือน) เป็นแผนพรีเมียมที่รวมทุกอย่างใน Protect บวก:\n\n• สแกนสัญญาได้ไม่จำกัด\n• การแจ้งเตือนขั้นสูง\n• เครดิตจดหมาย 10 ใบ\n• พื้นที่จัดเก็บ 20GB\n• คิวคดีลำดับความสำคัญ\n• สแกนลำดับความสำคัญ\n• การสนับสนุนพรีเมียม',
-        answerZh: 'Secure计划（฿990/月）是我们的高级套餐，包含Protect的所有内容加上：\n\n• 无限次租约扫描\n• 高级提醒\n• 10个信件积分\n• 20GB文档存储\n• 优先案件队列（排在前面）\n• 优先扫描（加急处理）\n• 高级支持（更快响应）',
-        answerJa: 'Secureプラン（฿990/月）はプレミアムティアで、Protectの全て＋：\n\n• 無制限のリーススキャン\n• 高度なリマインダー\n• 10のレタークレジット\n• 20GBドキュメントストレージ\n• 優先ケースキュー（最前列）\n• 優先スキャン（迅速処理）\n• プレミアムサポート（より速い応答）',
-        answerKo: 'Secure 플랜（฿990/월）은 프리미엄 티어로 Protect의 모든 것 +：\n\n• 무제한 임대 계약 스캔\n• 고급 알림\n• 10개 레터 크레딧\n• 20GB 문서 저장소\n• 우선 사례 대기열（맨 앞）\n• 우선 스캔（신속 처리）\n• 프리미엄 지원（빠른 응답）',
-        answerRu: 'План Secure（฿990/месяц）- наш премиум-уровень со всем из Protect плюс：\n\n• Неограниченные сканирования договоров\n• Расширенные напоминания\n• 10 кредитов писем\n• 20 ГБ хранилища\n• Приоритетная очередь дел（в начале очереди）\n• Приоритетное сканирование（ускоренная обработка）\n• Премиум-поддержка（быстрый ответ）'
-      }
-    ]
-  },
-  resolve: {
-    icon: Scale,
-    color: '#EF4444',
-    titleEn: 'Resolve Service',
-    titleTh: 'บริการ Resolve',
-    titleZh: 'Resolve服务',
-    titleJa: 'Resolveサービス',
-    titleKo: 'Resolve 서비스',
-    titleRu: 'Сервис Resolve',
+  multilingual: {
+    icon: FileText,
+    color: '#3B82F6',
+    titleEn: 'Multilingual Support',
+    titleTh: 'การสนับสนุนหลายภาษา',
+    titleZh: '多语言支持',
+    titleJa: '多言語サポート',
+    titleKo: '다국어 지원',
+    titleRu: 'Многоязычная поддержка',
     questions: [
       {
         questionEn: 'What is the Resolve service and how much does it cost?',
