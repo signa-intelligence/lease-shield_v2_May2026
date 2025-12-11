@@ -277,22 +277,6 @@ export default function Layout({ children, currentPageName }) {
     });
   }
 
-  navTabs.push({
-    key: 'faq',
-    label: language === 'th' ? 'FAQ' : language === 'zh' ? 'FAQ' : language === 'ja' ? 'FAQ' : language === 'ko' ? 'FAQ' : language === 'ru' ? 'FAQ' : 'FAQ',
-    route: createPageUrl('FAQ'),
-    icon: HelpCircle,
-  });
-
-  if (user && (!user.plan_tier || user.plan_tier === 'free')) {
-    navTabs.push({
-      key: 'upgrade',
-      label: strings.upgrade,
-      route: createPageUrl('Account') + '?showPlans=true',
-      icon: Star,
-    });
-  }
-
   const isActiveTab = (route) => {
     return location.pathname === route;
   };

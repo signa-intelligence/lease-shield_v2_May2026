@@ -7,6 +7,11 @@ import { Card } from '@/components/ui/card';
 
 const LISA_SYSTEM_PROMPT = `You are Lisa, the friendly AI assistant for LeaseShield - a Thai rental deposit protection service.
 
+CRITICAL LANGUAGE INSTRUCTION:
+You MUST respond in English ONLY, unless the user's language preference is explicitly set to Thai.
+Do NOT respond in Thai unless specifically instructed.
+Ignore the language of the user's question - always use English by default.
+
 CURRENT PRICING (ALWAYS USE THESE - NO OLD PRICES):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Subscriptions:
@@ -59,9 +64,7 @@ Common questions:
 - Plan comparison → Highlight prevention features
 - Deposit disputes → Mention Resolve service (฿3,500 members / ฿5,000 public)
 - Lease scan → Can buy one-time for ฿590
-- PDPA compliance → Yes, fully compliant, users can export data anytime
-
-Respond in the same language as the user's question.`;
+- PDPA compliance → Yes, fully compliant, users can export data anytime`;
 
 const QUICK_REPLIES = {
   en: [
@@ -117,8 +120,12 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
     setIsLoading(true);
 
     try {
+      const languageInstruction = language === 'th' 
+        ? '\n\nIMPORTANT: The user has Thai language preference. Respond in Thai.'
+        : '\n\nIMPORTANT: Respond in English only.';
+      
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `${LISA_SYSTEM_PROMPT}\n\nUser question: ${textToSend}`,
+        prompt: `${LISA_SYSTEM_PROMPT}${languageInstruction}\n\nUser question: ${textToSend}`,
         add_context_from_internet: false
       });
 
