@@ -168,7 +168,7 @@ export default function Layout({ children, currentPageName }) {
 
   const t = {
     en: {
-      appName: "LEASE SHIELD",
+      appName: "Lease Shield",
       home: "Home",
       scan: "Scan",
       property: "Property",
