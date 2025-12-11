@@ -269,10 +269,6 @@ const TEMPLATES = [
 ];
 
 function TemplatesContent() {
-  return <div style={{ padding: '40px', fontSize: '18px', color: '#0C3B2E' }}>Templates debug – if you see this, TemplatesContent itself is valid.</div>;
-}
-
-function TemplatesContentOriginal() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { success, error } = useToast();
@@ -745,11 +741,42 @@ function TemplatesContentOriginal() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Upload Dialog */}
-        {showUploadDialog && (
+    <div className="p-4">
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#0C3B2E' }}>
+        Templates – Component Isolation Test
+      </h1>
+      
+      {/* TEST A: PageHeader */}
+      <PageHeader
+        title={strings.title}
+        subtitle={strings.subtitle}
+        icon={FileText}
+        iconColor="#0C3B2E"
+        showBack={true}
+        backLabel={strings.back}
+        isDarkMode={isDarkMode}
+        actions={
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <span className="bg-blue-100 text-blue-700 border border-blue-200 rounded px-3 py-1 text-xs sm:text-sm w-fit">
+              {strings.allLetters}
+            </span>
+          </div>
+        }
+      />
+      
+      {/* TEST B: SkeletonLoader */}
+      {/* {templatesLoading && <SkeletonLoader variant="card" count={1} isDarkMode={isDarkMode} />} */}
+      
+      {/* TEST C: MobileFormInput */}
+      {/* <MobileFormInput
+        label="Test Input"
+        value=""
+        onChange={() => {}}
+        colors={colors}
+      /> */}
+      
+      {/* TEST D: Upload Dialog */}
+      {/* {showUploadDialog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowUploadDialog(false)}>
             <div className="w-full max-w-2xl mx-4 rounded-xl shadow-xl" style={{
               backgroundColor: colors.cardBg,
@@ -888,9 +915,9 @@ function TemplatesContentOriginal() {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
-        <PageHeader
+        {/* <PageHeader
           title={strings.title}
           subtitle={strings.subtitle}
           icon={FileText}
@@ -916,10 +943,10 @@ function TemplatesContentOriginal() {
               )}
             </div>
           }
-        />
+        /> */}
 
         {/* Credit Balance Card */}
-        <div className="mb-6 rounded-xl border-none shadow-xl p-6" style={{ backgroundColor: colors.cardBg }}>
+        {/* <div className="mb-6 rounded-xl border-none shadow-xl p-6" style={{ backgroundColor: colors.cardBg }}>
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
@@ -963,10 +990,10 @@ function TemplatesContentOriginal() {
                 </button>
               </div>
             </div>
-        </div>
+        </div> */}
 
         {/* PRE-SIGNING SECTION */}
-        <div className="mb-12">
+        {/* <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-amber-400 to-orange-600 rounded"></div>
             <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
@@ -982,10 +1009,10 @@ function TemplatesContentOriginal() {
               {preSigningTemplates.map((template) => renderTemplateCard(template))}
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* FRIENDLY APPROACH SECTION */}
-        <div className="mb-12">
+        {/* <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-blue-400 to-purple-600 rounded"></div>
             <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
@@ -997,10 +1024,10 @@ function TemplatesContentOriginal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {liteTemplates.map((template) => renderTemplateCard(template))}
           </div>
-        </div>
+        </div> */}
 
         {/* PROFESSIONAL ESCALATION SECTION */}
-        <div className="mb-12">
+        {/* <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-emerald-500 to-cyan-600 rounded"></div>
             <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
@@ -1012,10 +1039,10 @@ function TemplatesContentOriginal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {protectTemplates.map((template) => renderTemplateCard(template))}
           </div>
-        </div>
+        </div> */}
 
         {/* FINAL MEASURES SECTION */}
-        <div>
+        {/* <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-orange-600 to-red-700 rounded"></div>
             <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
@@ -1027,10 +1054,10 @@ function TemplatesContentOriginal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {secureTemplates.map((template) => renderTemplateCard(template))}
           </div>
-        </div>
+        </div> */}
 
         {/* Legal Disclaimer */}
-        <div className="mt-12 p-4 rounded-lg text-center" style={{
+        {/* <div className="mt-12 p-4 rounded-lg text-center" style={{
           backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC',
           border: `1px solid ${colors.borderColor}`
         }}>
@@ -1046,12 +1073,12 @@ function TemplatesContentOriginal() {
                     : language === 'ru'
                       ? 'Lease Shield предоставляет общие рекомендации и шаблоны документов для вашего удобства。Lease Shield не является юридической фирмой、не предоставляет юридическое представительство и не является стороной вашего договора аренды。Вы несёте ответственность за проверку точности всей информации и документов перед отправкой。'
                       : 'Lease Shield provides general guidance and document templates for your convenience. Lease Shield is not a law firm, does not provide legal representation, and is not a party to your lease. You are responsible for checking the accuracy of all information and documents before sending them.'}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
+                      </p>
+                      </div> */}
+                      </div>
+                      </div>
+                      );
+                      }
 
 export default function Templates() {
   return (
