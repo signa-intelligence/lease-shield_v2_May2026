@@ -916,48 +916,49 @@ function TemplatesContent() {
 
         {/* Credit Balance Card */}
         <div className="mb-6 rounded-xl border-none shadow-xl p-6" style={{ backgroundColor: colors.cardBg }}>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-                  <Coins className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
-                    {strings.creditBalance}
-                  </p>
-                  <p className="text-4xl font-bold" style={{ color: '#C7A338' }}>
-                    {userCredits}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                    {strings.oneLetterPerCredit}
-                  </p>
-                </div>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+                <Coins className="w-8 h-8 text-white" />
               </div>
-
-              <div className="flex flex-col items-end gap-3 w-full md:w-auto">
-                <div className="flex flex-wrap gap-2 justify-center md:justify-end">
-                  <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 rounded px-2 py-1 text-xs flex items-center">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                    {strings.accessTemplateLibrary}
-                  </span>
-                  <span className="bg-blue-100 text-blue-700 border border-blue-200 rounded px-2 py-1 text-xs flex items-center">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                    {strings.bilingual}
-                  </span>
-                  <span className="bg-purple-100 text-purple-700 border border-purple-200 rounded px-2 py-1 text-xs flex items-center">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                    {strings.creditsNeverExpire}
-                  </span>
-                </div>
-                <button
-                  onClick={() => navigate(createPageUrl("Account") + '#letter-credits')}
-                  className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-4 py-2 rounded-lg flex items-center justify-center w-full md:w-auto btn-interaction"
-                  style={{ height: '40px' }}
-                >
-                  <Coins className="w-4 h-4 mr-2" />
-                  {strings.purchaseCredits}
-                </button>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                  {strings.creditBalance}
+                </p>
+                <p className="text-4xl font-bold" style={{ color: '#C7A338' }}>
+                  {userCredits}
+                </p>
+                <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                  {strings.oneLetterPerCredit}
+                </p>
               </div>
             </div>
+
+            <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+              <div className="flex flex-wrap gap-2 justify-center md:justify-end">
+                <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 rounded px-2 py-1 text-xs flex items-center">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  {strings.accessTemplateLibrary}
+                </span>
+                <span className="bg-blue-100 text-blue-700 border border-blue-200 rounded px-2 py-1 text-xs flex items-center">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  {strings.bilingual}
+                </span>
+                <span className="bg-purple-100 text-purple-700 border border-purple-200 rounded px-2 py-1 text-xs flex items-center">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  {strings.creditsNeverExpire}
+                </span>
+              </div>
+              <button
+                onClick={() => navigate(createPageUrl("Account") + '#letter-credits')}
+                className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-4 py-2 rounded-lg flex items-center justify-center w-full md:w-auto btn-interaction"
+                style={{ height: '40px' }}
+              >
+                <Coins className="w-4 h-4 mr-2" />
+                {strings.purchaseCredits}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* PRE-SIGNING SECTION */}
@@ -1043,9 +1044,10 @@ function TemplatesContent() {
                       : 'Lease Shield provides general guidance and document templates for your convenience. Lease Shield is not a law firm, does not provide legal representation, and is not a party to your lease. You are responsible for checking the accuracy of all information and documents before sending them.'}
           </p>
           </div>
-                      </div>
-                      );
-                      }
+          </div>
+          </div>
+          );
+          }
 
 export default function Templates() {
   return (
