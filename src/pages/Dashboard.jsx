@@ -1384,6 +1384,19 @@ ja: {
     }));
   };
 
+  // Auto-expand sections with important data
+  React.useEffect(() => {
+    if (urgentDeposits > 0) {
+      setExpandedSections(prev => ({ ...prev, depositAlerts: true }));
+    }
+    if (unreadNotifications > 0) {
+      setExpandedSections(prev => ({ ...prev, notifications: true }));
+    }
+    if (leases.length > 0) {
+      setExpandedSections(prev => ({ ...prev, recentLeases: true }));
+    }
+  }, [urgentDeposits, unreadNotifications, leases.length]);
+
   const isLoading = leasesLoading || depositsLoading;
 
   const calculateOnboardingProgress = () => {
@@ -2090,180 +2103,258 @@ ja: {
             </div>
           )}
 
-          {/* FREE TIER UPSELL BANNER */}
+          {/* FREE TIER UPSELL - Clean and professional */}
           {isFreeTier && (
-            <div
-              className="mb-6 p-4 sm:p-5 rounded-2xl shadow-lg"
+            <Card
+              className="mb-6 border-none shadow-xl overflow-hidden"
               style={{
                 background: isDarkMode
-                  ? 'linear-gradient(135deg, rgba(199,163,56,0.15) 0%, rgba(12,59,46,0.15) 100%)'
-                  : 'linear-gradient(135deg, rgba(199,163,56,0.08) 0%, rgba(12,59,46,0.08) 100%)',
-                border: `2px solid ${isDarkMode ? 'rgba(199,163,56,0.3)' : 'rgba(12,59,46,0.2)'}`,
+                  ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
+                  : 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
+                border: `2px solid ${isDarkMode ? 'rgba(199,163,56,0.4)' : '#C7A338'}`,
               }}
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex-1">
-                <h3 className="text-base sm:text-lg font-bold mb-1 text-gray-900 dark:text-gray-50">
-                  {strings.unlockFullProtection}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {strings.upgradeToLiteProtectSecure}
-                  </p>
+              <CardContent className="p-5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #C7A338 0%, #D4B451 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 8px rgba(199,163,56,0.3)',
+                      flexShrink: 0
+                    }}>
+                      <Shield className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base sm:text-lg font-bold mb-2 text-gray-900 dark:text-gray-50">
+                        {strings.unlockFullProtection}
+                      </h3>
+                      <p className="text-sm mb-2" style={{ color: colors.textSecondary, lineHeight: '1.5' }}>
+                        {language === 'th' ? 'เริ่ม ฿190/เดือน สำหรับการป้องกันเต็มรูปแบบ' : language === 'zh' ? '从฿190/月开始全面保护' : language === 'ja' ? '฿190/月から完全保護' : language === 'ko' ? '฿190/월부터 완전 보호' : language === 'ru' ? 'От ฿190/мес для полной защиты' : 'Starting at ฿190/month for full protection'}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md" style={{
+                          backgroundColor: isDarkMode ? '#374151' : 'white',
+                          fontSize: '11px',
+                          fontWeight: '600'
+                        }}>
+                          <span>✓</span> {language === 'th' ? 'สแกนสัญญา' : 'Lease Scans'}
+                        </div>
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md" style={{
+                          backgroundColor: isDarkMode ? '#374151' : 'white',
+                          fontSize: '11px',
+                          fontWeight: '600'
+                        }}>
+                          <span>✓</span> {language === 'th' ? 'ติดตามเงินมัดจำ' : 'Deposit Tracking'}
+                        </div>
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md" style={{
+                          backgroundColor: isDarkMode ? '#374151' : 'white',
+                          fontSize: '11px',
+                          fontWeight: '600'
+                        }}>
+                          <span>✓</span> {language === 'th' ? 'แจ้งเตือน' : 'Alerts'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <Link to={createPageUrl("Account") + '?showPlans=true'}>
+                    <button
+                      onClick={() => haptic.medium()}
+                      className="btn-interaction w-full sm:w-auto"
+                      style={{
+                        padding: '12px 28px',
+                        borderRadius: '12px',
+                        backgroundColor: '#0C3B2E',
+                        color: '#FFFFFF',
+                        border: '2px solid #C7A338',
+                        fontWeight: '700',
+                        fontSize: '15px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(12,59,46,0.3)',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#C7A338';
+                        e.target.style.borderColor = '#C7A338';
+                        e.target.style.color = '#1A1D1F';
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 6px 16px rgba(199,163,56,0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = '#0C3B2E';
+                        e.target.style.borderColor = '#C7A338';
+                        e.target.style.color = '#FFFFFF';
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 4px 12px rgba(12,59,46,0.3)';
+                      }}
+                    >
+                      {strings.viewPlans}
+                    </button>
+                  </Link>
                 </div>
-                <Link to={createPageUrl("Account") + '?showPlans=true'}>
-                  <button
-                    onClick={() => haptic.medium()}
-                    className="btn-interaction"
-                    style={{
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      backgroundColor: '#0C3B2E',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      fontWeight: '600',
-                      fontSize: language === 'ru' ? '13px' : '14px',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 8px rgba(12,59,46,0.3)',
-                      whiteSpace: language === 'ru' ? 'normal' : 'nowrap',
-                      textAlign: 'center',
-                      lineHeight: '1.3'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#C7A338';
-                      e.target.style.transform = 'translateY(-1px)';
-                      e.target.style.boxShadow = '0 6px 10px rgba(199,163,56,0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#0C3B2E';
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 4px 8px rgba(12,59,46,0.3)';
-                    }}
-                  >
-                    {strings.viewPlans}
-                  </button>
-                </Link>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* LITE PLAN UPSELL - Upgrade to Protect */}
+          {/* LITE PLAN UPSELL - Subtle, refined */}
           {isLitePlan && (
-            <div
-              className="mb-6 p-5 rounded-2xl shadow-lg"
+            <Card
+              className="mb-6 border-none shadow-lg overflow-hidden"
               style={{
                 background: isDarkMode
-                  ? 'linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(16,185,129,0.15) 100%)'
-                  : 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(16,185,129,0.08) 100%)',
-                border: `2px solid ${isDarkMode ? 'rgba(16,185,129,0.3)' : 'rgba(16,185,129,0.25)'}`,
+                  ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
+                  : 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
+                border: `2px solid ${isDarkMode ? 'rgba(16,185,129,0.3)' : '#10B981'}`,
               }}
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-5 h-5 text-emerald-600" />
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                      {language === 'th' ? 'อัปเกรดเป็น Protect - ฿390/เดือน' : language === 'zh' ? '升级到Protect - ฿390/月' : language === 'ja' ? 'Protectにアップグレード - ฿390/月' : language === 'ko' ? 'Protect로 업그레이드 - ฿390/월' : language === 'ru' ? 'Обновить до Protect - ฿390/месяц' : 'Upgrade to Protect - ฿390/month'}
-                    </h3>
+              <CardContent className="p-5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 8px rgba(16,185,129,0.3)',
+                      flexShrink: 0
+                    }}>
+                      <Shield className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base sm:text-lg font-bold mb-2 text-gray-900 dark:text-gray-50">
+                        {language === 'th' ? 'อัปเกรดเป็น Protect' : language === 'zh' ? '升级到Protect' : language === 'ja' ? 'Protectにアップグレード' : language === 'ko' ? 'Protect로 업그레이드' : language === 'ru' ? 'Обновить до Protect' : 'Upgrade to Protect'}
+                      </h3>
+                      <p className="text-sm mb-2" style={{ color: colors.textSecondary, lineHeight: '1.5' }}>
+                        {language === 'th' ? '12 การสแกน/ปี • LINE • 5 เครดิต • แจ้งเตือนค่าเช่า' : language === 'zh' ? '12次扫描 • LINE • 5积分 • 租金提醒' : language === 'ja' ? '12スキャン • LINE • 5クレジット • 家賃アラート' : language === 'ko' ? '12회 스캔 • LINE • 5크레딧 • 임대료 알림' : language === 'ru' ? '12 сканирований • LINE • 5 кредитов • Напоминания' : '12 scans/year • LINE alerts • 5 letter credits'}
+                      </p>
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{
+                        backgroundColor: '#10B981',
+                        color: 'white'
+                      }}>
+                        <span className="text-xs font-bold">฿390/mo</span>
+                        <span className="text-xs opacity-75">or ฿3,900/yr</span>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {language === 'th' ? '12 การสแกน/ปี • การแจ้งเตือน LINE • 5 เครดิตจดหมาย • แจ้งเตือนค่าเช่า' : language === 'zh' ? '12次扫描/年 • LINE通知 • 5个信件积分 • 租金提醒' : language === 'ja' ? '年12回スキャン • LINE通知 • 5レタークレジット • 家賃アラート' : language === 'ko' ? '연간 12회 스캔 • LINE 알림 • 5개 레터 크레딧 • 임대료 알림' : language === 'ru' ? '12 сканирований/год • LINE уведомления • 5 кредитов писем • Напоминания об аренде' : '12 scans/year • LINE notifications • 5 letter credits • Rent alerts'}
-                  </p>
-                  <p className="text-xs font-semibold text-emerald-600">
-                    {language === 'th' ? 'ประหยัด ฿780 ต่อปีด้วยการจ่ายรายปี (฿3,900)' : language === 'zh' ? '年付节省฿780（฿3,900）' : language === 'ja' ? '年払いで฿780節約（฿3,900）' : language === 'ko' ? '연간 결제시 ฿780 절약（฿3,900）' : language === 'ru' ? 'Экономия ฿780 в год при годовой оплате（฿3,900）' : 'Save ฿780/year with annual billing (฿3,900)'}
-                  </p>
+                  <Link to={createPageUrl("Account") + '?showPlans=true'}>
+                    <button
+                      onClick={() => haptic.medium()}
+                      className="btn-interaction w-full sm:w-auto"
+                      style={{
+                        padding: '12px 28px',
+                        borderRadius: '12px',
+                        backgroundColor: '#10B981',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        fontWeight: '700',
+                        fontSize: '15px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#059669';
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 6px 16px rgba(16,185,129,0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = '#10B981';
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)';
+                      }}
+                    >
+                      {language === 'th' ? 'อัปเกรดเลย' : language === 'zh' ? '立即升级' : language === 'ja' ? '今すぐアップグレード' : language === 'ko' ? '지금 업그레이드' : language === 'ru' ? 'Обновить сейчас' : 'Upgrade Now'}
+                    </button>
+                  </Link>
                 </div>
-                <Link to={createPageUrl("Account") + '?showPlans=true'}>
-                  <button
-                    onClick={() => haptic.medium()}
-                    className="btn-interaction"
-                    style={{
-                      padding: '12px 24px',
-                      borderRadius: '10px',
-                      backgroundColor: '#10B981',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      fontWeight: '700',
-                      fontSize: '15px',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                      whiteSpace: 'nowrap'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#059669';
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 6px 16px rgba(16,185,129,0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#10B981';
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)';
-                    }}
-                  >
-                    {language === 'th' ? 'อัปเกรด' : language === 'zh' ? '升级' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'ru' ? 'Обновить' : 'Upgrade'}
-                  </button>
-                </Link>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
-          {/* PROTECT PLAN UPSELL - Upgrade to Secure */}
+          {/* PROTECT PLAN UPSELL - Premium Secure upgrade */}
           {isProtectPlan && (
-            <div
-              className="mb-6 p-5 rounded-2xl shadow-lg"
+            <Card
+              className="mb-6 border-none shadow-xl overflow-hidden"
               style={{
                 background: isDarkMode
-                  ? 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(12,59,46,0.15) 100%)'
-                  : 'linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(12,59,46,0.08) 100%)',
-                border: `2px solid ${isDarkMode ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.25)'}`,
+                  ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
+                  : 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)',
+                border: `2px solid ${isDarkMode ? 'rgba(139,92,246,0.4)' : '#8B5CF6'}`,
               }}
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Crown className="w-5 h-5 text-purple-600" />
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                      {language === 'th' ? 'อัปเกรดเป็น Secure - ฿990/เดือน' : language === 'zh' ? '升级到Secure - ฿990/月' : language === 'ja' ? 'Secureにアップグレード - ฿990/月' : language === 'ko' ? 'Secure로 업그레이드 - ฿990/월' : language === 'ru' ? 'Обновить до Secure - ฿990/месяц' : 'Upgrade to Secure - ฿990/month'}
-                    </h3>
+              <CardContent className="p-5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1">
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 8px rgba(139,92,246,0.3)',
+                      flexShrink: 0
+                    }}>
+                      <Crown className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base sm:text-lg font-bold mb-2 text-gray-900 dark:text-gray-50">
+                        {language === 'th' ? 'อัปเกรดเป็น Secure' : language === 'zh' ? '升级到Secure' : language === 'ja' ? 'Secureにアップグレード' : language === 'ko' ? 'Secure로 업그레이드' : language === 'ru' ? 'Обновить до Secure' : 'Upgrade to Secure'}
+                      </h3>
+                      <p className="text-sm mb-2" style={{ color: colors.textSecondary, lineHeight: '1.5' }}>
+                        {language === 'th' ? 'สแกนไม่จำกัด • 10 เครดิต • การสนับสนุนพิเศษ • คิวเร่งด่วน' : language === 'zh' ? '无限扫描 • 10积分 • 优先支持 • 优先队列' : language === 'ja' ? '無制限スキャン • 10クレジット • 優先サポート • 優先キュー' : language === 'ko' ? '무제한 스캔 • 10크레딧 • 우선 지원 • 우선 대기열' : language === 'ru' ? 'Безлимит • 10 кредитов • Приоритет • Очередь' : 'Unlimited scans • 10 credits • Priority support'}
+                      </p>
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{
+                        backgroundColor: '#8B5CF6',
+                        color: 'white'
+                      }}>
+                        <span className="text-xs font-bold">฿990/mo</span>
+                        <span className="text-xs opacity-75">or ฿9,900/yr</span>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    {language === 'th' ? 'สแกนไม่จำกัด • 10 เครดิตจดหมาย • การสนับสนุนลำดับความสำคัญ • คิวคดีเร่งด่วน' : language === 'zh' ? '无限扫描 • 10个信件积分 • 优先支持 • 优先案件队列' : language === 'ja' ? '無制限スキャン • 10レタークレジット • 優先サポート • 優先ケースキュー' : language === 'ko' ? '무제한 스캔 • 10개 레터 크레딧 • 우선 지원 • 우선 사례 대기열' : language === 'ru' ? 'Неограниченные сканирования • 10 кредитов писем • Приоритетная поддержка • Приоритетная очередь дел' : 'Unlimited scans • 10 letter credits • Priority support • Priority case queue'}
-                  </p>
-                  <p className="text-xs font-semibold text-purple-600">
-                    {language === 'th' ? 'ประหยัด ฿1,980 ต่อปีด้วยการจ่ายรายปี (฿9,900)' : language === 'zh' ? '年付节省฿1,980（฿9,900）' : language === 'ja' ? '年払いで฿1,980節約（฿9,900）' : language === 'ko' ? '연간 결제시 ฿1,980 절약（฿9,900）' : language === 'ru' ? 'Экономия ฿1,980 в год при годовой оплате（฿9,900）' : 'Save ฿1,980/year with annual billing (฿9,900)'}
-                  </p>
+                  <Link to={createPageUrl("Account") + '?showPlans=true'}>
+                    <button
+                      onClick={() => haptic.medium()}
+                      className="btn-interaction w-full sm:w-auto"
+                      style={{
+                        padding: '12px 28px',
+                        borderRadius: '12px',
+                        backgroundColor: '#8B5CF6',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        fontWeight: '700',
+                        fontSize: '15px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
+                        whiteSpace: 'nowrap'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#7C3AED';
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 6px 16px rgba(139,92,246,0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = '#8B5CF6';
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = '0 4px 12px rgba(139,92,246,0.3)';
+                      }}
+                    >
+                      {language === 'th' ? 'อัปเกรดเลย' : language === 'zh' ? '立即升级' : language === 'ja' ? '今すぐアップグレード' : language === 'ko' ? '지금 업그레이드' : language === 'ru' ? 'Обновить сейчас' : 'Upgrade Now'}
+                    </button>
+                  </Link>
                 </div>
-                <Link to={createPageUrl("Account") + '?showPlans=true'}>
-                  <button
-                    onClick={() => haptic.medium()}
-                    className="btn-interaction"
-                    style={{
-                      padding: '12px 24px',
-                      borderRadius: '10px',
-                      backgroundColor: '#8B5CF6',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      fontWeight: '700',
-                      fontSize: '15px',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
-                      whiteSpace: 'nowrap'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#7C3AED';
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 6px 16px rgba(139,92,246,0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#8B5CF6';
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(139,92,246,0.3)';
-                    }}
-                  >
-                    {language === 'th' ? 'อัปเกรด' : language === 'zh' ? '升级' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'ru' ? 'Обновить' : 'Upgrade'}
-                  </button>
-                </Link>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* RESOLVE DISPUTE COMPACT BANNER - Available to ALL users */}
@@ -2416,19 +2507,71 @@ ja: {
                 </div>
               ) : (
                 <>
+                  {/* Compact Protection Score Summary */}
                   <div className="mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
-                    <ProtectionScoreEnhanced
-                      score={protectionScore}
-                      breakdown={breakdown}
-                      recommendations={recommendations}
-                      language={language}
-                      isDarkMode={isDarkMode}
-                      user={user}
-                    />
+                    <Card className="border-none shadow-md bg-white dark:bg-gray-800" style={{
+                      background: isDarkMode 
+                        ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
+                        : 'linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%)',
+                      border: `2px solid ${isDarkMode ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.15)'}`
+                    }}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div style={{
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: '12px',
+                              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 4px 8px rgba(16,185,129,0.3)'
+                            }}>
+                              <Shield className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                                {language === 'th' ? 'คะแนนการป้องกัน' : language === 'zh' ? '保护分数' : language === 'ja' ? '保護スコア' : language === 'ko' ? '보호 점수' : language === 'ru' ? 'Уровень защиты' : 'Protection Score'}
+                              </p>
+                              <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                                {protectionScore}/100
+                              </p>
+                            </div>
+                          </div>
+                          <Link to={createPageUrl("Analytics")}>
+                            <button
+                              onClick={() => haptic.light()}
+                              style={{
+                                padding: '8px 16px',
+                                borderRadius: '8px',
+                                backgroundColor: 'transparent',
+                                border: `2px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.1)'}`,
+                                color: colors.textPrimary,
+                                fontSize: '13px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = '#10B981';
+                                e.currentTarget.style.color = '#10B981';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.1)';
+                                e.currentTarget.style.color = colors.textPrimary;
+                              }}
+                            >
+                              {language === 'th' ? 'ดูรายละเอียด' : language === 'zh' ? '查看详情' : language === 'ja' ? '詳細を見る' : language === 'ko' ? '세부 정보 보기' : language === 'ru' ? 'Подробнее' : 'View Details'} →
+                            </button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
 
-                  {/* Six Feature Cards - Fixed consistent grid layout */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                  {/* Six Feature Cards - Consistent 3-column grid */}
+                  <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
                     {[
                       {
                         title: strings.leasesScanned,
@@ -2521,115 +2664,159 @@ ja: {
               <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
             ) : (
               <>
-                {/* Recent Leases Section */}
+                {/* Recent Leases Section - Enhanced */}
                 <Card 
-                  className="border-none shadow-xl overflow-hidden bg-white dark:bg-gray-800"
+                  className="border-none shadow-lg overflow-hidden"
+                  style={{
+                    backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                    border: `1px solid ${colors.borderColor}`
+                  }}
                 >
                   <div 
-                    className="cursor-pointer p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700"
+                    className="cursor-pointer p-5 flex items-center justify-between transition-colors hover:bg-opacity-50"
                     onClick={() => toggleSection('recentLeases')}
+                    style={{
+                      borderBottom: expandedSections.recentLeases ? `1px solid ${colors.borderColor}` : 'none'
+                    }}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
-                        backgroundColor: '#3B82F6',
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 8px rgba(59,130,246,0.3)'
                       }}>
-                        <FileText className="w-5 h-5 text-white" />
+                        <FileText className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
                           {strings.recentLeases}
                         </h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                        <p className="text-xs font-medium" style={{ color: colors.textSecondary }}>
                           {leases.length} {strings.items}
                         </p>
                       </div>
                     </div>
-                    {expandedSections.recentLeases ? (
-                      <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    )}
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {expandedSections.recentLeases ? (
+                        <ChevronUp className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      )}
+                    </div>
                   </div>
                   {expandedSections.recentLeases && (
-                    <div className="p-4">
+                    <div className="p-5">
                       <RecentLeases leases={leases} language={language} />
                     </div>
                   )}
                 </Card>
 
-                {/* Notifications Section */}
+                {/* Notifications Section - Enhanced */}
                 <Card 
-                  className="border-none shadow-xl overflow-hidden bg-white dark:bg-gray-800"
+                  className="border-none shadow-lg overflow-hidden"
+                  style={{
+                    backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                    border: `1px solid ${colors.borderColor}`
+                  }}
                 >
                   <div 
-                    className="cursor-pointer p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700"
+                    className="cursor-pointer p-5 flex items-center justify-between transition-colors hover:bg-opacity-50"
                     onClick={() => toggleSection('notifications')}
+                    style={{
+                      borderBottom: expandedSections.notifications ? `1px solid ${colors.borderColor}` : 'none'
+                    }}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
-                        backgroundColor: '#8B5CF6',
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 8px rgba(139,92,246,0.3)'
                       }}>
-                        <Bell className="w-5 h-5 text-white" />
+                        <Bell className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
                           {strings.myNotifications}
                         </h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {unreadNotifications} {language === 'th' ? 'การแจ้งเตือน' : language === 'zh' ? '通知' : language === 'ja' ? '通知' : language === 'ko' ? '알림' : language === 'ru' ? 'уведомлений' : 'notifications'}
+                        <p className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+                          {unreadNotifications} {language === 'th' ? 'ใหม่' : language === 'zh' ? '新' : language === 'ja' ? '新着' : language === 'ko' ? '새로운' : language === 'ru' ? 'новых' : 'unread'}
                         </p>
                       </div>
                     </div>
-                    {expandedSections.notifications ? (
-                      <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    )}
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {expandedSections.notifications ? (
+                        <ChevronUp className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      )}
+                    </div>
                   </div>
                   {expandedSections.notifications && (
-                    <div className="p-4">
+                    <div className="p-5">
                       <NotificationSummary language={language} isDarkMode={isDarkMode} />
                     </div>
                   )}
                 </Card>
 
-                {/* Deposit Alerts Section */}
+                {/* Deposit Alerts Section - Enhanced */}
                 <Card 
-                  className="border-none shadow-xl overflow-hidden bg-white dark:bg-gray-800"
+                  className="border-none shadow-lg overflow-hidden"
+                  style={{
+                    backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                    border: `1px solid ${colors.borderColor}`
+                  }}
                 >
                   <div 
-                    className="cursor-pointer p-4 flex items-center justify-between border-b border-gray-200 dark:border-gray-700"
+                    className="cursor-pointer p-5 flex items-center justify-between transition-colors hover:bg-opacity-50"
                     onClick={() => toggleSection('depositAlerts')}
+                    style={{
+                      borderBottom: expandedSections.depositAlerts ? `1px solid ${colors.borderColor}` : 'none'
+                    }}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
-                        backgroundColor: '#10B981',
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 8px rgba(16,185,129,0.3)'
                       }}>
-                        <Wallet className="w-5 h-5 text-white" />
+                        <Wallet className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
                           {strings.depositAlerts}
                         </h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                        <p className="text-xs font-medium" style={{ color: urgentDeposits > 0 ? '#EF4444' : '#10B981' }}>
                           {urgentDeposits > 0 
                             ? `${urgentDeposits} ${strings.alerts}`
                             : strings.allDepositsOnTrack
@@ -2637,14 +2824,24 @@ ja: {
                         </p>
                       </div>
                     </div>
-                    {expandedSections.depositAlerts ? (
-                      <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    )}
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {expandedSections.depositAlerts ? (
+                        <ChevronUp className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      )}
+                    </div>
                   </div>
                   {expandedSections.depositAlerts && (
-                    <div className="p-4">
+                    <div className="p-5">
                       <DepositAlert deposits={deposits} language={language} />
                     </div>
                   )}

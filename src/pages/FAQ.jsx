@@ -275,38 +275,52 @@ function FAQContent() {
             return (
               <Card key={categoryKey} className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
                 <CardHeader 
-                  className="cursor-pointer"
+                  className="cursor-pointer hover:bg-opacity-50 transition-all"
                   onClick={() => toggleCategory(categoryKey)}
-                  style={{ borderBottom: isExpanded ? `1px solid ${colors.borderColor}` : 'none' }}
+                  style={{ 
+                    borderBottom: isExpanded ? `1px solid ${colors.borderColor}` : 'none',
+                    padding: '20px'
+                  }}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <div style={{
-                        width: '40px',
-                        height: '40px',
-                        backgroundColor: category.color,
-                        borderRadius: '10px',
+                        width: '56px',
+                        height: '56px',
+                        background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}CC 100%)`,
+                        borderRadius: '14px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        boxShadow: `0 4px 12px ${category.color}30`
                       }}>
-                        <Icon className="w-5 h-5 text-white" />
+                        <Icon className="w-7 h-7 text-white" />
                       </div>
-                      <CardTitle style={{ color: colors.textPrimary }}>
+                      <CardTitle className="text-lg" style={{ color: colors.textPrimary }}>
                         {getLocalizedText(category, 'title')}
                       </CardTitle>
                     </div>
-                    {isExpanded ? (
-                      <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
-                    ) : (
-                      <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
-                    )}
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 
                 {isExpanded && (
-                  <CardContent className="p-6">
-                    <div className="space-y-3">
+                  <CardContent className="p-6" style={{ paddingTop: '24px' }}>
+                    <div className="space-y-4">
                       {category.questions.map((q, qIdx) => {
                         const questionId = `${categoryKey}-${qIdx}`;
                         const isQuestionExpanded = expandedQuestions[questionId];
@@ -315,30 +329,42 @@ function FAQContent() {
                           <div key={questionId}>
                             <button
                               onClick={() => toggleQuestion(questionId)}
-                              className="w-full text-left p-4 rounded-lg transition-all"
+                              className="w-full text-left p-5 rounded-xl transition-all"
                               style={{
                                 backgroundColor: isQuestionExpanded ? (isDarkMode ? '#374151' : '#F0FDF4') : colors.fieldBg,
-                                border: isQuestionExpanded ? `2px solid ${category.color}` : `1px solid ${colors.borderColor}`
+                                border: isQuestionExpanded ? `2px solid ${category.color}` : `2px solid ${colors.borderColor}`,
+                                boxShadow: isQuestionExpanded ? `0 4px 12px ${category.color}20` : 'none'
                               }}
                             >
-                              <div className="flex items-start justify-between gap-3">
-                                <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                              <div className="flex items-start justify-between gap-4">
+                                <p className="font-semibold text-base leading-relaxed" style={{ color: colors.textPrimary }}>
                                   {getLocalizedText(q, 'question')}
                                 </p>
-                                {isQuestionExpanded ? (
-                                  <ChevronUp className="w-5 h-5 flex-shrink-0" style={{ color: category.color }} />
-                                ) : (
-                                  <ChevronDown className="w-5 h-5 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                                )}
+                                <div style={{
+                                  width: '28px',
+                                  height: '28px',
+                                  borderRadius: '8px',
+                                  backgroundColor: isQuestionExpanded ? category.color : (isDarkMode ? '#374151' : '#F3F4F6'),
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0
+                                }}>
+                                  {isQuestionExpanded ? (
+                                    <ChevronUp className="w-4 h-4" style={{ color: 'white' }} />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                                  )}
+                                </div>
                               </div>
                             </button>
                             
                             {isQuestionExpanded && (
-                              <div className="mt-2 p-4 rounded-lg" style={{
+                              <div className="mt-3 p-5 rounded-xl" style={{
                                 backgroundColor: isDarkMode ? '#1F2937' : '#F9FAFB',
                                 borderLeft: `4px solid ${category.color}`
                               }}>
-                                <p className="text-sm whitespace-pre-line" style={{ color: colors.textPrimary }}>
+                                <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: colors.textPrimary, lineHeight: '1.7' }}>
                                   {getLocalizedText(q, 'answer')}
                                 </p>
                               </div>

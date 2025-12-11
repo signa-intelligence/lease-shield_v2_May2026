@@ -109,26 +109,18 @@ export default function LanguageSelector({ isOpen, onClose, colors, currentLangu
           ))}
         </div>
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={saving}
-            style={{
-              flex: 1,
-              borderColor: colors.borderColor,
-              color: colors.textPrimary
-            }}
-          >
-            {currentLanguage === 'th' ? 'ยกเลิก' : currentLanguage === 'zh' ? '取消' : currentLanguage === 'ja' ? 'キャンセル' : currentLanguage === 'ko' ? '취소' : currentLanguage === 'ru' ? 'Отмена' : 'Cancel'}
-          </Button>
+        <div className="space-y-3">
           <Button
             onClick={handleSave}
             disabled={saving}
+            className="w-full"
             style={{
-              flex: 1,
               backgroundColor: '#0C3B2E',
-              color: '#FFFFFF'
+              color: '#FFFFFF',
+              padding: '14px',
+              fontWeight: '700',
+              fontSize: '15px',
+              borderRadius: '12px'
             }}
           >
             {saving ? (
@@ -137,6 +129,22 @@ export default function LanguageSelector({ isOpen, onClose, colors, currentLangu
               currentLanguage === 'th' ? 'บันทึก' : currentLanguage === 'zh' ? '保存' : currentLanguage === 'ja' ? '保存' : currentLanguage === 'ko' ? '저장' : currentLanguage === 'ru' ? 'Сохранить' : 'Save'
             )}
           </Button>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            style={{
+              width: '100%',
+              padding: '8px',
+              background: 'none',
+              border: 'none',
+              color: colors.textSecondary,
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            {currentLanguage === 'th' ? 'ยกเลิก' : currentLanguage === 'zh' ? '取消' : currentLanguage === 'ja' ? 'キャンセル' : currentLanguage === 'ko' ? '취소' : currentLanguage === 'ru' ? 'Отмена' : 'Cancel'}
+          </button>
         </div>
       </Card>
     </div>
