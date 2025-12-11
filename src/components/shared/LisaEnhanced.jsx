@@ -100,7 +100,7 @@ const QUICK_REPLIES = {
   ]
 };
 
-export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
+export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOpen: externalIsOpen = false, onClose }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -108,6 +108,11 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
   const [isLoading, setIsLoading] = useState(false);
   const [userPreferredLanguage, setUserPreferredLanguage] = useState(null);
   const messagesEndRef = useRef(null);
+
+  // Sync with external control
+  useEffect(() => {
+    setIsOpen(externalIsOpen);
+  }, [externalIsOpen]);
 
   const colors = isDarkMode ? {
     bg: '#1F2937',
@@ -209,6 +214,14 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
     }
   };
 
+  const handleClose = () => {
+    setIsOpen(false);
+    setIsMinimized(false);
+    setMessages([]);
+    setInputValue('');
+    if (onClose) onClose();
+  };
+
   const formatTime = (date) => {
     return date.toLocaleTimeString(language === 'th' ? 'th-TH' : 'en-US', { 
       hour: '2-digit', 
@@ -216,51 +229,10 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
     });
   };
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        aria-label="Open Lisa Assistant"
-        style={{
-          position: 'fixed',
-          bottom: '90px',
-          right: '20px',
-          width: '64px',
-          height: '64px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #063F2C 0%, #0F5A45 100%)',
-          border: '3px solid #CFAF6A',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          boxShadow: '0 8px 24px rgba(12,59,46,0.35), 0 0 0 0 rgba(199,163,56,0.4)',
-          zIndex: 1000,
-          transition: 'all 0.3s ease',
-          animation: 'lisaPulse 3s infinite'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.08) rotate(5deg)';
-          e.currentTarget.style.boxShadow = '0 12px 32px rgba(12,59,46,0.45), 0 0 0 8px rgba(199,163,56,0.2)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(12,59,46,0.35), 0 0 0 0 rgba(199,163,56,0.4)';
-        }}
-      >
-        <MessageCircle className="w-7 h-7 text-white mb-0.5" />
-        <span className="text-[9px] font-bold text-white/90">LISA</span>
-        <style>{`
-          @keyframes lisaPulse {
-            0%, 100% { box-shadow: 0 8px 24px rgba(12,59,46,0.35), 0 0 0 0 rgba(199,163,56,0.4); }
-            50% { box-shadow: 0 8px 24px rgba(12,59,46,0.35), 0 0 0 6px rgba(199,163,56,0.15); }
-          }
-        `}</style>
-      </button>
-    );
+  // Don't render anything if not open or minimized
+  if (!isOpen && !isMinimized) {
+    return null;
   }
-  */
 
   if (isMinimized) {
     return (
@@ -409,7 +381,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
             <Minimize2 className="w-4 h-4" />
           </button>
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             aria-label="Close"
             style={{
               background: 'rgba(255,255,255,0.1)',
