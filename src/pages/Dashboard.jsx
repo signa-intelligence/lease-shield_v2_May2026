@@ -2077,28 +2077,41 @@ ja: {
                         <Wrench className="w-4 h-4" />
                         {strings.reportMaintenance}
                       </button>
-                      {isFreeTier && (
-                        <button
-                          onClick={() => navigate(createPageUrl("Account") + '?showPlans=true')}
-                          className="btn-interaction"
-                          style={{
-                            padding: '8px 14px',
-                            backgroundColor: 'transparent',
-                            color: '#C7A338',
-                            borderRadius: '8px',
-                            border: '1px solid #C7A338',
-                            fontWeight: '600',
-                            fontSize: '13px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                          }}
-                        >
-                          {strings.viewPlans}
-                        </button>
-                      )}
                     </div>
+                    
+                    {/* Upgrade CTA inside Getting Started for Free tier */}
+                    {isFreeTier && (
+                      <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex-1">
+                            <p className="text-sm font-bold mb-1" style={{ color: '#C7A338' }}>
+                              {strings.unlockFullProtection}
+                            </p>
+                            <p className="text-xs" style={{ color: colors.textSecondary }}>
+                              {language === 'th' ? 'การป้องกันเต็มรูปแบบเริ่มต้น ฿190/เดือน' : language === 'zh' ? '从฿190/月开始全面保护' : language === 'ja' ? '฿190/月から完全保護' : language === 'ko' ? '฿190/월부터 완전 보호' : language === 'ru' ? 'От ฿190/мес для полной защиты' : 'Starting at ฿190/month'}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => navigate(createPageUrl("Account") + '?showPlans=true')}
+                            className="btn-interaction"
+                            style={{
+                              padding: '8px 16px',
+                              backgroundColor: '#0C3B2E',
+                              color: '#FFFFFF',
+                              borderRadius: '8px',
+                              border: '2px solid #C7A338',
+                              fontWeight: '700',
+                              fontSize: '13px',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                              boxShadow: '0 2px 6px rgba(12,59,46,0.25)'
+                            }}
+                          >
+                            {language === 'th' ? 'อัปเกรด' : language === 'zh' ? '升级' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'ru' ? 'Обновить' : 'Upgrade'} →
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

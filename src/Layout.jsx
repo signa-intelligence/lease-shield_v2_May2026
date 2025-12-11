@@ -6,10 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { haptic } from "./components/shared/HapticFeedback";
 import LisaEnhanced from "./components/shared/LisaEnhanced";
+import LisaFAB from "./components/shared/LisaFAB";
 import AccountPopup from "./components/shared/AccountPopup";
 import LanguageSelector from "./components/shared/LanguageSelector";
 import QuickGuide from "./components/shared/QuickGuide";
-import UpgradeBanner from "./components/shared/UpgradeBanner";
 
 
 // Animation utilities inlined
@@ -71,6 +71,7 @@ export default function Layout({ children, currentPageName }) {
   const [showAccountPopup, setShowAccountPopup] = React.useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = React.useState(false);
   const [showQuickGuide, setShowQuickGuide] = React.useState(false);
+  const [showLisa, setShowLisa] = React.useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -707,7 +708,17 @@ export default function Layout({ children, currentPageName }) {
         </div>
         </nav>
 
-        <LisaEnhanced language={language} isDarkMode={isDarkMode} />
+        <LisaEnhanced 
+          language={language} 
+          isDarkMode={isDarkMode}
+          isOpen={showLisa}
+          onClose={() => setShowLisa(false)}
+        />
+
+        <LisaFAB 
+          onClick={() => setShowLisa(true)}
+          isDarkMode={isDarkMode}
+        />
 
         <AccountPopup
           isOpen={showAccountPopup}
@@ -733,12 +744,6 @@ export default function Layout({ children, currentPageName }) {
           onClose={() => setShowQuickGuide(false)}
           onDismiss={() => setShowQuickGuide(false)}
           language={language}
-        />
-
-        <UpgradeBanner 
-          user={user}
-          language={language}
-          isDarkMode={isDarkMode}
         />
         </div>
         );

@@ -260,6 +260,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false }) {
       </button>
     );
   }
+  */
 
   if (isMinimized) {
     return (
