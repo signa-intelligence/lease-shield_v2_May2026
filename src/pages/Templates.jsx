@@ -1076,7 +1076,6 @@ function TemplatesContent() {
                       </p>
                       </div> */}
                       </div>
-                      </div>
                       );
                       }
 
