@@ -275,7 +275,7 @@ const TEMPLATES = [
 function TemplatesContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const toast = useToast();
+  const { success, error } = useToast();
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadFormData, setUploadFormData] = useState({
@@ -316,11 +316,11 @@ function TemplatesContent() {
         credit_cost: 1,
         file: null
       });
-      toast.success(strings.uploadSuccess);
+      success(strings.uploadSuccess);
       haptic.success();
     },
     onError: () => {
-      toast.error(strings.uploadFailed);
+      error(strings.uploadFailed);
       haptic.error();
     }
   });
@@ -625,13 +625,13 @@ function TemplatesContent() {
       }
     } else {
       haptic.error();
-      toast.error(strings.insufficientCredits);
+      error(strings.insufficientCredits);
     }
   };
 
   const handleUploadTemplate = async () => {
     if (!uploadFormData.file || !uploadFormData.title_en || !uploadFormData.title_th) {
-      toast.error(strings.fillAllFields);
+      error(strings.fillAllFields);
       haptic.error();
       return;
     }
