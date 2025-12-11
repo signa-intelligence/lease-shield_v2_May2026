@@ -22,6 +22,22 @@ export default function LisaFAB({ onClick, isDarkMode = false }) {
 
   const label = isMobile ? 'Ask Lisa' : 'Chat with Lisa';
 
+  // Check if cookie banner is visible
+  const [cookieBannerVisible, setCookieBannerVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkCookieBanner = () => {
+      const banner = document.getElementById('cookie-banner') || document.querySelector('[data-cookie-banner]');
+      setCookieBannerVisible(banner && banner.offsetHeight > 0);
+    };
+
+    checkCookieBanner();
+    const observer = new MutationObserver(checkCookieBanner);
+    observer.observe(document.body, { childList: true, subtree: true });
+    
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <button
       type="button"
@@ -35,7 +51,7 @@ export default function LisaFAB({ onClick, isDarkMode = false }) {
       onMouseLeave={() => setIsHovered(false)}
       style={{
         position: "fixed",
-        bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+        bottom: cookieBannerVisible ? "calc(160px + env(safe-area-inset-bottom, 0px))" : "calc(80px + env(safe-area-inset-bottom, 0px))",
         right: "20px",
         minWidth: isMobile ? "56px" : (isHovered ? "180px" : "56px"),
         height: "56px",
@@ -50,7 +66,7 @@ export default function LisaFAB({ onClick, isDarkMode = false }) {
         padding: "0 16px",
         boxShadow: "0 8px 24px rgba(6,63,44,0.4)",
         cursor: "pointer",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1), all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         zIndex: 50,
         fontWeight: "700",
         fontSize: "14px",

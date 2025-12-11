@@ -4453,6 +4453,130 @@ function AccountContent() {
           </div>
         )}
 
+        {/* One-Time Lease Scan Card */}
+        <Card className="mb-6 border-none shadow-xl overflow-hidden" style={{
+          backgroundColor: colors.cardBg,
+          border: `2px solid ${isDarkMode ? 'rgba(59,130,246,0.3)' : '#3B82F6'}`
+        }}>
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4 flex-1">
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '14px',
+                  background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(59,130,246,0.3)',
+                  flexShrink: 0
+                }}>
+                  <Shield className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? 'การสแกนสัญญาเช่าครั้งเดียว' : language === 'zh' ? '一次性租约扫描' : language === 'ja' ? '一回限りリーススキャン' : language === 'ko' ? '일회성 임대 계약 스캔' : language === 'ru' ? 'Однократное сканирование договора' : 'One-Time Lease Scan'}
+                    </h3>
+                    <Badge className="bg-blue-100 text-blue-700 text-xs font-bold">
+                      {language === 'th' ? 'ครั้งเดียว' : language === 'zh' ? '一次性' : language === 'ja' ? '一回限り' : language === 'ko' ? '일회성' : language === 'ru' ? 'Разово' : 'One-time'}
+                    </Badge>
+                  </div>
+                  <p className="text-base sm:text-lg font-bold mb-3" style={{ color: '#3B82F6' }}>
+                    ฿590 {language === 'th' ? '(ชำระครั้งเดียว)' : language === 'zh' ? '(一次性付款)' : language === 'ja' ? '(一回払い)' : language === 'ko' ? '(일회 결제)' : language === 'ru' ? '(одноразовый платёж)' : '(one-time payment)'}
+                  </p>
+                  <ul className="space-y-1.5 text-sm" style={{ color: colors.textPrimary }}>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                      <span>{language === 'th' ? 'อัปโหลด 1 ครั้ง + วิเคราะห์ด้วย AI' : language === 'zh' ? '1次上传 + AI分析' : language === 'ja' ? '1アップロード + AI分析' : language === 'ko' ? '1회 업로드 + AI 분석' : language === 'ru' ? '1 загрузка + AI-анализ' : '1 upload + AI scan'}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                      <span>{language === 'th' ? 'สรุปโดยผู้เชี่ยวชาญ 1 ฉบับ' : language === 'zh' ? '1份专家审核摘要' : language === 'ja' ? '専門家による1件のレビュー' : language === 'ko' ? '전문가 검토 요약 1건' : language === 'ru' ? '1 экспертный обзор' : '1 human-reviewed summary'}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                      <span>{language === 'th' ? 'คะแนนความเสี่ยง 1-100' : language === 'zh' ? '风险评分1-100' : language === 'ja' ? 'リスク評価1-100' : language === 'ko' ? '위험 점수 1-100' : language === 'ru' ? 'Оценка риска 1-100' : 'Risk rating 1-100'}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                      <span>{language === 'th' ? 'ความเสี่ยง 5 อันดับแรก' : language === 'zh' ? '前5大风险' : language === 'ja' ? 'トップ5リスク' : language === 'ko' ? '상위 5개 위험' : language === 'ru' ? 'Топ-5 рисков' : 'Top 5 risk highlights'}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                      <span>{language === 'th' ? 'ขั้นตอนแนะนำ 5 ข้อ' : language === 'zh' ? '5项建议行动' : language === 'ja' ? '5つの推奨アクション' : language === 'ko' ? '5가지 권장 조치' : language === 'ru' ? '5 рекомендаций' : '5 recommended actions'}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                      <span>{language === 'th' ? 'เทมเพลตจดหมาย 1 ฉบับ (ถ้าจำเป็น)' : language === 'zh' ? '1个信件模板（如需）' : language === 'ja' ? '1レターテンプレート（必要時）' : language === 'ko' ? '1개 편지 템플릿（필요시）' : language === 'ru' ? '1 шаблон письма（при необходимости）' : '1 letter template (if needed)'}</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                      <span>{language === 'th' ? 'ถามชี้แจงเพิ่มเติม 1 คำถาม' : language === 'zh' ? '1次后续澄清问题' : language === 'ja' ? '1件のフォローアップ質問' : language === 'ko' ? '후속 확인 질문 1개' : language === 'ru' ? '1 уточняющий вопрос' : '1 follow-up clarification'}</span>
+                    </li>
+                  </ul>
+                  <p className="text-xs mt-3 italic" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'ไม่มีการสมัครสมาชิก ไม่มีการแจ้งเตือนอัตโนมัติ ไม่มีพื้นที่จัดเก็บ' : language === 'zh' ? '无订阅，无自动提醒，无存储空间' : language === 'ja' ? 'サブスクなし、自動リマインダーなし、ストレージなし' : language === 'ko' ? '구독 없음, 자동 알림 없음, 저장소 없음' : language === 'ru' ? 'Без подписки, без автоматических напоминаний, без хранилища' : 'No subscription. No reminders. No storage.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  haptic.medium();
+                  try {
+                    const response = await base44.functions.invoke('createCheckout', {
+                      mode: 'payment',
+                      amount: 590,
+                      currency: 'thb',
+                      description: 'One-Time Lease Scan',
+                      successUrl: `${window.location.origin}/uploadscan?payment=success&type=one_time_scan`,
+                      cancelUrl: `${window.location.origin}/account?payment=cancelled`,
+                      metadata: {
+                        type: 'one_time_scan',
+                        userId: user.id,
+                        email: user.email
+                      }
+                    });
+                    
+                    if (response.data?.url) {
+                      window.location.href = response.data.url;
+                    }
+                  } catch (error) {
+                    console.error('One-time scan checkout error:', error);
+                    alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
+                  }
+                }}
+                className="btn-interaction w-full sm:w-auto"
+                style={{
+                  padding: '14px 32px',
+                  borderRadius: '12px',
+                  backgroundColor: '#3B82F6',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  fontWeight: '700',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(59,130,246,0.3)',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#2563EB';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 16px rgba(59,130,246,0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#3B82F6';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(59,130,246,0.3)';
+                }}
+              >
+                {language === 'th' ? 'ซื้อการสแกนครั้งเดียว' : language === 'zh' ? '购买一次性扫描' : language === 'ja' ? '一回スキャンを購入' : language === 'ko' ? '일회 스캔 구매' : language === 'ru' ? 'Купить одноразовое сканирование' : 'Get One-Time Scan'}
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
         <section id="plan-selector" ref={plansSectionRef}>
           <div className="mb-6">
             <div className="flex items-center justify-center mb-6">

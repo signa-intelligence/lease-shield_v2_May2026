@@ -123,37 +123,62 @@ Deno.serve(async (req) => {
     };
 
     // ========================================
-    // CREDITS: One-time payment
+    // PAYMENT: One-time payments (Credits OR One-Time Scan)
     // ========================================
     if (mode === 'payment' && amount) {
       const finalAmount = Math.round(amount * 100);
-      const creditsCount = metadata?.credits || 1;
+      const paymentType = metadata?.type || 'credits';
       
-      console.log('[CREATE_CHECKOUT] 💰 CREDITS MODE:');
+      console.log('[CREATE_CHECKOUT] 💰 PAYMENT MODE:', paymentType);
       console.log(`  Amount: ${amount} THB → ${finalAmount} satang`);
-      console.log(`  Credits: ${creditsCount}`);
       
-      sessionConfig.metadata = {
-        type: 'credits',
-        userId: user.id,
-        email: user.email,
-        credits: creditsCount.toString(),
-      };
+      if (paymentType === 'one_time_scan') {
+        // One-Time Lease Scan product
+        console.log('[CREATE_CHECKOUT] 📄 ONE-TIME LEASE SCAN');
+        
+        sessionConfig.metadata = {
+          type: 'one_time_scan',
+          userId: user.id,
+          email: user.email,
+        };
 
-      sessionConfig.line_items = [{
-        price_data: {
-          currency: currency || 'thb',
-          unit_amount: finalAmount,
-          product_data: {
-            name: description || `${creditsCount} Letter Credit${creditsCount > 1 ? 's' : ''}`,
-            description: 'Lease Shield Letter Credits',
+        sessionConfig.line_items = [{
+          price_data: {
+            currency: currency || 'thb',
+            unit_amount: finalAmount,
+            product_data: {
+              name: description || 'One-Time Lease Scan',
+              description: 'AI analysis + human review + risk score + recommendations',
+            },
           },
-        },
-        quantity: 1,
-      }];
+          quantity: 1,
+        }];
+      } else {
+        // Letter Credits
+        const creditsCount = metadata?.credits || 1;
+        console.log('[CREATE_CHECKOUT] 💌 LETTER CREDITS:', creditsCount);
+        
+        sessionConfig.metadata = {
+          type: 'credits',
+          userId: user.id,
+          email: user.email,
+          credits: creditsCount.toString(),
+        };
+
+        sessionConfig.line_items = [{
+          price_data: {
+            currency: currency || 'thb',
+            unit_amount: finalAmount,
+            product_data: {
+              name: description || `${creditsCount} Letter Credit${creditsCount > 1 ? 's' : ''}`,
+              description: 'Lease Shield Letter Credits',
+            },
+          },
+          quantity: 1,
+        }];
+      }
 
       sessionConfig.payment_method_types = ['card', 'promptpay'];
-
       console.log('[CREATE_CHECKOUT] Session metadata:', JSON.stringify(sessionConfig.metadata, null, 2));
     } 
     // ========================================

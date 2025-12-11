@@ -256,6 +256,79 @@ Deno.serve(async (req) => {
       }
 
       // ========================================
+      // ONE-TIME LEASE SCAN PURCHASE
+      // ========================================
+      if (metadata.type === 'one_time_scan') {
+        console.log('[ONE_TIME_SCAN_WEBHOOK] 📄 One-time scan purchase detected');
+
+        const userId = metadata.userId;
+        const email = metadata.email;
+
+        console.log('[ONE_TIME_SCAN_WEBHOOK] User:', email, `(${userId})`);
+
+        if (!userId) {
+          console.error('[ONE_TIME_SCAN_WEBHOOK] ❌ Missing userId');
+          return Response.json({ received: true, error: 'missing_user_id' }, { status: 200 });
+        }
+
+        // Fetch user
+        let user;
+        try {
+          const allUsers = await base44.asServiceRole.entities.User.list();
+          user = allUsers.find(u => u.id === userId || u.email === email);
+
+          if (!user) {
+            console.error('[ONE_TIME_SCAN_WEBHOOK] ❌ User not found');
+            return Response.json({ received: true, error: 'user_not_found' }, { status: 200 });
+          }
+
+          console.log('[ONE_TIME_SCAN_WEBHOOK] User found:', user.email);
+        } catch (fetchError) {
+          console.error('[ONE_TIME_SCAN_WEBHOOK] ❌ Failed to fetch user:', fetchError.message);
+          return Response.json({ received: true, error: 'user_fetch_failed' }, { status: 200 });
+        }
+
+        // Grant one-time scan entitlement
+        const currentScans = user.one_time_scan_credits || 0;
+        const newScans = currentScans + 1;
+
+        try {
+          await base44.asServiceRole.entities.User.update(user.id, {
+            one_time_scan_credits: newScans
+          });
+
+          console.log('[ONE_TIME_SCAN_WEBHOOK] ✅ One-time scan credit granted');
+          console.log('[ONE_TIME_SCAN_WEBHOOK] New balance:', newScans);
+        } catch (updateError) {
+          console.error('[ONE_TIME_SCAN_WEBHOOK] ❌ Failed to update credits:', updateError.message);
+          return Response.json({ received: true, error: 'credit_update_failed' }, { status: 200 });
+        }
+
+        // Create Payment record
+        try {
+          await base44.asServiceRole.entities.Payment.create({
+            type: 'addon',
+            amount: parseFloat((session.amount_total / 100).toFixed(2)),
+            currency: session.currency?.toUpperCase() || 'THB',
+            provider: 'stripe',
+            status: 'paid',
+            external_id: session.id,
+            created_by: user.email
+          });
+
+          console.log('[ONE_TIME_SCAN_WEBHOOK] ✅ Payment record created');
+        } catch (paymentError) {
+          console.error('[ONE_TIME_SCAN_WEBHOOK] ⚠️ Payment record failed (non-critical):', paymentError.message);
+        }
+
+        console.log('[ONE_TIME_SCAN_WEBHOOK] ✅ Processing complete');
+        return Response.json({ 
+          received: true, 
+          processed: 'one_time_scan'
+        }, { status: 200 });
+      }
+
+      // ========================================
       // CREDITS PURCHASE FLOW
       // ========================================
       if (metadata.type === 'credits') {
