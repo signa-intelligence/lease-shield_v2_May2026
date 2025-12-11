@@ -611,17 +611,17 @@ function TemplatesContent() {
   const handleTemplateClick = (template) => {
     haptic.medium();
     
-    // Check if template has enough credits
-    const cost = template.creditCost || template.credit_cost || 1;
+    // Check if it's a built-in template (has .id) or database template (has .template_id)
+    const templateId = template.id || template.template_id;
+    const creditCost = template.creditCost || template.credits_required || 1;
     
-    if (userCredits >= cost) {
-      // For built-in templates (has .id) or new bilingual templates (has .template_key), navigate to form
-      const templateId = template.id || template.template_key;
-      if (templateId) {
-        navigate(createPageUrl("TemplateForm") + `?subject=${templateId}`);
-      } else if (template.file_url) {
-        // For custom uploaded file templates, open directly
+    if (userCredits >= creditCost) {
+      // If template has file_url, it's a custom uploaded template
+      if (template.file_url && !template.body_en && !template.body_th) {
         window.open(template.file_url, '_blank');
+      } else {
+        // Navigate to TemplateForm for all other templates (built-in and bilingual DB templates)
+        navigate(createPageUrl("TemplateForm") + `?subject=${templateId}`);
       }
     } else {
       haptic.error();
@@ -658,33 +658,45 @@ function TemplatesContent() {
     }
   };
 
-  // Organize templates by category - merge built-in + database templates
-  const preSigningTemplates = [
-    ...TEMPLATES.filter(t => t.preSigning), 
-    ...customTemplates.filter(t => t.category === 'pre_signing')
-  ];
-  const liteTemplates = [
-    ...TEMPLATES.filter(t => ['deposit', 'deductions', 'reminder'].includes(t.id)), 
-    ...customTemplates.filter(t => t.category === 'friendly')
-  ];
-  const protectTemplates = [
-    ...TEMPLATES.filter(t => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(t.id)), 
-    ...customTemplates.filter(t => t.category === 'professional')
-  ];
-  const secureTemplates = [
-    ...TEMPLATES.filter(t => ['final_opportunity', 'non_compliance', 'settlement'].includes(t.id)), 
-    ...customTemplates.filter(t => t.category === 'final')
-  ];
+  // Organize templates by category - built-in first, then custom from DB
+  const builtInPreSigning = TEMPLATES.filter(t => t.preSigning);
+  const builtInLite = TEMPLATES.filter(t => ['deposit', 'deductions', 'reminder'].includes(t.id));
+  const builtInProtect = TEMPLATES.filter(t => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(t.id));
+  const builtInSecure = TEMPLATES.filter(t => ['final_opportunity', 'non_compliance', 'settlement'].includes(t.id));
 
-  const renderTemplateCard = (template, isCustom = false) => {
-    const Icon = isCustom ? FileText : (template.icon || FileText);
-    const cost = template.creditCost || template.credit_cost || 1;
-    const hasEnoughCredits = userCredits >= cost;
-    const color = template.color || 'from-blue-500 to-blue-700';
+  const dbChecklistTemplates = customTemplates.filter(t => t.category === 'Checklist');
+  const dbMoveOutTemplates = customTemplates.filter(t => t.category === 'Move-Out');
+  const dbDepositTemplates = customTemplates.filter(t => t.category === 'Deposit');
+  const dbCustomTemplates = customTemplates.filter(t => !['Checklist', 'Move-Out', 'Deposit'].includes(t.category));
+
+  const preSigningTemplates = [...builtInPreSigning, ...dbChecklistTemplates];
+  const liteTemplates = [...builtInLite, ...dbDepositTemplates.filter(t => t.tone_level === 'friendly')];
+  const protectTemplates = [...builtInProtect, ...dbDepositTemplates.filter(t => t.tone_level !== 'friendly'), ...dbMoveOutTemplates];
+  const secureTemplates = [...builtInSecure, ...dbCustomTemplates];
+
+  const renderTemplateCard = (template) => {
+    // Determine if it's a built-in template or DB template
+    const isBuiltIn = !!template.id;
+    const isDBTemplate = !!template.template_id;
+    
+    const Icon = isBuiltIn ? template.icon : FileText;
+    const creditCost = template.creditCost || template.credits_required || 1;
+    const hasEnoughCredits = userCredits >= creditCost;
+    const color = isBuiltIn ? template.color : 'from-emerald-500 to-emerald-700';
+    
+    // Get display text based on template source
+    let displayTitle, displayDescription;
+    if (isBuiltIn) {
+      displayTitle = template.name?.[language] || template.name?.en;
+      displayDescription = template.description?.[language] || template.description?.en;
+    } else if (isDBTemplate) {
+      displayTitle = language === 'th' ? template.title_th : template.title_en;
+      displayDescription = language === 'th' ? template.description_th : template.description_en;
+    }
 
     return (
       <Card
-        key={isCustom ? template.id : template.id}
+        key={template.id || template.template_id || Math.random()}
         className={`border-none shadow-md hover:shadow-xl transition-all duration-200 card-hover-lift ${hasEnoughCredits ? 'cursor-pointer btn-interaction' : 'opacity-60 cursor-not-allowed'}`}
         style={{ backgroundColor: colors.cardBg }}
         onClick={() => {
@@ -701,16 +713,22 @@ function TemplatesContent() {
             </div>
             <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
               <Coins className="w-3 h-3" />
-              {template.creditCost || template.credit_cost || 1}
+              {creditCost}
             </Badge>
           </div>
 
           <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
-            {template.title_en || template.title_th || template.name?.[language] || template.name?.en || template.name_en || 'Untitled'}
+            {displayTitle}
           </h3>
+          
+          {isDBTemplate && language !== 'th' && (
+            <p className="text-xs mb-1" style={{ color: colors.textSecondary, fontStyle: 'italic' }}>
+              {template.title_th}
+            </p>
+          )}
 
           <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
-            {template.description_en || template.description_th || template.description?.[language] || template.description?.en || template.description_en || ''}
+            {displayDescription}
           </p>
 
           {!hasEnoughCredits && (
@@ -960,7 +978,7 @@ function TemplatesContent() {
             <SkeletonLoader variant="card" count={1} isDarkMode={isDarkMode} />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {preSigningTemplates.map((template) => renderTemplateCard(template, !template.id))}
+              {preSigningTemplates.map((template) => renderTemplateCard(template))}
             </div>
           )}
         </div>
@@ -976,7 +994,7 @@ function TemplatesContent() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {liteTemplates.map((template) => renderTemplateCard(template, !template.id))}
+            {liteTemplates.map((template) => renderTemplateCard(template))}
           </div>
         </div>
 
@@ -991,7 +1009,7 @@ function TemplatesContent() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {protectTemplates.map((template) => renderTemplateCard(template, !template.id))}
+            {protectTemplates.map((template) => renderTemplateCard(template))}
           </div>
         </div>
 
@@ -1006,7 +1024,7 @@ function TemplatesContent() {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {secureTemplates.map((template) => renderTemplateCard(template, !template.id))}
+            {secureTemplates.map((template) => renderTemplateCard(template))}
           </div>
         </div>
       </div>
