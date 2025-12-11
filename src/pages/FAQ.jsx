@@ -247,7 +247,7 @@ function FAQContent() {
           subtitle={language === 'th' ? 'ค้นหาคำตอบสำหรับคำถามทั่วไป' : language === 'zh' ? '查找常见问题的答案' : language === 'ja' ? 'よくある質問の回答を見つける' : language === 'ko' ? '일반적인 질문에 대한 답변 찾기' : language === 'ru' ? 'Найдите ответы на общие вопросы' : 'Find answers to common questions'}
           icon={HelpCircle}
           iconColor="#0C3B2E"
-          colors={colors}
+          isDarkMode={isDarkMode}
         />
 
         <div className="mb-6">
