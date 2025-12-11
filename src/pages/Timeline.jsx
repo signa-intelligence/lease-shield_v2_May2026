@@ -42,6 +42,9 @@ import { createPageUrl } from "@/utils";
 import PageHeader from "../components/shared/PageHeader";
 import { FEATURE_COLORS } from "../components/shared/featureTheme";
 import AuthGuard from "../components/shared/AuthGuard";
+import { haptic } from "../components/shared/HapticFeedback";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
+import EmptyState from "../components/shared/EmptyState";
 
 function TimelineContent() {
   const navigate = useNavigate();
@@ -54,29 +57,31 @@ function TimelineContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: leases = [] } = useQuery({
+  const { data: leases = [], isLoading: leasesLoading } = useQuery({
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
 
-  const { data: deposits = [] } = useQuery({
+  const { data: deposits = [], isLoading: depositsLoading } = useQuery({
     queryKey: ['deposits'],
     queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
 
-  const { data: cases = [] } = useQuery({
+  const { data: cases = [], isLoading: casesLoading } = useQuery({
     queryKey: ['cases'],
     queryFn: () => base44.entities.Case.filter({ user_email: user?.email }, '-created_date'),
     enabled: !!user,
   });
 
-  const { data: maintenance = [] } = useQuery({
+  const { data: maintenance = [], isLoading: maintenanceLoading } = useQuery({
     queryKey: ['maintenance'],
     queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
+
+  const isLoading = leasesLoading || depositsLoading || casesLoading || maintenanceLoading;
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
@@ -448,6 +453,7 @@ function TimelineContent() {
 
 
   const toggleType = (type) => {
+    haptic.light();
     setSelectedTypes(prev =>
       prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
     );
@@ -462,14 +468,17 @@ function TimelineContent() {
 
     return (
       <div
-        className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-lg active:scale-95"
+        className="p-4 rounded-xl border-2 cursor-pointer transition-all hover:shadow-lg btn-interaction"
         style={{
           backgroundColor: colors.cardBg,
           borderColor: event.urgent || isUrgent || isOverdue ? event.color : colors.borderColor,
           borderLeftWidth: '6px',
           borderLeftColor: event.color
         }}
-        onClick={() => navigate(event.route)}
+        onClick={() => {
+          haptic.light();
+          navigate(event.route);
+        }}
       >
         <div className="flex items-start gap-3">
           <div
@@ -520,7 +529,7 @@ function TimelineContent() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         <PageHeader
           title={strings.title}
@@ -535,8 +544,11 @@ function TimelineContent() {
             <div className="flex flex-wrap items-center justify-between gap-4 w-full">
               <div className="flex gap-2 p-1 rounded-lg" style={{ backgroundColor: colors.cardBg, border: `2px solid ${colors.borderColor}` }}>
                 <button
-                  onClick={() => setViewMode('upcoming')}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  onClick={() => {
+                    haptic.light();
+                    setViewMode('upcoming');
+                  }}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 btn-interaction"
                   style={{
                     backgroundColor: viewMode === 'upcoming' ? FEATURE_COLORS.leases.accent : 'transparent',
                     color: viewMode === 'upcoming' ? '#FFFFFF' : colors.textPrimary
@@ -546,8 +558,11 @@ function TimelineContent() {
                   <span className="hidden sm:inline">{strings.upcoming}</span>
                 </button>
                 <button
-                  onClick={() => setViewMode('calendar')}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  onClick={() => {
+                    haptic.light();
+                    setViewMode('calendar');
+                  }}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 btn-interaction"
                   style={{
                     backgroundColor: viewMode === 'calendar' ? FEATURE_COLORS.leases.accent : 'transparent',
                     color: viewMode === 'calendar' ? '#FFFFFF' : colors.textPrimary
@@ -557,8 +572,11 @@ function TimelineContent() {
                   <span className="hidden sm:inline">{strings.calendar}</span>
                 </button>
                 <button
-                  onClick={() => setViewMode('list')}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                  onClick={() => {
+                    haptic.light();
+                    setViewMode('list');
+                  }}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 btn-interaction"
                   style={{
                     backgroundColor: viewMode === 'list' ? FEATURE_COLORS.leases.accent : 'transparent',
                     color: viewMode === 'list' ? '#FFFFFF' : colors.textPrimary
@@ -607,30 +625,36 @@ function TimelineContent() {
 
         {viewMode === 'upcoming' && (
           <div className="space-y-6">
-            <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <TrendingUp className="w-5 h-5" style={{ color: FEATURE_COLORS.leases.accent }} />
-                  {strings.upcomingDeadlines}
-                  <Badge className="bg-blue-100 text-blue-800">{strings.next30Days}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {upcomingEvents.length === 0 ? (
-                  <div className="text-center py-12">
-                    <CheckCircle2 className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noUpcoming}</p>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.noEventsDesc}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {upcomingEvents.map(event => (
-                      <EventCard key={event.id} event={event} />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {isLoading ? (
+              <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
+            ) : (
+              <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                    <TrendingUp className="w-5 h-5" style={{ color: FEATURE_COLORS.leases.accent }} />
+                    {strings.upcomingDeadlines}
+                    <Badge className="bg-blue-100 text-blue-800">{strings.next30Days}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {upcomingEvents.length === 0 ? (
+                    <EmptyState
+                      icon={CheckCircle2}
+                      title={strings.noUpcoming}
+                      description={strings.noEventsDesc}
+                      isDarkMode={isDarkMode}
+                      compact={true}
+                    />
+                  ) : (
+                    <div className="space-y-3">
+                      {upcomingEvents.map(event => (
+                        <EventCard key={event.id} event={event} />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {pastEvents.length > 0 && (
               <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
@@ -663,21 +687,33 @@ function TimelineContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentDate(new Date())}
+                    onClick={() => {
+                      haptic.light();
+                      setCurrentDate(new Date());
+                    }}
+                    className="btn-interaction"
                   >
                     {strings.today}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+                    onClick={() => {
+                      haptic.light();
+                      setCurrentDate(subMonths(currentDate, 1));
+                    }}
+                    className="btn-interaction"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+                    onClick={() => {
+                      haptic.light();
+                      setCurrentDate(addMonths(currentDate, 1));
+                    }}
+                    className="btn-interaction"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -717,6 +753,7 @@ function TimelineContent() {
                       }}
                       onClick={() => {
                         if (hasEvents && dayData.events[0].route) {
+                          haptic.light();
                           navigate(dayData.events[0].route);
                         }
                       }}
@@ -801,12 +838,14 @@ function TimelineContent() {
 
             {upcomingEvents.length === 0 && pastEvents.length === 0 && (
               <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-                <CardContent className="p-12 text-center">
-                  <CalendarIcon className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                  <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                    {strings.noEvents}
-                  </h3>
-                  <p style={{ color: colors.textSecondary }}>{strings.noEventsDesc}</p>
+                <CardContent className="p-0">
+                  <EmptyState
+                    icon={CalendarIcon}
+                    title={strings.noEvents}
+                    description={strings.noEventsDesc}
+                    isDarkMode={isDarkMode}
+                    compact={true}
+                  />
                 </CardContent>
               </Card>
             )}

@@ -8,13 +8,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select";
 import { haptic } from "../components/shared/HapticFeedback";
-import PageHeader from "../components/shared/PageHeader"; // Added import
+import PageHeader from "../components/shared/PageHeader";
 import AuthGuard from "../components/shared/AuthGuard";
+import MobileFormInput from "../components/shared/MobileFormInput";
+import { ToastProvider, useToast } from "../components/shared/Toast";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
 
 const TEMPLATES = [
   {
@@ -276,6 +275,7 @@ const TEMPLATES = [
 function TemplatesContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadFormData, setUploadFormData] = useState({
@@ -293,7 +293,7 @@ function TemplatesContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: customTemplates = [] } = useQuery({
+  const { data: customTemplates = [], isLoading: templatesLoading } = useQuery({
     queryKey: ['customTemplates'],
     queryFn: () => base44.entities.TemplateLibrary.filter({ is_active: true }),
     enabled: !!user,
@@ -316,6 +316,12 @@ function TemplatesContent() {
         credit_cost: 1,
         file: null
       });
+      toast.success(strings.uploadSuccess);
+      haptic.success();
+    },
+    onError: () => {
+      toast.error(strings.uploadFailed);
+      haptic.error();
     }
   });
 
@@ -329,14 +335,14 @@ function TemplatesContent() {
     cardBg: '#2A2D30',
     textPrimary: '#F9FAFB',
     textSecondary: '#D1D5DB',
-    inputBg: '#374151',
+    fieldBg: '#374151',
     borderColor: 'rgba(255,255,255,0.1)'
   } : {
     bg: '#F3F6F5',
     cardBg: '#FFFFFF',
     textPrimary: '#0F172A',
     textSecondary: '#475569',
-    inputBg: '#FFFFFF',
+    fieldBg: '#F8FAFC',
     borderColor: 'rgba(12,59,46,0.08)'
   };
 
@@ -624,17 +630,16 @@ function TemplatesContent() {
 
   const handleUploadTemplate = async () => {
     if (!uploadFormData.file || !uploadFormData.title_en || !uploadFormData.title_th) {
-      alert(strings.fillAllFields);
+      toast.error(strings.fillAllFields);
+      haptic.error();
       return;
     }
 
     haptic.medium();
     setUploadingFile(true);
     try {
-      // Upload file first
       const { file_url } = await base44.integrations.Core.UploadFile({ file: uploadFormData.file });
 
-      // Create template record
       await createTemplateMutation.mutateAsync({
         category: uploadFormData.category,
         title_en: uploadFormData.title_en,
@@ -645,13 +650,8 @@ function TemplatesContent() {
         file_url: file_url,
         is_active: true
       });
-
-      haptic.success();
-      alert(strings.uploadSuccess);
     } catch (error) {
       console.error('Upload failed:', error);
-      haptic.error();
-      alert(strings.uploadFailed);
     } finally {
       setUploadingFile(false);
     }
@@ -671,9 +671,13 @@ function TemplatesContent() {
     return (
       <Card
         key={isCustom ? template.id : template.id}
-        className={`border-none shadow-lg hover:shadow-xl transition-all duration-300 ${hasEnoughCredits ? 'cursor-pointer' : 'opacity-75'}`}
+        className={`border-none shadow-md hover:shadow-xl transition-all duration-200 card-hover-lift ${hasEnoughCredits ? 'cursor-pointer btn-interaction' : 'opacity-60 cursor-not-allowed'}`}
         style={{ backgroundColor: colors.cardBg }}
-        onClick={() => handleTemplateClick(template)}
+        onClick={() => {
+          if (hasEnoughCredits) {
+            handleTemplateClick(template);
+          }
+        }}
       >
         <div className={`h-2 bg-gradient-to-r ${color} rounded-t-xl`} />
         <CardContent className="p-4 sm:p-6">
@@ -715,7 +719,7 @@ function TemplatesContent() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
         
         {/* Upload Dialog */}
@@ -731,83 +735,89 @@ function TemplatesContent() {
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div>
-                <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
-                <Select value={uploadFormData.category} onValueChange={(val) => setUploadFormData({...uploadFormData, category: val})}>
-                  <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent style={{ backgroundColor: colors.cardBg }}>
-                    <SelectItem value="pre_signing">{categoryOptions[language].pre_signing}</SelectItem>
-                    <SelectItem value="friendly">{categoryOptions[language].friendly}</SelectItem>
-                    <SelectItem value="professional">{categoryOptions[language].professional}</SelectItem>
-                    <SelectItem value="final">{categoryOptions[language].final}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                  {strings.category}
+                </label>
+                <select
+                  value={uploadFormData.category}
+                  onChange={(e) => setUploadFormData({...uploadFormData, category: e.target.value})}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    backgroundColor: colors.fieldBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary,
+                    fontSize: '16px',
+                    borderRadius: '12px',
+                    border: `2px solid ${colors.borderColor}`,
+                    minHeight: '48px'
+                  }}
+                >
+                  <option value="pre_signing">{categoryOptions[language].pre_signing}</option>
+                  <option value="friendly">{categoryOptions[language].friendly}</option>
+                  <option value="professional">{categoryOptions[language].professional}</option>
+                  <option value="final">{categoryOptions[language].final}</option>
+                </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.titleEnglish}</Label>
-                  <Input
-                    value={uploadFormData.title_en}
-                    onChange={(e) => setUploadFormData({...uploadFormData, title_en: e.target.value})}
-                    className="mt-2"
-                    style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                  />
-                </div>
-                <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.titleThai}</Label>
-                  <Input
-                    value={uploadFormData.title_th}
-                    onChange={(e) => setUploadFormData({...uploadFormData, title_th: e.target.value})}
-                    className="mt-2"
-                    style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label style={{ color: colors.textPrimary }}>{strings.descriptionEnglish}</Label>
-                <Textarea
-                  value={uploadFormData.description_en}
-                  onChange={(e) => setUploadFormData({...uploadFormData, description_en: e.target.value})}
-                  className="mt-2"
-                  rows={2}
-                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <MobileFormInput
+                  label={strings.titleEnglish}
+                  value={uploadFormData.title_en}
+                  onChange={(e) => setUploadFormData({...uploadFormData, title_en: e.target.value})}
+                  required
+                  colors={colors}
+                />
+                <MobileFormInput
+                  label={strings.titleThai}
+                  value={uploadFormData.title_th}
+                  onChange={(e) => setUploadFormData({...uploadFormData, title_th: e.target.value})}
+                  required
+                  colors={colors}
                 />
               </div>
 
-              <div>
-                <Label style={{ color: colors.textPrimary }}>{strings.descriptionThai}</Label>
-                <Textarea
-                  value={uploadFormData.description_th}
-                  onChange={(e) => setUploadFormData({...uploadFormData, description_th: e.target.value})}
-                  className="mt-2"
-                  rows={2}
-                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                />
-              </div>
+              <MobileFormInput
+                label={strings.descriptionEnglish}
+                value={uploadFormData.description_en}
+                onChange={(e) => setUploadFormData({...uploadFormData, description_en: e.target.value})}
+                multiline
+                rows={2}
+                colors={colors}
+              />
+
+              <MobileFormInput
+                label={strings.descriptionThai}
+                value={uploadFormData.description_th}
+                onChange={(e) => setUploadFormData({...uploadFormData, description_th: e.target.value})}
+                multiline
+                rows={2}
+                colors={colors}
+              />
+
+              <MobileFormInput
+                label={strings.creditCost}
+                type="number"
+                min={1}
+                value={uploadFormData.credit_cost}
+                onChange={(e) => setUploadFormData({...uploadFormData, credit_cost: parseInt(e.target.value) || 1})}
+                colors={colors}
+              />
 
               <div>
-                <Label style={{ color: colors.textPrimary }}>{strings.creditCost}</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={uploadFormData.credit_cost}
-                  onChange={(e) => setUploadFormData({...uploadFormData, credit_cost: parseInt(e.target.value) || 1})}
-                  className="mt-2"
-                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                />
-              </div>
-
-              <div>
-                <Label style={{ color: colors.textPrimary }}>{strings.selectFile}</Label>
+                <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                  {strings.selectFile}
+                </label>
                 <input
                   type="file"
                   onChange={handleFileSelect}
-                  className="mt-2 w-full"
+                  className="w-full p-3 rounded-lg border-2"
                   accept=".pdf,.doc,.docx"
-                  style={{ color: colors.textPrimary }}
+                  style={{ 
+                    backgroundColor: colors.fieldBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
                 />
                 {uploadFormData.file && (
                   <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
@@ -819,15 +829,19 @@ function TemplatesContent() {
               <div className="flex gap-3 justify-end pt-4">
                 <Button
                   variant="outline"
-                  onClick={() => setShowUploadDialog(false)}
+                  onClick={() => {
+                    haptic.light();
+                    setShowUploadDialog(false);
+                  }}
                   disabled={uploadingFile}
+                  className="btn-interaction"
                 >
                   {strings.cancel}
                 </Button>
                 <Button
                   onClick={handleUploadTemplate}
                   disabled={uploadingFile}
-                  className="bg-ls-forest hover:bg-ls-forest/90"
+                  className="bg-ls-forest hover:bg-ls-forest/90 btn-interaction"
                 >
                   {uploadingFile ? (
                     <>
@@ -934,9 +948,13 @@ function TemplatesContent() {
             <div className="h-1 flex-1 bg-gradient-to-l from-amber-400 to-orange-600 rounded"></div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {preSigningTemplates.map((template) => renderTemplateCard(template, !template.id))}
-          </div>
+          {templatesLoading ? (
+            <SkeletonLoader variant="card" count={1} isDarkMode={isDarkMode} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {preSigningTemplates.map((template) => renderTemplateCard(template, !template.id))}
+            </div>
+          )}
         </div>
 
         {/* FRIENDLY APPROACH SECTION */}
@@ -991,7 +1009,9 @@ function TemplatesContent() {
 export default function Templates() {
   return (
     <AuthGuard>
-      <TemplatesContent />
+      <ToastProvider>
+        <TemplatesContent />
+      </ToastProvider>
     </AuthGuard>
   );
 }
