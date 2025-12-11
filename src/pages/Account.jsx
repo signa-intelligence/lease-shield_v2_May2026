@@ -4453,7 +4453,7 @@ function AccountContent() {
           </div>
         )}
 
-        {/* One-Time Lease Scan Card */}
+        {/* One-Time Lease Scan — Standalone Product */}
         <Card className="mb-6 border-none shadow-xl overflow-hidden" style={{
           backgroundColor: colors.cardBg,
           border: `2px solid ${isDarkMode ? 'rgba(59,130,246,0.3)' : '#3B82F6'}`
