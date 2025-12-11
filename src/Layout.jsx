@@ -720,7 +720,6 @@ export default function Layout({ children, currentPageName }) {
           isOpen={showQuickGuide}
           onClose={() => setShowQuickGuide(false)}
           onDismiss={() => setShowQuickGuide(false)}
-          colors={colors}
           language={language}
         />
         </div>

@@ -4,18 +4,18 @@
 
 @layer base {
   :root {
-    /* LeaseShield Brand Palette */
-    --ls-forest: #0C3B2E;
-    --ls-forest-light: #0F5A45;
-    --ls-gold: #C7A338;
-    --ls-gold-light: #D4B451;
+    /* LeaseShield Brand Palette - 2025 Refresh */
+    --ls-forest: #063F2C;
+    --ls-forest-hover: #084D38;
+    --ls-gold: #CFAF6A;
+    --ls-gold-hover: #D9BC7E;
     --ls-charcoal: #1A1D1F;
-    --ls-stone: #F3F6F5;
+    --ls-stone: #F8FAFC;
     --ls-white: #FFFFFF;
     
     /* Semantic Colors */
     --success: #10B981;
-    --danger: #EF4444;
+    --danger: #DC2626;
     --warning: #F59E0B;
     --info: #3B82F6;
     
@@ -28,13 +28,13 @@
     --text-2xl: 1.5rem;
     --text-3xl: 2rem;
     
-    /* Spacing Scale */
-    --space-1: 4px;
-    --space-2: 8px;
-    --space-3: 12px;
-    --space-4: 16px;
-    --space-6: 24px;
-    --space-8: 32px;
+    /* Spacing Scale (8px Grid System) */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
     
     /* Radius Scale */
     --radius-sm: 8px;
@@ -43,20 +43,21 @@
     --radius-xl: 24px;
     
     /* Shadows */
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-    --shadow-md: 0 4px 8px rgba(0,0,0,0.1);
-    --shadow-lg: 0 12px 24px rgba(0,0,0,0.15);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+    --shadow-xl: 0 20px 40px rgba(0,0,0,0.15);
     
     /* Light mode base colors */
-    --background: 243 246 245;
+    --background: 248 250 252;
     --foreground: 15 23 42;
     --card: 0 0% 100%;
     --card-foreground: 15 23 42;
-    --border: 12 59 46 / 0.08;
-    --primary: 12 59 46;
+    --border: 6 63 44 / 0.08;
+    --primary: 6 63 44;
     --primary-foreground: 0 0% 100%;
-    --accent: 45 55% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 40 48% 62%;
+    --accent-foreground: 26 29 31;
   }
 
   .dark {
@@ -98,31 +99,39 @@
 .btn-primary {
   background-color: var(--ls-forest);
   color: var(--ls-white);
-  padding: var(--space-3) var(--space-6);
-  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-family: Inter, -apple-system, sans-serif;
   font-weight: 600;
-  font-size: var(--text-sm);
+  font-size: 14px;
   border: none;
   cursor: pointer;
   transition: all 150ms ease;
+  min-height: 48px;
 }
 
 .btn-primary:hover {
-  background-color: var(--ls-forest-light);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  background-color: var(--ls-forest-hover);
+}
+
+.btn-primary:disabled {
+  background-color: #9CA3AF;
+  color: #6B7280;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
   background-color: transparent;
   border: 2px solid var(--ls-forest);
   color: var(--ls-forest);
-  padding: var(--space-3) var(--space-6);
-  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-family: Inter, -apple-system, sans-serif;
   font-weight: 600;
-  font-size: var(--text-sm);
+  font-size: 14px;
   cursor: pointer;
   transition: all 150ms ease;
+  min-height: 48px;
 }
 
 .btn-secondary:hover {
@@ -130,21 +139,28 @@
   color: var(--ls-white);
 }
 
+.btn-secondary:disabled {
+  border-color: #D1D5DB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+}
+
 .btn-accent {
   background-color: var(--ls-gold);
   color: var(--ls-charcoal);
-  padding: var(--space-3) var(--space-6);
-  border-radius: var(--radius-md);
-  font-weight: 700;
-  font-size: var(--text-sm);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-family: Inter, -apple-system, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
   border: none;
   cursor: pointer;
   transition: all 150ms ease;
+  min-height: 48px;
 }
 
 .btn-accent:hover {
-  background-color: var(--ls-gold-light);
-  transform: translateY(-1px);
+  background-color: var(--ls-gold-hover);
 }
 
 /* ========================================
@@ -152,14 +168,14 @@
    ======================================== */
 .card-standard {
   background-color: white;
-  border-radius: var(--radius-lg);
+  border-radius: 16px;
   box-shadow: var(--shadow-md);
-  padding: var(--space-6);
-  border: 1px solid rgba(12, 59, 46, 0.08);
+  padding: 24px;
+  border: 1px solid rgba(6, 63, 44, 0.08);
 }
 
 .dark .card-standard {
-  background-color: #2A2D30;
+  background-color: #1F2937;
   border-color: rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
