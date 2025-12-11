@@ -399,7 +399,7 @@ function SearchContent() {
             <div style={{
               width: '48px',
               height: '48px',
-              backgroundColor: '#0C3B2E',
+              backgroundColor: '#063F2C',
               borderRadius: '12px',
               display: 'flex',
               alignItems: 'center',

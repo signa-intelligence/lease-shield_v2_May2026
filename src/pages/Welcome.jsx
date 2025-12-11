@@ -143,6 +143,8 @@ export default function Welcome() {
       evidenceTitle: "Хранилище доказательств",
       evidenceBody: "храните фото въезда/выезда и заметки по делу",
       continueButton: "Перейти в приложение",
+      continueCaption: "Мы используем Base44.com для безопасной авторизации через Google.",
+      checkingSession: "Проверка вашей сессии...",
       installHelp: "Как установить на телефон",
       modalTitle: "Установите Lease Shield на телефон",
       step1: "Откройте app.leaseshield.asia в мобильном браузере.",
@@ -223,7 +225,7 @@ export default function Welcome() {
           </div>
 
           {/* Heading */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-3" style={{ color: '#0C3B2E' }}>
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-3" style={{ color: '#063F2C' }}>
             {strings.title}
           </h1>
 
@@ -238,7 +240,7 @@ export default function Welcome() {
               <div key={index} className="flex items-start gap-3">
                 <div 
                   className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: '#0C3B2E' }}
+                  style={{ backgroundColor: '#063F2C' }}
                 >
                   <feature.icon className="w-5 h-5 text-white" />
                 </div>
@@ -255,13 +257,13 @@ export default function Welcome() {
             onClick={handleContinue}
             className="w-full mb-2 btn-interaction"
             style={{
-              backgroundColor: '#0C3B2E',
+              backgroundColor: '#063F2C',
               color: '#FFFFFF',
               padding: '14px 24px',
               fontSize: '17px',
               fontWeight: '700',
               borderRadius: '12px',
-              border: '2px solid #C7A338',
+              border: '2px solid #CFAF6A',
               boxShadow: '0 6px 16px rgba(12, 59, 46, 0.3)',
               display: 'flex',
               alignItems: 'center',
@@ -291,7 +293,7 @@ export default function Welcome() {
             }}
             className="w-full text-center text-sm font-medium flex items-center justify-center gap-2 btn-interaction"
             style={{ 
-              color: '#0C3B2E', 
+              color: '#063F2C', 
               background: 'none', 
               border: 'none', 
               cursor: 'pointer',
@@ -332,11 +334,11 @@ export default function Welcome() {
               <div className="flex items-center gap-3 mb-6">
                 <div 
                   className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: '#0C3B2E' }}
+                  style={{ backgroundColor: '#063F2C' }}
                 >
                   <Smartphone className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-xl font-bold" style={{ color: '#0C3B2E' }}>
+                <h2 className="text-xl font-bold" style={{ color: '#063F2C' }}>
                   {strings.modalTitle}
                 </h2>
               </div>
@@ -376,13 +378,13 @@ export default function Welcome() {
                 onClick={handleOpenApp}
                 className="w-full btn-interaction"
                 style={{
-                  backgroundColor: '#0C3B2E',
+                  backgroundColor: '#063F2C',
                   color: '#FFFFFF',
                   padding: '12px 24px',
                   fontSize: '16px',
                   fontWeight: '600',
                   borderRadius: '12px',
-                  border: '2px solid #C7A338'
+                  border: '2px solid #CFAF6A'
                 }}
               >
                 {strings.openApp}

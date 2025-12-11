@@ -207,7 +207,7 @@ const EmptyState = ({
               justifyContent: 'center',
               gap: '8px',
               padding: '12px 24px',
-              backgroundColor: '#0C3B2E',
+              backgroundColor: '#063F2C',
               color: '#FFFFFF',
               borderRadius: '12px',
               fontSize: '16px',
@@ -215,7 +215,7 @@ const EmptyState = ({
               border: 'none',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              boxShadow: '0 4px 6px rgba(12, 59, 46, 0.2)',
+              boxShadow: '0 4px 6px rgba(6, 63, 44, 0.2)',
               whiteSpace: 'normal',
               textAlign: 'center',
               lineHeight: '1.3',
@@ -223,13 +223,13 @@ const EmptyState = ({
             }}
             onMouseEnter={(e) => {
               e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 8px 12px rgba(12, 59, 46, 0.3)';
-              e.target.style.backgroundColor = '#0a2f25';
+              e.target.style.boxShadow = '0 8px 12px rgba(6, 63, 44, 0.3)';
+              e.target.style.backgroundColor = '#084D38';
             }}
             onMouseLeave={(e) => {
               e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.2)';
-              e.target.style.backgroundColor = '#0C3B2E';
+              e.target.style.boxShadow = '0 4px 6px rgba(6, 63, 44, 0.2)';
+              e.target.style.backgroundColor = '#063F2C';
             }}
           >
             {actionLabel}
@@ -249,11 +249,11 @@ const EmptyState = ({
                 gap: '8px',
                 padding: '12px 24px',
                 backgroundColor: 'transparent',
-                color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
+                color: isDarkMode ? '#F9FAFB' : '#063F2C',
                 borderRadius: '12px',
                 fontSize: '16px',
                 fontWeight: '600',
-                border: `2px solid ${isDarkMode ? '#F9FAFB' : '#0C3B2E'}`,
+                border: `2px solid ${isDarkMode ? '#F9FAFB' : '#063F2C'}`,
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 whiteSpace: 'normal',

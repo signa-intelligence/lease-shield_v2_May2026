@@ -88,8 +88,8 @@ export default function LanguageSelector({ isOpen, onClose, colors, currentLangu
                 width: '100%',
                 padding: '12px',
                 borderRadius: '8px',
-                backgroundColor: selectedLanguage === lang.code ? '#0C3B2E' : 'transparent',
-                border: `2px solid ${selectedLanguage === lang.code ? '#0C3B2E' : colors.borderColor}`,
+                backgroundColor: selectedLanguage === lang.code ? '#063F2C' : 'transparent',
+                border: `2px solid ${selectedLanguage === lang.code ? '#063F2C' : colors.borderColor}`,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -115,7 +115,7 @@ export default function LanguageSelector({ isOpen, onClose, colors, currentLangu
             disabled={saving}
             className="w-full"
             style={{
-              backgroundColor: '#0C3B2E',
+              backgroundColor: '#063F2C',
               color: '#FFFFFF',
               padding: '14px',
               fontWeight: '700',
