@@ -79,10 +79,11 @@ Deno.serve(async (req) => {
         console.log('[SUBSCRIPTION_WEBHOOK] User:', email);
         console.log('[SUBSCRIPTION_WEBHOOK] Plan:', planTier, '/', billingInterval);
 
-        // Fetch user
+        // Fetch all users for later referral lookup
+        let allUsers = [];
         let subscribedUser;
         try {
-          const allUsers = await base44.asServiceRole.entities.User.list();
+          allUsers = await base44.asServiceRole.entities.User.list();
           subscribedUser = allUsers.find(u => u.id === userId || u.email === email);
 
           if (!subscribedUser) {
@@ -199,9 +200,7 @@ Deno.serve(async (req) => {
 
                 // Notify referrer (non-blocking)
                 if (referrer.email_notifications && RESEND_API_KEY) {
-                  const emailSubject = language === 'th' 
-                    ? '🎉 คุณได้รับเครดิตการแนะนำ!' 
-                    : '🎉 You Earned a Referral Credit!';
+                  const emailSubject = '🎉 You Earned a Referral Credit!';
 
                   const emailBody = `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
