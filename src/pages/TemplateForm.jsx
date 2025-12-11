@@ -259,20 +259,7 @@ function TemplateFormContent() {
       includeLandlordLanguageCopy: "รวมภาษาเจ้าของบ้าน",
       willGenerate: "📦 จะสร้าง:",
       languages: "ภาษา",
-      yourLanguage: "ภาษาของคุณ:",
-      languageOptions: "ตัวเลือกภาษา",
-      recipientLabel: "ผู้รับจดหมาย",
-      recipientTenant: "ผู้เช่า (ตัวเอง)",
-      recipientLandlord: "เจ้าของบ้าน",
-      recipientJuristic: "นิติบุคคล",
-      juristicLanguageInfo: "📋 จดหมายนิติบุคคลจะสร้างเป็นภาษาไทยและอังกฤษเท่านั้น (ตามมาตรฐานในประเทศไทย)",
-      primaryLanguage: "ภาษาหลัก:",
-      englishIncluded: "✓ อังกฤษจะถูกเพิ่มโดยอัตโนมัติ",
-      includeTenantLanguageCopy: "รวมสำเนาภาษาผู้เช่า",
-      includeThaiCopy: "รวมภาษาไทย",
-      includeLandlordLanguageCopy: "รวมภาษาเจ้าของบ้าน",
-      willGenerate: "📦 จะสร้าง:",
-      languages: "ภาษา"
+      yourLanguage: "ภาษาของคุณ:"
       },
       zh: {
       generateLetter: "生成信件",
