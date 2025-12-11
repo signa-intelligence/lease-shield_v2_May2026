@@ -893,7 +893,7 @@ function TemplatesContent() {
           iconColor="#0C3B2E"
           showBack={true}
           backLabel={strings.back}
-          colors={colors}
+          isDarkMode={isDarkMode}
           actions={
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs sm:text-sm w-fit">
