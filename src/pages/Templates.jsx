@@ -269,6 +269,10 @@ const TEMPLATES = [
 ];
 
 function TemplatesContent() {
+  return <div style={{ padding: '40px', fontSize: '18px', color: '#0C3B2E' }}>Templates debug – if you see this, TemplatesContent itself is valid.</div>;
+}
+
+function TemplatesContentOriginal() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { success, error } = useToast();
