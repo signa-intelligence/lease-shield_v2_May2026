@@ -9,6 +9,9 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import { haptic } from "../components/shared/HapticFeedback";
 import { format } from "date-fns";
 import AuthGuard from "../components/shared/AuthGuard";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
+import EmptyState from "../components/shared/EmptyState";
+import PageHeader from "../components/shared/PageHeader";
 
 function RecycleBinContent() {
   const navigate = useNavigate();
@@ -31,6 +34,15 @@ function RecycleBinContent() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+
+  const colors = {
+    bg: isDarkMode ? '#111827' : '#F3F6F5',
+    cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+    textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A',
+    textSecondary: isDarkMode ? '#D1D5DB' : '#475569',
+    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)',
+    fieldBg: isDarkMode ? '#374151' : '#F8FAFC'
+  };
 
   const t = {
     en: {
@@ -290,24 +302,22 @@ function RecycleBinContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6">
+    <div className="min-h-screen p-4 sm:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
+        <PageHeader
+          title={strings.title}
+          subtitle={strings.subtitle}
+          icon={Trash2}
+          iconColor="#EF4444"
+          showBack={true}
+          backRoute={-1}
+          isDarkMode={isDarkMode}
+        />
+
         <div className="mb-6">
-          <button
-            onClick={() => {
-              haptic.light();
-              navigate(-1);
-            }}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm font-medium">{strings.backToSettings}</span>
-          </button>
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
-              {strings.title}
-            </h1>
+          <div className="flex items-center justify-between">
+            <div />
             {deletedItems.length > 0 && (
               <button
                 onClick={() => {
@@ -328,30 +338,31 @@ function RecycleBinContent() {
               </button>
             )}
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {strings.subtitle}
-          </p>
         </div>
 
         {/* Storage Usage Section */}
-        <Card className="mb-6 border-none shadow-sm bg-white dark:bg-gray-800">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <Database className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-50">
-                    {strings.storageUsage}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {totalSizeMB} MB {language === 'en' ? 'of deleted items' : 'ของรายการที่ลบ'}
-                  </p>
-                </div>
+        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3">
+              <div 
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+                  boxShadow: '0 4px 12px rgba(139,92,246,0.25)'
+                }}
+              >
+                <Database className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                  {strings.storageUsage}
+                </h3>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  {totalSizeMB} MB {language === 'en' ? 'of deleted items' : 'ของรายการที่ลบ'}
+                </p>
               </div>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-500 mt-3">
+            <p className="text-xs mt-3" style={{ color: colors.textSecondary, opacity: 0.7 }}>
               {strings.storageNote}
             </p>
           </CardContent>
@@ -397,19 +408,17 @@ function RecycleBinContent() {
 
         {/* Deleted Items */}
         {isLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100 mx-auto" />
-          </div>
+          <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
         ) : deletedItems.length === 0 ? (
-          <Card className="border-none shadow-sm bg-white dark:bg-gray-800">
-            <CardContent className="p-12 text-center">
-              <Trash2 className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50 mb-2">
-                {strings.noItems}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {strings.noItemsDesc}
-              </p>
+          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={Trash2}
+                title={strings.noItems}
+                description={strings.noItemsDesc}
+                isDarkMode={isDarkMode}
+                compact={true}
+              />
             </CardContent>
           </Card>
         ) : (
@@ -419,7 +428,7 @@ function RecycleBinContent() {
               
               return (
                 <div key={type}>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50 mb-3">
+                  <h2 className="text-lg font-bold mb-3" style={{ color: colors.textPrimary }}>
                     {typeLabels[type]} ({items.length})
                   </h2>
                   <div className="space-y-3">
@@ -429,8 +438,11 @@ function RecycleBinContent() {
                       return (
                         <Card 
                           key={item.id} 
-                          className="border-none shadow-sm bg-white dark:bg-gray-800 cursor-pointer"
-                          style={{ opacity: selectedItems.length > 0 && !isSelected ? 0.6 : 1 }}
+                          className="border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
+                          style={{ 
+                            backgroundColor: colors.cardBg,
+                            opacity: selectedItems.length > 0 && !isSelected ? 0.6 : 1
+                          }}
                           onClick={() => {
                             if (selectedItems.length > 0 || selectedItems.includes(item.id)) {
                               toggleItemSelection(item.id);
@@ -469,7 +481,7 @@ function RecycleBinContent() {
                                       {strings.deletedOn} {format(new Date(item.deleted_date), 'MMM d, yyyy')}
                                     </span>
                                   </div>
-                                  <p className="font-medium text-gray-900 dark:text-gray-50 truncate">
+                                  <p className="font-semibold truncate" style={{ color: colors.textPrimary }}>
                                     {item.item_label || item.original_id}
                                   </p>
                                 </div>

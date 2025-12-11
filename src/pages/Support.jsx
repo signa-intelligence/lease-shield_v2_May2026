@@ -3,14 +3,17 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Clock, CheckCircle2, HelpCircle, Upload } from "lucide-react";
 import { format } from "date-fns";
 import AuthGuard from "../components/shared/AuthGuard";
+import MobileFormInput from "../components/shared/MobileFormInput";
+import { useFormValidation, validators } from "../components/shared/FormValidation";
+import { ToastProvider, useToast } from "../components/shared/Toast";
+import { haptic } from "../components/shared/HapticFeedback";
+import PageHeader from "../components/shared/PageHeader";
+import EmptyState from "../components/shared/EmptyState";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
 
 const STATUS_CONFIG = {
   open: { label: 'Open', color: 'bg-blue-100 text-blue-800', icon: Clock },
@@ -22,21 +25,44 @@ const STATUS_CONFIG = {
 
 function SupportContent() {
   const [uploading, setUploading] = useState(false);
-  const [formData, setFormData] = useState({
-    subject: '',
-    description: '',
-    category: 'technical',
-    attachments: []
-  });
-
+  const toast = useToast();
   const queryClient = useQueryClient();
+
+  const validationSchema = {
+    subject: [
+      (v) => validators.required(v, 'Subject'),
+      (v) => validators.minLength(v, 5, 'Subject')
+    ],
+    description: [
+      (v) => validators.required(v, 'Description'),
+      (v) => validators.minLength(v, 20, 'Description')
+    ]
+  };
+
+  const {
+    values: formData,
+    errors,
+    handleChange,
+    handleBlur,
+    validate,
+    reset,
+    setValues
+  } = useFormValidation(
+    {
+      subject: '',
+      description: '',
+      category: 'technical',
+      attachments: []
+    },
+    validationSchema
+  );
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: tickets = [] } = useQuery({
+  const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
     queryKey: ['tickets'],
     queryFn: () => base44.entities.SupportTicket.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
@@ -46,13 +72,14 @@ function SupportContent() {
     mutationFn: (data) => base44.entities.SupportTicket.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
-      setFormData({
-        subject: '',
-        description: '',
-        category: 'technical',
-        attachments: []
-      });
+      reset();
+      toast.success(language === 'th' ? 'ส่งคำขอสำเร็จ' : 'Ticket submitted successfully');
+      haptic.success();
     },
+    onError: () => {
+      toast.error(language === 'th' ? 'การส่งล้มเหลว' : 'Failed to submit ticket');
+      haptic.error();
+    }
   });
 
   const handleFileUpload = async (e) => {
@@ -60,15 +87,19 @@ function SupportContent() {
     if (!files || files.length === 0) return;
 
     setUploading(true);
+    haptic.light();
+    
     try {
       const urls = [];
       for (const file of files) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
         urls.push(file_url);
       }
-      setFormData({ ...formData, attachments: [...formData.attachments, ...urls] });
+      setValues({ ...formData, attachments: [...formData.attachments, ...urls] });
+      toast.success(language === 'th' ? `อัปโหลด ${files.length} ไฟล์สำเร็จ` : `${files.length} file(s) uploaded`);
     } catch (error) {
       console.error('Upload failed:', error);
+      toast.error(language === 'th' ? 'การอัปโหลดล้มเหลว' : 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -76,6 +107,14 @@ function SupportContent() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    if (!validate()) {
+      haptic.error();
+      toast.error(language === 'th' ? 'กรุณากรอกข้อมูลให้ถูกต้อง' : 'Please fix form errors');
+      return;
+    }
+    
+    haptic.medium();
     createTicketMutation.mutate(formData);
   };
 
@@ -177,100 +216,131 @@ function SupportContent() {
   const strings = t[language] || t.en;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ls-stone via-white to-ls-stone p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <MessageCircle className="w-8 h-8 text-ls-forest" />
-            <h1 className="text-3xl font-bold text-ls-charcoal">{strings.title}</h1>
-          </div>
-          <p className="text-slate-600">{strings.subtitle}</p>
-        </div>
+        <PageHeader
+          title={strings.title}
+          subtitle={strings.subtitle}
+          icon={MessageCircle}
+          iconColor="#0C3B2E"
+          isDarkMode={isDarkMode}
+        />
 
         <div className="grid lg:grid-cols-5 gap-6">
           {/* Left Side - Submit Form (2/5) */}
           <div className="lg:col-span-2">
-            <Card className="border-none shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+            <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+              <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <MessageCircle className="w-5 h-5 text-ls-forest" />
                   {strings.submitTicket}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+              <CardContent className="pt-6">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <MobileFormInput
+                    label={strings.subject}
+                    type="text"
+                    value={formData.subject}
+                    onChange={(e) => {
+                      handleChange('subject', e.target.value);
+                    }}
+                    onBlur={() => handleBlur('subject')}
+                    placeholder={language === 'th' ? 'สรุปปัญหาโดยย่อ' : 'Brief description of your issue'}
+                    required
+                    error={errors.subject}
+                    colors={colors}
+                  />
+
                   <div>
-                    <Label htmlFor="subject">{strings.subject}</Label>
-                    <Input
-                      id="subject"
-                      required
-                      value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                      placeholder="Brief description of your issue"
-                    />
+                    <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                      {strings.category}
+                    </label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => handleChange('category', e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        backgroundColor: colors.fieldBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                        fontSize: '16px',
+                        borderRadius: '12px',
+                        border: `2px solid ${colors.borderColor}`,
+                        minHeight: '48px'
+                      }}
+                    >
+                      <option value="technical">Technical</option>
+                      <option value="billing">Billing</option>
+                      <option value="deposit">Deposit</option>
+                      <option value="scan">Lease Scan</option>
+                      <option value="legal">Legal Question</option>
+                      <option value="other">Other</option>
+                    </select>
                   </div>
+
+                  <MobileFormInput
+                    label={strings.description}
+                    multiline
+                    rows={5}
+                    value={formData.description}
+                    onChange={(e) => {
+                      handleChange('description', e.target.value);
+                    }}
+                    onBlur={() => handleBlur('description')}
+                    placeholder={language === 'th' ? 'กรุณาระบุรายละเอียดให้มากที่สุด...' : 'Please provide as much detail as possible...'}
+                    required
+                    error={errors.description}
+                    colors={colors}
+                  />
                   <div>
-                    <Label htmlFor="category">{strings.category}</Label>
-                    <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="technical">Technical</SelectItem>
-                        <SelectItem value="billing">Billing</SelectItem>
-                        <SelectItem value="deposit">Deposit</SelectItem>
-                        <SelectItem value="scan">Lease Scan</SelectItem>
-                        <SelectItem value="legal">Legal Question</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="description">{strings.description}</Label>
-                    <Textarea
-                      id="description"
-                      required
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Please provide as much detail as possible..."
-                      rows={5}
-                    />
-                  </div>
-                  <div>
-                    <Label>{strings.attachments}</Label>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                      {strings.attachments}
+                    </label>
                     <label
                       htmlFor="file-upload"
-                      className="mt-2 flex items-center justify-center gap-2 p-4 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-ls-forest transition-colors"
+                      className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-xl cursor-pointer hover:border-ls-forest transition-all"
+                      style={{
+                        borderColor: colors.borderColor,
+                        backgroundColor: colors.fieldBg,
+                        minHeight: '80px'
+                      }}
                     >
-                      <Upload className="w-5 h-5 text-slate-500" />
-                      <span className="text-sm text-slate-600">
-                        {uploading ? 'Uploading...' : strings.uploadFiles}
+                      <Upload className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                      <span className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+                        {uploading ? (language === 'th' ? 'กำลังอัปโหลด...' : 'Uploading...') : strings.uploadFiles}
                       </span>
                       <input
                         id="file-upload"
                         type="file"
                         multiple
+                        accept="image/*,.pdf,.doc,.docx"
                         onChange={handleFileUpload}
                         disabled={uploading}
                         className="hidden"
                       />
                     </label>
                     {formData.attachments.length > 0 && (
-                      <p className="text-xs text-slate-500 mt-2">
-                        {formData.attachments.length} file(s) attached
+                      <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                        {formData.attachments.length} {language === 'th' ? 'ไฟล์แนบ' : 'file(s) attached'}
                       </p>
                     )}
                   </div>
                   <Button
                     type="submit"
-                    disabled={createTicketMutation.isPending}
-                    className="w-full"
+                    disabled={createTicketMutation.isPending || uploading}
+                    className="w-full btn-interaction"
                     style={{
-                      backgroundColor: createTicketMutation.isPending ? '#9CA3AF' : '#0C3B2E',
-                      color: '#FFFFFF'
+                      backgroundColor: (createTicketMutation.isPending || uploading) ? '#9CA3AF' : '#0C3B2E',
+                      color: '#FFFFFF',
+                      padding: '14px',
+                      fontSize: '16px',
+                      fontWeight: '700',
+                      minHeight: '52px'
                     }}
                   >
-                    {createTicketMutation.isPending ? 'Submitting...' : strings.submitButton}
+                    {createTicketMutation.isPending ? (language === 'th' ? 'กำลังส่ง...' : 'Submitting...') : strings.submitButton}
                   </Button>
                 </form>
               </CardContent>
@@ -279,13 +349,19 @@ function SupportContent() {
 
           {/* Right Side - Tickets List (3/5) */}
           <div className="lg:col-span-3">
-            <h3 className="font-bold text-lg text-ls-charcoal mb-4">{strings.recentTickets}</h3>
-            {tickets.length === 0 ? (
-              <Card className="border-none shadow-lg">
-                <CardContent className="p-12 text-center">
-                  <MessageCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                  <h4 className="text-lg font-bold text-ls-charcoal mb-2">{strings.noTickets}</h4>
-                  <p className="text-slate-600">{strings.noTicketsSub}</p>
+            <h3 className="font-bold text-lg mb-4" style={{ color: colors.textPrimary }}>{strings.recentTickets}</h3>
+            {ticketsLoading ? (
+              <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
+            ) : tickets.length === 0 ? (
+              <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+                <CardContent className="p-0">
+                  <EmptyState
+                    icon={MessageCircle}
+                    title={strings.noTickets}
+                    description={strings.noTicketsSub}
+                    isDarkMode={isDarkMode}
+                    compact={true}
+                  />
                 </CardContent>
               </Card>
             ) : (
@@ -295,30 +371,41 @@ function SupportContent() {
                   const StatusIcon = statusConfig.icon;
 
                   return (
-                    <Card key={ticket.id} className="border-none shadow-md hover:shadow-lg transition-all duration-300">
-                      <CardContent className="p-4">
+                    <Card 
+                      key={ticket.id} 
+                      className="border-none shadow-md hover:shadow-xl transition-all duration-200 card-hover-lift"
+                      style={{ backgroundColor: colors.cardBg }}
+                    >
+                      <CardContent className="p-5">
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-start gap-3 flex-1">
-                            <div className="p-2 bg-ls-stone rounded-lg flex-shrink-0">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div 
+                              className="p-2.5 rounded-lg flex-shrink-0"
+                              style={{ backgroundColor: isDarkMode ? '#374151' : '#F3F6F5' }}
+                            >
                               <StatusIcon className="w-5 h-5 text-ls-forest" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-bold text-base text-ls-charcoal mb-1">{ticket.subject}</p>
-                              <p className="text-xs text-slate-500">
-                                Opened {format(new Date(ticket.created_date), 'MMM d, yyyy')}
+                              <p className="font-bold text-base mb-1 break-words" style={{ color: colors.textPrimary }}>
+                                {ticket.subject}
+                              </p>
+                              <p className="text-xs" style={{ color: colors.textSecondary }}>
+                                {language === 'th' ? 'เปิดเมื่อ' : 'Opened'} {format(new Date(ticket.created_date), 'MMM d, yyyy')}
                               </p>
                             </div>
                           </div>
-                          <Badge className={`${statusConfig.color} text-xs flex-shrink-0`}>
+                          <Badge className={`${statusConfig.color} text-xs flex-shrink-0 ml-2`}>
                             {statusConfig.label}
                           </Badge>
                         </div>
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                          <p className="text-sm text-slate-700 line-clamp-2">{ticket.description}</p>
+                        <div className="p-3 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
+                          <p className="text-sm line-clamp-2 break-words" style={{ color: colors.textSecondary }}>
+                            {ticket.description}
+                          </p>
                         </div>
                         {ticket.attachments && ticket.attachments.length > 0 && (
-                          <p className="text-xs text-slate-500 mt-2">
-                            📎 {ticket.attachments.length} attachment(s)
+                          <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                            📎 {ticket.attachments.length} {language === 'th' ? 'ไฟล์แนบ' : 'attachment(s)'}
                           </p>
                         )}
                       </CardContent>
@@ -337,7 +424,9 @@ function SupportContent() {
 export default function Support() {
   return (
     <AuthGuard>
-      <SupportContent />
+      <ToastProvider>
+        <SupportContent />
+      </ToastProvider>
     </AuthGuard>
   );
 }
