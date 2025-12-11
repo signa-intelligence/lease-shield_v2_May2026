@@ -322,7 +322,7 @@ function AdminConsoleContent() {
 
     const monthlyRevenue = users.reduce((sum, u) => {
       if (u.subscription_status === 'active' && u.plan_tier !== 'free') {
-        const planPrices = { lite: 390, protect: 690, secure: 1290 };
+        const planPrices = { lite: 190, protect: 390, secure: 990 };
         return sum + (planPrices[u.plan_tier] || 0);
       }
       return sum;

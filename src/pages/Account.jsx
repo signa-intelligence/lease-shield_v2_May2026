@@ -97,11 +97,11 @@ const PLAN_DETAILS = [
   {
     key: 'lite',
     label: 'Lite',
-    priceMonthly: 390,
-    priceAnnual: 3900,
+    priceMonthly: 190,
+    priceAnnual: 1900,
     priceIdMonthly: 'PRICE_LIVE_LITE_MONTHLY',
     priceIdAnnual: 'PRICE_LIVE_LITE_ANNUAL',
-    savingsAnnual: 780,
+    savingsAnnual: 380,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Essential Protection',
@@ -182,11 +182,11 @@ const PLAN_DETAILS = [
   {
     key: 'protect',
     label: 'Protect',
-    priceMonthly: 690,
-    priceAnnual: 6900,
+    priceMonthly: 390,
+    priceAnnual: 3900,
     priceIdMonthly: 'PRICE_LIVE_PROTECT_MONTHLY',
     priceIdAnnual: 'PRICE_LIVE_PROTECT_ANNUAL',
-    savingsAnnual: 1380,
+    savingsAnnual: 780,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Complete Prevention Suite',
@@ -274,11 +274,11 @@ const PLAN_DETAILS = [
   {
     key: 'secure',
     label: 'Secure',
-    priceMonthly: 1290,
-    priceAnnual: 12900,
+    priceMonthly: 990,
+    priceAnnual: 9900,
     priceIdMonthly: 'PRICE_LIVE_SECURE_MONTHLY',
     priceIdAnnual: 'PRICE_LIVE_SECURE_ANNUAL',
-    savingsAnnual: 2580,
+    savingsAnnual: 1980,
     intervalMonthly: '/month',
     intervalAnnual: '/year',
     tagline: 'Premium Protection',
@@ -3907,16 +3907,16 @@ function AccountContent() {
                           </h3>
                           <p className="text-sm mb-3" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
                             {language === 'th' 
-                              ? 'เพียง ฿390/เดือน - รักษาการป้องกันหลักและประหยัด 43% จากแผนปัจจุบัน'
+                              ? 'เพียง ฿190/เดือน - รักษาการป้องกันหลักและประหยัด 81% จากแผนปัจจุบัน'
                               : language === 'zh'
-                              ? '仅฿390/月 - 保持核心保护并比当前计划节省43%'
+                              ? '仅฿190/月 - 保持核心保护并比当前计划节省81%'
                               : language === 'ja'
-                              ? 'わずか฿390/月 - コア保護を維持し、現在のプランから43%節約'
+                              ? 'わずか฿190/月 - コア保護を維持し、現在のプランから81%節約'
                               : language === 'ko'
-                              ? '월 ฿390만 - 핵심 보호 유지 및 현재 플랜에서 43% 절약'
+                              ? '월 ฿190만 - 핵심 보호 유지 및 현재 플랜에서 81% 절약'
                               : language === 'ru'
-                                ? 'Всего ฿390/месяц - сохраните основную защиту и экономьте 43% от текущего плана'
-                                : 'Only ฿390/month - keep core protections and save 43% from current plan'}
+                                ? 'Всего ฿190/месяц - сохраните основную защиту и экономьте 81% от текущего плана'
+                                : 'Only ฿190/month - keep core protections and save 81% from current plan'}
                           </p>
                           <ul className="space-y-1 text-xs sm:text-sm mb-4" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
                             <li className="flex items-center gap-2">
