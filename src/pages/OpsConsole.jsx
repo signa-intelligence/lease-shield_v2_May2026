@@ -4,10 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Scale,
   User,
@@ -30,6 +26,11 @@ import { createPageUrl } from "@/utils";
 import CaseKanban from "../components/admin/CaseKanban";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
+import { haptic } from "../components/shared/HapticFeedback";
+import PageHeader from "../components/shared/PageHeader";
+import MobileFormInput from "../components/shared/MobileFormInput";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
+import EmptyState from "../components/shared/EmptyState";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -66,11 +67,10 @@ function OpsConsoleContent() {
   const accessLevel = user?.access_level || 'user';
   const hasOpsAccess = ['va', 'admin', 'super_admin'].includes(accessLevel) || user?.role === 'admin';
 
-  const { data: cases = [] } = useQuery({
+  const { data: cases = [], isLoading: casesLoading } = useQuery({
     queryKey: ['allCases'],
     queryFn: async () => {
       const result = await base44.entities.Case.list('-created_date', 100);
-      // Filter out soft-deleted cases
       return result.filter(c => !c.is_deleted);
     },
     enabled: hasOpsAccess,
@@ -96,24 +96,24 @@ function OpsConsoleContent() {
   const isDarkMode = user?.theme === 'dark';
 
   const colors = isDarkMode ? {
-    bg: '#1A1D1F',
+    bg: '#111827',
     cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    statBg: '#353A3D',
+    textPrimary: '#F9FAFB',
+    textSecondary: '#D1D5DB',
+    borderColor: 'rgba(255,255,255,0.1)',
+    statBg: '#374151',
     modalBg: '#2A2D30',
-    inputBg: '#353A3D',
-    inputBorder: '#4A4D50'
+    fieldBg: '#374151',
+    inputBorder: '#4B5563'
   } : {
-    bg: '#F8FAFC',
+    bg: '#F3F6F5',
     cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
+    textPrimary: '#0F172A',
+    textSecondary: '#475569',
+    borderColor: 'rgba(12,59,46,0.08)',
     statBg: '#FFFFFF',
     modalBg: '#FFFFFF',
-    inputBg: '#FFFFFF',
+    fieldBg: '#F8FAFC',
     inputBorder: '#E5E7EB'
   };
 
@@ -309,16 +309,15 @@ function OpsConsoleContent() {
 
   if (!hasOpsAccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen flex items-center justify-center p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <Card className="max-w-md border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardContent className="p-8 text-center">
-            <Scale className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {strings.unauthorized}
-            </h2>
-            <p style={{ color: colors.textSecondary }}>
-              {strings.unauthorizedDesc}
-            </p>
+          <CardContent className="p-0">
+            <EmptyState
+              icon={Scale}
+              title={strings.unauthorized}
+              description={strings.unauthorizedDesc}
+              isDarkMode={isDarkMode}
+            />
           </CardContent>
         </Card>
       </div>
@@ -414,35 +413,20 @@ function OpsConsoleContent() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-7xl mx-auto">
+        <PageHeader
+          title={strings.opsConsole}
+          subtitle={strings.subtitle}
+          icon={Scale}
+          iconColor="#0C3B2E"
+          showBack={true}
+          backRoute={createPageUrl("AdminConsole")}
+          isDarkMode={isDarkMode}
+        />
+
         <div className="mb-6">
-          <Button
-            variant="outline"
-            onClick={() => navigate(createPageUrl("AdminConsole"))}
-            className="mb-4"
-            style={{
-              backgroundColor: colors.cardBg,
-              borderColor: colors.borderColor,
-              color: colors.textPrimary
-            }}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {strings.back}
-          </Button>
-          
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Scale className="w-8 h-8 text-ls-forest" />
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                  {strings.opsConsole}
-                </h1>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  {strings.subtitle}
-                </p>
-              </div>
-            </div>
+          <div className="flex items-center justify-end gap-4">
 
             <div 
               className="flex rounded-lg p-1"
@@ -452,7 +436,11 @@ function OpsConsoleContent() {
               }}
             >
               <button
-                onClick={() => setViewMode('kanban')}
+                onClick={() => {
+                  haptic.light();
+                  setViewMode('kanban');
+                }}
+                className="btn-interaction"
                 style={{
                   padding: '8px 16px',
                   borderRadius: '8px',
@@ -472,7 +460,11 @@ function OpsConsoleContent() {
                 Kanban
               </button>
               <button
-                onClick={() => setViewMode('list')}
+                onClick={() => {
+                  haptic.light();
+                  setViewMode('list');
+                }}
+                className="btn-interaction"
                 style={{
                   padding: '8px 16px',
                   borderRadius: '8px',
@@ -563,42 +555,68 @@ function OpsConsoleContent() {
           <CardContent className="p-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="search" className="text-sm font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
-                  <Search className="w-4 h-4 inline mr-2" />
+                <label htmlFor="search" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Search className="w-4 h-4" />
                   {strings.searchCases}
-                </Label>
-                <Input
+                </label>
+                <input
                   id="search"
+                  type="text"
                   placeholder={strings.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.inputBorder,
-                    color: colors.textPrimary
+                    width: '100%',
+                    padding: '12px 16px',
+                    backgroundColor: colors.fieldBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary,
+                    fontSize: '16px',
+                    borderRadius: '12px',
+                    border: `2px solid ${colors.borderColor}`,
+                    minHeight: '48px'
                   }}
                 />
               </div>
               <div>
-                <Label htmlFor="filter" className="text-sm font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
-                  <Filter className="w-4 h-4 inline mr-2" />
+                <label htmlFor="filter" className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Filter className="w-4 h-4" />
                   {strings.filterByStatus}
-                </Label>
-                <Select value={filterStatus} onValueChange={(val) => {
-                  setFilterStatus(val);
-                  // BUG FIX #1: Update URL when filter changes (preserves tab on refresh)
-                  const newUrl = val === 'all' 
-                    ? window.location.pathname 
-                    : `${window.location.pathname}?tab=${val}`;
-                  window.history.replaceState({}, '', newUrl);
-                }}>
-                  <SelectTrigger style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.inputBorder,
-                    color: colors.textPrimary
-                  }}>
-                    <SelectValue />
-                  </SelectTrigger>
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => {
+                    haptic.light();
+                    const val = e.target.value;
+                    setFilterStatus(val);
+                    const newUrl = val === 'all' 
+                      ? window.location.pathname 
+                      : `${window.location.pathname}?tab=${val}`;
+                    window.history.replaceState({}, '', newUrl);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    backgroundColor: colors.fieldBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary,
+                    fontSize: '16px',
+                    borderRadius: '12px',
+                    border: `2px solid ${colors.borderColor}`,
+                    minHeight: '48px'
+                  }}
+                >
+                  <option value="all">{strings.allStatuses}</option>
+                  <option value="intake">{STATUS_CONFIG.intake.label}</option>
+                  <option value="pending_review">{STATUS_CONFIG.pending_review.label}</option>
+                  <option value="under_review">{STATUS_CONFIG.under_review.label}</option>
+                  <option value="ready_drafts">{STATUS_CONFIG.ready_drafts.label}</option>
+                  <option value="client_review">{STATUS_CONFIG.client_review.label}</option>
+                  <option value="awaiting_landlord">{STATUS_CONFIG.awaiting_landlord.label}</option>
+                  <option value="in_progress">{STATUS_CONFIG.in_progress.label}</option>
+                  <option value="resolved">{STATUS_CONFIG.resolved.label}</option>
+                  <option value="closed">{STATUS_CONFIG.closed.label}</option>
+                </select>
                   <SelectContent>
                     <SelectItem value="all">{strings.allStatuses}</SelectItem>
                     <SelectItem value="intake">{STATUS_CONFIG.intake.label}</SelectItem>
@@ -617,7 +635,9 @@ function OpsConsoleContent() {
           </CardContent>
         </Card>
 
-        {viewMode === 'kanban' ? (
+        {casesLoading ? (
+          <SkeletonLoader variant="card" count={4} isDarkMode={isDarkMode} />
+        ) : viewMode === 'kanban' ? (
           <CaseKanban
             cases={filteredCases}
             users={users}
@@ -894,6 +914,7 @@ function OpsConsoleContent() {
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
+                      haptic.medium();
                       const formData = new FormData(e.target);
                       handleRecordSettlement(selectedCase.id, {
                         amount: parseFloat(formData.get('amount')),
@@ -904,67 +925,42 @@ function OpsConsoleContent() {
                     }}
                     className="space-y-4"
                   >
-                    <div>
-                      <Label htmlFor="amount" style={{ color: colors.textPrimary }}>
-                        {strings.settlementAmount}
-                      </Label>
-                      <Input
-                        id="amount"
-                        name="amount"
-                        type="number"
-                        required
-                        placeholder="15000"
-                        style={{
-                          backgroundColor: colors.inputBg,
-                          borderColor: colors.inputBorder,
-                          color: colors.textPrimary
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="method" style={{ color: colors.textPrimary }}>
-                        {strings.paymentMethod}
-                      </Label>
-                      <Input
-                        id="method"
-                        name="method"
-                        placeholder={strings.paymentMethodPlaceholder}
-                        style={{
-                          backgroundColor: colors.inputBg,
-                          borderColor: colors.inputBorder,
-                          color: colors.textPrimary
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="notes" style={{ color: colors.textPrimary }}>
-                        {strings.notes}
-                      </Label>
-                      <Textarea
-                        id="notes"
-                        name="notes"
-                        rows={3}
-                        placeholder={strings.notesPlaceholder}
-                        style={{
-                          backgroundColor: colors.inputBg,
-                          borderColor: colors.inputBorder,
-                          color: colors.textPrimary
-                        }}
-                      />
-                    </div>
+                    <MobileFormInput
+                      label={strings.settlementAmount}
+                      type="number"
+                      name="amount"
+                      required
+                      placeholder="15000"
+                      colors={colors}
+                    />
+                    <MobileFormInput
+                      label={strings.paymentMethod}
+                      name="method"
+                      placeholder={strings.paymentMethodPlaceholder}
+                      colors={colors}
+                    />
+                    <MobileFormInput
+                      label={strings.notes}
+                      name="notes"
+                      multiline
+                      rows={3}
+                      placeholder={strings.notesPlaceholder}
+                      colors={colors}
+                    />
                     <div className="flex gap-2">
                       <Button
                         type="button"
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 btn-interaction"
                         onClick={() => {
+                          haptic.light();
                           setSelectedCase(null);
                           setActionMode(null);
                         }}
                       >
                         {strings.cancel}
                       </Button>
-                      <Button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                      <Button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-700 btn-interaction">
                         {strings.recordSettlement}
                       </Button>
                     </div>

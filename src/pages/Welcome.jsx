@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { haptic } from "../components/shared/HapticFeedback";
+import LoadingSpinner from "../components/shared/LoadingSpinner";
 
 export default function Welcome() {
   const [showInstallModal, setShowInstallModal] = useState(false);
@@ -152,30 +154,19 @@ export default function Welcome() {
 
   const strings = t[language] || t.en;
 
-  // Show full-screen loader while checking auth
   if (checkingAuth || isLoading) {
     return (
       <div 
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-screen flex items-center justify-center page-transition"
         style={{
           background: 'linear-gradient(135deg, #F3F6F5 0%, #E8EDEC 100%)'
         }}
       >
-        <div className="text-center">
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-            alt="Lease Shield"
-            className="h-20 w-20 mx-auto mb-6 animate-pulse"
-          />
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-ls-forest animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-2 h-2 rounded-full bg-ls-forest animate-bounce" style={{ animationDelay: '150ms' }}></div>
-            <div className="w-2 h-2 rounded-full bg-ls-forest animate-bounce" style={{ animationDelay: '300ms' }}></div>
-          </div>
-          <p className="text-sm mt-4" style={{ color: '#475569' }}>
-            {strings.checkingSession}
-          </p>
-        </div>
+        <LoadingSpinner
+          size="lg"
+          color="#0C3B2E"
+          text={strings.checkingSession}
+        />
       </div>
     );
   }
@@ -184,13 +175,13 @@ export default function Welcome() {
   const queryParams = window.location.search;
 
   const handleContinue = () => {
-    // Always land on /cookie-sync after OAuth for smooth transition
+    haptic.medium();
     window.location.href = "/login?next=/cookie-sync";
   };
 
   const handleOpenApp = () => {
+    haptic.light();
     setShowInstallModal(false);
-    // Use relative URL to maintain current domain (app.leaseshield.asia)
     window.location.href = "/login?next=/cookie-sync";
   };
 
@@ -262,7 +253,7 @@ export default function Welcome() {
           {/* Primary Google Button */}
           <Button
             onClick={handleContinue}
-            className="w-full mb-2"
+            className="w-full mb-2 btn-interaction"
             style={{
               backgroundColor: '#0C3B2E',
               color: '#FFFFFF',
@@ -294,8 +285,11 @@ export default function Welcome() {
 
           {/* Secondary Link */}
           <button
-            onClick={() => setShowInstallModal(true)}
-            className="w-full text-center text-sm font-medium flex items-center justify-center gap-2"
+            onClick={() => {
+              haptic.light();
+              setShowInstallModal(true);
+            }}
+            className="w-full text-center text-sm font-medium flex items-center justify-center gap-2 btn-interaction"
             style={{ 
               color: '#0C3B2E', 
               background: 'none', 
@@ -323,8 +317,11 @@ export default function Welcome() {
           >
             {/* Close Button */}
             <button
-              onClick={() => setShowInstallModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              onClick={() => {
+                haptic.light();
+                setShowInstallModal(false);
+              }}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors btn-interaction"
               style={{ background: 'none', border: 'none', cursor: 'pointer' }}
             >
               <X className="w-5 h-5 text-gray-500" />
@@ -377,7 +374,7 @@ export default function Welcome() {
               {/* Open App Button */}
               <Button
                 onClick={handleOpenApp}
-                className="w-full"
+                className="w-full btn-interaction"
                 style={{
                   backgroundColor: '#0C3B2E',
                   color: '#FFFFFF',

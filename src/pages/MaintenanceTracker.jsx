@@ -1,14 +1,9 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Wrench, Plus, Camera, Image as ImageIcon, X, Loader2, ArrowLeft, Save, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -17,10 +12,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import ChatLog from "../components/maintenance/ChatLog";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
 import { haptic } from "../components/shared/HapticFeedback";
+import MobileFormInput from "../components/shared/MobileFormInput";
+import { ToastProvider, useToast } from "../components/shared/Toast";
+import PageHeader from "../components/shared/PageHeader";
+import EmptyState from "../components/shared/EmptyState";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
 
 export default function MaintenanceTrackerPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [showAddRequest, setShowAddRequest] = useState(false);
   const [expandedRequest, setExpandedRequest] = useState(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
@@ -69,6 +70,8 @@ export default function MaintenanceTrackerPage() {
         setShowPostUpgradeHint(true);
       }
 
+      haptic.success();
+
       try {
         const notificationResponse = await base44.functions.invoke('sendMaintenanceNotification', {
           maintenanceRequest: createdRequest
@@ -77,15 +80,17 @@ export default function MaintenanceTrackerPage() {
         if (notificationResponse.data?.success) {
           const sentCount = notificationResponse.data.notifications?.filter(n => n.status === 'sent').length || 0;
           if (sentCount > 0) {
-            alert(
-              `${strings.requestSent} ${sentCount} ${strings.recipients}`
-            );
+            toast.success(`${strings.requestSent} ${sentCount} ${strings.recipients}`);
           }
         }
       } catch (notifError) {
         console.error('Failed to send notifications:', notifError);
       }
     },
+    onError: () => {
+      toast.error(strings.failedToCreate);
+      haptic.error();
+    }
   });
 
   const language = user?.language || 'en';
@@ -93,13 +98,13 @@ export default function MaintenanceTrackerPage() {
   const theme = getFeatureCardStyles("maintenance", isDarkMode);
 
   const colors = {
-    bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
+    bg: isDarkMode ? '#111827' : '#F3F6F5',
     cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
-    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
-    textSecondary: isDarkMode ? '#9CA3AF' : '#6B7280',
-    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
-    inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
-    sectionBg: isDarkMode ? '#353A3D' : '#F8FAFC'
+    textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A',
+    textSecondary: isDarkMode ? '#D1D5DB' : '#475569',
+    borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)',
+    fieldBg: isDarkMode ? '#374151' : '#F8FAFC',
+    sectionBg: isDarkMode ? '#374151' : '#F8FAFC'
   };
 
   const t = {
@@ -283,11 +288,13 @@ export default function MaintenanceTrackerPage() {
   };
 
   const handleRemovePhoto = (index) => {
+    haptic.light();
     setPhotoFiles(prev => prev.filter((_, i) => i !== index));
     setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleNewRequestClick = () => {
+    haptic.medium();
     if (!user || !user.plan_tier || user.plan_tier === 'free') {
       setShowUpgradeModal(true);
       return;
@@ -351,19 +358,20 @@ export default function MaintenanceTrackerPage() {
   };
 
   return (
-    <div className="min-h-screen p-4 md:p-6 pb-28" style={{ backgroundColor: colors.bg }}>
-      <div className="max-w-4xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(createPageUrl("Dashboard"))}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {strings.back}
-        </Button>
+    <ToastProvider>
+      <div className="min-h-screen p-4 md:p-6 pb-28 page-transition" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-4xl mx-auto">
+          <PageHeader
+            title={strings.title}
+            subtitle={strings.subtitle}
+            icon={Wrench}
+            iconColor={theme.accent}
+            showBack={true}
+            isDarkMode={isDarkMode}
+          />
 
         <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-          <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+          <DialogContent className="modal-enter" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <DialogHeader>
               <DialogTitle style={{ color: colors.textPrimary }}>{strings.upgradeModalTitle}</DialogTitle>
               <DialogDescription style={{ color: colors.textSecondary }}>
@@ -371,14 +379,23 @@ export default function MaintenanceTrackerPage() {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setShowUpgradeModal(false)}>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  haptic.light();
+                  setShowUpgradeModal(false);
+                }}
+                className="btn-interaction"
+              >
                 {strings.cancel}
               </Button>
               <Button
                 onClick={() => {
+                  haptic.medium();
                   setShowUpgradeModal(false);
                   navigate(createPageUrl("Account") + '#plans');
                 }}
+                className="btn-interaction"
                 style={{
                   backgroundColor: '#0C3B2E',
                   color: '#FFFFFF'
@@ -390,17 +407,9 @@ export default function MaintenanceTrackerPage() {
           </DialogContent>
         </Dialog>
 
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2" style={{ color: theme.headerColor }}>
-            <Wrench className="w-7 h-7 md:w-8 md:h-8" style={{ color: theme.accent }} />
-            {strings.title}
-          </h1>
-          <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-        </div>
-
         <Button
           onClick={handleNewRequestClick}
-          className="w-full mb-6 ls-cta-primary"
+          className="w-full mb-6 ls-cta-primary btn-interaction"
         >
           <Plus className="w-5 h-5 mr-2" />
           {strings.addRequest}
@@ -455,30 +464,27 @@ export default function MaintenanceTrackerPage() {
           >
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.issueTitle}</Label>
-                  <Input
-                    required
-                    value={formData.issue_title}
-                    onChange={(e) => setFormData({...formData, issue_title: e.target.value})}
-                    className="mt-2"
-                    style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                  />
-                </div>
+                <MobileFormInput
+                  label={strings.issueTitle}
+                  value={formData.issue_title}
+                  onChange={(e) => setFormData({...formData, issue_title: e.target.value})}
+                  required
+                  colors={colors}
+                />
+
+                <MobileFormInput
+                  label={strings.description}
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  multiline
+                  rows={4}
+                  colors={colors}
+                />
 
                 <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.description}</Label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="mt-2"
-                    rows={4}
-                    style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}
-                  />
-                </div>
-
-                <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.addPhotos}</Label>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.addPhotos}
+                  </label>
                   <div className="mt-2 space-y-3">
                     <div className="flex gap-2 flex-wrap">
                       <label className="cursor-pointer">
@@ -556,38 +562,60 @@ export default function MaintenanceTrackerPage() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
-                    <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
-                      <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="plumbing">Plumbing</SelectItem>
-                        <SelectItem value="electrical">Electrical</SelectItem>
-                        <SelectItem value="structural">Structural</SelectItem>
-                        <SelectItem value="appliance">Appliance</SelectItem>
-                        <SelectItem value="hvac">HVAC</SelectItem>
-                        <SelectItem value="pest">Pest</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                      {strings.category}
+                    </label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({...formData, category: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        backgroundColor: colors.fieldBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                        fontSize: '16px',
+                        borderRadius: '12px',
+                        border: `2px solid ${colors.borderColor}`,
+                        minHeight: '48px'
+                      }}
+                    >
+                      <option value="plumbing">Plumbing</option>
+                      <option value="electrical">Electrical</option>
+                      <option value="structural">Structural</option>
+                      <option value="appliance">Appliance</option>
+                      <option value="hvac">HVAC</option>
+                      <option value="pest">Pest</option>
+                      <option value="other">Other</option>
+                    </select>
                   </div>
 
                   <div>
-                    <Label style={{ color: colors.textPrimary }}>{strings.priority}</Label>
-                    <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
-                      <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor }}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="urgent">Urgent</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                      {strings.priority}
+                    </label>
+                    <select
+                      value={formData.priority}
+                      onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        backgroundColor: colors.fieldBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                        fontSize: '16px',
+                        borderRadius: '12px',
+                        border: `2px solid ${colors.borderColor}`,
+                        minHeight: '48px'
+                      }}
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="urgent">Urgent</option>
+                    </select>
                   </div>
                 </div>
 
@@ -596,18 +624,20 @@ export default function MaintenanceTrackerPage() {
                     type="button"
                     variant="outline"
                     onClick={() => {
+                      haptic.light();
                       setShowAddRequest(false);
                       setPhotoFiles([]);
                       setPhotoPreviews([]);
                     }}
                     disabled={uploadingPhotos}
+                    className="btn-interaction"
                   >
                     <X className="w-4 h-4 mr-2" />
                     {strings.cancel}
                   </Button>
                   <Button
                     type="submit"
-                    className="ls-cta-primary"
+                    className="ls-cta-primary btn-interaction"
                     disabled={uploadingPhotos}
                   >
                     {uploadingPhotos ? (
@@ -628,12 +658,29 @@ export default function MaintenanceTrackerPage() {
           </Card>
         )}
 
-        {maintenanceRequests.length === 0 ? (
-          <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }}>
-            <h3 className="font-semibold text-sm sm:text-base mb-1">No maintenance requests yet</h3>
-            <p className="text-xs sm:text-sm text-gray-700 mb-3">
-              Log your first maintenance issue so you have a clear record with timestamps, photos and notifications.
-            </p>
+        {isLoading ? (
+          <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
+        ) : maintenanceRequests.length === 0 ? (
+          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={Wrench}
+                title={strings.noRequests}
+                description={strings.noRequestsDesc}
+                actionLabel={strings.addRequest}
+                onAction={handleNewRequestClick}
+                isDarkMode={isDarkMode}
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {maintenanceRequests.length === 0 && (
+              <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }}>
+                <h3 className="font-semibold text-sm sm:text-base mb-1">No maintenance requests yet</h3>
+                <p className="text-xs sm:text-sm text-gray-700 mb-3">
+                  Log your first maintenance issue so you have a clear record with timestamps, photos and notifications.
+                </p>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -658,10 +705,10 @@ export default function MaintenanceTrackerPage() {
                 >
                   Upgrade for full maintenance history
                 </button>
-              )}
-            </div>
-          </div>
-        ) : (
+                )}
+                </div>
+                </div>
+                )}
           <div className="max-w-5xl mx-auto space-y-4">
             {maintenanceRequests.map((request) => (
               <Card 
@@ -737,8 +784,10 @@ export default function MaintenanceTrackerPage() {
               </Card>
             ))}
           </div>
+          </>
         )}
       </div>
     </div>
+    </ToastProvider>
   );
 }
