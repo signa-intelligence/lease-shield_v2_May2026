@@ -754,16 +754,18 @@ function TemplatesContent() {
       <div className="max-w-7xl mx-auto">
         
         {/* Upload Dialog */}
-        <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-          <DialogContent className="sm:max-w-2xl" style={{
-            backgroundColor: colors.cardBg,
-            borderColor: colors.borderColor
-          }}>
-            <div className="mb-4">
-              <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
-                {strings.uploadTemplateTitle}
-              </h2>
-            </div>
+        {showUploadDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowUploadDialog(false)}>
+            <div className="w-full max-w-2xl mx-4 rounded-xl shadow-xl" style={{
+              backgroundColor: colors.cardBg,
+              border: `1px solid ${colors.borderColor}`
+            }} onClick={(e) => e.stopPropagation()}>
+              <div className="p-6">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
+                    {strings.uploadTemplateTitle}
+                  </h2>
+                </div>
             <div className="space-y-4 mt-4">
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
@@ -888,8 +890,8 @@ function TemplatesContent() {
                 </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        )}
 
         <PageHeader
           title={strings.title}
