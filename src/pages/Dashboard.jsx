@@ -31,6 +31,7 @@ import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featu
 import PageHeader from "../components/shared/PageHeader";
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
 import AuthGuard from "../components/shared/AuthGuard";
+import QuickGuide from "../components/shared/QuickGuide";
 
 function DashboardContent() {
   const [expandedSections, setExpandedSections] = React.useState({
@@ -43,6 +44,7 @@ function DashboardContent() {
   });
   const [showOnboarding, setShowOnboarding] = React.useState(false);
   const [showTour, setShowTour] = React.useState(false);
+  const [showQuickGuide, setShowQuickGuide] = React.useState(true);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -1937,6 +1939,24 @@ ja: {
             </div>
           )}
 
+          {/* Quick Guide - Persistent helper card */}
+          {showQuickGuide && hasAnyData && !showOnboarding && (
+            <div className="mb-6">
+              <QuickGuide 
+                user={user}
+                onDismiss={() => setShowQuickGuide(false)}
+                colors={{
+                  cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                  textPrimary: isDarkMode ? '#F9FAFB' : '#0F172A',
+                  textSecondary: isDarkMode ? '#D1D5DB' : '#475569',
+                  borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)',
+                  fieldBg: isDarkMode ? '#374151' : '#F8FAFC'
+                }}
+                language={language}
+              />
+            </div>
+          )}
+
           {/* Quick Start Card - Shows for users with no activity yet */}
           {!isLoading && !hasAnyData && !showOnboarding && (
             <Card className="mb-6 border-none shadow-lg bg-white dark:bg-gray-800">
@@ -2112,24 +2132,30 @@ ja: {
             </div>
           )}
 
-          {/* LITE PLAN UPSELL */}
+          {/* LITE PLAN UPSELL - Upgrade to Protect */}
           {isLitePlan && (
             <div
               className="mb-6 p-5 rounded-2xl shadow-lg"
               style={{
                 background: isDarkMode
-                  ? 'linear-gradient(135deg, rgba(199,163,56,0.15) 0%, rgba(12,59,46,0.15) 100%)'
-                  : 'linear-gradient(135deg, rgba(199,163,56,0.08) 0%, rgba(12,59,46,0.08) 100%)',
-                border: `2px solid ${isDarkMode ? 'rgba(199,163,56,0.3)' : 'rgba(12,59,46,0.2)'}`,
+                  ? 'linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(16,185,129,0.15) 100%)'
+                  : 'linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(16,185,129,0.08) 100%)',
+                border: `2px solid ${isDarkMode ? 'rgba(16,185,129,0.3)' : 'rgba(16,185,129,0.25)'}`,
               }}
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold mb-1 text-gray-900 dark:text-gray-50">
-                    {strings.upgradeToProtectForEnhancedTools}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {strings.getMoreScansLineAlerts}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-5 h-5 text-emerald-600" />
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">
+                      {language === 'th' ? 'อัปเกรดเป็น Protect - ฿390/เดือน' : language === 'zh' ? '升级到Protect - ฿390/月' : language === 'ja' ? 'Protectにアップグレード - ฿390/月' : language === 'ko' ? 'Protect로 업그레이드 - ฿390/월' : language === 'ru' ? 'Обновить до Protect - ฿390/месяц' : 'Upgrade to Protect - ฿390/month'}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    {language === 'th' ? '12 การสแกน/ปี • การแจ้งเตือน LINE • 5 เครดิตจดหมาย • แจ้งเตือนค่าเช่า' : language === 'zh' ? '12次扫描/年 • LINE通知 • 5个信件积分 • 租金提醒' : language === 'ja' ? '年12回スキャン • LINE通知 • 5レタークレジット • 家賃アラート' : language === 'ko' ? '연간 12회 스캔 • LINE 알림 • 5개 레터 크레딧 • 임대료 알림' : language === 'ru' ? '12 сканирований/год • LINE уведомления • 5 кредитов писем • Напоминания об аренде' : '12 scans/year • LINE notifications • 5 letter credits • Rent alerts'}
+                  </p>
+                  <p className="text-xs font-semibold text-emerald-600">
+                    {language === 'th' ? 'ประหยัด ฿780 ต่อปีด้วยการจ่ายรายปี (฿3,900)' : language === 'zh' ? '年付节省฿780（฿3,900）' : language === 'ja' ? '年払いで฿780節約（฿3,900）' : language === 'ko' ? '연간 결제시 ฿780 절약（฿3,900）' : language === 'ru' ? 'Экономия ฿780 в год при годовой оплате（฿3,900）' : 'Save ฿780/year with annual billing (฿3,900)'}
                   </p>
                 </div>
                 <Link to={createPageUrl("Account") + '?showPlans=true'}>
@@ -2137,29 +2163,89 @@ ja: {
                     onClick={() => haptic.medium()}
                     className="btn-interaction"
                     style={{
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      backgroundColor: '#C7A338',
+                      padding: '12px 24px',
+                      borderRadius: '10px',
+                      backgroundColor: '#10B981',
                       color: '#FFFFFF',
                       border: 'none',
-                      fontWeight: '600',
-                      fontSize: '14px',
+                      fontWeight: '700',
+                      fontSize: '15px',
                       cursor: 'pointer',
-                      boxShadow: '0 4px 8px rgba(199,163,56,0.3)',
+                      boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
                       whiteSpace: 'nowrap'
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#D4B451';
-                      e.target.style.transform = 'translateY(-1px)';
-                      e.target.style.boxShadow = '0 6px 10px rgba(199,163,56,0.4)';
+                      e.target.style.backgroundColor = '#059669';
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 6px 16px rgba(16,185,129,0.4)';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#C7A338';
+                      e.target.style.backgroundColor = '#10B981';
                       e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 4px 8px rgba(199,163,56,0.3)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)';
                     }}
                   >
-                    {strings.upgradeToProtect}
+                    {language === 'th' ? 'อัปเกรด' : language === 'zh' ? '升级' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'ru' ? 'Обновить' : 'Upgrade'}
+                  </button>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* PROTECT PLAN UPSELL - Upgrade to Secure */}
+          {isProtectPlan && (
+            <div
+              className="mb-6 p-5 rounded-2xl shadow-lg"
+              style={{
+                background: isDarkMode
+                  ? 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(12,59,46,0.15) 100%)'
+                  : 'linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(12,59,46,0.08) 100%)',
+                border: `2px solid ${isDarkMode ? 'rgba(139,92,246,0.3)' : 'rgba(139,92,246,0.25)'}`,
+              }}
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Crown className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">
+                      {language === 'th' ? 'อัปเกรดเป็น Secure - ฿990/เดือน' : language === 'zh' ? '升级到Secure - ฿990/月' : language === 'ja' ? 'Secureにアップグレード - ฿990/月' : language === 'ko' ? 'Secure로 업그레이드 - ฿990/월' : language === 'ru' ? 'Обновить до Secure - ฿990/месяц' : 'Upgrade to Secure - ฿990/month'}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    {language === 'th' ? 'สแกนไม่จำกัด • 10 เครดิตจดหมาย • การสนับสนุนลำดับความสำคัญ • คิวคดีเร่งด่วน' : language === 'zh' ? '无限扫描 • 10个信件积分 • 优先支持 • 优先案件队列' : language === 'ja' ? '無制限スキャン • 10レタークレジット • 優先サポート • 優先ケースキュー' : language === 'ko' ? '무제한 스캔 • 10개 레터 크레딧 • 우선 지원 • 우선 사례 대기열' : language === 'ru' ? 'Неограниченные сканирования • 10 кредитов писем • Приоритетная поддержка • Приоритетная очередь дел' : 'Unlimited scans • 10 letter credits • Priority support • Priority case queue'}
+                  </p>
+                  <p className="text-xs font-semibold text-purple-600">
+                    {language === 'th' ? 'ประหยัด ฿1,980 ต่อปีด้วยการจ่ายรายปี (฿9,900)' : language === 'zh' ? '年付节省฿1,980（฿9,900）' : language === 'ja' ? '年払いで฿1,980節約（฿9,900）' : language === 'ko' ? '연간 결제시 ฿1,980 절약（฿9,900）' : language === 'ru' ? 'Экономия ฿1,980 в год при годовой оплате（฿9,900）' : 'Save ฿1,980/year with annual billing (฿9,900)'}
+                  </p>
+                </div>
+                <Link to={createPageUrl("Account") + '?showPlans=true'}>
+                  <button
+                    onClick={() => haptic.medium()}
+                    className="btn-interaction"
+                    style={{
+                      padding: '12px 24px',
+                      borderRadius: '10px',
+                      backgroundColor: '#8B5CF6',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      fontWeight: '700',
+                      fontSize: '15px',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#7C3AED';
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 6px 16px rgba(139,92,246,0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#8B5CF6';
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(139,92,246,0.3)';
+                    }}
+                  >
+                    {language === 'th' ? 'อัปเกรด' : language === 'zh' ? '升级' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'ru' ? 'Обновить' : 'Upgrade'}
                   </button>
                 </Link>
               </div>
