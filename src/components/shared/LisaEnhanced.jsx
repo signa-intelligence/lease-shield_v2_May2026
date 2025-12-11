@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, X, MessageCircle, Minimize2, Loader2, HelpCircle, DollarSign, Shield } from 'lucide-react';
+import { Send, X, MessageCircle, Minimize2, Loader2, HelpCircle, DollarSign, Shield, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const LISA_SYSTEM_PROMPT = `You are Lisa, the friendly AI assistant for Lease Shield - a rental management and protection platform for both tenants and landlords in Thailand.
 
@@ -143,12 +144,77 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [userPreferredLanguage, setUserPreferredLanguage] = useState(null);
+  const [conversationId, setConversationId] = useState(null);
+  const [loadError, setLoadError] = useState(false);
   const messagesEndRef = useRef(null);
+  const queryClient = useQueryClient();
 
   // Sync with external control
   useEffect(() => {
     setIsOpen(externalIsOpen);
   }, [externalIsOpen]);
+
+  // Fetch current user's active conversation
+  const { data: conversation, isLoading: isLoadingHistory } = useQuery({
+    queryKey: ['lisaConversation'],
+    queryFn: async () => {
+      try {
+        const user = await base44.auth.me();
+        if (!user) return null;
+
+        const conversations = await base44.entities.LisaConversation.filter({
+          user_email: user.email,
+          is_active: true
+        }, '-updated_date', 1);
+
+        return conversations[0] || null;
+      } catch (error) {
+        console.error('Failed to load Lisa conversation:', error);
+        setLoadError(true);
+        return null;
+      }
+    },
+    enabled: isOpen,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Load conversation history when conversation loads
+  useEffect(() => {
+    if (conversation && conversation.messages) {
+      setMessages(conversation.messages);
+      setConversationId(conversation.id);
+    }
+  }, [conversation]);
+
+  // Save conversation mutation
+  const saveConversationMutation = useMutation({
+    mutationFn: async (newMessages) => {
+      const user = await base44.auth.me();
+      if (!user) throw new Error('User not authenticated');
+
+      // Cap at 100 messages
+      const cappedMessages = newMessages.slice(-100);
+
+      if (conversationId) {
+        // Update existing conversation
+        return await base44.entities.LisaConversation.update(conversationId, {
+          messages: cappedMessages
+        });
+      } else {
+        // Create new conversation
+        const newConv = await base44.entities.LisaConversation.create({
+          user_email: user.email,
+          messages: cappedMessages,
+          is_active: true
+        });
+        setConversationId(newConv.id);
+        return newConv;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lisaConversation'] });
+    }
+  });
 
   const colors = isDarkMode ? {
     bg: '#1F2937',
@@ -179,7 +245,14 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     if (!textToSend || isLoading) return;
 
     setInputValue('');
-    setMessages(prev => [...prev, { role: 'user', content: textToSend, timestamp: new Date() }]);
+    const userMessage = { 
+      role: 'user', 
+      content: textToSend, 
+      timestamp: new Date().toISOString(),
+      language: userPreferredLanguage || language || 'en'
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
     try {
@@ -220,14 +293,22 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
         add_context_from_internet: false
       });
 
-      setMessages(prev => [...prev, { 
+      const assistantMessage = { 
         role: 'assistant', 
         content: response || 'I apologize, I encountered an error. Please try again or contact support@leaseshield.asia',
-        timestamp: new Date()
-      }]);
+        timestamp: new Date().toISOString(),
+        language: responseLanguage
+      };
+
+      const updatedMessages = [...messages, userMessage, assistantMessage];
+      setMessages(updatedMessages);
+
+      // Save to database (non-blocking)
+      saveConversationMutation.mutate(updatedMessages);
+
     } catch (error) {
       console.error('Lisa error:', error);
-      setMessages(prev => [...prev, { 
+      const errorMessage = { 
         role: 'assistant', 
         content: language === 'th' 
           ? 'ขออภัย เกิดข้อผิดพลาด กรุณาลองอีกครั้งหรือติดต่อ support@leaseshield.asia'
@@ -240,8 +321,13 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
                 : language === 'ru'
                   ? 'Извините, произошла ошибка. Попробуйте снова или свяжитесь с support@leaseshield.asia'
                   : 'Sorry, an error occurred. Please try again or contact support@leaseshield.asia',
-        timestamp: new Date()
-      }]);
+        timestamp: new Date().toISOString(),
+        language: language
+      };
+      
+      const updatedMessages = [...messages, userMessage, errorMessage];
+      setMessages(updatedMessages);
+      saveConversationMutation.mutate(updatedMessages);
     } finally {
       setIsLoading(false);
     }
@@ -261,17 +347,56 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
   const handleClose = () => {
     setIsOpen(false);
     setIsMinimized(false);
-    setMessages([]);
     setInputValue('');
     if (onClose) onClose();
   };
 
-  const formatTime = (date) => {
+  const handleNewConversation = async () => {
+    try {
+      const user = await base44.auth.me();
+      if (!user) return;
+
+      // Archive current conversation
+      if (conversationId) {
+        await base44.entities.LisaConversation.update(conversationId, {
+          is_active: false
+        });
+      }
+
+      // Create new conversation
+      const newConv = await base44.entities.LisaConversation.create({
+        user_email: user.email,
+        messages: [],
+        is_active: true
+      });
+
+      setConversationId(newConv.id);
+      setMessages([]);
+      queryClient.invalidateQueries({ queryKey: ['lisaConversation'] });
+      haptic.success();
+    } catch (error) {
+      console.error('Failed to start new conversation:', error);
+    }
+  };
+
+  const formatTime = (timestamp) => {
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
     return date.toLocaleTimeString(language === 'th' ? 'th-TH' : 'en-US', { 
       hour: '2-digit', 
       minute: '2-digit' 
     });
   };
+
+  const t = {
+    en: { newConversation: 'New conversation', historyLoadFailed: "We couldn't load your previous messages, but you can still ask me anything." },
+    th: { newConversation: 'บทสนทนาใหม่', historyLoadFailed: "ไม่สามารถโหลดข้อความก่อนหน้าได้ แต่คุณยังสามารถถามอะไรก็ได้" },
+    zh: { newConversation: '新对话', historyLoadFailed: "无法加载您之前的消息，但您仍然可以问我任何问题。" },
+    ja: { newConversation: '新しい会話', historyLoadFailed: "以前のメッセージを読み込めませんでしたが、何でも質問できます。" },
+    ko: { newConversation: '새 대화', historyLoadFailed: "이전 메시지를 불러올 수 없었지만 여전히 무엇이든 물어볼 수 있습니다." },
+    ru: { newConversation: 'Новая беседа', historyLoadFailed: "Не удалось загрузить предыдущие сообщения, но вы всё ещё можете спросить что угодно." }
+  };
+
+  const strings = t[language] || t.en;
 
   // Don't render anything if not open or minimized
   if (!isOpen && !isMinimized) {
@@ -404,6 +529,27 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={handleNewConversation}
+            aria-label={strings.newConversation}
+            title={strings.newConversation}
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              padding: '6px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+          <button
             onClick={() => setIsMinimized(true)}
             aria-label="Minimize"
             style={{
@@ -454,9 +600,28 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
-        backgroundColor: isDarkMode ? '#1F2937' : '#F9FAFB'
+        backgroundColor: isDarkMode ? '#1F2937' : '#F9FAFB',
+        minHeight: '400px'
       }}>
-        {messages.length === 0 ? (
+        {loadError && (
+          <div className="p-3 rounded-lg" style={{
+            backgroundColor: isDarkMode ? '#7F1D1D' : '#FEE2E2',
+            border: '1px solid #EF4444',
+            marginBottom: '12px'
+          }}>
+            <p className="text-xs" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+              {strings.historyLoadFailed}
+            </p>
+          </div>
+        )}
+        {isLoadingHistory ? (
+          <div className="text-center" style={{ marginTop: '60px' }}>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto" style={{ color: colors.textSecondary }} />
+            <p className="text-sm mt-4" style={{ color: colors.textSecondary }}>
+              {language === 'th' ? 'กำลังโหลดประวัติการสนทนา...' : 'Loading conversation...'}
+            </p>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="text-center" style={{ marginTop: '60px' }}>
             <div style={{
               width: '80px',
@@ -477,6 +642,15 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
             <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
               {language === 'th' ? 'ที่ปรึกษา Lease Shield ของคุณ' : language === 'zh' ? '您的Lease Shield顾问' : language === 'ja' ? 'あなたのLease Shieldコンサルタント' : language === 'ko' ? '귀하의 Lease Shield 컨설턴트' : language === 'ru' ? 'Ваш консультант Lease Shield' : 'Your Lease Shield Consultant'}
             </p>
+            {loadError && (
+              <p className="text-xs mb-4 px-4 py-2 rounded-lg" style={{ 
+                color: isDarkMode ? '#FCA5A5' : '#991B1B',
+                backgroundColor: isDarkMode ? '#7F1D1D' : '#FEE2E2',
+                border: '1px solid #EF4444'
+              }}>
+                {strings.historyLoadFailed}
+              </p>
+            )}
             
             {/* Quick Reply Buttons */}
             <div className="flex flex-col gap-2 px-4">
