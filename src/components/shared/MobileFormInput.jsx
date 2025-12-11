@@ -1,7 +1,4 @@
 import React from "react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 
 /**
  * Mobile-optimized form input with proper keyboard handling
@@ -75,7 +72,7 @@ export default function MobileFormInput({
   return (
     <div className="space-y-2">
       {label && (
-        <Label htmlFor={inputId} className="flex items-center gap-2" style={{ 
+        <label htmlFor={inputId} className="flex items-center gap-2" style={{ 
           color: colors?.textPrimary || '#0F172A',
           fontSize: '14px',
           fontWeight: '600'
@@ -83,23 +80,24 @@ export default function MobileFormInput({
           {Icon && <Icon className="w-4 h-4" style={{ color: colors?.textSecondary || '#64748B' }} />}
           <span>{label}</span>
           {required && <span className="text-red-500 ml-0.5">*</span>}
-        </Label>
+        </label>
       )}
       
       <div className="relative">
         {multiline ? (
-          <Textarea
+          <textarea
             {...commonProps}
             rows={rows}
             style={{
               ...commonProps.style,
               minHeight: '96px', // 2x touch target for textarea
               resize: 'vertical',
-              lineHeight: '1.5'
+              lineHeight: '1.5',
+              width: '100%'
             }}
           />
         ) : (
-          <Input
+          <input
             type={type}
             {...commonProps}
             {...numberProps}
