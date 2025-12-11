@@ -959,7 +959,6 @@ function TemplatesContent() {
                 </button>
               </div>
             </div>
-          </div>
         </div>
 
         {/* PRE-SIGNING SECTION */}
