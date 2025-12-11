@@ -941,6 +941,87 @@ function AccountContent() {
     }
   };
 
+  const [installPrompt, setInstallPrompt] = React.useState(null);
+  const [showInstallInstructions, setShowInstallInstructions] = React.useState(false);
+  const [appLinkCopied, setAppLinkCopied] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallApp = async () => {
+    haptic.medium();
+    
+    if (installPrompt) {
+      try {
+        await installPrompt.prompt();
+        const { outcome } = await installPrompt.userChoice;
+        if (outcome === 'accepted') {
+          toast.success(language === 'th' ? 'กำลังติดตั้งแอป...' : language === 'zh' ? '正在安装应用...' : language === 'ja' ? 'アプリをインストール中...' : language === 'ko' ? '앱 설치 중...' : language === 'ru' ? 'Установка приложения...' : 'Installing app...');
+          haptic.success();
+        }
+        setInstallPrompt(null);
+      } catch (err) {
+        console.error('Install failed:', err);
+      }
+    } else {
+      setShowInstallInstructions(true);
+    }
+  };
+
+  const handleShareApp = async () => {
+    haptic.light();
+    const appUrl = 'https://app.leaseshield.asia';
+    const title = 'LeaseShield';
+    const text = language === 'th' 
+      ? 'ป้องกันปัญหาการเช่าด้วย LeaseShield - วิเคราะห์สัญญา ติดตามเงินมัดจำ และเปิดคดีได้ง่ายๆ'
+      : language === 'zh' 
+        ? '用 LeaseShield 防止租赁问题 - 分析合同、追踪押金、轻松开案'
+        : language === 'ja'
+          ? 'LeaseShieldで賃貸問題を防ぐ - 契約分析、敷金追跡、簡単にケース開設'
+          : language === 'ko'
+            ? 'LeaseShield로 임대 문제 예방 - 계약 분석, 보증금 추적, 쉬운 사례 개설'
+            : language === 'ru'
+              ? 'Предотвращайте проблемы аренды с LeaseShield - анализ договоров, отслеживание депозитов, простое открытие дел'
+              : 'Prevent rental problems with LeaseShield - analyze contracts, track deposits, open cases easily';
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: text,
+          url: appUrl
+        });
+        toast.success(language === 'th' ? 'แชร์แล้ว!' : language === 'zh' ? '已分享！' : language === 'ja' ? '共有しました！' : language === 'ko' ? '공유됨!' : language === 'ru' ? 'Поделились!' : 'Shared!');
+        haptic.success();
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          await navigator.clipboard.writeText(appUrl);
+          setAppLinkCopied(true);
+          toast.success(language === 'th' ? 'คัดลอกลิンก์แล้ว!' : language === 'zh' ? '链接已复制！' : language === 'ja' ? 'リンクをコピーしました！' : language === 'ko' ? '링크 복사됨!' : language === 'ru' ? 'Ссылка скопирована!' : 'Link copied!');
+          setTimeout(() => setAppLinkCopied(false), 2000);
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(appUrl);
+        setAppLinkCopied(true);
+        toast.success(language === 'th' ? 'คัดลอกลินก์แล้ว!' : language === 'zh' ? '链接已复制！' : language === 'ja' ? 'リンクをコピーしました！' : language === 'ko' ? '링크 복사됨!' : language === 'ru' ? 'Ссылка скопирована!' : 'Link copied!');
+        haptic.success();
+        setTimeout(() => setAppLinkCopied(false), 2000);
+      } catch (err) {
+        console.error('Copy failed:', err);
+        toast.error(language === 'th' ? 'ไม่สามารถคัดลอกได้' : language === 'zh' ? '无法复制' : language === 'ja' ? 'コピーできませんでした' : language === 'ko' ? '복사 실패' : language === 'ru' ? 'Не удалось скопировать' : 'Failed to copy');
+      }
+    }
+  };
+
   const planTier = user?.plan_tier || 'free';
   const userBillingInterval = user?.billing_interval || 'monthly';
   const subscriptionStatus = user?.subscription_status || 'inactive';
@@ -3402,6 +3483,177 @@ function AccountContent() {
             </Link>
           </CardContent>
         </Card>
+
+        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Download className="w-5 h-5 text-ls-forest" />
+              {language === 'th' ? 'แอปและการแชร์' : language === 'zh' ? '应用与分享' : language === 'ja' ? 'アプリと共有' : language === 'ko' ? '앱 및 공유' : language === 'ru' ? 'Приложение и обмен' : 'App & Sharing'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div
+                onClick={handleInstallApp}
+                style={{
+                  padding: '16px',
+                  backgroundColor: colors.fieldBg,
+                  borderRadius: '12px',
+                  borderLeft: '4px solid #0C3B2E',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
+                  e.currentTarget.style.borderLeftColor = '#C7A338';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = colors.fieldBg;
+                  e.currentTarget.style.borderLeftColor = '#0C3B2E';
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: '#0C3B2E',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Download className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                        {strings.installApp}
+                      </p>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                        {strings.installAppDesc}
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                </div>
+              </div>
+
+              <div
+                onClick={handleShareApp}
+                style={{
+                  padding: '16px',
+                  backgroundColor: colors.fieldBg,
+                  borderRadius: '12px',
+                  borderLeft: '4px solid #C7A338',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
+                  e.currentTarget.style.borderLeftColor = '#0C3B2E';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = colors.fieldBg;
+                  e.currentTarget.style.borderLeftColor = '#C7A338';
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: appLinkCopied ? '#10B981' : '#C7A338',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}>
+                      {appLinkCopied ? (
+                        <CheckCircle2 className="w-5 h-5 text-white" />
+                      ) : (
+                        <Share2 className="w-5 h-5 text-white" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                        {strings.shareApp}
+                      </p>
+                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                        {strings.shareAppDesc}
+                      </p>
+                    </div>
+                  </div>
+                  {appLinkCopied ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  ) : (
+                    <ArrowRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Dialog open={showInstallInstructions} onOpenChange={setShowInstallInstructions}>
+          <DialogContent style={{
+            backgroundColor: colors.cardBg,
+            borderColor: colors.borderColor,
+            maxWidth: '500px',
+            width: '95vw'
+          }}>
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>
+                {strings.installInstructions}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div className="p-4 rounded-lg" style={{
+                backgroundColor: colors.fieldBg,
+                borderLeft: '4px solid #3B82F6'
+              }}>
+                <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>📱 iOS (Safari)</p>
+                <p className="text-sm whitespace-pre-line" style={{ color: colors.textSecondary }}>
+                  {strings.iosInstructions}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg" style={{
+                backgroundColor: colors.fieldBg,
+                borderLeft: '4px solid #10B981'
+              }}>
+                <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>🤖 Android (Chrome)</p>
+                <p className="text-sm whitespace-pre-line" style={{ color: colors.textSecondary }}>
+                  {strings.androidInstructions}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg" style={{
+                backgroundColor: colors.fieldBg,
+                borderLeft: '4px solid #8B5CF6'
+              }}>
+                <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>💻 Desktop</p>
+                <p className="text-sm whitespace-pre-line" style={{ color: colors.textSecondary }}>
+                  {strings.desktopInstructions}
+                </p>
+              </div>
+              <Button
+                onClick={() => {
+                  haptic.light();
+                  setShowInstallInstructions(false);
+                }}
+                className="w-full"
+                style={{
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF',
+                  minHeight: '48px',
+                  fontSize: '15px',
+                  fontWeight: '700'
+                }}
+              >
+                {strings.gotIt}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
