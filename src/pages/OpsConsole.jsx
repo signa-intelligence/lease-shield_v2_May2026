@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Scale,
   User,
@@ -616,21 +618,8 @@ function OpsConsoleContent() {
                   <option value="in_progress">{STATUS_CONFIG.in_progress.label}</option>
                   <option value="resolved">{STATUS_CONFIG.resolved.label}</option>
                   <option value="closed">{STATUS_CONFIG.closed.label}</option>
-                </select>
-                  <SelectContent>
-                    <SelectItem value="all">{strings.allStatuses}</SelectItem>
-                    <SelectItem value="intake">{STATUS_CONFIG.intake.label}</SelectItem>
-                    <SelectItem value="pending_review">{STATUS_CONFIG.pending_review.label}</SelectItem>
-                    <SelectItem value="under_review">{STATUS_CONFIG.under_review.label}</SelectItem>
-                    <SelectItem value="ready_drafts">{STATUS_CONFIG.ready_drafts.label}</SelectItem>
-                    <SelectItem value="client_review">{STATUS_CONFIG.client_review.label}</SelectItem>
-                    <SelectItem value="awaiting_landlord">{STATUS_CONFIG.awaiting_landlord.label}</SelectItem>
-                    <SelectItem value="in_progress">{STATUS_CONFIG.in_progress.label}</SelectItem>
-                    <SelectItem value="resolved">{STATUS_CONFIG.resolved.label}</SelectItem>
-                    <SelectItem value="closed">{STATUS_CONFIG.closed.label}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  </select>
+                  </div>
             </div>
           </CardContent>
         </Card>
