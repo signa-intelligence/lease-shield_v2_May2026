@@ -128,7 +128,7 @@ export default function Layout({ children, currentPageName }) {
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
-      { name: 'apple-mobile-web-app-title', content: 'Lease Shield' },
+      { name: 'apple-mobile-web-app-title', content: 'LeaseShield' },
     ];
 
     metaTags.forEach(({ name, content }) => {
@@ -168,7 +168,7 @@ export default function Layout({ children, currentPageName }) {
 
   const t = {
     en: {
-      appName: "Lease Shield",
+      appName: "LEASE SHIELD",
       home: "Home",
       scan: "Scan",
       property: "Property",
