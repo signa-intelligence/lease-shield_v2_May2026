@@ -7,7 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import AuthGuard from "../components/shared/AuthGuard";
@@ -754,11 +759,11 @@ function TemplatesContent() {
             backgroundColor: colors.cardBg,
             borderColor: colors.borderColor
           }}>
-            <DialogHeader>
-              <DialogTitle style={{ color: colors.textPrimary }}>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>
                 {strings.uploadTemplateTitle}
-              </DialogTitle>
-            </DialogHeader>
+              </h2>
+            </div>
             <div className="space-y-4 mt-4">
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
