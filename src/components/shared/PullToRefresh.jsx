@@ -36,15 +36,13 @@ const PullToRefresh = ({ onRefresh, children, isDarkMode }) => {
       const timeSinceLastRefresh = lastRefreshTime ? now - lastRefreshTime : Infinity;
       const timeSinceActive = now - lastActiveTime;
       
-      // Only show success toast if user manually pulled AND (no recent refresh OR was idle 10+ mins)
-      const shouldShowToast = timeSinceLastRefresh > REFRESH_COOLDOWN || timeSinceActive > IDLE_THRESHOLD;
-      
       setIsRefreshing(true);
       setLastRefreshTime(now);
       setLastActiveTime(now);
       
       try {
-        await onRefresh(shouldShowToast);
+        // Call onRefresh without passing shouldShowToast parameter
+        await onRefresh();
       } catch (error) {
         console.error('Refresh failed:', error);
       } finally {

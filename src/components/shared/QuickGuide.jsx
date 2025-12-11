@@ -439,6 +439,30 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
               {isLastStep ? strings.finish : `${strings.next} →`}
             </button>
           </div>
+          
+          {(!user?.plan_tier || user.plan_tier === 'free') && (
+            <p className="text-xs text-center mt-3" style={{ color: '#6B7280' }}>
+              <a 
+                href={createPageUrl("Account") + '?showPlans=true'}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  haptic.light();
+                  handleDismiss();
+                  navigate(createPageUrl("Account") + '?showPlans=true');
+                }}
+                className="font-semibold underline"
+                style={{ color: '#CFAF6A' }}
+              >
+                {language === 'th' ? 'อัปเกรดเพื่อการปกป้องเต็มรูปแบบ →' : 
+                 language === 'zh' ? '升级以获得全面保护 →' : 
+                 language === 'ja' ? 'フル保護にアップグレード →' : 
+                 language === 'ko' ? '전체 보호를 위해 업그레이드 →' : 
+                 language === 'ru' ? 'Обновите для полной защиты →' : 
+                 'Upgrade for full protection →'}
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </div>

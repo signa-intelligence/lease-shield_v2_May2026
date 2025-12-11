@@ -9,6 +9,7 @@ import LisaEnhanced from "./components/shared/LisaEnhanced";
 import AccountPopup from "./components/shared/AccountPopup";
 import LanguageSelector from "./components/shared/LanguageSelector";
 import QuickGuide from "./components/shared/QuickGuide";
+import UpgradeBanner from "./components/shared/UpgradeBanner";
 
 
 // Animation utilities inlined
@@ -732,6 +733,12 @@ export default function Layout({ children, currentPageName }) {
           onClose={() => setShowQuickGuide(false)}
           onDismiss={() => setShowQuickGuide(false)}
           language={language}
+        />
+
+        <UpgradeBanner 
+          user={user}
+          language={language}
+          isDarkMode={isDarkMode}
         />
         </div>
         );
