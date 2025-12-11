@@ -1,11 +1,12 @@
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, HelpCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import LanguageToggle from "./components/shared/LanguageToggle";
 import { haptic } from "./components/shared/HapticFeedback";
+import Lisa from "./components/shared/Lisa";
 
 
 // Animation utilities inlined
@@ -270,6 +271,13 @@ export default function Layout({ children, currentPageName }) {
       icon: Settings,
     });
   }
+
+  navTabs.push({
+    key: 'faq',
+    label: language === 'th' ? 'FAQ' : language === 'zh' ? 'FAQ' : language === 'ja' ? 'FAQ' : language === 'ko' ? 'FAQ' : language === 'ru' ? 'FAQ' : 'FAQ',
+    route: createPageUrl('FAQ'),
+    icon: HelpCircle,
+  });
 
   if (user && (!user.plan_tier || user.plan_tier === 'free')) {
     navTabs.push({
@@ -676,7 +684,9 @@ export default function Layout({ children, currentPageName }) {
             );
           })}
         </div>
-      </nav>
-    </div>
-  );
-}
+        </nav>
+
+        <Lisa language={language} isDarkMode={isDarkMode} />
+        </div>
+        );
+        }
