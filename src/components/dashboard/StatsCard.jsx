@@ -33,7 +33,7 @@ export default function StatsCard({
     borderColor: extractedColor,
     iconBg: isDarkMode ? iconBgDark : iconBgLight,
     iconColor: extractedColor,
-    titleColor: extractedColor,
+    titleColor: textPrimary,
     metricColor: textPrimary,
     buttonBg: extractedColor,
     buttonText: '#FFFFFF',
@@ -55,40 +55,22 @@ export default function StatsCard({
           }, 200);
         }
       }}
-      className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-sm transition-all duration-200 ${className || ''}`}
+      className={`rounded-xl p-4 flex flex-col justify-between shadow-md transition-all duration-200 ${className || ''}`}
       style={{
         backgroundColor: cardStyles.backgroundColor,
-        borderLeft: `4px solid ${cardStyles.borderColor}`,
+        border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)'}`,
         cursor: 'pointer'
       }}
     >
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div 
-                id={`stat-icon-${title.replace(/\s/g, '-')}`}
-                className="w-8 h-8 rounded-lg flex items-center justify-center" 
-                style={{ backgroundColor: cardStyles.iconBg }}
-              >
-                <Icon className="w-4 h-4" style={{ color: cardStyles.iconColor }} />
-              </div>
-              <h3 
-                className="text-sm font-semibold" 
-                style={{ 
-                  color: cardStyles.titleColor,
-                  whiteSpace: 'normal',
-                  lineHeight: '1.3',
-                  wordBreak: 'break-word'
-                }}
-              >
-                {title}
-              </h3>
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold" style={{ color: cardStyles.metricColor }}>
-              {value}
-            </p>
-          </div>
-          {trend && (
+        <div className="flex flex-col mb-3">
+          <div className="flex items-center justify-between mb-3">
+            <div 
+              id={`stat-icon-${title.replace(/\s/g, '-')}`}
+              className="w-10 h-10 rounded-xl flex items-center justify-center" 
+              style={{ backgroundColor: cardStyles.iconBg }}
+            >
+              <Icon className="w-5 h-5" style={{ color: cardStyles.iconColor }} />
+            {trend && (
             <div className="flex items-center gap-1 px-2 py-1 rounded-full" style={{ backgroundColor: trend.color + '20' }}>
               {trend.value && String(trend.value).startsWith('-') ? (
                 <TrendingDown className="w-3 h-3" style={{ color: trend.color }} />
@@ -99,7 +81,24 @@ export default function StatsCard({
                 {trend.value}
               </span>
             </div>
-          )}
+            )}
+          </div>
+          <div>
+            <h3 
+              className="text-xs font-semibold mb-1" 
+              style={{ 
+                color: cardStyles.titleColor,
+                opacity: 0.7,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}
+            >
+              {title}
+            </h3>
+            <p className="text-2xl font-bold" style={{ color: cardStyles.metricColor }}>
+              {value}
+            </p>
+          </div>
         </div>
 
         {miniStats && miniStats.length > 0 && (
@@ -125,16 +124,17 @@ export default function StatsCard({
               backgroundColor: cardStyles.buttonBg,
               color: cardStyles.buttonText,
               width: "100%",
-              padding: "8px 12px",
-              borderRadius: "8px",
-              fontSize: "0.875rem",
-              fontWeight: "600",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              fontSize: "13px",
+              fontWeight: "700",
               border: "none",
               cursor: "pointer",
-              whiteSpace: "normal",
+              whiteSpace: "nowrap",
               textAlign: "center",
-              lineHeight: "1.3",
-              minHeight: "36px"
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              minHeight: "40px"
             }}
           >
             {label}

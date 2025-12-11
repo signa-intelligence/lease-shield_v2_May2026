@@ -303,7 +303,8 @@ export default function Layout({ children, currentPageName }) {
     textSecondary: '#D1D5DB',
     topBarBg: '#1F2937',
     bottomTabBg: '#1F2937',
-    hoverBg: '#3A3D40'
+    hoverBg: '#3A3D40',
+    fieldBg: '#374151'
   } : {
     bg: '#F3F6F5',
     cardBg: '#FFFFFF',
@@ -312,7 +313,8 @@ export default function Layout({ children, currentPageName }) {
     textSecondary: '#475569',
     topBarBg: '#FFFFFF',
     bottomTabBg: '#FFFFFF',
-    hoverBg: '#F1F5F9'
+    hoverBg: '#F1F5F9',
+    fieldBg: '#F8FAFC'
   };
 
   return (
@@ -466,7 +468,7 @@ export default function Layout({ children, currentPageName }) {
         borderBottomColor: colors.borderColor
       }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             {isDarkMode ? (
               <div className="h-10 px-3 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center md:hidden">
                 <img 
@@ -667,7 +669,6 @@ export default function Layout({ children, currentPageName }) {
                 <Icon 
                   className={`w-5 h-5 mb-1 ${isActive ? 'tab-select' : ''}`} 
                   style={{ 
-                    animation: isActive ? 'pulse 2s infinite' : 'none',
                     color: isActive ? '#FFFFFF' : colors.textPrimary,
                     transition: 'all 0.2s ease'
                   }} 

@@ -36,7 +36,6 @@ import QuickGuide from "../components/shared/QuickGuide";
 function DashboardContent() {
   const [expandedSections, setExpandedSections] = React.useState({
     stats: true,
-    quickActions: true,
     content: true,
     recentLeases: false,
     notifications: false,
@@ -1573,14 +1572,14 @@ ja: {
                   </button>
                 </Link>
 
-                  {isAdmin && (
-                    <>
-                      <button
-                        onClick={() => {
-                          haptic.medium();
-                          testFlexFromBrowser();
-                        }}
-                        disabled={testingBrowserFlex}
+                  {false && isAdmin && (
+                  <>
+                  <button
+                    onClick={() => {
+                      haptic.medium();
+                      testFlexFromBrowser();
+                    }}
+                    disabled={testingBrowserFlex}
                         style={{
                           padding: '6px 12px',
                           backgroundColor: testingBrowserFlex ? '#9CA3AF' : '#8B5CF6',
@@ -2850,93 +2849,7 @@ ja: {
             )}
           </div>
 
-          {expandedSections.quickActions && (
-            <div style={{
-              background: isDarkMode
-                ? 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)'
-                : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-              borderRadius: '24px',
-              padding: '24px',
-              marginBottom: '24px',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-              animation: 'scaleIn 0.3s ease-out',
-            }}>
-              <style>
-                {`
-                  @keyframes scaleIn {
-                    from {
-                      opacity: 0;
-                      transform: scale(0.95);
-                    }
-                    to {
-                      opacity: 1;
-                      transform: scale(1);
-                    }
-                  }
-                `}
-              </style>
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'stretch',
-                gap: '16px',
-              }}>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{
-                    fontSize: '24px',
-                    fontWeight: 'bold',
-                    color: '#FFFFFF',
-                    marginBottom: '12px',
-                    letterSpacing: '-0.01em'
-                  }}>
-                    {strings.protectRights}
-                  </h2>
-                  <p style={{
-                    fontSize: '16px',
-                    color: '#D1FAE5',
-                    lineHeight: '1.6'
-                  }}>
-                    {strings.uploadCta}
-                  </p>
-                </div>
-                <Link to={createPageUrl("uploadscan")} className="w-full">
-                  <button
-                    onClick={() => haptic.medium()}
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#C7A338',
-                      color: '#1A1D1F',
-                      padding: '12px 24px',
-                      borderRadius: '12px',
-                      fontWeight: 'bold',
-                      fontSize: '16px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                      transition: 'all 0.3s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#D4B451';
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#C7A338';
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
-                    }}
-                  >
-                    <Shield className="w-5 h-5" />
-                    {strings.uploadLease}
-                  </button>
-                </Link>
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
     </PullToRefresh>
