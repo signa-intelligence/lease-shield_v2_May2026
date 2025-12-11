@@ -611,20 +611,21 @@ function TemplatesContent() {
   const handleTemplateClick = (template) => {
     haptic.medium();
     
-    // For built-in templates, check credits and navigate to form
-    if (template.id) {
-      if (userCredits >= template.creditCost) {
-        navigate(createPageUrl("TemplateForm") + `?subject=${template.id}`);
-      } else {
-        haptic.error();
+    // Check if template has enough credits
+    const cost = template.creditCost || template.credit_cost || 1;
+    
+    if (userCredits >= cost) {
+      // For built-in templates (has .id) or new bilingual templates (has .template_key), navigate to form
+      const templateId = template.id || template.template_key;
+      if (templateId) {
+        navigate(createPageUrl("TemplateForm") + `?subject=${templateId}`);
+      } else if (template.file_url) {
+        // For custom uploaded file templates, open directly
+        window.open(template.file_url, '_blank');
       }
     } else {
-      // For custom uploaded templates, open the file directly
-      if (userCredits >= template.credit_cost) {
-        window.open(template.file_url, '_blank');
-      } else {
-        haptic.error();
-      }
+      haptic.error();
+      toast.error(strings.insufficientCredits);
     }
   };
 
@@ -657,16 +658,29 @@ function TemplatesContent() {
     }
   };
 
-  // Organize templates by category
-  const preSigningTemplates = [...TEMPLATES.filter(t => t.preSigning), ...customTemplates.filter(t => t.category === 'pre_signing')];
-  const liteTemplates = [...TEMPLATES.filter(t => ['deposit', 'deductions', 'reminder'].includes(t.id)), ...customTemplates.filter(t => t.category === 'friendly')];
-  const protectTemplates = [...TEMPLATES.filter(t => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(t.id)), ...customTemplates.filter(t => t.category === 'professional')];
-  const secureTemplates = [...TEMPLATES.filter(t => ['final_opportunity', 'non_compliance', 'settlement'].includes(t.id)), ...customTemplates.filter(t => t.category === 'final')];
+  // Organize templates by category - merge built-in + database templates
+  const preSigningTemplates = [
+    ...TEMPLATES.filter(t => t.preSigning), 
+    ...customTemplates.filter(t => t.category === 'pre_signing')
+  ];
+  const liteTemplates = [
+    ...TEMPLATES.filter(t => ['deposit', 'deductions', 'reminder'].includes(t.id)), 
+    ...customTemplates.filter(t => t.category === 'friendly')
+  ];
+  const protectTemplates = [
+    ...TEMPLATES.filter(t => ['dispute', 'early_termination', 'condition_dispute', 'evidence'].includes(t.id)), 
+    ...customTemplates.filter(t => t.category === 'professional')
+  ];
+  const secureTemplates = [
+    ...TEMPLATES.filter(t => ['final_opportunity', 'non_compliance', 'settlement'].includes(t.id)), 
+    ...customTemplates.filter(t => t.category === 'final')
+  ];
 
   const renderTemplateCard = (template, isCustom = false) => {
-    const Icon = isCustom ? FileText : template.icon;
-    const hasEnoughCredits = userCredits >= (isCustom ? template.credit_cost : template.creditCost);
-    const color = isCustom ? 'from-blue-500 to-blue-700' : template.color;
+    const Icon = isCustom ? FileText : (template.icon || FileText);
+    const cost = template.creditCost || template.credit_cost || 1;
+    const hasEnoughCredits = userCredits >= cost;
+    const color = template.color || 'from-blue-500 to-blue-700';
 
     return (
       <Card
@@ -687,22 +701,16 @@ function TemplatesContent() {
             </div>
             <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
               <Coins className="w-3 h-3" />
-              {isCustom ? template.credit_cost : template.creditCost}
+              {template.creditCost || template.credit_cost || 1}
             </Badge>
           </div>
 
           <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
-            {isCustom 
-              ? (language === 'th' ? template.title_th : template.title_en)
-              : (template.name?.[language] || template.name?.en || template.name_en)
-            }
+            {template.title_en || template.title_th || template.name?.[language] || template.name?.en || template.name_en || 'Untitled'}
           </h3>
 
           <p className="text-xs sm:text-sm mb-4" style={{ color: colors.textSecondary }}>
-            {isCustom
-              ? (language === 'th' ? template.description_th : template.description_en)
-              : (template.description?.[language] || template.description?.en || template.description_en)
-            }
+            {template.description_en || template.description_th || template.description?.[language] || template.description?.en || template.description_en || ''}
           </p>
 
           {!hasEnoughCredits && (
