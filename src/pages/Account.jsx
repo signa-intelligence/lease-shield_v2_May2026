@@ -1121,8 +1121,8 @@ function AccountContent() {
       export: "Export",
       exporting: "Exporting...",
       deleteAccount: "Need to Delete Your Account?",
-      deleteDesc: "To exercise your right to erasure under PDPA, please contact us at",
-      deleteNote: "We will securely delete all your data within 30 days.",
+      deleteDesc: "To request permanent deletion of your account and data, please email us from your registered email at",
+      deleteNote: "After verification, your data will be deleted within 14 days, except where we must keep certain records for legal or accounting reasons.",
       preventionBannerTitle: "Prevention-First Protection",
       preventionBannerSubtitle: "Subscription-based protection for your lease, deposit, and documentation",
       preventionBannerText: "Lease Shield helps you maintain clear, legal, and evidence-based leasing relationships. Prevent rental problems before they happen with automated alerts, risk analysis, and professional templates.",
@@ -1282,8 +1282,8 @@ function AccountContent() {
       export: "ส่งออก",
       exporting: "กำลังส่งออก...",
       deleteAccount: "ต้องการลบบัญชี?",
-      deleteDesc: "หากต้องการใช้สิทธิ์ลบข้อมูลตาม พ.ร.บ. PDPA กรุณาติดต่อเราที่",
-      deleteNote: "เราจะลบข้อมูลทั้งหมดของคุณอย่างปลอดภัยภายใน 30 วัน",
+      deleteDesc: "หากต้องการขอลบบัญชีและข้อมูลของคุณอย่างถาวร กรุณาส่งอีเมลจากอีเมลที่ลงทะเบียนไปที่",
+      deleteNote: "หลังจากตรวจสอบแล้ว ข้อมูลของคุณจะถูกลบภายใน 14 วัน ยกเว้นกรณีที่เราต้องเก็บบันทึกบางอย่างตามกฎหมายหรือเพื่อการบัญชี",
       preventionBannerTitle: "การป้องกันเป็นอันดับแรก",
       preventionBannerSubtitle: "การป้องกันแบบสมัครสมาชิกสำหรับสัญญาเช่า เงินมัดจำ และเอกสารของคุณ",
       preventionBannerText: "Lease Shield ช่วยให้คุณรักษาความสัมพันธ์ในการเช่าที่ชัดเจน ถูกกฎหมาย และมีหลักฐาน ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้นด้วยการแจ้งเตือนอัตโนมัติ การวิเคราะห์ความเสี่ยง และเทมเพลตมืออาชีพ",
@@ -3759,7 +3759,7 @@ function AccountContent() {
                     </div>
                   </div>
                   <a
-                    href="https://www.leaseshield.asia/legal#privacy"
+                    href="https://leaseshield.asia/privacy"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -3842,18 +3842,18 @@ function AccountContent() {
 
               <div style={{
                 padding: '16px',
-                backgroundColor: '#FEE2E2',
+                backgroundColor: isDarkMode ? '#2A2020' : '#FEF2F2',
                 borderRadius: '12px',
-                borderLeft: '4px solid #DC2626'
+                border: '2px solid #DC2626'
               }}>
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-red-900 mb-1">{strings.deleteAccount}</p>
-                    <p className="text-sm text-red-800 mb-2">
+                    <p className="font-semibold mb-2" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>{strings.deleteAccount}</p>
+                    <p className="text-sm mb-2" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B', lineHeight: '1.5' }}>
                       {strings.deleteDesc} <strong>privacy@leaseshield.asia</strong>
                     </p>
-                    <p className="text-xs text-red-700">
+                    <p className="text-xs" style={{ color: isDarkMode ? '#FECACA' : '#B91C1C', lineHeight: '1.4' }}>
                       {strings.deleteNote}
                     </p>
                   </div>
