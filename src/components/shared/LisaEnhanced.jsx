@@ -61,7 +61,8 @@ Protect (฿390/month):
 Secure (฿990/month):
 - Everything in Protect
 - UNLIMITED lease scans
-- 10 letter credits
+- 1 Resolve case per year (included)
+- Unlimited FastTrack (no extra cost)
 - 20GB storage
 - Priority support
 - Priority case queue

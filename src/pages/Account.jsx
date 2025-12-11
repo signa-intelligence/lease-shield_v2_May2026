@@ -297,10 +297,10 @@ const PLAN_DETAILS = [
     benefits: [
       'Everything in Protect',
       'Unlimited Lease Scans',
-      'Advanced Reminders',
-      '10 Letter Credits',
+      '1 Resolve Case per year',
+      'Unlimited FastTrack',
       '20GB Document Storage',
-      'Deposit Tracker',
+      'Advanced Reminders',
       'Priority Case Queue',
       'Priority Scanning',
       'Premium Support'
@@ -308,10 +308,10 @@ const PLAN_DETAILS = [
     benefitsTh: [
       'ทุกอย่างในแผน Protect',
       'สแกนสัญญาได้ไม่จำกัด',
-      'การแจ้งเตือนขั้นสูง',
-      'เครดิตจดหมาย 10 ใบ',
+      '1 คดี Resolve ต่อปี',
+      'FastTrack ไม่จำกัด',
       'พื้นที่จัดเก็บ 20GB',
-      'ติดตามเงินมัดจำ',
+      'การแจ้งเตือนขั้นสูง',
       'คิวคดีลำดับความสำคัญ',
       'สแกนลำดับความสำคัญ',
       'การสนับสนุนพรีเมียม'
@@ -319,10 +319,10 @@ const PLAN_DETAILS = [
     benefitsRu: [
       'Все из тарифа Protect',
       'Неограниченное количество сканирований договора',
-      'Расширенные напоминания',
-      '10 кредитов на письма',
+      '1 дело Resolve в год',
+      'FastTrack без ограничений',
       '20 ГБ хранилища документов',
-      'Отслеживание депозита',
+      'Расширенные напоминания',
       'Приоритетная очередь по делам',
       'Приоритетное сканирование',
       'Премиальная поддержка'
@@ -330,10 +330,10 @@ const PLAN_DETAILS = [
     benefitsZh: [
       '包含Protect计划所有内容',
       '无限次租约扫描',
-      '高级提醒',
-      '10个信件积分',
+      '每年1个Resolve案件',
+      '无限FastTrack',
       '20GB文档存储',
-      '押金追踪器',
+      '高级提醒',
       '优先案件队列',
       '优先扫描',
       '高级支持'
@@ -341,10 +341,10 @@ const PLAN_DETAILS = [
     benefitsJa: [
       'Protectの全て',
       '無制限のリーススキャン',
-      '高度なリマインダー',
-      '10のレタークレジット',
+      '年間1件のResolveケース',
+      '無制限のFastTrack',
       '20GBドキュメントストレージ',
-      '敷金トラッカー',
+      '高度なリマインダー',
       '優先ケースキュー',
       '優先スキャン',
       'プレミアムサポート'
@@ -352,10 +352,10 @@ const PLAN_DETAILS = [
     benefitsKo: [
       'Protect 플랜의 모든 내용',
       '무제한 임대 계약 스캔',
-      '고급 알림',
-      '10개 레터 크레딧',
+      '연간 1건 Resolve 케이스',
+      '무제한 FastTrack',
       '20GB 문서 저장소',
-      '보증금 추적기',
+      '고급 알림',
       '우선 사례 대기열',
       '우선 스캔',
       '프리미엄 지원'
