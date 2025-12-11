@@ -16,9 +16,9 @@ function Skeleton({ width = '100%', height = '20px', className = '', isDarkMode 
   );
 }
 
-export default function SkeletonLoader({ variant = 'card', count = 1, isDarkMode = false }) {
+export default function SkeletonLoader({ variant = 'card', count = 1, isDarkMode = false, className = '' }) {
   const cardBg = isDarkMode ? '#2A2D30' : '#FFFFFF';
-  const borderColor = isDarkMode ? '#374151' : '#E5E7EB';
+  const borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)';
 
   const renderSkeleton = () => {
     switch (variant) {
@@ -93,9 +93,11 @@ export default function SkeletonLoader({ variant = 'card', count = 1, isDarkMode
   };
 
   return (
-    <div className="content-fade-in">
+    <div className={`content-fade-in ${className}`}>
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="mb-4">
+        <div key={index} className="mb-4" style={{ 
+          animation: `fadeIn 0.4s ease-out ${index * 0.1}s both` 
+        }}>
           {renderSkeleton()}
         </div>
       ))}

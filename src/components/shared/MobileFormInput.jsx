@@ -53,13 +53,16 @@ export default function MobileFormInput({
     disabled: disabled,
     inputMode: getInputMode(),
     style: {
-      backgroundColor: colors.inputBg,
-      borderColor: error ? '#EF4444' : colors.borderColor,
-      color: colors.textPrimary,
+      backgroundColor: colors?.fieldBg || colors?.inputBg || (colors?.cardBg || '#FFFFFF'),
+      borderColor: error ? '#EF4444' : (colors?.borderColor || '#E5E7EB'),
+      color: colors?.textPrimary || '#0F172A',
       fontSize: '16px', // Prevents zoom on iOS
-      minHeight: '44px', // Touch target minimum
+      minHeight: '48px', // Touch target minimum (increased from 44px)
+      padding: '12px 16px',
+      borderRadius: '12px',
+      transition: 'all 0.2s ease',
     },
-    className: `${error ? 'border-red-500' : ''}`
+    className: `${error ? 'border-2 border-red-500 focus:border-red-500' : 'border-2 focus:border-ls-forest'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`
   };
 
   const numberProps = type === 'number' ? {
@@ -72,10 +75,14 @@ export default function MobileFormInput({
   return (
     <div className="space-y-2">
       {label && (
-        <Label htmlFor={inputId} className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-          {Icon && <Icon className="w-4 h-4" style={{ color: colors.textSecondary }} />}
-          <span className="font-semibold">{label}</span>
-          {required && <span className="text-red-500">*</span>}
+        <Label htmlFor={inputId} className="flex items-center gap-2" style={{ 
+          color: colors?.textPrimary || '#0F172A',
+          fontSize: '14px',
+          fontWeight: '600'
+        }}>
+          {Icon && <Icon className="w-4 h-4" style={{ color: colors?.textSecondary || '#64748B' }} />}
+          <span>{label}</span>
+          {required && <span className="text-red-500 ml-0.5">*</span>}
         </Label>
       )}
       
@@ -86,8 +93,9 @@ export default function MobileFormInput({
             rows={rows}
             style={{
               ...commonProps.style,
-              minHeight: '88px', // 2x touch target for textarea
-              resize: 'vertical'
+              minHeight: '96px', // 2x touch target for textarea
+              resize: 'vertical',
+              lineHeight: '1.5'
             }}
           />
         ) : (
@@ -105,7 +113,10 @@ export default function MobileFormInput({
         )}
         
         {hint && !error && (
-          <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+          <p className="text-xs mt-1" style={{ 
+            color: colors?.textSecondary || '#64748B',
+            lineHeight: '1.4'
+          }}>
             {hint}
           </p>
         )}

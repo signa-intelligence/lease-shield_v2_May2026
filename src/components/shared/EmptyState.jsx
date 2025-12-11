@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { haptic } from './HapticFeedback';
 
 const EmptyState = ({
   icon: Icon,
@@ -12,6 +13,8 @@ const EmptyState = ({
   onSecondaryAction,
   illustration = 'default',
   animate = true,
+  isDarkMode = false,
+  compact = false,
 }) => {
   const illustrations = {
     default: (
@@ -123,11 +126,16 @@ const EmptyState = ({
     ),
   };
 
+  const textColor = isDarkMode ? '#F9FAFB' : '#0F172A';
+  const secondaryTextColor = isDarkMode ? '#D1D5DB' : '#64748B';
+
   return (
     <div
-      className="text-center py-12 px-6"
+      className="text-center px-6"
       style={{
         animation: animate ? 'fadeIn 0.5s ease-out' : 'none',
+        paddingTop: compact ? '32px' : '48px',
+        paddingBottom: compact ? '32px' : '48px',
       }}
     >
       <style>
@@ -163,22 +171,24 @@ const EmptyState = ({
       {illustrations[illustration] || illustrations.default}
 
       <h3
-        className="text-2xl font-bold mb-3"
+        className="font-bold mb-3"
         style={{
-          fontSize: '24px',
+          fontSize: compact ? '20px' : '24px',
           fontWeight: '700',
           marginBottom: '12px',
+          color: textColor,
         }}
       >
         {title}
       </h3>
 
       <p
-        className="text-slate-600 mb-6 max-w-md mx-auto"
+        className="mb-6 max-w-md mx-auto"
         style={{
-          fontSize: '16px',
+          fontSize: compact ? '14px' : '16px',
           lineHeight: '1.6',
           marginBottom: '24px',
+          color: secondaryTextColor,
         }}
       >
         {description}
@@ -187,7 +197,10 @@ const EmptyState = ({
       {actionLabel && onAction && (
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
-            onClick={onAction}
+            onClick={() => {
+              haptic.light();
+              onAction();
+            }}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -225,7 +238,10 @@ const EmptyState = ({
 
           {secondaryActionLabel && onSecondaryAction && (
             <button
-              onClick={onSecondaryAction}
+              onClick={() => {
+                haptic.light();
+                onSecondaryAction();
+              }}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -233,11 +249,11 @@ const EmptyState = ({
                 gap: '8px',
                 padding: '12px 24px',
                 backgroundColor: 'transparent',
-                color: '#0C3B2E',
+                color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
                 borderRadius: '12px',
                 fontSize: '16px',
                 fontWeight: '600',
-                border: '2px solid #0C3B2E',
+                border: `2px solid ${isDarkMode ? '#F9FAFB' : '#0C3B2E'}`,
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 whiteSpace: 'normal',
@@ -246,7 +262,7 @@ const EmptyState = ({
                 minHeight: '48px'
               }}
               onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#F8FAFC';
+                e.target.style.backgroundColor = isDarkMode ? '#374151' : '#F8FAFC';
               }}
               onMouseLeave={(e) => {
                 e.target.style.backgroundColor = 'transparent';
