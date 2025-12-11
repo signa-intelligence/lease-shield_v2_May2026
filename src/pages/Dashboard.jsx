@@ -53,6 +53,15 @@ function DashboardContent() {
     queryFn: () => base44.auth.me(),
   });
 
+  // Generate referral code on first login if missing
+  React.useEffect(() => {
+    if (user && !user.referral_code) {
+      base44.functions.invoke('generateReferralCode')
+        .then(() => queryClient.invalidateQueries({ queryKey: ['currentUser'] }))
+        .catch(err => console.error('[DASHBOARD] Failed to generate referral code:', err));
+    }
+  }, [user?.id, user?.referral_code, queryClient]);
+
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
     queryKey: ['leases'],
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),

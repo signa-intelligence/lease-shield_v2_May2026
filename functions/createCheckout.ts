@@ -198,6 +198,8 @@ Deno.serve(async (req) => {
           email: user.email,
           plan: planTier,
           interval: billingInterval,
+          referredBy: user.referred_by || null,
+          referralCode: user.referral_code || null
         }
       };
 

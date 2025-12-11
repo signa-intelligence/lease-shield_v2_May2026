@@ -25,6 +25,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
+import ReferralCard from "../components/referral/ReferralCard";
 
 const PLAN_DETAILS = [
   {
@@ -2840,6 +2841,11 @@ function AccountContent() {
 
         <div className="mb-6">
           <LineConnectionStatus user={user} colors={colors} />
+        </div>
+
+        {/* Referral Program */}
+        <div className="mb-6">
+          <ReferralCard user={user} colors={colors} language={language} />
         </div>
 
         <div className="mb-6">

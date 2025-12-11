@@ -66,6 +66,194 @@ Deno.serve(async (req) => {
       console.log('[WEBHOOK] Metadata type:', metadata.type);
 
       // ========================================
+      // SUBSCRIPTION FLOW - Handle plan activation & referral
+      // ========================================
+      if (metadata.type === 'subscription') {
+        console.log('[SUBSCRIPTION_WEBHOOK] 📋 New subscription detected');
+
+        const userId = metadata.userId;
+        const email = metadata.email;
+        const planTier = metadata.plan || 'lite';
+        const billingInterval = metadata.interval || 'monthly';
+
+        console.log('[SUBSCRIPTION_WEBHOOK] User:', email);
+        console.log('[SUBSCRIPTION_WEBHOOK] Plan:', planTier, '/', billingInterval);
+
+        // Fetch user
+        let subscribedUser;
+        try {
+          const allUsers = await base44.asServiceRole.entities.User.list();
+          subscribedUser = allUsers.find(u => u.id === userId || u.email === email);
+
+          if (!subscribedUser) {
+            console.error('[SUBSCRIPTION_WEBHOOK] ❌ User not found');
+            return Response.json({ received: true, error: 'user_not_found' }, { status: 200 });
+          }
+
+          console.log('[SUBSCRIPTION_WEBHOOK] User found:', subscribedUser.email);
+        } catch (fetchError) {
+          console.error('[SUBSCRIPTION_WEBHOOK] ❌ Failed to fetch user:', fetchError.message);
+          return Response.json({ received: true, error: 'user_fetch_failed' }, { status: 200 });
+        }
+
+        // Update user plan
+        const now = new Date().toISOString();
+        const isFirstPaidPlan = !subscribedUser.member_since;
+
+        await base44.asServiceRole.entities.User.update(subscribedUser.id, {
+          plan_tier: planTier,
+          billing_interval: billingInterval,
+          subscription_status: 'active',
+          subscription_started_at: now,
+          member_since: subscribedUser.member_since || now,
+          stripe_subscription_id: session.subscription
+        });
+
+        console.log('[SUBSCRIPTION_WEBHOOK] ✅ User plan updated to:', planTier);
+
+        // ========================================
+        // REFERRAL CREDIT LOGIC - First paid subscription only
+        // ========================================
+        if (isFirstPaidPlan && subscribedUser.referred_by) {
+          console.log('[REFERRAL_CREDIT] 🎁 User was referred, processing credit...');
+
+          try {
+            // Find referrer
+            const referrer = allUsers.find(u => u.id === subscribedUser.referred_by);
+
+            if (!referrer) {
+              console.error('[REFERRAL_CREDIT] ❌ Referrer not found:', subscribedUser.referred_by);
+            } else {
+              console.log('[REFERRAL_CREDIT] Referrer found:', referrer.email);
+              console.log('[REFERRAL_CREDIT] Referrer plan:', referrer.plan_tier);
+              console.log('[REFERRAL_CREDIT] Friend plan:', planTier);
+
+              // Calculate credit (cheaper plan rule)
+              const planPrices = {
+                lite: 190,
+                protect: 390,
+                secure: 990
+              };
+
+              const referrerMonthlyPrice = planPrices[referrer.plan_tier] || 0;
+              const friendMonthlyPrice = planPrices[planTier] || 0;
+
+              const creditTHB = Math.min(referrerMonthlyPrice, friendMonthlyPrice);
+
+              console.log('[REFERRAL_CREDIT] Referrer monthly price:', referrerMonthlyPrice);
+              console.log('[REFERRAL_CREDIT] Friend monthly price:', friendMonthlyPrice);
+              console.log('[REFERRAL_CREDIT] Credit to award:', creditTHB);
+
+              if (creditTHB > 0) {
+                // Update referrer credits
+                const newReferralBalance = (referrer.referral_credits_thb || 0) + creditTHB;
+                const newTotalEarned = (referrer.referral_credits_total_thb || 0) + creditTHB;
+                const newReferralCount = (referrer.referral_count || 0) + 1;
+
+                await base44.asServiceRole.entities.User.update(referrer.id, {
+                  referral_credits_thb: newReferralBalance,
+                  referral_credits_total_thb: newTotalEarned,
+                  referral_count: newReferralCount
+                });
+
+                console.log('[REFERRAL_CREDIT] ✅ Referrer updated:', referrer.email);
+                console.log('[REFERRAL_CREDIT] New balance:', newReferralBalance);
+                console.log('[REFERRAL_CREDIT] Total earned:', newTotalEarned);
+                console.log('[REFERRAL_CREDIT] Referral count:', newReferralCount);
+
+                // Apply Stripe customer balance (negative = credit)
+                const creditInSmallestUnit = creditTHB * 100; // THB to satang
+
+                try {
+                  await stripe.customers.update(referrer.stripe_customer_id, {
+                    balance: -creditInSmallestUnit, // Negative = credit
+                    metadata: {
+                      last_referral_credit: creditTHB.toString(),
+                      last_referral_date: now
+                    }
+                  });
+
+                  console.log('[REFERRAL_CREDIT] ✅ Stripe customer balance updated');
+                  console.log('[REFERRAL_CREDIT] Credit applied:', -creditInSmallestUnit, 'satang');
+                } catch (stripeError) {
+                  console.error('[REFERRAL_CREDIT] ⚠️ Stripe balance update failed:', stripeError.message);
+                }
+
+                // Update referral record
+                const referralRecords = await base44.asServiceRole.entities.Referral.filter({
+                  referrer_user_id: referrer.id,
+                  referred_user_id: subscribedUser.id
+                });
+
+                if (referralRecords.length > 0) {
+                  await base44.asServiceRole.entities.Referral.update(referralRecords[0].id, {
+                    status: 'converted',
+                    credit_thb: creditTHB,
+                    referrer_plan_at_conversion: referrer.plan_tier,
+                    referred_plan: planTier,
+                    converted_at: now
+                  });
+
+                  console.log('[REFERRAL_CREDIT] ✅ Referral record updated to converted');
+                }
+
+                // Notify referrer (non-blocking)
+                if (referrer.email_notifications && RESEND_API_KEY) {
+                  const emailSubject = language === 'th' 
+                    ? '🎉 คุณได้รับเครดิตการแนะนำ!' 
+                    : '🎉 You Earned a Referral Credit!';
+
+                  const emailBody = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                      <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h2 style="color: white; margin: 0;">🎉 Referral Credit Earned!</h2>
+                      </div>
+                      <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                        <p>Hi <strong>${referrer.full_name || 'there'}</strong>,</p>
+                        <p>Great news! Your friend just subscribed to Lease Shield.</p>
+                        <div style="background: #FFFBEB; padding: 16px; border-radius: 8px; border-left: 4px solid #C7A338; margin: 20px 0;">
+                          <p style="margin: 8px 0;"><strong>Credit earned:</strong> ฿${creditTHB}</p>
+                          <p style="margin: 8px 0;"><strong>New balance:</strong> ฿${newReferralBalance}</p>
+                          <p style="margin: 8px 0;"><strong>Total earned:</strong> ฿${newTotalEarned}</p>
+                        </div>
+                        <p>This credit will automatically reduce your next invoice(s). Keep sharing to earn more!</p>
+                        <p><a href="https://app.leaseshield.asia/account" style="color: #0C3B2E; font-weight: bold;">View Your Referrals →</a></p>
+                        <p style="margin-top: 24px; color: #666; font-size: 12px;">— The Lease Shield Team</p>
+                      </div>
+                    </div>
+                  `;
+
+                  fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${RESEND_API_KEY}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      from: 'Lease Shield <no-reply@leaseshield.asia>',
+                      to: [referrer.email],
+                      subject: emailSubject,
+                      html: emailBody,
+                    }),
+                  }).catch((err) => console.error('[REFERRAL_CREDIT] ⚠️ Email failed:', err));
+                }
+              } else {
+                console.log('[REFERRAL_CREDIT] ⚠️ No credit awarded (referrer on free or friend on free)');
+              }
+            }
+          } catch (referralError) {
+            console.error('[REFERRAL_CREDIT] ⚠️ Referral processing failed (non-critical):', referralError.message);
+          }
+        }
+
+        console.log('[SUBSCRIPTION_WEBHOOK] ✅ Subscription processing complete');
+        return Response.json({ 
+          received: true,
+          processed: 'subscription'
+        }, { status: 200 });
+      }
+
+      // ========================================
       // CREDITS PURCHASE FLOW
       // ========================================
       if (metadata.type === 'credits') {

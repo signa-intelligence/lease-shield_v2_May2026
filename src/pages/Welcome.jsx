@@ -21,10 +21,25 @@ export default function Welcome() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Redirect authenticated users to dashboard immediately
+  // Handle referral code from URL and redirect authenticated users
   React.useEffect(() => {
     if (!isLoading) {
       if (user) {
+        // Check for ref param and process referral
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        
+        if (refCode && !user.referred_by && !user.referral_code_processed) {
+          // Process referral in background
+          base44.functions.invoke('processReferralSignup', { referralCode: refCode })
+            .then(() => console.log('[WELCOME] Referral processed'))
+            .catch(err => console.error('[WELCOME] Referral failed:', err));
+          
+          // Mark as processed to avoid duplicate calls
+          base44.auth.updateMe({ referral_code_processed: true })
+            .catch(err => console.error('[WELCOME] Failed to mark referral processed:', err));
+        }
+        
         window.location.href = '/dashboard';
       } else {
         setCheckingAuth(false);
@@ -178,7 +193,11 @@ export default function Welcome() {
 
   const handleContinue = () => {
     haptic.medium();
-    window.location.href = "/login?next=/cookie-sync";
+    // Preserve ref param through login flow
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    const nextUrl = refCode ? `/welcome?ref=${refCode}` : '/cookie-sync';
+    window.location.href = `/login?next=${encodeURIComponent(nextUrl)}`;
   };
 
   const handleOpenApp = () => {
