@@ -9,15 +9,203 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 
 const FAQ_DATA = {
+  general: {
+    icon: HelpCircle,
+    color: '#0C3B2E',
+    titleEn: 'General Overview',
+    titleTh: 'ภาพรวมทั่วไป',
+    titleZh: '概述',
+    titleJa: '概要',
+    titleKo: '일반 개요',
+    titleRu: 'Общий обзор',
+    questions: [
+      {
+        questionEn: 'What is Lease Shield?',
+        questionTh: 'Lease Shield คืออะไร?',
+        questionZh: 'Lease Shield是什么？',
+        questionJa: 'Lease Shieldとは何ですか？',
+        questionKo: 'Lease Shield는 무엇인가요?',
+        questionRu: 'Что такое Lease Shield?',
+        answerEn: 'Lease Shield is a platform that helps tenants and landlords manage the rental journey clearly, confidently, and fairly.\n\nWe provide tools for lease scanning, deposit tracking, reminders, documentation, evidence storage, and issue reporting — helping prevent problems before they happen.',
+        answerTh: 'Lease Shield คือแพลตฟอร์มที่ช่วยผู้เช่าและเจ้าของบ้านจัดการการเช่าอย่างชัดเจน มั่นใจ และเป็นธรรม\n\nเรามีเครื่องมือสำหรับการสแกนสัญญาเช่า ติดตามเงินมัดจำ การแจ้งเตือน เอกสาร การจัดเก็บหลักฐาน และรายงานปัญหา — ช่วยป้องกันปัญหาก่อนเกิดขึ้น',
+        answerZh: 'Lease Shield是一个帮助租户和房东清晰、自信、公平地管理租赁过程的平台。\n\n我们提供租约扫描、押金追踪、提醒、文档管理、证据存储和问题报告工具 — 帮助在问题发生前预防。',
+        answerJa: 'Lease Shieldは、賃借人と貸主が賃貸の過程を明確、自信を持って、公正に管理するのを支援するプラットフォームです。\n\nリーススキャン、敷金追跡、リマインダー、文書管理、証拠保存、問題報告のツールを提供し — 問題が発生する前に防ぐのを支援します。',
+        answerKo: 'Lease Shield는 임차인과 임대인이 임대 과정을 명확하고 자신감 있게 공정하게 관리할 수 있도록 돕는 플랫폼입니다。\n\n임대 계약 스캔、보증금 추적、알림、문서화、증거 저장 및 문제 보고 도구를 제공하여 문제가 발생하기 전에 예방합니다。',
+        answerRu: 'Lease Shield — это платформа, которая помогает арендаторам и арендодателям управлять процессом аренды ясно, уверенно и справедливо。\n\nМы предоставляем инструменты для сканирования договоров、отслеживания депозитов、напоминаний、документации、хранения доказательств и сообщения о проблемах — помогая предотвращать проблемы до их возникновения。'
+      },
+      {
+        questionEn: 'How does Lease Shield work?',
+        questionTh: 'Lease Shield ทำงานอย่างไร?',
+        questionZh: 'Lease Shield如何工作？',
+        questionJa: 'Lease Shieldはどのように機能しますか？',
+        questionKo: 'Lease Shield는 어떻게 작동하나요?',
+        questionRu: 'Как работает Lease Shield?',
+        answerEn: 'You upload your lease, track your deposit, report issues, store evidence, and receive guidance throughout your rental period.\n\nLease Shield does not take sides — it supports both tenants and landlords by improving clarity and reducing misunderstandings.',
+        answerTh: 'คุณอัปโหลดสัญญาเช่า ติดตามเงินมัดจำ รายงานปัญหา จัดเก็บหลักฐาน และรับคำแนะนำตลอดระยะเวลาการเช่า\n\nLease Shield ไม่เข้าข้างฝ่ายใด — รองรับทั้งผู้เช่าและเจ้าของบ้านด้วยการปรับปรุงความชัดเจนและลดความเข้าใจผิด',
+        answerZh: '您上传租约、追踪押金、报告问题、存储证据，并在整个租赁期间获得指导。\n\nLease Shield不偏袒任何一方 — 通过提高清晰度和减少误解来支持租户和房东。',
+        answerJa: 'リース契約をアップロードし、敷金を追跡し、問題を報告し、証拠を保存し、賃貸期間中にガイダンスを受けます。\n\nLease Shieldは立場を取りません — 明確性を向上させ、誤解を減らすことで、賃借人と貸主の両方をサポートします。',
+        answerKo: '임대 계약을 업로드하고、보증금을 추적하고、문제를 보고하고、증거를 저장하며、임대 기간 동안 안내를 받습니다。\n\nLease Shield는 편을 들지 않습니다 — 명확성을 개선하고 오해를 줄임으로써 임차인과 임대인 모두를 지원합니다。',
+        answerRu: 'Вы загружаете договор、отслеживаете депозит、сообщаете о проблемах、храните доказательства и получаете рекомендации на протяжении всего периода аренды。\n\nLease Shield не принимает чью-либо сторону — он поддерживает и арендаторов、и арендодателей、улучшая ясность и уменьшая недопонимание。'
+      },
+      {
+        questionEn: 'Who is Lease Shield for — tenants or landlords?',
+        questionTh: 'Lease Shield เหมาะสำหรับใคร — ผู้เช่าหรือเจ้าของบ้าน?',
+        questionZh: 'Lease Shield是为租户还是房东设计的？',
+        questionJa: 'Lease Shieldは誰のためですか — 賃借人または貸主？',
+        questionKo: 'Lease Shield는 누구를 위한 것입니까 — 임차인인가요 아니면 임대인인가요?',
+        questionRu: 'Для кого Lease Shield — для арендаторов или арендодателей?',
+        answerEn: 'Both.\n\nLease Shield is designed for tenants who want clarity and protection and landlords who want transparency, documentation, and well-informed tenants.',
+        answerTh: 'ทั้งสองฝ่าย\n\nLease Shield ออกแบบมาสำหรับผู้เช่าที่ต้องการความชัดเจนและการป้องกัน และเจ้าของบ้านที่ต้องการความโปร่งใส เอกสาร และผู้เช่าที่มีข้อมูลดี',
+        answerZh: '两者都有。\n\nLease Shield是为想要清晰和保护的租户以及想要透明度、文档和知情租户的房东设计的。',
+        answerJa: '両方です。\n\nLease Shieldは、明確性と保護を求める賃借人と、透明性、文書化、および情報に通じた賃借人を求める貸主のために設計されています。',
+        answerKo: '둘 다입니다。\n\nLease Shield는 명확성과 보호를 원하는 임차인과 투명성、문서화 및 정보에 밝은 임차인을 원하는 임대인을 위해 설계되었습니다。',
+        answerRu: 'Для обоих。\n\nLease Shield разработан для арендаторов、которые хотят ясности и защиты、и для арендодателей、которые хотят прозрачности、документации и информированных арендаторов。'
+      }
+    ]
+  },
+  leaseScan: {
+    icon: Shield,
+    color: '#0C3B2E',
+    titleEn: 'Lease Scan',
+    titleTh: 'สแกนสัญญาเช่า',
+    titleZh: '租约扫描',
+    titleJa: 'リーススキャン',
+    titleKo: '임대 계약 스캔',
+    titleRu: 'Сканирование договора',
+    questions: [
+      {
+        questionEn: 'What is a lease scan?',
+        questionTh: 'การสแกนสัญญาเช่าคืออะไร?',
+        questionZh: '租约扫描是什么？',
+        questionJa: 'リーススキャンとは何ですか？',
+        questionKo: '임대 계약 스캔이란 무엇인가요?',
+        questionRu: 'Что такое сканирование договора?',
+        answerEn: 'Our AI reviews your rental agreement to highlight unusual terms, important dates, missing information, and potential risks.',
+        answerTh: 'AI ของเราตรวจสอบสัญญาเช่าของคุณเพื่อเน้นเงื่อนไขที่ผิดปกติ วันที่สำคัญ ข้อมูลที่ขาดหายไป และความเสี่ยงที่อาจเกิดขึ้น',
+        answerZh: '我们的AI会审查您的租赁协议，突出显示不寻常的条款、重要日期、缺失信息和潜在风险。',
+        answerJa: '私たちのAIは、あなたの賃貸契約をレビューして、異常な条件、重要な日付、欠落している情報、および潜在的なリスクを強調します。',
+        answerKo: '우리의 AI는 임대 계약을 검토하여 비정상적인 조건、중요한 날짜、누락된 정보 및 잠재적 위험을 강조합니다。',
+        answerRu: 'Наш ИИ проверяет ваш договор аренды、чтобы выделить необычные условия、важные даты、отсутствующую информацию и потенциальные риски。'
+      },
+      {
+        questionEn: 'Does Lease Shield give legal advice?',
+        questionTh: 'Lease Shield ให้คำแนะนำทางกฎหมายหรือไม่?',
+        questionZh: 'Lease Shield提供法律建议吗？',
+        questionJa: 'Lease Shieldは法的アドバイスを提供しますか？',
+        questionKo: 'Lease Shield는 법률 자문을 제공하나요?',
+        questionRu: 'Lease Shield дает юридические консультации?',
+        answerEn: 'No.\n\nLease Shield highlights information and risk areas to help you understand your lease better — but final decisions should be made by you or a legal professional.',
+        answerTh: 'ไม่ให้\n\nLease Shield เน้นข้อมูลและพื้นที่เสี่ยงเพื่อช่วยให้คุณเข้าใจสัญญาเช่าได้ดีขึ้น — แต่การตัดสินใจขั้นสุดท้ายควรทำโดยคุณหรือผู้เชี่ยวชาญด้านกฎหมาย',
+        answerZh: '不提供。\n\nLease Shield突出显示信息和风险区域，帮助您更好地理解您的租约 — 但最终决定应由您或法律专业人士做出。',
+        answerJa: 'いいえ。\n\nLease Shieldは、あなたがリース契約をよりよく理解できるように情報とリスク領域を強調します — しかし最終的な決定はあなたまたは法律専門家が行うべきです。',
+        answerKo: '아니요。\n\nLease Shield는 임대 계약을 더 잘 이해할 수 있도록 정보와 위험 영역을 강조합니다 — 그러나 최종 결정은 귀하 또는 법률 전문가가 내려야 합니다。',
+        answerRu: 'Нет。\n\nLease Shield выделяет информацию и области рисков、чтобы помочь вам лучше понять ваш договор — но окончательные решения должны приниматься вами или юристом。'
+      },
+      {
+        questionEn: 'How many lease scans do I get?',
+        questionTh: 'ฉันได้สแกนสัญญาเช่ากี่ครั้ง?',
+        questionZh: '我可以进行多少次租约扫描？',
+        questionJa: 'リーススキャンは何回利用できますか？',
+        questionKo: '몇 번의 임대 계약 스캔을 받나요?',
+        questionRu: 'Сколько сканирований договора я получаю?',
+        answerEn: 'Lite → 6 scans per year\nProtect → 12 scans per year\nSecure → Unlimited',
+        answerTh: 'Lite → 6 ครั้ง/ปี\nProtect → 12 ครั้ง/ปี\nSecure → ไม่จำกัด',
+        answerZh: 'Lite → 每年6次\nProtect → 每年12次\nSecure → 无限制',
+        answerJa: 'Lite → 年6回\nProtect → 年12回\nSecure → 無制限',
+        answerKo: 'Lite → 연간 6회\nProtect → 연간 12회\nSecure → 무제한',
+        answerRu: 'Lite → 6 раз в год\nProtect → 12 раз в год\nSecure → Неограниченно'
+      }
+    ]
+  },
+  deposit: {
+    icon: Wallet,
+    color: '#10B981',
+    titleEn: 'Deposit Tracking',
+    titleTh: 'ติดตามเงินมัดจำ',
+    titleZh: '押金追踪',
+    titleJa: '敷金追跡',
+    titleKo: '보증금 추적',
+    titleRu: 'Отслеживание депозита',
+    questions: [
+      {
+        questionEn: 'Can Lease Shield track my rental deposit?',
+        questionTh: 'Lease Shield สามารถติดตามเงินมัดจำการเช่าของฉันได้หรือไม่?',
+        questionZh: 'Lease Shield可以追踪我的租金押金吗？',
+        questionJa: 'Lease Shieldは私の敷金を追跡できますか？',
+        questionKo: 'Lease Shield가 내 임대 보증금을 추적할 수 있나요?',
+        questionRu: 'Может ли Lease Shield отслеживать мой арендный депозит?',
+        answerEn: 'Yes.\n\nThe system tracks your deposit amount, due date, and return deadlines, with reminders before key events.',
+        answerTh: 'ได้\n\nระบบติดตามจำนวนเงินมัดจำ วันครบกำหนด และกำหนดเวลาคืนเงิน พร้อมการแจ้งเตือนก่อนกิจกรรมสำคัญ',
+        answerZh: '可以。\n\n系统追踪您的押金金额、到期日和退还期限，并在关键事件前提醒您。',
+        answerJa: 'はい。\n\nシステムは、あなたの敷金額、期日、および返却期限を追跡し、重要なイベントの前にリマインダーを送信します。',
+        answerKo: '예。\n\n시스템은 보증금 금액、만기일 및 반환 기한을 추적하고 주요 이벤트 전에 알림을 보냅니다。',
+        answerRu: 'Да。\n\nСистема отслеживает сумму вашего депозита、срок оплаты и сроки возврата、с напоминаниями перед ключевыми событиями。'
+      },
+      {
+        questionEn: 'Does Lease Shield hold or manage deposit money?',
+        questionTh: 'Lease Shield ถือหรือจัดการเงินมัดจำหรือไม่?',
+        questionZh: 'Lease Shield持有或管理押金吗？',
+        questionJa: 'Lease Shieldは敷金を保管または管理しますか？',
+        questionKo: 'Lease Shield가 보증금을 보유하거나 관리하나요?',
+        questionRu: 'Lease Shield хранит или управляет деньгами депозита?',
+        answerEn: 'No.\n\nWe track and remind — but we do not handle or store funds.',
+        answerTh: 'ไม่\n\nเราติดตามและแจ้งเตือน — แต่เราไม่จัดการหรือจัดเก็บเงิน',
+        answerZh: '不。\n\n我们追踪和提醒 — 但我们不处理或存储资金。',
+        answerJa: 'いいえ。\n\n私たちは追跡とリマインダーを行います — しかし資金を取り扱ったり保管したりはしません。',
+        answerKo: '아니요。\n\n우리는 추적하고 알림을 보냅니다 — 그러나 자금을 처리하거나 보관하지 않습니다。',
+        answerRu: 'Нет。\n\nМы отслеживаем и напоминаем — но мы не обрабатываем и не храним средства。'
+      }
+    ]
+  },
+  evidence: {
+    icon: FileText,
+    color: '#8B5CF6',
+    titleEn: 'Issue Reporting & Evidence',
+    titleTh: 'การรายงานปัญหาและหลักฐาน',
+    titleZh: '问题报告和证据',
+    titleJa: '問題報告と証拠',
+    titleKo: '문제 보고 및 증거',
+    titleRu: 'Отчет о проблемах и доказательства',
+    questions: [
+      {
+        questionEn: 'What can I report through Lease Shield?',
+        questionTh: 'ฉันสามารถรายงานอะไรผ่าน Lease Shield ได้บ้าง?',
+        questionZh: '我可以通过Lease Shield报告什么？',
+        questionJa: 'Lease Shieldを通じて何を報告できますか？',
+        questionKo: 'Lease Shield를 통해 무엇을 보고할 수 있나요?',
+        questionRu: 'Что я могу сообщить через Lease Shield?',
+        answerEn: 'You can report issues such as:\n• Maintenance problems\n• Repair delays\n• Communication breakdowns\n• Deposit disputes\n• General rental concerns\n\nReports can be saved privately or shared when needed.',
+        answerTh: 'คุณสามารถรายงานปัญหาเช่น:\n• ปัญหาการซ่อมบำรุง\n• ความล่าช้าในการซ่อมแซม\n• การสื่อสารขัดข้อง\n• ข้อพิพาทเงินมัดจำ\n• ความกังวลเกี่ยวกับการเช่าทั่วไป\n\nรายงานสามารถบันทึกไว้เป็นส่วนตัวหรือแบ่งปันเมื่อจำเป็น',
+        answerZh: '您可以报告以下问题：\n• 维护问题\n• 维修延迟\n• 沟通障碍\n• 押金纠纷\n• 一般租赁问题\n\n报告可以私密保存或在需要时共享。',
+        answerJa: '次のような問題を報告できます：\n• メンテナンスの問題\n• 修理の遅延\n• コミュニケーションの問題\n• 敷金の紛争\n• 一般的な賃貸の懸念\n\nレポートは非公開で保存したり、必要に応じて共有したりできます。',
+        answerKo: '다음과 같은 문제를 보고할 수 있습니다：\n• 유지보수 문제\n• 수리 지연\n• 의사소통 장애\n• 보증금 분쟁\n• 일반 임대 문제\n\n보고서는 비공개로 저장하거나 필요시 공유할 수 있습니다。',
+        answerRu: 'Вы можете сообщать о таких проблемах、как：\n• Проблемы с обслуживанием\n• Задержки ремонта\n• Нарушения связи\n• Споры о депозите\n• Общие вопросы аренды\n\nОтчеты могут быть сохранены конфиденциально или переданы при необходимости。'
+      },
+      {
+        questionEn: 'How does the evidence feature work?',
+        questionTh: 'ฟีเจอร์หลักฐานทำงานอย่างไร?',
+        questionZh: '证据功能如何运作？',
+        questionJa: '証拠機能はどのように機能しますか？',
+        questionKo: '증거 기능은 어떻게 작동하나요?',
+        questionRu: 'Как работает функция доказательств?',
+        answerEn: 'You can upload photos, videos, receipts, and documents.\n\nEverything is stored with timestamps so both sides have a clear record if issues ever arise.',
+        answerTh: 'คุณสามารถอัปโหลดรูปภาพ วิดีโอ ใบเสร็จ และเอกสาร\n\nทุกอย่างจะถูกจัดเก็บพร้อมประทับเวลา เพื่อให้ทั้งสองฝ่ายมีบันทึกที่ชัดเจนหากเกิดปัญหา',
+        answerZh: '您可以上传照片、视频、收据和文件。\n\n所有内容都带有时间戳存储，以便在出现问题时双方都有明确的记录。',
+        answerJa: '写真、動画、領収書、文書をアップロードできます。\n\nすべてがタイムスタンプ付きで保存されるため、問題が発生した場合、双方が明確な記録を持つことができます。',
+        answerKo: '사진、동영상、영수증 및 문서를 업로드할 수 있습니다。\n\n모든 것이 타임스탬프와 함께 저장되므로 문제가 발생할 경우 양측 모두 명확한 기록을 갖게 됩니다。',
+        answerRu: 'Вы можете загружать фотографии、видео、чеки и документы。\n\nВсё хранится с отметками времени、чтобы обе стороны имели чёткую запись、если возникнут проблемы。'
+      }
+    ]
+  },
   pricing: {
     icon: DollarSign,
     color: '#C7A338',
-    titleEn: 'Pricing & Plans',
-    titleTh: 'ราคาและแผน',
-    titleZh: '定价与计划',
-    titleJa: '価格とプラン',
-    titleKo: '가격 및 플랜',
-    titleRu: 'Цены и планы',
+    titleEn: 'Plans & Pricing',
+    titleTh: 'แผนและราคา',
+    titleZh: '计划和定价',
+    titleJa: 'プランと料金',
+    titleKo: '플랜 및 가격',
+    titleRu: 'Планы и цены',
     questions: [
       {
         questionEn: 'What subscription plans do you offer?',
