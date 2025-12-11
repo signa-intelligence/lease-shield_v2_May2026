@@ -9,10 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Sparkles, Loader2, Crown, Lock } from "lucide-react";
 import { FeatureGate } from "../components/shared/FeatureGate";
 import AuthGuard from "../components/shared/AuthGuard";
+import { haptic } from "../components/shared/HapticFeedback";
+import { ToastProvider, useToast } from "../components/shared/Toast";
+import PageHeader from "../components/shared/PageHeader";
+import EmptyState from "../components/shared/EmptyState";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
 
 function ReportFullContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
   
@@ -24,7 +30,7 @@ function ReportFullContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: scan } = useQuery({
+  const { data: scan, isLoading: scanLoading } = useQuery({
     queryKey: ['scan', scanId],
     queryFn: async () => {
       const scans = await base44.entities.LeaseScan.list();
@@ -33,7 +39,7 @@ function ReportFullContent() {
     enabled: !!scanId,
   });
 
-  const { data: lease } = useQuery({
+  const { data: lease, isLoading: leaseLoading } = useQuery({
     queryKey: ['lease', scan?.lease_id],
     queryFn: async () => {
       const leases = await base44.entities.Lease.list();
@@ -41,6 +47,8 @@ function ReportFullContent() {
     },
     enabled: !!scan?.lease_id,
   });
+
+  const isLoading = scanLoading || leaseLoading;
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
@@ -406,28 +414,45 @@ function ReportFullContent() {
         totalGenerated: results.filter(r => r.success).length
       });
 
-      // Refresh case data
       queryClient.invalidateQueries({ queryKey: ['case', caseId] });
+      toast.success(strings.analysisComplete);
+      haptic.success();
 
     } catch (error) {
       console.error('Letter generation failed:', error);
-      alert(strings.failedToGenerateLetters);
+      toast.error(strings.failedToGenerateLetters);
+      haptic.error();
     } finally {
       setGeneratingLetters(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-4xl mx-auto">
+          <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
+        </div>
+      </div>
+    );
+  }
+
   if (!scan || !lease) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ backgroundColor: colors.bg }}>
-        <div className="text-center">
-          <FileText className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-          <p style={{ color: colors.textSecondary }} className="mb-4">
-            {strings.noScanReportFound}
-          </p>
-          <Button onClick={() => navigate(createPageUrl("UploadScan"))}>
-            {strings.uploadALease}
-          </Button>
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-4xl mx-auto">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={FileText}
+                title={strings.noScanReportFound}
+                description=""
+                actionLabel={strings.uploadALease}
+                onAction={() => navigate(createPageUrl("UploadScan"))}
+                isDarkMode={isDarkMode}
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -474,27 +499,25 @@ function ReportFullContent() {
 
   return (
     <FeatureGate feature="full_report">
-      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate(createPageUrl("Dashboard"))}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                {strings.fullLeaseReport}
-              </h1>
-              <p style={{ color: colors.textSecondary }}>{lease.property_address || 'Lease Agreement'}</p>
-            </div>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <Download className="w-4 h-4 mr-2" />
-              {strings.downloadPDF}
-            </Button>
-          </div>
+          <PageHeader
+            title={strings.fullLeaseReport}
+            subtitle={lease.property_address || 'Lease Agreement'}
+            icon={FileText}
+            iconColor="#0C3B2E"
+            showBack={true}
+            isDarkMode={isDarkMode}
+            actions={
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 btn-interaction"
+                onClick={() => haptic.light()}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {strings.downloadPDF}
+              </Button>
+            }
+          />
 
           {/* Risk Score Summary */}
           <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
@@ -755,9 +778,12 @@ function ReportFullContent() {
                         </div>
                       ) : (
                         <Button
-                          onClick={analyzeAndGenerateLetters}
+                          onClick={() => {
+                            haptic.medium();
+                            analyzeAndGenerateLetters();
+                          }}
                           disabled={generatingLetters}
-                          className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
+                          className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 btn-interaction"
                         >
                           {generatingLetters ? (
                             <>
@@ -857,7 +883,9 @@ function ReportFullContent() {
 export default function ReportFull() {
   return (
     <AuthGuard>
-      <ReportFullContent />
+      <ToastProvider>
+        <ReportFullContent />
+      </ToastProvider>
     </AuthGuard>
   );
 }

@@ -28,6 +28,11 @@ import { format } from "date-fns";
 import LetterPreview from "../components/shared/LetterPreview";
 import { getFeatureCardStyles } from "../components/shared/featureTheme";
 import AuthGuard from "../components/shared/AuthGuard";
+import { haptic } from "../components/shared/HapticFeedback";
+import { ToastProvider, useToast } from "../components/shared/Toast";
+import PageHeader from "../components/shared/PageHeader";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
+import EmptyState from "../components/shared/EmptyState";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -40,10 +45,11 @@ const STATUS_CONFIG = {
 
 function CaseDetailsContent() {
   const navigate = useNavigate();
+  const toast = useToast();
   const urlParams = new URLSearchParams(window.location.search);
   const caseId = urlParams.get('caseId');
-  const fromOps = urlParams.get('from') === 'ops'; // WORKFLOW FIX: Track navigation source
-  const previousTab = urlParams.get('tab') || 'all'; // BUG FIX #1: Preserve tab filter
+  const fromOps = urlParams.get('from') === 'ops';
+  const previousTab = urlParams.get('tab') || 'all';
   const queryClient = useQueryClient();
 
   const [compilingPack, setCompilingPack] = useState(false);
@@ -92,6 +98,7 @@ function CaseDetailsContent() {
   };
 
   const handleCompilePack = async () => {
+    haptic.medium();
     setCompilingPack(true);
     try {
       const response = await base44.functions.invoke('compileLetterPack', {
@@ -99,13 +106,14 @@ function CaseDetailsContent() {
       });
 
       if (response.data.success) {
-        // Refresh case data to get the new pack URL
         queryClient.invalidateQueries({ queryKey: ['case', caseId] });
-        alert(language === 'th' ? 'สร้าง Letter Pack สำเร็จ!' : 'Letter Pack compiled successfully!');
+        toast.success(language === 'th' ? 'สร้าง Letter Pack สำเร็จ!' : 'Letter Pack compiled successfully!');
+        haptic.success();
       }
     } catch (error) {
       console.error('Failed to compile letter pack:', error);
-      alert(language === 'th' ? 'ไม่สามารถสร้าง Letter Pack ได้' : 'Failed to compile letter pack');
+      toast.error(language === 'th' ? 'ไม่สามารถสร้าง Letter Pack ได้' : 'Failed to compile letter pack');
+      haptic.error();
     } finally {
       setCompilingPack(false);
     }
@@ -113,20 +121,23 @@ function CaseDetailsContent() {
 
   // New function to handle Word document downloads
   const handleDownloadWord = (subject) => {
+    haptic.light();
     const urlKey = `${subject}_url`;
     const url = caseItem?.letters?.[urlKey];
 
     if (!url) {
-      alert(language === 'th'
+      toast.error(language === 'th'
         ? `ไม่พบไฟล์ Word สำหรับ ${subject}`
         : `No Word file found for ${subject}`);
       return;
     }
 
     window.open(url, "_blank", "noopener,noreferrer");
+    toast.success(language === 'th' ? 'เริ่มดาวน์โหลดแล้ว' : 'Download started');
   };
 
   const handlePreviewHtml = (subject) => {
+    haptic.light();
     const htmlKey = `${subject}_html_url`;
     const docKey = `${subject}_url`;
 
@@ -134,7 +145,7 @@ function CaseDetailsContent() {
     const docUrl = caseItem?.letters?.[docKey];
 
     if (!htmlUrl && !docUrl) {
-      alert(language === 'th'
+      toast.error(language === 'th'
         ? `ไม่พบไฟล์สำหรับ ${subject}`
         : `No file found for ${subject}`);
       return;
@@ -439,12 +450,9 @@ function CaseDetailsContent() {
 
   if (caseLoading) {
     return (
-      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: colors.textSecondary }} />
-            <p className="text-lg" style={{ color: colors.textSecondary }}>{strings.loading}</p>
-          </div>
+          <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
         </div>
       </div>
     );
@@ -452,52 +460,44 @@ function CaseDetailsContent() {
 
   if (!caseItem) {
     return (
-      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-5xl mx-auto">
-          <Button 
-            variant="outline" 
-            onClick={() => navigate(fromOps ? `${createPageUrl("OpsConsole")}?tab=${previousTab}` : createPageUrl("Cases"))} 
-            className="mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {fromOps 
-              ? (language === 'th' ? 'กลับไปคอนโซลปฏิบัติการ' 
-                : language === 'zh' ? '返回运营控制台'
-                : language === 'ja' ? 'オペレーションコンソールに戻る'
-                : language === 'ko' ? '운영 콘솔로 돌아가기'
-                : 'Back to Ops Console')
-              : strings.backToCases
-            }
-          </Button>
-          <div className="text-center py-20">
-            <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
-              backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6'
-            }}>
-              <Scale className="w-10 h-10" style={{ color: colors.textSecondary, opacity: 0.5 }} />
-            </div>
-            <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {strings.notFound}
-            </h2>
-            <p className="mb-6" style={{ color: colors.textSecondary }}>
-              {strings.notFoundDesc}
-            </p>
-            <Button onClick={() => navigate(createPageUrl("Cases"))} className="ls-cta-primary">
-              {strings.backToCases}
-            </Button>
-          </div>
+          <PageHeader
+            title={strings.notFound}
+            subtitle={strings.notFoundDesc}
+            icon={Scale}
+            iconColor="#EF4444"
+            showBack={true}
+            backRoute={fromOps ? `${createPageUrl("OpsConsole")}?tab=${previousTab}` : createPageUrl("Cases")}
+            isDarkMode={isDarkMode}
+          />
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={Scale}
+                title={strings.notFound}
+                description={strings.notFoundDesc}
+                actionLabel={strings.backToCases}
+                onAction={() => navigate(createPageUrl("Cases"))}
+                isDarkMode={isDarkMode}
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
-        {/* Letter Preview Modal */}
         {previewLetter && (
           <LetterPreview
             open={!!previewLetter}
-            onOpenChange={() => setPreviewLetter(null)}
+            onOpenChange={() => {
+              haptic.light();
+              setPreviewLetter(null);
+            }}
             htmlUrl={previewLetter.htmlUrl}
             docUrl={previewLetter.docUrl}
             title={getLetterTitle(previewLetter.subject)}
@@ -506,8 +506,11 @@ function CaseDetailsContent() {
 
         <Button
           variant="outline"
-          onClick={() => navigate(fromOps ? `${createPageUrl("OpsConsole")}?tab=${previousTab}` : createPageUrl("Cases"))}
-          className="mb-4 md:mb-6"
+          onClick={() => {
+            haptic.light();
+            navigate(fromOps ? `${createPageUrl("OpsConsole")}?tab=${previousTab}` : createPageUrl("Cases"));
+          }}
+          className="mb-4 md:mb-6 btn-interaction"
           size="sm"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -1150,7 +1153,9 @@ function CaseDetailsContent() {
 export default function CaseDetails() {
   return (
     <AuthGuard>
-      <CaseDetailsContent />
+      <ToastProvider>
+        <CaseDetailsContent />
+      </ToastProvider>
     </AuthGuard>
   );
 }

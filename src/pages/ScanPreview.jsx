@@ -9,6 +9,10 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useFeatureAccess } from "../components/shared/FeatureGate";
 import AuthGuard from "../components/shared/AuthGuard";
+import { haptic } from "../components/shared/HapticFeedback";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
+import EmptyState from "../components/shared/EmptyState";
+import PageHeader from "../components/shared/PageHeader";
 
 const SEVERITY_CONFIG = {
   low: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Low' },
@@ -274,12 +278,9 @@ function ScanPreviewContent() {
 
   if (userLoading || leasesLoading || scansLoading) {
     return (
-      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
-            <p style={{ color: colors.textSecondary }}>{strings.loading}</p>
-          </div>
+          <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
         </div>
       </div>
     );
@@ -287,23 +288,26 @@ function ScanPreviewContent() {
 
   if (!scan || !lease) {
     return (
-      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
-          <Button
-            variant="outline"
-            onClick={() => navigate(createPageUrl("UploadScan"))}
-            className="mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {strings.backToScans}
-          </Button>
+          <PageHeader
+            title={strings.noScanFound}
+            subtitle={strings.noScanDesc}
+            icon={AlertTriangle}
+            iconColor="#F59E0B"
+            showBack={true}
+            isDarkMode={isDarkMode}
+          />
           <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-12 text-center">
-              <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-amber-500" />
-              <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                {strings.noScanFound}
-              </h3>
-              <p style={{ color: colors.textSecondary }}>{strings.noScanDesc}</p>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={FileText}
+                title={strings.noScanFound}
+                description={strings.noScanDesc}
+                actionLabel={strings.backToScans}
+                onAction={() => navigate(createPageUrl("UploadScan"))}
+                isDarkMode={isDarkMode}
+              />
             </CardContent>
           </Card>
         </div>
@@ -315,12 +319,15 @@ function ScanPreviewContent() {
   const riskLabel = getRiskLabel(scan.risk_score);
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '180px' }}>
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg, paddingBottom: '180px' }}>
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
-          onClick={() => navigate(createPageUrl("UploadScan"))}
-          className="mb-6"
+          onClick={() => {
+            haptic.light();
+            navigate(createPageUrl("UploadScan"));
+          }}
+          className="mb-6 btn-interaction"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           {strings.backToScans}
@@ -367,7 +374,11 @@ function ScanPreviewContent() {
                     <span className="text-lg font-bold">฿{lease.deposit_amount.toLocaleString()}</span>
                   </div>
                   <button
-                    onClick={() => navigate(createPageUrl("PropertyTracker"))}
+                    onClick={() => {
+                      haptic.medium();
+                      navigate(createPageUrl("PropertyTracker"));
+                    }}
+                    className="btn-interaction"
                     style={{
                       width: '100%',
                       backgroundColor: '#FFFFFF',
@@ -599,7 +610,11 @@ function ScanPreviewContent() {
           <div className="max-w-4xl mx-auto px-4 py-4">
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`)}
+                onClick={() => {
+                  haptic.medium();
+                  navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`);
+                }}
+                className="btn-interaction"
                 style={{
                   flex: 1,
                   backgroundColor: '#0C3B2E',
