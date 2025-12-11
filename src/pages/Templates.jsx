@@ -741,42 +741,11 @@ function TemplatesContent() {
   };
 
   return (
-    <div className="p-4">
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#0C3B2E' }}>
-        Templates – Component Isolation Test
-      </h1>
-      
-      {/* TEST A: PageHeader */}
-      <PageHeader
-        title={strings.title}
-        subtitle={strings.subtitle}
-        icon={FileText}
-        iconColor="#0C3B2E"
-        showBack={true}
-        backLabel={strings.back}
-        isDarkMode={isDarkMode}
-        actions={
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <span className="bg-blue-100 text-blue-700 border border-blue-200 rounded px-3 py-1 text-xs sm:text-sm w-fit">
-              {strings.allLetters}
-            </span>
-          </div>
-        }
-      />
-      
-      {/* TEST B: SkeletonLoader */}
-      {/* {templatesLoading && <SkeletonLoader variant="card" count={1} isDarkMode={isDarkMode} />} */}
-      
-      {/* TEST C: MobileFormInput */}
-      {/* <MobileFormInput
-        label="Test Input"
-        value=""
-        onChange={() => {}}
-        colors={colors}
-      /> */}
-      
-      {/* TEST D: Upload Dialog */}
-      {/* {showUploadDialog && (
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+      <div className="max-w-7xl mx-auto">
+        
+        {/* Upload Dialog */}
+        {showUploadDialog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowUploadDialog(false)}>
             <div className="w-full max-w-2xl mx-4 rounded-xl shadow-xl" style={{
               backgroundColor: colors.cardBg,
@@ -788,136 +757,136 @@ function TemplatesContent() {
                     {strings.uploadTemplateTitle}
                   </h2>
                 </div>
-            <div className="space-y-4 mt-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                  {strings.category}
-                </label>
-                <select
-                  value={uploadFormData.category}
-                  onChange={(e) => setUploadFormData({...uploadFormData, category: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    backgroundColor: colors.fieldBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary,
-                    fontSize: '16px',
-                    borderRadius: '12px',
-                    border: `2px solid ${colors.borderColor}`,
-                    minHeight: '48px'
-                  }}
-                >
-                  <option value="pre_signing">{categoryOptions[language].pre_signing}</option>
-                  <option value="friendly">{categoryOptions[language].friendly}</option>
-                  <option value="professional">{categoryOptions[language].professional}</option>
-                  <option value="final">{categoryOptions[language].final}</option>
-                </select>
-              </div>
+                <div className="space-y-4 mt-4">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                      {strings.category}
+                    </label>
+                    <select
+                      value={uploadFormData.category}
+                      onChange={(e) => setUploadFormData({...uploadFormData, category: e.target.value})}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        backgroundColor: colors.fieldBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                        fontSize: '16px',
+                        borderRadius: '12px',
+                        border: `2px solid ${colors.borderColor}`,
+                        minHeight: '48px'
+                      }}
+                    >
+                      <option value="pre_signing">{categoryOptions[language].pre_signing}</option>
+                      <option value="friendly">{categoryOptions[language].friendly}</option>
+                      <option value="professional">{categoryOptions[language].professional}</option>
+                      <option value="final">{categoryOptions[language].final}</option>
+                    </select>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <MobileFormInput
-                  label={strings.titleEnglish}
-                  value={uploadFormData.title_en}
-                  onChange={(e) => setUploadFormData({...uploadFormData, title_en: e.target.value})}
-                  required
-                  colors={colors}
-                />
-                <MobileFormInput
-                  label={strings.titleThai}
-                  value={uploadFormData.title_th}
-                  onChange={(e) => setUploadFormData({...uploadFormData, title_th: e.target.value})}
-                  required
-                  colors={colors}
-                />
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <MobileFormInput
+                      label={strings.titleEnglish}
+                      value={uploadFormData.title_en}
+                      onChange={(e) => setUploadFormData({...uploadFormData, title_en: e.target.value})}
+                      required
+                      colors={colors}
+                    />
+                    <MobileFormInput
+                      label={strings.titleThai}
+                      value={uploadFormData.title_th}
+                      onChange={(e) => setUploadFormData({...uploadFormData, title_th: e.target.value})}
+                      required
+                      colors={colors}
+                    />
+                  </div>
 
-              <MobileFormInput
-                label={strings.descriptionEnglish}
-                value={uploadFormData.description_en}
-                onChange={(e) => setUploadFormData({...uploadFormData, description_en: e.target.value})}
-                multiline
-                rows={2}
-                colors={colors}
-              />
+                  <MobileFormInput
+                    label={strings.descriptionEnglish}
+                    value={uploadFormData.description_en}
+                    onChange={(e) => setUploadFormData({...uploadFormData, description_en: e.target.value})}
+                    multiline
+                    rows={2}
+                    colors={colors}
+                  />
 
-              <MobileFormInput
-                label={strings.descriptionThai}
-                value={uploadFormData.description_th}
-                onChange={(e) => setUploadFormData({...uploadFormData, description_th: e.target.value})}
-                multiline
-                rows={2}
-                colors={colors}
-              />
+                  <MobileFormInput
+                    label={strings.descriptionThai}
+                    value={uploadFormData.description_th}
+                    onChange={(e) => setUploadFormData({...uploadFormData, description_th: e.target.value})}
+                    multiline
+                    rows={2}
+                    colors={colors}
+                  />
 
-              <MobileFormInput
-                label={strings.creditCost}
-                type="number"
-                min={1}
-                value={uploadFormData.credit_cost}
-                onChange={(e) => setUploadFormData({...uploadFormData, credit_cost: parseInt(e.target.value) || 1})}
-                colors={colors}
-              />
+                  <MobileFormInput
+                    label={strings.creditCost}
+                    type="number"
+                    min={1}
+                    value={uploadFormData.credit_cost}
+                    onChange={(e) => setUploadFormData({...uploadFormData, credit_cost: parseInt(e.target.value) || 1})}
+                    colors={colors}
+                  />
 
-              <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                  {strings.selectFile}
-                </label>
-                <input
-                  type="file"
-                  onChange={handleFileSelect}
-                  className="w-full p-3 rounded-lg border-2"
-                  accept=".pdf,.doc,.docx"
-                  style={{ 
-                    backgroundColor: colors.fieldBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-                {uploadFormData.file && (
-                  <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
-                    {uploadFormData.file.name}
-                  </p>
-                )}
-              </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                      {strings.selectFile}
+                    </label>
+                    <input
+                      type="file"
+                      onChange={handleFileSelect}
+                      className="w-full p-3 rounded-lg border-2"
+                      accept=".pdf,.doc,.docx"
+                      style={{ 
+                        backgroundColor: colors.fieldBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary
+                      }}
+                    />
+                    {uploadFormData.file && (
+                      <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
+                        {uploadFormData.file.name}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="flex gap-3 justify-end pt-4">
-                <button
-                  onClick={() => {
-                    haptic.light();
-                    setShowUploadDialog(false);
-                  }}
-                  disabled={uploadingFile}
-                  className="border border-gray-300 px-4 py-2 rounded-lg btn-interaction"
-                  style={{ color: colors.textPrimary }}
-                >
-                  {strings.cancel}
-                </button>
-                <button
-                  onClick={handleUploadTemplate}
-                  disabled={uploadingFile}
-                  className="bg-ls-forest hover:bg-ls-forest/90 text-white px-4 py-2 rounded-lg flex items-center btn-interaction"
-                >
-                  {uploadingFile ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {strings.uploading}
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4 mr-2" />
-                      {strings.upload}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+                  <div className="flex gap-3 justify-end pt-4">
+                    <button
+                      onClick={() => {
+                        haptic.light();
+                        setShowUploadDialog(false);
+                      }}
+                      disabled={uploadingFile}
+                      className="border border-gray-300 px-4 py-2 rounded-lg btn-interaction"
+                      style={{ color: colors.textPrimary }}
+                    >
+                      {strings.cancel}
+                    </button>
+                    <button
+                      onClick={handleUploadTemplate}
+                      disabled={uploadingFile}
+                      className="bg-ls-forest hover:bg-ls-forest/90 text-white px-4 py-2 rounded-lg flex items-center btn-interaction"
+                    >
+                      {uploadingFile ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          {strings.uploading}
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4 mr-2" />
+                          {strings.upload}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        )} */}
+        )}
 
-        {/* <PageHeader
+        <PageHeader
           title={strings.title}
           subtitle={strings.subtitle}
           icon={FileText}
@@ -943,11 +912,10 @@ function TemplatesContent() {
               )}
             </div>
           }
-        /> */}
+        />
 
         {/* Credit Balance Card */}
-        {/* <div className="mb-6 rounded-xl border-none shadow-xl p-6" style={{ backgroundColor: colors.cardBg }}>
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mb-6 rounded-xl border-none shadow-xl p-6" style={{ backgroundColor: colors.cardBg }}>
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
                   <Coins className="w-8 h-8 text-white" />
@@ -990,10 +958,10 @@ function TemplatesContent() {
                 </button>
               </div>
             </div>
-        </div> */}
+        </div>
 
         {/* PRE-SIGNING SECTION */}
-        {/* <div className="mb-12">
+        <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-amber-400 to-orange-600 rounded"></div>
             <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
@@ -1009,10 +977,10 @@ function TemplatesContent() {
               {preSigningTemplates.map((template) => renderTemplateCard(template))}
             </div>
           )}
-        </div> */}
+        </div>
 
         {/* FRIENDLY APPROACH SECTION */}
-        {/* <div className="mb-12">
+        <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-blue-400 to-purple-600 rounded"></div>
             <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
@@ -1024,10 +992,10 @@ function TemplatesContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {liteTemplates.map((template) => renderTemplateCard(template))}
           </div>
-        </div> */}
+        </div>
 
         {/* PROFESSIONAL ESCALATION SECTION */}
-        {/* <div className="mb-12">
+        <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-emerald-500 to-cyan-600 rounded"></div>
             <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
@@ -1039,10 +1007,10 @@ function TemplatesContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {protectTemplates.map((template) => renderTemplateCard(template))}
           </div>
-        </div> */}
+        </div>
 
         {/* FINAL MEASURES SECTION */}
-        {/* <div>
+        <div>
           <div className="flex items-center gap-3 mb-4">
             <div className="h-1 flex-1 bg-gradient-to-r from-orange-600 to-red-700 rounded"></div>
             <h2 className="text-lg sm:text-xl font-bold" style={{ color: colors.textPrimary }}>
@@ -1054,13 +1022,13 @@ function TemplatesContent() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {secureTemplates.map((template) => renderTemplateCard(template))}
           </div>
-        </div> */}
+        </div>
 
         {/* Legal Disclaimer */}
-        {/* <div className="mt-12 p-4 rounded-lg text-center" style={{
+        <div className="mt-12 p-4 rounded-lg text-center" style={{
           backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC',
           border: `1px solid ${colors.borderColor}`
-        }}>
+          }}>
           <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
             {language === 'th' 
               ? 'Lease Shield ให้คำแนะนำทั่วไปและเทมเพลตเอกสารเพื่อความสะดวกของคุณ Lease Shield ไม่ใช่สำนักงานกฎหมาย ไม่ให้บริการตัวแทนทางกฎหมาย และไม่ได้เป็นคู่สัญญาในสัญญาเช่าของคุณ คุณมีหน้าที่รับผิดชอบในการตรวจสอบความถูกต้องของข้อมูลและเอกสารทั้งหมดก่อนส่ง'
@@ -1073,8 +1041,8 @@ function TemplatesContent() {
                     : language === 'ru'
                       ? 'Lease Shield предоставляет общие рекомендации и шаблоны документов для вашего удобства。Lease Shield не является юридической фирмой、не предоставляет юридическое представительство и не является стороной вашего договора аренды。Вы несёте ответственность за проверку точности всей информации и документов перед отправкой。'
                       : 'Lease Shield provides general guidance and document templates for your convenience. Lease Shield is not a law firm, does not provide legal representation, and is not a party to your lease. You are responsible for checking the accuracy of all information and documents before sending them.'}
-                      </p>
-                      </div> */}
+          </p>
+          </div>
                       </div>
                       );
                       }
