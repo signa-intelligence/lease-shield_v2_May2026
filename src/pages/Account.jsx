@@ -775,7 +775,7 @@ function AccountContent() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `LeaseShield_Personal_Data_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `Lease_Shield_Personal_Data_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -1394,14 +1394,14 @@ function AccountContent() {
       reasonForDowngrade: "เหตุผลในการลดระดับ",
       goBack: "กลับ",
       confirmDowngradeBtn: "ยืนยันการลดเป็นฟรี",
-      installApp: "ติดตั้งแอป LeaseShield",
+      installApp: "ติดตั้งแอป Lease Shield",
       installAppDesc: "เพิ่มลงในหน้าจอหลักเพื่อเข้าถึงง่ายๆ",
       shareApp: "แชร์แอปกับเพื่อน",
       shareAppDesc: "ชวนคนอื่นมาป้องกันเงินมัดจำของพวกเขา",
       installInstructions: "วิธีติดตั้ง",
       iosInstructions: "บน iPhone/iPad:\n1. แตะปุ่มแชร์ใน Safari\n2. แตะ 'เพิ่มที่หน้าจอโฮม'\n3. แตะ 'เพิ่ม'",
       androidInstructions: "บน Android:\n1. แตะเมนู (⋮) ใน Chrome\n2. แตะ 'เพิ่มที่หน้าจอโฮม'\n3. แตะ 'เพิ่ม'",
-      desktopInstructions: "บนเดสก์ท็อป:\n1. คลิกไอคอนติดตั้งในแถบที่อยู่\n2. หรือใช้เมนูเบราว์เซอร์ > 'ติดตั้ง LeaseShield'",
+      desktopInstructions: "บนเดสก์ท็อป:\n1. คลิกไอคอนติดตั้งในแถบที่อยู่\n2. หรือใช้เมนูเบราว์เซอร์ > 'ติดตั้ง Lease Shield'",
       gotIt: "เข้าใจแล้ว",
       install: "ติดตั้ง",
       alreadyInstalled: "ติดตั้งแล้ว"
@@ -1573,14 +1573,14 @@ function AccountContent() {
       selectLandlordLanguage: "选择房东的首选语言",
       notificationPreferences: "通知偏好",
       notificationInsights: "通知统计",
-      installApp: "安装 LeaseShield 应用",
+      installApp: "安装 Lease Shield 应用",
       installAppDesc: "添加到主屏幕以便快速访问",
       shareApp: "与朋友分享应用",
       shareAppDesc: "邀请他人保护他们的押金",
       installInstructions: "安装说明",
       iosInstructions: "在 iPhone/iPad 上:\n1. 在 Safari 中点击分享按钮\n2. 点击'添加到主屏幕'\n3. 点击'添加'",
       androidInstructions: "在 Android 上:\n1. 在 Chrome 中点击菜单 (⋮)\n2. 点击'添加到主屏幕'\n3. 点击'添加'",
-      desktopInstructions: "在桌面上:\n1. 点击地址栏中的安装图标\n2. 或使用浏览器菜单 > '安装 LeaseShield'",
+      desktopInstructions: "在桌面上:\n1. 点击地址栏中的安装图标\n2. 或使用浏览器菜单 > '安装 Lease Shield'",
       gotIt: "知道了",
       install: "安装",
       alreadyInstalled: "已安装"
@@ -1752,14 +1752,14 @@ function AccountContent() {
       selectLandlordLanguage: "家主の好みの言語を選択",
       notificationPreferences: "通知設定",
       notificationInsights: "通知インサイト",
-      installApp: "LeaseShield アプリをインストール",
+      installApp: "Lease Shield アプリをインストール",
       installAppDesc: "ホーム画面に追加して素早くアクセス",
       shareApp: "友達とアプリを共有",
       shareAppDesc: "他の人に敷金保護を勧める",
       installInstructions: "インストール方法",
       iosInstructions: "iPhone/iPadで:\n1. Safariで共有ボタンをタップ\n2. 「ホーム画面に追加」をタップ\n3. 「追加」をタップ",
       androidInstructions: "Androidで:\n1. Chromeでメニュー (⋮) をタップ\n2. 「ホーム画面に追加」をタップ\n3. 「追加」をタップ",
-      desktopInstructions: "デスクトップで:\n1. アドレスバーのインストールアイコンをクリック\n2. またはブラウザメニュー > 「LeaseShieldをインストール」",
+      desktopInstructions: "デスクトップで:\n1. アドレスバーのインストールアイコンをクリック\n2. またはブラウザメニュー > 「Lease Shieldをインストール」",
       gotIt: "了解",
       install: "インストール",
       alreadyInstalled: "インストール済み"
@@ -1931,14 +1931,14 @@ function AccountContent() {
       selectLandlordLanguage: "집주인의 선호 언어 선택",
       notificationPreferences: "알림 설정",
       notificationInsights: "알림 통계",
-      installApp: "LeaseShield 앱 설치",
+      installApp: "Lease Shield 앱 설치",
       installAppDesc: "빠른 액세스를 위해 홈 화면에 추가",
       shareApp: "친구와 앱 공유",
       shareAppDesc: "다른 사람들이 보증금을 보호하도록 초대",
       installInstructions: "설치 방법",
       iosInstructions: "iPhone/iPad에서:\n1. Safari에서 공유 버튼 탭\n2. '홈 화면에 추가' 탭\n3. '추가' 탭",
       androidInstructions: "Android에서:\n1. Chrome에서 메뉴 (⋮) 탭\n2. '홈 화면에 추가' 탭\n3. '추가' 탭",
-      desktopInstructions: "데스크톱에서:\n1. 주소 표시줄의 설치 아이콘 클릭\n2. 또는 브라우저 메뉴 > 'LeaseShield 설치'",
+      desktopInstructions: "데스크톱에서:\n1. 주소 표시줄의 설치 아이콘 클릭\n2. 또는 브라우저 메뉴 > 'Lease Shield 설치'",
       gotIt: "알겠습니다",
       install: "설치",
       alreadyInstalled: "이미 설치됨"
@@ -2110,14 +2110,14 @@ function AccountContent() {
       selectLandlordLanguage: "Выберите предпочтительный язык арендодателя",
       notificationPreferences: "Настройки уведомлений",
       notificationInsights: "Статистика уведомлений",
-      installApp: "Установить приложение LeaseShield",
+      installApp: "Установить приложение Lease Shield",
       installAppDesc: "Добавьте на главный экран для быстрого доступа",
       shareApp: "Поделиться приложением с другом",
       shareAppDesc: "Пригласите других защитить свои депозиты",
       installInstructions: "Инструкция по установке",
       iosInstructions: "На iPhone/iPad:\n1. Нажмите кнопку Поделиться в Safari\n2. Нажмите 'На экран Домой'\n3. Нажмите 'Добавить'",
       androidInstructions: "На Android:\n1. Нажмите меню (⋮) в Chrome\n2. Нажмите 'Добавить на главный экран'\n3. Нажмите 'Добавить'",
-      desktopInstructions: "На компьютере:\n1. Нажмите значок установки в адресной строке\n2. Или меню браузера > 'Установить LeaseShield'",
+      desktopInstructions: "На компьютере:\n1. Нажмите значок установки в адресной строке\n2. Или меню браузера > 'Установить Lease Shield'",
       gotIt: "Понятно",
       install: "Установить",
       alreadyInstalled: "Уже установлено"

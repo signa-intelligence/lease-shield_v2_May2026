@@ -2353,7 +2353,7 @@ ja: {
                         {language === 'th' ? 'อัปเกรดเป็น Secure' : language === 'zh' ? '升级到Secure' : language === 'ja' ? 'Secureにアップグレード' : language === 'ko' ? 'Secure로 업그레이드' : language === 'ru' ? 'Обновить до Secure' : 'Upgrade to Secure'}
                       </h3>
                       <p className="text-sm mb-2" style={{ color: colors.textSecondary, lineHeight: '1.5' }}>
-                        {language === 'th' ? 'สแกนไม่จำกัด • 10 เครดิต • การสนับสนุนพิเศษ • คิวเร่งด่วน' : language === 'zh' ? '无限扫描 • 10积分 • 优先支持 • 优先队列' : language === 'ja' ? '無制限スキャン • 10クレジット • 優先サポート • 優先キュー' : language === 'ko' ? '무제한 스캔 • 10크레딧 • 우선 지원 • 우선 대기열' : language === 'ru' ? 'Безлимит • 10 кредитов • Приоритет • Очередь' : 'Unlimited scans • 10 credits • Priority support'}
+                        {language === 'th' ? 'สแกนไม่จำกัด • 1 Resolve/ปี • FastTrack ฟรี • การสนับสนุนพิเศษ' : language === 'zh' ? '无限扫描 • 每年1个Resolve • 免费FastTrack • 优先支持' : language === 'ja' ? '無制限スキャン • 年1件Resolve • 無料FastTrack • 優先サポート' : language === 'ko' ? '무제한 스캔 • 연 1회 Resolve • 무료 FastTrack • 우선 지원' : language === 'ru' ? 'Безлимит • 1 Resolve/год • FastTrack бесплатно • Приоритет' : 'Unlimited scans • 1 Resolve/year • Free FastTrack • Priority support'}
                       </p>
                       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{
                         backgroundColor: '#8B5CF6',
