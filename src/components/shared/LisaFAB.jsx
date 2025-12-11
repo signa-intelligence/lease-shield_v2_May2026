@@ -37,7 +37,7 @@ export default function LisaFAB({ onClick, isDarkMode = false }) {
         position: "fixed",
         bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
         right: "20px",
-        minWidth: isMobile ? "56px" : (isHovered ? "180px" : "56px"),
+        minWidth: isMobile ? "120px" : (isHovered ? "180px" : "56px"),
         height: "56px",
         borderRadius: "28px",
         backgroundColor: "#063F2C",
@@ -59,7 +59,7 @@ export default function LisaFAB({ onClick, isDarkMode = false }) {
       }}
     >
       <MessageCircle className="w-6 h-6 flex-shrink-0" />
-      {(!isMobile && isHovered) && (
+      {(isMobile || isHovered) && (
         <span style={{
           opacity: 1,
           animation: "fadeIn 0.2s ease-in"
