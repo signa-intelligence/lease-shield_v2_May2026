@@ -200,7 +200,10 @@ Deno.serve(async (req) => {
 
                 // Notify referrer (non-blocking)
                 if (referrer.email_notifications && RESEND_API_KEY) {
-                  const emailSubject = '🎉 You Earned a Referral Credit!';
+                  const referrerLang = referrer.language || 'en';
+                  const emailSubject = referrerLang === 'th' 
+                    ? '🎉 คุณได้รับเครดิตการแนะนำ!' 
+                    : '🎉 You Earned a Referral Credit!';
 
                   const emailBody = `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
