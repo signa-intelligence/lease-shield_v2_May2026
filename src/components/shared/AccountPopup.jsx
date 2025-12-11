@@ -3,7 +3,6 @@ import { Card } from '@/components/ui/card';
 import { User, HelpCircle, Globe, Star, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import React from 'react';
 
 export default function AccountPopup({ isOpen, onClose, colors, language = 'en', onLanguageClick }) {
   if (!isOpen) return null;
