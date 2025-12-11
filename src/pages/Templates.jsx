@@ -1,12 +1,9 @@
 import React, { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { FileText, Shield, FileX, Scale, Camera, Mail, AlertTriangle, Gavel, CheckCircle, Coins, CheckCircle2, Upload, Plus, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Button } from "@/components/ui/button";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import AuthGuard from "../components/shared/AuthGuard";
@@ -694,9 +691,9 @@ function TemplatesContent() {
     }
 
     return (
-      <Card
+      <div
         key={template.id || template.template_id || Math.random()}
-        className={`border-none shadow-md hover:shadow-xl transition-all duration-200 card-hover-lift ${hasEnoughCredits ? 'cursor-pointer btn-interaction' : 'opacity-60 cursor-not-allowed'}`}
+        className={`rounded-xl border-none shadow-md hover:shadow-xl transition-all duration-200 card-hover-lift ${hasEnoughCredits ? 'cursor-pointer btn-interaction' : 'opacity-60 cursor-not-allowed'}`}
         style={{ backgroundColor: colors.cardBg }}
         onClick={() => {
           if (hasEnoughCredits) {
@@ -705,15 +702,15 @@ function TemplatesContent() {
         }}
       >
         <div className={`h-2 bg-gradient-to-r ${color} rounded-t-xl`} />
-        <CardContent className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6">
           <div className="flex items-start justify-between mb-3 sm:mb-4">
             <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center`}>
               <Icon className="w-6 h-6 text-white" />
             </div>
-            <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-200 flex items-center gap-1">
+            <span className="text-xs bg-blue-100 text-blue-700 border border-blue-200 rounded px-2 py-1 flex items-center gap-1">
               <Coins className="w-3 h-3" />
               {creditCost}
-            </Badge>
+            </span>
           </div>
 
           <h3 className="text-base sm:text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
@@ -738,8 +735,8 @@ function TemplatesContent() {
               {strings.insufficientCredits}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   };
 
@@ -854,21 +851,21 @@ function TemplatesContent() {
               </div>
 
               <div className="flex gap-3 justify-end pt-4">
-                <Button
-                  variant="outline"
+                <button
                   onClick={() => {
                     haptic.light();
                     setShowUploadDialog(false);
                   }}
                   disabled={uploadingFile}
-                  className="btn-interaction"
+                  className="border border-gray-300 px-4 py-2 rounded-lg btn-interaction"
+                  style={{ color: colors.textPrimary }}
                 >
                   {strings.cancel}
-                </Button>
-                <Button
+                </button>
+                <button
                   onClick={handleUploadTemplate}
                   disabled={uploadingFile}
-                  className="bg-ls-forest hover:bg-ls-forest/90 btn-interaction"
+                  className="bg-ls-forest hover:bg-ls-forest/90 text-white px-4 py-2 rounded-lg flex items-center btn-interaction"
                 >
                   {uploadingFile ? (
                     <>
@@ -881,7 +878,7 @@ function TemplatesContent() {
                       {strings.upload}
                     </>
                   )}
-                </Button>
+                </button>
               </div>
             </div>
               </div>
@@ -899,28 +896,26 @@ function TemplatesContent() {
           isDarkMode={isDarkMode}
           actions={
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs sm:text-sm w-fit">
+              <span className="bg-blue-100 text-blue-700 border border-blue-200 rounded px-3 py-1 text-xs sm:text-sm w-fit">
                 {strings.allLetters}
-              </Badge>
+              </span>
               
               {isAdmin && (
-                <Button
+                <button
                   onClick={() => setShowUploadDialog(true)}
-                  className="bg-ls-forest hover:bg-ls-forest/90"
-                  size="sm"
+                  className="bg-ls-forest hover:bg-ls-forest/90 text-white px-4 py-2 rounded-lg flex items-center justify-center btn-interaction"
                   style={{ height: '36px' }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   {strings.uploadTemplate}
-                </Button>
+                </button>
               )}
             </div>
           }
         />
 
         {/* Credit Balance Card */}
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardContent className="p-6">
+        <div className="mb-6 rounded-xl border-none shadow-xl p-6" style={{ backgroundColor: colors.cardBg }}>
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
@@ -941,31 +936,31 @@ function TemplatesContent() {
 
               <div className="flex flex-col items-end gap-3 w-full md:w-auto">
                 <div className="flex flex-wrap gap-2 justify-center md:justify-end">
-                  <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                  <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 rounded px-2 py-1 text-xs flex items-center">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
                     {strings.accessTemplateLibrary}
-                  </Badge>
-                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                  </span>
+                  <span className="bg-blue-100 text-blue-700 border border-blue-200 rounded px-2 py-1 text-xs flex items-center">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
                     {strings.bilingual}
-                  </Badge>
-                  <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
+                  </span>
+                  <span className="bg-purple-100 text-purple-700 border border-purple-200 rounded px-2 py-1 text-xs flex items-center">
                     <CheckCircle2 className="w-3 h-3 mr-1" />
                     {strings.creditsNeverExpire}
-                  </Badge>
+                  </span>
                 </div>
-                <Button
+                <button
                   onClick={() => navigate(createPageUrl("Account") + '#letter-credits')}
-                  className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 w-full md:w-auto"
+                  className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-4 py-2 rounded-lg flex items-center justify-center w-full md:w-auto btn-interaction"
                   style={{ height: '40px' }}
                 >
                   <Coins className="w-4 h-4 mr-2" />
                   {strings.purchaseCredits}
-                </Button>
+                </button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* PRE-SIGNING SECTION */}
         <div className="mb-12">
