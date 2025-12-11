@@ -1423,6 +1423,23 @@ ja: {
   };
 
   const hasAnyData = leases.length > 0 || deposits.length > 0 || cases.length > 0 || documents.length > 0;
+  const isProtectPlan = user?.plan_tier === 'protect';
+
+  // Auto-show Quick Guide modal on first visit (if not previously dismissed)
+  React.useEffect(() => {
+    if (user && !user.quick_guide_dismissed && !showOnboarding) {
+      setShowQuickGuide(true);
+    }
+  }, [user, showOnboarding]);
+
+  // Listen for Quick Guide open event from nav
+  React.useEffect(() => {
+    const handleOpenQuickGuide = () => {
+      setShowQuickGuide(true);
+    };
+    window.addEventListener('openQuickGuide', handleOpenQuickGuide);
+    return () => window.removeEventListener('openQuickGuide', handleOpenQuickGuide);
+  }, []);
 
   return (
     <PullToRefresh onRefresh={handleRefresh} isDarkMode={isDarkMode}>
