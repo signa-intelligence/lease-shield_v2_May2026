@@ -25,10 +25,16 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import AuthGuard from "../components/shared/AuthGuard";
+import { haptic } from "../components/shared/HapticFeedback";
+import { ToastProvider, useToast } from "../components/shared/Toast";
+import SkeletonLoader from "../components/shared/SkeletonLoader";
+import EmptyState from "../components/shared/EmptyState";
+import PageHeader from "../components/shared/PageHeader";
 
 function LeaseDetailsContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const urlParams = new URLSearchParams(window.location.search);
   const leaseId = urlParams.get('leaseId');
 
@@ -80,19 +86,19 @@ function LeaseDetailsContent() {
   const isDarkMode = user?.theme === 'dark';
 
   const colors = isDarkMode ? {
-    bg: '#1A1D1F',
+    bg: '#111827',
     cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D'
+    textPrimary: '#F9FAFB',
+    textSecondary: '#D1D5DB',
+    borderColor: 'rgba(255,255,255,0.1)',
+    fieldBg: '#374151'
   } : {
-    bg: '#F8FAFC',
+    bg: '#F3F6F5',
     cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF'
+    textPrimary: '#0F172A',
+    textSecondary: '#475569',
+    borderColor: 'rgba(12,59,46,0.08)',
+    fieldBg: '#F8FAFC'
   };
 
   const t = {
@@ -281,28 +287,46 @@ function LeaseDetailsContent() {
   const strings = t[language] || t.en;
 
   const handleToggleAlerts = async (enabled) => {
-    await updateLeaseMutation.mutateAsync({
-      notice_alerts_enabled: enabled
-    });
+    haptic.light();
+    try {
+      await updateLeaseMutation.mutateAsync({
+        notice_alerts_enabled: enabled
+      });
+      toast.success(language === 'th' ? 'อัปเดตสำเร็จ' : 'Updated successfully');
+      haptic.success();
+    } catch (error) {
+      toast.error(language === 'th' ? 'อัปเดตล้มเหลว' : 'Update failed');
+      haptic.error();
+    }
   };
 
   const handleSaveNoticeSettings = async () => {
     if (!lease.end_date || !noticeSettings.notice_period_days) {
-      alert(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : 'Please fill in all fields');
+      toast.error(language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : 'Please fill in all fields');
+      haptic.error();
       return;
     }
 
+    haptic.medium();
     const endDate = new Date(lease.end_date);
     const deadline = new Date(endDate);
     deadline.setDate(deadline.getDate() - noticeSettings.notice_period_days);
 
-    await updateLeaseMutation.mutateAsync({
-      notice_period_days: noticeSettings.notice_period_days,
-      notice_deadline: deadline.toISOString().split('T')[0]
-    });
+    try {
+      await updateLeaseMutation.mutateAsync({
+        notice_period_days: noticeSettings.notice_period_days,
+        notice_deadline: deadline.toISOString().split('T')[0]
+      });
+      toast.success(language === 'th' ? 'บันทึกสำเร็จ' : 'Saved successfully');
+      haptic.success();
+    } catch (error) {
+      toast.error(language === 'th' ? 'บันทึกล้มเหลว' : 'Save failed');
+      haptic.error();
+    }
   };
 
   const handleEditNotice = () => {
+    haptic.light();
     setNoticeSettings({
       notice_period_days: lease.notice_period_days || 30,
       notice_deadline: lease.notice_deadline || ''
@@ -319,12 +343,9 @@ function LeaseDetailsContent() {
 
   if (leaseLoading) {
     return (
-      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: colors.textSecondary }} />
-            <p className="text-lg" style={{ color: colors.textSecondary }}>{strings.loading}</p>
-          </div>
+          <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
         </div>
       </div>
     );
@@ -332,57 +353,44 @@ function LeaseDetailsContent() {
 
   if (!lease) {
     return (
-      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-5xl mx-auto">
-          <Button variant="outline" onClick={() => navigate(createPageUrl("UploadScan"))} className="mb-6">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {strings.backToLeases}
-          </Button>
-          <div className="text-center py-20">
-            <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{
-              backgroundColor: isDarkMode ? '#3A3D40' : '#F3F4F6'
-            }}>
-              <FileText className="w-10 h-10" style={{ color: colors.textSecondary, opacity: 0.5 }} />
-            </div>
-            <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {strings.notFound}
-            </h2>
-            <p className="mb-6" style={{ color: colors.textSecondary }}>
-              {language === 'th' 
-                ? 'ไม่พบสัญญาเช่าที่คุณกำลังมองหา หรืออาจถูกลบไปแล้ว' 
-                : 'The lease you\'re looking for doesn\'t exist or may have been deleted.'}
-            </p>
-            <Button 
-              onClick={() => navigate(createPageUrl("UploadScan"))} 
-              className="bg-ls-forest hover:bg-ls-forest/90"
-              style={{ color: '#FFFFFF' }}
-            >
-              <span style={{ color: '#FFFFFF', fontWeight: '600' }}>
-                {language === 'th' ? 'กลับไปที่สัญญาเช่า' : 'Go to Leases'}
-              </span>
-            </Button>
-          </div>
+          <PageHeader
+            title={strings.notFound}
+            subtitle={language === 'th' ? 'ไม่พบสัญญาเช่าที่คุณกำลังมองหา' : 'The lease you\'re looking for doesn\'t exist'}
+            icon={FileText}
+            iconColor="#EF4444"
+            showBack={true}
+            isDarkMode={isDarkMode}
+          />
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-0">
+              <EmptyState
+                icon={FileText}
+                title={strings.notFound}
+                description={language === 'th' ? 'หรืออาจถูกลบไปแล้ว' : 'or may have been deleted'}
+                actionLabel={strings.backToLeases}
+                onAction={() => navigate(createPageUrl("UploadScan"))}
+                isDarkMode={isDarkMode}
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
-        <Button
-          variant="outline"
-          onClick={() => navigate(createPageUrl("UploadScan"))}
-          className="mb-4 md:mb-6"
-          size="sm"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {strings.backToLeases}
-        </Button>
-
-        <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6" style={{ color: colors.textPrimary }}>
-          {strings.leaseDetails}
-        </h1>
+        <PageHeader
+          title={strings.leaseDetails}
+          subtitle={lease.property_address || ''}
+          icon={FileText}
+          iconColor="#0C3B2E"
+          showBack={true}
+          isDarkMode={isDarkMode}
+        />
 
         {/* Basic Information */}
         <Card className="mb-4 md:mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
@@ -497,7 +505,7 @@ function LeaseDetailsContent() {
                       {strings.noticeHelp}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={handleEditNotice} className="w-full sm:w-auto">
+                  <Button variant="outline" size="sm" onClick={handleEditNotice} className="w-full sm:w-auto btn-interaction">
                     <Edit2 className="w-4 h-4 mr-2" />
                     {strings.edit}
                   </Button>
@@ -547,8 +555,11 @@ function LeaseDetailsContent() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     variant="outline"
-                    onClick={() => setEditingNotice(false)}
-                    className="flex-1 w-full"
+                    onClick={() => {
+                      haptic.light();
+                      setEditingNotice(false);
+                    }}
+                    className="flex-1 w-full btn-interaction"
                   >
                     <X className="w-4 h-4 mr-2" />
                     {strings.cancel}
@@ -556,9 +567,13 @@ function LeaseDetailsContent() {
                   <Button
                     onClick={handleSaveNoticeSettings}
                     disabled={updateLeaseMutation.isLoading}
-                    className="flex-1 w-full bg-ls-forest hover:bg-ls-forest/90"
+                    className="flex-1 w-full bg-ls-forest hover:bg-ls-forest/90 btn-interaction"
                   >
-                    <Save className="w-4 h-4 mr-2" />
+                    {updateLeaseMutation.isLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
                     {strings.save}
                   </Button>
                 </div>
@@ -728,9 +743,11 @@ function LeaseDetailsContent() {
                   }
 
                   export default function LeaseDetails() {
-                  return (
-                  <AuthGuard>
-                  <LeaseDetailsContent />
-                  </AuthGuard>
-                  );
+                    return (
+                      <AuthGuard>
+                        <ToastProvider>
+                          <LeaseDetailsContent />
+                        </ToastProvider>
+                      </AuthGuard>
+                    );
                   }

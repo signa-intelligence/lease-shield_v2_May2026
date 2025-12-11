@@ -2,10 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -13,10 +9,16 @@ import { ArrowLeft, Loader2, FileText, Send, AlertCircle, Edit2, Save, Globe, Ch
 import { base44 } from "@/api/base44Client";
 import { buildLetterLanguagePack, getLanguageLabel, formatLanguageList } from "../components/shared/languageRules";
 import AuthGuard from "../components/shared/AuthGuard";
+import { ToastProvider, useToast } from "../components/shared/Toast";
+import { haptic } from "../components/shared/HapticFeedback";
+import MobileFormInput from "../components/shared/MobileFormInput";
+import PageHeader from "../components/shared/PageHeader";
+import ProgressBar from "../components/shared/ProgressBar";
 
 function TemplateFormContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -67,19 +69,19 @@ function TemplateFormContent() {
   const userCredits = user?.letter_credits || 0;
 
   const colors = isDarkMode ? {
-    bg: '#1A1D1F',
+    bg: '#111827',
     cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D'
+    textPrimary: '#F9FAFB',
+    textSecondary: '#D1D5DB',
+    borderColor: 'rgba(255,255,255,0.1)',
+    fieldBg: '#374151'
   } : {
-    bg: '#F8FAFC',
+    bg: '#F3F6F5',
     cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF'
+    textPrimary: '#0F172A',
+    textSecondary: '#475569',
+    borderColor: 'rgba(12,59,46,0.08)',
+    fieldBg: '#F8FAFC'
   };
 
   const t = {
@@ -611,42 +613,45 @@ function TemplateFormContent() {
     e.preventDefault();
     setError(null);
 
-    // Basic validation
     if (!formData.subject) {
       setError(strings.selectTypeFirst);
+      haptic.error();
       return;
     }
     if (!formData.tenant_name || !formData.landlord_name) {
       setError(strings.errorFillRequired);
+      haptic.error();
       return;
     }
 
-    // Credit check
     if (userCredits < 1) {
       setError(strings.insufficientCreditsMsg);
+      haptic.error();
       return;
     }
 
+    haptic.medium();
     setGenerating(true);
     try {
       // Call the backend function to generate multi-language letter pack (credit is deducted here)
       const response = await base44.functions.invoke('generatePhase1Letter', formData);
 
       if (response.data?.ok) {
-        // Refresh user credits immediately
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-
-        // Store the generated content for review
         setGeneratedLetter(response.data);
         setLanguagePack(response.data.language_pack);
         setEditedContent(response.data.letter_content || {});
-        setReviewMode(true); // Enter review mode
+        setReviewMode(true);
+        haptic.success();
+        toast.success(strings.creditDeductedRemaining.replace('{credits_remaining}', response.data.credits_remaining || 0));
       } else {
         throw new Error(response.data?.error || strings.errorGenerationFailed);
       }
     } catch (err) {
       console.error('Generation error:', err);
       setError(err.message || strings.errorGenerationFailed);
+      haptic.error();
+      toast.error(err.message || strings.errorGenerationFailed);
     } finally {
       setGenerating(false);
     }
@@ -655,9 +660,11 @@ function TemplateFormContent() {
   const handleSaveAfterReview = async () => {
     if (!generatedLetter || !languagePack || Object.keys(editedContent).length === 0) {
       setError(strings.reviewContentRequired);
+      haptic.error();
       return;
     }
 
+    haptic.medium();
     setSaving(true);
     setError(null);
 
@@ -675,17 +682,17 @@ function TemplateFormContent() {
 
       if (response.data?.ok) {
         queryClient.invalidateQueries({ queryKey: ['documents'] });
-
-        // Show success and navigate
-        alert(strings.saveLetterSuccess);
-
-        navigate(createPageUrl("DocumentVault"));
+        toast.success(strings.saveLetterSuccess);
+        haptic.success();
+        navigate(createPageUrl("EvidenceVault"));
       } else {
         throw new Error(response.data?.error || strings.saveFailed);
       }
     } catch (err) {
       console.error('Save error:', err);
       setError(err.message || strings.saveFailed);
+      toast.error(err.message || strings.saveFailed);
+      haptic.error();
     } finally {
       setSaving(false);
     }
@@ -714,35 +721,26 @@ function TemplateFormContent() {
     }
   };
 
-  // Review Mode UI
   if (reviewMode && generatedLetter) {
     return (
-      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-5xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={handleCancelReview}
-            className="mb-4 text-sm font-medium hover:opacity-70 transition-opacity"
-            style={{ color: colors.textSecondary }}
-            disabled={saving}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {strings.back}
-          </Button>
-
-          <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {strings.reviewEditLetter}
-            </h1>
-            <p style={{ color: colors.textSecondary }}>
-              {strings.reviewEditLetterDesc}
-            </p>
-            <div className="mt-2">
+          <PageHeader
+            title={strings.reviewEditLetter}
+            subtitle={strings.reviewEditLetterDesc}
+            icon={Edit2}
+            iconColor="#8B5CF6"
+            showBack={true}
+            backRoute={() => handleCancelReview()}
+            isDarkMode={isDarkMode}
+            actions={
               <Badge className="bg-amber-100 text-amber-700 border-amber-200">
                 {strings.creditDeductedRemaining.replace('{credits_remaining}', generatedLetter.credits_remaining || 0)}
               </Badge>
-            </div>
-          </div>
+            }
+          />
+
+          <div className="mb-6">
 
           {error && (
             <Card className="mb-4 border-2 border-red-500" style={{ backgroundColor: colors.cardBg }}>
@@ -797,9 +795,12 @@ function TemplateFormContent() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleCancelReview}
+                  onClick={() => {
+                    haptic.light();
+                    handleCancelReview();
+                  }}
                   disabled={saving}
-                  className="flex-1"
+                  className="flex-1 btn-interaction"
                   style={{
                     backgroundColor: colors.cardBg,
                     borderColor: colors.borderColor,
@@ -809,9 +810,12 @@ function TemplateFormContent() {
                   {strings.cancel}
                 </Button>
                 <Button
-                  onClick={handleSaveAfterReview}
+                  onClick={() => {
+                    haptic.medium();
+                    handleSaveAfterReview();
+                  }}
                   disabled={saving || Object.keys(editedContent).length === 0}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white btn-interaction"
                 >
                   {saving ? (
                     <>
@@ -847,13 +851,30 @@ function TemplateFormContent() {
     );
   }
 
-  // Original Form UI - this block executes if not in reviewMode
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-3xl mx-auto">
+        {generating && (
+          <Card className="border-none shadow-lg mb-6" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-6">
+              <ProgressBar
+                value={65}
+                label={strings.generating}
+                showPercentage={false}
+                color="#8B5CF6"
+                isDarkMode={isDarkMode}
+                animated={true}
+              />
+            </CardContent>
+          </Card>
+        )}
+
         <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 mb-6 text-sm font-medium hover:opacity-70 transition-opacity"
+          onClick={() => {
+            haptic.light();
+            navigate(-1);
+          }}
+          className="flex items-center gap-2 mb-6 text-sm font-medium hover:opacity-70 transition-opacity btn-interaction"
           style={{ color: colors.textSecondary }}
         >
           <ArrowLeft className="w-4 h-4" />
@@ -1434,7 +1455,9 @@ function TemplateFormContent() {
 export default function TemplateForm() {
   return (
     <AuthGuard>
-      <TemplateFormContent />
+      <ToastProvider>
+        <TemplateFormContent />
+      </ToastProvider>
     </AuthGuard>
   );
 }

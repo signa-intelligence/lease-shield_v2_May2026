@@ -5,15 +5,16 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, Loader2, CheckCircle2, Upload, X, Crown, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricingForUser } from "../components/shared/resolvePricing";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
+import MobileFormInput from "../components/shared/MobileFormInput";
+import { useFormValidation, validators } from "../components/shared/FormValidation";
+import { haptic } from "../components/shared/HapticFeedback";
+import PageHeader from "../components/shared/PageHeader";
+import ProgressBar from "../components/shared/ProgressBar";
 
 function ResolveCaseContent() {
   const navigate = useNavigate();
@@ -73,19 +74,19 @@ function ResolveCaseContent() {
   }, [deposits, user, language]);
 
   const colors = isDarkMode ? {
-    bg: '#1A1D1F',
+    bg: '#111827',
     cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40',
-    inputBg: '#353A3D'
+    textPrimary: '#F9FAFB',
+    textSecondary: '#D1D5DB',
+    borderColor: 'rgba(255,255,255,0.1)',
+    fieldBg: '#374151'
   } : {
-    bg: '#F8FAFC',
+    bg: '#F3F6F5',
     cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#6B7280',
-    borderColor: '#E5E7EB',
-    inputBg: '#FFFFFF'
+    textPrimary: '#0F172A',
+    textSecondary: '#475569',
+    borderColor: 'rgba(12,59,46,0.08)',
+    fieldBg: '#F8FAFC'
   };
 
   const createCaseMutation = useMutation({
@@ -254,6 +255,7 @@ function ResolveCaseContent() {
   const handleFileUpload = async (files) => {
     if (!files || files.length === 0) return;
     
+    haptic.light();
     setUploading(true);
     try {
       const uploadResults = [];
@@ -329,6 +331,7 @@ function ResolveCaseContent() {
   };
 
   const handleRemoveFile = (fileId) => {
+    haptic.light();
     setFormData(prev => ({
       ...prev,
       evidence_files: prev.evidence_files.filter(f => f.id !== fileId)
@@ -338,7 +341,6 @@ function ResolveCaseContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // ROOT CAUSE FIX #3: Validate required fields
     if (!formData.type || !formData.dispute_amount || !formData.summary) {
       toast.error(
         language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน'
@@ -348,8 +350,11 @@ function ResolveCaseContent() {
         : language === 'ru' ? 'Пожалуйста, заполните все обязательные поля'
         : 'Please fill in all required fields'
       );
+      haptic.error();
       return;
     }
+
+    haptic.medium();
 
     try {
       // CRITICAL FIX: Use unified membership system
@@ -730,32 +735,19 @@ function ResolveCaseContent() {
   const str = strings[language] || strings.en;
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+    <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: '#DC2626',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 6px rgba(220, 38, 38, 0.3)'
-            }}>
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                {str.title}
-              </h1>
-              <p style={{ color: colors.textSecondary }}>{str.subtitle}</p>
-            </div>
-          </div>
+        <PageHeader
+          title={str.title}
+          subtitle={str.subtitle}
+          icon={Shield}
+          iconColor="#DC2626"
+          showBack={true}
+          isDarkMode={isDarkMode}
+        />
 
-          {/* Auto-fill indicator */}
+        <div className="mb-6">
+
           {autoFilledFromDeposit && (
             <div className="mt-4 p-4 rounded-lg border-2 animate-pulse" style={{
               backgroundColor: isDarkMode ? '#1E4435' : '#ECFDF5',
@@ -774,7 +766,6 @@ function ResolveCaseContent() {
               </div>
             </div>
           )}
-        </div>
 
         {/* Resolve Service Pricing */}
         <Card className="border-none shadow-xl mb-6" style={{ 
@@ -948,67 +939,61 @@ function ResolveCaseContent() {
               <CardTitle style={{ color: colors.textPrimary }}>{str.caseDetails}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Case Type */}
               <div>
-                <Label style={{ color: colors.textPrimary }}>
+                <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                   {str.caseType} <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formData.type} onValueChange={(val) => setFormData({...formData, type: val})}>
-                  <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent style={{ backgroundColor: colors.cardBg }}>
-                    <SelectItem value="deposit">{str.depositCase}</SelectItem>
-                    <SelectItem value="early_termination">{str.earlyTermCase}</SelectItem>
-                    <SelectItem value="damages">{str.damagesCase}</SelectItem>
-                    <SelectItem value="other">{str.otherCase}</SelectItem>
-                  </SelectContent>
-                </Select>
+                </label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({...formData, type: e.target.value})}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    backgroundColor: colors.fieldBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary,
+                    fontSize: '16px',
+                    borderRadius: '12px',
+                    border: `2px solid ${colors.borderColor}`,
+                    minHeight: '48px'
+                  }}
+                >
+                  <option value="deposit">{str.depositCase}</option>
+                  <option value="early_termination">{str.earlyTermCase}</option>
+                  <option value="damages">{str.damagesCase}</option>
+                  <option value="other">{str.otherCase}</option>
+                </select>
               </div>
 
-              {/* Dispute Amount */}
-              <div>
-                <Label style={{ color: colors.textPrimary }}>
-                  {str.disputeAmount} (฿) <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  type="number"
-                  value={formData.dispute_amount}
-                  onChange={(e) => setFormData({...formData, dispute_amount: e.target.value})}
-                  placeholder={str.disputePlaceholder}
-                  className="mt-2"
-                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                />
-              </div>
+              <MobileFormInput
+                label={`${str.disputeAmount} (฿)`}
+                type="number"
+                value={formData.dispute_amount}
+                onChange={(e) => setFormData({...formData, dispute_amount: e.target.value})}
+                placeholder={str.disputePlaceholder}
+                required
+                colors={colors}
+                min={0}
+              />
 
-              {/* Property Address */}
-              <div>
-                <Label style={{ color: colors.textPrimary }}>
-                  {str.propertAddress} <span className="text-sm" style={{ color: colors.textSecondary }}>({str.optional})</span>
-                </Label>
-                <Input
-                  value={formData.property_address}
-                  onChange={(e) => setFormData({...formData, property_address: e.target.value})}
-                  placeholder={str.addressPlaceholder}
-                  className="mt-2"
-                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                />
-              </div>
+              <MobileFormInput
+                label={`${str.propertAddress} (${str.optional})`}
+                value={formData.property_address}
+                onChange={(e) => setFormData({...formData, property_address: e.target.value})}
+                placeholder={str.addressPlaceholder}
+                colors={colors}
+              />
 
-              {/* Summary */}
-              <div>
-                <Label style={{ color: colors.textPrimary }}>
-                  {str.summary} <span className="text-red-500">*</span>
-                </Label>
-                <Textarea
-                  value={formData.summary}
-                  onChange={(e) => setFormData({...formData, summary: e.target.value})}
-                  placeholder={str.summaryPlaceholder}
-                  rows={6}
-                  className="mt-2"
-                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                />
-              </div>
+              <MobileFormInput
+                label={str.summary}
+                value={formData.summary}
+                onChange={(e) => setFormData({...formData, summary: e.target.value})}
+                placeholder={str.summaryPlaceholder}
+                multiline
+                rows={6}
+                required
+                colors={colors}
+              />
             </CardContent>
           </Card>
 
@@ -1017,26 +1002,20 @@ function ResolveCaseContent() {
             <CardHeader>
               <CardTitle style={{ color: colors.textPrimary }}>{str.landlordInfo}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label style={{ color: colors.textPrimary }}>{str.landlordName}</Label>
-                <Input
-                  value={formData.landlord_name}
-                  onChange={(e) => setFormData({...formData, landlord_name: e.target.value})}
-                  className="mt-2"
-                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                />
-              </div>
-              <div>
-                <Label style={{ color: colors.textPrimary }}>{str.landlordEmail}</Label>
-                <Input
-                  type="email"
-                  value={formData.landlord_email}
-                  onChange={(e) => setFormData({...formData, landlord_email: e.target.value})}
-                  className="mt-2"
-                  style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                />
-              </div>
+            <CardContent className="space-y-5">
+              <MobileFormInput
+                label={str.landlordName}
+                value={formData.landlord_name}
+                onChange={(e) => setFormData({...formData, landlord_name: e.target.value})}
+                colors={colors}
+              />
+              <MobileFormInput
+                label={str.landlordEmail}
+                type="email"
+                value={formData.landlord_email}
+                onChange={(e) => setFormData({...formData, landlord_email: e.target.value})}
+                colors={colors}
+              />
             </CardContent>
           </Card>
 
@@ -1091,11 +1070,34 @@ function ResolveCaseContent() {
             </CardContent>
           </Card>
 
-          {/* Submit Button */}
+          {createCaseMutation.isPending && (
+            <Card className="border-none shadow-lg mb-6" style={{ backgroundColor: colors.cardBg }}>
+              <CardContent className="p-6">
+                <ProgressBar
+                  value={50}
+                  label={str.submitting}
+                  showPercentage={false}
+                  color="#DC2626"
+                  isDarkMode={isDarkMode}
+                  animated={true}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           <Button
             type="submit"
             disabled={createCaseMutation.isPending || uploading}
-            className="w-full bg-red-600 hover:bg-red-700 py-6 text-lg font-bold"
+            className="w-full btn-interaction"
+            style={{
+              backgroundColor: createCaseMutation.isPending || uploading ? '#9CA3AF' : '#DC2626',
+              color: '#FFFFFF',
+              padding: '18px',
+              fontSize: '18px',
+              fontWeight: '700',
+              borderRadius: '12px',
+              minHeight: '64px'
+            }}
           >
             {createCaseMutation.isPending ? (
               <>
