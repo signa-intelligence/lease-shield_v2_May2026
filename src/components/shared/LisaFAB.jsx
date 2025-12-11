@@ -7,49 +7,63 @@ import { haptic } from "./HapticFeedback";
  * Small circular button that opens the Lisa assistant
  */
 export default function LisaFAB({ onClick, isDarkMode = false }) {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   return (
     <button
       type="button"
-      aria-label="Open Lisa Assistant"
+      aria-label="Chat with Lisa"
       onClick={() => {
         haptic.medium();
         if (onClick) onClick();
       }}
       className="btn-interaction"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
         position: "fixed",
         bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
         right: "20px",
-        width: "56px",
+        minWidth: isMobile ? "56px" : (isHovered ? "160px" : "56px"),
         height: "56px",
-        borderRadius: "50%",
-        backgroundColor: "#0C3B2E",
-        border: "2px solid #C7A338",
+        borderRadius: "28px",
+        backgroundColor: "#063F2C",
+        border: "3px solid #CFAF6A",
         color: "#FFFFFF",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        boxShadow: "0 8px 20px rgba(12,59,46,0.35)",
+        gap: "8px",
+        padding: "0 16px",
+        boxShadow: "0 8px 24px rgba(6,63,44,0.4)",
         cursor: "pointer",
-        transition: "all 0.2s ease",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         zIndex: 50,
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "scale(1.05) translateY(-2px)";
-        e.currentTarget.style.boxShadow = "0 12px 28px rgba(12,59,46,0.45)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "scale(1) translateY(0)";
-        e.currentTarget.style.boxShadow = "0 8px 20px rgba(12,59,46,0.35)";
-      }}
-      onMouseDown={(e) => {
-        e.currentTarget.style.transform = "scale(0.95)";
-      }}
-      onMouseUp={(e) => {
-        e.currentTarget.style.transform = "scale(1.05) translateY(-2px)";
+        fontWeight: "700",
+        fontSize: "14px",
+        overflow: "hidden",
+        whiteSpace: "nowrap"
       }}
     >
-      <MessageCircle className="w-6 h-6" />
+      <MessageCircle className="w-6 h-6 flex-shrink-0" />
+      {(!isMobile && isHovered) && (
+        <span style={{
+          opacity: 1,
+          animation: "fadeIn 0.2s ease-in"
+        }}>
+          Chat with Lisa
+        </span>
+      )}
+      {isMobile && (
+        <span className="sr-only">Ask Lisa</span>
+      )}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
     </button>
   );
 }

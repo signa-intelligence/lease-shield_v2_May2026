@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
               console.log('[REFERRAL_CREDIT] Referrer plan:', referrer.plan_tier);
               console.log('[REFERRAL_CREDIT] Friend plan:', planTier);
 
-              // Calculate credit (cheaper plan rule)
+              // Calculate credit (friend's plan value)
               const planPrices = {
                 lite: 190,
                 protect: 390,
@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
               const referrerMonthlyPrice = planPrices[referrer.plan_tier] || 0;
               const friendMonthlyPrice = planPrices[planTier] || 0;
 
-              const creditTHB = Math.min(referrerMonthlyPrice, friendMonthlyPrice);
+              const creditTHB = friendMonthlyPrice; // Award friend's plan value
 
               console.log('[REFERRAL_CREDIT] Referrer monthly price:', referrerMonthlyPrice);
               console.log('[REFERRAL_CREDIT] Friend monthly price:', friendMonthlyPrice);
