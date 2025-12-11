@@ -1,15 +1,14 @@
 import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Star, HelpCircle } from "lucide-react";
+import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Menu } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { haptic } from "./components/shared/HapticFeedback";
 import LisaEnhanced from "./components/shared/LisaEnhanced";
 import LisaFAB from "./components/shared/LisaFAB";
-import AccountPopup from "./components/shared/AccountPopup";
+import MobileMenuDrawer from "./components/shared/MobileMenuDrawer";
 import LanguageSelector from "./components/shared/LanguageSelector";
-import QuickGuide from "./components/shared/QuickGuide";
 
 
 // Animation utilities inlined
@@ -68,9 +67,8 @@ const createRipple = (event, element) => {
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const mainContentRef = useRef(null);
-  const [showAccountPopup, setShowAccountPopup] = React.useState(false);
+  const [showMobileMenu, setShowMobileMenu] = React.useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = React.useState(false);
-  const [showQuickGuide, setShowQuickGuide] = React.useState(false);
   const [showLisa, setShowLisa] = React.useState(false);
 
   const { data: user } = useQuery({
@@ -501,53 +499,8 @@ export default function Layout({ children, currentPageName }) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0" style={{ marginRight: '4px' }}>
-            <div style={{
-              width: '1px',
-              height: '24px',
-              backgroundColor: colors.borderColor,
-              opacity: 0.5
-            }} />
-            <Link to={createPageUrl("Account") + '?showPlans=true'}>
-              <button
-                aria-label="Upgrade Plan"
-                onClick={() => haptic.light()}
-                className="btn-interaction"
-                style={{
-                  minWidth: '48px',
-                  minHeight: '48px',
-                  padding: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                  border: '2px solid #CFAF6A',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
-                  transition: 'all 0.2s'
-                }}>
-                  <Star 
-                    className="w-5 h-5" 
-                    style={{ 
-                      color: '#CFAF6A',
-                      transition: 'color 0.2s'
-                    }}
-                  />
-                </div>
-              </button>
-            </Link>
+          {/* Mobile: Only Search + Menu */}
+          <div className="flex items-center gap-2 flex-shrink-0 md:hidden">
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
@@ -588,51 +541,10 @@ export default function Layout({ children, currentPageName }) {
               </button>
             </Link>
             <button
-              aria-label="Quick Guide"
+              aria-label="Menu"
               onClick={() => {
                 haptic.light();
-                setShowQuickGuide(true);
-              }}
-              className="btn-interaction"
-              style={{
-                minWidth: '48px',
-                minHeight: '48px',
-                padding: '8px',
-                borderRadius: '50%',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                backgroundColor: showQuickGuide ? '#063F2C' : (isDarkMode ? '#374151' : '#F3F4F6'),
-                border: showQuickGuide ? '2px solid #CFAF6A' : 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: showQuickGuide ? '0 0 0 4px rgba(207,175,106,0.15)' : (isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'),
-                transition: 'all 0.2s'
-              }}>
-                <HelpCircle 
-                  className="w-5 h-5" 
-                  style={{ 
-                    color: showQuickGuide ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
-                    transition: 'color 0.2s'
-                  }}
-                />
-              </div>
-            </button>
-            <button
-              aria-label="Account Menu"
-              onClick={() => {
-                haptic.light();
-                setShowAccountPopup(!showAccountPopup);
+                setShowMobileMenu(true);
               }}
               className="btn-interaction"
               style={{
@@ -653,18 +565,109 @@ export default function Layout({ children, currentPageName }) {
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
-                backgroundColor: showAccountPopup ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
-                border: showAccountPopup ? '2px solid #C7A338' : 'none',
+                backgroundColor: showMobileMenu ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
+                border: showMobileMenu ? '2px solid #CFAF6A' : 'none',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: showAccountPopup ? '0 0 0 4px rgba(199,163,56,0.15)' : (isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'),
+                boxShadow: showMobileMenu ? '0 0 0 4px rgba(207,175,106,0.15)' : (isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'),
                 transition: 'all 0.2s'
               }}>
-                <User 
+                <Menu 
                   className="w-5 h-5" 
                   style={{ 
-                    color: showAccountPopup ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
+                    color: showMobileMenu ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
+                    transition: 'color 0.2s'
+                  }}
+                />
+              </div>
+            </button>
+          </div>
+
+          {/* Desktop/Tablet: Keep all icons */}
+          <div className="hidden md:flex items-center gap-2 flex-shrink-0" style={{ marginRight: '4px' }}>
+            <div style={{
+              width: '1px',
+              height: '24px',
+              backgroundColor: colors.borderColor,
+              opacity: 0.5
+            }} />
+            <Link to={createPageUrl("Search")}>
+              <button
+                aria-label={strings.search || "Search"}
+                onClick={() => haptic.light()}
+                className="btn-interaction"
+                style={{
+                  minWidth: '48px',
+                  minHeight: '48px',
+                  padding: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: isActiveTab(createPageUrl("Search")) ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
+                  transition: 'all 0.2s'
+                }}>
+                  <Search 
+                    className="w-5 h-5" 
+                    style={{ 
+                      color: isActiveTab(createPageUrl("Search")) ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
+                      transition: 'color 0.2s'
+                    }}
+                  />
+                </div>
+              </button>
+            </Link>
+            <button
+              aria-label="Menu"
+              onClick={() => {
+                haptic.light();
+                setShowMobileMenu(true);
+              }}
+              className="btn-interaction"
+              style={{
+                minWidth: '48px',
+                minHeight: '48px',
+                padding: '8px',
+                marginRight: '4px',
+                borderRadius: '50%',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: showMobileMenu ? '#0C3B2E' : (isDarkMode ? '#374151' : '#F3F4F6'),
+                border: showMobileMenu ? '2px solid #CFAF6A' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: showMobileMenu ? '0 0 0 4px rgba(207,175,106,0.15)' : (isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)'),
+                transition: 'all 0.2s'
+              }}>
+                <Menu 
+                  className="w-5 h-5" 
+                  style={{ 
+                    color: showMobileMenu ? '#FFFFFF' : (isDarkMode ? '#F9FAFB' : '#0C3B2E'),
                     transition: 'color 0.2s'
                   }}
                 />
@@ -770,13 +773,14 @@ export default function Layout({ children, currentPageName }) {
           isDarkMode={isDarkMode}
         />
 
-        <AccountPopup
-          isOpen={showAccountPopup}
-          onClose={() => setShowAccountPopup(false)}
+        <MobileMenuDrawer
+          isOpen={showMobileMenu}
+          onClose={() => setShowMobileMenu(false)}
           colors={colors}
           language={language}
+          user={user}
           onLanguageClick={() => {
-            setShowAccountPopup(false);
+            setShowMobileMenu(false);
             setShowLanguageSelector(true);
           }}
         />
@@ -786,14 +790,6 @@ export default function Layout({ children, currentPageName }) {
           onClose={() => setShowLanguageSelector(false)}
           colors={colors}
           currentLanguage={language}
-        />
-
-        <QuickGuide
-          user={user}
-          isOpen={showQuickGuide}
-          onClose={() => setShowQuickGuide(false)}
-          onDismiss={() => setShowQuickGuide(false)}
-          language={language}
         />
         </div>
         );
