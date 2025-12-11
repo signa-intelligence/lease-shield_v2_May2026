@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle, UserX, UserCheck, Scale } from "lucide-react";
+import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle, UserX, UserCheck, Scale, ChevronDown, ChevronUp } from "lucide-react";
 import { format, differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
@@ -44,6 +44,9 @@ function AdminConsoleContent() {
   const [debugData, setDebugData] = useState(null);
   const [loadingDebug, setLoadingDebug] = useState(false);
   const [restoringUsers, setRestoringUsers] = useState(false);
+  const [userManagementExpanded, setUserManagementExpanded] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
 
   const queryClient = useQueryClient();
 
@@ -1094,6 +1097,23 @@ function AdminConsoleContent() {
     return aVal < bVal ? 1 : -1;
   });
 
+  const totalPages = Math.ceil(sortedUsers.length / usersPerPage);
+  const startIndex = (currentPage - 1) * usersPerPage;
+  const endIndex = startIndex + usersPerPage;
+  const visibleUsers = sortedUsers.slice(startIndex, endIndex);
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   const FEATURE_DEFINITIONS = [
     { key: 'manage_users', label: strings.manageUsers, icon: Users, color: 'text-blue-600' },
     { key: 'manage_cases', label: strings.manageCases, icon: Shield, color: 'text-emerald-600' },
@@ -1635,28 +1655,49 @@ function AdminConsoleContent() {
           </Card>
         )}
 
-        {/* 3. USER MANAGEMENT */}
+        {/* 3. USER MANAGEMENT - COLLAPSIBLE */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle style={{ color: colors.textPrimary }}>{strings.userManagement}</CardTitle>
+          <CardHeader 
+            className="cursor-pointer" 
+            style={{ borderBottom: userManagementExpanded ? `1px solid ${colors.borderColor}` : 'none' }}
+            onClick={() => setUserManagementExpanded(!userManagementExpanded)}
+          >
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <Users className="w-5 h-5 text-ls-forest" />
+                {strings.userManagement} <span style={{ color: colors.textSecondary, fontWeight: 'normal' }}>({users.length} users)</span>
+              </CardTitle>
+              {userManagementExpanded ? (
+                <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+              ) : (
+                <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+              )}
+            </div>
           </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.letterCredits}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedUsers.map((u, idx) => {
+          {userManagementExpanded && (
+            <CardContent className="p-0">
+              <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead style={{ 
+                      backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                      position: 'sticky',
+                      top: 0,
+                      zIndex: 10
+                    }}>
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.letterCredits}</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleUsers.map((u, idx) => {
                     const lastUpdate = new Date(u.updated_date || u.created_date);
                     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
                     const isOnline = lastUpdate > fiveMinutesAgo;
@@ -1946,7 +1987,49 @@ function AdminConsoleContent() {
                 </tbody>
               </table>
             </div>
-          </CardContent>
+          </div>
+          
+          {/* Pagination Controls */}
+          <div className="px-6 py-4 border-t" style={{ 
+            borderTopColor: colors.borderColor,
+            backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC'
+          }}>
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                style={{ 
+                  borderColor: colors.borderColor,
+                  opacity: currentPage === 1 ? 0.5 : 1,
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Previous
+              </Button>
+              
+              <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={currentPage >= totalPages}
+                style={{ 
+                  borderColor: colors.borderColor,
+                  opacity: currentPage >= totalPages ? 0.5 : 1,
+                  cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+          )}
         </Card>
 
         {/* 4. RECENT LEASES */}
