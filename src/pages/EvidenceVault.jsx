@@ -2515,18 +2515,38 @@ function EvidenceVaultContent() {
               })}
             </div>
           )}
-        </div>
-      </div>
-    </PullToRefresh>
-  );
-}
+          </div>
 
-export default function EvidenceVault() {
-  return (
-    <AuthGuard>
-      <ToastProvider>
-        <EvidenceVaultContent />
-      </ToastProvider>
-    </AuthGuard>
-  );
-}
+          {/* Legal Disclaimer */}
+          <div className="mt-8 p-4 rounded-lg text-center max-w-4xl mx-auto" style={{
+          backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC',
+          border: `1px solid ${colors.borderColor}`
+          }}>
+          <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
+            {language === 'th' 
+              ? 'Lease Shield ให้คำแนะนำทั่วไปและเทมเพลตเอกสารเพื่อความสะดวกของคุณ Lease Shield ไม่ใช่สำนักงานกฎหมาย ไม่ให้บริการตัวแทนทางกฎหมาย และไม่ได้เป็นคู่สัญญาในสัญญาเช่าของคุณ คุณมีหน้าที่รับผิดชอบในการตรวจสอบความถูกต้องของข้อมูลและเอกสารทั้งหมดก่อนส่ง'
+              : language === 'zh'
+                ? 'Lease Shield为您提供一般性指导和文档模板以方便使用。Lease Shield不是律师事务所，不提供法律代理，也不是您租约的一方。在发送之前，您有责任检查所有信息和文档的准确性。'
+                : language === 'ja'
+                  ? 'Lease Shieldは、お客様の便宜のために一般的なガイダンスと文書テンプレートを提供します。Lease Shieldは法律事務所ではなく、法的代理を提供せず、お客様のリース契約の当事者でもありません。送信する前に、すべての情報と文書の正確性を確認する責任はお客様にあります。'
+                  : language === 'ko'
+                    ? 'Lease Shield는 귀하의 편의를 위해 일반적인 안내 및 문서 템플릿을 제공합니다。Lease Shield는 법률 회사가 아니며 법적 대리를 제공하지 않으며 귀하의 임대 계약 당사자가 아닙니다。발송하기 전에 모든 정보와 문서의 정확성을 확인할 책임은 귀하에게 있습니다。'
+                    : language === 'ru'
+                      ? 'Lease Shield предоставляет общие рекомендации и шаблоны документов для вашего удобства。Lease Shield не является юридической фирмой、не предоставляет юридическое представительство и не является стороной вашего договора аренды。Вы несёте ответственность за проверку точности всей информации и документов перед отправкой。'
+                      : 'Lease Shield provides general guidance and document templates for your convenience. Lease Shield is not a law firm, does not provide legal representation, and is not a party to your lease. You are responsible for checking the accuracy of all information and documents before sending them.'}
+          </p>
+          </div>
+          </div>
+          </PullToRefresh>
+          );
+          }
+
+          export default function EvidenceVault() {
+          return (
+          <AuthGuard>
+          <ToastProvider>
+          <EvidenceVaultContent />
+          </ToastProvider>
+          </AuthGuard>
+          );
+          }

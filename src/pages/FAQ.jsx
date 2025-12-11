@@ -399,9 +399,77 @@ const FAQ_DATA = {
       }
     ]
   },
-  technical: {
+  privacy: {
     icon: Lock,
     color: '#8B5CF6',
+    titleEn: 'Privacy & PDPA',
+    titleTh: 'ความเป็นส่วนตัวและ PDPA',
+    titleZh: '隐私和PDPA',
+    titleJa: 'プライバシーとPDPA',
+    titleKo: '개인정보 보호 및 PDPA',
+    titleRu: 'Конфиденциальность и PDPA',
+    questions: [
+      {
+        questionEn: 'How does Lease Shield use my data?',
+        questionTh: 'Lease Shield ใช้ข้อมูลของฉันอย่างไร?',
+        questionZh: 'Lease Shield如何使用我的数据？',
+        questionJa: 'Lease Shieldは私のデータをどのように使用しますか？',
+        questionKo: 'Lease Shield는 내 데이터를 어떻게 사용하나요?',
+        questionRu: 'Как Lease Shield использует мои данные?',
+        answerEn: 'We use your information and uploaded documents only to provide the Lease Shield service – for example, to analyse your lease, generate letters, and help you organise evidence.\n\nWe follow Thailand\'s PDPA rules. For full details, see our Privacy / PDPA Policy at leaseshield.asia.',
+        answerTh: 'เราใช้ข้อมูลและเอกสารที่อัปโหลดของคุณเพื่อให้บริการ Lease Shield เท่านั้น – เช่น เพื่อวิเคราะห์สัญญาเช่า สร้างจดหมาย และช่วยคุณจัดระเบียบหลักฐาน\n\nเราปฏิบัติตามกฎหมาย PDPA ของไทย สำหรับรายละเอียดเต็มรูปแบบ ดูนโยบายความเป็นส่วนตัว / PDPA ที่ leaseshield.asia',
+        answerZh: '我们仅使用您的信息和上传的文档来提供Lease Shield服务 – 例如，分析您的租约、生成信件并帮助您整理证据。\n\n我们遵守泰国的PDPA规则。有关完整详细信息，请参阅leaseshield.asia上的隐私/PDPA政策。',
+        answerJa: 'お客様の情報およびアップロードされた文書は、Lease Shieldサービスの提供のためにのみ使用されます – 例えば、リース契約の分析、レターの生成、証拠の整理をお手伝いするためです。\n\nタイのPDPA規則に従います。詳細については、leaseshield.asiaのプライバシー/PDPAポリシーをご覧ください。',
+        answerKo: '귀하의 정보 및 업로드된 문서는 Lease Shield 서비스 제공을 위해서만 사용됩니다 – 예를 들어 임대 계약 분석、편지 생성 및 증거 정리 지원을 위해서입니다。\n\n우리는 태국의 PDPA 규칙을 따릅니다。전체 세부 정보는 leaseshield.asia의 개인정보 보호/PDPA 정책을 참조하세요。',
+        answerRu: 'Мы используем вашу информацию и загруженные документы только для предоставления услуги Lease Shield – например、для анализа вашего договора、создания писем и помощи в организации доказательств。\n\nМы следуем правилам PDPA Таиланда。Полные подробности см。в нашей Политике конфиденциальности / PDPA на leaseshield.asia。'
+      },
+      {
+        questionEn: 'Can I delete my data or account?',
+        questionTh: 'ฉันสามารถลบข้อมูลหรือบัญชีของฉันได้หรือไม่?',
+        questionZh: '我可以删除我的数据或帐户吗？',
+        questionJa: 'データまたはアカウントを削除できますか？',
+        questionKo: '내 데이터나 계정을 삭제할 수 있나요?',
+        questionRu: 'Могу ли я удалить свои данные или аккаунт?',
+        answerEn: 'Yes. You can request permanent deletion of your account and data at any time by emailing privacy@leaseshield.asia from your registered email address.\n\nAfter verification, your data will be deleted within 14 days, except where we must keep certain records for legal or accounting reasons. See the Data Deletion section on leaseshield.asia for details.',
+        answerTh: 'ได้ คุณสามารถขอลบบัญชีและข้อมูลของคุณอย่างถาวรได้ตลอดเวลาโดยส่งอีเมลไปที่ privacy@leaseshield.asia จากอีเมลที่ลงทะเบียนของคุณ\n\nหลังจากตรวจสอบแล้ว ข้อมูลของคุณจะถูกลบภายใน 14 วัน ยกเว้นกรณีที่เราต้องเก็บบันทึกบางอย่างตามกฎหมายหรือเพื่อการบัญชี ดูส่วนการลบข้อมูลที่ leaseshield.asia สำหรับรายละเอียด',
+        answerZh: '可以。您可以随时通过从注册的电子邮件地址向privacy@leaseshield.asia发送电子邮件来请求永久删除您的帐户和数据。\n\n验证后，您的数据将在14天内删除，除非我们必须出于法律或会计原因保留某些记录。有关详细信息，请参阅leaseshield.asia上的数据删除部分。',
+        answerJa: 'はい。登録されたメールアドレスからprivacy@leaseshield.asiaにメールを送信することで、いつでもアカウントとデータの完全削除をリクエストできます。\n\n確認後、法律または会計上の理由で特定の記録を保持する必要がある場合を除き、14日以内にデータが削除されます。詳細については、leaseshield.asiaのデータ削除セクションを参照してください。',
+        answerKo: '예。등록된 이메일 주소에서 privacy@leaseshield.asia로 이메일을 보내 언제든지 계정 및 데이터의 영구 삭제를 요청할 수 있습니다。\n\n확인 후 법적 또는 회계 목적으로 특정 기록을 보관해야 하는 경우를 제외하고 14일 이내에 데이터가 삭제됩니다。자세한 내용은 leaseshield.asia의 데이터 삭제 섹션을 참조하세요。',
+        answerRu: 'Да。Вы можете запросить окончательное удаление вашей учётной записи и данных в любое время、отправив письмо на privacy@leaseshield.asia с зарегистрированного адреса электронной почты。\n\nПосле проверки ваши данные будут удалены в течение 14 дней、за исключением случаев、когда мы обязаны хранить определённые записи по юридическим или бухгалтерским причинам。Подробности см。в разделе «Удаление данных» на leaseshield.asia。'
+      },
+      {
+        questionEn: 'Is Lease Shield a law firm?',
+        questionTh: 'Lease Shield เป็นสำนักงานกฎหมายหรือไม่?',
+        questionZh: 'Lease Shield是律师事务所吗？',
+        questionJa: 'Lease Shieldは法律事務所ですか？',
+        questionKo: 'Lease Shield는 법률 회사인가요?',
+        questionRu: 'Lease Shield — это юридическая фирма?',
+        answerEn: 'No. Lease Shield is not a law firm and does not provide legal advice or legal representation.\n\nWe offer tools, templates, and guidance to help you manage rental issues. For complex disputes, you may still need to consult a qualified lawyer.',
+        answerTh: 'ไม่ใช่ Lease Shield ไม่ใช่สำนักงานกฎหมายและไม่ให้คำแนะนำทางกฎหมายหรือการตัวแทนทางกฎหมาย\n\nเรานำเสนอเครื่องมือ เทมเพลต และคำแนะนำเพื่อช่วยคุณจัดการปัญหาการเช่า สำหรับข้อพิพาทที่ซับซ้อน คุณอาจยังคงต้องปรึกษาทนายความที่มีคุณสมบัติ',
+        answerZh: '不。Lease Shield不是律师事务所，不提供法律建议或法律代理。\n\n我们提供工具、模板和指导，帮助您管理租赁问题。对于复杂的纠纷，您可能仍需咨询合格的律师。',
+        answerJa: 'いいえ。Lease Shieldは法律事務所ではなく、法的助言や法的代理を提供しません。\n\n賃貸問題の管理を支援するツール、テンプレート、ガイダンスを提供します。複雑な紛争の場合、適格な弁護士に相談する必要があるかもしれません。',
+        answerKo: '아니요。Lease Shield는 법률 회사가 아니며 법률 자문이나 법적 대리를 제공하지 않습니다。\n\n임대 문제 관리를 돕기 위한 도구、템플릿 및 안내를 제공합니다。복잡한 분쟁의 경우 자격을 갖춘 변호사와 상담해야 할 수도 있습니다。',
+        answerRu: 'Нет。Lease Shield не является юридической фирмой и не предоставляет юридические консультации или юридическое представительство。\n\nМы предлагаем инструменты、шаблоны и рекомендации、чтобы помочь вам управлять проблемами аренды。Для сложных споров вам может потребоваться консультация квалифицированного юриста。'
+      },
+      {
+        questionEn: 'What is the refund policy for subscriptions and credits?',
+        questionTh: 'นโยบายการคืนเงินสำหรับการสมัครสมาชิกและเครดิตคืออะไร?',
+        questionZh: '订阅和积分的退款政策是什么？',
+        questionJa: 'サブスクリプションとクレジットの返金ポリシーは何ですか？',
+        questionKo: '구독 및 크레딧에 대한 환불 정책은 무엇인가요?',
+        questionRu: 'Какова политика возврата средств для подписок и кредитов?',
+        answerEn: 'Refunds are only available in limited cases, such as mistaken charges, auto-renewals you report within 48 hours, or confirmed technical failures.\n\nWe do not refund unused credits, change of mind, or partial subscription periods. For full details, see the Refund & Subscription Policy at leaseshield.asia.',
+        answerTh: 'การคืนเงินมีเฉพาะในกรณีจำกัด เช่น การเรียกเก็บเงินผิดพลาด การต่ออายุอัตโนมัติที่คุณรายงานภายใน 48 ชั่วโมง หรือความล้มเหลวทางเทคนิคที่ยืนยัน\n\nเราไม่คืนเงินสำหรับเครดิตที่ไม่ได้ใช้ การเปลี่ยนใจ หรือระยะเวลาการสมัครสมาชิกบางส่วน สำหรับรายละเอียดเต็มรูปแบบ ดูนโยบายการคืนเงินและการสมัครสมาชิกที่ leaseshield.asia',
+        answerZh: '退款仅在有限情况下可用，例如错误收费、您在48小时内报告的自动续订或确认的技术故障。\n\n我们不退还未使用的积分、改变主意或部分订阅期。有关完整详细信息，请参阅leaseshield.asia上的退款和订阅政策。',
+        answerJa: '返金は、誤請求、48時間以内に報告された自動更新、または確認された技術的障害など、限られた場合にのみ利用可能です。\n\n未使用のクレジット、気が変わった場合、または部分的なサブスクリプション期間の返金はしません。詳細については、leaseshield.asiaの返金およびサブスクリプションポリシーをご覧ください。',
+        answerKo: '환불은 잘못된 청구、48시간 이내에 보고한 자동 갱신 또는 확인된 기술적 오류와 같은 제한적인 경우에만 가능합니다。\n\n미사용 크레딧、마음이 바뀐 경우 또는 부분 구독 기간에 대해서는 환불하지 않습니다。전체 세부 정보는 leaseshield.asia의 환불 및 구독 정책을 참조하세요。',
+        answerRu: 'Возврат средств доступен только в ограниченных случаях、таких как ошибочные списания、автопродления、о которых вы сообщили в течение 48 часов、или подтверждённые технические сбои。\n\nМы не возвращаем неиспользованные кредиты、в случае изменения решения или за частичные периоды подписки。Полные подробности см。в Политике возврата и подписки на leaseshield.asia。'
+      }
+    ]
+  },
+  technical: {
+    icon: HelpCircle,
+    color: '#6366F1',
     titleEn: 'App & Technical',
     titleTh: 'แอปและเทคนิค',
     titleZh: '应用和技术',
