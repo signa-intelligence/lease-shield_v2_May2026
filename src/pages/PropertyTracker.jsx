@@ -2229,7 +2229,7 @@ function PropertyTrackerContent() {
                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.alertDaysBefore}</p>
                       </div>
                       <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                        {deposit.rent_alert_days_before || 3} {strings.days}
+                        {deposit.rent_alert_days_before || 3} {strings.day}
                       </p>
                       {deposit.rent_alerts_enabled && (
                         <Badge className="bg-emerald-100 text-emerald-800 mt-2">
