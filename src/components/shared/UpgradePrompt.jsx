@@ -3,6 +3,7 @@ import { Crown, X, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { haptic } from './HapticFeedback';
+import { getUpgradeRoute } from './UpgradeHelper';
 
 /**
  * Reusable upgrade prompt component
@@ -12,7 +13,8 @@ export default function UpgradePrompt({
   title,
   description,
   benefits = [],
-  targetPlan = 'secure',
+  targetPlan = 'secure', // deprecated - now auto-determined
+  currentUserTier = 'free', // NEW: pass current user tier
   onUpgrade,
   onDismiss,
   compact = false,
@@ -20,6 +22,7 @@ export default function UpgradePrompt({
   language = 'en',
   isDarkMode = false
 }) {
+  const upgradeRoute = getUpgradeRoute(currentUserTier, language);
   const colors = isDarkMode ? {
     bg: '#2A2D30',
     textPrimary: '#F9FAFB',
@@ -119,7 +122,11 @@ export default function UpgradePrompt({
             <Button
               onClick={() => {
                 haptic.medium();
-                if (onUpgrade) onUpgrade();
+                if (onUpgrade) {
+                  onUpgrade();
+                } else if (upgradeRoute) {
+                  window.location.href = upgradeRoute;
+                }
               }}
               className="w-full btn-interaction"
               style={{
