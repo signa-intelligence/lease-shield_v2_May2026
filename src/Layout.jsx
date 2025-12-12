@@ -9,6 +9,7 @@ import LisaEnhanced from "./components/shared/LisaEnhanced";
 import LisaFAB from "./components/shared/LisaFAB";
 import MobileMenuDrawer from "./components/shared/MobileMenuDrawer";
 import LanguageSelector from "./components/shared/LanguageSelector";
+import QuickGuide from "./components/shared/QuickGuide";
 
 
 // Animation utilities inlined
@@ -70,6 +71,7 @@ export default function Layout({ children, currentPageName }) {
   const [showMobileMenu, setShowMobileMenu] = React.useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = React.useState(false);
   const [showLisa, setShowLisa] = React.useState(false);
+  const [showQuickGuide, setShowQuickGuide] = React.useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -83,6 +85,22 @@ export default function Layout({ children, currentPageName }) {
     }
     window.scrollTo(0, 0);
   }, [location.pathname]);
+
+  // Listen for Quick Guide open event
+  React.useEffect(() => {
+    const handleOpenQuickGuide = () => {
+      setShowQuickGuide(true);
+    };
+    window.addEventListener('openQuickGuide', handleOpenQuickGuide);
+    return () => window.removeEventListener('openQuickGuide', handleOpenQuickGuide);
+  }, []);
+
+  // Auto-show Quick Guide if not dismissed
+  React.useEffect(() => {
+    if (user && !user.quick_guide_dismissed) {
+      setShowQuickGuide(true);
+    }
+  }, [user]);
 
   React.useEffect(() => {
     if (user?.theme === 'dark') {
@@ -838,6 +856,15 @@ export default function Layout({ children, currentPageName }) {
           onClose={() => setShowLanguageSelector(false)}
           colors={colors}
           currentLanguage={language}
+        />
+
+        <QuickGuide
+          user={user}
+          colors={colors}
+          language={language}
+          isOpen={showQuickGuide}
+          onClose={() => setShowQuickGuide(false)}
+          onDismiss={() => setShowQuickGuide(false)}
         />
         </div>
         );
