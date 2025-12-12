@@ -224,6 +224,8 @@ function SupportContent() {
           icon={MessageCircle}
           iconColor="#0C3B2E"
           isDarkMode={isDarkMode}
+          showBack={true}
+          backLabel={strings.back}
         />
 
         <div className="grid lg:grid-cols-5 gap-6">

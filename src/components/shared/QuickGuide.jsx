@@ -160,7 +160,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
       icon: HelpCircle,
       title: strings.step5,
       description: strings.step5Desc,
-      route: createPageUrl('FAQ')
+      route: createPageUrl('Dashboard')
     }
   ];
 
