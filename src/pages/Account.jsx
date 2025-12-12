@@ -408,7 +408,7 @@ function AccountContent() {
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState({});
   const [exporting, setExporting] = useState(false);
-  const [billingInterval, setBillingInterval] = useState('monthly');
+  const [billingInterval, setBillingInterval] = useState('annual');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -430,6 +430,8 @@ function AccountContent() {
   const [downgradeFeedback, setDowngradeFeedback] = useState('');
   const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
   const [expandedNotifAnalytics, setExpandedNotifAnalytics] = useState(false); // New state for Notification Analytics expansion
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState('pdf');
   
   const plansSectionRef = React.useRef(null);
 
@@ -768,23 +770,51 @@ function AccountContent() {
 
   const handleExportData = async () => {
     haptic.medium();
+    setShowExportDialog(false);
     setExporting(true);
     try {
       const response = await base44.functions.invoke('exportUserData');
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Lease_Shield_Personal_Data_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
+      
+      // Try to use Web Share API first (mobile)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], `LeaseShield_Data_${new Date().toISOString().split('T')[0]}.pdf`, { type: 'application/pdf' })] })) {
+        const file = new File([blob], `LeaseShield_Data_${new Date().toISOString().split('T')[0]}.pdf`, { type: 'application/pdf' });
+        try {
+          await navigator.share({
+            files: [file],
+            title: language === 'th' ? 'ข้อมูล Lease Shield ของฉัน' : 'My Lease Shield Data'
+          });
+          toast.success(language === 'th' ? 'แชร์ไฟล์สำเร็จ' : 'File shared successfully');
+        } catch (shareError) {
+          if (shareError.name !== 'AbortError') {
+            // Fallback to download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Lease_Shield_Personal_Data_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            toast.success(language === 'th' ? 'บันทึกไฟล์แล้ว' : 'File saved to Downloads');
+          }
+        }
+      } else {
+        // Fallback to download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Lease_Shield_Personal_Data_${new Date().toISOString().split('T')[0]}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        toast.success(language === 'th' ? 'บันทึกไฟล์แล้ว' : 'File saved to Downloads');
+      }
+      
       window.URL.revokeObjectURL(url);
-      a.remove();
       haptic.success();
     } catch (error) {
       console.error('❌ Export failed:', error);
       haptic.error();
-      alert('Failed to export data. Please try again or contact support.');
+      toast.error(language === 'th' ? 'ส่งออกล้มเหลว กรุณาลองอีกครั้ง' : 'Failed to export data. Please try again.');
     } finally {
       setExporting(false);
     }
@@ -3602,10 +3632,10 @@ function AccountContent() {
                       <Download className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                      <p className="font-bold text-base" style={{ color: colors.textPrimary }}>
                         {strings.installApp}
                       </p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      <p className="text-sm font-medium" style={{ color: colors.textSecondary }}>
                         {strings.installAppDesc}
                       </p>
                     </div>
@@ -3652,10 +3682,10 @@ function AccountContent() {
                       )}
                     </div>
                     <div>
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                      <p className="font-bold text-base" style={{ color: colors.textPrimary }}>
                         {strings.shareApp}
                       </p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      <p className="text-sm font-medium" style={{ color: colors.textSecondary }}>
                         {strings.shareAppDesc}
                       </p>
                     </div>
@@ -3765,7 +3795,7 @@ function AccountContent() {
                     </div>
                   </div>
                   <a
-                    href="https://leaseshield.asia/privacy"
+                    href="https://www.leaseshield.asia/legal#privacy"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -3795,54 +3825,55 @@ function AccountContent() {
                 </div>
               </div>
 
-              <div style={{
-                padding: '16px',
-                backgroundColor: colors.fieldBg,
-                borderRadius: '12px',
-                borderLeft: '44px solid #C7A338'
-              }}>
-                <div className="flex items-start gap-3 justify-between flex-wrap">
-                  <div className="flex items-start gap-3">
-                    <Download className="w-5 h-5 flex-shrink-0 mt-0.5 text-ls-gold" />
+              <div
+                onClick={() => {
+                  if (!exporting) {
+                    setShowExportDialog(true);
+                    haptic.light();
+                  }
+                }}
+                style={{
+                  padding: '16px',
+                  backgroundColor: colors.fieldBg,
+                  borderRadius: '12px',
+                  borderLeft: '4px solid #C7A338',
+                  cursor: exporting ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
+                  opacity: exporting ? 0.7 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!exporting) {
+                    e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
+                    e.currentTarget.style.borderLeftColor = '#0C3B2E';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!exporting) {
+                    e.currentTarget.style.backgroundColor = colors.fieldBg;
+                    e.currentTarget.style.borderLeftColor = '#C7A338';
+                  }
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: exporting ? '#9CA3AF' : '#C7A338',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s'
+                    }}>
+                      {exporting ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Download className="w-5 h-5 text-white" />}
+                    </div>
                     <div>
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.exportData}</p>
+                      <p className="font-semibold text-base" style={{ color: colors.textPrimary }}>{strings.exportData}</p>
                       <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.exportDesc}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={handleExportData}
-                    disabled={exporting}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: '2px solid #C7A338',
-                      backgroundColor: exporting ? colors.fieldBg : colors.cardBg,
-                      color: exporting ? colors.textSecondary : '#C7A338',
-                      fontWeight: 'bold',
-                      fontSize: '14px',
-                      cursor: exporting ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      opacity: exporting ? 0.7 : 1
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!exporting) {
-                        e.target.style.backgroundColor = '#C7A338';
-                        e.target.style.color = '#FFFFFF';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!exporting) {
-                        e.target.style.backgroundColor = colors.cardBg;
-                        e.target.style.color = '#C7A338';
-                      }
-                    }}
-                  >
-                    {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    {exporting ? strings.exporting : strings.export}
-                  </button>
+                  <ArrowRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
                 </div>
               </div>
 
@@ -4992,6 +5023,90 @@ function AccountContent() {
               >
                 {language === 'th' ? 'ลดระดับต่อไป' : language === 'zh' ? '继续降级' : language === 'ja' ? 'ダウングレードを続行' : language === 'ko' ? '다운그레이드 계속' : language === 'ru' ? 'Всё равно понизить' : 'Downgrade Anyway'}
               </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Export Data Dialog */}
+        <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+          <DialogContent style={{
+            backgroundColor: colors.cardBg,
+            borderColor: colors.borderColor,
+            maxWidth: '500px',
+            width: '95vw'
+          }}>
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>
+                {strings.exportData}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <p className="text-sm" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
+                  ? 'ข้อมูลที่จะถูกส่งออก: โปรไฟล์, ทรัพย์สิน, เอกสารหลักฐาน, การติดตามเงินมัดจำ, คดี และการตั้งค่าการแจ้งเตือน'
+                  : language === 'zh'
+                    ? '将导出的数据：个人资料、房产、证据文件、押金追踪、案件和通知设置'
+                    : language === 'ja'
+                      ? 'エクスポートされるデータ：プロフィール、物件、証拠ファイル、敷金追跡、ケース、通知設定'
+                      : language === 'ko'
+                        ? '내보낼 데이터: 프로필, 부동산, 증거 파일, 보증금 추적, 사례 및 알림 설정'
+                        : language === 'ru'
+                          ? 'Экспортируемые данные: профиль, недвижимость, файлы доказательств, отслеживание депозитов, дела и настройки уведомлений'
+                          : 'Data to be exported: profile, properties, evidence files, deposit tracking, cases, and notification settings'}
+              </p>
+              <div className="p-4 rounded-lg" style={{
+                backgroundColor: colors.fieldBg,
+                border: `1px solid ${colors.borderColor}`
+              }}>
+                <p className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                  {language === 'th' ? 'รูปแบบ:' : 'Format:'}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setExportFormat('pdf');
+                      haptic.light();
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: `2px solid ${exportFormat === 'pdf' ? '#0C3B2E' : colors.borderColor}`,
+                      backgroundColor: exportFormat === 'pdf' ? (isDarkMode ? 'rgba(12,59,46,0.2)' : '#F0FDF4') : 'transparent',
+                      color: colors.textPrimary,
+                      fontWeight: exportFormat === 'pdf' ? '700' : '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    PDF
+                  </button>
+                </div>
+              </div>
+              <Button
+                onClick={handleExportData}
+                disabled={exporting}
+                className="w-full"
+                style={{
+                  backgroundColor: exporting ? '#9CA3AF' : '#0C3B2E',
+                  color: '#FFFFFF',
+                  minHeight: '48px',
+                  fontSize: '15px',
+                  fontWeight: '700'
+                }}
+              >
+                {exporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {strings.exporting}
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    {strings.export}
+                  </>
+                )}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
