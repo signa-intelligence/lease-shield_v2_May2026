@@ -4728,7 +4728,7 @@ function AccountContent() {
                           ⭐ {strings.mostPopular}
                         </Badge>
                       )}
-                      {billingInterval === 'annual' && !isFreeplanLocal && !plan.popular && !isSecureTierLocal && (
+                      {billingPeriod === 'annual' && !isFreeplanLocal && !plan.popular && !isSecureTierLocal && (
                         <Badge className="bg-emerald-500 text-white text-xs font-bold w-full justify-center whitespace-nowrap" style={{ padding: '4px 8px' }}>
                           🏷️ {strings.monthsFree}
                         </Badge>
