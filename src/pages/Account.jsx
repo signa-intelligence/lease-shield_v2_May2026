@@ -27,17 +27,29 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
 import ReferralCard from "../components/referral/ReferralCard";
 
+// Centralized pricing config with real Stripe price IDs
+const PRICING = {
+  lite: {
+    monthly: { amount: 190, priceId: "price_1SbtXQQwol6NhlUxKMIyoEbs" },
+    annual: { amount: 1900, priceId: "price_1SbtXQQwol6NhlUxXqxUROyx" }
+  },
+  protect: {
+    monthly: { amount: 390, priceId: "price_1SbtZ4Qwol6NhlUxxxUML4Un" },
+    annual: { amount: 3900, priceId: "price_1SbtZ4Qwol6NhlUxUwsvYbkS" }
+  },
+  secure: {
+    monthly: { amount: 990, priceId: "price_1SbtaWQwol6NhlUxJboFevsu" },
+    annual: { amount: 9900, priceId: "price_1SbtaWQwol6NhlUxAfPLTDeE" }
+  }
+};
+
 const PLAN_DETAILS = [
   {
     key: 'free',
     label: 'Free',
     priceMonthly: 0,
     priceAnnual: 0,
-    priceIdMonthly: null,
-    priceIdAnnual: null,
     savingsAnnual: 0,
-    intervalMonthly: '',
-    intervalAnnual: '',
     tagline: 'Try Before You Commit',
     taglineTh: 'ทดลองก่อนตัดสินใจ',
     taglineRu: 'Попробуйте перед тем, как принять решение',
@@ -100,11 +112,7 @@ const PLAN_DETAILS = [
     label: 'Lite',
     priceMonthly: 190,
     priceAnnual: 1900,
-    priceIdMonthly: 'PRICE_LIVE_LITE_MONTHLY',
-    priceIdAnnual: 'PRICE_LIVE_LITE_ANNUAL',
     savingsAnnual: 380,
-    intervalMonthly: '/month',
-    intervalAnnual: '/year',
     tagline: 'Essential Protection',
     taglineTh: 'การป้องกันที่จำเป็น',
     taglineRu: 'Базовая защита',
@@ -185,11 +193,7 @@ const PLAN_DETAILS = [
     label: 'Protect',
     priceMonthly: 390,
     priceAnnual: 3900,
-    priceIdMonthly: 'PRICE_LIVE_PROTECT_MONTHLY',
-    priceIdAnnual: 'PRICE_LIVE_PROTECT_ANNUAL',
     savingsAnnual: 780,
-    intervalMonthly: '/month',
-    intervalAnnual: '/year',
     tagline: 'Complete Prevention Suite',
     taglineTh: 'ชุดป้องกันครบครัน',
     taglineRu: 'Полный комплекс профилактической защиты',
@@ -277,11 +281,7 @@ const PLAN_DETAILS = [
     label: 'Secure',
     priceMonthly: 990,
     priceAnnual: 9900,
-    priceIdMonthly: 'PRICE_LIVE_SECURE_MONTHLY',
-    priceIdAnnual: 'PRICE_LIVE_SECURE_ANNUAL',
     savingsAnnual: 1980,
-    intervalMonthly: '/month',
-    intervalAnnual: '/year',
     tagline: 'Premium Protection',
     taglineTh: 'การป้องกันระดับพรีเมียม',
     taglineRu: 'Премиальная защита',
@@ -408,7 +408,7 @@ function AccountContent() {
   const [isEditing, setIsEditing] = useState(false);
   const [subscribing, setSubscribing] = useState({});
   const [exporting, setExporting] = useState(false);
-  const [billingInterval, setBillingInterval] = useState('annual');
+  const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -694,13 +694,24 @@ function AccountContent() {
     const plan = PLAN_DETAILS.find(p => p.key === selectedPlan);
     if (!plan) return;
 
+    // Get Stripe price ID from PRICING config
+    const pricingData = PRICING[selectedPlan];
+    if (!pricingData) {
+      alert(language === 'th' ? 'ราคาไม่พร้อมใช้งานชั่วคราว' : 'Pricing temporarily unavailable');
+      return;
+    }
+
+    const selectedPriceData = pricingData[selectedInterval];
+    if (!selectedPriceData?.priceId) {
+      alert(language === 'th' ? 'ราคาไม่พร้อมใช้งานชั่วคราว' : 'Pricing temporarily unavailable');
+      return;
+    }
+
     haptic.medium();
     setShowBillingDialog(false);
 
-    const amount = selectedInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly;
+    const amount = selectedPriceData.amount;
     const billingInterval = selectedInterval === 'annual' ? 'annual' : 'monthly';
-
-
 
     setSubscribing(prev => ({ ...prev, [selectedPlan]: true }));
     try {
@@ -711,6 +722,7 @@ function AccountContent() {
         description: `Lease Shield ${plan.label} - ${selectedInterval === 'annual' ? 'Annual' : 'Monthly'}`,
         successUrl: `${window.location.origin}/account?checkout_success=true`,
         cancelUrl: `${window.location.origin}/account?subscription=cancelled`,
+        priceId: selectedPriceData.priceId,
         metadata: {
           type: 'subscription',
           userId: user.id,
@@ -4615,7 +4627,7 @@ function AccountContent() {
                 <button
                   onClick={() => {
                     haptic.light();
-                    setBillingInterval('monthly');
+                    setBillingPeriod('monthly');
                   }}
                   className="btn-interaction"
                   style={{
@@ -4626,8 +4638,8 @@ function AccountContent() {
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    backgroundColor: billingInterval === 'monthly' ? '#0C3B2E' : 'transparent',
-                    color: billingInterval === 'monthly' ? '#FFFFFF' : colors.textPrimary
+                    backgroundColor: billingPeriod === 'monthly' ? '#0C3B2E' : 'transparent',
+                    color: billingPeriod === 'monthly' ? '#FFFFFF' : colors.textPrimary
                   }}
                 >
                   {strings.monthly}
@@ -4635,7 +4647,7 @@ function AccountContent() {
                 <button
                   onClick={() => {
                     haptic.light();
-                    setBillingInterval('annual');
+                    setBillingPeriod('annual');
                   }}
                   className="btn-interaction"
                   style={{
@@ -4646,8 +4658,8 @@ function AccountContent() {
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
-                    backgroundColor: billingInterval === 'annual' ? '#0C3B2E' : 'transparent',
-                    color: billingInterval === 'annual' ? '#FFFFFF' : colors.textPrimary,
+                    backgroundColor: billingPeriod === 'annual' ? '#0C3B2E' : 'transparent',
+                    color: billingPeriod === 'annual' ? '#FFFFFF' : colors.textPrimary,
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px'
@@ -4662,7 +4674,7 @@ function AccountContent() {
                     backgroundColor: '#C7A338',
                     color: '#FFFFFF'
                   }}>
-                    {strings.save17}
+                    {language === 'th' ? 'ฟรี 2 เดือน' : language === 'zh' ? '免费2个月' : language === 'ja' ? '2ヶ月無料' : language === 'ko' ? '2개월 무료' : language === 'ru' ? '2 месяца бесплатно' : '2 months free'}
                   </span>
                 </button>
               </div>
@@ -4681,10 +4693,11 @@ function AccountContent() {
                 const isFreeplanLocal = plan.key === 'free';
                 const isSecureTierLocal = plan.key === 'secure';
                 const isLiteTierLocal = plan.key === 'lite';
-                const displayPrice = isFreeplanLocal ? 0 : (billingInterval === 'annual' ? plan.priceAnnual : plan.priceMonthly);
-                const displayInterval = isFreeplanLocal ? '' : (billingInterval === 'annual' ? (language === 'th' ? '/ปี' : plan.intervalAnnual) : (language === 'th' ? '/เดือน' : plan.intervalMonthly));
-                const effectiveMonthly = billingInterval === 'annual' ? Math.round(plan.priceAnnual / 12) : plan.priceMonthly;
                 const isSubscribingForPlan = subscribing[plan.key];
+                
+                // Check if pricing is available
+                const pricingData = PRICING[plan.key];
+                const hasPricing = !isFreeplanLocal && pricingData;
                 
                 return (
                   <div
@@ -4754,39 +4767,56 @@ function AccountContent() {
 
                     <div className="text-center" style={{ height: '140px', marginBottom: '12px' }}>
                       {isFreeplanLocal ? (
-                        <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
-                          {strings.freePlanName}
-                        </div>
-                      ) : (
                         <>
-                          {/* Primary Price - Monthly */}
+                          <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
+                            {strings.freePlanName}
+                          </div>
+                          <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                            {strings.noCreditCard}
+                          </p>
+                        </>
+                      ) : hasPricing ? (
+                        <>
+                          {/* Primary: Show price based on selected toggle */}
                           <div className="mb-2">
                             <div className="text-3xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
-                              ฿{plan.priceMonthly.toLocaleString()}
+                              ฿{billingPeriod === 'monthly' ? plan.priceMonthly.toLocaleString() : plan.priceAnnual.toLocaleString()}
                             </div>
-                            <div className="text-xs" style={{ color: colors.textSecondary }}>
-                              {language === 'th' ? '/เดือน' : '/month'}
+                            <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                              {billingPeriod === 'monthly' 
+                                ? (language === 'th' ? '/เดือน' : '/month')
+                                : (language === 'th' ? '/ปี' : '/year')
+                              }
                             </div>
                           </div>
 
-                          {/* Secondary Price - Annual with Savings */}
+                          {/* Secondary: Show opposite billing period */}
                           <div className="pt-2 border-t" style={{ borderColor: colors.borderColor }}>
-                            <div className="text-lg font-bold" style={{ color: colors.textSecondary }}>
-                              ฿{plan.priceAnnual.toLocaleString()}
-                            </div>
-                            <div className="text-xs mb-1" style={{ color: colors.textSecondary }}>
-                              {language === 'th' ? '/ปี' : '/year'}
-                            </div>
-                            <Badge className="bg-emerald-100 text-emerald-700 text-xs font-bold">
-                              {language === 'th' ? 'ฟรี 2 เดือน — ประหยัด' : language === 'zh' ? '免费2个月 — 节省' : language === 'ja' ? '2ヶ月無料 — 節約' : language === 'ko' ? '2개월 무료 — 절약' : language === 'ru' ? '2 месяца бесплатно — экономия' : '2 months free — save'} ฿{plan.savingsAnnual.toLocaleString()}
-                            </Badge>
+                            {billingPeriod === 'monthly' ? (
+                              <>
+                                <div className="text-sm" style={{ color: colors.textSecondary }}>
+                                  {language === 'th' ? 'หรือชำระ' : language === 'zh' ? '或支付' : language === 'ja' ? 'または支払う' : language === 'ko' ? '또는 지불' : language === 'ru' ? 'Или платите' : 'Billed as'} <span className="font-bold">฿{plan.priceAnnual.toLocaleString()}</span> {language === 'th' ? '/ปี' : '/year'}
+                                </div>
+                                <Badge className="bg-emerald-100 text-emerald-700 text-xs font-bold mt-1">
+                                  {language === 'th' ? 'ฟรี 2 เดือน — ประหยัด' : language === 'zh' ? '免费2个月 — 节省' : language === 'ja' ? '2ヶ月無料 — 節約' : language === 'ko' ? '2개월 무료 — 절약' : language === 'ru' ? '2 месяца бесплатно — экономия' : '2 months free — save'} ฿{plan.savingsAnnual.toLocaleString()}
+                                </Badge>
+                              </>
+                            ) : (
+                              <>
+                                <div className="text-sm" style={{ color: colors.textSecondary }}>
+                                  {language === 'th' ? 'เท่ากับ' : language === 'zh' ? '相当于' : language === 'ja' ? '相当' : language === 'ko' ? '동등한' : language === 'ru' ? 'Эквивалент' : 'Equivalent'} <span className="font-bold">฿{Math.round(plan.priceAnnual / 10).toLocaleString()}</span> {language === 'th' ? '/เดือน' : '/month'}
+                                </div>
+                                <Badge className="bg-emerald-100 text-emerald-700 text-xs font-bold mt-1">
+                                  {language === 'th' ? 'ฟรี 2 เดือน — ประหยัด' : language === 'zh' ? '免费2个月 — 节省' : language === 'ja' ? '2ヶ月無料 — 節約' : language === 'ko' ? '2개월 무료 — 절약' : language === 'ru' ? '2 месяца бесплатно — экономия' : '2 months free — save'} ฿{plan.savingsAnnual.toLocaleString()}
+                                </Badge>
+                              </>
+                            )}
                           </div>
                         </>
-                      )}
-                      {isFreeplanLocal && (
-                        <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
-                          {strings.noCreditCard}
-                        </p>
+                      ) : (
+                        <div className="text-sm font-semibold" style={{ color: '#EF4444' }}>
+                          {language === 'th' ? 'ราคาไม่พร้อมใช้งานชั่วคราว' : 'Pricing temporarily unavailable'}
+                        </div>
                       )}
                     </div>
 
@@ -4854,11 +4884,24 @@ function AccountContent() {
                         >
                           {strings.signupFree}
                         </Button>
+                      ) : !hasPricing ? (
+                        <Button
+                          disabled
+                          className="w-full h-10 text-sm btn-interaction"
+                          style={{
+                            backgroundColor: '#9CA3AF',
+                            color: '#FFFFFF',
+                            cursor: 'not-allowed',
+                            opacity: 0.6
+                          }}
+                        >
+                          {language === 'th' ? 'ไม่พร้อมใช้งานชั่วคราว' : 'Temporarily Unavailable'}
+                        </Button>
                       ) : (
                         <Button
                           onClick={() => {
                             haptic.medium();
-                            handleSubscribe(plan.key, billingInterval);
+                            handleSubscribe(plan.key, billingPeriod);
                           }}
                           disabled={isSubscribingForPlan}
                           className="w-full h-10 btn-interaction"
@@ -4871,7 +4914,11 @@ function AccountContent() {
                             fontWeight: isSecureTierLocal ? '700' : '600'
                           }}
                         >
-                          {isSubscribingForPlan ? strings.processing : `${strings.startPlan} ${plan.label}`}
+                          {isSubscribingForPlan ? strings.processing : (
+                            billingPeriod === 'annual' 
+                              ? `${strings.startPlan} ${plan.label} (${language === 'th' ? 'ประหยัด' : language === 'zh' ? '节省' : language === 'ja' ? '節約' : language === 'ko' ? '절약' : language === 'ru' ? 'экономия' : 'save'} ฿${plan.savingsAnnual.toLocaleString()})`
+                              : `${strings.startPlan} ${plan.label}`
+                          )}
                         </Button>
                       )}
                     </div>
