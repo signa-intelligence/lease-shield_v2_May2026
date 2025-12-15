@@ -4669,7 +4669,10 @@ function AccountContent() {
             </div>
 
             <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
-            <p className="mb-6 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
+            <p className="mb-3 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
+            <p className="mb-6 text-center text-sm" style={{ color: '#10B981', fontWeight: '600' }}>
+              {language === 'th' ? 'คุณสามารถจ่ายรายเดือนหรือรายปีได้ การจ่ายรายปีฟรี 2 เดือน' : language === 'zh' ? '您可以按月或按年付款。年付包含2个月免费。' : language === 'ja' ? '月払いまたは年払いをお選びいただけます。年払いには2ヶ月無料が含まれます。' : language === 'ko' ? '월별 또는 연간 결제를 선택할 수 있습니다. 연간 결제 시 2개월 무료.' : language === 'ru' ? 'Вы можете платить ежемесячно или ежегодно. Годовая оплата включает 2 бесплатных месяца.' : 'You can pay monthly or yearly. Yearly includes 2 months free.'}
+            </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {PLAN_DETAILS.map((plan) => {
@@ -4703,7 +4706,7 @@ function AccountContent() {
                       padding: '16px',
                       display: 'flex',
                       flexDirection: 'column',
-                      minHeight: '520px'
+                      minHeight: '580px'
                     }}
                   >
                     <div style={{ height: '24px', marginBottom: '12px' }}>
@@ -4749,33 +4752,42 @@ function AccountContent() {
                       </p>
                     </div>
 
-                    <div className="text-center" style={{ height: '100px', marginBottom: '12px' }}>
+                    <div className="text-center" style={{ height: '140px', marginBottom: '12px' }}>
                       {isFreeplanLocal ? (
                         <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
                           {strings.freePlanName}
                         </div>
                       ) : (
                         <>
-                          <div className="text-3xl font-bold mb-1" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
-                            ฿{displayPrice.toLocaleString()}
+                          {/* Primary Price - Monthly */}
+                          <div className="mb-2">
+                            <div className="text-3xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
+                              ฿{plan.priceMonthly.toLocaleString()}
+                            </div>
+                            <div className="text-xs" style={{ color: colors.textSecondary }}>
+                              {language === 'th' ? '/เดือน' : '/month'}
+                            </div>
                           </div>
-                          <div className="text-xs mb-2" style={{ color: colors.textSecondary }}>
-                            {displayInterval}
+
+                          {/* Secondary Price - Annual with Savings */}
+                          <div className="pt-2 border-t" style={{ borderColor: colors.borderColor }}>
+                            <div className="text-lg font-bold" style={{ color: colors.textSecondary }}>
+                              ฿{plan.priceAnnual.toLocaleString()}
+                            </div>
+                            <div className="text-xs mb-1" style={{ color: colors.textSecondary }}>
+                              {language === 'th' ? '/ปี' : '/year'}
+                            </div>
+                            <Badge className="bg-emerald-100 text-emerald-700 text-xs font-bold">
+                              {language === 'th' ? 'ฟรี 2 เดือน — ประหยัด' : language === 'zh' ? '免费2个月 — 节省' : language === 'ja' ? '2ヶ月無料 — 節約' : language === 'ko' ? '2개월 무료 — 절약' : language === 'ru' ? '2 месяца бесплатно — экономия' : '2 months free — save'} ฿{plan.savingsAnnual.toLocaleString()}
+                            </Badge>
                           </div>
                         </>
                       )}
-                      <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {billingInterval === 'annual' && !isFreeplanLocal && (
-                          <p className="text-xs" style={{ color: colors.textSecondary }}>
-                            ฿{effectiveMonthly}{strings.perMonth}
-                          </p>
-                        )}
-                        {isFreeplanLocal && (
-                          <p className="text-xs" style={{ color: colors.textSecondary }}>
-                            {strings.noCreditCard}
-                          </p>
-                        )}
-                      </div>
+                      {isFreeplanLocal && (
+                        <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                          {strings.noCreditCard}
+                        </p>
+                      )}
                     </div>
 
                     <div style={{ flex: 1, marginBottom: '12px' }}>
