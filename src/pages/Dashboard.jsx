@@ -2551,10 +2551,11 @@ ja: {
                 <>
                   {/* Compact Protection Score Summary */}
                   <div className="mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
-                    <Card className="border-none shadow-sm bg-white dark:bg-gray-800" style={{
-                      backgroundColor: isDarkMode ? '#2A2D30' : '#FAFBFC',
-                      border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-                      boxShadow: isDarkMode ? 'none' : '0 1px 2px rgba(0,0,0,0.04)'
+                    <Card className="border-none shadow-md bg-white dark:bg-gray-800" style={{
+                      background: isDarkMode 
+                        ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
+                        : 'linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%)',
+                      border: `2px solid ${isDarkMode ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.15)'}`
                     }}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
@@ -2563,12 +2564,13 @@ ja: {
                               width: '48px',
                               height: '48px',
                               borderRadius: '12px',
-                              backgroundColor: isDarkMode ? '#37415120' : '#F3F4F610',
+                              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center'
+                              justifyContent: 'center',
+                              boxShadow: '0 4px 8px rgba(16,185,129,0.3)'
                             }}>
-                              <Shield className="w-6 h-6" style={{ color: isDarkMode ? '#9CA3AF' : '#6B7280' }} />
+                              <Shield className="w-6 h-6 text-white" />
                             </div>
                             <div>
                               <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
@@ -2585,19 +2587,21 @@ ja: {
                               style={{
                                 padding: '8px 16px',
                                 borderRadius: '8px',
-                                backgroundColor: '#0C3B2E',
-                                border: 'none',
-                                color: '#FFFFFF',
+                                backgroundColor: 'transparent',
+                                border: `2px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.1)'}`,
+                                color: colors.textPrimary,
                                 fontSize: '13px',
                                 fontWeight: '600',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s'
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#084D38';
+                                e.currentTarget.style.borderColor = '#10B981';
+                                e.currentTarget.style.color = '#10B981';
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#0C3B2E';
+                                e.currentTarget.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.1)';
+                                e.currentTarget.style.color = colors.textPrimary;
                               }}
                             >
                               {language === 'th' ? 'ดูรายละเอียด' : language === 'zh' ? '查看详情' : language === 'ja' ? '詳細を見る' : language === 'ko' ? '세부 정보 보기' : language === 'ru' ? 'Подробнее' : 'View Details'} →
@@ -2615,6 +2619,8 @@ ja: {
                         title: strings.leasesScanned,
                         value: leases.length,
                         icon: FileText,
+                        gradient: 'from-blue-500 to-blue-700',
+                        scoreColor: FEATURE_COLORS.leases.accent,
                         miniStats: [],
                         route: createPageUrl("uploadscan"),
                         label: strings.scanNewLease,
@@ -2624,6 +2630,8 @@ ja: {
                         title: strings.depositsTracked,
                         value: deposits.length,
                         icon: Wallet,
+                        gradient: 'from-emerald-500 to-emerald-700',
+                        scoreColor: FEATURE_COLORS.deposits.accent,
                         miniStats: [
                           { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
                         ],
@@ -2635,6 +2643,8 @@ ja: {
                         title: strings.activeCases,
                         value: activeCases.length,
                         icon: Scale,
+                        gradient: 'from-red-500 to-red-700',
+                        scoreColor: FEATURE_COLORS.cases.accent,
                         miniStats: [],
                         route: createPageUrl("cases"),
                         label: strings.cases,
@@ -2648,6 +2658,8 @@ ja: {
                         title: strings.rentTracked,
                         value: rentTrackedCount,
                         icon: Calendar,
+                        gradient: 'from-amber-500 to-amber-700',
+                        scoreColor: FEATURE_COLORS.rent.accent,
                         miniStats: [
                           { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'Уведомления' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
                         ],
@@ -2659,6 +2671,8 @@ ja: {
                         title: strings.notifications,
                         value: unreadNotifications,
                         icon: Bell,
+                        gradient: 'from-purple-500 to-purple-700',
+                        scoreColor: FEATURE_COLORS.notifications.accent,
                         miniStats: [],
                         route: createPageUrl("timeline"),
                         label: strings.viewTimeline,
@@ -2668,6 +2682,8 @@ ja: {
                         title: strings.evidenceUploaded,
                         value: documents.length,
                         icon: FileText,
+                        gradient: 'from-indigo-500 to-indigo-700',
+                        scoreColor: FEATURE_COLORS.evidence.accent,
                         miniStats: [
                           { label: strings.totalFiles, value: documents.length }
                         ],
@@ -2699,11 +2715,10 @@ ja: {
               <>
                 {/* Recent Leases Section - Enhanced */}
                 <Card 
-                  className="border-none shadow-sm overflow-hidden"
+                  className="border-none shadow-lg overflow-hidden"
                   style={{
-                    backgroundColor: isDarkMode ? '#2A2D30' : '#FAFBFC',
-                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-                    boxShadow: isDarkMode ? 'none' : '0 1px 2px rgba(0,0,0,0.04)'
+                    backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                    border: `1px solid ${colors.borderColor}`
                   }}
                 >
                   <div 
@@ -2718,12 +2733,13 @@ ja: {
                         width: '48px',
                         height: '48px',
                         borderRadius: '12px',
-                        backgroundColor: isDarkMode ? '#37415120' : '#F3F4F610',
+                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 8px rgba(59,130,246,0.3)'
                       }}>
-                        <FileText className="w-6 h-6" style={{ color: isDarkMode ? '#9CA3AF' : '#6B7280' }} />
+                        <FileText className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
@@ -2759,11 +2775,10 @@ ja: {
 
                 {/* Notifications Section - Enhanced */}
                 <Card 
-                  className="border-none shadow-sm overflow-hidden"
+                  className="border-none shadow-lg overflow-hidden"
                   style={{
-                    backgroundColor: isDarkMode ? '#2A2D30' : '#FAFBFC',
-                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-                    boxShadow: isDarkMode ? 'none' : '0 1px 2px rgba(0,0,0,0.04)'
+                    backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                    border: `1px solid ${colors.borderColor}`
                   }}
                 >
                   <div 
@@ -2778,12 +2793,13 @@ ja: {
                         width: '48px',
                         height: '48px',
                         borderRadius: '12px',
-                        backgroundColor: isDarkMode ? '#37415120' : '#F3F4F610',
+                        background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 8px rgba(139,92,246,0.3)'
                       }}>
-                        <Bell className="w-6 h-6" style={{ color: isDarkMode ? '#9CA3AF' : '#6B7280' }} />
+                        <Bell className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
@@ -2819,11 +2835,10 @@ ja: {
 
                 {/* Deposit Alerts Section - Enhanced */}
                 <Card 
-                  className="border-none shadow-sm overflow-hidden"
+                  className="border-none shadow-lg overflow-hidden"
                   style={{
-                    backgroundColor: isDarkMode ? '#2A2D30' : '#FAFBFC',
-                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
-                    boxShadow: isDarkMode ? 'none' : '0 1px 2px rgba(0,0,0,0.04)'
+                    backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                    border: `1px solid ${colors.borderColor}`
                   }}
                 >
                   <div 
@@ -2838,12 +2853,13 @@ ja: {
                         width: '48px',
                         height: '48px',
                         borderRadius: '12px',
-                        backgroundColor: isDarkMode ? '#37415120' : '#F3F4F610',
+                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 8px rgba(16,185,129,0.3)'
                       }}>
-                        <Wallet className="w-6 h-6" style={{ color: urgentDeposits > 0 ? '#DC2626' : (isDarkMode ? '#9CA3AF' : '#6B7280') }} />
+                        <Wallet className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
