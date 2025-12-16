@@ -31,6 +31,7 @@ import Welcome from './pages/Welcome';
 import CookieSync from './pages/CookieSync';
 import cookieSync from './pages/cookie-sync';
 import FAQ from './pages/FAQ';
+import Index from './pages/Index';
 import __Layout from './Layout.jsx';
 
 
@@ -68,6 +69,7 @@ export const PAGES = {
     "CookieSync": CookieSync,
     "cookie-sync": cookieSync,
     "FAQ": FAQ,
+    "Index": Index,
 }
 
 export const pagesConfig = {
