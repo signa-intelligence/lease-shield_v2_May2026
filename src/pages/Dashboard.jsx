@@ -2339,7 +2339,7 @@ ja: {
                       width: '48px',
                       height: '48px',
                       borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                      background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.5) 0%, rgba(124, 58, 237, 0.5) 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -2494,7 +2494,7 @@ ja: {
                     style={{
                       padding: '8px 16px',
                       borderRadius: '8px',
-                      backgroundColor: '#EF4444',
+                      backgroundColor: 'rgba(239, 68, 68, 0.5)',
                       color: '#FFFFFF',
                       border: 'none',
                       fontWeight: '600',
@@ -2733,11 +2733,11 @@ ja: {
                         width: '48px',
                         height: '48px',
                         borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                        background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.5) 0%, rgba(37, 99, 235, 0.5) 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 4px 8px rgba(59,130,246,0.3)'
+                        boxShadow: '0 4px 8px rgba(59,130,246,0.15)'
                       }}>
                         <FileText className="w-6 h-6 text-white" />
                       </div>
@@ -2793,11 +2793,11 @@ ja: {
                         width: '48px',
                         height: '48px',
                         borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.5) 0%, rgba(124, 58, 237, 0.5) 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 4px 8px rgba(139,92,246,0.3)'
+                        boxShadow: '0 4px 8px rgba(139,92,246,0.15)'
                       }}>
                         <Bell className="w-6 h-6 text-white" />
                       </div>
