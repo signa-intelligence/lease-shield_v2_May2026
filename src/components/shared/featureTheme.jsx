@@ -34,175 +34,175 @@ export const FEATURE_THEMES = {
   leases: {
     light: {
       cardBg: '#F0F9FF',
-      borderColor: '#3B82F6',
-      iconBg: 'rgba(59,130,246,0.15)',
-      iconColor: '#2563EB',
-      titleColor: '#1E3A8A',
-      metricColor: '#1E40AF',
-      buttonBg: '#3B82F6',
+      borderColor: 'rgba(59, 130, 246, 0.5)',
+      iconBg: 'rgba(59,130,246,0.1)',
+      iconColor: 'rgba(37, 99, 235, 0.5)',
+      titleColor: 'rgba(30, 58, 138, 0.5)',
+      metricColor: 'rgba(30, 64, 175, 0.5)',
+      buttonBg: 'rgba(59, 130, 246, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#3B82F6'
+      accent: 'rgba(59, 130, 246, 0.5)'
     },
     dark: {
       cardBg: '#1E293B',
-      borderColor: '#3B82F6',
-      iconBg: 'rgba(59,130,246,0.2)',
-      iconColor: '#60A5FA',
-      titleColor: '#DBEAFE',
-      metricColor: '#93C5FD',
-      buttonBg: '#3B82F6',
+      borderColor: 'rgba(59, 130, 246, 0.5)',
+      iconBg: 'rgba(59,130,246,0.15)',
+      iconColor: 'rgba(96, 165, 250, 0.5)',
+      titleColor: 'rgba(219, 234, 254, 0.5)',
+      metricColor: 'rgba(147, 197, 253, 0.5)',
+      buttonBg: 'rgba(59, 130, 246, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#3B82F6'
+      accent: 'rgba(59, 130, 246, 0.5)'
     }
   },
   
   deposits: {
     light: {
       cardBg: '#F0FDF4',
-      borderColor: '#10B981',
-      iconBg: 'rgba(16,185,129,0.15)',
-      iconColor: '#059669',
-      titleColor: '#065F46',
-      metricColor: '#047857',
-      buttonBg: '#10B981',
+      borderColor: 'rgba(16, 185, 129, 0.5)',
+      iconBg: 'rgba(16,185,129,0.1)',
+      iconColor: 'rgba(5, 150, 105, 0.5)',
+      titleColor: 'rgba(6, 95, 70, 0.5)',
+      metricColor: 'rgba(4, 120, 87, 0.5)',
+      buttonBg: 'rgba(16, 185, 129, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#10B981'
+      accent: 'rgba(16, 185, 129, 0.5)'
     },
     dark: {
       cardBg: '#1A2E27',
-      borderColor: '#10B981',
-      iconBg: 'rgba(16,185,129,0.2)',
-      iconColor: '#6EE7B7',
-      titleColor: '#D1FAE5',
-      metricColor: '#6EE7B7',
-      buttonBg: '#10B981',
+      borderColor: 'rgba(16, 185, 129, 0.5)',
+      iconBg: 'rgba(16,185,129,0.15)',
+      iconColor: 'rgba(110, 231, 183, 0.5)',
+      titleColor: 'rgba(209, 250, 229, 0.5)',
+      metricColor: 'rgba(110, 231, 183, 0.5)',
+      buttonBg: 'rgba(16, 185, 129, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#10B981'
+      accent: 'rgba(16, 185, 129, 0.5)'
     }
   },
   
   rent: {
     light: {
       cardBg: '#FFFBEB',
-      borderColor: '#F59E0B',
-      iconBg: 'rgba(245,158,11,0.15)',
-      iconColor: '#D97706',
-      titleColor: '#78350F',
-      metricColor: '#B45309',
-      buttonBg: '#F59E0B',
+      borderColor: 'rgba(245, 158, 11, 0.5)',
+      iconBg: 'rgba(245,158,11,0.1)',
+      iconColor: 'rgba(217, 119, 6, 0.5)',
+      titleColor: 'rgba(120, 53, 15, 0.5)',
+      metricColor: 'rgba(180, 83, 9, 0.5)',
+      buttonBg: 'rgba(245, 158, 11, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#F59E0B'
+      accent: 'rgba(245, 158, 11, 0.5)'
     },
     dark: {
       cardBg: '#2A2416',
-      borderColor: '#F59E0B',
-      iconBg: 'rgba(245,158,11,0.2)',
-      iconColor: '#FCD34D',
-      titleColor: '#FEF3C7',
-      metricColor: '#FDE68A',
-      buttonBg: '#F59E0B',
+      borderColor: 'rgba(245, 158, 11, 0.5)',
+      iconBg: 'rgba(245,158,11,0.15)',
+      iconColor: 'rgba(252, 211, 77, 0.5)',
+      titleColor: 'rgba(254, 243, 199, 0.5)',
+      metricColor: 'rgba(253, 230, 138, 0.5)',
+      buttonBg: 'rgba(245, 158, 11, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#F59E0B'
+      accent: 'rgba(245, 158, 11, 0.5)'
     }
   },
   
   notifications: {
     light: {
       cardBg: '#F5F3FF',
-      borderColor: '#8B5CF6',
-      iconBg: 'rgba(139,92,246,0.15)',
-      iconColor: '#7C3AED',
-      titleColor: '#5B21B6',
-      metricColor: '#6D28D9',
-      buttonBg: '#8B5CF6',
+      borderColor: 'rgba(139, 92, 246, 0.5)',
+      iconBg: 'rgba(139,92,246,0.1)',
+      iconColor: 'rgba(124, 58, 237, 0.5)',
+      titleColor: 'rgba(91, 33, 182, 0.5)',
+      metricColor: 'rgba(109, 40, 217, 0.5)',
+      buttonBg: 'rgba(139, 92, 246, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#8B5CF6'
+      accent: 'rgba(139, 92, 246, 0.5)'
     },
     dark: {
       cardBg: '#2E1F3A',
-      borderColor: '#8B5CF6',
-      iconBg: 'rgba(139,92,246,0.2)',
-      iconColor: '#C4B5FD',
-      titleColor: '#EDE9FE',
-      metricColor: '#DDD6FE',
-      buttonBg: '#8B5CF6',
+      borderColor: 'rgba(139, 92, 246, 0.5)',
+      iconBg: 'rgba(139,92,246,0.15)',
+      iconColor: 'rgba(196, 181, 253, 0.5)',
+      titleColor: 'rgba(237, 233, 254, 0.5)',
+      metricColor: 'rgba(221, 214, 254, 0.5)',
+      buttonBg: 'rgba(139, 92, 246, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#8B5CF6'
+      accent: 'rgba(139, 92, 246, 0.5)'
     }
   },
   
   cases: {
     light: {
       cardBg: '#FEF2F2',
-      borderColor: '#EF4444',
-      iconBg: 'rgba(239,68,68,0.15)',
-      iconColor: '#DC2626',
-      titleColor: '#991B1B',
-      metricColor: '#B91C1C',
-      buttonBg: '#EF4444',
+      borderColor: 'rgba(239, 68, 68, 0.5)',
+      iconBg: 'rgba(239,68,68,0.1)',
+      iconColor: 'rgba(220, 38, 38, 0.5)',
+      titleColor: 'rgba(153, 27, 27, 0.5)',
+      metricColor: 'rgba(185, 28, 28, 0.5)',
+      buttonBg: 'rgba(239, 68, 68, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#EF4444'
+      accent: 'rgba(239, 68, 68, 0.5)'
     },
     dark: {
       cardBg: '#2A1F1F',
-      borderColor: '#EF4444',
-      iconBg: 'rgba(239,68,68,0.2)',
-      iconColor: '#FCA5A5',
-      titleColor: '#FEE2E2',
-      metricColor: '#FECACA',
-      buttonBg: '#EF4444',
+      borderColor: 'rgba(239, 68, 68, 0.5)',
+      iconBg: 'rgba(239,68,68,0.15)',
+      iconColor: 'rgba(252, 165, 165, 0.5)',
+      titleColor: 'rgba(254, 226, 226, 0.5)',
+      metricColor: 'rgba(254, 202, 202, 0.5)',
+      buttonBg: 'rgba(239, 68, 68, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#EF4444'
+      accent: 'rgba(239, 68, 68, 0.5)'
     }
   },
   
   maintenance: {
     light: {
       cardBg: '#FFF8E1',
-      borderColor: '#F9A825',
-      iconBg: 'rgba(249,168,37,0.15)',
-      iconColor: '#F57F17',
-      titleColor: '#F57F17',
-      metricColor: '#F9A825',
-      buttonBg: '#F9A825',
+      borderColor: 'rgba(249, 168, 37, 0.5)',
+      iconBg: 'rgba(249,168,37,0.1)',
+      iconColor: 'rgba(245, 127, 23, 0.5)',
+      titleColor: 'rgba(245, 127, 23, 0.5)',
+      metricColor: 'rgba(249, 168, 37, 0.5)',
+      buttonBg: 'rgba(249, 168, 37, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#F9A825'
+      accent: 'rgba(249, 168, 37, 0.5)'
     },
     dark: {
       cardBg: '#2D2817',
-      borderColor: '#F9A825',
-      iconBg: 'rgba(249,168,37,0.2)',
-      iconColor: '#FFD54F',
-      titleColor: '#FFF9C4',
-      metricColor: '#FFD54F',
-      buttonBg: '#F9A825',
+      borderColor: 'rgba(249, 168, 37, 0.5)',
+      iconBg: 'rgba(249,168,37,0.15)',
+      iconColor: 'rgba(255, 213, 79, 0.5)',
+      titleColor: 'rgba(255, 249, 196, 0.5)',
+      metricColor: 'rgba(255, 213, 79, 0.5)',
+      buttonBg: 'rgba(249, 168, 37, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#F9A825'
+      accent: 'rgba(249, 168, 37, 0.5)'
     }
   },
   
   evidence: {
     light: {
       cardBg: '#F0F9FF',
-      borderColor: '#0EA5E9',
-      iconBg: 'rgba(14,165,233,0.15)',
-      iconColor: '#0284C7',
-      titleColor: '#075985',
-      metricColor: '#0369A1',
-      buttonBg: '#0EA5E9',
+      borderColor: 'rgba(14, 165, 233, 0.5)',
+      iconBg: 'rgba(14,165,233,0.1)',
+      iconColor: 'rgba(2, 132, 199, 0.5)',
+      titleColor: 'rgba(7, 89, 133, 0.5)',
+      metricColor: 'rgba(3, 105, 161, 0.5)',
+      buttonBg: 'rgba(14, 165, 233, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#0EA5E9'
+      accent: 'rgba(14, 165, 233, 0.5)'
     },
     dark: {
       cardBg: '#1E293B',
-      borderColor: '#0EA5E9',
-      iconBg: 'rgba(14,165,233,0.2)',
-      iconColor: '#7DD3FC',
-      titleColor: '#E0F2FE',
-      metricColor: '#BAE6FD',
-      buttonBg: '#0EA5E9',
+      borderColor: 'rgba(14, 165, 233, 0.5)',
+      iconBg: 'rgba(14,165,233,0.15)',
+      iconColor: 'rgba(125, 211, 252, 0.5)',
+      titleColor: 'rgba(224, 242, 254, 0.5)',
+      metricColor: 'rgba(186, 230, 253, 0.5)',
+      buttonBg: 'rgba(14, 165, 233, 0.5)',
       buttonText: '#FFFFFF',
-      accent: '#0EA5E9'
+      accent: 'rgba(14, 165, 233, 0.5)'
     }
   }
 };
@@ -212,13 +212,13 @@ export const FEATURE_THEMES = {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const FEATURE_COLORS = {
-  leases: { accent: '#3B82F6' },
-  deposits: { accent: '#10B981' },
-  rent: { accent: '#F59E0B' },
-  notifications: { accent: '#8B5CF6' },
-  cases: { accent: '#EF4444' },
-  maintenance: { accent: '#F9A825' },
-  evidence: { accent: '#0EA5E9' }
+  leases: { accent: 'rgba(59, 130, 246, 0.5)' },
+  deposits: { accent: 'rgba(16, 185, 129, 0.5)' },
+  rent: { accent: 'rgba(245, 158, 11, 0.5)' },
+  notifications: { accent: 'rgba(139, 92, 246, 0.5)' },
+  cases: { accent: 'rgba(239, 68, 68, 0.5)' },
+  maintenance: { accent: 'rgba(249, 168, 37, 0.5)' },
+  evidence: { accent: 'rgba(14, 165, 233, 0.5)' }
 };
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
