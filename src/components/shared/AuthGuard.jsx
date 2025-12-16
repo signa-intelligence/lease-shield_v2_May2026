@@ -5,7 +5,7 @@
 // except redirecting unauthenticated users to the login page.
 
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabaseClient";
 
 const AuthGuard = ({ children }) => {
   const [loading, setLoading] = useState(true);
@@ -16,10 +16,10 @@ const AuthGuard = ({ children }) => {
 
     async function checkAuth() {
       try {
-        const me = await base44.auth.me();
+        const { data: { session } } = await supabase.auth.getSession();
         if (cancelled) return;
 
-        if (me) {
+        if (session) {
           setIsAuthed(true);
         } else {
           // Redirect to login with next parameter
