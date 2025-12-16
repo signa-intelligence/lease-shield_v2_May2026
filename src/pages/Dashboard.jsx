@@ -2624,6 +2624,7 @@ ja: {
                         miniStats: [],
                         route: createPageUrl("uploadscan"),
                         label: strings.scanNewLease,
+                        compactTitle: language === 'ru'
                       },
                       {
                         title: strings.depositsTracked,
@@ -2636,6 +2637,7 @@ ja: {
                         ],
                         route: createPageUrl("PropertyTracker") + "#deposit",
                         label: strings.trackDeposit,
+                        compactTitle: language === 'ru'
                       },
                       {
                         title: strings.activeCases,
@@ -2649,7 +2651,8 @@ ja: {
                         onClick: () => {
                           haptic.light();
                           navigate(createPageUrl("cases"));
-                        }
+                        },
+                        compactTitle: language === 'ru'
                       },
                       {
                         title: strings.rentTracked,
@@ -2662,6 +2665,7 @@ ja: {
                         ],
                         route: createPageUrl("PropertyTracker") + "#rent",
                         label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'ru' ? 'Управление' : 'จัดการ') : strings.setupRent,
+                        compactTitle: language === 'ru'
                       },
                       {
                         title: strings.notifications,
@@ -2672,6 +2676,7 @@ ja: {
                         miniStats: [],
                         route: createPageUrl("timeline"),
                         label: strings.viewTimeline,
+                        compactTitle: language === 'ru'
                       },
                       {
                         title: strings.evidenceUploaded,
@@ -2684,6 +2689,7 @@ ja: {
                         ],
                         route: createPageUrl("evidencevault"),
                         label: strings.manageEvidence,
+                        compactTitle: language === 'ru'
                       }
                     ].map((card, index) => (
                       <div key={index} className="w-full">
@@ -2692,6 +2698,7 @@ ja: {
                           compact={false}
                           isDarkMode={isDarkMode}
                           className="card-interactive h-full"
+                          language={language}
                         />
                       </div>
                     ))}
