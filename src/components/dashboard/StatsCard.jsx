@@ -15,7 +15,9 @@ export default function StatsCard({
   haptic,
   isDarkMode = false,
   gradient,
-  scoreColor
+  scoreColor,
+  compactTitle = false,
+  language = 'en'
 }) {
   const cardBg = isDarkMode ? '#2A2D30' : '#FFFFFF';
   const textPrimary = isDarkMode ? '#F9FAFB' : '#1A1D1F';
@@ -91,7 +93,12 @@ export default function StatsCard({
                 color: cardStyles.titleColor,
                 opacity: 0.7,
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '0.5px',
+                fontSize: compactTitle ? '10px' : '0.75rem',
+                lineHeight: compactTitle ? '1.2' : '1rem',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+                hyphens: 'auto'
               }}
             >
               {title}
@@ -127,15 +134,16 @@ export default function StatsCard({
               width: "100%",
               padding: "10px 14px",
               borderRadius: "10px",
-              fontSize: "13px",
+              fontSize: language === 'ru' ? '11px' : '13px',
               fontWeight: "700",
               border: "none",
               cursor: "pointer",
-              whiteSpace: "nowrap",
+              whiteSpace: language === 'ru' ? 'normal' : 'nowrap',
               textAlign: "center",
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              minHeight: "40px"
+              minHeight: "40px",
+              lineHeight: language === 'ru' ? '1.2' : '1.5'
             }}
           >
             {label}
