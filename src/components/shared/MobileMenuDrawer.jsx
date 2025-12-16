@@ -68,7 +68,13 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
   const handleLogout = async () => {
     haptic.medium();
     onClose();
-    await base44.auth.logout();
+    try {
+      await base44.auth.logout();
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      window.location.replace('/login');
+    }
   };
 
   // Determine next tier for upgrade
