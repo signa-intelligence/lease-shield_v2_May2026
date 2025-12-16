@@ -517,7 +517,7 @@ export default function Layout({ children, currentPageName }) {
               </span>
             )}
           </div>
-          {/* Mobile: Only Search + Menu */}
+          {/* Mobile: Search + Quick Guide + Menu */}
           <div className="flex items-center gap-2 flex-shrink-0 md:hidden">
             <Link to={createPageUrl("Search")}>
               <button
@@ -558,6 +558,54 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               </button>
             </Link>
+            <button
+              aria-label="Quick Guide"
+              onClick={() => {
+                haptic.light();
+                const quickGuideEvent = new CustomEvent('openQuickGuide');
+                window.dispatchEvent(quickGuideEvent);
+              }}
+              className="btn-interaction"
+              style={{
+                minWidth: '48px',
+                minHeight: '48px',
+                padding: '8px',
+                borderRadius: '50%',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)',
+                transition: 'all 0.2s'
+              }}>
+                <svg 
+                  className="w-5 h-5" 
+                  style={{ 
+                    color: isDarkMode ? '#F9FAFB' : '#0C3B2E',
+                    transition: 'color 0.2s'
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                  <line x1="12" y1="16" x2="12" y2="12" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="12" cy="8" r="0.5" fill="currentColor" strokeWidth="1.5" />
+                </svg>
+              </div>
+            </button>
             <button
               aria-label="Menu"
               onClick={() => {
