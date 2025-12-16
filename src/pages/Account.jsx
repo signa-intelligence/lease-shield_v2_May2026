@@ -5513,15 +5513,7 @@ function AccountContent() {
           <Button
             variant="outline"
             className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-            onClick={async () => {
-              try {
-                await base44.auth.logout();
-              } catch (err) {
-                console.error('Logout error:', err);
-              } finally {
-                window.location.replace('/login');
-              }
-            }}
+            onClick={() => base44.auth.logout()}
             style={{ 
               backgroundColor: colors.cardBg, 
               borderColor: isDarkMode ? '#EF4444' : '#FECACA', 
