@@ -5,7 +5,7 @@
 // except redirecting unauthenticated users to the login page.
 
 import React, { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "./SupabaseClient";
 
 const AuthGuard = ({ children }) => {
   const [loading, setLoading] = useState(true);

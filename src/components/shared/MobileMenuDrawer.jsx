@@ -2,7 +2,7 @@ import React from 'react';
 import { X, User, HelpCircle, Globe, Users, TrendingUp, LogOut, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from './SupabaseClient';
 import { haptic } from './HapticFeedback';
 
 export default function MobileMenuDrawer({ isOpen, onClose, colors, language = 'en', user, onLanguageClick }) {
