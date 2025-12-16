@@ -19,25 +19,22 @@ export default function StatsCard({
   compactTitle = false,
   language = 'en'
 }) {
-  const cardBg = isDarkMode ? '#2A2D30' : '#FFFFFF';
+  const cardBg = isDarkMode ? '#2A2D30' : '#FAFBFC';
   const textPrimary = isDarkMode ? '#F9FAFB' : '#1A1D1F';
   const textSecondary = isDarkMode ? '#D1D5DB' : '#64748b';
 
-  // Extract color from gradient if provided (e.g., "from-blue-500 to-blue-700" -> "#3B82F6")
-  const extractedColor = scoreColor || '#0C3B2E';
+  // Professional neutral styling - grey icons, brand green CTAs only
+  const iconColor = isDarkMode ? '#9CA3AF' : '#6B7280';
+  const iconBgLight = isDarkMode ? '#37415120' : '#F3F4F610';
   
-  // Generate lighter background for icon based on the main color
-  const iconBgLight = `${extractedColor}15`;
-  const iconBgDark = `${extractedColor}30`;
-
   const cardStyles = {
     backgroundColor: cardBg,
-    borderColor: extractedColor,
-    iconBg: isDarkMode ? iconBgDark : iconBgLight,
-    iconColor: extractedColor,
-    titleColor: textPrimary,
+    borderColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+    iconBg: iconBgLight,
+    iconColor: iconColor,
+    titleColor: textSecondary,
     metricColor: textPrimary,
-    buttonBg: extractedColor,
+    buttonBg: '#0C3B2E',
     buttonText: '#FFFFFF',
   };
 
@@ -60,8 +57,9 @@ export default function StatsCard({
       className={`rounded-xl p-4 flex flex-col justify-between shadow-md transition-all duration-200 ${className || ''}`}
       style={{
         backgroundColor: cardStyles.backgroundColor,
-        border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)'}`,
-        cursor: 'pointer'
+        border: `1px solid ${cardStyles.borderColor}`,
+        cursor: 'pointer',
+        boxShadow: isDarkMode ? 'none' : '0 1px 2px rgba(0,0,0,0.04)'
       }}
     >
         <div className="flex flex-col mb-3">

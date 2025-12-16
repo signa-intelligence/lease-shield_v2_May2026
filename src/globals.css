@@ -4,20 +4,20 @@
 
 @layer base {
   :root {
-    /* LeaseShield Brand Palette - 2025 Refresh */
-    --ls-forest: #063F2C;
+    /* LeaseShield Brand Palette - Professional 2025 */
+    --ls-forest: #0C3B2E;
     --ls-forest-hover: #084D38;
-    --ls-gold: #CFAF6A;
-    --ls-gold-hover: #D9BC7E;
+    --ls-gold: #C7A338;
+    --ls-gold-hover: #D4B451;
     --ls-charcoal: #1A1D1F;
     --ls-stone: #F8FAFC;
     --ls-white: #FFFFFF;
-    
-    /* Semantic Colors */
-    --success: #10B981;
+
+    /* Semantic Colors - Desaturated */
+    --success: #059669;
     --danger: #DC2626;
-    --warning: #F59E0B;
-    --info: #3B82F6;
+    --warning: #D97706;
+    --info: #6B7280;
     
     /* Typography Scale */
     --text-xs: 0.75rem;
