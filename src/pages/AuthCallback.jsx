@@ -11,17 +11,19 @@ export default function AuthCallback() {
     let timeout;
 
     const handleCallback = async () => {
-      // Wait for Supabase to process the auth callback
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for Supabase to process the auth callback from URL hash
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
       if (session) {
+        console.log('✅ [AuthCallback] Session confirmed, redirecting...');
         // Get the original 'next' param if it exists
         const urlParams = new URLSearchParams(window.location.search);
         const nextUrl = urlParams.get('next') || '/dashboard';
         navigate(nextUrl, { replace: true });
       } else {
+        console.warn('⚠️ [AuthCallback] No session found');
         // Set timeout to show error after 3 seconds
         timeout = setTimeout(() => {
           setError(true);
