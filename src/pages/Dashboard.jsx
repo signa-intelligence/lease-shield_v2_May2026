@@ -2706,10 +2706,11 @@ ja: {
               <>
                 {/* Recent Leases Section - Enhanced */}
                 <Card 
-                  className="border-none shadow-lg overflow-hidden"
+                  className="border-none shadow-sm overflow-hidden"
                   style={{
                     backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
-                    border: `1px solid ${colors.borderColor}`
+                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                    boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)'
                   }}
                 >
                   <div 
@@ -2765,10 +2766,11 @@ ja: {
 
                 {/* Notifications Section - Enhanced */}
                 <Card 
-                  className="border-none shadow-lg overflow-hidden"
+                  className="border-none shadow-sm overflow-hidden"
                   style={{
                     backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
-                    border: `1px solid ${colors.borderColor}`
+                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                    boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)'
                   }}
                 >
                   <div 
@@ -2824,10 +2826,11 @@ ja: {
 
                 {/* Deposit Alerts Section - Enhanced */}
                 <Card 
-                  className="border-none shadow-lg overflow-hidden"
+                  className="border-none shadow-sm overflow-hidden"
                   style={{
                     backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
-                    border: `1px solid ${colors.borderColor}`
+                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                    boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)'
                   }}
                 >
                   <div 
