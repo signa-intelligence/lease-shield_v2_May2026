@@ -24,21 +24,11 @@ export default function StatsCard({
   const textSecondary = isDarkMode ? '#D1D5DB' : '#64748b';
 
   // Extract color from gradient if provided (e.g., "from-blue-500 to-blue-700" -> "#3B82F6")
-  // Muted semantic colors - reduced saturation
-  const mutedColors = {
-    '#3B82F6': isDarkMode ? '#60A5FA' : '#6B7280', // blue -> neutral grey
-    '#10B981': isDarkMode ? '#6EE7B7' : '#6B7280', // green -> neutral grey  
-    '#EF4444': isDarkMode ? '#F87171' : '#DC2626', // red stays (semantic)
-    '#F59E0B': isDarkMode ? '#FCD34D' : '#D97706', // yellow stays (semantic)
-    '#8B5CF6': isDarkMode ? '#C084FC' : '#9CA3AF', // purple -> neutral grey
-    '#6366F1': isDarkMode ? '#818CF8' : '#9CA3AF', // indigo -> neutral grey
-  };
-  
-  const extractedColor = mutedColors[scoreColor] || (isDarkMode ? '#94A3B8' : '#64748b');
+  const extractedColor = scoreColor || '#0C3B2E';
   
   // Generate lighter background for icon based on the main color
-  const iconBgLight = isDarkMode ? 'rgba(148,163,184,0.1)' : 'rgba(148,163,184,0.08)';
-  const iconBgDark = isDarkMode ? 'rgba(148,163,184,0.15)' : 'rgba(148,163,184,0.1)';
+  const iconBgLight = `${extractedColor}15`;
+  const iconBgDark = `${extractedColor}30`;
 
   const cardStyles = {
     backgroundColor: cardBg,
