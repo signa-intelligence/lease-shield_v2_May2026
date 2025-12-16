@@ -1,10 +1,11 @@
 // src/components/shared/AuthGuard.jsx
 //
-// Supabase-only authentication guard for LeaseShield.
-// Redirects unauthenticated users to /login.
+// Simple authentication guard for LeaseShield.
+// Uses Base44 built-in auth and does NOT change behaviour
+// except redirecting unauthenticated users to the login page.
 
 import React, { useEffect, useState } from "react";
-import { supabase } from "./SupabaseClient";
+import { base44 } from "@/api/base44Client";
 
 const AuthGuard = ({ children }) => {
   const [loading, setLoading] = useState(true);
@@ -15,22 +16,20 @@ const AuthGuard = ({ children }) => {
 
     async function checkAuth() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const me = await base44.auth.me();
         if (cancelled) return;
 
-        console.log('🔒 [AuthGuard] Session check:', !!session);
-
-        if (session) {
+        if (me) {
           setIsAuthed(true);
         } else {
           // Redirect to login with next parameter
           const currentPath = window.location.pathname + window.location.search;
-          console.log('🔒 [AuthGuard] No session, redirecting to /login');
           window.location.href = `/login?next=${encodeURIComponent(currentPath)}`;
         }
       } catch (err) {
-        console.error("❌ [AuthGuard] Auth check failed:", err);
+        console.error("AuthGuard: auth check failed", err);
         if (!cancelled) {
+          // Redirect to login with next parameter
           const currentPath = window.location.pathname + window.location.search;
           window.location.href = `/login?next=${encodeURIComponent(currentPath)}`;
         }
@@ -43,21 +42,8 @@ const AuthGuard = ({ children }) => {
 
     checkAuth();
 
-    // Subscribe to auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelled) {
-        console.log('🔒 [AuthGuard] Auth state changed:', !!session);
-        setIsAuthed(!!session);
-        if (!session) {
-          const currentPath = window.location.pathname + window.location.search;
-          window.location.href = `/login?next=${encodeURIComponent(currentPath)}`;
-        }
-      }
-    });
-
     return () => {
       cancelled = true;
-      subscription?.unsubscribe();
     };
   }, []);
 

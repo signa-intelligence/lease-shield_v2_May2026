@@ -1,35 +1,24 @@
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/components/shared/SupabaseClient";
-import { Loader2 } from "lucide-react";
+import { Shield, Calendar, FolderLock, X, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { haptic } from "../components/shared/HapticFeedback";
+import LoadingSpinner from "../components/shared/LoadingSpinner";
 
 export default function Welcome() {
   const navigate = useNavigate();
-  const [checking, setChecking] = React.useState(true);
 
-  useEffect(() => {
-    // Check Supabase session and redirect accordingly
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        // Authenticated - redirect to dashboard
-        const urlParams = new URLSearchParams(window.location.search);
-        const nextUrl = urlParams.get('next') || '/dashboard';
-        navigate(nextUrl, { replace: true });
-      } else {
-        // Not authenticated - redirect to login
-        navigate('/login', { replace: true });
-      }
-    }).catch(err => {
-      console.error('Session check failed:', err);
-      navigate('/login', { replace: true });
-    }).finally(() => {
-      setChecking(false);
-    });
+  // Redirect to dashboard - Welcome screen permanently removed
+  React.useEffect(() => {
+    // Check if there's a 'next' param (from login redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    const nextUrl = urlParams.get('next') || '/dashboard';
+    
+    navigate(nextUrl, { replace: true });
   }, [navigate]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F3F6F5' }}>
-      <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#0C3B2E' }} />
-    </div>
-  );
+  return null;
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import { X, User, HelpCircle, Globe, Users, TrendingUp, LogOut, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { supabase } from './SupabaseClient';
+import { base44 } from '@/api/base44Client';
 import { haptic } from './HapticFeedback';
 
 export default function MobileMenuDrawer({ isOpen, onClose, colors, language = 'en', user, onLanguageClick }) {
@@ -68,8 +68,7 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
   const handleLogout = async () => {
     haptic.medium();
     onClose();
-    await supabase.auth.signOut();
-    window.location.href = '/login';
+    await base44.auth.logout();
   };
 
   // Determine next tier for upgrade
