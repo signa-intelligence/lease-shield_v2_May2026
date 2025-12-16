@@ -1510,53 +1510,54 @@ ja: {
               isDarkMode={isDarkMode}
               actions={
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
-                    background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg" style={{
+                    backgroundColor: isDarkMode ? '#374151' : '#F8FAFC',
+                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'}`,
+                    boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)',
                   }}>
                     <div className="w-5 h-5 flex-shrink-0">
                       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
-                        <path d="M12 2L4 5V11C4 16 7 20.5 12 22C17 20.5 20 16 20 11V5L12 2Z" fill="#0C3B2E" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <rect x="9" y="11" width="6" height="5" rx="1" fill="#C7A338"/>
-                        <path d="M10 11V9.5C10 8.67 10.67 8 11.5 8H12.5C13.33 8 14 8.67 14 9.5V11" stroke="#C7A338" strokeWidth="1.5" strokeLinecap="round"/>
+                        <path d="M12 2L4 5V11C4 16 7 20.5 12 22C17 20.5 20 16 20 11V5L12 2Z" fill={isDarkMode ? '#475569' : '#E2E8F0'} stroke={isDarkMode ? '#64748b' : '#94A3B8'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <rect x="9" y="11" width="6" height="5" rx="1" fill="#0C3B2E"/>
+                        <path d="M10 11V9.5C10 8.67 10.67 8 11.5 8H12.5C13.33 8 14 8.67 14 9.5V11" stroke="#0C3B2E" strokeWidth="1.5" strokeLinecap="round"/>
                       </svg>
                     </div>
-                    <div className="flex items-center gap-2 text-sm sm:text-base font-semibold">
+                    <div className="flex items-center gap-2 text-sm sm:text-base font-semibold" style={{ color: isDarkMode ? '#E5E7EB' : '#475569' }}>
                       {language === 'zh' ? (
                         <>
-                          <span style={{ color: '#FFFFFF' }}>公平。</span>
-                          <span style={{ color: '#ECEFED' }}>透明。</span>
-                          <span style={{ color: '#C7A338' }}>保护。</span>
+                          <span>公平。</span>
+                          <span>透明。</span>
+                          <span>保护。</span>
                         </>
                       ) : language === 'ja' ? (
                         <>
-                          <span style={{ color: '#FFFFFF' }}>公正。</span>
-                          <span style={{ color: '#ECEFED' }}>透明。</span>
-                          <span style={{ color: '#C7A338' }}>保護。</span>
+                          <span>公正。</span>
+                          <span>透明。</span>
+                          <span>保護。</span>
                         </>
                       ) : language === 'ko' ? (
                         <>
-                          <span style={{ color: '#FFFFFF' }}>공정。</span>
-                          <span style={{ color: '#ECEFED' }}>투명。</span>
-                          <span style={{ color: '#C7A338' }}>보호。</span>
+                          <span>공정。</span>
+                          <span>투명。</span>
+                          <span>보호。</span>
                         </>
                       ) : language === 'ru' ? (
                         <>
-                          <span style={{ color: '#FFFFFF' }}>Справедливо.</span>
-                          <span style={{ color: '#ECEFED' }}>Прозрачно.</span>
-                          <span style={{ color: '#C7A338' }}>Защищено.</span>
+                          <span>Справедливо.</span>
+                          <span>Прозрачно.</span>
+                          <span>Защищено.</span>
                         </>
                       ) : language === 'th' ? (
                         <>
-                          <span style={{ color: '#FFFFFF' }}>ยุติธรรม。</span>
-                          <span style={{ color: '#ECEFED' }}>โปร่งใส。</span>
-                          <span style={{ color: '#C7A338' }}>ปลอดภัย。</span>
+                          <span>ยุติธรรม。</span>
+                          <span>โปร่งใส。</span>
+                          <span>ปลอดภัย。</span>
                         </>
                       ) : (
                         <>
-                          <span style={{ color: '#FFFFFF', fontSize: language === 'ru' ? '0.8rem' : 'inherit' }}>Fair.</span>
-                                <span style={{ color: '#ECEFED', fontSize: language === 'ru' ? '0.8rem' : 'inherit' }}>Transparent.</span>
-                                <span style={{ color: '#C7A338', fontSize: language === 'ru' ? '0.8rem' : 'inherit' }}>Protected.</span>
+                          <span style={{ fontSize: language === 'ru' ? '0.8rem' : 'inherit' }}>Fair.</span>
+                          <span style={{ fontSize: language === 'ru' ? '0.8rem' : 'inherit' }}>Transparent.</span>
+                          <span style={{ fontSize: language === 'ru' ? '0.8rem' : 'inherit' }}>Protected.</span>
                         </>
                       )}
                     </div>
@@ -2148,12 +2149,11 @@ ja: {
           {/* FREE TIER UPSELL - Clean and professional */}
           {isFreeTier && (
             <Card
-              className="mb-6 border-none shadow-xl overflow-hidden"
+              className="mb-6 border-none shadow-sm overflow-hidden"
               style={{
-                background: isDarkMode
-                  ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
-                  : 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)',
-                border: `2px solid ${isDarkMode ? 'rgba(199,163,56,0.4)' : '#C7A338'}`,
+                backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)'
               }}
             >
               <CardContent className="p-5">
@@ -2163,14 +2163,13 @@ ja: {
                       width: '48px',
                       height: '48px',
                       borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #C7A338 0%, #D4B451 100%)',
+                      backgroundColor: 'rgba(12,59,46,0.08)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 4px 8px rgba(199,163,56,0.3)',
                       flexShrink: 0
                     }}>
-                      <Shield className="w-6 h-6 text-white" />
+                      <Shield className="w-6 h-6" style={{ color: '#0C3B2E' }} />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-base sm:text-lg font-bold mb-2 text-gray-900 dark:text-gray-50">
@@ -2246,12 +2245,11 @@ ja: {
           {/* LITE PLAN UPSELL - Subtle, refined */}
           {isLitePlan && (
             <Card
-              className="mb-6 border-none shadow-lg overflow-hidden"
+              className="mb-6 border-none shadow-sm overflow-hidden"
               style={{
-                background: isDarkMode
-                  ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
-                  : 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
-                border: `2px solid ${isDarkMode ? 'rgba(16,185,129,0.3)' : '#10B981'}`,
+                backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)'
               }}
             >
               <CardContent className="p-5">
@@ -2261,14 +2259,13 @@ ja: {
                       width: '48px',
                       height: '48px',
                       borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                      backgroundColor: isDarkMode ? 'rgba(99,102,241,0.1)' : 'rgba(99,102,241,0.08)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 4px 8px rgba(16,185,129,0.3)',
                       flexShrink: 0
                     }}>
-                      <Shield className="w-6 h-6 text-white" />
+                      <Shield className="w-6 h-6" style={{ color: isDarkMode ? '#818CF8' : '#6366F1' }} />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-base sm:text-lg font-bold mb-2 text-gray-900 dark:text-gray-50">
@@ -2324,12 +2321,11 @@ ja: {
           {/* PROTECT PLAN UPSELL - Premium Secure upgrade */}
           {isProtectPlan && (
             <Card
-              className="mb-6 border-none shadow-xl overflow-hidden"
+              className="mb-6 border-none shadow-sm overflow-hidden"
               style={{
-                background: isDarkMode
-                  ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
-                  : 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)',
-                border: `2px solid ${isDarkMode ? 'rgba(139,92,246,0.4)' : '#8B5CF6'}`,
+                backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)'
               }}
             >
               <CardContent className="p-5">
@@ -2339,14 +2335,13 @@ ja: {
                       width: '48px',
                       height: '48px',
                       borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                      backgroundColor: isDarkMode ? 'rgba(168,85,247,0.1)' : 'rgba(168,85,247,0.08)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 4px 8px rgba(139,92,246,0.3)',
                       flexShrink: 0
                     }}>
-                      <Crown className="w-6 h-6 text-white" />
+                      <Crown className="w-6 h-6" style={{ color: isDarkMode ? '#C084FC' : '#A855F7' }} />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-base sm:text-lg font-bold mb-2 text-gray-900 dark:text-gray-50">
@@ -2452,38 +2447,38 @@ ja: {
               <div 
                 className="mb-6 cursor-pointer card-interactive"
                 style={{
-                  background: isDarkMode ? '#2A1F1F' : '#FFE8E8',
-                  borderRadius: '18px',
+                  backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                  borderRadius: '12px',
                   padding: '14px 16px',
-                  boxShadow: isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(239,68,68,0.12)',
-                  border: `1px solid ${isDarkMode ? '#EF444440' : '#FECACA'}`,
+                  boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)',
+                  border: `1px solid ${isDarkMode ? 'rgba(239,68,68,0.2)' : 'rgba(239,68,68,0.15)'}`,
                   transition: 'all 0.2s'
                 }}
                 onClick={handleStartResolve}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = isDarkMode ? '0 6px 16px rgba(0,0,0,0.4)' : '0 6px 16px rgba(239,68,68,0.18)';
+                  e.currentTarget.style.boxShadow = isDarkMode ? '0 2px 6px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.08)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(239,68,68,0.12)';
+                  e.currentTarget.style.boxShadow = isDarkMode ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)';
                 }}
               >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{
-                      backgroundColor: isDarkMode ? '#EF444430' : '#FEE2E2'
+                      backgroundColor: isDarkMode ? 'rgba(239,68,68,0.1)' : 'rgba(239,68,68,0.08)'
                     }}>
-                      <Scale className="w-5 h-5" style={{ color: '#EF4444' }} />
+                      <Scale className="w-5 h-5" style={{ color: isDarkMode ? '#F87171' : '#DC2626' }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                      <h4 className="text-sm font-bold mb-0.5" style={{ color: colors.textPrimary }}>
                         {awaitingCase 
                           ? strings.continueYourCase
                           : strings.resolveDispute
                         }
                       </h4>
-                      <p className="text-xs" style={{ color: isDarkMode ? '#F87171' : '#B91C1C' }}>
+                      <p className="text-xs" style={{ color: colors.textSecondary }}>
                         {awaitingCase ? strings.completeCaseSubmission : pricingMessage}
                       </p>
                     </div>
@@ -2551,11 +2546,10 @@ ja: {
                 <>
                   {/* Compact Protection Score Summary */}
                   <div className="mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
-                    <Card className="border-none shadow-md bg-white dark:bg-gray-800" style={{
-                      background: isDarkMode 
-                        ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
-                        : 'linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%)',
-                      border: `2px solid ${isDarkMode ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.15)'}`
+                    <Card className="border-none shadow-sm bg-white dark:bg-gray-800" style={{
+                      backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                      border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+                      boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.05)'
                     }}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
@@ -2564,13 +2558,12 @@ ja: {
                               width: '48px',
                               height: '48px',
                               borderRadius: '12px',
-                              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                              backgroundColor: protectionScore >= 70 ? 'rgba(16,185,129,0.1)' : 'rgba(148,163,184,0.1)',
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center',
-                              boxShadow: '0 4px 8px rgba(16,185,129,0.3)'
+                              justifyContent: 'center'
                             }}>
-                              <Shield className="w-6 h-6 text-white" />
+                              <Shield className="w-6 h-6" style={{ color: protectionScore >= 70 ? '#10B981' : '#64748b' }} />
                             </div>
                             <div>
                               <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
@@ -2588,20 +2581,18 @@ ja: {
                                 padding: '8px 16px',
                                 borderRadius: '8px',
                                 backgroundColor: 'transparent',
-                                border: `2px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.1)'}`,
-                                color: colors.textPrimary,
+                                border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                                color: colors.textSecondary,
                                 fontSize: '13px',
                                 fontWeight: '600',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s'
                               }}
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = '#10B981';
-                                e.currentTarget.style.color = '#10B981';
+                                e.currentTarget.style.backgroundColor = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)';
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.1)';
-                                e.currentTarget.style.color = colors.textPrimary;
+                                e.currentTarget.style.backgroundColor = 'transparent';
                               }}
                             >
                               {language === 'th' ? 'ดูรายละเอียด' : language === 'zh' ? '查看详情' : language === 'ja' ? '詳細を見る' : language === 'ko' ? '세부 정보 보기' : language === 'ru' ? 'Подробнее' : 'View Details'} →
@@ -2733,13 +2724,12 @@ ja: {
                         width: '48px',
                         height: '48px',
                         borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                        backgroundColor: isDarkMode ? 'rgba(148,163,184,0.1)' : 'rgba(148,163,184,0.08)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 8px rgba(59,130,246,0.3)'
+                        justifyContent: 'center'
                       }}>
-                        <FileText className="w-6 h-6 text-white" />
+                        <FileText className="w-6 h-6" style={{ color: isDarkMode ? '#94A3B8' : '#64748b' }} />
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
@@ -2793,13 +2783,12 @@ ja: {
                         width: '48px',
                         height: '48px',
                         borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+                        backgroundColor: isDarkMode ? 'rgba(168,85,247,0.1)' : 'rgba(168,85,247,0.08)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 8px rgba(139,92,246,0.3)'
+                        justifyContent: 'center'
                       }}>
-                        <Bell className="w-6 h-6 text-white" />
+                        <Bell className="w-6 h-6" style={{ color: isDarkMode ? '#C084FC' : '#A855F7' }} />
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
@@ -2853,13 +2842,12 @@ ja: {
                         width: '48px',
                         height: '48px',
                         borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                        backgroundColor: urgentDeposits > 0 ? 'rgba(245,158,11,0.1)' : (isDarkMode ? 'rgba(148,163,184,0.1)' : 'rgba(148,163,184,0.08)'),
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 8px rgba(16,185,129,0.3)'
+                        justifyContent: 'center'
                       }}>
-                        <Wallet className="w-6 h-6 text-white" />
+                        <Wallet className="w-6 h-6" style={{ color: urgentDeposits > 0 ? '#F59E0B' : (isDarkMode ? '#94A3B8' : '#64748b') }} />
                       </div>
                       <div>
                         <h3 className="font-bold text-base text-gray-900 dark:text-gray-50">
