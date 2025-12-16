@@ -12,12 +12,12 @@
     --ls-charcoal: #1A1D1F;
     --ls-stone: #F8FAFC;
     --ls-white: #FFFFFF;
-    
-    /* Semantic Colors */
-    --success: #10B981;
-    --danger: #DC2626;
-    --warning: #F59E0B;
-    --info: #3B82F6;
+
+    /* Semantic Colors - Muted */
+    --success: rgba(16, 185, 129, 0.5);
+    --danger: rgba(220, 38, 38, 0.5);
+    --warning: rgba(245, 158, 11, 0.5);
+    --info: rgba(59, 130, 246, 0.5);
     
     /* Typography Scale */
     --text-xs: 0.75rem;
