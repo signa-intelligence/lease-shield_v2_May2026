@@ -3644,10 +3644,10 @@ function AccountContent() {
                       <Download className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-bold text-base" style={{ color: '#0C3B2E' }}>
+                      <p style={{ fontSize: '16px', fontWeight: '700', color: '#0C3B2E', lineHeight: '1.3' }}>
                         {strings.installApp}
                       </p>
-                      <p className="text-sm font-medium" style={{ color: '#0C3B2E' }}>
+                      <p style={{ fontSize: '14px', fontWeight: '600', color: '#0C3B2E', lineHeight: '1.3' }}>
                         {strings.installAppDesc}
                       </p>
                     </div>
@@ -3694,10 +3694,10 @@ function AccountContent() {
                       )}
                     </div>
                     <div>
-                      <p className="font-bold text-base" style={{ color: '#0C3B2E' }}>
+                      <p style={{ fontSize: '16px', fontWeight: '700', color: '#0C3B2E', lineHeight: '1.3' }}>
                         {strings.shareApp}
                       </p>
-                      <p className="text-sm font-medium" style={{ color: '#0C3B2E' }}>
+                      <p style={{ fontSize: '14px', fontWeight: '600', color: '#0C3B2E', lineHeight: '1.3' }}>
                         {strings.shareAppDesc}
                       </p>
                     </div>
