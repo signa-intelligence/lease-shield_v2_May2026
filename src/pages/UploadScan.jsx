@@ -61,6 +61,9 @@ function UploadScanPageContent() {
 
   // NEW: State for post-scan upgrade hint
   const [showPostScanHint, setShowPostScanHint] = useState(false);
+  
+  // NEW: State for disclaimer acceptance
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -69,6 +72,13 @@ function UploadScanPageContent() {
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000
   });
+
+  // Check if user has already accepted disclaimer
+  useEffect(() => {
+    if (user?.scan_disclaimer_accepted) {
+      setDisclaimerAccepted(true);
+    }
+  }, [user]);
 
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
@@ -624,6 +634,14 @@ function UploadScanPageContent() {
     }
   });
 
+  const handleAcceptDisclaimer = async () => {
+    haptic.medium();
+    setDisclaimerAccepted(true);
+    // Save acceptance to user profile
+    await base44.auth.updateMe({ scan_disclaimer_accepted: true });
+    queryClient.invalidateQueries({ queryKey: ['user'] });
+  };
+
   const handleUploadAll = async () => {
     // Reset post-scan hint at the start of a new upload attempt
     setShowPostScanHint(false);
@@ -973,8 +991,8 @@ function UploadScanPageContent() {
   };
 
   const handleFileSelect = (e) => {
-    // Only allow file selection if upload is allowed
-    if (!scanStatus.allowed) return;
+    // Only allow file selection if upload is allowed AND disclaimer accepted
+    if (!scanStatus.allowed || !disclaimerAccepted) return;
     const files = Array.from(e.target.files || e.dataTransfer?.files || []);
     setSelectedFiles(prev => [...prev, ...files]);
     setError(null);
@@ -982,8 +1000,8 @@ function UploadScanPageContent() {
   };
 
   const handleDrop = (e) => {
-    // Only allow drop if upload is allowed
-    if (!scanStatus.allowed) return;
+    // Only allow drop if upload is allowed AND disclaimer accepted
+    if (!scanStatus.allowed || !disclaimerAccepted) return;
     e.preventDefault();
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
@@ -1486,6 +1504,61 @@ function UploadScanPageContent() {
 
         {/* Upload Zone */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
+          {/* ✅ LEASE SCAN DISCLAIMER - Visible if not yet accepted */}
+          {!disclaimerAccepted && !user?.scan_disclaimer_accepted && (
+            <div className="p-6 md:p-8 border-b" style={{ borderBottomColor: colors.borderColor }}>
+              <div className="mb-4">
+                <h3 className="font-bold text-lg mb-3" style={{ color: colors.textPrimary }}>
+                  Lease Scan Disclaimer
+                </h3>
+                <div className="space-y-3 text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
+                  <p>
+                    Lease Shield provides automated analysis, general guidance, and document templates for informational purposes only.
+                  </p>
+                  <p>
+                    Lease Shield is not a law firm, does not provide legal advice, and does not provide legal representation. No lawyer-client relationship is created by using this service.
+                  </p>
+                  <p>
+                    The results of any lease scan are generated using automated processes and may be incomplete, inaccurate, or outdated. Lease Shield does not guarantee the accuracy, completeness, or suitability of any scan results, recommendations, or generated documents.
+                  </p>
+                  <p className="font-semibold">You remain fully responsible for:</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li>Reviewing your lease documents</li>
+                    <li>Verifying the accuracy of all information</li>
+                    <li>Seeking independent legal advice before taking action</li>
+                    <li>Deciding whether and how to use any output provided</li>
+                  </ul>
+                  <p>
+                    Lease Shield is not a party to your lease and assumes no liability for decisions, disputes, losses, or outcomes arising from the use of this service.
+                  </p>
+                  <p className="font-semibold">
+                    By proceeding, you acknowledge and accept that you use Lease Shield at your own risk.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-4 rounded-lg" style={{
+                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                border: `2px solid ${colors.borderColor}`
+              }}>
+                <input
+                  type="checkbox"
+                  id="disclaimer-checkbox"
+                  checked={disclaimerAccepted}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      handleAcceptDisclaimer();
+                    }
+                  }}
+                  className="w-5 h-5 mt-0.5 flex-shrink-0 cursor-pointer"
+                  style={{ accentColor: '#0C3B2E' }}
+                />
+                <label htmlFor="disclaimer-checkbox" className="font-semibold text-sm cursor-pointer" style={{ color: colors.textPrimary }}>
+                  I understand and agree to the Lease Scan Disclaimer.
+                </label>
+              </div>
+            </div>
+          )}
+
           <div className="p-6 md:p-8">
             {uploading || analyzing ? (
               <UploadProgress
@@ -1550,13 +1623,13 @@ function UploadScanPageContent() {
                 )}
 
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all ${dragActive ? 'border-blue-500 bg-blue-50' : ''} ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all ${dragActive ? 'border-blue-500 bg-blue-50' : ''} ${(!scanStatus.allowed || !disclaimerAccepted) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   style={{
                     borderColor: dragActive ? '#3B82F6' : colors.borderColor,
                     backgroundColor: dragActive ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') : 'transparent',
-                    pointerEvents: scanStatus.allowed ? 'auto' : 'none'
+                    pointerEvents: (scanStatus.allowed && disclaimerAccepted) ? 'auto' : 'none'
                   }}
-                  onDragEnter={() => scanStatus.allowed && setDragActive(true)}
+                  onDragEnter={() => (scanStatus.allowed && disclaimerAccepted) && setDragActive(true)}
                   onDragLeave={() => setDragActive(false)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleDrop}
@@ -1575,10 +1648,10 @@ function UploadScanPageContent() {
                         accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
                         onChange={handleFileSelect}
                         className="hidden"
-                        disabled={!scanStatus.allowed}
+                        disabled={!scanStatus.allowed || !disclaimerAccepted}
                       />
                       <span
-                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg ${(!scanStatus.allowed || !disclaimerAccepted) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                         style={{
                           backgroundColor: '#0C3B2E',
                           color: '#FFFFFF'
@@ -1597,10 +1670,10 @@ function UploadScanPageContent() {
                         capture="environment"
                         onChange={handleFileSelect}
                         className="hidden"
-                        disabled={!scanStatus.allowed}
+                        disabled={!scanStatus.allowed || !disclaimerAccepted}
                       />
                       <span
-                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg cursor-pointer border-2 ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg border-2 ${(!scanStatus.allowed || !disclaimerAccepted) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                         style={{
                           backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                           color: '#0C3B2E',
@@ -1647,8 +1720,8 @@ function UploadScanPageContent() {
                         haptic.medium();
                         handleUploadAll();
                       }}
-                      disabled={uploading || !scanStatus.allowed}
-                      className={`w-full mt-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={uploading || !scanStatus.allowed || !disclaimerAccepted}
+                      className={`w-full mt-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 ${(!scanStatus.allowed || !disclaimerAccepted) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       style={{
                         backgroundColor: '#0C3B2E',
                         color: '#FFFFFF'
