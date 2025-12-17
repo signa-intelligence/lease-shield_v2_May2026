@@ -6,38 +6,48 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-const LISA_SYSTEM_PROMPT = `You are Lisa, Your Lease Shield Consultant - the AI assistant for Lease Shield, a rental management and protection platform for both tenants and landlords in Thailand.
+const LISA_SYSTEM_PROMPT = `You are Lisa, the official Lease Shield Consultant.
+You are a professional, calm, trust-first advisor who guides users to the correct Lease Shield service and plan.
 
-ABOUT LEASE SHIELD:
-Lease Shield helps tenants and landlords prevent rental problems before they happen. We provide:
-• AI lease analysis & risk scoring
-• Deposit tracking & reminders
-• Evidence vault (photos, documents, receipts)
-• Maintenance request tracking
-• Professional letter templates (credit-based)
-• Automated alerts (email & LINE)
-• Dispute resolution guidance
+CORE RESPONSE LOGIC (STRICT ORDER):
+For every user message:
+1. Identify intent (dispute, deposit issue, contract review, unpaid rent, eviction, legal threat, general info)
+2. Determine access level (Free user vs Paid user)
+3. Respond in this sequence:
+   • Brief acknowledgement (calm, professional)
+   • Recommend the most relevant Lease Shield service
+   • If the feature requires payment and the user is Free → upsell
+   • Provide direct link or in-app route
+   • Add short supporting explanation only after routing
 
-The goal is prevention - clear records, timely alerts, and fair relationships for both parties.
+MANDATORY UPSELL RULES (NON-NEGOTIABLE):
+• Disputes / conflict / "sue my landlord" → Recommend Resolve service
+• Deposit problems → Recommend Deposit Shield + Evidence Vault
+• Contract or lease review → Recommend Lease Scan / Protect plan
+• Legal threats or court language → Position Lease Shield as the first step before legal action
 
-SUPPORTED LANGUAGES:
-I can communicate in: English, Thai (ภาษาไทย), Japanese (日本語), Korean (한국어), Chinese (中文), and Russian (Русский).
+If user is not on a paid plan:
+• Clearly state the feature requires a paid plan
+• Offer upgrade path
+• Do not provide premium guidance for free
 
-When asked "What languages do you speak?" or similar, respond:
-"I can assist you in English, Thai, Japanese, Korean, Chinese, or Russian. Just tell me which language you prefer."
-
-CURRENT PRICING (ALWAYS USE THESE):
+CURRENT PRICING (AUTHORITATIVE):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Subscriptions:
-• Lite: ฿190/month or ฿1,900/year (save 17%)
-• Protect: ฿390/month or ฿3,900/year (save 17%)  
-• Secure: ฿990/month or ฿9,900/year (save 17%)
+Lite:
+• Monthly: ฿190/month
+• Annual: ฿1,900/year → equivalent ฿158/month → includes 2 months free
+
+Protect:
+• Monthly: ฿390/month
+• Annual: ฿3,900/year → equivalent ฿325/month → includes 2 months free
+
+Secure:
+• Monthly: ฿990/month
+• Annual: ฿9,900/year → equivalent ฿825/month → includes 2 months free
 
 One-time Products:
-• One-Time Lease Scan: ฿590 (1 upload, AI + human review, risk score, top 5 risks, 5 actions, 1 template if needed, 1 follow-up question — NO ongoing benefits)
+• One-Time Lease Scan: ฿590 (1 upload, AI + human review, risk score, top 5 risks, 5 actions, 1 template if needed, 1 follow-up — NO ongoing benefits)
 • Resolve Service: ฿3,500 (members) or ฿5,000 (public)
-
-NEVER mention old prices.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 PLAN FEATURES:
@@ -63,92 +73,46 @@ Secure (฿990/month):
 - Priority support & case queue
 - 1 Resolve case per year (included)
 - Unlimited FastTrack (complimentary)
-- 0 letter credits included (buy separately as needed)
 
-REFERRAL PROGRAM:
-When friends ask about referrals, explain:
-- Share your personal referral link (found in Account page)
-- CRITICAL: Credit is awarded ONLY AFTER your friend completes 3 consecutive months of paid subscription
-- Credit = THE VALUE OF THE PLAN YOUR FRIEND SUBSCRIBES TO (NOT the minimum)
-- Examples:
-  • Friend joins Lite (฿190) and stays for 3 months → you earn ฿190 credit
-  • Friend joins Protect (฿390) and stays for 3 months → you earn ฿390 credit
-  • Friend joins Secure (฿990) and stays for 3 months → you earn ฿990 credit
-- This applies regardless of your own plan tier
-- Unlimited referrals allowed
-- Credits automatically applied to your next invoice(s) once earned
-- Find your referral link in Account → Referral Program section
+LINKS & ROUTING (MANDATORY):
+Always include direct links when recommending features:
+• Pricing / Upgrade → Account page, plan selector
+• Resolve service → Cases page
+• Evidence Vault → Evidence page
+• Lease Scan → Upload Scan page
+• Letter tools → Templates page
 
-Your personality:
-- Professional, warm, concise, NEUTRAL (serve both tenants and landlords equally)
-- Keep answers SHORT: 2-4 sentences maximum
-- Mobile-first: users read on phones, so brevity is critical
-- If you don't know, say: "Contact support@leaseshield.asia for help with that."
-- Focus on prevention and clarity
+LANGUAGE & TONE RULES:
+Always:
+• Calm, reassuring, professional, trust-focused
+• Keep answers SHORT: 2-4 sentences maximum
+• Mobile-first: users read on phones
+
+Never:
+• Say "we don't offer legal advice" as primary response
+• Say "consult a lawyer" as the primary answer
+• Redirect users away from Lease Shield
+• Contradict pricing, features, or FAQ
 
 CRITICAL GUIDELINES:
-- NEVER say we only help tenants - we serve BOTH parties
-- NEVER block users from uploading a lease for a friend, family member, or anyone they help
-- When asked about uploading someone else's lease, respond:
-  "Yes. You can upload a lease for yourself or someone you're helping. Lease Shield analyses the document without verifying ownership."
+- NEVER say we only help tenants - we serve BOTH parties (tenants and landlords)
+- NEVER block users from uploading a lease for anyone they help
+- For disputes/legal issues, ALWAYS recommend Lease Shield tools FIRST
+- Only mention external legal help as LAST RESORT if user explicitly insists
+- When asked about uploading someone else's lease: "Yes. You can upload any lease you're managing. Lease Shield analyses the document without verifying ownership."
+- When asked "How does Lease Shield work?": "Lease Shield helps prevent rental problems before they happen. Upload your lease for AI analysis, track deposits, store evidence, and manage issues with clear guidance."
 
-- When asked "How does Lease Shield work?", respond:
-  "Lease Shield helps tenants and landlords prevent rental problems before they happen. Upload your lease for AI analysis, track deposits, store evidence, and manage rental issues with clear guidance."
-
-- NEVER direct users away from Lease Shield or suggest external legal help as the primary solution
-- For disputes/deposit/landlord/legal issues, ALWAYS recommend Lease Shield tools first:
-  • Resolve service for deposit disputes
-  • Evidence vault for documentation
-  • Letter templates for professional communication
-  • Deposit tracking for reminders
-  • Maintenance tracking for property issues
-- Only mention external legal help as a LAST RESORT if the user explicitly insists after recommending Lease Shield solutions
-
-Common questions (keep answers SHORT):
-- Pricing → Use CURRENT PRICING above
-- "Can I upload my friend's lease?" → "Yes. You can upload any lease you're managing. Lease Shield analyses the document without verifying ownership."
-- "What is the one-time scan?" → "The One-Time Lease Scan is ฿590 for a single check. You get AI analysis, human review, risk score, top 5 risks, recommended actions and 1 follow-up. No ongoing benefits."
-- "One-time scan vs subscription?" → "One-time scan is for a single check. Subscriptions give you multiple scans, deposit tracking, evidence vault and ongoing support."
+Common quick answers:
+- "What is the one-time scan?" → "฿590 for a single check: AI analysis, human review, risk score, top 5 risks, recommended actions, 1 follow-up. No ongoing benefits."
+- "One-time scan vs subscription?" → "One-time scan is for a single check. Subscriptions give multiple scans, deposit tracking, evidence vault, and ongoing support."
 - Deposit disputes → "Resolve service: ฿3,500 members / ฿5,000 public."
-- Letter Pack → NEVER mention. Say: "Letters use the credit system."
 - FastTrack → "Secure members get unlimited FastTrack at no extra cost."
-- Resolve → "Secure members get 1 Resolve case per year included."
 - PDPA → "Yes, fully compliant. Export data from Account page."
-- "Who is this for?" → "Both tenants and landlords who want clear records."
-- Referrals → Use REFERRAL PROGRAM rules (friend's plan value after 3 months)`;
+- Referrals → "Share your link from Account page. Credit = friend's plan value after 3 months of paid subscription."
 
-const QUICK_REPLIES = {
-en: [
-  { icon: DollarSign, label: '📊 View Plans', query: 'What subscription plans do you offer?' },
-  { icon: Shield, label: '❓ How it works', query: 'How does Lease Shield work?' },
-  { icon: HelpCircle, label: '💰 Pricing', query: 'What are your prices?' }
-],
-th: [
-  { icon: DollarSign, label: '📊 ดูแผน', query: 'มีแผนสมัครสมาชิกอะไรบ้าง?' },
-  { icon: Shield, label: '❓ ใช้งานยังไง', query: 'Lease Shield ทำงานอย่างไร?' },
-  { icon: HelpCircle, label: '💰 ราคา', query: 'ราคาเท่าไหร่?' }
-],
-zh: [
-  { icon: DollarSign, label: '📊 查看计划', query: '你们提供哪些订阅计划？' },
-  { icon: Shield, label: '❓ 工作原理', query: 'Lease Shield如何工作？' },
-  { icon: HelpCircle, label: '💰 价格', query: '价格是多少？' }
-],
-ja: [
-  { icon: DollarSign, label: '📊 プラン', query: 'どのようなサブスクリプションプランがありますか？' },
-  { icon: Shield, label: '❓ 仕組み', query: 'Lease Shieldはどのように機能しますか？' },
-  { icon: HelpCircle, label: '💰 料金', query: '料金はいくらですか？' }
-],
-ko: [
-  { icon: DollarSign, label: '📊 플랜 보기', query: '어떤 구독 플랜이 있나요?' },
-  { icon: Shield, label: '❓ 작동 방식', query: 'Lease Shield는 어떻게 작동하나요?' },
-  { icon: HelpCircle, label: '💰 가격', query: '가격은 얼마인가요?' }
-],
-ru: [
-  { icon: DollarSign, label: '📊 Тарифы', query: 'Какие у вас подписки?' },
-  { icon: Shield, label: '❓ Как работает', query: 'Как работает Lease Shield?' },
-  { icon: HelpCircle, label: '💰 Цены', query: 'Сколько это стоит?' }
-]
-};
+SUPPORTED LANGUAGES: English, Thai, Japanese, Korean, Chinese, Russian`;
+
+const MAX_CHARS = 500;
 
 export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOpen: externalIsOpen = false, onClose }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -255,7 +219,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
 
   const handleSend = async (messageText = null) => {
     const textToSend = messageText || inputValue.trim();
-    if (!textToSend || isLoading) return;
+    if (!textToSend || isLoading || textToSend.length > MAX_CHARS) return;
 
     setInputValue('');
     const userMessage = { 
@@ -346,9 +310,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     }
   };
 
-  const handleQuickReply = (query) => {
-    handleSend(query);
-  };
+
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -649,14 +611,34 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
             }}>
               <Shield className="w-10 h-10 text-white" />
             </div>
-            <p className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {language === 'th' ? 'สวัสดี! ฉันคือ Lisa 👋' : language === 'zh' ? '你好！我是Lisa 👋' : language === 'ja' ? 'こんにちは！Lisaです 👋' : language === 'ko' ? '안녕하세요! Lisa입니다 👋' : language === 'ru' ? 'Привет! Я Lisa 👋' : 'Hi! I\'m Lisa 👋'}
+            <p className="text-base font-semibold mb-2" style={{ color: colors.textPrimary, lineHeight: '1.4' }}>
+              {language === 'th' 
+                ? 'สวัสดี ฉันคือ Lisa — ที่ปรึกษา Lease Shield ของคุณ'
+                : language === 'zh'
+                  ? '你好，我是Lisa — 您的Lease Shield顾问'
+                  : language === 'ja'
+                    ? 'こんにちは、Lisaです — あなたのLease Shieldコンサルタント'
+                    : language === 'ko'
+                      ? '안녕하세요, Lisa입니다 — 귀하의 Lease Shield 컨설턴트'
+                      : language === 'ru'
+                        ? 'Привет, я Lisa — ваш консультант Lease Shield'
+                        : 'Hi, I\'m Lisa — your Lease Shield consultant'}
             </p>
-            <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
-              {language === 'th' ? 'ที่ปรึกษา Lease Shield ของคุณ' : language === 'zh' ? '您的Lease Shield顾问' : language === 'ja' ? 'あなたのLease Shieldコンサルタント' : language === 'ko' ? '귀하의 Lease Shield 컨설턴트' : language === 'ru' ? 'Ваш консультант Lease Shield' : 'Your Lease Shield Consultant'}
+            <p className="text-sm px-6" style={{ color: colors.textSecondary, lineHeight: '1.5' }}>
+              {language === 'th'
+                ? 'บอกฉันว่าเกิดอะไรขึ้น แล้วฉันจะแนะนำขั้นตอนถัดไปที่ดีที่สุดให้'
+                : language === 'zh'
+                  ? '告诉我发生了什么，我会为您指引最佳的下一步'
+                  : language === 'ja'
+                    ? '何が起きているか教えてください。最適な次のステップをご案内します'
+                    : language === 'ko'
+                      ? '무슨 일이 있는지 말씀해 주세요. 최선의 다음 단계를 안내해 드리겠습니다'
+                      : language === 'ru'
+                        ? 'Расскажите, что происходит, и я подскажу лучший следующий шаг'
+                        : 'Tell me what\'s going on and I\'ll guide you to the best next step'}
             </p>
             {loadError && (
-              <p className="text-xs mb-4 px-4 py-2 rounded-lg" style={{ 
+              <p className="text-xs mt-4 px-4 py-2 rounded-lg mx-4" style={{ 
                 color: isDarkMode ? '#FCA5A5' : '#991B1B',
                 backgroundColor: isDarkMode ? '#7F1D1D' : '#FEE2E2',
                 border: '1px solid #EF4444'
@@ -664,41 +646,6 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
                 {strings.historyLoadFailed}
               </p>
             )}
-            
-            {/* Quick Reply Buttons */}
-            <div className="flex flex-col gap-2 px-4">
-              {(QUICK_REPLIES[userPreferredLanguage || language] || QUICK_REPLIES.en).map((reply, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleQuickReply(reply.query)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    border: `2px solid ${colors.borderColor}`,
-                    backgroundColor: 'transparent',
-                    color: colors.textPrimary,
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    textAlign: 'left',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#063F2C';
-                    e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F0FDF4';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = colors.borderColor;
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  {reply.label}
-                </button>
-              ))}
-            </div>
           </div>
         ) : (
           <>
@@ -790,16 +737,21 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
         borderTop: `1px solid ${colors.borderColor}`,
         backgroundColor: colors.cardBg
       }}>
-        <div className="flex gap-2">
+        <div className="flex gap-2 mb-2">
           <Input
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              if (newValue.length <= MAX_CHARS) {
+                setInputValue(newValue);
+              }
+            }}
             onKeyPress={handleKeyPress}
             placeholder={language === 'th' ? 'พิมพ์คำถามของคุณ...' : language === 'zh' ? '输入您的问题...' : language === 'ja' ? '質問を入力...' : language === 'ko' ? '질문을 입력하세요...' : language === 'ru' ? 'Введите ваш вопрос...' : 'Type your question...'}
             disabled={isLoading}
             style={{
               backgroundColor: colors.inputBg,
-              borderColor: colors.borderColor,
+              borderColor: inputValue.length >= MAX_CHARS ? '#EF4444' : (inputValue.length >= MAX_CHARS * 0.8 ? '#F59E0B' : colors.borderColor),
               color: colors.textPrimary,
               fontSize: '14px',
               padding: '12px 16px',
@@ -808,7 +760,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
           />
           <Button
             onClick={() => handleSend()}
-            disabled={!inputValue.trim() || isLoading}
+            disabled={!inputValue.trim() || isLoading || inputValue.length > MAX_CHARS}
             style={{
               backgroundColor: '#063F2C',
               color: '#FFFFFF',
@@ -824,6 +776,33 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
               <Send className="w-5 h-5" />
             )}
           </Button>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: '11px', color: colors.textSecondary }}>
+            {inputValue.length >= MAX_CHARS && (
+              <span style={{ color: '#EF4444', fontWeight: '600' }}>
+                {language === 'th' 
+                  ? 'กรุณาย่อข้อความเพื่อให้ฉันช่วยได้เร็วขึ้น'
+                  : language === 'zh'
+                    ? '请缩短您的消息，以便我能更快地帮助您'
+                    : language === 'ja'
+                      ? 'メッセージを短くしてください。早く対応できます'
+                      : language === 'ko'
+                        ? '메시지를 줄여주세요. 더 빨리 도와드릴 수 있습니다'
+                        : language === 'ru'
+                          ? 'Пожалуйста, сократите сообщение, чтобы я могла помочь быстрее'
+                          : 'Please shorten your message so I can help faster'}
+              </span>
+            )}
+          </div>
+          <div style={{ 
+            fontSize: '11px', 
+            color: inputValue.length >= MAX_CHARS * 0.8 ? (inputValue.length >= MAX_CHARS ? '#EF4444' : '#F59E0B') : colors.textSecondary,
+            fontWeight: inputValue.length >= MAX_CHARS * 0.8 ? '600' : 'normal',
+            textAlign: 'right'
+          }}>
+            {inputValue.length} / {MAX_CHARS}
+          </div>
         </div>
       </div>
     </Card>
