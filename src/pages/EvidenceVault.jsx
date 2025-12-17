@@ -821,7 +821,7 @@ function EvidenceVaultContent() {
       noDocumentsDesc: "Start building your evidence vault for better protection. All your uploaded documents are securely stored here.",
       uploadFirst: "Upload First Document", // This string is no longer used due to the new empty state, but kept for completeness
       deleteConfirm: "Are you sure?",
-      confirmDelete: "Are you sure you want to delete this file?",
+      confirmDelete: "Are you sure you want to delete this letter? This action cannot be undone.",
       confirmBulkDelete: "Are you sure you want to delete {count} file(s)?" ,
       view: "View",
       download: "Download",
@@ -920,7 +920,7 @@ function EvidenceVaultContent() {
       noDocumentsDesc: "เริ่มสร้างคลังหลักฐานเพื่อการป้องกันที่ดีขึ้น เอกสารทั้งหมดที่คุณอัปโหลดจะถูกจัดเก็บอย่างปลอดภัยที่นี่",
       uploadFirst: "อัปโหลดเอกสารแรก",
       deleteConfirm: "คุณแน่ใจหรือไม่?",
-      confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์นี้?",
+      confirmDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบจดหมายนี้? การกระทำนี้ไม่สามารถยกเลิกได้",
       confirmBulkDelete: "คุณแน่ใจหรือไม่ว่าต้องการลบไฟล์ {count} ไฟล์?",
       view: "ดู",
       download: "ดาวน์โหลด",
@@ -1019,7 +1019,7 @@ function EvidenceVaultContent() {
       noDocumentsDesc: "开始建立您的证据库以获得更好的保护。您上传的所有文档都会安全存储在这里。",
       uploadFirst: "上传第一份文档",
       deleteConfirm: "您确定吗？",
-      confirmDelete: "您确定要删除此文件吗？",
+      confirmDelete: "您确定要删除此信件吗？此操作无法撤消。",
       confirmBulkDelete: "您确定要删除 {count} 个文件吗？",
       view: "查看",
       download: "下载",
@@ -1118,7 +1118,7 @@ function EvidenceVaultContent() {
       noDocumentsDesc: "より良い保護のために証拠保管庫の構築を開始してください。アップロードしたすべてのドキュメントはここに安全に保存されます。",
       uploadFirst: "最初のドキュメントをアップロード",
       deleteConfirm: "よろしいですか？",
-      confirmDelete: "このファイルを削除してもよろしいですか？",
+      confirmDelete: "このレターを削除してもよろしいですか？この操作は元に戻せません。",
       confirmBulkDelete: "{count}個のファイルを削除してもよろしいですか？",
       view: "表示",
       download: "ダウンロード",
@@ -1217,7 +1217,7 @@ function EvidenceVaultContent() {
       noDocumentsDesc: "더 나은 보호를 위해 증거 보관소 구축을 시작하세요. 업로드한 모든 문서는 여기에 안전하게 저장됩니다.",
       uploadFirst: "첫 번째 문서 업로드",
       deleteConfirm: "확실합니까?",
-      confirmDelete: "이 파일을 삭제하시겠습니까?",
+      confirmDelete: "이 편지를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
       confirmBulkDelete: "{count}개의 파일을 삭제하시겠습니까?",
       view: "보기",
       download: "다운로드",
@@ -1316,7 +1316,7 @@ function EvidenceVaultContent() {
       noDocumentsDesc: "Начните создавать хранилище доказательств для лучшей защиты. Все загруженные документы безопасно хранятся здесь.",
       uploadFirst: "Загрузить первый документ",
       deleteConfirm: "Вы уверены?",
-      confirmDelete: "Вы уверены, что хотите удалить этот файл?",
+      confirmDelete: "Вы уверены, что хотите удалить это письмо? Это действие необратимо.",
       confirmBulkDelete: "Вы уверены, что хотите удалить файлов: {count}?",
       view: "Посмотреть",
       download: "Скачать",
@@ -2506,6 +2506,32 @@ function EvidenceVaultContent() {
                           >
                             <Download className="w-3 h-3 inline mr-1" />
                             {strings.download}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(strings.confirmDelete)) {
+                                handleDelete(doc.id);
+                              }
+                            }}
+                            disabled={isOptimistic}
+                            className="py-2 px-3 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{
+                              backgroundColor: '#FEE2E2',
+                              color: '#DC2626'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isOptimistic) {
+                                e.target.style.backgroundColor = '#FECACA';
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isOptimistic) {
+                                e.target.style.backgroundColor = '#FEE2E2';
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
                       </CardContent>
