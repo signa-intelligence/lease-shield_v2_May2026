@@ -103,6 +103,11 @@ export default function Templates() {
     };
   });
 
+  // DEDUPLICATE by template_key (keep first occurrence only)
+  const dedupedTemplates = Array.from(
+    new Map(templatesWithCategory.map(t => [t.template_key, t])).values()
+  );
+
   const colors = isDarkMode ? {
     bg: '#111827',
     cardBg: '#1F2937',
@@ -126,7 +131,7 @@ export default function Templates() {
       purchaseCredits: "Purchase Credits",
       checklists: "📋 Checklists",
       preSigningNegotiation: "⭐ Pre-Signing Negotiation",
-      friendlyApproach: "💬 Friendly Approach",
+      friendlyApproach: "💬 Initial Resolution",
       professionalEscalation: "📝 Professional Escalation",
       finalMeasures: "⚖️ Final Measures",
       openTemplate: "Open",
@@ -143,7 +148,7 @@ export default function Templates() {
       purchaseCredits: "ซื้อเครดิต",
       checklists: "📋 รายการตรวจสอบ",
       preSigningNegotiation: "⭐ เจรจาก่อนลงนาม",
-      friendlyApproach: "💬 แนวทางเป็นมิตร",
+      friendlyApproach: "💬 การแก้ไขเบื้องต้น",
       professionalEscalation: "📝 การยกระดับอย่างมืออาชีพ",
       finalMeasures: "⚖️ มาตรการสุดท้าย",
       openTemplate: "เปิด",
@@ -156,15 +161,15 @@ export default function Templates() {
 
   const strings = t[language] || t.en;
 
-  // Category filtering with fixed order
-  const checklistTemplates = templatesWithCategory.filter(t => t.category === 'checklists');
-  const preSigningTemplates = templatesWithCategory.filter(t => t.category === 'pre_signing_negotiation');
-  const friendlyTemplates = templatesWithCategory.filter(t => t.category === 'friendly_approach');
-  const professionalTemplates = templatesWithCategory.filter(t => t.category === 'professional_escalation');
-  const finalTemplates = templatesWithCategory.filter(t => t.category === 'final_measures');
+  // Category filtering with fixed order - use DEDUPED templates
+  const checklistTemplates = dedupedTemplates.filter(t => t.category === 'checklists');
+  const preSigningTemplates = dedupedTemplates.filter(t => t.category === 'pre_signing_negotiation');
+  const friendlyTemplates = dedupedTemplates.filter(t => t.category === 'friendly_approach');
+  const professionalTemplates = dedupedTemplates.filter(t => t.category === 'professional_escalation');
+  const finalTemplates = dedupedTemplates.filter(t => t.category === 'final_measures');
 
   // Mapped categories for debugging
-  const mappedCategories = [...new Set(templatesWithCategory.map(t => t.category))];
+  const mappedCategories = [...new Set(dedupedTemplates.map(t => t.category))];
 
   // Debug data
   const debugData = {
@@ -172,8 +177,9 @@ export default function Templates() {
     queryMethod: 'list(\'-created_date\')',
     rawCount: allTemplates.length,
     filteredCount: activeTemplates.length,
-    withCategoryCount: templatesWithCategory.length,
-    templateKeys: templatesWithCategory.slice(0, 50).map(t => t.template_key).join(', '),
+    beforeDedup: templatesWithCategory.length,
+    afterDedup: dedupedTemplates.length,
+    templateKeys: dedupedTemplates.slice(0, 50).map(t => t.template_key).join(', '),
     rawCategoriesFound: rawCategories.join(', '),
     mappedCategories: mappedCategories.join(', '),
     userRole: user?.access_level || 'none',
@@ -310,7 +316,8 @@ export default function Templates() {
               <div className="h-px bg-current opacity-20 my-2"></div>
               <div><strong>Raw DB Count:</strong> {debugData.rawCount}</div>
               <div><strong>After Filters:</strong> {debugData.filteredCount}</div>
-              <div><strong>With Category:</strong> {debugData.withCategoryCount}</div>
+              <div><strong>Before Dedup:</strong> {debugData.beforeDedup}</div>
+              <div><strong>After Dedup:</strong> {debugData.afterDedup}</div>
               <div className="h-px bg-current opacity-20 my-2"></div>
               <div><strong>Raw Categories (from DB):</strong> {debugData.rawCategoriesFound}</div>
               <div><strong>Mapped Categories:</strong> {debugData.mappedCategories}</div>
@@ -371,7 +378,7 @@ export default function Templates() {
           </div>
         </div>
 
-        {templatesWithCategory.length === 0 ? (
+        {dedupedTemplates.length === 0 ? (
           <div className="text-center py-12 px-4">
             <div className="p-6 rounded-lg max-w-md mx-auto" style={{
               backgroundColor: colors.cardBg,
@@ -422,7 +429,7 @@ export default function Templates() {
               </div>
             )}
 
-            {/* Friendly Approach */}
+            {/* Initial Resolution */}
             {friendlyTemplates.length > 0 && (
               <div className="mb-12">
                 <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
