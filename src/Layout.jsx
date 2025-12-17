@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Home, Upload, Shield, FileText, User, Settings, Wrench, Scale, Search, Calendar, Menu } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { haptic } from "./components/shared/HapticFeedback";
 import LisaEnhanced from "./components/shared/LisaEnhanced";
@@ -68,6 +68,7 @@ const createRipple = (event, element) => {
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const mainContentRef = useRef(null);
+  const queryClient = useQueryClient();
   const [showMobileMenu, setShowMobileMenu] = React.useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = React.useState(false);
   const [showLisa, setShowLisa] = React.useState(false);
@@ -78,6 +79,24 @@ export default function Layout({ children, currentPageName }) {
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000,
   });
+
+  // Handle language from URL parameter
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const langParam = urlParams.get('lang');
+    
+    if (langParam && user) {
+      const supportedLanguages = ['en', 'th', 'zh', 'ja', 'ko', 'ru'];
+      
+      if (supportedLanguages.includes(langParam) && user.language !== langParam) {
+        base44.auth.updateMe({ language: langParam })
+          .then(() => {
+            queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+          })
+          .catch(err => console.error('Failed to update language:', err));
+      }
+    }
+  }, [user]);
 
   React.useEffect(() => {
     if (mainContentRef.current) {
