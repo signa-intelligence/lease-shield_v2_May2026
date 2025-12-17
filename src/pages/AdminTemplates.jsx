@@ -22,27 +22,6 @@ function AdminTemplatesContent() {
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
 
-  // Enforce uniqueness: Group templates by template_key
-  const templatesByKey = templates.reduce((acc, t) => {
-    const key = t.template_key || 'unknown';
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(t);
-    return acc;
-  }, {});
-
-  // Display only unique templates (first occurrence)
-  const uniqueTemplates = Object.values(templatesByKey).map(group => {
-    // Select canonical record: prefer complete, active, recent
-    return group.sort((a, b) => {
-      const aComplete = a.title_en && a.title_th;
-      const bComplete = b.title_en && b.title_th;
-      if (aComplete && !bComplete) return -1;
-      if (!aComplete && bComplete) return 1;
-      if (a.is_active && !b.is_active) return -1;
-      if (!a.is_active && b.is_active) return 1;
-      return new Date(b.updated_date) - new Date(a.updated_date);
-    })[0];
-  });
   const [formData, setFormData] = useState({
     template_key: '',
     category: 'initial_resolution',
@@ -64,6 +43,28 @@ function AdminTemplatesContent() {
     queryKey: ['adminTemplates'],
     queryFn: () => base44.entities.TemplateLibrary.list('-created_date'),
     enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
+  });
+
+  // Enforce uniqueness: Group templates by template_key
+  const templatesByKey = templates.reduce((acc, t) => {
+    const key = t.template_key || 'unknown';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(t);
+    return acc;
+  }, {});
+
+  // Display only unique templates (first occurrence)
+  const uniqueTemplates = Object.values(templatesByKey).map(group => {
+    // Select canonical record: prefer complete, active, recent
+    return group.sort((a, b) => {
+      const aComplete = a.title_en && a.title_th;
+      const bComplete = b.title_en && b.title_th;
+      if (aComplete && !bComplete) return -1;
+      if (!aComplete && bComplete) return 1;
+      if (a.is_active && !b.is_active) return -1;
+      if (!a.is_active && b.is_active) return 1;
+      return new Date(b.updated_date) - new Date(a.updated_date);
+    })[0];
   });
 
   const createTemplateMutation = useMutation({
