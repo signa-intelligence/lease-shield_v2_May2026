@@ -214,6 +214,24 @@ function UploadScanPageContent() {
       stepTrack: "Track",
       upgradeHintText: "Upgrade to unlock unlimited scans and advanced lease analysis.",
       viewPlans: "View plans",
+      disclaimerTitle: "Lease Scan Disclaimer",
+      disclaimerCheckbox: "I have read and agree to the Lease Scan Disclaimer.",
+      agreeAndContinue: "Agree & Continue",
+      disclaimerCancel: "Cancel",
+      disclaimerText: {
+        p1: "Lease Shield provides automated analysis, general guidance, and document templates for informational purposes only.",
+        p2: "Lease Shield is not a law firm, does not provide legal advice, and does not provide legal representation. No lawyer-client relationship is created by using this service.",
+        p3: "Results may be incomplete, inaccurate, or outdated. Lease Shield does not guarantee the accuracy, completeness, or suitability of scan results, recommendations, or generated documents.",
+        responsibleTitle: "You remain fully responsible for:",
+        responsibilities: [
+          "Reviewing your lease documents",
+          "Verifying the accuracy of all information",
+          "Seeking independent legal advice before taking action",
+          "Deciding whether and how to use any output provided"
+        ],
+        p4: "Lease Shield is not a party to your lease and assumes no liability for decisions, disputes, losses, or outcomes arising from the use of this service.",
+        p5: "By proceeding, you acknowledge and accept that you use Lease Shield at your own risk."
+      }
     },
     th: {
       title: "สแกนสัญญาเช่า",
