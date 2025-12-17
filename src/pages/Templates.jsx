@@ -401,18 +401,6 @@ export default function Templates() {
           </div>
         ) : (
           <>
-            {/* Checklists */}
-            {checklistTemplates.length > 0 && (
-              <div className="mb-12">
-                <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
-                  {strings.checklists}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {checklistTemplates.map(t => renderTemplateCard(t, 'bg-gradient-to-r from-blue-400 to-indigo-600'))}
-                </div>
-              </div>
-            )}
-
             {/* Pre-Signing Negotiation */}
             {preSigningTemplates.length > 0 && (
               <div className="mb-12">
@@ -426,13 +414,13 @@ export default function Templates() {
             )}
 
             {/* Initial Resolution */}
-            {friendlyTemplates.length > 0 && (
+            {initialResolutionTemplates.length > 0 && (
               <div className="mb-12">
                 <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
-                  {strings.friendlyApproach}
+                  {strings.initialResolution}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {friendlyTemplates.map(t => renderTemplateCard(t, 'bg-gradient-to-r from-blue-400 to-purple-600'))}
+                  {initialResolutionTemplates.map(t => renderTemplateCard(t, 'bg-gradient-to-r from-blue-400 to-purple-600'))}
                 </div>
               </div>
             )}
