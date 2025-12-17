@@ -459,6 +459,22 @@ export default function Templates() {
           <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
             {strings.disclaimer}
           </p>
+          <p className="text-xs leading-relaxed mt-3 pt-3" style={{ 
+            color: colors.textSecondary,
+            borderTop: `1px solid ${colors.borderColor}`
+          }}>
+            {language === 'th'
+              ? 'Lease Shield ให้เทมเพลตเอกสารและคำแนะนำเท่านั้น เอกสารที่สร้างขึ้นสามารถแก้ไขได้ทั้งหมดและส่งตามดุลยพินิจของผู้ใช้ ผู้ใช้มีหน้าที่รับผิดชอบในการตรวจสอบและยืนยันเนื้อหาทั้งหมดก่อนใช้'
+              : language === 'zh'
+                ? 'Lease Shield仅提供文档模板和指导。生成的文档可完全编辑并由用户自行决定发送。用户在使用前有责任审查和验证所有内容。'
+                : language === 'ja'
+                  ? 'Lease Shieldは文書テンプレートとガイダンスのみを提供します。生成された文書は完全に編集可能で、ユーザーの裁量で送信されます。ユーザーは使用前にすべての内容を確認し検証する責任があります。'
+                  : language === 'ko'
+                    ? 'Lease Shield는 문서 템플릿과 안내만 제공합니다. 생성된 문서는 완전히 편집 가능하며 사용자의 재량에 따라 발송됩니다. 사용자는 사용 전에 모든 내용을 검토하고 확인할 책임이 있습니다。'
+                    : language === 'ru'
+                      ? 'Lease Shield предоставляет только шаблоны документов и рекомендации。Созданные документы полностью редактируемы и отправляются по усмотрению пользователя。Пользователь несёт ответственность за проверку и верификацию всего содержимого перед использованием。'
+                      : 'Lease Shield provides document templates and guidance only. Generated documents are fully editable and sent at the user\'s discretion. Users are responsible for reviewing and verifying all content before use.'}
+          </p>
         </div>
       </div>
     </div>
