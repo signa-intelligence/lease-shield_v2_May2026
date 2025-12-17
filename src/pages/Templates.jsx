@@ -35,19 +35,19 @@ export default function Templates() {
 
   // Category normalization function - maps any category variant to canonical slug
   const normalizeCategorySlug = (rawCategory) => {
-    if (!rawCategory) return 'friendly_approach';
+    if (!rawCategory) return 'initial_resolution';
     
     const lower = rawCategory.toLowerCase().trim();
     
     // Map variants to canonical slugs
     if (lower.includes('check')) return 'checklists';
     if (lower.includes('pre') && lower.includes('sign')) return 'pre_signing_negotiation';
-    if (lower.includes('friendly')) return 'friendly_approach';
+    if (lower.includes('initial') || lower.includes('friendly')) return 'initial_resolution';
     if (lower.includes('professional') || lower.includes('escalation')) return 'professional_escalation';
     if (lower.includes('final')) return 'final_measures';
     
     // Default fallback
-    return 'friendly_approach';
+    return 'initial_resolution';
   };
 
   // Detect if template_key is a hex record ID (legacy)
@@ -129,9 +129,8 @@ export default function Templates() {
       creditBalance: "Credit Balance",
       oneLetterPerCredit: "1 letter = 1 credit",
       purchaseCredits: "Purchase Credits",
-      checklists: "📋 Checklists",
       preSigningNegotiation: "⭐ Pre-Signing Negotiation",
-      friendlyApproach: "💬 Initial Resolution",
+      initialResolution: "💬 Initial Resolution",
       professionalEscalation: "📝 Professional Escalation",
       finalMeasures: "⚖️ Final Measures",
       openTemplate: "Open",
@@ -146,9 +145,8 @@ export default function Templates() {
       creditBalance: "เครดิตคงเหลือ",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
       purchaseCredits: "ซื้อเครดิต",
-      checklists: "📋 รายการตรวจสอบ",
       preSigningNegotiation: "⭐ เจรจาก่อนลงนาม",
-      friendlyApproach: "💬 การแก้ไขเบื้องต้น",
+      initialResolution: "💬 การแก้ไขเบื้องต้น",
       professionalEscalation: "📝 การยกระดับอย่างมืออาชีพ",
       finalMeasures: "⚖️ มาตรการสุดท้าย",
       openTemplate: "เปิด",
@@ -161,10 +159,9 @@ export default function Templates() {
 
   const strings = t[language] || t.en;
 
-  // Category filtering with fixed order - use DEDUPED templates
-  const checklistTemplates = dedupedTemplates.filter(t => t.category === 'checklists');
+  // Category filtering with fixed order - use DEDUPED templates (exclude checklists)
   const preSigningTemplates = dedupedTemplates.filter(t => t.category === 'pre_signing_negotiation');
-  const friendlyTemplates = dedupedTemplates.filter(t => t.category === 'friendly_approach');
+  const initialResolutionTemplates = dedupedTemplates.filter(t => t.category === 'initial_resolution');
   const professionalTemplates = dedupedTemplates.filter(t => t.category === 'professional_escalation');
   const finalTemplates = dedupedTemplates.filter(t => t.category === 'final_measures');
 
@@ -186,9 +183,8 @@ export default function Templates() {
     userLanguage: language,
     errorMessage: error?.message || 'none',
     categoryBreakdown: {
-      checklists: checklistTemplates.length,
       pre_signing: preSigningTemplates.length,
-      friendly: friendlyTemplates.length,
+      initial_resolution: initialResolutionTemplates.length,
       professional: professionalTemplates.length,
       final: finalTemplates.length
     }
@@ -322,7 +318,7 @@ export default function Templates() {
               <div><strong>Raw Categories (from DB):</strong> {debugData.rawCategoriesFound}</div>
               <div><strong>Mapped Categories:</strong> {debugData.mappedCategories}</div>
               <div className="h-px bg-current opacity-20 my-2"></div>
-              <div><strong>Category Counts:</strong> Checklists={debugData.categoryBreakdown.checklists}, PreSigning={debugData.categoryBreakdown.pre_signing}, Friendly={debugData.categoryBreakdown.friendly}, Professional={debugData.categoryBreakdown.professional}, Final={debugData.categoryBreakdown.final}</div>
+              <div><strong>Category Counts:</strong> PreSigning={debugData.categoryBreakdown.pre_signing}, InitialResolution={debugData.categoryBreakdown.initial_resolution}, Professional={debugData.categoryBreakdown.professional}, Final={debugData.categoryBreakdown.final}</div>
               <div className="h-px bg-current opacity-20 my-2"></div>
               <div><strong>Template Keys (first 50):</strong> {debugData.templateKeys || '(none)'}</div>
               <div className="h-px bg-current opacity-20 my-2"></div>
