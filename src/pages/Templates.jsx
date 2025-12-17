@@ -12,78 +12,40 @@ export default function Templates() {
     queryFn: () => base44.auth.me(),
   });
 
+  const { data: allTemplates = [], isLoading } = useQuery({
+    queryKey: ['templates'],
+    queryFn: () => base44.entities.TemplateLibrary.list('-created_date'),
+  });
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userCredits = user?.letter_credits || 0;
 
-  const templates = [
-    {
-      id: 'lease_negotiation',
-      name: { en: 'Pre-Signing Lease Negotiation', th: 'จดหมายทบทวนสัญญาก่อนลงนาม' },
-      description: { en: 'Request clarification of concerning lease terms before signing', th: 'ขอชี้แจงข้อกำหนดที่น่ากังวลก่อนการลงนามสัญญา' },
-      category: 'pre-signing'
-    },
-    {
-      id: 'deposit',
-      name: { en: 'Deposit Return Request', th: 'จดหมายขอคืนเงินมัดจำ' },
-      description: { en: 'Friendly formal request for security deposit return', th: 'จดหมายทางการสุภาพขอคืนเงินประกัน' },
-      category: 'friendly'
-    },
-    {
-      id: 'deductions',
-      name: { en: 'Request for Itemised Deductions', th: 'ขอรายละเอียดการหักเงิน' },
-      description: { en: 'Request breakdown of damage charges and deductions', th: 'ขอรายละเอียดค่าเสียหายและการหักเงินแบบแยกรายการ' },
-      category: 'friendly'
-    },
-    {
-      id: 'reminder',
-      name: { en: 'Friendly Reminder', th: 'จดหมายเตือนแบบมิตร' },
-      description: { en: 'Gentle follow-up on pending deposit return', th: 'จดหมายติดตามความคืบหน้าอย่างสุภาพ' },
-      category: 'friendly'
-    },
-    {
-      id: 'dispute',
-      name: { en: 'Formal Dispute of Withholding', th: 'จดหมายคัดค้านการระงับเงิน' },
-      description: { en: 'Formal dispute of unfair deposit withholding', th: 'จดหมายคัดค้านการระงับเงินประกันอย่างเป็นทางการ' },
-      category: 'professional'
-    },
-    {
-      id: 'early_termination',
-      name: { en: 'Early Termination Reconciliation', th: 'ประสานยุติสัญญาก่อนกำหนด' },
-      description: { en: 'Coordinate early lease termination details', th: 'ประสานรายละเอียดการยุติสัญญาก่อนกำหนด' },
-      category: 'professional'
-    },
-    {
-      id: 'condition_dispute',
-      name: { en: 'Property Condition Dispute', th: 'โต้แย้งสภาพทรัพย์สิน' },
-      description: { en: 'Dispute claimed property damages', th: 'โต้แย้งการเรียกร้องค่าเสียหายทรัพย์สิน' },
-      category: 'professional'
-    },
-    {
-      id: 'evidence',
-      name: { en: 'Request for Evidence', th: 'ขอหลักฐานประกอบ' },
-      description: { en: 'Request supporting documents for claimed damages', th: 'ขอเอกสารหลักฐานสำหรับค่าเสียหายที่อ้าง' },
-      category: 'professional'
-    },
-    {
-      id: 'final_opportunity',
-      name: { en: 'Final Opportunity', th: 'โอกาสสุดท้าย' },
-      description: { en: 'Last chance before formal escalation', th: 'โอกาสสุดท้ายก่อนดำเนินการทางกฎหมาย' },
-      category: 'final'
-    },
-    {
-      id: 'non_compliance',
-      name: { en: 'Notice of Non-Compliance', th: 'แจ้งไม่ปฏิบัติตามสัญญา' },
-      description: { en: 'Official notice of contract breach', th: 'แจ้งการฝ่าฝืนสัญญาอย่างเป็นทางการ' },
-      category: 'final'
-    },
-    {
-      id: 'settlement',
-      name: { en: 'Settlement Confirmation', th: 'ยืนยันการตกลงชำระเงิน' },
-      description: { en: 'Confirm successful deposit transfer', th: 'ยืนยันการคืนเงินประกันสำเร็จ' },
-      category: 'final'
+  // Filter for active templates only (same as AdminTemplates logic)
+  const activeTemplates = allTemplates.filter(t => t.is_active !== false);
+
+  // Log verification counts
+  React.useEffect(() => {
+    if (allTemplates.length > 0) {
+      const adminActiveCount = allTemplates.filter(t => t.is_active !== false).length;
+      const missingCategoryCount = activeTemplates.filter(t => !t.category).length;
+      
+      console.log('📊 Template Verification:');
+      console.log('  Total templates:', allTemplates.length);
+      console.log('  Active templates (adminActiveCount):', adminActiveCount);
+      console.log('  Active templates (userActiveCount):', activeTemplates.length);
+      console.log('  Missing category count:', missingCategoryCount);
+      console.log('  ✅ Counts match:', adminActiveCount === activeTemplates.length);
     }
-  ];
+  }, [allTemplates, activeTemplates]);
+
+  // Transform to match old structure with proper category normalization
+  const templates = activeTemplates.map(t => ({
+    id: t.template_key || t.id,
+    name: { en: t.title_en, th: t.title_th },
+    description: { en: t.description_en || '', th: t.description_th || '' },
+    category: t.category ? t.category.toLowerCase().replace('_', '-') : 'other'
+  }));
 
   const colors = isDarkMode ? {
     bg: '#111827',
@@ -132,14 +94,28 @@ export default function Templates() {
 
   const strings = t[language] || t.en;
 
-  const preSigningTemplates = templates.filter(t => t.category === 'pre-signing');
+  // Category normalization - handle both formats (pre-signing and pre_signing)
+  const preSigningTemplates = templates.filter(t => 
+    t.category === 'pre-signing' || t.category === 'pre_signing'
+  );
   const friendlyTemplates = templates.filter(t => t.category === 'friendly');
   const professionalTemplates = templates.filter(t => t.category === 'professional');
   const finalTemplates = templates.filter(t => t.category === 'final');
+  const otherTemplates = templates.filter(t => 
+    !['pre-signing', 'pre_signing', 'friendly', 'professional', 'final'].includes(t.category)
+  );
 
   const handleTemplateClick = (templateId) => {
     navigate(createPageUrl("TemplateForm") + `?subject=${templateId}`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -297,6 +273,36 @@ export default function Templates() {
                   style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}
                 >
                   <div className="h-1 bg-gradient-to-r from-orange-600 to-red-700 rounded-t-xl mb-4" />
+                  <h3 className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
+                    {template.name[language] || template.name.en}
+                  </h3>
+                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                    {template.description[language] || template.description.en}
+                  </p>
+                  <button className="text-sm font-medium text-emerald-700 hover:underline">
+                    {strings.openTemplate} →
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Other Templates Section (if any without proper category) */}
+        {otherTemplates.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
+              Other Templates
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {otherTemplates.map((template) => (
+                <div
+                  key={template.id}
+                  onClick={() => handleTemplateClick(template.id)}
+                  className="rounded-xl shadow-md hover:shadow-xl transition-all cursor-pointer p-6"
+                  style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}
+                >
+                  <div className="h-1 bg-gradient-to-r from-gray-400 to-gray-600 rounded-t-xl mb-4" />
                   <h3 className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
                     {template.name[language] || template.name.en}
                   </h3>
