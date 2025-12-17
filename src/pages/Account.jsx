@@ -3587,10 +3587,10 @@ function AccountContent() {
                       <Trash2 className="w-5 h-5" style={{ color: '#6B7280' }} />
                     </div>
                     <div>
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                      <p className="font-semibold" style={{ color: colors.textPrimary, opacity: 1 }}>
                         {strings.recycleBin || (language === 'th' ? 'ถังขยะ' : language === 'zh' ? '回收站' : language === 'ja' ? 'ゴミ箱' : language === 'ko' ? '휴지통' : language === 'ru' ? 'Корзина' : 'Recycle Bin')}
                       </p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      <p className="text-sm" style={{ color: colors.textSecondary, opacity: 1 }}>
                         {strings.manageDeletedItems || (language === 'th' ? 'จัดการรายการที่ลบ' : language === 'zh' ? '管理已删除项目' : language === 'ja' ? '削除されたアイテムを管理' : language === 'ko' ? '삭제된 항목 관리' : language === 'ru' ? 'Управление удалёнными элементами' : 'Manage deleted items')}
                       </p>
                     </div>
@@ -3644,10 +3644,10 @@ function AccountContent() {
                       <Download className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                      <p className="font-bold text-base" style={{ color: colors.textPrimary, opacity: 1 }}>
                         {strings.installApp}
                       </p>
-                      <p className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+                      <p className="text-sm font-medium" style={{ color: colors.textSecondary, opacity: 1 }}>
                         {strings.installAppDesc}
                       </p>
                     </div>
@@ -3694,10 +3694,10 @@ function AccountContent() {
                       )}
                     </div>
                     <div>
-                      <p className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                      <p className="font-bold text-base" style={{ color: colors.textPrimary, opacity: 1 }}>
                         {strings.shareApp}
                       </p>
-                      <p className="text-sm font-medium" style={{ color: colors.textSecondary }}>
+                      <p className="text-sm font-medium" style={{ color: colors.textSecondary, opacity: 1 }}>
                         {strings.shareAppDesc}
                       </p>
                     </div>
@@ -3802,8 +3802,8 @@ function AccountContent() {
                       <FileText className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="font-semibold" style={{ color: colors.textPrimary }}>{strings.privacyPolicy}</p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.privacyDesc}</p>
+                      <p className="font-semibold" style={{ color: colors.textPrimary, opacity: 1 }}>{strings.privacyPolicy}</p>
+                      <p className="text-sm" style={{ color: colors.textSecondary, opacity: 1 }}>{strings.privacyDesc}</p>
                     </div>
                   </div>
                   <a
@@ -3881,8 +3881,8 @@ function AccountContent() {
                       {exporting ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Download className="w-5 h-5 text-white" />}
                     </div>
                     <div>
-                      <p className="font-semibold text-base" style={{ color: colors.textPrimary }}>{strings.exportData}</p>
-                      <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.exportDesc}</p>
+                      <p className="font-semibold text-base" style={{ color: colors.textPrimary, opacity: 1 }}>{strings.exportData}</p>
+                      <p className="text-sm" style={{ color: colors.textSecondary, opacity: 1 }}>{strings.exportDesc}</p>
                     </div>
                   </div>
                   <ArrowRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
