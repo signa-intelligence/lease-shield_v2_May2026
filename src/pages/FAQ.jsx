@@ -28,12 +28,12 @@ const FAQ_DATA = {
         questionJa: 'Lease Shieldとは何ですか？',
         questionKo: 'Lease Shield는 무엇인가요?',
         questionRu: 'Что такое Lease Shield?',
-        answerEn: 'Lease Shield helps tenants and landlords prevent rental problems before they happen.\n\nWe provide AI lease analysis, deposit tracking, evidence storage, automated reminders, and dispute guidance — keeping records clear and relationships fair.',
-        answerTh: 'Lease Shield ช่วยผู้เช่าและเจ้าของบ้านป้องกันปัญหาการเช่าก่อนเกิดขึ้น\n\nเรามีการวิเคราะห์สัญญาด้วย AI ติดตามเงินมัดจำ จัดเก็บหลักฐาน การแจ้งเตือนอัตโนมัติ และคำแนะนำข้อพิพาท — รักษาบันทึกที่ชัดเจนและความสัมพันธ์ที่เป็นธรรม',
-        answerZh: 'Lease Shield帮助租户和房东在问题发生前预防租赁问题。\n\n我们提供AI租约分析、押金追踪、证据存储、自动提醒和纠纷指导 — 保持记录清晰，关系公平。',
-        answerJa: 'Lease Shieldは、賃借人と貸主が賃貸問題を未然に防ぐのを支援します。\n\nAIリース分析、敷金追跡、証拠保存、自動リマインダー、紛争ガイダンスを提供 — 記録を明確に、関係を公正に保ちます。',
-        answerKo: 'Lease Shield는 임차인과 임대인이 임대 문제를 사전에 예방할 수 있도록 돕습니다。\n\nAI 임대 계약 분석、보증금 추적、증거 보관、자동 알림 및 분쟁 안내를 제공 — 기록을 명확하게、관계를 공정하게 유지합니다。',
-        answerRu: 'Lease Shield помогает арендаторам и арендодателям предотвращать проблемы с арендой до их возникновения。\n\nМы предоставляем AI-анализ договоров、отслеживание депозитов、хранение доказательств、автоматические напоминания и помощь в спорах — сохраняя записи ясными、а отношения справедливыми。'
+        answerEn: 'Lease Shield helps tenants and landlords prevent rental problems before they happen.\n\nIt provides lease checks, deposit tracking, evidence storage, reminders, and structured guidance — keeping records clear and relationships fair.',
+        answerTh: 'Lease Shield ช่วยผู้เช่าและเจ้าของบ้านป้องกันปัญหาการเช่าก่อนเกิดขึ้น\n\nให้บริการตรวจสอบสัญญาเช่า ติดตามเงินมัดจำ จัดเก็บหลักฐาน การแจ้งเตือน และคำแนะนำที่มีโครงสร้าง — รักษาบันทึกที่ชัดเจนและความสัมพันธ์ที่เป็นธรรม',
+        answerZh: 'Lease Shield帮助租户和房东在问题发生前预防租赁问题。\n\n它提供租约检查、押金追踪、证据存储、提醒和结构化指导 — 保持记录清晰，关系公平。',
+        answerJa: 'Lease Shieldは、賃借人と貸主が賃貸問題を未然に防ぐのを支援します。\n\nリース契約チェック、敷金追跡、証拠保存、リマインダー、構造化されたガイダンスを提供 — 記録を明確に、関係を公正に保ちます。',
+        answerKo: 'Lease Shield는 임차인과 임대인이 임대 문제를 사전에 예방할 수 있도록 돕습니다。\n\n임대 계약 확인、보증금 추적、증거 보관、알림 및 구조화된 안내를 제공 — 기록을 명확하게、관계를 공정하게 유지합니다。',
+        answerRu: 'Lease Shield помогает арендаторам и арендодателям предотвращать проблемы с арендой до их возникновения。\n\nОн предоставляет проверку договоров、отслеживание депозитов、хранение доказательств、напоминания и структурированную помощь — сохраняя записи ясными、а отношения справедливыми。'
       },
       {
         questionEn: 'How does Lease Shield work?',
@@ -216,12 +216,12 @@ const FAQ_DATA = {
         questionJa: '一回限りリーススキャンとは何ですか？',
         questionKo: '일회성 임대 계약 스캔이란 무엇인가요?',
         questionRu: 'Что такое однократное сканирование договора?',
-        answerEn: 'A one-time service for ฿590. You get 1 upload + AI analysis, human-reviewed summary, risk score (1-100), top 5 risk highlights, 5 recommended actions, 1 letter template if needed, and 1 follow-up clarification.\n\nNo subscription. No recurring benefits. No reminders. No storage.',
-        answerTh: 'บริการครั้งเดียวในราคา ฿590 คุณจะได้รับ 1 การอัปโหลด + การวิเคราะห์ AI, สรุปโดยผู้เชี่ยวชาญ, คะแนนความเสี่ยง (1-100), ความเสี่ยง 5 อันดับแรก, ขั้นตอนแนะนำ 5 ข้อ, เทมเพลตจดหมาย 1 ฉบับ (ถ้าจำเป็น) และคำถามชี้แจง 1 คำถาม\n\nไม่มีการสมัครสมาชิก ไม่มีสิทธิประโยชน์ต่อเนื่อง ไม่มีการแจ้งเตือน ไม่มีพื้นที่จัดเก็บ',
-        answerZh: '฿590的一次性服务。您获得1次上传 + AI分析、专家审核摘要、风险评分（1-100）、前5大风险、5项建议行动、1个信件模板（如需）和1次后续澄清。\n\n无订阅。无持续福利。无提醒。无存储。',
-        answerJa: '฿590の一回限りサービス。1アップロード + AI分析、専門家レビュー済み要約、リスクスコア（1-100）、トップ5リスク、5つの推奨アクション、必要に応じて1レターテンプレート、および1フォローアップ質問を取得します。\n\nサブスクリプションなし。継続的な特典なし。リマインダーなし。ストレージなし。',
-        answerKo: '฿590의 일회성 서비스입니다。1회 업로드 + AI 분석、전문가 검토 요약、위험 점수（1-100）、상위 5개 위험、5가지 권장 조치、필요시 1개 편지 템플릿 및 1회 후속 확인을 받습니다。\n\n구독 없음。지속적인 혜택 없음。알림 없음。저장소 없음。',
-        answerRu: 'Одноразовая услуга за ฿590。Вы получаете 1 загрузку + AI-анализ、экспертный обзор、оценку риска（1-100）、топ-5 рисков、5 рекомендаций、1 шаблон письма（при необходимости）и 1 уточняющий вопрос。\n\nБез подписки。Без постоянных льгот。Без напоминаний。Без хранилища。'
+        answerEn: 'A one-time service for ฿590. You receive one lease upload, a structured review summary, a risk score, key risk highlights, recommended actions, and a letter template if needed.\n\nThis option is ideal if you want a quick check without committing to an ongoing plan.',
+        answerTh: 'บริการครั้งเดียวในราคา ฿590 คุณจะได้รับการอัปโหลดสัญญาเช่าหนึ่งครั้ง สรุปการตรวจสอบที่มีโครงสร้าง คะแนนความเสี่ยง ความเสี่ยงสำคัญ การดำเนินการที่แนะนำ และเทมเพลตจดหมายหากจำเป็น\n\nตัวเลือกนี้เหมาะถ้าคุณต้องการตรวจสอบอย่างรวดเร็วโดยไม่ผูกมัดกับแผนต่อเนื่อง',
+        answerZh: '฿590的一次性服务。您将收到一次租约上传、结构化审查摘要、风险评分、关键风险重点、建议行动和所需的信件模板。\n\n如果您想要快速检查而不承诺持续计划，此选项非常理想。',
+        answerJa: '฿590の一回限りサービス。1回のリースアップロード、構造化されたレビュー要約、リスクスコア、主要リスクのハイライト、推奨アクション、必要に応じてレターテンプレートを受け取ります。\n\nこのオプションは、継続的なプランにコミットせずに迅速なチェックが必要な場合に最適です。',
+        answerKo: '฿590의 일회성 서비스입니다。한 번의 임대 계약 업로드、구조화된 검토 요약、위험 점수、주요 위험 강조、권장 조치 및 필요한 경우 편지 템플릿을 받습니다。\n\n지속적인 플랜에 커밋하지 않고 빠른 확인을 원하는 경우 이 옵션이 이상적입니다。',
+        answerRu: 'Одноразовая услуга за ฿590。Вы получаете одну загрузку договора、структурированное резюме обзора、оценку риска、ключевые риски、рекомендуемые действия и шаблон письма при необходимости。\n\nЭтот вариант идеален、если вы хотите быструю проверку без обязательств по постоянному плану。'
       },
       {
         questionEn: 'What plans are available?',
@@ -244,12 +244,12 @@ const FAQ_DATA = {
         questionJa: '一回限りスキャンとサブスクリプションの違いは何ですか？',
         questionKo: '일회성 스캔과 구독의 차이점은 무엇인가요?',
         questionRu: 'Чем однократное сканирование отличается от подписок?',
-        answerEn: 'The One-Time Scan (฿590) is a single check with no ongoing benefits.\n\nSubscriptions (Lite/Protect/Secure) include multiple scans per year, deposit tracking, automated reminders, evidence vault, and ongoing support. Best if you want full protection throughout your tenancy.',
-        answerTh: 'การสแกนครั้งเดียว (฿590) เป็นการตรวจสอบเพียงครั้งเดียวโดยไม่มีสิทธิประโยชน์ต่อเนื่อง\n\nการสมัครสมาชิก (Lite/Protect/Secure) รวมการสแกนหลายครั้งต่อปี การติดตามเงินมัดจำ การแจ้งเตือนอัตโนมัติ คลังหลักฐาน และการสนับสนุนอย่างต่อเนื่อง เหมาะสำหรับการป้องกันเต็มรูปแบบตลอดการเช่า',
-        answerZh: '一次性扫描（฿590）是一次检查，无持续福利。\n\n订阅（Lite/Protect/Secure）包括每年多次扫描、押金追踪、自动提醒、证据库和持续支持。如果您希望在整个租期获得全面保护，订阅最合适。',
-        answerJa: '一回限りスキャン（฿590）は、継続的な特典のない単一チェックです。\n\nサブスクリプション（Lite/Protect/Secure）には、年間複数回のスキャン、敷金追跡、自動リマインダー、証拠保管庫、および継続的なサポートが含まれます。賃貸期間中の完全な保護が必要な場合に最適です。',
-        answerKo: '일회성 스캔（฿590）은 지속적인 혜택이 없는 단일 확인입니다。\n\n구독（Lite/Protect/Secure）에는 연간 여러 번의 스캔、보증금 추적、자동 알림、증거 보관함 및 지속적인 지원이 포함됩니다。임대 기간 동안 완전한 보호를 원하시면 구독이 가장 적합합니다。',
-        answerRu: 'Однократное сканирование（฿590）— это одна проверка без постоянных льгот。\n\nПодписки（Lite/Protect/Secure）включают несколько сканирований в год、отслеживание депозитов、автоматические напоминания、хранилище доказательств и постоянную поддержку。Лучший вариант для полной защиты на весь период аренды。'
+        answerEn: 'The <a href="#" class="one-time-scan-link font-semibold underline" style="color: #0C3B2E;">One-Time Lease Scan</a> (฿590) is a single check with no ongoing benefits.\n\n<a href="#" class="subscription-plans-link font-semibold underline" style="color: #0C3B2E;">Subscription plans</a> (Lite/Protect/Secure) include multiple scans per year, deposit tracking, automated reminders, evidence vault, and ongoing support. Best if you want full protection throughout your tenancy.',
+        answerTh: '<a href="#" class="one-time-scan-link font-semibold underline" style="color: #0C3B2E;">การสแกนสัญญาเช่าครั้งเดียว</a> (฿590) เป็นการตรวจสอบเพียงครั้งเดียวโดยไม่มีสิทธิประโยชน์ต่อเนื่อง\n\n<a href="#" class="subscription-plans-link font-semibold underline" style="color: #0C3B2E;">แผนสมาชิก</a> (Lite/Protect/Secure) รวมการสแกนหลายครั้งต่อปี การติดตามเงินมัดจำ การแจ้งเตือนอัตโนมัติ คลังหลักฐาน และการสนับสนุนอย่างต่อเนื่อง เหมาะสำหรับการป้องกันเต็มรูปแบบตลอดการเช่า',
+        answerZh: '<a href="#" class="one-time-scan-link font-semibold underline" style="color: #0C3B2E;">一次性租约扫描</a>（฿590）是一次检查，无持续福利。\n\n<a href="#" class="subscription-plans-link font-semibold underline" style="color: #0C3B2E;">订阅计划</a>（Lite/Protect/Secure）包括每年多次扫描、押金追踪、自动提醒、证据库和持续支持。如果您希望在整个租期获得全面保护，订阅最合适。',
+        answerJa: '<a href="#" class="one-time-scan-link font-semibold underline" style="color: #0C3B2E;">一回限りリーススキャン</a>（฿590）は、継続的な特典のない単一チェックです。\n\n<a href="#" class="subscription-plans-link font-semibold underline" style="color: #0C3B2E;">サブスクリプションプラン</a>（Lite/Protect/Secure）には、年間複数回のスキャン、敷金追跡、自動リマインダー、証拠保管庫、および継続的なサポートが含まれます。賃貸期間中の完全な保護が必要な場合に最適です。',
+        answerKo: '<a href="#" class="one-time-scan-link font-semibold underline" style="color: #0C3B2E;">일회성 임대 계약 스캔</a>（฿590）은 지속적인 혜택이 없는 단일 확인입니다。\n\n<a href="#" class="subscription-plans-link font-semibold underline" style="color: #0C3B2E;">구독 플랜</a>（Lite/Protect/Secure）에는 연간 여러 번의 스캔、보증금 추적、자동 알림、증거 보관함 및 지속적인 지원이 포함됩니다。임대 기간 동안 완전한 보호를 원하시면 구독이 가장 적합합니다。',
+        answerRu: '<a href="#" class="one-time-scan-link font-semibold underline" style="color: #0C3B2E;">Однократное сканирование договора</a>（฿590）— это одна проверка без постоянных льгот。\n\n<a href="#" class="subscription-plans-link font-semibold underline" style="color: #0C3B2E;">Планы подписки</a>（Lite/Protect/Secure）включают несколько сканирований в год、отслеживание депозитов、автоматические напоминания、хранилище доказательств и постоянную поддержку。Лучший вариант для полной защиты на весь период аренды。'
       },
       {
         questionEn: 'Can I change or cancel my plan later?',
@@ -258,12 +258,12 @@ const FAQ_DATA = {
         questionJa: '後でプランを変更またはキャンセルできますか？',
         questionKo: '나중에 플랜을 변경하거나 취소할 수 있나요?',
         questionRu: 'Могу ли я изменить или отменить свой план позже?',
-        answerEn: 'Yes. You can upgrade, downgrade, or cancel at any time.',
-        answerTh: 'ได้ คุณสามารถอัปเกรด ดาวน์เกรด หรือยกเลิกได้ทุกเมื่อ',
-        answerZh: '可以。您可以随时升级、降级或取消。',
-        answerJa: 'はい。いつでもアップグレード、ダウングレード、またはキャンセルできます。',
-        answerKo: '예。언제든지 업그레이드、다운그레이드 또는 취소할 수 있습니다。',
-        answerRu: 'Да。Вы можете обновить、понизить или отменить в любое время。'
+        answerEn: 'Yes. You can upgrade, downgrade, or cancel your plan at any time from <a href="#" class="account-plans-link font-semibold underline" style="color: #0C3B2E;">your account</a>.',
+        answerTh: 'ได้ คุณสามารถอัปเกรด ดาวน์เกรด หรือยกเลิกแผนของคุณได้ทุกเมื่อจาก<a href="#" class="account-plans-link font-semibold underline" style="color: #0C3B2E;">บัญชีของคุณ</a>',
+        answerZh: '可以。您可以随时从<a href="#" class="account-plans-link font-semibold underline" style="color: #0C3B2E;">您的帐户</a>升级、降级或取消您的计划。',
+        answerJa: 'はい。<a href="#" class="account-plans-link font-semibold underline" style="color: #0C3B2E;">アカウント</a>からいつでもプランをアップグレード、ダウングレード、またはキャンセルできます。',
+        answerKo: '예。<a href="#" class="account-plans-link font-semibold underline" style="color: #0C3B2E;">계정</a>에서 언제든지 플랜을 업그레이드、다운그레이드 또는 취소할 수 있습니다。',
+        answerRu: 'Да。Вы можете обновить、понизить или отменить свой план в любое время из <a href="#" class="account-plans-link font-semibold underline" style="color: #0C3B2E;">вашего аккаунта</a>。'
       },
       {
         questionEn: 'What payment methods do you accept?',
@@ -582,6 +582,18 @@ function FAQContent() {
       if (e.target.classList.contains('account-notifications-link')) {
         e.preventDefault();
         navigate(createPageUrl('Account') + '#notifications');
+      }
+      if (e.target.classList.contains('one-time-scan-link')) {
+        e.preventDefault();
+        navigate(createPageUrl('Account') + '#one-time');
+      }
+      if (e.target.classList.contains('subscription-plans-link')) {
+        e.preventDefault();
+        navigate(createPageUrl('Account') + '#plans');
+      }
+      if (e.target.classList.contains('account-plans-link')) {
+        e.preventDefault();
+        navigate(createPageUrl('Account') + '#plans');
       }
     };
     
