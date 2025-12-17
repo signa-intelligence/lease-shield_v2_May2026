@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,8 @@ import PageHeader from "../components/shared/PageHeader";
 import AuthGuard from "../components/shared/AuthGuard";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 const FAQ_DATA = {
   general: {
@@ -40,12 +42,12 @@ const FAQ_DATA = {
         questionJa: 'Lease Shieldはどのように機能しますか？',
         questionKo: 'Lease Shield는 어떻게 작동하나요?',
         questionRu: 'Как работает Lease Shield?',
-        answerEn: 'Upload your lease for AI analysis, track your deposit with automated reminders, store evidence (photos, documents), and receive guidance when issues arise.\n\nLease Shield serves both tenants and landlords by keeping records clear and preventing misunderstandings before they escalate.',
-        answerTh: 'อัปโหลดสัญญาเช่าเพื่อวิเคราะห์ด้วย AI ติดตามเงินมัดจำด้วยการแจ้งเตือนอัตโนมัติ จัดเก็บหลักฐาน (รูปภาพ, เอกสาร) และรับคำแนะนำเมื่อเกิดปัญหา\n\nLease Shield รองรับทั้งผู้เช่าและเจ้าของบ้านโดยรักษาบันทึกให้ชัดเจนและป้องกันความเข้าใจผิดก่อนที่จะบานปลาย',
-        answerZh: '上传租约进行AI分析，通过自动提醒追踪押金，存储证据（照片、文件），并在出现问题时获得指导。\n\nLease Shield通过保持记录清晰和防止误解升级来服务租户和房东。',
-        answerJa: 'リース契約をアップロードしてAI分析、自動リマインダー付きの敷金追跡、証拠保存（写真、文書）、問題発生時のガイダンスを受けます。\n\nLease Shieldは、記録を明確に保ち、誤解がエスカレートする前に防ぐことで、賃借人と貸主の両方に役立ちます。',
-        answerKo: 'AI 분석을 위해 임대 계약을 업로드하고、자동 알림으로 보증금을 추적하고、증거（사진、문서）를 저장하고、문제 발생 시 안내를 받습니다。\n\nLease Shield는 기록을 명확하게 유지하고 오해가 확대되기 전에 예방함으로써 임차인과 임대인 모두에게 서비스를 제공합니다。',
-        answerRu: 'Загрузите договор для AI-анализа、отслеживайте депозит с автоматическими напоминаниями、храните доказательства（фото、документы）и получайте помощь при возникновении проблем。\n\nLease Shield служит и арендаторам、и арендодателям、сохраняя записи ясными и предотвращая недопонимание до эскалации。'
+        answerEn: 'Upload your lease for structured analysis, track deposits with reminders, store evidence (documents and photos), and access guidance when issues arise.\n\nLease Shield supports both tenants and landlords by keeping records clear and helping prevent disputes before they escalate.',
+        answerTh: 'อัปโหลดสัญญาเช่าเพื่อวิเคราะห์แบบมีโครงสร้าง ติดตามเงินมัดจำด้วยการแจ้งเตือน จัดเก็บหลักฐาน (เอกสารและรูปภาพ) และเข้าถึงคำแนะนำเมื่อเกิดปัญหา\n\nLease Shield สนับสนุนทั้งผู้เช่าและเจ้าของบ้านโดยรักษาบันทึกให้ชัดเจนและช่วยป้องกันข้อพิพาทก่อนที่จะบานปลาย',
+        answerZh: '上传租约进行结构化分析，通过提醒追踪押金，存储证据（文件和照片），并在出现问题时获得指导。\n\nLease Shield通过保持记录清晰和帮助在争议升级前预防来支持租户和房东。',
+        answerJa: 'リース契約をアップロードして構造化分析、リマインダー付きの敷金追跡、証拠保存（文書と写真）、問題発生時のガイダンスへのアクセスを受けます。\n\nLease Shieldは、記録を明確に保ち、紛争がエスカレートする前に予防を支援することで、賃借人と貸主の両方をサポートします。',
+        answerKo: '구조화된 분석을 위해 임대 계약을 업로드하고、알림으로 보증금을 추적하고、증거（문서 및 사진）를 저장하고、문제 발생 시 안내에 액세스하세요。\n\nLease Shield는 기록을 명확하게 유지하고 분쟁이 확대되기 전에 예방하도록 도와 임차인과 임대인 모두를 지원합니다。',
+        answerRu: 'Загрузите договор для структурированного анализа、отслеживайте депозиты с напоминаниями、храните доказательства（документы и фото）и получайте помощь при возникновении проблем。\n\nLease Shield поддерживает как арендаторов、так и арендодателей、сохраняя записи ясными и помогая предотвратить споры до их эскалации。'
       },
       {
         questionEn: 'Who is Lease Shield for — tenants or landlords?',
@@ -228,12 +230,12 @@ const FAQ_DATA = {
         questionJa: 'どのようなプランがありますか？',
         questionKo: '어떤 플랜이 있나요?',
         questionRu: 'Какие планы доступны?',
-        answerEn: 'Lite (฿190/month or ฿1,900/year):\n• 6 lease scans/year, email alerts, 3 letter credits, 1GB storage\n\nProtect (฿390/month or ฿3,900/year):\n• Everything in Lite + 12 scans/year, LINE alerts, 5 letter credits, 5GB storage\n\nSecure (฿990/month or ฿9,900/year):\n• Everything in Protect + unlimited scans, 20GB storage, 1 Resolve case/year (included), unlimited FastTrack (complimentary)\n• Letter credits sold separately',
-        answerTh: 'Lite (฿190/เดือน หรือ ฿1,900/ปี):\n• 6 การสแกน/ปี, อีเมลแจ้งเตือน, 3 เครดิตจดหมาย, พื้นที่ 1GB\n\nProtect (฿390/เดือน หรือ ฿3,900/ปี):\n• ทุกอย่างใน Lite + 12 การสแกน/ปี, LINE แจ้งเตือน, 5 เครดิตจดหมาย, พื้นที่ 5GB\n\nSecure (฿990/เดือน หรือ ฿9,900/ปี):\n• ทุกอย่างใน Protect + สแกนไม่จำกัด, พื้นที่ 20GB, 1 คดี Resolve/ปี (รวม), FastTrack ไม่จำกัด (ฟรี)\n• เครดิตจดหมายขายแยก',
-        answerZh: 'Lite（฿190/月 或 ฿1,900/年）:\n• 每年6次扫描、电子邮件提醒、3个信件积分、1GB存储\n\nProtect（฿390/月 或 ฿3,900/年）:\n• Lite所有功能 + 每年12次扫描、LINE提醒、5个信件积分、5GB存储\n\nSecure（฿990/月 或 ฿9,900/年）:\n• Protect所有功能 + 无限扫描、20GB存储、每年1个Resolve案件（包含）、无限FastTrack（免费）\n• 信件积分单独购买',
-        answerJa: 'Lite（฿190/月 または ฿1,900/年）:\n• 年6回スキャン、メールアラート、3レタークレジット、1GBストレージ\n\nProtect（฿390/月 または ฿3,900/年）:\n• Liteの全機能 + 年12回スキャン、LINE通知、5レタークレジット、5GBストレージ\n\nSecure（฿990/月 または ฿9,900/年）:\n• Protectの全機能 + 無制限スキャン、20GBストレージ、年1件Resolveケース（含）、無制限FastTrack（無料）\n• レタークレジットは別途購入',
-        answerKo: 'Lite（฿190/월 또는 ฿1,900/년）:\n• 연간 6회 스캔、이메일 알림、3개 레터 크레딧、1GB 저장소\n\nProtect（฿390/월 또는 ฿3,900/년）:\n• Lite 모든 기능 + 연간 12회 스캔、LINE 알림、5개 레터 크레딧、5GB 저장소\n\nSecure（฿990/월 또는 ฿9,900/년）:\n• Protect 모든 기능 + 무제한 스캔、20GB 저장소、연간 1건 Resolve 케이스（포함）、무제한 FastTrack（무료）\n• 레터 크레딧 별도 구매',
-        answerRu: 'Lite（฿190/месяц или ฿1,900/год）:\n• 6 сканирований/год、email-уведомления、3 кредита писем、1GB хранилище\n\nProtect（฿390/месяц или ฿3,900/год）:\n• Всё из Lite + 12 сканирований/год、LINE-уведомления、5 кредитов писем、5GB хранилище\n\nSecure（฿990/месяц или ฿9,900/год）:\n• Всё из Protect + безлимит сканирований、20GB хранилище、1 дело Resolve/год（включено）、безлимит FastTrack（бесплатно）\n• Кредиты писем продаются отдельно'
+        answerEn: 'Lite\n฿190/month or ฿1,900/year (save ฿380)\n• 6 lease scans/year\n• Email alerts\n• 3 letter credits\n• 1GB storage\n\nProtect\n฿390/month or ฿3,900/year (save ฿780)\n• Everything in Lite\n• 12 scans/year\n• LINE alerts\n• 5 letter credits\n• 5GB storage\n\nSecure\n฿990/month or ฿9,900/year (save ฿1,980)\n• Everything in Protect\n• Unlimited scans\n• 20GB storage\n• 1 Resolve case/year (included)\n• Unlimited FastTrack (complimentary)',
+        answerTh: 'Lite\n฿190/เดือน หรือ ฿1,900/ปี (ประหยัด ฿380)\n• 6 การสแกน/ปี\n• อีเมลแจ้งเตือน\n• 3 เครดิตจดหมาย\n• พื้นที่ 1GB\n\nProtect\n฿390/เดือน หรือ ฿3,900/ปี (ประหยัด ฿780)\n• ทุกอย่างใน Lite\n• 12 การสแกน/ปี\n• LINE แจ้งเตือน\n• 5 เครดิตจดหมาย\n• พื้นที่ 5GB\n\nSecure\n฿990/เดือน หรือ ฿9,900/ปี (ประหยัด ฿1,980)\n• ทุกอย่างใน Protect\n• สแกนไม่จำกัด\n• พื้นที่ 20GB\n• 1 คดี Resolve/ปี (รวม)\n• FastTrack ไม่จำกัด (ฟรี)',
+        answerZh: 'Lite\n฿190/月 或 ฿1,900/年（节省 ฿380）\n• 每年6次租约扫描\n• 电子邮件提醒\n• 3个信件积分\n• 1GB存储\n\nProtect\n฿390/月 或 ฿3,900/年（节省 ฿780）\n• Lite所有功能\n• 每年12次扫描\n• LINE提醒\n• 5个信件积分\n• 5GB存储\n\nSecure\n฿990/月 或 ฿9,900/年（节省 ฿1,980）\n• Protect所有功能\n• 无限扫描\n• 20GB存储\n• 每年1个Resolve案件（包含）\n• 无限FastTrack（免费）',
+        answerJa: 'Lite\n฿190/月 または ฿1,900/年（฿380節約）\n• 年6回リーススキャン\n• メールアラート\n• 3レタークレジット\n• 1GBストレージ\n\nProtect\n฿390/月 または ฿3,900/年（฿780節約）\n• Liteの全機能\n• 年12回スキャン\n• LINE通知\n• 5レタークレジット\n• 5GBストレージ\n\nSecure\n฿990/月 または ฿9,900/年（฿1,980節約）\n• Protectの全機能\n• 無制限スキャン\n• 20GBストレージ\n• 年1件Resolveケース（含）\n• 無制限FastTrack（無料）',
+        answerKo: 'Lite\n฿190/월 또는 ฿1,900/년（฿380 절약）\n• 연간 6회 임대 계약 스캔\n• 이메일 알림\n• 3개 레터 크레딧\n• 1GB 저장소\n\nProtect\n฿390/월 또는 ฿3,900/년（฿780 절약）\n• Lite 모든 기능\n• 연간 12회 스캔\n• LINE 알림\n• 5개 레터 크레딧\n• 5GB 저장소\n\nSecure\n฿990/월 또는 ฿9,900/년（฿1,980 절약）\n• Protect 모든 기능\n• 무제한 스캔\n• 20GB 저장소\n• 연간 1건 Resolve 케이스（포함）\n• 무제한 FastTrack（무료）',
+        answerRu: 'Lite\n฿190/месяц или ฿1,900/год（экономия ฿380）\n• 6 сканирований договора/год\n• Email-уведомления\n• 3 кредита писем\n• 1GB хранилище\n\nProtect\n฿390/месяц или ฿3,900/год（экономия ฿780）\n• Всё из Lite\n• 12 сканирований/год\n• LINE-уведомления\n• 5 кредитов писем\n• 5GB хранилище\n\nSecure\n฿990/месяц или ฿9,900/год（экономия ฿1,980）\n• Всё из Protect\n• Безлимит сканирований\n• 20GB хранилище\n• 1 дело Resolve/год（включено）\n• Безлимит FastTrack（бесплатно）'
       },
       {
         questionEn: 'How is the One-Time Scan different from subscriptions?',
@@ -310,12 +312,12 @@ const FAQ_DATA = {
         questionJa: '言語を変更するにはどうすればよいですか？',
         questionKo: '언어를 변경하려면 어떻게 하나요?',
         questionRu: 'Как изменить язык?',
-        answerEn: 'From the navigation menu or account settings → select preferred language.',
-        answerTh: 'จากเมนูนำทางหรือการตั้งค่าบัญชี → เลือกภาษาที่ต้องการ',
-        answerZh: '从导航菜单或帐户设置 → 选择首选语言。',
-        answerJa: 'ナビゲーションメニューまたはアカウント設定から → 希望する言語を選択します。',
-        answerKo: '탐색 메뉴 또는 계정 설정에서 → 원하는 언어를 선택합니다。',
-        answerRu: 'В навигационном меню или настройках аккаунта → выберите предпочитаемый язык。'
+        answerEn: 'You can change your language anytime using the <a href="#" class="language-selector-link font-semibold underline" style="color: #0C3B2E;">language selector</a> in the app menu.',
+        answerTh: 'คุณสามารถเปลี่ยนภาษาได้ทุกเมื่อโดยใช้<a href="#" class="language-selector-link font-semibold underline" style="color: #0C3B2E;">ตัวเลือกภาษา</a>ในเมนูแอป',
+        answerZh: '您可以随时使用应用菜单中的<a href="#" class="language-selector-link font-semibold underline" style="color: #0C3B2E;">语言选择器</a>更改语言。',
+        answerJa: 'アプリメニューの<a href="#" class="language-selector-link font-semibold underline" style="color: #0C3B2E;">言語セレクター</a>を使用していつでも言語を変更できます。',
+        answerKo: '앱 메뉴의 <a href="#" class="language-selector-link font-semibold underline" style="color: #0C3B2E;">언어 선택기</a>를 사용하여 언제든지 언어를 변경할 수 있습니다。',
+        answerRu: 'Вы можете изменить язык в любое время、используя <a href="#" class="language-selector-link font-semibold underline" style="color: #0C3B2E;">переключатель языка</a> в меню приложения。'
       }
     ]
   },
@@ -376,12 +378,12 @@ const FAQ_DATA = {
         questionJa: '紹介プログラムはどのように機能しますか？',
         questionKo: '추천 프로그램은 어떻게 작동하나요?',
         questionRu: 'Как работает реферальная программа?',
-        answerEn: 'Share your personal referral link. When your friend subscribes and completes 3 consecutive months of paid subscription, you receive credit automatically applied to your next invoice.',
-        answerTh: 'แชร์ลิงก์แนะนำส่วนตัวของคุณ เมื่อเพื่อนของคุณสมัครสมาชิกและชำระครบ 3 เดือนติดต่อกัน คุณจะได้รับเครดิตที่นำไปใช้กับใบแจ้งหนี้ถัดไปโดยอัตโนมัติ',
-        answerZh: '分享您的个人推荐链接。当您的朋友订阅并完成3个月连续付费订阅时，您将获得自动应用于下一张发票的积分。',
-        answerJa: '個人紹介リンクを共有します。友達がサブスクリプションを登録し、3ヶ月間連続して支払いを完了すると、次の請求書に自動的に適用されるクレジットを受け取ります。',
-        answerKo: '개인 추천 링크를 공유하세요。친구가 구독하고 3개월 연속 유료 구독을 완료하면 다음 송장에 자동으로 적용되는 크레딧을 받습니다。',
-        answerRu: 'Поделитесь своей личной реферальной ссылкой。Когда ваш друг подпишется и завершит 3 месяца подряд платной подписки、вы получите кредит、автоматически применяемый к следующему счёту。'
+        answerEn: 'Share your personal referral link. When your friend subscribes and completes 3 consecutive months of paid subscription, you receive account credit automatically.\n\n<a href="https://www.leaseshield.asia" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Learn more about referrals →</a>',
+        answerTh: 'แชร์ลิงก์แนะนำส่วนตัวของคุณ เมื่อเพื่อนของคุณสมัครสมาชิกและชำระครบ 3 เดือนติดต่อกัน คุณจะได้รับเครดิตบัญชีโดยอัตโนมัติ\n\n<a href="https://www.leaseshield.asia" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">เรียนรู้เพิ่มเติมเกี่ยวกับการแนะนำ →</a>',
+        answerZh: '分享您的个人推荐链接。当您的朋友订阅并完成3个月连续付费订阅时，您将自动获得帐户积分。\n\n<a href="https://www.leaseshield.asia" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">了解更多推荐信息 →</a>',
+        answerJa: '個人紹介リンクを共有します。友達がサブスクリプションを登録し、3ヶ月間連続して支払いを完了すると、自動的にアカウントクレジットを受け取ります。\n\n<a href="https://www.leaseshield.asia" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">紹介についてもっと詳しく →</a>',
+        answerKo: '개인 추천 링크를 공유하세요。친구가 구독하고 3개월 연속 유료 구독을 완료하면 자동으로 계정 크레딧을 받습니다。\n\n<a href="https://www.leaseshield.asia" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">추천에 대해 자세히 알아보기 →</a>',
+        answerRu: 'Поделитесь своей личной реферальной ссылкой。Когда ваш друг подпишется и завершит 3 месяца подряд платной подписки、вы автоматически получите кредит на счёт。\n\n<a href="https://www.leaseshield.asia" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Узнать больше о рефералах →</a>'
       },
       {
         questionEn: 'Is there a limit to how many friends I can refer?',
@@ -418,12 +420,12 @@ const FAQ_DATA = {
         questionJa: '紹介リンクはどこで見つかりますか？',
         questionKo: '추천 링크는 어디에서 찾을 수 있나요?',
         questionRu: 'Где я могу найти мою реферальную ссылку?',
-        answerEn: 'In your account page under "Referral Program".',
-        answerTh: 'ในหน้าบัญชีของคุณภายใต้ "โปรแกรมแนะนำเพื่อน"',
-        answerZh: '在您的帐户页面的"推荐计划"下。',
-        answerJa: 'アカウントページの「紹介プログラム」の下にあります。',
-        answerKo: '계정 페이지의 "추천 프로그램" 아래에 있습니다。',
-        answerRu: 'На странице вашего аккаунта в разделе "Реферальная программа"。'
+        answerEn: 'You can find your referral link in your <a href="#" class="account-referral-link font-semibold underline" style="color: #0C3B2E;">Account page</a> under "Referral Program."',
+        answerTh: 'คุณสามารถหาลิงก์แนะนำของคุณได้ใน<a href="#" class="account-referral-link font-semibold underline" style="color: #0C3B2E;">หน้าบัญชี</a>ของคุณภายใต้ "โปรแกรมแนะนำเพื่อน"',
+        answerZh: '您可以在<a href="#" class="account-referral-link font-semibold underline" style="color: #0C3B2E;">帐户页面</a>的"推荐计划"下找到您的推荐链接。',
+        answerJa: '<a href="#" class="account-referral-link font-semibold underline" style="color: #0C3B2E;">アカウントページ</a>の「紹介プログラム」の下に紹介リンクがあります。',
+        answerKo: '<a href="#" class="account-referral-link font-semibold underline" style="color: #0C3B2E;">계정 페이지</a>의 "추천 프로그램" 아래에서 추천 링크를 찾을 수 있습니다。',
+        answerRu: 'Вы можете найти свою реферальную ссылку на <a href="#" class="account-referral-link font-semibold underline" style="color: #0C3B2E;">странице аккаунта</a> в разделе "Реферальная программа"。'
       }
     ]
   },
@@ -444,12 +446,12 @@ const FAQ_DATA = {
         questionJa: 'Lease Shieldは私のデータをどのように使用しますか？',
         questionKo: 'Lease Shield는 내 데이터를 어떻게 사용하나요?',
         questionRu: 'Как Lease Shield использует мои данные?',
-        answerEn: 'We use your information and uploaded documents only to provide the Lease Shield service – for example, to analyse your lease, generate letters, and help you organise evidence.\n\nWe follow Thailand\'s PDPA rules. For full details, see our Privacy / PDPA Policy at leaseshield.asia.',
-        answerTh: 'เราใช้ข้อมูลและเอกสารที่อัปโหลดของคุณเพื่อให้บริการ Lease Shield เท่านั้น – เช่น เพื่อวิเคราะห์สัญญาเช่า สร้างจดหมาย และช่วยคุณจัดระเบียบหลักฐาน\n\nเราปฏิบัติตามกฎหมาย PDPA ของไทย สำหรับรายละเอียดเต็มรูปแบบ ดูนโยบายความเป็นส่วนตัว / PDPA ที่ leaseshield.asia',
-        answerZh: '我们仅使用您的信息和上传的文档来提供Lease Shield服务 – 例如，分析您的租约、生成信件并帮助您整理证据。\n\n我们遵守泰国的PDPA规则。有关完整详细信息，请参阅leaseshield.asia上的隐私/PDPA政策。',
-        answerJa: 'お客様の情報およびアップロードされた文書は、Lease Shieldサービスの提供のためにのみ使用されます – 例えば、リース契約の分析、レターの生成、証拠の整理をお手伝いするためです。\n\nタイのPDPA規則に従います。詳細については、leaseshield.asiaのプライバシー/PDPAポリシーをご覧ください。',
-        answerKo: '귀하의 정보 및 업로드된 문서는 Lease Shield 서비스 제공을 위해서만 사용됩니다 – 예를 들어 임대 계약 분석、편지 생성 및 증거 정리 지원을 위해서입니다。\n\n우리는 태국의 PDPA 규칙을 따릅니다。전체 세부 정보는 leaseshield.asia의 개인정보 보호/PDPA 정책을 참조하세요。',
-        answerRu: 'Мы используем вашу информацию и загруженные документы только для предоставления услуги Lease Shield – например、для анализа вашего договора、создания писем и помощи в организации доказательств。\n\nМы следуем правилам PDPA Таиланда。Полные подробности см。в нашей Политике конфиденциальности / PDPA на leaseshield.asia。'
+        answerEn: 'We use your information and uploaded documents only to deliver the Lease Shield service, such as analysing leases, generating documents, and organising evidence.\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Privacy Policy →</a>',
+        answerTh: 'เราใช้ข้อมูลและเอกสารที่อัปโหลดของคุณเพื่อให้บริการ Lease Shield เท่านั้น เช่น การวิเคราะห์สัญญาเช่า การสร้างเอกสาร และการจัดระเบียบหลักฐาน\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">นโยบายความเป็นส่วนตัว →</a>',
+        answerZh: '我们仅使用您的信息和上传的文档来提供Lease Shield服务，例如分析租约、生成文档和组织证据。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">隐私政策 →</a>',
+        answerJa: 'お客様の情報およびアップロードされた文書は、Lease Shieldサービスの提供（リース契約の分析、文書の生成、証拠の整理など）のためにのみ使用されます。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">プライバシーポリシー →</a>',
+        answerKo: '귀하의 정보 및 업로드된 문서는 임대 계약 분석、문서 생성 및 증거 정리와 같은 Lease Shield 서비스 제공을 위해서만 사용됩니다。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">개인정보 보호정책 →</a>',
+        answerRu: 'Мы используем вашу информацию и загруженные документы только для предоставления услуги Lease Shield、такие как анализ договоров、создание документов и организация доказательств。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Политика конфиденциальности →</a>'
       },
       {
         questionEn: 'Can I delete my data or account?',
@@ -458,12 +460,12 @@ const FAQ_DATA = {
         questionJa: 'データまたはアカウントを削除できますか？',
         questionKo: '내 데이터나 계정을 삭제할 수 있나요?',
         questionRu: 'Могу ли я удалить свои данные или аккаунт?',
-        answerEn: 'Yes. You can request permanent deletion of your account and data at any time by emailing privacy@leaseshield.asia from your registered email address.\n\nAfter verification, your data will be deleted within 14 days, except where we must keep certain records for legal or accounting reasons. See the Data Deletion section on leaseshield.asia for details.',
-        answerTh: 'ได้ คุณสามารถขอลบบัญชีและข้อมูลของคุณอย่างถาวรได้ตลอดเวลาโดยส่งอีเมลไปที่ privacy@leaseshield.asia จากอีเมลที่ลงทะเบียนของคุณ\n\nหลังจากตรวจสอบแล้ว ข้อมูลของคุณจะถูกลบภายใน 14 วัน ยกเว้นกรณีที่เราต้องเก็บบันทึกบางอย่างตามกฎหมายหรือเพื่อการบัญชี ดูส่วนการลบข้อมูลที่ leaseshield.asia สำหรับรายละเอียด',
-        answerZh: '可以。您可以随时通过从注册的电子邮件地址向privacy@leaseshield.asia发送电子邮件来请求永久删除您的帐户和数据。\n\n验证后，您的数据将在14天内删除，除非我们必须出于法律或会计原因保留某些记录。有关详细信息，请参阅leaseshield.asia上的数据删除部分。',
-        answerJa: 'はい。登録されたメールアドレスからprivacy@leaseshield.asiaにメールを送信することで、いつでもアカウントとデータの完全削除をリクエストできます。\n\n確認後、法律または会計上の理由で特定の記録を保持する必要がある場合を除き、14日以内にデータが削除されます。詳細については、leaseshield.asiaのデータ削除セクションを参照してください。',
-        answerKo: '예。등록된 이메일 주소에서 privacy@leaseshield.asia로 이메일을 보내 언제든지 계정 및 데이터의 영구 삭제를 요청할 수 있습니다。\n\n확인 후 법적 또는 회계 목적으로 특정 기록을 보관해야 하는 경우를 제외하고 14일 이내에 데이터가 삭제됩니다。자세한 내용은 leaseshield.asia의 데이터 삭제 섹션을 참조하세요。',
-        answerRu: 'Да。Вы можете запросить окончательное удаление вашей учётной записи и данных в любое время、отправив письмо на privacy@leaseshield.asia с зарегистрированного адреса электронной почты。\n\nПосле проверки ваши данные будут удалены в течение 14 дней、за исключением случаев、когда мы обязаны хранить определённые записи по юридическим или бухгалтерским причинам。Подробности см。в разделе «Удаление данных» на leaseshield.asia。'
+        answerEn: 'You may request account or data deletion at any time by emailing <a href="mailto:privacy@leaseshield.asia" class="font-semibold underline" style="color: #0C3B2E;">privacy@leaseshield.asia</a>.\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Privacy Policy →</a>',
+        answerTh: 'คุณสามารถขอลบบัญชีหรือข้อมูลได้ตลอดเวลาโดยส่งอีเมลไปที่ <a href="mailto:privacy@leaseshield.asia" class="font-semibold underline" style="color: #0C3B2E;">privacy@leaseshield.asia</a>\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">นโยบายความเป็นส่วนตัว →</a>',
+        answerZh: '您可以随时通过发送电子邮件至<a href="mailto:privacy@leaseshield.asia" class="font-semibold underline" style="color: #0C3B2E;">privacy@leaseshield.asia</a>请求删除帐户或数据。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">隐私政策 →</a>',
+        answerJa: '<a href="mailto:privacy@leaseshield.asia" class="font-semibold underline" style="color: #0C3B2E;">privacy@leaseshield.asia</a>にメールを送信することで、いつでもアカウントまたはデータの削除をリクエストできます。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">プライバシーポリシー →</a>',
+        answerKo: '<a href="mailto:privacy@leaseshield.asia" class="font-semibold underline" style="color: #0C3B2E;">privacy@leaseshield.asia</a>로 이메일을 보내 언제든지 계정 또는 데이터 삭제를 요청할 수 있습니다。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">개인정보 보호정책 →</a>',
+        answerRu: 'Вы можете запросить удаление учётной записи или данных в любое время、отправив письмо на <a href="mailto:privacy@leaseshield.asia" class="font-semibold underline" style="color: #0C3B2E;">privacy@leaseshield.asia</a>。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Политика конфиденциальности →</a>'
       },
       {
         questionEn: 'Is Lease Shield a law firm?',
@@ -486,12 +488,12 @@ const FAQ_DATA = {
         questionJa: 'サブスクリプションとクレジットの返金ポリシーは何ですか？',
         questionKo: '구독 및 크레딧에 대한 환불 정책은 무엇인가요?',
         questionRu: 'Какова политика возврата средств для подписок и кредитов?',
-        answerEn: 'Refunds are only available in limited cases, such as mistaken charges, auto-renewals you report within 48 hours, or confirmed technical failures.\n\nWe do not refund unused credits, change of mind, or partial subscription periods. For full details, see the Refund & Subscription Policy at leaseshield.asia.',
-        answerTh: 'การคืนเงินมีเฉพาะในกรณีจำกัด เช่น การเรียกเก็บเงินผิดพลาด การต่ออายุอัตโนมัติที่คุณรายงานภายใน 48 ชั่วโมง หรือความล้มเหลวทางเทคนิคที่ยืนยัน\n\nเราไม่คืนเงินสำหรับเครดิตที่ไม่ได้ใช้ การเปลี่ยนใจ หรือระยะเวลาการสมัครสมาชิกบางส่วน สำหรับรายละเอียดเต็มรูปแบบ ดูนโยบายการคืนเงินและการสมัครสมาชิกที่ leaseshield.asia',
-        answerZh: '退款仅在有限情况下可用，例如错误收费、您在48小时内报告的自动续订或确认的技术故障。\n\n我们不退还未使用的积分、改变主意或部分订阅期。有关完整详细信息，请参阅leaseshield.asia上的退款和订阅政策。',
-        answerJa: '返金は、誤請求、48時間以内に報告された自動更新、または確認された技術的障害など、限られた場合にのみ利用可能です。\n\n未使用のクレジット、気が変わった場合、または部分的なサブスクリプション期間の返金はしません。詳細については、leaseshield.asiaの返金およびサブスクリプションポリシーをご覧ください。',
-        answerKo: '환불은 잘못된 청구、48시간 이내에 보고한 자동 갱신 또는 확인된 기술적 오류와 같은 제한적인 경우에만 가능합니다。\n\n미사용 크레딧、마음이 바뀐 경우 또는 부분 구독 기간에 대해서는 환불하지 않습니다。전체 세부 정보는 leaseshield.asia의 환불 및 구독 정책을 참조하세요。',
-        answerRu: 'Возврат средств доступен только в ограниченных случаях、таких как ошибочные списания、автопродления、о которых вы сообщили в течение 48 часов、или подтверждённые технические сбои。\n\nМы не возвращаем неиспользованные кредиты、в случае изменения решения или за частичные периоды подписки。Полные подробности см。в Политике возврата и подписки на leaseshield.asia。'
+        answerEn: 'Refunds are only available in limited cases such as mistaken charges, reported auto-renewals within 48 hours, or confirmed technical failures.\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Refund Policy →</a>',
+        answerTh: 'การคืนเงินมีเฉพาะในกรณีจำกัด เช่น การเรียกเก็บเงินผิดพลาด การรายงานการต่ออายุอัตโนมัติภายใน 48 ชั่วโมง หรือความล้มเหลวทางเทคนิคที่ยืนยัน\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">นโยบายการคืนเงิน →</a>',
+        answerZh: '退款仅在有限情况下可用，例如错误收费、48小时内报告的自动续订或确认的技术故障。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">退款政策 →</a>',
+        answerJa: '返金は、誤請求、48時間以内に報告された自動更新、または確認された技術的障害など、限られた場合にのみ利用可能です。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">返金ポリシー →</a>',
+        answerKo: '환불은 잘못된 청구、48시간 이내에 보고된 자동 갱신 또는 확인된 기술적 오류와 같은 제한적인 경우에만 가능합니다。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">환불 정책 →</a>',
+        answerRu: 'Возврат средств доступен только в ограниченных случаях、таких как ошибочные списания、о которых сообщено в течение 48 часов、или подтверждённые технические сбои。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Политика возврата →</a>'
       }
     ]
   },
@@ -512,12 +514,12 @@ const FAQ_DATA = {
         questionJa: 'Lease Shieldをモバイルで使用できますか？',
         questionKo: 'Lease Shield를 모바일에서 사용할 수 있나요?',
         questionRu: 'Могу ли я использовать Lease Shield на мобильном устройстве?',
-        answerEn: 'Yes — it is fully optimized for both mobile browsers and Android/iOS app wrappers.',
-        answerTh: 'ได้ — ได้รับการปรับให้เหมาะสมอย่างเต็มที่สำหรับทั้งเบราว์เซอร์มือถือและแอป Android/iOS',
-        answerZh: '是的 — 它已针对移动浏览器和Android/iOS应用程序进行了完全优化。',
-        answerJa: 'はい — モバイルブラウザとAndroid/iOSアプリラッパーの両方に完全に最適化されています。',
-        answerKo: '예 — 모바일 브라우저와 Android/iOS 앱 래퍼 모두에 완전히 최적화되어 있습니다。',
-        answerRu: 'Да — оно полностью оптимизировано как для мобильных браузеров、так и для обёрток приложений Android/iOS。'
+        answerEn: 'Yes. Lease Shield is a web-based app optimized for mobile devices and is also available on <a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>.\n\niOS version coming soon.\n\nOn iPhone or iPad, you can save Lease Shield to your home screen by opening it in Safari, tapping Share, then selecting "Add to Home Screen."',
+        answerTh: 'ได้ Lease Shield เป็นแอปบนเว็บที่ปรับให้เหมาะกับอุปกรณ์มือถือและยังมีใน<a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>\n\nเวอร์ชัน iOS เร็วๆ นี้\n\nบน iPhone หรือ iPad คุณสามารถบันทึก Lease Shield ไปยังหน้าจอหลักได้โดยเปิดใน Safari แตะ Share จากนั้นเลือก "Add to Home Screen"',
+        answerZh: '是的。Lease Shield是一个针对移动设备优化的网络应用，也可在<a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>上获得。\n\niOS版本即将推出。\n\n在iPhone或iPad上，您可以通过在Safari中打开它、点击"共享"、然后选择"添加到主屏幕"来将Lease Shield保存到主屏幕。',
+        answerJa: 'はい。Lease Shieldは、モバイルデバイス向けに最適化されたWebベースのアプリで、<a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>でも利用可能です。\n\niOSバージョンは近日公開予定。\n\niPhoneまたはiPadでは、Safariで開いて「共有」をタップし、「ホーム画面に追加」を選択することで、Lease Shieldをホーム画面に保存できます。',
+        answerKo: '예。Lease Shield는 모바일 장치에 최적화된 웹 기반 앱이며 <a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>에서도 사용할 수 있습니다。\n\niOS 버전 출시 예정。\n\niPhone 또는 iPad에서 Safari에서 열고 공유를 탭한 다음 "홈 화면에 추가"를 선택하여 Lease Shield를 홈 화면에 저장할 수 있습니다。',
+        answerRu: 'Да。Lease Shield — это веб-приложение、оптимизированное для мобильных устройств、и также доступное в <a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>。\n\nВерсия для iOS скоро появится。\n\nНа iPhone или iPad вы можете сохранить Lease Shield на главный экран、открыв его в Safari、нажав "Поделиться"、затем выбрав "На экран «Домой»"。'
       },
       {
         questionEn: 'Why am I not receiving notifications?',
@@ -526,12 +528,12 @@ const FAQ_DATA = {
         questionJa: '通知が届かないのはなぜですか？',
         questionKo: '알림을 받지 못하는 이유는 무엇인가요?',
         questionRu: 'Почему я не получаю уведомления?',
-        answerEn: 'Enable push notifications and/or LINE alerts in your device settings and app preferences.',
-        answerTh: 'เปิดใช้งานการแจ้งเตือนแบบพุชและ/หรือการแจ้งเตือน LINE ในการตั้งค่าอุปกรณ์และการตั้งค่าแอปของคุณ',
-        answerZh: '在您的设备设置和应用偏好中启用推送通知和/或LINE提醒。',
-        answerJa: 'デバイス設定とアプリの設定でプッシュ通知および/またはLINE通知を有効にしてください。',
-        answerKo: '기기 설정 및 앱 환경설정에서 푸시 알림 및/또는 LINE 알림을 활성화하세요。',
-        answerRu: 'Включите push-уведомления и/или LINE-уведомления в настройках устройства и настройках приложения。'
+        answerEn: 'Please check your notification preferences and ensure LINE alerts are enabled in your <a href="#" class="account-notifications-link font-semibold underline" style="color: #0C3B2E;">account settings</a>.',
+        answerTh: 'กรุณาตรวจสอบการตั้งค่าการแจ้งเตือนและตรวจสอบว่าเปิดการแจ้งเตือน LINE ใน<a href="#" class="account-notifications-link font-semibold underline" style="color: #0C3B2E;">การตั้งค่าบัญชี</a>ของคุณ',
+        answerZh: '请检查您的通知偏好设置，并确保在您的<a href="#" class="account-notifications-link font-semibold underline" style="color: #0C3B2E;">帐户设置</a>中启用了LINE提醒。',
+        answerJa: '通知設定を確認し、<a href="#" class="account-notifications-link font-semibold underline" style="color: #0C3B2E;">アカウント設定</a>でLINE通知が有効になっていることを確認してください。',
+        answerKo: '알림 환경설정을 확인하고 <a href="#" class="account-notifications-link font-semibold underline" style="color: #0C3B2E;">계정 설정</a>에서 LINE 알림이 활성화되어 있는지 확인하세요。',
+        answerRu: 'Пожалуйста、проверьте настройки уведомлений и убедитесь、что LINE-уведомления включены в ваших <a href="#" class="account-notifications-link font-semibold underline" style="color: #0C3B2E;">настройках аккаунта</a>。'
       },
       {
         questionEn: 'Is my data secure?',
@@ -540,12 +542,12 @@ const FAQ_DATA = {
         questionJa: '私のデータは安全ですか？',
         questionKo: '내 데이터는 안전한가요?',
         questionRu: 'Мои данные в безопасности?',
-        answerEn: 'All files and communication are encrypted.\n\nLease Shield never sells or shares your personal data.',
-        answerTh: 'ไฟล์และการสื่อสารทั้งหมดได้รับการเข้ารหัส\n\nLease Shield ไม่เคยขายหรือแบ่งปันข้อมูลส่วนบุคคลของคุณ',
-        answerZh: '所有文件和通信都经过加密。\n\nLease Shield永远不会出售或共享您的个人数据。',
-        answerJa: 'すべてのファイルと通信は暗号化されています。\n\nLease Shieldはあなたの個人データを決して販売または共有しません。',
-        answerKo: '모든 파일과 통신은 암호화됩니다。\n\nLease Shield는 귀하의 개인 데이터를 절대 판매하거나 공유하지 않습니다。',
-        answerRu: 'Все файлы и коммуникации зашифрованы。\n\nLease Shield никогда не продаёт и не передаёт ваши личные данные。'
+        answerEn: 'All files and communications are encrypted. Lease Shield never sells or shares personal data.\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">PDPA & Privacy →</a>',
+        answerTh: 'ไฟล์และการสื่อสารทั้งหมดได้รับการเข้ารหัส Lease Shield ไม่เคยขายหรือแบ่งปันข้อมูลส่วนบุคคล\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">PDPA และความเป็นส่วนตัว →</a>',
+        answerZh: '所有文件和通信都经过加密。Lease Shield永远不会出售或共享个人数据。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">PDPA和隐私 →</a>',
+        answerJa: 'すべてのファイルと通信は暗号化されています。Lease Shieldは個人データを決して販売または共有しません。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">PDPAとプライバシー →</a>',
+        answerKo: '모든 파일과 통신은 암호화됩니다。Lease Shield는 개인 데이터를 절대 판매하거나 공유하지 않습니다。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">PDPA 및 개인정보 보호 →</a>',
+        answerRu: 'Все файлы и коммуникации зашифрованы。Lease Shield никогда не продаёт и не передаёт личные данные。\n\n<a href="https://www.leaseshield.asia/legal#privacy" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">PDPA и конфиденциальность →</a>'
       }
     ]
   }
@@ -555,6 +557,7 @@ function FAQContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedQuestions, setExpandedQuestions] = useState({});
+  const navigate = useNavigate();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -563,6 +566,28 @@ function FAQContent() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
+
+  // Handle in-app link clicks
+  useEffect(() => {
+    const handleLinkClick = (e) => {
+      if (e.target.classList.contains('language-selector-link')) {
+        e.preventDefault();
+        const langEvent = new CustomEvent('openLanguageSelector');
+        window.dispatchEvent(langEvent);
+      }
+      if (e.target.classList.contains('account-referral-link')) {
+        e.preventDefault();
+        navigate(createPageUrl('Account') + '#referral');
+      }
+      if (e.target.classList.contains('account-notifications-link')) {
+        e.preventDefault();
+        navigate(createPageUrl('Account') + '#notifications');
+      }
+    };
+    
+    document.addEventListener('click', handleLinkClick);
+    return () => document.removeEventListener('click', handleLinkClick);
+  }, [navigate]);
 
   const colors = isDarkMode ? {
     bg: '#111827',
@@ -744,9 +769,11 @@ function FAQContent() {
                                 backgroundColor: isDarkMode ? '#1F2937' : '#F9FAFB',
                                 borderLeft: `4px solid ${category.color}`
                               }}>
-                                <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: colors.textPrimary, lineHeight: '1.7' }}>
-                                  {getLocalizedText(q, 'answer')}
-                                </p>
+                                <div 
+                                 className="text-sm leading-relaxed whitespace-pre-line" 
+                                 style={{ color: colors.textPrimary, lineHeight: '1.7' }}
+                                 dangerouslySetInnerHTML={{ __html: getLocalizedText(q, 'answer') }}
+                                />
                               </div>
                             )}
                           </div>
