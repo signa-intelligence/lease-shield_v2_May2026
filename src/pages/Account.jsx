@@ -3644,10 +3644,10 @@ function AccountContent() {
                       <Download className="w-5 h-5 text-white" />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#0C3B2E !important', marginBottom: '2px' }}>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#0C3B2E', marginBottom: '2px' }}>
                         {language === 'th' ? 'ติดตั้งแอป Lease Shield' : language === 'zh' ? '安装 Lease Shield 应用' : language === 'ja' ? 'Lease Shield アプリをインストール' : language === 'ko' ? 'Lease Shield 앱 설치' : language === 'ru' ? 'Установить приложение Lease Shield' : 'Install Lease Shield App'}
                       </div>
-                      <div style={{ fontSize: '14px', fontWeight: '500', color: '#0C3B2E !important' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '500', color: '#0C3B2E' }}>
                         {language === 'th' ? 'เพิ่มลงในหน้าจอหลักเพื่อเข้าถึงง่ายๆ' : language === 'zh' ? '添加到主屏幕以便快速访问' : language === 'ja' ? 'ホーム画面に追加して素早くアクセス' : language === 'ko' ? '빠른 액세스를 위해 홈 화면에 추가' : language === 'ru' ? 'Добавьте на главный экран для быстрого доступа' : 'Add to home screen for quick access'}
                       </div>
                     </div>
@@ -3693,19 +3693,19 @@ function AccountContent() {
                         <Share2 className="w-5 h-5 text-white" />
                       )}
                     </div>
-                    <div>
-                      <p style={{ fontSize: '16px', fontWeight: '700', color: '#0C3B2E', lineHeight: '1.3' }}>
-                        {strings.shareApp}
-                      </p>
-                      <p style={{ fontSize: '14px', fontWeight: '600', color: '#0C3B2E', lineHeight: '1.3' }}>
-                        {strings.shareAppDesc}
-                      </p>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#0C3B2E', marginBottom: '2px' }}>
+                        {language === 'th' ? 'แชร์แอปกับเพื่อน' : language === 'zh' ? '与朋友分享应用' : language === 'ja' ? '友達とアプリを共有' : language === 'ko' ? '친구와 앱 공유' : language === 'ru' ? 'Поделиться приложением с другом' : 'Share App with Friends'}
+                      </div>
+                      <div style={{ fontSize: '13px', fontWeight: '500', color: '#0C3B2E' }}>
+                        {language === 'th' ? 'ชวนคนอื่นมาป้องกันเงินมัดจำของพวกเขา' : language === 'zh' ? '邀请他人保护他们的押金' : language === 'ja' ? '他の人に敷金保護を勧める' : language === 'ko' ? '다른 사람들이 보증금을 보호하도록 초대' : language === 'ru' ? 'Пригласите других защитить свои депозиты' : 'Invite others to protect their deposits'}
+                      </div>
                     </div>
                   </div>
                   {appLinkCopied ? (
                     <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   ) : (
-                    <ArrowRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                    <ArrowRight className="w-5 h-5" style={{ color: '#0C3B2E' }} />
                   )}
                 </div>
               </div>
