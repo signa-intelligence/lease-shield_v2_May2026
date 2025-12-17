@@ -880,6 +880,39 @@ function TemplateFormContent() {
                   {strings.cancel}
                 </Button>
                 <Button
+                  type="button"
+                  onClick={async () => {
+                    haptic.medium();
+                    try {
+                      const response = await base44.functions.invoke('generateDocx', {
+                        letterContent: editedContent,
+                        languagePack: languagePack,
+                        subject: formData.subject,
+                        tenant_name: formData.tenant_name,
+                        landlord_name: formData.landlord_name,
+                        property_address: formData.property_address,
+                        recipientType: formData.recipientType
+                      });
+                      
+                      if (response.data?.ok && response.data?.docx_url) {
+                        const a = document.createElement('a');
+                        a.href = response.data.docx_url;
+                        a.download = response.data.filename || 'letter.docx';
+                        a.click();
+                        toast.success(language === 'th' ? 'ดาวน์โหลด DOCX สำเร็จ' : 'DOCX downloaded successfully');
+                      }
+                    } catch (err) {
+                      console.error('DOCX generation failed:', err);
+                      toast.error(language === 'th' ? 'ไม่สามารถสร้าง DOCX ได้' : 'Failed to generate DOCX');
+                    }
+                  }}
+                  disabled={saving}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white btn-interaction"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  {strings.downloadWord}
+                </Button>
+                <Button
                   onClick={() => {
                     haptic.medium();
                     handleSaveAfterReview();
@@ -1016,33 +1049,6 @@ function TemplateFormContent() {
                   { value: 'juristic', label: language === 'th' ? 'นิติบุคคล' : language === 'zh' ? '法人' : language === 'ja' ? '法人' : language === 'ko' ? '법인' : language === 'ru' ? 'Юридическое лицо' : 'Juristic Office' }
                 ]}
               />
-
-              <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                  {strings.letterType} <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.subject}
-                  onChange={(e) => handleInputChange('subject', e.target.value)}
-                  disabled={generating}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    backgroundColor: colors.fieldBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary,
-                    fontSize: '16px',
-                    borderRadius: '12px',
-                    border: `2px solid ${colors.borderColor}`,
-                    minHeight: '48px'
-                  }}
-                >
-                  <option value="">{strings.selectLetterTypePlaceholder}</option>
-                  {Object.entries(letterTypeLabels).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
-                </select>
-              </div>
 
               <MobileFormInput
                 label={`${strings.yourName} *`}
