@@ -33,29 +33,75 @@ export default function Templates() {
   const userCredits = user?.letter_credits || 0;
   const isAdmin = ['admin', 'super_admin'].includes(user?.access_level);
 
-  // SAFE FILTERING: Only filter if fields exist, treat missing as valid
-  const activeTemplates = allTemplates.filter(t => {
-    // If is_active field exists and is false, exclude
-    if (t.is_active === false) return false;
+  // Category normalization function - maps any category variant to canonical slug
+  const normalizeCategorySlug = (rawCategory) => {
+    if (!rawCategory) return 'friendly_approach';
     
-    // If is_legacy field exists and is true, exclude
+    const lower = rawCategory.toLowerCase().trim();
+    
+    // Map variants to canonical slugs
+    if (lower.includes('check')) return 'checklists';
+    if (lower.includes('pre') && lower.includes('sign')) return 'pre_signing_negotiation';
+    if (lower.includes('friendly')) return 'friendly_approach';
+    if (lower.includes('professional') || lower.includes('escalation')) return 'professional_escalation';
+    if (lower.includes('final')) return 'final_measures';
+    
+    // Default fallback
+    return 'friendly_approach';
+  };
+
+  // Detect if template_key is a hex record ID (legacy)
+  const isLegacyKey = (key) => {
+    if (!key) return true;
+    // Hex pattern: 24 chars, starts with digits/hex
+    if (/^[0-9a-f]{24}$/i.test(key)) return true;
+    // Also exclude 'legacy' and 'unknown'
+    if (key === 'legacy' || key === 'unknown') return true;
+    return false;
+  };
+
+  // Get template_key from either template_key field or old template_id field
+  const getTemplateKey = (t) => {
+    return t.template_key || t.template_id || t.id;
+  };
+
+  // ROBUST FILTERING: Active, non-legacy, valid keys only
+  const activeTemplates = allTemplates.filter(t => {
+    // Must have is_active = true (or missing = treat as true for old data)
+    const isActive = t.is_active !== false;
+    if (!isActive) return false;
+    
+    // Exclude if explicitly marked legacy
     if (t.is_legacy === true) return false;
     
-    // If template_key is explicitly 'legacy', exclude
-    if (t.template_key === 'legacy') return false;
+    // Get the key and check if it's a legacy hex ID
+    const key = getTemplateKey(t);
+    if (isLegacyKey(key)) return false;
     
-    // Otherwise include
     return true;
   });
 
-  // Ensure every template has a category (assign default if missing)
-  const templatesWithCategory = activeTemplates.map(t => ({
-    ...t,
-    category: t.category || 'friendly_approach',
-    template_key: t.template_key || t.id || 'unknown',
-    title_en: t.title_en || 'Untitled Template',
-    credit_cost: t.credit_cost || 1
-  }));
+  // Extract raw categories for debugging
+  const rawCategories = [...new Set(allTemplates.map(t => t.category || 'none'))];
+
+  // Normalize and enrich templates
+  const templatesWithCategory = activeTemplates.map(t => {
+    const rawCategory = t.category;
+    const normalizedCategory = normalizeCategorySlug(rawCategory);
+    const key = getTemplateKey(t);
+    
+    return {
+      ...t,
+      template_key: key,
+      category: normalizedCategory,
+      rawCategory: rawCategory, // Keep for debug
+      title_en: t.title_en || 'Untitled Template',
+      title_th: t.title_th || '',
+      description_en: t.description_en || '',
+      description_th: t.description_th || '',
+      credit_cost: t.credit_cost || t.credits_required || 1
+    };
+  });
 
   const colors = isDarkMode ? {
     bg: '#111827',
@@ -117,6 +163,9 @@ export default function Templates() {
   const professionalTemplates = templatesWithCategory.filter(t => t.category === 'professional_escalation');
   const finalTemplates = templatesWithCategory.filter(t => t.category === 'final_measures');
 
+  // Mapped categories for debugging
+  const mappedCategories = [...new Set(templatesWithCategory.map(t => t.category))];
+
   // Debug data
   const debugData = {
     entityName: 'TemplateLibrary',
@@ -125,6 +174,8 @@ export default function Templates() {
     filteredCount: activeTemplates.length,
     withCategoryCount: templatesWithCategory.length,
     templateKeys: templatesWithCategory.slice(0, 50).map(t => t.template_key).join(', '),
+    rawCategoriesFound: rawCategories.join(', '),
+    mappedCategories: mappedCategories.join(', '),
     userRole: user?.access_level || 'none',
     userLanguage: language,
     errorMessage: error?.message || 'none',
@@ -261,9 +312,12 @@ export default function Templates() {
               <div><strong>After Filters:</strong> {debugData.filteredCount}</div>
               <div><strong>With Category:</strong> {debugData.withCategoryCount}</div>
               <div className="h-px bg-current opacity-20 my-2"></div>
-              <div><strong>Categories:</strong> Checklists={debugData.categoryBreakdown.checklists}, PreSigning={debugData.categoryBreakdown.pre_signing}, Friendly={debugData.categoryBreakdown.friendly}, Professional={debugData.categoryBreakdown.professional}, Final={debugData.categoryBreakdown.final}</div>
+              <div><strong>Raw Categories (from DB):</strong> {debugData.rawCategoriesFound}</div>
+              <div><strong>Mapped Categories:</strong> {debugData.mappedCategories}</div>
               <div className="h-px bg-current opacity-20 my-2"></div>
-              <div><strong>Template Keys:</strong> {debugData.templateKeys || '(none)'}</div>
+              <div><strong>Category Counts:</strong> Checklists={debugData.categoryBreakdown.checklists}, PreSigning={debugData.categoryBreakdown.pre_signing}, Friendly={debugData.categoryBreakdown.friendly}, Professional={debugData.categoryBreakdown.professional}, Final={debugData.categoryBreakdown.final}</div>
+              <div className="h-px bg-current opacity-20 my-2"></div>
+              <div><strong>Template Keys (first 50):</strong> {debugData.templateKeys || '(none)'}</div>
               <div className="h-px bg-current opacity-20 my-2"></div>
               <div><strong>User Role:</strong> {debugData.userRole}</div>
               <div><strong>Language:</strong> {debugData.userLanguage}</div>
@@ -275,7 +329,12 @@ export default function Templates() {
               )}
               {debugData.rawCount > 0 && debugData.filteredCount === 0 && (
                 <div className="mt-2 p-2 bg-red-100 text-red-800 rounded font-bold">
-                  ⚠️ Filters removed all rows — filter logic is wrong
+                  ⚠️ Filters removed all rows — filter logic is wrong (probably legacy hex IDs)
+                </div>
+              )}
+              {debugData.withCategoryCount > 0 && Object.values(debugData.categoryBreakdown).every(c => c === 0) && (
+                <div className="mt-2 p-2 bg-orange-100 text-orange-800 rounded font-bold">
+                  ⚠️ Templates exist but all category counts are 0 — category mapping failed
                 </div>
               )}
             </div>
