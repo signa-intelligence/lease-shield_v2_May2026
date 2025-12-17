@@ -35,7 +35,8 @@ function SupportContent() {
     ],
     description: [
       (v) => validators.required(v, 'Description'),
-      (v) => validators.minLength(v, 20, 'Description')
+      (v) => validators.minLength(v, 20, 'Description'),
+      (v) => validators.maxLength(v, 500, 'Description')
     ]
   };
 
@@ -277,25 +278,32 @@ function SupportContent() {
                       <option value="billing">Billing</option>
                       <option value="deposit">Deposit</option>
                       <option value="scan">Lease Scan</option>
-                      <option value="legal">Legal Question</option>
+                      <option value="documents">Document & Template</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
 
-                  <MobileFormInput
-                    label={strings.description}
-                    multiline
-                    rows={5}
-                    value={formData.description}
-                    onChange={(e) => {
-                      handleChange('description', e.target.value);
-                    }}
-                    onBlur={() => handleBlur('description')}
-                    placeholder={language === 'th' ? 'กรุณาระบุรายละเอียดให้มากที่สุด...' : 'Please provide as much detail as possible...'}
-                    required
-                    error={errors.description}
-                    colors={colors}
-                  />
+                  <div>
+                    <MobileFormInput
+                      label={strings.description}
+                      multiline
+                      rows={5}
+                      value={formData.description}
+                      onChange={(e) => {
+                        const newValue = e.target.value.slice(0, 500);
+                        handleChange('description', newValue);
+                      }}
+                      onBlur={() => handleBlur('description')}
+                      placeholder={language === 'th' ? 'กรุณาระบุรายละเอียดให้มากที่สุด...' : 'Please provide as much detail as possible...'}
+                      required
+                      error={errors.description}
+                      colors={colors}
+                      maxLength={500}
+                    />
+                    <div className="text-xs text-right mt-1" style={{ color: colors.textSecondary }}>
+                      {formData.description.length}/500
+                    </div>
+                  </div>
                   <div>
                     <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                       {strings.attachments}
@@ -311,13 +319,15 @@ function SupportContent() {
                     >
                       <Upload className="w-5 h-5" style={{ color: colors.textSecondary }} />
                       <span className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-                        {uploading ? (language === 'th' ? 'กำลังอัปโหลด...' : 'Uploading...') : strings.uploadFiles}
+                        {uploading 
+                          ? (language === 'th' ? 'กำลังอัปโหลด...' : language === 'zh' ? '上传中...' : language === 'ja' ? 'アップロード中...' : language === 'ko' ? '업로드 중...' : language === 'ru' ? 'Загрузка...' : 'Uploading...') 
+                          : (language === 'th' ? 'อัปโหลดรูปภาพและไฟล์' : language === 'zh' ? '上传照片和文件' : language === 'ja' ? '写真とファイルをアップロード' : language === 'ko' ? '사진 및 파일 업로드' : language === 'ru' ? 'Загрузить фото и файлы' : 'Upload photos and files')}
                       </span>
                       <input
                         id="file-upload"
                         type="file"
                         multiple
-                        accept="image/*,.pdf,.doc,.docx"
+                        accept="image/*,application/pdf,.pdf,.doc,.docx,.txt"
                         onChange={handleFileUpload}
                         disabled={uploading}
                         className="hidden"
