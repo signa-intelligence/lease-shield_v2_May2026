@@ -7,43 +7,55 @@ import { AlertCircle } from "lucide-react";
 
 export default function Templates() {
   const navigate = useNavigate();
+  const [showDebug, setShowDebug] = React.useState(false);
+
+  // Check for debug query param
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('debug') === '1') {
+      setShowDebug(true);
+    }
+  }, []);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
+  // EXACT SAME QUERY AS ADMIN PAGE
   const { data: allTemplates = [], isLoading, error } = useQuery({
     queryKey: ['templates'],
-    queryFn: () => base44.entities.TemplateLibrary.list('sort_order'),
+    queryFn: () => base44.entities.TemplateLibrary.list('-created_date'),
   });
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userCredits = user?.letter_credits || 0;
+  const isAdmin = ['admin', 'super_admin'].includes(user?.access_level);
 
-  // SINGLE SOURCE OF TRUTH: Filter active, non-legacy templates
-  const activeTemplates = allTemplates.filter(t => 
-    t.is_active === true && t.is_legacy !== true
-  );
+  // SAFE FILTERING: Only filter if fields exist, treat missing as valid
+  const activeTemplates = allTemplates.filter(t => {
+    // If is_active field exists and is false, exclude
+    if (t.is_active === false) return false;
+    
+    // If is_legacy field exists and is true, exclude
+    if (t.is_legacy === true) return false;
+    
+    // If template_key is explicitly 'legacy', exclude
+    if (t.template_key === 'legacy') return false;
+    
+    // Otherwise include
+    return true;
+  });
 
-  // Debug logging
-  React.useEffect(() => {
-    if (allTemplates.length > 0) {
-      const categoryBreakdown = activeTemplates.reduce((acc, t) => {
-        const cat = t.category || 'uncategorized';
-        acc[cat] = (acc[cat] || 0) + 1;
-        return acc;
-      }, {});
-      
-      console.log('📊 Templates Debug:');
-      console.log('  Total in DB:', allTemplates.length);
-      console.log('  Active non-legacy:', activeTemplates.length);
-      console.log('  Expected: 14');
-      console.log('  Categories:', Object.keys(categoryBreakdown));
-      console.log('  Breakdown:', categoryBreakdown);
-    }
-  }, [allTemplates, activeTemplates]);
+  // Ensure every template has a category (assign default if missing)
+  const templatesWithCategory = activeTemplates.map(t => ({
+    ...t,
+    category: t.category || 'friendly_approach',
+    template_key: t.template_key || t.id || 'unknown',
+    title_en: t.title_en || 'Untitled Template',
+    credit_cost: t.credit_cost || 1
+  }));
 
   const colors = isDarkMode ? {
     bg: '#111827',
@@ -99,27 +111,58 @@ export default function Templates() {
   const strings = t[language] || t.en;
 
   // Category filtering with fixed order
-  const checklistTemplates = activeTemplates.filter(t => t.category === 'checklists');
-  const preSigningTemplates = activeTemplates.filter(t => t.category === 'pre_signing_negotiation');
-  const friendlyTemplates = activeTemplates.filter(t => t.category === 'friendly_approach');
-  const professionalTemplates = activeTemplates.filter(t => t.category === 'professional_escalation');
-  const finalTemplates = activeTemplates.filter(t => t.category === 'final_measures');
+  const checklistTemplates = templatesWithCategory.filter(t => t.category === 'checklists');
+  const preSigningTemplates = templatesWithCategory.filter(t => t.category === 'pre_signing_negotiation');
+  const friendlyTemplates = templatesWithCategory.filter(t => t.category === 'friendly_approach');
+  const professionalTemplates = templatesWithCategory.filter(t => t.category === 'professional_escalation');
+  const finalTemplates = templatesWithCategory.filter(t => t.category === 'final_measures');
+
+  // Debug data
+  const debugData = {
+    entityName: 'TemplateLibrary',
+    queryMethod: 'list(\'-created_date\')',
+    rawCount: allTemplates.length,
+    filteredCount: activeTemplates.length,
+    withCategoryCount: templatesWithCategory.length,
+    templateKeys: templatesWithCategory.slice(0, 50).map(t => t.template_key).join(', '),
+    userRole: user?.access_level || 'none',
+    userLanguage: language,
+    errorMessage: error?.message || 'none',
+    categoryBreakdown: {
+      checklists: checklistTemplates.length,
+      pre_signing: preSigningTemplates.length,
+      friendly: friendlyTemplates.length,
+      professional: professionalTemplates.length,
+      final: finalTemplates.length
+    }
+  };
 
   const renderTemplateCard = (template, gradientClass) => {
     const title = language === 'th' && template.title_th ? template.title_th : template.title_en;
     const description = language === 'th' && template.description_th ? template.description_th : template.description_en || '';
+    const hasValidKey = template.template_key && template.template_key !== 'unknown';
     
     return (
       <div
-        key={template.template_key}
-        onClick={() => navigate(createPageUrl("TemplateForm") + `?subject=${template.template_key}`)}
-        className="rounded-xl shadow-md hover:shadow-xl transition-all cursor-pointer p-6"
-        style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}
+        key={template.id || template.template_key}
+        onClick={() => hasValidKey && navigate(createPageUrl("TemplateForm") + `?subject=${template.template_key}`)}
+        className="rounded-xl shadow-md hover:shadow-xl transition-all p-6"
+        style={{ 
+          backgroundColor: colors.cardBg, 
+          border: `1px solid ${colors.borderColor}`,
+          cursor: hasValidKey ? 'pointer' : 'not-allowed',
+          opacity: hasValidKey ? 1 : 0.6
+        }}
       >
         <div className={`h-1 ${gradientClass} rounded-t-xl mb-4`} />
         <div className="flex items-start justify-between mb-2">
           <h3 className="text-lg font-bold flex-1" style={{ color: colors.textPrimary }}>
             {title}
+            {!hasValidKey && (
+              <span className="ml-2 px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-800">
+                Missing template_key
+              </span>
+            )}
           </h3>
           <span className="ml-2 px-2 py-1 text-xs font-semibold rounded" style={{
             backgroundColor: '#FEF3C7',
@@ -131,9 +174,13 @@ export default function Templates() {
         <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
           {description}
         </p>
-        <button className="text-sm font-medium text-emerald-700 hover:underline">
-          {strings.openTemplate} →
-        </button>
+        {hasValidKey ? (
+          <button className="text-sm font-medium text-emerald-700 hover:underline">
+            {strings.openTemplate} →
+          </button>
+        ) : (
+          <span className="text-sm text-red-600">Cannot open - invalid key</span>
+        )}
       </div>
     );
   };
@@ -174,13 +221,66 @@ export default function Templates() {
           >
             ← {strings.back}
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-            {strings.title}
-          </h1>
-          <p className="text-sm" style={{ color: colors.textSecondary }}>
-            {strings.subtitle}
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                {strings.title}
+              </h1>
+              <p className="text-sm" style={{ color: colors.textSecondary }}>
+                {strings.subtitle}
+              </p>
+            </div>
+            {isAdmin && (
+              <button
+                onClick={() => setShowDebug(!showDebug)}
+                className="px-3 py-1 text-xs rounded"
+                style={{
+                  backgroundColor: showDebug ? '#EF4444' : '#6B7280',
+                  color: '#FFFFFF'
+                }}
+              >
+                {showDebug ? 'Hide Debug' : 'Show Debug'}
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* DEBUG PANEL */}
+        {showDebug && (
+          <div className="mb-6 p-4 rounded-lg font-mono text-xs" style={{
+            backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7',
+            border: `2px solid ${isDarkMode ? '#374151' : '#F59E0B'}`,
+            color: isDarkMode ? '#F9FAFB' : '#92400E'
+          }}>
+            <div className="font-bold text-sm mb-2">🔍 DEBUG: Template Data</div>
+            <div className="space-y-1">
+              <div><strong>Entity:</strong> {debugData.entityName}</div>
+              <div><strong>Query:</strong> {debugData.queryMethod}</div>
+              <div className="h-px bg-current opacity-20 my-2"></div>
+              <div><strong>Raw DB Count:</strong> {debugData.rawCount}</div>
+              <div><strong>After Filters:</strong> {debugData.filteredCount}</div>
+              <div><strong>With Category:</strong> {debugData.withCategoryCount}</div>
+              <div className="h-px bg-current opacity-20 my-2"></div>
+              <div><strong>Categories:</strong> Checklists={debugData.categoryBreakdown.checklists}, PreSigning={debugData.categoryBreakdown.pre_signing}, Friendly={debugData.categoryBreakdown.friendly}, Professional={debugData.categoryBreakdown.professional}, Final={debugData.categoryBreakdown.final}</div>
+              <div className="h-px bg-current opacity-20 my-2"></div>
+              <div><strong>Template Keys:</strong> {debugData.templateKeys || '(none)'}</div>
+              <div className="h-px bg-current opacity-20 my-2"></div>
+              <div><strong>User Role:</strong> {debugData.userRole}</div>
+              <div><strong>Language:</strong> {debugData.userLanguage}</div>
+              <div><strong>Error:</strong> {debugData.errorMessage}</div>
+              {debugData.rawCount === 0 && (
+                <div className="mt-2 p-2 bg-red-100 text-red-800 rounded font-bold">
+                  ⚠️ DB returned 0 templates — this is a data/query problem
+                </div>
+              )}
+              {debugData.rawCount > 0 && debugData.filteredCount === 0 && (
+                <div className="mt-2 p-2 bg-red-100 text-red-800 rounded font-bold">
+                  ⚠️ Filters removed all rows — filter logic is wrong
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Credit Balance Card */}
         <div className="mb-8 rounded-xl shadow-lg p-6" style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}>
@@ -212,11 +312,30 @@ export default function Templates() {
           </div>
         </div>
 
-        {activeTemplates.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-xl font-semibold" style={{ color: colors.textPrimary }}>
-              {strings.noTemplates}
-            </p>
+        {templatesWithCategory.length === 0 ? (
+          <div className="text-center py-12 px-4">
+            <div className="p-6 rounded-lg max-w-md mx-auto" style={{
+              backgroundColor: colors.cardBg,
+              border: `2px solid ${colors.borderColor}`
+            }}>
+              <p className="text-xl font-semibold mb-4" style={{ color: colors.textPrimary }}>
+                {strings.noTemplates}
+              </p>
+              <div className="text-left text-sm space-y-2" style={{ color: colors.textSecondary }}>
+                <div>Raw DB Count: <strong>{allTemplates.length}</strong></div>
+                <div>After Filters: <strong>{activeTemplates.length}</strong></div>
+                {allTemplates.length === 0 && (
+                  <div className="mt-4 p-3 bg-red-50 text-red-800 rounded text-xs">
+                    No templates found in database. Admin needs to create templates.
+                  </div>
+                )}
+                {allTemplates.length > 0 && activeTemplates.length === 0 && (
+                  <div className="mt-4 p-3 bg-orange-50 text-orange-800 rounded text-xs">
+                    All templates were filtered out. Check is_active and is_legacy fields.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         ) : (
           <>
