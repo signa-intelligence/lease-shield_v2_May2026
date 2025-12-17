@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, X, MessageCircle, Minimize2, Loader2, HelpCircle, DollarSign, Shield, RotateCcw } from 'lucide-react';
+import { Send, X, MessageCircle, Minimize2, Loader2, HelpCircle, DollarSign, Shield, RotateCcw, ArrowRight, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 const LISA_SYSTEM_PROMPT = `You are Lisa, the official Lease Shield Consultant.
 You are a professional, calm, trust-first advisor who guides users to the correct Lease Shield service and plan.
@@ -75,24 +77,26 @@ Secure (฿990/month):
 - Unlimited FastTrack (complimentary)
 
 LINKS & ROUTING (MANDATORY):
-Always include direct links when recommending features:
-• Pricing / Upgrade → Account page, plan selector
-• Resolve service → Cases page
-• Evidence Vault → Evidence page
-• Lease Scan → Upload Scan page
-• Letter tools → Templates page
+NEVER use markdown links like [text](url) or [here](#).
+Instead, provide clear routing instructions in plain text:
+• For upgrades: mention "upgrade your plan" and the system will show action buttons
+• For Resolve: mention "Resolve service" and the system will show action buttons
+• For other features: provide clear page names (e.g., "Go to Evidence Vault", "Visit Upload Scan")
 
 LANGUAGE & TONE RULES:
 Always:
 • Calm, reassuring, professional, trust-focused
 • Keep answers SHORT: 2-4 sentences maximum
 • Mobile-first: users read on phones
+• NEVER use markdown links or placeholders like [here](#)
+• Remove repetitive wording - be concise
 
 Never:
 • Say "we don't offer legal advice" as primary response
 • Say "consult a lawyer" as the primary answer
 • Redirect users away from Lease Shield
 • Contradict pricing, features, or FAQ
+• Use markdown links or HTML links
 
 CRITICAL GUIDELINES:
 - NEVER say we only help tenants - we serve BOTH parties (tenants and landlords)
@@ -123,8 +127,10 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
   const [userPreferredLanguage, setUserPreferredLanguage] = useState(null);
   const [conversationId, setConversationId] = useState(null);
   const [loadError, setLoadError] = useState(false);
+  const [navigationError, setNavigationError] = useState(false);
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Sync with external control
   useEffect(() => {
@@ -360,6 +366,30 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
       hour: '2-digit', 
       minute: '2-digit' 
     });
+  };
+
+  const handleNavigate = (route) => {
+    try {
+      setNavigationError(false);
+      navigate(createPageUrl(route));
+      handleClose();
+    } catch (error) {
+      console.error('Navigation error:', error);
+      setNavigationError(true);
+    }
+  };
+
+  const detectActionButtons = (content) => {
+    // Detect if message mentions both Resolve and upgrade/plan
+    const mentionsResolve = /resolve service|resolve case|dispute resolution/i.test(content);
+    const mentionsUpgrade = /upgrade|paid plan|member|subscription/i.test(content);
+    
+    return mentionsResolve && mentionsUpgrade;
+  };
+
+  const stripMarkdownLinks = (text) => {
+    // Remove markdown links [text](url) or [text](#)
+    return text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
   };
 
   const t = {
@@ -649,43 +679,147 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
           </div>
         ) : (
           <>
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                style={{
-                  alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  maxWidth: '85%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px'
-                }}
-              >
+            {messages.map((msg, idx) => {
+              const shouldShowActions = msg.role === 'assistant' && detectActionButtons(msg.content);
+              const cleanContent = msg.role === 'assistant' ? stripMarkdownLinks(msg.content) : msg.content;
+              
+              return (
                 <div
+                  key={idx}
                   style={{
-                    padding: '12px 16px',
-                    borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                    backgroundColor: msg.role === 'user' ? colors.userBubbleBg : colors.lisaBubbleBg,
-                    color: msg.role === 'user' ? '#FFFFFF' : colors.textPrimary,
-                    fontSize: '14px',
-                    lineHeight: '1.6',
-                    whiteSpace: 'pre-line',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                    borderLeft: msg.role === 'assistant' ? '3px solid #10B981' : 'none'
+                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    maxWidth: '85%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
                   }}
                 >
-                  {msg.content}
+                  <div
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                      backgroundColor: msg.role === 'user' ? colors.userBubbleBg : colors.lisaBubbleBg,
+                      color: msg.role === 'user' ? '#FFFFFF' : colors.textPrimary,
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      whiteSpace: 'pre-line',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      borderLeft: msg.role === 'assistant' ? '3px solid #10B981' : 'none'
+                    }}
+                  >
+                    {cleanContent}
+                  </div>
+                  
+                  {shouldShowActions && !navigationError && (
+                    <div style={{
+                      display: 'flex',
+                      gap: '8px',
+                      marginTop: '8px',
+                      flexWrap: 'wrap'
+                    }}>
+                      <button
+                        onClick={() => handleNavigate('Account')}
+                        style={{
+                          padding: '8px 14px',
+                          borderRadius: '8px',
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 6px rgba(12,59,46,0.3)',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#084D38';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#0C3B2E';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        {language === 'th' ? 'อัปเกรดแผน' : language === 'zh' ? '升级计划' : language === 'ja' ? 'プランをアップグレード' : language === 'ko' ? '플랜 업그레이드' : language === 'ru' ? 'Обновить план' : 'Upgrade Plan'}
+                      </button>
+                      <button
+                        onClick={() => handleNavigate('ResolveCase')}
+                        style={{
+                          padding: '8px 14px',
+                          borderRadius: '8px',
+                          backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                          color: colors.textPrimary,
+                          border: `2px solid ${colors.borderColor}`,
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#4B5563' : '#E5E7EB';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
+                        }}
+                      >
+                        <Shield className="w-4 h-4" />
+                        {language === 'th' ? 'เปิด Resolve' : language === 'zh' ? '打开Resolve' : language === 'ja' ? 'Resolveを開く' : language === 'ko' ? 'Resolve 열기' : language === 'ru' ? 'Открыть Resolve' : 'Open Resolve'}
+                      </button>
+                    </div>
+                  )}
+
+                  {shouldShowActions && navigationError && (
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: isDarkMode ? '#7F1D1D' : '#FEE2E2',
+                      border: '1px solid #EF4444'
+                    }}>
+                      <p style={{ fontSize: '12px', color: isDarkMode ? '#FCA5A5' : '#991B1B', marginBottom: '8px' }}>
+                        {language === 'th' ? 'ไม่สามารถนำทางได้ กรุณาไปที่หน้าบัญชี' : 'Navigation failed. Please go to Account page.'}
+                      </p>
+                      <button
+                        onClick={() => handleNavigate('Account')}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        {language === 'th' ? 'ไปที่บัญชี' : 'Go to Account'}
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  
+                  <span style={{
+                    fontSize: '11px',
+                    color: colors.textSecondary,
+                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    paddingLeft: msg.role === 'assistant' ? '4px' : '0',
+                    paddingRight: msg.role === 'user' ? '4px' : '0'
+                  }}>
+                    {msg.timestamp && formatTime(msg.timestamp)}
+                  </span>
                 </div>
-                <span style={{
-                  fontSize: '11px',
-                  color: colors.textSecondary,
-                  alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  paddingLeft: msg.role === 'assistant' ? '4px' : '0',
-                  paddingRight: msg.role === 'user' ? '4px' : '0'
-                }}>
-                  {msg.timestamp && formatTime(msg.timestamp)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
             
             {/* Typing Indicator */}
             {isLoading && (
