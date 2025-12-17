@@ -21,30 +21,33 @@ export default function Templates() {
   const isDarkMode = user?.theme === 'dark';
   const userCredits = user?.letter_credits || 0;
 
-  // Filter for active templates only (same as AdminTemplates logic)
-  const activeTemplates = allTemplates.filter(t => t.is_active !== false);
+  // CANONICAL TEMPLATES ONLY - exclude legacy
+  const canonicalTemplates = allTemplates.filter(t => 
+    t.is_active !== false && 
+    t.template_key && 
+    t.template_key !== 'legacy'
+  );
 
   // Log verification counts
   React.useEffect(() => {
     if (allTemplates.length > 0) {
-      const adminActiveCount = allTemplates.filter(t => t.is_active !== false).length;
-      const missingCategoryCount = activeTemplates.filter(t => !t.category).length;
+      const legacyCount = allTemplates.filter(t => !t.template_key || t.template_key === 'legacy').length;
       
       console.log('📊 Template Verification:');
-      console.log('  Total templates:', allTemplates.length);
-      console.log('  Active templates (adminActiveCount):', adminActiveCount);
-      console.log('  Active templates (userActiveCount):', activeTemplates.length);
-      console.log('  Missing category count:', missingCategoryCount);
-      console.log('  ✅ Counts match:', adminActiveCount === activeTemplates.length);
+      console.log('  Total templates in DB:', allTemplates.length);
+      console.log('  Legacy templates (hidden):', legacyCount);
+      console.log('  Canonical templates (shown):', canonicalTemplates.length);
+      console.log('  Expected count: 8');
+      console.log('  ✅ Match:', canonicalTemplates.length === 8);
     }
-  }, [allTemplates, activeTemplates]);
+  }, [allTemplates, canonicalTemplates]);
 
-  // Transform to match old structure with proper category normalization
-  const templates = activeTemplates.map(t => ({
-    id: t.template_key || t.id,
+  // Transform canonical templates only
+  const templates = canonicalTemplates.map(t => ({
+    id: t.template_key,
     name: { en: t.title_en, th: t.title_th },
     description: { en: t.description_en || '', th: t.description_th || '' },
-    category: t.category ? t.category.toLowerCase().replace('_', '-') : 'other'
+    category: t.category || 'other'
   }));
 
   const colors = isDarkMode ? {
@@ -68,10 +71,10 @@ export default function Templates() {
       creditBalance: "Credit Balance",
       oneLetterPerCredit: "1 letter = 1 credit",
       purchaseCredits: "Purchase Credits",
-      preSigningSection: "⭐ Pre-Signing Negotiation",
+      checklists: "📋 Checklists",
       friendlyApproach: "Friendly Approach (3 Letters)",
-      professionalEscalation: "Professional Escalation (4 Letters)",
-      finalMeasures: "Final Measures (3 Letters)",
+      professionalEscalation: "Professional Escalation (1 Letter)",
+      finalMeasures: "Final Measures (1 Letter)",
       openTemplate: "Open",
       back: "Back",
       disclaimer: "Lease Shield provides general guidance and document templates for your convenience. Lease Shield is not a law firm, does not provide legal representation, and is not a party to your lease. You are responsible for checking the accuracy of all information and documents before sending them."
@@ -82,10 +85,10 @@ export default function Templates() {
       creditBalance: "เครดิตคงเหลือ",
       oneLetterPerCredit: "1 จดหมาย = 1 เครดิต",
       purchaseCredits: "ซื้อเครดิต",
-      preSigningSection: "⭐ เจรจาก่อนลงนาม",
+      checklists: "📋 รายการตรวจสอบ",
       friendlyApproach: "แนวทางเป็นมิตร (3 จดหมาย)",
-      professionalEscalation: "การยกระดับอย่างมืออาชีพ (4 จดหมาย)",
-      finalMeasures: "มาตรการสุดท้าย (3 จดหมาย)",
+      professionalEscalation: "การยกระดับอย่างมืออาชีพ (1 จดหมาย)",
+      finalMeasures: "มาตรการสุดท้าย (1 จดหมาย)",
       openTemplate: "เปิด",
       back: "กลับ",
       disclaimer: "Lease Shield ให้คำแนะนำทั่วไปและเทมเพลตเอกสารเพื่อความสะดวกของคุณ Lease Shield ไม่ใช่สำนักงานกฎหมาย ไม่ให้บริการตัวแทนทางกฎหมาย และไม่ได้เป็นคู่สัญญาในสัญญาเช่าของคุณ คุณมีหน้าที่รับผิดชอบในการตรวจสอบความถูกต้องของข้อมูลและเอกสารทั้งหมดก่อนส่ง"
@@ -94,16 +97,11 @@ export default function Templates() {
 
   const strings = t[language] || t.en;
 
-  // Category normalization - handle both formats (pre-signing and pre_signing)
-  const preSigningTemplates = templates.filter(t => 
-    t.category === 'pre-signing' || t.category === 'pre_signing'
-  );
+  // Deterministic category filtering
+  const checklistTemplates = templates.filter(t => t.category === 'checklist');
   const friendlyTemplates = templates.filter(t => t.category === 'friendly');
   const professionalTemplates = templates.filter(t => t.category === 'professional');
   const finalTemplates = templates.filter(t => t.category === 'final');
-  const otherTemplates = templates.filter(t => 
-    !['pre-signing', 'pre_signing', 'friendly', 'professional', 'final'].includes(t.category)
-  );
 
   const handleTemplateClick = (templateId) => {
     navigate(createPageUrl("TemplateForm") + `?subject=${templateId}`);
@@ -168,21 +166,21 @@ export default function Templates() {
           </div>
         </div>
 
-        {/* Pre-Signing Section */}
-        {preSigningTemplates.length > 0 && (
+        {/* Checklists Section */}
+        {checklistTemplates.length > 0 && (
           <div className="mb-12">
             <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
-              {strings.preSigningSection}
+              {strings.checklists}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {preSigningTemplates.map((template) => (
+              {checklistTemplates.map((template) => (
                 <div
                   key={template.id}
                   onClick={() => handleTemplateClick(template.id)}
                   className="rounded-xl shadow-md hover:shadow-xl transition-all cursor-pointer p-6"
                   style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}
                 >
-                  <div className="h-1 bg-gradient-to-r from-amber-400 to-orange-600 rounded-t-xl mb-4" />
+                  <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-600 rounded-t-xl mb-4" />
                   <h3 className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
                     {template.name[language] || template.name.en}
                   </h3>
@@ -204,7 +202,7 @@ export default function Templates() {
             <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
               {strings.friendlyApproach}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {friendlyTemplates.map((template) => (
                 <div
                   key={template.id}
@@ -234,7 +232,7 @@ export default function Templates() {
             <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
               {strings.professionalEscalation}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {professionalTemplates.map((template) => (
                 <div
                   key={template.id}
@@ -264,7 +262,7 @@ export default function Templates() {
             <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
               {strings.finalMeasures}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {finalTemplates.map((template) => (
                 <div
                   key={template.id}
@@ -273,36 +271,6 @@ export default function Templates() {
                   style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}
                 >
                   <div className="h-1 bg-gradient-to-r from-orange-600 to-red-700 rounded-t-xl mb-4" />
-                  <h3 className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
-                    {template.name[language] || template.name.en}
-                  </h3>
-                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-                    {template.description[language] || template.description.en}
-                  </p>
-                  <button className="text-sm font-medium text-emerald-700 hover:underline">
-                    {strings.openTemplate} →
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Other Templates Section (if any without proper category) */}
-        {otherTemplates.length > 0 && (
-          <div className="mb-12">
-            <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
-              Other Templates
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {otherTemplates.map((template) => (
-                <div
-                  key={template.id}
-                  onClick={() => handleTemplateClick(template.id)}
-                  className="rounded-xl shadow-md hover:shadow-xl transition-all cursor-pointer p-6"
-                  style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}
-                >
-                  <div className="h-1 bg-gradient-to-r from-gray-400 to-gray-600 rounded-t-xl mb-4" />
                   <h3 className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
                     {template.name[language] || template.name.en}
                   </h3>

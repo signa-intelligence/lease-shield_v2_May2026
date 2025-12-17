@@ -600,16 +600,24 @@ function AdminTemplatesContent() {
                     </tr>
                   </thead>
                   <tbody>
-                    {templates.map((template, idx) => (
+                    {templates.map((template, idx) => {
+                      const isLegacy = !template.template_key || template.template_key === 'legacy';
+                      return (
                       <tr
                         key={template.id}
                         style={{
                           borderBottom: `1px solid ${colors.borderColor}`,
-                          backgroundColor: idx % 2 === 0 ? colors.cardBg : (isDarkMode ? '#2A2D30' : '#F8FAFC')
+                          backgroundColor: idx % 2 === 0 ? colors.cardBg : (isDarkMode ? '#2A2D30' : '#F8FAFC'),
+                          opacity: isLegacy ? 0.5 : 1
                         }}
                       >
                         <td className="px-4 py-3">
-                          <p className="text-xs font-mono" style={{ color: colors.textPrimary }}>{template.template_key || 'legacy'}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-mono" style={{ color: colors.textPrimary }}>{template.template_key || 'legacy'}</p>
+                            {isLegacy && (
+                              <Badge className="bg-gray-300 text-gray-700 text-xs">Legacy (Deprecated)</Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <Badge variant="outline" className="text-xs">
@@ -648,6 +656,8 @@ function AdminTemplatesContent() {
                               variant="outline"
                               onClick={() => handleEdit(template)}
                               className="h-7"
+                              disabled={isLegacy}
+                              title={isLegacy ? "Legacy templates cannot be edited" : ""}
                             >
                               <Edit2 className="w-3 h-3 mr-1" />
                               Edit
@@ -665,13 +675,16 @@ function AdminTemplatesContent() {
                               variant="outline"
                               onClick={() => handleDelete(template)}
                               className="h-7 text-red-600 border-red-200"
+                              disabled={isLegacy}
+                              title={isLegacy ? "Legacy templates cannot be deleted" : ""}
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    );
+                    })}
                   </tbody>
                 </table>
               </div>
