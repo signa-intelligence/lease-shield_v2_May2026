@@ -3643,16 +3643,16 @@ function AccountContent() {
                     }}>
                       <Download className="w-5 h-5 text-white" />
                     </div>
-                    <div>
-                      <p style={{ fontSize: '16px', fontWeight: '700', color: '#0C3B2E', lineHeight: '1.3' }}>
-                        {strings.installApp}
-                      </p>
-                      <p style={{ fontSize: '14px', fontWeight: '600', color: '#0C3B2E', lineHeight: '1.3' }}>
-                        {strings.installAppDesc}
-                      </p>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#0C3B2E !important', marginBottom: '2px' }}>
+                        {language === 'th' ? 'ติดตั้งแอป Lease Shield' : language === 'zh' ? '安装 Lease Shield 应用' : language === 'ja' ? 'Lease Shield アプリをインストール' : language === 'ko' ? 'Lease Shield 앱 설치' : language === 'ru' ? 'Установить приложение Lease Shield' : 'Install Lease Shield App'}
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: '#0C3B2E !important' }}>
+                        {language === 'th' ? 'เพิ่มลงในหน้าจอหลักเพื่อเข้าถึงง่ายๆ' : language === 'zh' ? '添加到主屏幕以便快速访问' : language === 'ja' ? 'ホーム画面に追加して素早くアクセス' : language === 'ko' ? '빠른 액세스를 위해 홈 화면에 추가' : language === 'ru' ? 'Добавьте на главный экран для быстрого доступа' : 'Add to home screen for quick access'}
+                      </div>
                     </div>
                   </div>
-                  <ArrowRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                  <ArrowRight className="w-5 h-5" style={{ color: '#0C3B2E' }} />
                 </div>
               </div>
 
