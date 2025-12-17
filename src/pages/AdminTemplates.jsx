@@ -21,17 +21,22 @@ function AdminTemplatesContent() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
-
   const [formData, setFormData] = useState({
     template_key: '',
-    category: 'initial_resolution',
+    recipient_type: 'landlord',
+    language_code: 'en',
+    category: 'friendly',
     title_en: '',
     title_th: '',
     description_en: '',
     description_th: '',
     credit_cost: 1,
+    icon_name: 'FileText',
     is_active: true,
-    sort_order: 100
+    file: null,
+    subject_template: '',
+    body_template: '',
+    format: 'html'
   });
 
   const { data: user } = useQuery({
@@ -43,28 +48,6 @@ function AdminTemplatesContent() {
     queryKey: ['adminTemplates'],
     queryFn: () => base44.entities.TemplateLibrary.list('-created_date'),
     enabled: !!user && ['admin', 'super_admin'].includes(user.access_level),
-  });
-
-  // Enforce uniqueness: Group templates by template_key
-  const templatesByKey = templates.reduce((acc, t) => {
-    const key = t.template_key || 'unknown';
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(t);
-    return acc;
-  }, {});
-
-  // Display only unique templates (first occurrence)
-  const uniqueTemplates = Object.values(templatesByKey).map(group => {
-    // Select canonical record: prefer complete, active, recent
-    return group.sort((a, b) => {
-      const aComplete = a.title_en && a.title_th;
-      const bComplete = b.title_en && b.title_th;
-      if (aComplete && !bComplete) return -1;
-      if (!aComplete && bComplete) return 1;
-      if (a.is_active && !b.is_active) return -1;
-      if (!a.is_active && b.is_active) return 1;
-      return new Date(b.updated_date) - new Date(a.updated_date);
-    })[0];
   });
 
   const createTemplateMutation = useMutation({
@@ -195,46 +178,56 @@ function AdminTemplatesContent() {
   const resetForm = () => {
     setFormData({
       template_key: '',
-      category: 'initial_resolution',
+      recipient_type: 'landlord',
+      language_code: 'en',
+      category: 'friendly',
       title_en: '',
       title_th: '',
       description_en: '',
       description_th: '',
       credit_cost: 1,
+      icon_name: 'FileText',
       is_active: true,
-      sort_order: 100
+      file: null,
+      subject_template: '',
+      body_template: '',
+      format: 'html'
     });
   };
 
-
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({ ...formData, file });
+    }
+  };
 
   const handleCreateTemplate = async () => {
-    if (!formData.template_key || !formData.title_en || !formData.title_th) {
+    if (!formData.title_en || !formData.title_th || !formData.file) {
       alert(strings.fillAllFields);
-      return;
-    }
-
-    // Check for duplicate template_key
-    const existingTemplate = templates.find(t => t.template_key === formData.template_key);
-    if (existingTemplate) {
-      alert(language === 'th' 
-        ? `ไม่สามารถสร้างได้: template_key "${formData.template_key}" มีอยู่แล้ว กรุณาแก้ไขแทน`
-        : `Cannot create: template_key "${formData.template_key}" already exists. Please edit instead.`);
       return;
     }
 
     setUploadingFile(true);
     try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: formData.file });
+
       await createTemplateMutation.mutateAsync({
         template_key: formData.template_key,
+        recipient_type: formData.recipient_type,
+        language_code: formData.language_code,
         category: formData.category,
         title_en: formData.title_en,
         title_th: formData.title_th,
         description_en: formData.description_en,
         description_th: formData.description_th,
         credit_cost: formData.credit_cost,
+        icon_name: formData.icon_name,
         is_active: formData.is_active,
-        sort_order: formData.sort_order
+        file_url: file_url,
+        subject_template: formData.subject_template,
+        body_template: formData.body_template,
+        format: formData.format
       });
     } catch (error) {
       console.error('Failed to create template:', error);
@@ -245,34 +238,38 @@ function AdminTemplatesContent() {
   };
 
   const handleUpdateTemplate = async () => {
-    if (!editingTemplate || !formData.template_key || !formData.title_en || !formData.title_th) {
+    if (!editingTemplate || !formData.title_en || !formData.title_th) {
       alert(strings.fillAllFields);
-      return;
-    }
-
-    // Check for duplicate template_key (excluding current template)
-    const existingTemplate = templates.find(t => t.template_key === formData.template_key && t.id !== editingTemplate.id);
-    if (existingTemplate) {
-      alert(language === 'th' 
-        ? `ไม่สามารถอัปเดตได้: template_key "${formData.template_key}" ถูกใช้แล้ว`
-        : `Cannot update: template_key "${formData.template_key}" is already in use.`);
       return;
     }
 
     setUploadingFile(true);
     try {
+      let fileUrl = editingTemplate.file_url;
+
+      if (formData.file) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: formData.file });
+        fileUrl = file_url;
+      }
+
       await updateTemplateMutation.mutateAsync({
         id: editingTemplate.id,
         data: {
           template_key: formData.template_key,
+          recipient_type: formData.recipient_type,
+          language_code: formData.language_code,
           category: formData.category,
           title_en: formData.title_en,
           title_th: formData.title_th,
           description_en: formData.description_en,
           description_th: formData.description_th,
           credit_cost: formData.credit_cost,
+          icon_name: formData.icon_name,
           is_active: formData.is_active,
-          sort_order: formData.sort_order
+          file_url: fileUrl,
+          subject_template: formData.subject_template,
+          body_template: formData.body_template,
+          format: formData.format
         }
       });
     } catch (error) {
@@ -287,14 +284,20 @@ function AdminTemplatesContent() {
     setEditingTemplate(template);
     setFormData({
       template_key: template.template_key || '',
+      recipient_type: template.recipient_type || 'landlord',
+      language_code: template.language_code || 'en',
       category: template.category,
       title_en: template.title_en,
       title_th: template.title_th,
       description_en: template.description_en || '',
       description_th: template.description_th || '',
       credit_cost: template.credit_cost || 1,
+      icon_name: template.icon_name || 'FileText',
       is_active: template.is_active !== false,
-      sort_order: template.sort_order || 100
+      file: null,
+      subject_template: template.subject_template || '',
+      body_template: template.body_template || '',
+      format: template.format || 'html'
     });
     setShowCreateDialog(true);
   };
@@ -377,35 +380,63 @@ function AdminTemplatesContent() {
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div>
-                <Label style={{ color: colors.textPrimary }}>Template Key (UNIQUE Identifier) *</Label>
+                <Label style={{ color: colors.textPrimary }}>Template Key (Identifier)</Label>
                 <Input
                   value={formData.template_key}
                   onChange={(e) => setFormData({...formData, template_key: e.target.value})}
-                  placeholder="e.g., deposit_return_request"
+                  placeholder="e.g., deposit_demand_v1"
                   className="mt-2"
-                  disabled={!!editingTemplate}
                   style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
                 />
-                {editingTemplate && (
-                  <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'ไม่สามารถเปลี่ยน template_key ได้' : 'Template key cannot be changed'}
-                  </p>
-                )}
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label style={{ color: colors.textPrimary }}>Recipient Type</Label>
+                  <Select value={formData.recipient_type} onValueChange={(val) => setFormData({...formData, recipient_type: val})}>
+                    <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                      <SelectItem value="tenant">Tenant</SelectItem>
+                      <SelectItem value="landlord">Landlord</SelectItem>
+                      <SelectItem value="juristic">Juristic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
+                <div>
+                  <Label style={{ color: colors.textPrimary }}>
+                    <Globe className="w-4 h-4 inline mr-1" />
+                    Language
+                  </Label>
+                  <Select value={formData.language_code} onValueChange={(val) => setFormData({...formData, language_code: val})}>
+                    <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                      <SelectItem value="en">🇬🇧 English</SelectItem>
+                      <SelectItem value="th">🇹🇭 Thai (ไทย)</SelectItem>
+                      <SelectItem value="ja">🇯🇵 Japanese (日本語)</SelectItem>
+                      <SelectItem value="zh">🇨🇳 Chinese (中文)</SelectItem>
+                      <SelectItem value="ko">🇰🇷 Korean (한국어)</SelectItem>
+                      <SelectItem value="ru">🇷🇺 Russian (Русский)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
               <div>
-                <Label style={{ color: colors.textPrimary }}>{strings.category} *</Label>
+                <Label style={{ color: colors.textPrimary }}>{strings.category}</Label>
                 <Select value={formData.category} onValueChange={(val) => setFormData({...formData, category: val})}>
                   <SelectTrigger className="mt-2" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent style={{ backgroundColor: colors.cardBg }}>
-                    <SelectItem value="pre_signing_negotiation">Pre-Signing Negotiation</SelectItem>
-                    <SelectItem value="initial_resolution">Initial Resolution</SelectItem>
-                    <SelectItem value="professional_escalation">Professional Escalation</SelectItem>
-                    <SelectItem value="final_measures">Final Measures</SelectItem>
+                    <SelectItem value="pre_signing">{categoryLabels.pre_signing}</SelectItem>
+                    <SelectItem value="friendly">{categoryLabels.friendly}</SelectItem>
+                    <SelectItem value="professional">{categoryLabels.professional}</SelectItem>
+                    <SelectItem value="final">{categoryLabels.final}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -455,7 +486,7 @@ function AdminTemplatesContent() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label style={{ color: colors.textPrimary }}>Credit Cost *</Label>
+                  <Label style={{ color: colors.textPrimary }}>{strings.creditCost}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -466,17 +497,36 @@ function AdminTemplatesContent() {
                   />
                 </div>
                 <div>
-                  <Label style={{ color: colors.textPrimary }}>Sort Order</Label>
+                  <Label style={{ color: colors.textPrimary }}>{strings.iconName}</Label>
                   <Input
-                    type="number"
-                    min="1"
-                    value={formData.sort_order}
-                    onChange={(e) => setFormData({...formData, sort_order: parseInt(e.target.value) || 100})}
-                    placeholder="100"
+                    value={formData.icon_name}
+                    onChange={(e) => setFormData({...formData, icon_name: e.target.value})}
+                    placeholder="FileText"
                     className="mt-2"
                     style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{strings.selectFile}</Label>
+                <input
+                  type="file"
+                  onChange={handleFileSelect}
+                  className="mt-2 w-full"
+                  accept=".pdf,.doc,.docx"
+                  style={{ color: colors.textPrimary }}
+                />
+                {formData.file && (
+                  <p className="text-sm mt-2" style={{ color: colors.textSecondary }}>
+                    {formData.file.name}
+                  </p>
+                )}
+                {editingTemplate && !formData.file && (
+                  <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                    Current file: {editingTemplate.file_url?.split('/').pop()}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -500,17 +550,20 @@ function AdminTemplatesContent() {
                 {uploadingFile ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
+                    {strings.uploading}
                   </>
                 ) : (
-                  editingTemplate ? strings.update : strings.create
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    {editingTemplate ? strings.update : strings.create}
+                  </>
                 )}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {uniqueTemplates.length === 0 ? (
+        {templates.length === 0 ? (
           <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-12 text-center">
               <FileText className="w-16 h-16 mx-auto mb-4" style={{ color: colors.textSecondary, opacity: 0.3 }} />
@@ -538,42 +591,50 @@ function AdminTemplatesContent() {
                   <thead style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Template Key</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Recipient</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Language</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Title (EN)</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Languages</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Category</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Cost</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {uniqueTemplates.map((template, idx) => (
+                    {templates.map((template, idx) => {
+                      const isLegacy = !template.template_key || template.template_key === 'legacy';
+                      return (
                       <tr
                         key={template.id}
                         style={{
                           borderBottom: `1px solid ${colors.borderColor}`,
-                          backgroundColor: idx % 2 === 0 ? colors.cardBg : (isDarkMode ? '#2A2D30' : '#F8FAFC')
+                          backgroundColor: idx % 2 === 0 ? colors.cardBg : (isDarkMode ? '#2A2D30' : '#F8FAFC'),
+                          opacity: isLegacy ? 0.5 : 1
                         }}
                       >
                         <td className="px-4 py-3">
-                          <p className="text-xs font-mono" style={{ color: colors.textPrimary }}>{template.template_key}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{template.title_en}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1">
-                            {template.title_en && (
-                              <Badge className="bg-blue-100 text-blue-700 text-xs">EN</Badge>
-                            )}
-                            {template.title_th && (
-                              <Badge className="bg-purple-100 text-purple-700 text-xs">TH</Badge>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-mono" style={{ color: colors.textPrimary }}>{template.template_key || 'legacy'}</p>
+                            {isLegacy && (
+                              <Badge className="bg-gray-300 text-gray-700 text-xs">Legacy (Deprecated)</Badge>
                             )}
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           <Badge variant="outline" className="text-xs">
-                            {template.category?.replace(/_/g, ' ')}
+                            {template.recipient_type || 'tenant'}
                           </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className="bg-blue-100 text-blue-700 text-xs flex items-center gap-1 w-fit">
+                            <Globe className="w-3 h-3" />
+                            {(template.language_code || 'en').toUpperCase()}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{template.title_en}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className="bg-amber-100 text-amber-800">{template.credit_cost || 1}</Badge>
                         </td>
                         <td className="px-4 py-3">
                           {template.is_active !== false ? (
@@ -595,6 +656,8 @@ function AdminTemplatesContent() {
                               variant="outline"
                               onClick={() => handleEdit(template)}
                               className="h-7"
+                              disabled={isLegacy}
+                              title={isLegacy ? "Legacy templates cannot be edited" : ""}
                             >
                               <Edit2 className="w-3 h-3 mr-1" />
                               Edit
@@ -612,13 +675,16 @@ function AdminTemplatesContent() {
                               variant="outline"
                               onClick={() => handleDelete(template)}
                               className="h-7 text-red-600 border-red-200"
+                              disabled={isLegacy}
+                              title={isLegacy ? "Legacy templates cannot be deleted" : ""}
                             >
                               <Trash2 className="w-3 h-3" />
                             </Button>
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    );
+                    })}
                   </tbody>
                 </table>
               </div>

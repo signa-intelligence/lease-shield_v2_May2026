@@ -116,17 +116,19 @@ Deno.serve(async (req) => {
     languagePack.allLanguages.forEach((langCode, index) => {
       const content = letterContent[langCode] || letterContent['en'] || '';
       
-      // Language section header (minimal, no branding)
+      // Language section header
       docSections.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: `${languageLabels[langCode] || langCode.toUpperCase()}`,
+              text: `📄 ${languageLabels[langCode] || langCode.toUpperCase()}`,
               bold: true,
-              size: 22
+              size: 24,
+              color: '0C3B2E'
             })
           ],
-          spacing: { before: index === 0 ? 200 : 400, after: 300 }
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 400, after: 300 }
         })
       );
 
@@ -140,6 +142,8 @@ Deno.serve(async (req) => {
         }));
       }
     });
+
+    // No footer - clean professional letter only
 
     // Create DOCX document
     const doc = new Document({
