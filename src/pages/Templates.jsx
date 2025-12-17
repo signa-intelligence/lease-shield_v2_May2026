@@ -73,6 +73,23 @@ export default function Templates() {
 
   const strings = t[language] || t.en;
 
+  const categoryLabels = {
+    en: {
+      checklists: 'Checklists',
+      pre_signing: 'Pre-Signing',
+      initial_resolution: 'Initial Resolution',
+      professional: 'Professional Escalation',
+      final: 'Final Measures'
+    },
+    th: {
+      checklists: 'รายการตรวจสอบ',
+      pre_signing: 'ก่อนลงนาม',
+      initial_resolution: 'การแก้ไขเบื้องต้น',
+      professional: 'การยกระดับอย่างมืออาชีพ',
+      final: 'มาตรการสุดท้าย'
+    }
+  };
+
   // Group templates by category
   const checklistTemplates = displayTemplates.filter(t => t.category === 'checklists');
   const preSigningTemplates = displayTemplates.filter(t => t.category === 'pre_signing');
