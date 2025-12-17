@@ -71,7 +71,7 @@ function TemplateFormContent() {
 
   const { data: dbTemplates = [] } = useQuery({
     queryKey: ['templateLibrary'],
-    queryFn: () => base44.entities.TemplateLibrary.filter({ is_active: true }),
+    queryFn: () => base44.entities.TemplateLibrary.filter({ status: 'active' }),
     enabled: !!user,
     initialData: []
   });
@@ -641,25 +641,36 @@ function TemplateFormContent() {
     haptic.medium();
     setGenerating(true);
     try {
-      // Check if it's a DB template with body_en and body_th
-      const dbTemplate = dbTemplates.find(t => t.template_id === formData.subject);
+      // Find template from DB by template_key
+      const dbTemplate = dbTemplates.find(t => t.template_key === formData.subject);
       
-      if (dbTemplate && dbTemplate.body_en && dbTemplate.body_th) {
+      if (dbTemplate && dbTemplate.content_en && dbTemplate.content_th) {
         // Handle bilingual template with merge fields
         const mergeData = {
-          tenant_full_name: formData.tenant_name || '[ADD YOUR NAME]',
+          tenant_name: formData.tenant_name || '[ADD YOUR NAME]',
           tenant_address: formData.tenant_address || '[ADD YOUR ADDRESS]',
           landlord_name: formData.landlord_name || '[ADD LANDLORD NAME]',
           landlord_address: formData.landlord_address || formData.property_address || '[ADD LANDLORD ADDRESS]',
+          property_address: formData.property_address || '[ADD PROPERTY ADDRESS]',
           property_name: formData.property_name || formData.property_address || '[ADD PROPERTY NAME]',
           unit_number: formData.unit_number || '[ADD UNIT NUMBER]',
           today_date: new Date().toLocaleDateString('en-GB'),
-          notice_period_days: formData.notice_period_days || '[ADD NOTICE PERIOD]'
+          notice_period_days: formData.notice_period_days || '[ADD NOTICE PERIOD]',
+          deposit_amount: formData.deposit_amount || '[ADD DEPOSIT AMOUNT]',
+          move_out_date: formData.move_out_date || '[ADD MOVE OUT DATE]',
+          contract_date: formData.contract_ref || '[ADD CONTRACT DATE]',
+          breach_details: formData.breach_summary || '[ADD BREACH DETAILS]',
+          settlement_amount: formData.settlement_amount || '[ADD SETTLEMENT AMOUNT]',
+          settlement_date: formData.settlement_date || '[ADD SETTLEMENT DATE]',
+          payment_method: formData.payment_method || '[ADD PAYMENT METHOD]',
+          previous_letter_date: '[PREVIOUS LETTER DATE]',
+          deadline_date: '[DEADLINE DATE]',
+          final_deadline_date: '[FINAL DEADLINE DATE]'
         };
 
         // Replace merge fields in both languages
-        let letterContentEn = dbTemplate.body_en;
-        let letterContentTh = dbTemplate.body_th;
+        let letterContentEn = dbTemplate.content_en;
+        let letterContentTh = dbTemplate.content_th;
         
         Object.entries(mergeData).forEach(([key, value]) => {
           const placeholder = `{{${key}}}`;
@@ -690,8 +701,9 @@ function TemplateFormContent() {
           }
         });
 
-        // Deduct credit
-        const newCredits = userCredits - dbTemplate.credits_required;
+        // Deduct credit based on template cost
+        const creditsToDeduct = dbTemplate.cost_credits || 1;
+        const newCredits = userCredits - creditsToDeduct;
         await base44.auth.updateMe({ letter_credits: newCredits });
 
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
