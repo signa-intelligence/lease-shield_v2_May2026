@@ -110,6 +110,14 @@ function AdminTemplatesContent() {
   const isDarkMode = user?.theme === 'dark';
   const isAdmin = ['admin', 'super_admin'].includes(user?.access_level);
 
+  const categoryLabels = {
+    checklists: language === 'th' ? 'รายการตรวจสอบ' : 'Checklists',
+    pre_signing: language === 'th' ? 'เจรจาก่อนลงนาม' : 'Pre-Signing',
+    initial_resolution: language === 'th' ? 'การแก้ไขเบื้องต้น' : 'Initial Resolution',
+    professional: language === 'th' ? 'การยกระดับอย่างมืออาชีพ' : 'Professional',
+    final: language === 'th' ? 'มาตรการสุดท้าย' : 'Final Measures'
+  };
+
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
     cardBg: '#2A2D30',
@@ -192,14 +200,6 @@ function AdminTemplatesContent() {
   };
 
   const strings = t[language] || t.en;
-
-  const categoryLabels = {
-    checklists: language === 'th' ? 'รายการตรวจสอบ' : 'Checklists',
-    pre_signing: strings.preSigning,
-    initial_resolution: language === 'th' ? 'การแก้ไขเบื้องต้น' : 'Initial Resolution',
-    professional: strings.professional,
-    final: strings.final
-  };
 
   const resetForm = () => {
     setFormData({
