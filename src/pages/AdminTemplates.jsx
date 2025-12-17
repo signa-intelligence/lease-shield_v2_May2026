@@ -484,7 +484,7 @@ function AdminTemplatesContent() {
               </div>
 
               <div>
-                <Label style={{ color: colors.textPrimary }}>English Content * (use merge fields like {{`{{tenant_name}}`}})</Label>
+                <Label style={{ color: colors.textPrimary }}>{'English Content * (use merge fields like {{tenant_name}})'}</Label>
                 <Textarea
                   value={formData.content_en}
                   onChange={(e) => setFormData({...formData, content_en: e.target.value})}
@@ -496,7 +496,7 @@ function AdminTemplatesContent() {
               </div>
 
               <div>
-                <Label style={{ color: colors.textPrimary }}>Thai Content * (use merge fields like {{`{{tenant_name}}`}})</Label>
+                <Label style={{ color: colors.textPrimary }}>{'Thai Content * (use merge fields like {{tenant_name}})'}</Label>
                 <Textarea
                   value={formData.content_th}
                   onChange={(e) => setFormData({...formData, content_th: e.target.value})}
