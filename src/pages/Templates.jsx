@@ -12,78 +12,24 @@ export default function Templates() {
     queryFn: () => base44.auth.me(),
   });
 
+  const { data: allTemplates = [] } = useQuery({
+    queryKey: ['customTemplates'],
+    queryFn: () => base44.entities.TemplateLibrary.filter({ is_active: true }, '-created_date'),
+  });
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userCredits = user?.letter_credits || 0;
 
-  const templates = [
-    {
-      id: 'lease_negotiation',
-      name: { en: 'Pre-Signing Lease Negotiation', th: 'จดหมายทบทวนสัญญาก่อนลงนาม' },
-      description: { en: 'Request clarification of concerning lease terms before signing', th: 'ขอชี้แจงข้อกำหนดที่น่ากังวลก่อนการลงนามสัญญา' },
-      category: 'pre-signing'
-    },
-    {
-      id: 'deposit',
-      name: { en: 'Deposit Return Request', th: 'จดหมายขอคืนเงินมัดจำ' },
-      description: { en: 'Friendly formal request for security deposit return', th: 'จดหมายทางการสุภาพขอคืนเงินประกัน' },
-      category: 'friendly'
-    },
-    {
-      id: 'deductions',
-      name: { en: 'Request for Itemised Deductions', th: 'ขอรายละเอียดการหักเงิน' },
-      description: { en: 'Request breakdown of damage charges and deductions', th: 'ขอรายละเอียดค่าเสียหายและการหักเงินแบบแยกรายการ' },
-      category: 'friendly'
-    },
-    {
-      id: 'reminder',
-      name: { en: 'Friendly Reminder', th: 'จดหมายเตือนแบบมิตร' },
-      description: { en: 'Gentle follow-up on pending deposit return', th: 'จดหมายติดตามความคืบหน้าอย่างสุภาพ' },
-      category: 'friendly'
-    },
-    {
-      id: 'dispute',
-      name: { en: 'Formal Dispute of Withholding', th: 'จดหมายคัดค้านการระงับเงิน' },
-      description: { en: 'Formal dispute of unfair deposit withholding', th: 'จดหมายคัดค้านการระงับเงินประกันอย่างเป็นทางการ' },
-      category: 'professional'
-    },
-    {
-      id: 'early_termination',
-      name: { en: 'Early Termination Reconciliation', th: 'ประสานยุติสัญญาก่อนกำหนด' },
-      description: { en: 'Coordinate early lease termination details', th: 'ประสานรายละเอียดการยุติสัญญาก่อนกำหนด' },
-      category: 'professional'
-    },
-    {
-      id: 'condition_dispute',
-      name: { en: 'Property Condition Dispute', th: 'โต้แย้งสภาพทรัพย์สิน' },
-      description: { en: 'Dispute claimed property damages', th: 'โต้แย้งการเรียกร้องค่าเสียหายทรัพย์สิน' },
-      category: 'professional'
-    },
-    {
-      id: 'evidence',
-      name: { en: 'Request for Evidence', th: 'ขอหลักฐานประกอบ' },
-      description: { en: 'Request supporting documents for claimed damages', th: 'ขอเอกสารหลักฐานสำหรับค่าเสียหายที่อ้าง' },
-      category: 'professional'
-    },
-    {
-      id: 'final_opportunity',
-      name: { en: 'Final Opportunity', th: 'โอกาสสุดท้าย' },
-      description: { en: 'Last chance before formal escalation', th: 'โอกาสสุดท้ายก่อนดำเนินการทางกฎหมาย' },
-      category: 'final'
-    },
-    {
-      id: 'non_compliance',
-      name: { en: 'Notice of Non-Compliance', th: 'แจ้งไม่ปฏิบัติตามสัญญา' },
-      description: { en: 'Official notice of contract breach', th: 'แจ้งการฝ่าฝืนสัญญาอย่างเป็นทางการ' },
-      category: 'final'
-    },
-    {
-      id: 'settlement',
-      name: { en: 'Settlement Confirmation', th: 'ยืนยันการตกลงชำระเงิน' },
-      description: { en: 'Confirm successful deposit transfer', th: 'ยืนยันการคืนเงินประกันสำเร็จ' },
-      category: 'final'
-    }
-  ];
+  // Filter templates by recipient type (tenant) - users are tenants sending to landlords
+  const templates = allTemplates
+    .filter(t => t.recipient_type === 'landlord')
+    .map(t => ({
+      id: t.template_key || t.id,
+      name: { en: t.title_en, th: t.title_th },
+      description: { en: t.description_en || '', th: t.description_th || '' },
+      category: t.category
+    }));
 
   const colors = isDarkMode ? {
     bg: '#111827',
