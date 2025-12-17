@@ -4777,41 +4777,57 @@ function AccountContent() {
                         </>
                       ) : hasPricing ? (
                         <>
-                          {/* Primary: Show price based on selected toggle */}
-                          <div className="mb-2">
-                            <div className="text-3xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
-                              ฿{billingPeriod === 'monthly' ? plan.priceMonthly.toLocaleString() : plan.priceAnnual.toLocaleString()}
-                            </div>
-                            <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                              {billingPeriod === 'monthly' 
-                                ? (language === 'th' ? '/เดือน' : '/month')
-                                : (language === 'th' ? '/ปี' : '/year')
-                              }
-                            </div>
-                          </div>
-
-                          {/* Secondary: Show opposite billing period */}
-                          <div className="pt-2 border-t" style={{ borderColor: colors.borderColor }}>
-                            {billingPeriod === 'monthly' ? (
-                              <>
-                                <div className="text-sm" style={{ color: colors.textSecondary }}>
-                                  {language === 'th' ? 'หรือชำระ' : language === 'zh' ? '或支付' : language === 'ja' ? 'または支払う' : language === 'ko' ? '또는 지불' : language === 'ru' ? 'Или платите' : 'Billed as'} <span className="font-bold">฿{plan.priceAnnual.toLocaleString()}</span> {language === 'th' ? '/ปี' : '/year'}
+                          {billingPeriod === 'monthly' ? (
+                            <>
+                              {/* MONTHLY TOGGLE ACTIVE */}
+                              <div className="mb-2">
+                                <div className="text-3xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
+                                  ฿{plan.priceMonthly.toLocaleString()}
                                 </div>
-                                <Badge className="bg-emerald-100 text-emerald-700 text-xs font-bold mt-1">
-                                  {language === 'th' ? 'ฟรี 2 เดือน — ประหยัด' : language === 'zh' ? '免费2个月 — 节省' : language === 'ja' ? '2ヶ月無料 — 節約' : language === 'ko' ? '2개월 무료 — 절약' : language === 'ru' ? '2 месяца бесплатно — экономия' : '2 months free — save'} ฿{plan.savingsAnnual.toLocaleString()}
-                                </Badge>
-                              </>
-                            ) : (
-                              <>
-                                <div className="text-sm" style={{ color: colors.textSecondary }}>
-                                  {language === 'th' ? 'เท่ากับ' : language === 'zh' ? '相当于' : language === 'ja' ? '相当' : language === 'ko' ? '동등한' : language === 'ru' ? 'Эквивалент' : 'Equivalent'} <span className="font-bold">฿{Math.round(plan.priceAnnual / 10).toLocaleString()}</span> {language === 'th' ? '/เดือน' : '/month'}
+                                <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                                  {language === 'th' ? '/เดือน' : language === 'zh' ? '/月' : language === 'ja' ? '/月' : language === 'ko' ? '/월' : language === 'ru' ? '/месяц' : '/month'}
                                 </div>
-                                <Badge className="bg-emerald-100 text-emerald-700 text-xs font-bold mt-1">
-                                  {language === 'th' ? 'ฟรี 2 เดือน — ประหยัด' : language === 'zh' ? '免费2个月 — 节省' : language === 'ja' ? '2ヶ月無料 — 節約' : language === 'ko' ? '2개월 무료 — 절약' : language === 'ru' ? '2 месяца бесплатно — экономия' : '2 months free — save'} ฿{plan.savingsAnnual.toLocaleString()}
+                              </div>
+                              <div className="pt-2" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
+                                <p className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>
+                                  {language === 'th' ? 'เรียกเก็บรายเดือน' : language === 'zh' ? '按月计费' : language === 'ja' ? '月額請求' : language === 'ko' ? '월별 청구' : language === 'ru' ? 'Ежемесячная оплата' : 'Billed monthly'}
+                                </p>
+                                <p className="text-xs font-semibold" style={{ color: '#10B981' }}>
+                                  {language === 'th' 
+                                    ? `เปลี่ยนเป็นรายปี · ฟรี 2 เดือน (ประหยัด ฿${plan.savingsAnnual.toLocaleString()})`
+                                    : language === 'zh'
+                                      ? `切换到年付 · 免费2个月 (节省 ฿${plan.savingsAnnual.toLocaleString()})`
+                                      : language === 'ja'
+                                        ? `年払いに切替 · 2ヶ月無料 (฿${plan.savingsAnnual.toLocaleString()}節約)`
+                                        : language === 'ko'
+                                          ? `연간 결제로 전환 · 2개월 무료 (฿${plan.savingsAnnual.toLocaleString()} 절약)`
+                                          : language === 'ru'
+                                            ? `На годовую оплату · 2 месяца бесплатно (экономия ฿${plan.savingsAnnual.toLocaleString()})`
+                                            : `Switch to Annual · 2 months free (save ฿${plan.savingsAnnual.toLocaleString()})`}
+                                </p>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* ANNUAL TOGGLE ACTIVE */}
+                              <div className="mb-2">
+                                <div className="text-3xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
+                                  ฿{plan.priceAnnual.toLocaleString()}
+                                </div>
+                                <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                                  {language === 'th' ? '/ปี' : language === 'zh' ? '/年' : language === 'ja' ? '/年' : language === 'ko' ? '/년' : language === 'ru' ? '/год' : '/year'}
+                                </div>
+                              </div>
+                              <div className="pt-2" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
+                                <p className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>
+                                  {language === 'th' ? 'เท่ากับ' : language === 'zh' ? '相当于' : language === 'ja' ? '相当' : language === 'ko' ? '동등한' : language === 'ru' ? 'Эквивалент' : 'Equivalent to'} <span className="font-bold">฿{Math.round(plan.priceAnnual / 12).toLocaleString()}</span> {language === 'th' ? '/เดือน' : language === 'zh' ? '/月' : language === 'ja' ? '/月' : language === 'ko' ? '/월' : language === 'ru' ? '/месяц' : '/month'}
+                                </p>
+                                <Badge className="bg-emerald-100 text-emerald-700 text-xs font-bold">
+                                  {language === 'th' ? 'รวมฟรี 2 เดือน' : language === 'zh' ? '包含2个月免费' : language === 'ja' ? '2ヶ月無料含む' : language === 'ko' ? '2개월 무료 포함' : language === 'ru' ? 'Включает 2 месяца бесплатно' : 'Includes 2 months free'}
                                 </Badge>
-                              </>
-                            )}
-                          </div>
+                              </div>
+                            </>
+                          )}
                         </>
                       ) : (
                         <div className="text-sm font-semibold" style={{ color: '#EF4444' }}>
