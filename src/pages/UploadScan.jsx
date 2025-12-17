@@ -62,8 +62,9 @@ function UploadScanPageContent() {
   // NEW: State for post-scan upgrade hint
   const [showPostScanHint, setShowPostScanHint] = useState(false);
   
-  // NEW: State for disclaimer acceptance
-  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  // NEW: State for disclaimer modal
+  const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
+  const [disclaimerCheckboxTicked, setDisclaimerCheckboxTicked] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -72,13 +73,6 @@ function UploadScanPageContent() {
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000
   });
-
-  // Check if user has already accepted disclaimer
-  useEffect(() => {
-    if (user?.scan_disclaimer_accepted) {
-      setDisclaimerAccepted(true);
-    }
-  }, [user]);
 
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
@@ -296,6 +290,24 @@ function UploadScanPageContent() {
       stepTrack: "ติดตาม",
       upgradeHintText: "อัปเกรดเพื่อปลดล็อกการสแกนไม่จำกัดและการวิเคราะห์สัญญาขั้นสูง",
       viewPlans: "ดูแผน",
+      disclaimerTitle: "ข้อจำกัดความรับผิดชอบการสแกนสัญญาเช่า",
+      disclaimerCheckbox: "ข้าพเจ้าได้อ่านและยอมรับข้อจำกัดความรับผิดชอบการสแกนสัญญาเช่าแล้ว",
+      agreeAndContinue: "ยอมรับและดำเนินการต่อ",
+      disclaimerCancel: "ยกเลิก",
+      disclaimerText: {
+        p1: "Lease Shield ให้บริการวิเคราะห์อัตโนมัติ คำแนะนำทั่วไป และเทมเพลตเอกสารเพื่อวัตถุประสงค์ในการให้ข้อมูลเท่านั้น",
+        p2: "Lease Shield ไม่ใช่สำนักงานกฎหมาย ไม่ให้คำปรึกษาด้านกฎหมาย และไม่ให้การเป็นตัวแทนทางกฎหมาย การใช้บริการนี้ไม่ก่อให้เกิดความสัมพันธ์ทนายความ-ลูกความ",
+        p3: "ผลลัพธ์อาจไม่ครบถ้วน ไม่ถูกต้อง หรือไม่เป็นปัจจุบัน Lease Shield ไม่รับประกันความถูกต้อง ความครบถ้วน หรือความเหมาะสมของผลการสแกน คำแนะนำ หรือเอกสารที่สร้างขึ้น",
+        responsibleTitle: "คุณยังคงต้องรับผิดชอบทั้งหมดสำหรับ:",
+        responsibilities: [
+          "การตรวจสอบเอกสารสัญญาเช่าของคุณ",
+          "การตรวจสอบความถูกต้องของข้อมูลทั้งหมด",
+          "การขอคำปรึกษากฎหมายจากผู้เชี่ยวชาญอิสระก่อนดำเนินการ",
+          "การตัดสินใจว่าจะใช้ผลลัพธ์อย่างไรและในกรณีใด"
+        ],
+        p4: "Lease Shield ไม่ได้เป็นคู่สัญญาในสัญญาเช่าของคุณ และไม่รับผิดชอบต่อการตัดสินใจ ข้อพิพาท ความเสียหาย หรือผลลัพธ์ใด ๆ ที่เกิดจากการใช้บริการนี้",
+        p5: "เมื่อดำเนินการต่อ คุณรับทราบและยอมรับว่าการใช้ Lease Shield เป็นความเสี่ยงของคุณเอง"
+      }
     },
     zh: {
       title: "扫描租约",
@@ -372,6 +384,24 @@ function UploadScanPageContent() {
       stepTrack: "追踪",
       upgradeHintText: "升级以解锁无限扫描和高级租约分析。",
       viewPlans: "查看计划",
+      disclaimerTitle: "租约扫描免责声明",
+      disclaimerCheckbox: "我已阅读并同意租约扫描免责声明。",
+      agreeAndContinue: "同意并继续",
+      disclaimerCancel: "取消",
+      disclaimerText: {
+        p1: "Lease Shield 仅提供自动化分析、一般性建议和文档模板，供信息参考之用。",
+        p2: "Lease Shield 不是律师事务所，不提供法律意见，也不提供法律代理服务。使用本服务不会建立律师—客户关系。",
+        p3: "结果可能不完整、不准确或已过期。Lease Shield 不保证扫描结果、建议或生成文件的准确性、完整性或适用性。",
+        responsibleTitle: "您仍需对以下事项承担全部责任：",
+        responsibilities: [
+          "审阅您的租赁文件",
+          "核实所有信息的准确性",
+          "在采取行动前寻求独立法律意见",
+          "决定是否以及如何使用任何输出内容"
+        ],
+        p4: "Lease Shield 不是您租约的合同当事方，对因使用本服务所产生的决定、纠纷、损失或结果不承担任何责任。",
+        p5: "继续即表示您确认并接受：使用 Lease Shield 风险自负。"
+      }
     },
     ja: {
       title: "賃貸契約をスキャン",
@@ -448,6 +478,24 @@ function UploadScanPageContent() {
       stepTrack: "追跡",
       upgradeHintText: "無制限スキャンと高度な賃貸契約分析をアンロックするためにアップグレードしてください。",
       viewPlans: "プランを見る",
+      disclaimerTitle: "賃貸契約スキャン免責事項",
+      disclaimerCheckbox: "賃貸契約スキャン免責事項を読み、同意します。",
+      agreeAndContinue: "同意して続行",
+      disclaimerCancel: "キャンセル",
+      disclaimerText: {
+        p1: "Lease Shield は情報提供目的で、自動分析・一般的なガイダンス・文書テンプレートを提供します。",
+        p2: "Lease Shield は法律事務所ではなく、法律助言や法的代理を提供しません。本サービスの利用により弁護士—依頼者関係は成立しません。",
+        p3: "結果は不完全、不正確、または最新でない可能性があります。Lease Shield はスキャン結果、推奨事項、生成文書の正確性・完全性・適合性を保証しません。",
+        responsibleTitle: "以下については利用者が全責任を負います：",
+        responsibilities: [
+          "賃貸契約書類の確認",
+          "すべての情報の正確性の検証",
+          "行動前に独立した法律助言を求めること",
+          "出力結果を使用するかどうか、および使用方法の判断"
+        ],
+        p4: "Lease Shield は賃貸契約の当事者ではなく、本サービス利用に起因する判断、紛争、損害、結果について一切責任を負いません。",
+        p5: "続行することで、Lease Shield の利用は自己責任であることを確認し同意したものとします。"
+      }
     },
     ko: {
       title: "임대 계약 스캔",
@@ -524,6 +572,24 @@ function UploadScanPageContent() {
       stepTrack: "추적",
       upgradeHintText: "무제한 스캔 및 고급 임대 계약 분석을 잠금 해제하려면 업그레이드하십시오.",
       viewPlans: "플랜 보기",
+      disclaimerTitle: "임대차 계약 스캔 면책 조항",
+      disclaimerCheckbox: "임대차 계약 스캔 면책 조항을 읽고 이에 동의합니다.",
+      agreeAndContinue: "동의 및 계속",
+      disclaimerCancel: "취소",
+      disclaimerText: {
+        p1: "Lease Shield는 정보 제공 목적의 자동 분석, 일반 안내 및 문서 템플릿을 제공합니다.",
+        p2: "Lease Shield는 법률사무소가 아니며 법률 자문 또는 법률 대리를 제공하지 않습니다. 본 서비스를 사용한다고 해서 변호사-의뢰인 관계가 성립되지 않습니다.",
+        p3: "결과는 불완전하거나 부정확하거나 최신이 아닐 수 있습니다. Lease Shield는 스캔 결과, 권고 또는 생성 문서의 정확성, 완전성, 적합성을 보장하지 않습니다.",
+        responsibleTitle: "귀하는 다음에 대해 전적으로 책임이 있습니다:",
+        responsibilities: [
+          "임대차 계약서 검토",
+          "모든 정보의 정확성 확인",
+          "조치 전 독립적인 법률 자문 구하기",
+          "출력 결과를 사용할지 및 사용 방법 결정"
+        ],
+        p4: "Lease Shield는 귀하의 임대차 계약의 당사자가 아니며, 본 서비스 사용으로 인한 결정, 분쟁, 손실 또는 결과에 대해 책임을 지지 않습니다.",
+        p5: "계속 진행하면 Lease Shield 사용은 본인 책임임을 인정하고 동의하는 것입니다."
+      }
     },
     ru: {
       title: "Сканировать договор",
@@ -600,6 +666,24 @@ function UploadScanPageContent() {
       stepTrack: "Отслеживание",
       upgradeHintText: "Обновитесь для неограниченного сканирования и расширенного анализа договоров.",
       viewPlans: "Посмотреть планы",
+      disclaimerTitle: "Оговорка о сканировании договора аренды",
+      disclaimerCheckbox: "Я прочитал(а) и соглашаюсь с оговоркой о сканировании договора аренды.",
+      agreeAndContinue: "Согласиться и продолжить",
+      disclaimerCancel: "Отмена",
+      disclaimerText: {
+        p1: "Lease Shield предоставляет автоматизированный анализ, общие рекомендации и шаблоны документов исключительно в информационных целях.",
+        p2: "Lease Shield не является юридической фирмой, не предоставляет юридические консультации и не осуществляет юридическое представительство. Использование сервиса не создаёт отношений «адвокат—клиент».",
+        p3: "Результаты могут быть неполными, неточными или устаревшими. Lease Shield не гарантирует точность, полноту или пригодность результатов сканирования, рекомендаций или сгенерированных документов.",
+        responsibleTitle: "Вы полностью несёте ответственность за:",
+        responsibilities: [
+          "Проверку ваших документов аренды",
+          "Проверку точности всей информации",
+          "Обращение за независимой юридической консультацией перед действиями",
+          "Решение о том, использовать ли и как использовать любые результаты"
+        ],
+        p4: "Lease Shield не является стороной вашего договора аренды и не несёт ответственности за решения, споры, убытки или последствия, возникающие в результате использования сервиса.",
+        p5: "Продолжая, вы подтверждаете и принимаете, что используете Lease Shield на свой страх и риск."
+      }
     }
   };
 
@@ -634,15 +718,22 @@ function UploadScanPageContent() {
     }
   });
 
-  const handleAcceptDisclaimer = async () => {
+  const handleAcceptDisclaimerAndProceed = async () => {
+    if (!disclaimerCheckboxTicked) return;
+    
     haptic.medium();
-    setDisclaimerAccepted(true);
+    setShowDisclaimerModal(false);
+    setDisclaimerCheckboxTicked(false);
+    
     // Save acceptance to user profile
     await base44.auth.updateMe({ scan_disclaimer_accepted: true });
     queryClient.invalidateQueries({ queryKey: ['user'] });
+    
+    // Immediately proceed with upload
+    proceedWithUpload();
   };
 
-  const handleUploadAll = async () => {
+  const proceedWithUpload = async () => {
     // Reset post-scan hint at the start of a new upload attempt
     setShowPostScanHint(false);
 
@@ -887,6 +978,17 @@ function UploadScanPageContent() {
     await attemptUpload();
   };
 
+  const handleUploadAll = async () => {
+    // Check if user needs to see disclaimer first
+    if (!user?.scan_disclaimer_accepted) {
+      setShowDisclaimerModal(true);
+      return;
+    }
+    
+    // If already accepted, proceed directly
+    proceedWithUpload();
+  };
+
   const handleConfirmLeaseDetails = async () => {
     if (!pendingLeaseId || !leaseDetails) return;
 
@@ -991,8 +1093,8 @@ function UploadScanPageContent() {
   };
 
   const handleFileSelect = (e) => {
-    // Only allow file selection if upload is allowed AND disclaimer accepted
-    if (!scanStatus.allowed || !disclaimerAccepted) return;
+    // Only allow file selection if upload is allowed
+    if (!scanStatus.allowed) return;
     const files = Array.from(e.target.files || e.dataTransfer?.files || []);
     setSelectedFiles(prev => [...prev, ...files]);
     setError(null);
@@ -1000,8 +1102,8 @@ function UploadScanPageContent() {
   };
 
   const handleDrop = (e) => {
-    // Only allow drop if upload is allowed AND disclaimer accepted
-    if (!scanStatus.allowed || !disclaimerAccepted) return;
+    // Only allow drop if upload is allowed
+    if (!scanStatus.allowed) return;
     e.preventDefault();
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
@@ -1502,63 +1604,94 @@ function UploadScanPageContent() {
           </Dialog>
         )}
 
-        {/* Upload Zone */}
-        <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
-          {/* ✅ LEASE SCAN DISCLAIMER - Visible if not yet accepted */}
-          {!disclaimerAccepted && !user?.scan_disclaimer_accepted && (
-            <div className="p-6 md:p-8 border-b" style={{ borderBottomColor: colors.borderColor }}>
-              <div className="mb-4">
-                <h3 className="font-bold text-lg mb-3" style={{ color: colors.textPrimary }}>
-                  Lease Scan Disclaimer
-                </h3>
-                <div className="space-y-3 text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
-                  <p>
-                    Lease Shield provides automated analysis, general guidance, and document templates for informational purposes only.
-                  </p>
-                  <p>
-                    Lease Shield is not a law firm, does not provide legal advice, and does not provide legal representation. No lawyer-client relationship is created by using this service.
-                  </p>
-                  <p>
-                    The results of any lease scan are generated using automated processes and may be incomplete, inaccurate, or outdated. Lease Shield does not guarantee the accuracy, completeness, or suitability of any scan results, recommendations, or generated documents.
-                  </p>
-                  <p className="font-semibold">You remain fully responsible for:</p>
+        {/* Disclaimer Modal */}
+        <Dialog open={showDisclaimerModal} onOpenChange={setShowDisclaimerModal}>
+          <DialogContent 
+            className="max-w-2xl w-[95vw] h-[85vh] flex flex-col p-0"
+            style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}
+          >
+            <DialogHeader className="px-6 py-4 border-b flex-shrink-0" style={{ borderBottomColor: colors.borderColor }}>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <AlertCircle className="w-6 h-6 text-amber-600" />
+                {strings.disclaimerTitle}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-y-auto px-6 py-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <div className="space-y-4 text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
+                <p>{strings.disclaimerText.p1}</p>
+                <p>{strings.disclaimerText.p2}</p>
+                <p>{strings.disclaimerText.p3}</p>
+                <div>
+                  <p className="font-semibold mb-2">{strings.disclaimerText.responsibleTitle}</p>
                   <ul className="list-disc pl-5 space-y-1">
-                    <li>Reviewing your lease documents</li>
-                    <li>Verifying the accuracy of all information</li>
-                    <li>Seeking independent legal advice before taking action</li>
-                    <li>Deciding whether and how to use any output provided</li>
+                    {strings.disclaimerText.responsibilities.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
                   </ul>
-                  <p>
-                    Lease Shield is not a party to your lease and assumes no liability for decisions, disputes, losses, or outcomes arising from the use of this service.
-                  </p>
-                  <p className="font-semibold">
-                    By proceeding, you acknowledge and accept that you use Lease Shield at your own risk.
-                  </p>
                 </div>
+                <p>{strings.disclaimerText.p4}</p>
+                <p className="font-semibold">{strings.disclaimerText.p5}</p>
               </div>
-              <div className="flex items-start gap-3 p-4 rounded-lg" style={{
-                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                border: `2px solid ${colors.borderColor}`
+            </div>
+
+            <div className="px-6 py-4 border-t flex-shrink-0 space-y-4" style={{ borderTopColor: colors.borderColor }}>
+              <div className="flex items-start gap-3 p-3 rounded-lg" style={{
+                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6'
               }}>
                 <input
                   type="checkbox"
-                  id="disclaimer-checkbox"
-                  checked={disclaimerAccepted}
+                  id="modal-disclaimer-checkbox"
+                  checked={disclaimerCheckboxTicked}
                   onChange={(e) => {
-                    if (e.target.checked) {
-                      handleAcceptDisclaimer();
-                    }
+                    haptic.light();
+                    setDisclaimerCheckboxTicked(e.target.checked);
                   }}
                   className="w-5 h-5 mt-0.5 flex-shrink-0 cursor-pointer"
                   style={{ accentColor: '#0C3B2E' }}
                 />
-                <label htmlFor="disclaimer-checkbox" className="font-semibold text-sm cursor-pointer" style={{ color: colors.textPrimary }}>
-                  I understand and agree to the Lease Scan Disclaimer.
+                <label htmlFor="modal-disclaimer-checkbox" className="font-semibold text-sm cursor-pointer" style={{ color: colors.textPrimary }}>
+                  {strings.disclaimerCheckbox}
                 </label>
               </div>
-            </div>
-          )}
 
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    haptic.light();
+                    setShowDisclaimerModal(false);
+                    setDisclaimerCheckboxTicked(false);
+                  }}
+                  className="flex-1"
+                  style={{
+                    backgroundColor: colors.cardBg,
+                    borderColor: colors.borderColor,
+                    color: colors.textPrimary
+                  }}
+                >
+                  {strings.disclaimerCancel}
+                </Button>
+                <Button
+                  onClick={handleAcceptDisclaimerAndProceed}
+                  disabled={!disclaimerCheckboxTicked}
+                  className="flex-1"
+                  style={{
+                    backgroundColor: disclaimerCheckboxTicked ? '#0C3B2E' : '#9CA3AF',
+                    color: '#FFFFFF',
+                    cursor: disclaimerCheckboxTicked ? 'pointer' : 'not-allowed',
+                    opacity: disclaimerCheckboxTicked ? 1 : 0.6
+                  }}
+                >
+                  {strings.agreeAndContinue}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Upload Zone */}
+        <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <div className="p-6 md:p-8">
             {uploading || analyzing ? (
               <UploadProgress
@@ -1623,13 +1756,13 @@ function UploadScanPageContent() {
                 )}
 
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all ${dragActive ? 'border-blue-500 bg-blue-50' : ''} ${(!scanStatus.allowed || !disclaimerAccepted) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all ${dragActive ? 'border-blue-500 bg-blue-50' : ''} ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
                   style={{
                     borderColor: dragActive ? '#3B82F6' : colors.borderColor,
                     backgroundColor: dragActive ? (isDarkMode ? '#1E3A5F' : '#EFF6FF') : 'transparent',
-                    pointerEvents: (scanStatus.allowed && disclaimerAccepted) ? 'auto' : 'none'
+                    pointerEvents: scanStatus.allowed ? 'auto' : 'none'
                   }}
-                  onDragEnter={() => (scanStatus.allowed && disclaimerAccepted) && setDragActive(true)}
+                  onDragEnter={() => scanStatus.allowed && setDragActive(true)}
                   onDragLeave={() => setDragActive(false)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleDrop}
@@ -1648,10 +1781,10 @@ function UploadScanPageContent() {
                         accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
                         onChange={handleFileSelect}
                         className="hidden"
-                        disabled={!scanStatus.allowed || !disclaimerAccepted}
+                        disabled={!scanStatus.allowed}
                       />
                       <span
-                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg ${(!scanStatus.allowed || !disclaimerAccepted) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                         style={{
                           backgroundColor: '#0C3B2E',
                           color: '#FFFFFF'
@@ -1670,10 +1803,10 @@ function UploadScanPageContent() {
                         capture="environment"
                         onChange={handleFileSelect}
                         className="hidden"
-                        disabled={!scanStatus.allowed || !disclaimerAccepted}
+                        disabled={!scanStatus.allowed}
                       />
                       <span
-                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg border-2 ${(!scanStatus.allowed || !disclaimerAccepted) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg border-2 ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                         style={{
                           backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
                           color: '#0C3B2E',
@@ -1720,8 +1853,8 @@ function UploadScanPageContent() {
                         haptic.medium();
                         handleUploadAll();
                       }}
-                      disabled={uploading || !scanStatus.allowed || !disclaimerAccepted}
-                      className={`w-full mt-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 ${(!scanStatus.allowed || !disclaimerAccepted) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={uploading || !scanStatus.allowed}
+                      className={`w-full mt-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
                       style={{
                         backgroundColor: '#0C3B2E',
                         color: '#FFFFFF'
