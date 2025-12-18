@@ -1023,6 +1023,25 @@ function ResolveCaseContent() {
               <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{str.evidenceDesc}</p>
             </CardHeader>
             <CardContent>
+              {/* Privacy Notice - Consent */}
+              <div className="mb-4 p-4 rounded-lg" style={{
+                backgroundColor: isDarkMode ? '#1F2937' : '#F0FDF4',
+                border: `2px solid ${isDarkMode ? '#10B981' : '#86EFAC'}`
+              }}>
+                <p className="text-xs font-semibold leading-relaxed" style={{ color: isDarkMode ? '#10B981' : '#047857' }}>
+                  {language === 'th' 
+                    ? '🔒 ความเป็นส่วนตัวของคุณ: โดยการเริ่ม Resolve Case คุณยินยอมให้เอกสารที่คุณส่งได้รับการตรวจสอบโดยเจ้าหน้าที่ Resolve Case ของ Lease Shield เพื่อวัตถุประสงค์ในการแก้ไข เอกสารที่ไม่ได้ส่งยังคงเป็นส่วนตัวและไม่สามารถเข้าถึงได้'
+                    : language === 'zh'
+                      ? '🔒 您的隐私：通过启动Resolve案件，您同意您提交的文档将由Lease Shield Resolve案件负责人审查以供解决之用。未提交的文档保持私密且无法访问。'
+                      : language === 'ja'
+                        ? '🔒 あなたのプライバシー：Resolveケースを開始することにより、提出したドキュメントがLease Shield Resolveケース担当者によって解決目的で確認されることに同意します。提出されていないドキュメントは非公開のままでアクセスできません。'
+                        : language === 'ko'
+                          ? '🔒 귀하의 개인정보: Resolve 케이스를 시작함으로써 귀하가 제출한 문서가 해결 목적으로 Lease Shield Resolve 케이스 담당자에 의해 검토되는 것에 동의합니다. 제출되지 않은 문서는 비공개로 유지되며 액세스할 수 없습니다.'
+                          : language === 'ru'
+                            ? '🔒 Ваша конфиденциальность: Открывая дело Resolve, вы соглашаетесь на то, что отправленные вами документы будут проверены сотрудниками Lease Shield по делам Resolve для целей разрешения. Неотправленные документы остаются приватными и недоступными.'
+                            : '🔒 Your Privacy: By starting a Resolve Case, you consent to the documents you submit being reviewed by Lease Shield Resolve Case Officers for resolution purposes. Documents not submitted remain private and inaccessible.'}
+                </p>
+              </div>
               <label>
                 <input
                   type="file"
