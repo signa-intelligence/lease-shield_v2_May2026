@@ -176,44 +176,47 @@ export default function Layout({ children, currentPageName }) {
       meta.content = content;
     });
 
-    // Favicon setup
+    // Favicon setup with cache busting
     const faviconUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png';
+    const cacheBust = `?v=${Date.now()}`;
 
-    let favicon32 = document.querySelector('link[rel="icon"][sizes="32x32"]');
-    if (!favicon32) {
-      favicon32 = document.createElement('link');
-      favicon32.rel = 'icon';
-      favicon32.type = 'image/png';
-      favicon32.sizes = '32x32';
-      favicon32.href = faviconUrl;
-      document.head.appendChild(favicon32);
-    }
+    // Remove any existing favicons first to avoid conflicts
+    document.querySelectorAll('link[rel*="icon"]').forEach(el => el.remove());
 
-    let favicon16 = document.querySelector('link[rel="icon"][sizes="16x16"]');
-    if (!favicon16) {
-      favicon16 = document.createElement('link');
-      favicon16.rel = 'icon';
-      favicon16.type = 'image/png';
-      favicon16.sizes = '16x16';
-      favicon16.href = faviconUrl;
-      document.head.appendChild(favicon16);
-    }
+    // Standard favicon (most widely supported)
+    const faviconStandard = document.createElement('link');
+    faviconStandard.rel = 'icon';
+    faviconStandard.type = 'image/png';
+    faviconStandard.href = faviconUrl + cacheBust;
+    document.head.appendChild(faviconStandard);
 
-    let faviconDefault = document.querySelector('link[rel="shortcut icon"]');
-    if (!faviconDefault) {
-      faviconDefault = document.createElement('link');
-      faviconDefault.rel = 'shortcut icon';
-      faviconDefault.href = faviconUrl;
-      document.head.appendChild(faviconDefault);
-    }
+    // 32x32 favicon
+    const favicon32 = document.createElement('link');
+    favicon32.rel = 'icon';
+    favicon32.type = 'image/png';
+    favicon32.sizes = '32x32';
+    favicon32.href = faviconUrl + cacheBust;
+    document.head.appendChild(favicon32);
 
-    let appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
-    if (!appleIcon) {
-      appleIcon = document.createElement('link');
-      appleIcon.rel = 'apple-touch-icon';
-      appleIcon.href = faviconUrl;
-      document.head.appendChild(appleIcon);
-    }
+    // 16x16 favicon
+    const favicon16 = document.createElement('link');
+    favicon16.rel = 'icon';
+    favicon16.type = 'image/png';
+    favicon16.sizes = '16x16';
+    favicon16.href = faviconUrl + cacheBust;
+    document.head.appendChild(favicon16);
+
+    // Shortcut icon (legacy support)
+    const faviconShortcut = document.createElement('link');
+    faviconShortcut.rel = 'shortcut icon';
+    faviconShortcut.href = faviconUrl + cacheBust;
+    document.head.appendChild(faviconShortcut);
+
+    // Apple touch icon
+    const appleIcon = document.createElement('link');
+    appleIcon.rel = 'apple-touch-icon';
+    appleIcon.href = faviconUrl + cacheBust;
+    document.head.appendChild(appleIcon);
   }, []);
 
   const language = user?.language || 'en';
