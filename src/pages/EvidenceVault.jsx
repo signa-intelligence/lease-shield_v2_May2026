@@ -2142,6 +2142,54 @@ function EvidenceVaultContent() {
             backLabel={strings.back}
             colors={colors}
             onBack={() => navigate(createPageUrl("Dashboard"))}
+            actions={
+              <div className="flex flex-col sm:flex-row gap-3 items-center">
+                {/* Upload Evidence CTA */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic.medium();
+                    setShowUploadDialog(true);
+                  }}
+                  style={{
+                    ...primaryCtaStyle,
+                    padding: "10px 16px",
+                    fontSize: "0.875rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = primaryCtaHover.transform;
+                    e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "";
+                    e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                  }}
+                >
+                  <Upload className="w-4 h-4" />
+                  {strings.uploadEvidence}
+                </button>
+
+                {/* Storage Badges */}
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                    {strings.storageUsed
+                      .replace('{used}', storageCheck.usedMB)
+                      .replace('{limit}', storageLimits.limitMB)}
+                  </Badge>
+                  {userTier === 'free' && (
+                    <Badge className={documents.length >= storageLimits.fileLimit ? 'bg-red-100 text-red-700 text-xs' : 'bg-slate-100 text-slate-700 text-xs'}>
+                      {strings.filesUsed
+                        .replace('{count}', documents.length)
+                        .replace('{limit}', storageLimits.fileLimit)}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            }
           />
 
           {/* Trust Badge */}
@@ -2149,57 +2197,7 @@ function EvidenceVaultContent() {
             <TrustBadge language={language} isDarkMode={isDarkMode} />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 items-center mb-6">
-            <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
-              {/* Upload Evidence CTA */}
-              <button
-                type="button"
-                onClick={() => {
-                  haptic.medium();
-                  setShowUploadDialog(true);
-                }}
-                style={{
-                  ...primaryCtaStyle,
-                  padding: "10px 16px",
-                  fontSize: "0.875rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  width: '100%'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = primaryCtaHover.transform;
-                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "";
-                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                }}
-              >
-                <Upload className="w-4 h-4" />
-                {strings.uploadEvidence}
-              </button>
-            </div>
-
-            {/* Storage Badges - Now separate from actions */}
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
-                {strings.storageUsed
-                  .replace('{used}', storageCheck.usedMB)
-                  .replace('{limit}', storageLimits.limitMB)}
-              </Badge>
-              {userTier === 'free' && (
-                <Badge className={documents.length >= storageLimits.fileLimit ? 'bg-red-100 text-red-700 text-xs' : 'bg-slate-100 text-slate-700 text-xs'}>
-                  {strings.filesUsed
-                    .replace('{count}', documents.length)
-                    .replace('{limit}', storageLimits.fileLimit)}
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          {/* Templates Link Card - Keep existing but remove actions prop from PageHeader */}
+          {/* Templates Link Card */}
           <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg, borderLeft: `4px solid ${evidenceAccent}` }}>
             <CardContent className="p-0">
               <Link to={createPageUrl("Templates")}>
@@ -2230,7 +2228,6 @@ function EvidenceVaultContent() {
             </CardContent>
           </Card>
 
-          {/* Keep rest of content - adjusted to not use actions in PageHeader */}
           <div style={{ display: 'none' }} actions={
               <div className="flex flex-col sm:flex-row gap-3 items-center">
                 {/* Upload Evidence CTA */}
