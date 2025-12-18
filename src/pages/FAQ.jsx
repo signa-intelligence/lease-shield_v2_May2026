@@ -514,12 +514,26 @@ const FAQ_DATA = {
         questionJa: 'Lease Shieldをモバイルで使用できますか？',
         questionKo: 'Lease Shield를 모바일에서 사용할 수 있나요?',
         questionRu: 'Могу ли я использовать Lease Shield на мобильном устройстве?',
-        answerEn: 'Yes. Lease Shield is a web-based app optimized for mobile devices and is also available on <a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>.\n\niOS version coming soon.\n\nOn iPhone or iPad, you can save Lease Shield to your home screen by opening it in Safari, tapping Share, then selecting "Add to Home Screen."',
-        answerTh: 'ได้ Lease Shield เป็นแอปบนเว็บที่ปรับให้เหมาะกับอุปกรณ์มือถือและยังมีใน<a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>\n\nเวอร์ชัน iOS เร็วๆ นี้\n\nบน iPhone หรือ iPad คุณสามารถบันทึก Lease Shield ไปยังหน้าจอหลักได้โดยเปิดใน Safari แตะ Share จากนั้นเลือก "Add to Home Screen"',
-        answerZh: '是的。Lease Shield是一个针对移动设备优化的网络应用，也可在<a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>上获得。\n\niOS版本即将推出。\n\n在iPhone或iPad上，您可以通过在Safari中打开它、点击"共享"、然后选择"添加到主屏幕"来将Lease Shield保存到主屏幕。',
-        answerJa: 'はい。Lease Shieldは、モバイルデバイス向けに最適化されたWebベースのアプリで、<a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>でも利用可能です。\n\niOSバージョンは近日公開予定。\n\niPhoneまたはiPadでは、Safariで開いて「共有」をタップし、「ホーム画面に追加」を選択することで、Lease Shieldをホーム画面に保存できます。',
-        answerKo: '예。Lease Shield는 모바일 장치에 최적화된 웹 기반 앱이며 <a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>에서도 사용할 수 있습니다。\n\niOS 버전 출시 예정。\n\niPhone 또는 iPad에서 Safari에서 열고 공유를 탭한 다음 "홈 화면에 추가"를 선택하여 Lease Shield를 홈 화면에 저장할 수 있습니다。',
-        answerRu: 'Да。Lease Shield — это веб-приложение、оптимизированное для мобильных устройств、и также доступное в <a href="https://play.google.com/store/apps/details?id=asia.leaseshield.app" target="_blank" rel="noopener noreferrer" class="font-semibold underline" style="color: #0C3B2E;">Google Play</a>。\n\nВерсия для iOS скоро появится。\n\nНа iPhone или iPad вы можете сохранить Lease Shield на главный экран、открыв его в Safari、нажав "Поделиться"、затем выбрав "На экран «Домой»"。'
+        answerEn: 'Yes. Lease Shield works directly in your browser on any device.\n\nFor quick access, you can add it to your home screen from the browser menu (iOS Safari or Android Chrome) — no download required.',
+        answerTh: 'ได้ Lease Shield ทำงานในเบราว์เซอร์บนอุปกรณ์ใดก็ได้\n\nสำหรับการเข้าถึงอย่างรวดเร็ว คุณสามารถเพิ่มไปยังหน้าจอหลักจากเมนูเบราว์เซอร์ (iOS Safari หรือ Android Chrome) — ไม่ต้องดาวน์โหลด',
+        answerZh: '是的。Lease Shield直接在任何设备的浏览器中运行。\n\n为了快速访问，您可以从浏览器菜单（iOS Safari或Android Chrome）将其添加到主屏幕 — 无需下载。',
+        answerJa: 'はい。Lease Shieldは任意のデバイスのブラウザで直接動作します。\n\nクイックアクセスのため、ブラウザメニュー（iOS SafariまたはAndroid Chrome）からホーム画面に追加できます — ダウンロード不要。',
+        answerKo: '예。Lease Shield는 모든 기기의 브라우저에서 직접 작동합니다。\n\n빠른 액세스를 위해 브라우저 메뉴（iOS Safari 또는 Android Chrome）에서 홈 화면에 추가할 수 있습니다 — 다운로드 불필요。',
+        answerRu: 'Да。Lease Shield работает непосредственно в вашем браузере на любом устройстве。\n\nДля быстрого доступа вы можете добавить его на главный экран из меню браузера（iOS Safari или Android Chrome）— загрузка не требуется。'
+      },
+      {
+        questionEn: 'How can Lease Shield be installed on a phone?',
+        questionTh: 'สามารถติดตั้ง Lease Shield บนโทรศัพท์ได้อย่างไร?',
+        questionZh: '如何在手机上安装Lease Shield？',
+        questionJa: 'Lease Shieldはどのように携帯電話にインストールできますか？',
+        questionKo: 'Lease Shield를 휴대폰에 어떻게 설치할 수 있나요?',
+        questionRu: 'Как установить Lease Shield на телефон?',
+        answerEn: 'Lease Shield works in the browser and can be added to the home screen for quick access. No app download is required.\n\nTo add it, open the browser menu and select "Add to Home Screen."',
+        answerTh: 'Lease Shield ทำงานในเบราว์เซอร์และสามารถเพิ่มไปยังหน้าจอหลักเพื่อเข้าถึงอย่างรวดเร็ว ไม่ต้องดาวน์โหลดแอป\n\nเพื่อเพิ่ม ให้เปิดเมนูเบราว์เซอร์และเลือก "Add to Home Screen"',
+        answerZh: 'Lease Shield在浏览器中运行，可以添加到主屏幕以便快速访问。无需下载应用。\n\n要添加，请打开浏览器菜单并选择"添加到主屏幕"。',
+        answerJa: 'Lease Shieldはブラウザで動作し、クイックアクセスのためにホーム画面に追加できます。アプリのダウンロードは不要です。\n\n追加するには、ブラウザメニューを開き、「ホーム画面に追加」を選択してください。',
+        answerKo: 'Lease Shield는 브라우저에서 작동하며 빠른 액세스를 위해 홈 화면에 추가할 수 있습니다。앱 다운로드가 필요하지 않습니다。\n\n추가하려면 브라우저 메뉴를 열고 "홈 화면에 추가"를 선택하세요。',
+        answerRu: 'Lease Shield работает в браузере и может быть добавлен на главный экран для быстрого доступа。Загрузка приложения не требуется。\n\nЧтобы добавить、откройте меню браузера и выберите "Добавить на главный экран"。'
       },
       {
         questionEn: 'Why am I not receiving notifications?',
