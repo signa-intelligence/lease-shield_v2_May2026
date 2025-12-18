@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, FileText, Globe, Mail, AlertCircle } from "lucide-react";
@@ -44,7 +43,10 @@ All data collection is limited to what is necessary to provide our services to y
 • Service Improvement: Understanding usage patterns to enhance our platform
 • Legal Compliance: Meeting our obligations under Thai law and PDPA
 
-We do NOT sell your personal information or lease documents to third parties.`
+We do NOT sell your personal information or lease documents to third parties.
+
+DOCUMENT ACCESS & PRIVACY:
+Lease Shield team members do not have access to user documents by default. Only designated Lease Shield Resolve Case Officers may view documents, and only after a Resolve Case has been commenced and only for the files explicitly submitted by the user into that case. All other documents remain private within your vault.`
         },
         {
           icon: Shield,
