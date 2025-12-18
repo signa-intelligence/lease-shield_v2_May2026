@@ -33,6 +33,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
 import AuthGuard from "../components/shared/AuthGuard";
 import { FEATURE_COLORS } from "../components/shared/featureTheme";
+import TrustBadge from "../components/shared/TrustBadge";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
@@ -1773,24 +1774,9 @@ function UploadScanPageContent() {
                   </div>
                 )}
 
-                {/* Privacy Reassurance */}
-                <div className="mb-4 p-3 rounded-lg" style={{
-                  backgroundColor: isDarkMode ? '#1F2937' : '#F0FDF4',
-                  border: `1px solid ${isDarkMode ? '#10B981' : '#86EFAC'}`
-                }}>
-                  <p className="text-xs font-semibold text-center" style={{ color: isDarkMode ? '#10B981' : '#047857' }}>
-                    {language === 'th' 
-                      ? '🔒 เอกสารของคุณเป็นส่วนตัวโดยค่าเริ่มต้น Lease Shield ไม่สามารถดูไฟล์ของคุณได้เว้นแต่คุณจะส่งไฟล์เหล่านั้นไปยัง Resolve Case อย่างชัดเจน'
-                      : language === 'zh'
-                        ? '🔒 您的文档默认为私有。除非您明确提交到Resolve案件，否则Lease Shield无法查看您的文件。'
-                        : language === 'ja'
-                          ? '🔒 あなたのドキュメントはデフォルトで非公開です。Resolveケースに明示的に提出しない限り、Lease Shieldはあなたのファイルを表示できません。'
-                          : language === 'ko'
-                            ? '🔒 귀하의 문서는 기본적으로 비공개입니다。Resolve 케이스에 명시적으로 제출하지 않는 한 Lease Shield는 귀하의 파일을 볼 수 없습니다。'
-                            : language === 'ru'
-                              ? '🔒 Ваши документы по умолчанию являются приватными。Lease Shield не может просматривать ваши файлы、если вы явно не отправите их в дело Resolve。'
-                              : '🔒 Your documents are private by default. Lease Shield cannot view your files unless you explicitly submit them to a Resolve Case.'}
-                  </p>
+                {/* Trust Badge */}
+                <div className="mb-4">
+                  <TrustBadge language={language} isDarkMode={isDarkMode} />
                 </div>
 
                 <div

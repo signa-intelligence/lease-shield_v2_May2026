@@ -14,6 +14,7 @@ import MobileFormInput from "../components/shared/MobileFormInput";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import ProgressBar from "../components/shared/ProgressBar";
+import TrustBadge from "../components/shared/TrustBadge";
 
 function ResolveCaseContent() {
   const navigate = useNavigate();
@@ -1023,7 +1024,7 @@ function ResolveCaseContent() {
               <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{str.evidenceDesc}</p>
             </CardHeader>
             <CardContent>
-              {/* Privacy Notice - Consent */}
+              {/* Privacy Notice - Consent (before evidence upload) */}
               <div className="mb-4 p-4 rounded-lg" style={{
                 backgroundColor: isDarkMode ? '#1F2937' : '#F0FDF4',
                 border: `2px solid ${isDarkMode ? '#10B981' : '#86EFAC'}`
@@ -1100,6 +1101,11 @@ function ResolveCaseContent() {
               </CardContent>
             </Card>
           )}
+
+          {/* Trust Badge - before submit */}
+          <div className="mb-4">
+            <TrustBadge language={language} isDarkMode={isDarkMode} />
+          </div>
 
           <Button
             type="submit"
