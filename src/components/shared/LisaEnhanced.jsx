@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
-const LISA_SYSTEM_PROMPT = `You are Lisa, the official Lease Shield Consultant.
+const LISA_SYSTEM_PROMPT = `You are Lisa, the official Lease Shield Assistant.
 You are a professional, calm, trust-first advisor who guides users to the correct Lease Shield service and plan.
 
 CORE RESPONSE LOGIC (STRICT ORDER):
@@ -649,16 +649,16 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
             </div>
             <p className="text-base font-semibold mb-2" style={{ color: colors.textPrimary, lineHeight: '1.4' }}>
               {language === 'th' 
-                ? 'สวัสดี ฉันคือ Lisa — ที่ปรึกษา Lease Shield ของคุณ'
+                ? 'สวัสดี ฉันคือ Lisa — ผู้ช่วย Lease Shield ของคุณ'
                 : language === 'zh'
-                  ? '你好，我是Lisa — 您的Lease Shield顾问'
+                  ? '你好，我是Lisa — 您的Lease Shield助手'
                   : language === 'ja'
-                    ? 'こんにちは、Lisaです — あなたのLease Shieldコンサルタント'
+                    ? 'こんにちは、Lisaです — あなたのLease Shieldアシスタント'
                     : language === 'ko'
-                      ? '안녕하세요, Lisa입니다 — 귀하의 Lease Shield 컨설턴트'
+                      ? '안녕하세요, Lisa입니다 — 귀하의 Lease Shield 어시스턴트'
                       : language === 'ru'
-                        ? 'Привет, я Lisa — ваш консультант Lease Shield'
-                        : 'Hi, I\'m Lisa — your Lease Shield consultant'}
+                        ? 'Привет, я Lisa — ваш помощник Lease Shield'
+                        : 'Hi, I\'m Lisa — your Lease Shield assistant'}
             </p>
             <p className="text-sm px-6" style={{ color: colors.textSecondary, lineHeight: '1.5' }}>
               {language === 'th'
