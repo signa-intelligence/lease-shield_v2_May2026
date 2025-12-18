@@ -32,6 +32,7 @@ import CookieSync from './pages/CookieSync';
 import cookieSync from './pages/cookie-sync';
 import FAQ from './pages/FAQ';
 import Index from './pages/Index';
+import RefundPolicy from './pages/RefundPolicy';
 import __Layout from './Layout.jsx';
 
 
@@ -70,6 +71,7 @@ export const PAGES = {
     "cookie-sync": cookieSync,
     "FAQ": FAQ,
     "Index": Index,
+    "RefundPolicy": RefundPolicy,
 }
 
 export const pagesConfig = {
