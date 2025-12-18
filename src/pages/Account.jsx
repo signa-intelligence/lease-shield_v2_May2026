@@ -5551,6 +5551,31 @@ function AccountContent() {
             {strings.logout}
           </Button>
         </div>
+
+        {/* Signa Intelligence Attribution */}
+        <div className="mt-6 mb-4 text-center">
+          <p style={{
+            fontSize: '12px',
+            color: colors.textSecondary,
+            fontWeight: '400'
+          }}>
+            Developed by{' '}
+            <a
+              href="https://www.signaintelligence.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: colors.textSecondary,
+                textDecoration: 'underline',
+                fontWeight: '500'
+              }}
+              onMouseEnter={(e) => e.target.style.color = '#0C3B2E'}
+              onMouseLeave={(e) => e.target.style.color = colors.textSecondary}
+            >
+              Signa Intelligence
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
