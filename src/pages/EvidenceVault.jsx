@@ -2142,7 +2142,96 @@ function EvidenceVaultContent() {
             backLabel={strings.back}
             colors={colors}
             onBack={() => navigate(createPageUrl("Dashboard"))}
-            actions={
+          />
+
+          {/* Trust Badge */}
+          <div className="mb-6">
+            <TrustBadge language={language} isDarkMode={isDarkMode} />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 items-center mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
+              {/* Upload Evidence CTA */}
+              <button
+                type="button"
+                onClick={() => {
+                  haptic.medium();
+                  setShowUploadDialog(true);
+                }}
+                style={{
+                  ...primaryCtaStyle,
+                  padding: "10px 16px",
+                  fontSize: "0.875rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  width: '100%'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = primaryCtaHover.transform;
+                  e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "";
+                  e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
+                }}
+              >
+                <Upload className="w-4 h-4" />
+                {strings.uploadEvidence}
+              </button>
+            </div>
+
+            {/* Storage Badges - Now separate from actions */}
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                {strings.storageUsed
+                  .replace('{used}', storageCheck.usedMB)
+                  .replace('{limit}', storageLimits.limitMB)}
+              </Badge>
+              {userTier === 'free' && (
+                <Badge className={documents.length >= storageLimits.fileLimit ? 'bg-red-100 text-red-700 text-xs' : 'bg-slate-100 text-slate-700 text-xs'}>
+                  {strings.filesUsed
+                    .replace('{count}', documents.length)
+                    .replace('{limit}', storageLimits.fileLimit)}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Templates Link Card - Keep existing but remove actions prop from PageHeader */}
+          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg, borderLeft: `4px solid ${evidenceAccent}` }}>
+            <CardContent className="p-0">
+              <Link to={createPageUrl("Templates")}>
+                <div
+                  className="p-4 rounded-lg border-2 hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => haptic.light()}
+                  style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                    borderColor: evidenceAccent
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: evidenceAccent }}>
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm md:text-base" style={{ color: colors.textPrimary }}>
+                        {strings.viewTemplates}
+                      </p>
+                      <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>
+                        {strings.viewTemplatesDesc}
+                      </p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: evidenceAccent }} />
+                  </div>
+                </div>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Keep rest of content - adjusted to not use actions in PageHeader */}
+          <div style={{ display: 'none' }} actions={
               <div className="flex flex-col sm:flex-row gap-3 items-center">
                 {/* Upload Evidence CTA */}
                 <button
