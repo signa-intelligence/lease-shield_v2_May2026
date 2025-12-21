@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye, Download, Edit2, Send, CheckCircle2, Mic } from "lucide-react";
+import { FileText, Upload, Trash2, ExternalLink, Shield, Camera, FileVideo, Mail, HelpCircle, CheckSquare, Square, ArrowLeft, X, Loader2, ArrowRight, Eye, Download, Edit2, Send, CheckCircle2, Mic, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -28,6 +28,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import AuthGuard from "../components/shared/AuthGuard";
+import TrustBadge from "../components/shared/TrustBadge";
 import {
   FEATURE_COLORS,
   CTA_COLOR,
@@ -143,10 +144,15 @@ function EvidenceVaultContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: documents = [], isLoading: isLoadingDocuments } = useQuery({
+  const { data: documents = [], isLoading: isLoadingDocuments, error: documentsError } = useQuery({
     queryKey: ['documents'],
-    queryFn: () => base44.entities.Document.filter({ created_by: user?.email }, '-created_date'),
-    enabled: !!user,
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.Document.filter({ created_by: user.email }, '-created_date');
+    },
+    enabled: !!user?.email,
+    retry: 2,
+    staleTime: 30000,
   });
 
   // ADDED: Optimistic update hook
@@ -897,6 +903,7 @@ function EvidenceVaultContent() {
       createdBy: "Created by",
       selectFromDevice: "Select from device",
       useCameraToRecord: "Use camera to record",
+      imagesOptimizedDesc: "{count} images optimized, saved {saved}MB",
     },
     th: {
       back: "กลับไปยังแดชบอร์ด",
@@ -996,6 +1003,7 @@ function EvidenceVaultContent() {
       createdBy: "สร้างโดย",
       selectFromDevice: "เลือกจากอุปกรณ์",
       useCameraToRecord: "ใช้กล้องเพื่อบันทึก",
+      imagesOptimizedDesc: "ปรับภาพ {count} รูป ประหยัด {saved}MB",
     },
     zh: {
       back: "返回仪表板",
@@ -1095,6 +1103,7 @@ function EvidenceVaultContent() {
       createdBy: "创建者",
       selectFromDevice: "从设备选择",
       useCameraToRecord: "使用相机录制",
+      imagesOptimizedDesc: "已优化 {count} 张图片，节省 {saved}MB",
     },
     ja: {
       back: "ダッシュボードに戻る",
@@ -1194,6 +1203,7 @@ function EvidenceVaultContent() {
       createdBy: "作成者",
       selectFromDevice: "デバイスから選択",
       useCameraToRecord: "カメラで録画",
+      imagesOptimizedDesc: "{count}枚の画像を最適化、{saved}MB削減",
     },
     ko: {
       back: "대시보드로 돌아가기",
@@ -1293,6 +1303,7 @@ function EvidenceVaultContent() {
       createdBy: "작성자",
       selectFromDevice: "기기에서 선택",
       useCameraToRecord: "카메라로 녹화",
+      imagesOptimizedDesc: "{count}개 이미지 최적화, {saved}MB 절약",
     },
     ru: {
       back: "Назад к панели",
@@ -1392,6 +1403,7 @@ function EvidenceVaultContent() {
       createdBy: "Создано",
       selectFromDevice: "Выбрать с устройства",
       useCameraToRecord: "Записать с помощью камеры",
+      imagesOptimizedDesc: "Оптимизировано {count} изображений, сэкономлено {saved}МБ",
     }
   }[language] || {
     back: "Back to Dashboard",
@@ -1466,6 +1478,54 @@ function EvidenceVaultContent() {
     uploadVideo: "Upload Video",
     recordVideo: "Record Video"
   };
+
+  // Handle critical errors
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: evidenceAccent }} />
+          <p style={{ color: colors.textPrimary }}>{language === 'th' ? 'กำลังโหลด...' : 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (documentsError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bg }}>
+        <Card className="max-w-md w-full" style={{ backgroundColor: colors.cardBg }}>
+          <CardContent className="p-6 text-center">
+            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <h3 className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {language === 'th' ? 'เกิดข้อผิดพลาด' : language === 'zh' ? '发生错误' : language === 'ja' ? 'エラーが発生しました' : language === 'ko' ? '오류 발생' : language === 'ru' ? 'Произошла ошибка' : 'Something went wrong'}
+            </h3>
+            <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+              {language === 'th' ? 'ไม่สามารถโหลดเอกสารได้ กรุณาลองอีกครั้ง' : language === 'zh' ? '无法加载文档。请重试。' : language === 'ja' ? 'ドキュメントを読み込めませんでした。もう一度お試しください。' : language === 'ko' ? '문서를 로드할 수 없습니다. 다시 시도해주세요.' : language === 'ru' ? 'Не удалось загрузить документы. Попробуйте снова.' : 'Failed to load documents. Please try again.'}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => navigate(createPageUrl("Dashboard"))}
+                variant="outline"
+                className="flex-1"
+              >
+                {language === 'th' ? 'กลับ' : language === 'zh' ? '返回' : language === 'ja' ? '戻る' : language === 'ko' ? '뒤로' : language === 'ru' ? 'Назад' : 'Go Back'}
+              </Button>
+              <Button
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['documents'] })}
+                className="flex-1"
+                style={{ backgroundColor: evidenceAccent, color: '#FFFFFF' }}
+              >
+                {language === 'th' ? 'ลองอีกครั้ง' : language === 'zh' ? '重试' : language === 'ja' ? '再試行' : language === 'ko' ? '다시 시도' : language === 'ru' ? 'Повторить' : 'Try Again'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <PullToRefresh onRefresh={handleRefresh} colors={colors}>
