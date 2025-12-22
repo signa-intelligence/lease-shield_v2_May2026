@@ -5156,7 +5156,7 @@ function AccountContent() {
                     <p className="font-bold text-base mb-2" style={{ color: colors.textPrimary, whiteSpace: 'normal' }}>
                       {strings.payMonthly}
                     </p>
-                    <p className="text-sm" style={{ color: colors.textSecondary, whiteSpace: 'normal' }}>
+                    <p className="text-lg font-bold" style={{ color: colors.textPrimary, whiteSpace: 'normal' }}>
                       {selectedPlan && PRICING[selectedPlan]
                         ? `฿${PRICING[selectedPlan].monthly.amount}/${language === 'th' ? 'เดือน' : language === 'zh' ? '月' : language === 'ja' ? '月' : language === 'ko' ? '월' : language === 'ru' ? 'месяц' : 'month'}` 
                         : '—'}
@@ -5190,15 +5190,15 @@ function AccountContent() {
                   <div className="flex-1 pr-2">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       <p className="font-bold text-base" style={{ color: colors.textPrimary, whiteSpace: 'normal' }}>
-                        {language === 'th' ? 'ชำระรายปี - ประหยัด 17%' : language === 'zh' ? '年付 - 节省17%' : language === 'ja' ? '年払い - 17%節約' : language === 'ko' ? '연간 결제 - 17% 절약' : language === 'ru' ? 'Годовая оплата – Экономия 17%' : 'Pay Annually – Save 17%'}
+                        {language === 'th' ? 'ชำระรายปี — ประหยัด 17%' : language === 'zh' ? '年付 — 节省17%' : language === 'ja' ? '年払い — 17%節約' : language === 'ko' ? '연간 결제 — 17% 절약' : language === 'ru' ? 'Годовая оплата — Экономия 17%' : 'Pay Annually — Save 17%'}
                       </p>
                       <Badge className="bg-emerald-600 text-white text-xs font-bold px-2 py-1">
                         {language === 'th' ? 'คุ้มที่สุด' : language === 'zh' ? '最划算' : language === 'ja' ? 'ベストバリュー' : language === 'ko' ? '최고 가치' : language === 'ru' ? 'Лучшее предложение' : 'Best Value'}
                       </Badge>
                     </div>
-                    <p className="text-sm mb-1" style={{ color: colors.textSecondary, whiteSpace: 'normal' }}>
+                    <p className="text-lg font-bold mb-1" style={{ color: colors.textPrimary, whiteSpace: 'normal' }}>
                       {selectedPlan && PRICING[selectedPlan]
-                        ? `฿${PRICING[selectedPlan].annual.amount}/${language === 'th' ? 'ปี' : language === 'zh' ? '年' : language === 'ja' ? '年' : language === 'ko' ? '년' : language === 'ru' ? 'год' : 'year'}` 
+                        ? `฿${PRICING[selectedPlan].annual.amount.toLocaleString()}/${language === 'th' ? 'ปี' : language === 'zh' ? '年' : language === 'ja' ? '年' : language === 'ko' ? '년' : language === 'ru' ? 'год' : 'year'}` 
                         : '—'}
                     </p>
                     <p className="text-xs font-medium" style={{ color: '#10B981', whiteSpace: 'normal' }}>
