@@ -772,7 +772,7 @@ function DashboardContent() {
     } else {
       suggestions.push({
         action: language === 'th' ? 'อัปโหลดสัญญาเช่าเพื่อสแกนเต็มรูปแบบ' : language === 'zh' ? '上传租约进行完整扫描' : language === 'ja' ? 'リースをアップロードしてフルスキャン' : language === 'ko' ? '전체 스캔을 위해 임대 계약 업로드' : language === 'ru' ? 'Загрузите договор для полного сканирования' : 'Upload your lease for a full scan',
-        points: 30,
+        benefit: language === 'th' ? 'ระบุความเสี่ยงและข้อกำหนดที่ซ่อนอยู่ในสัญญา' : language === 'zh' ? '识别合同中的隐藏风险和条款' : language === 'ja' ? '契約内の隠れたリスクと条項を特定' : language === 'ko' ? '계약의 숨겨진 위험과 조항 식별' : language === 'ru' ? 'Выявите скрытые риски и условия в договоре' : 'Identify hidden risks and terms in your contract',
         route: createPageUrl("UploadScan"),
         completed: false
       });
@@ -785,7 +785,7 @@ function DashboardContent() {
     } else {
       suggestions.push({
         action: language === 'th' ? 'เพิ่มรายละเอียดเงินมัดจำของคุณ' : language === 'zh' ? '添加押金详细信息' : language === 'ja' ? '敷金詳細を追加' : language === 'ko' ? '보증금 세부 정보 추가' : language === 'ru' ? 'Добавьте данные депозита' : 'Add your deposit details',
-        points: 20,
+        benefit: language === 'th' ? 'ติดตามกำหนดคืนเงินและรับการแจ้งเตือนอัตโนมัติ' : language === 'zh' ? '跟踪退款截止日期并接收自动提醒' : language === 'ja' ? '返金期限を追跡し、自動リマインダーを受信' : language === 'ko' ? '환불 마감일 추적 및 자동 알림 수신' : language === 'ru' ? 'Отслеживайте сроки возврата и получайте напоминания' : 'Track refund deadlines and receive automated alerts',
         route: createPageUrl("PropertyTracker") + "#deposit",
         completed: false
       });
@@ -798,7 +798,7 @@ function DashboardContent() {
     } else {
       suggestions.push({
         action: language === 'th' ? 'เพิ่มวันที่สำคัญของสัญญาเช่า (เริ่ม/สิ้นสุด/แจ้ง)' : language === 'zh' ? '添加关键租约日期（开始/结束/通知）' : language === 'ja' ? '重要なリース日付を追加（開始/終了/通知）' : language === 'ko' ? '주요 임대 날짜 추가（시작/종료/통지）' : language === 'ru' ? 'Добавьте ключевые даты договора（начало/конец/уведомление）' : 'Add key lease dates (start/end/notice)',
-        points: 20,
+        benefit: language === 'th' ? 'ไม่พลาดกำหนดแจ้งล่วงหน้าและหลีกเลี่ยงค่าปรับ' : language === 'zh' ? '不错过通知截止日期，避免罚款' : language === 'ja' ? '通知期限を逃さず、罰金を回避' : language === 'ko' ? '통지 마감일을 놓치지 않고 벌금 회피' : language === 'ru' ? 'Не пропустите сроки уведомлений и избежите штрафов' : 'Never miss notice deadlines and avoid penalties',
         route: createPageUrl("PropertyTracker"),
         completed: false
       });
@@ -810,7 +810,7 @@ function DashboardContent() {
     } else {
       suggestions.push({
         action: language === 'th' ? 'อัปโหลดรูปภาพ/ไฟล์ไปยัง Evidence Vault' : language === 'zh' ? '上传照片/文件到证据保管库' : language === 'ja' ? 'Evidence Vaultに写真/ファイルをアップロード' : language === 'ko' ? 'Evidence Vault에 사진/파일 업로드' : language === 'ru' ? 'Загрузите фото/файлы в Хранилище доказательств' : 'Upload photos/files to Evidence Vault',
-        points: 15,
+        benefit: language === 'th' ? 'สร้างบันทึกที่ตรวจสอบได้สำหรับข้อพิพาทในอนาคต' : language === 'zh' ? '为未来的纠纷建立可验证的记录' : language === 'ja' ? '将来の紛争のために検証可能な記録を作成' : language === 'ko' ? '향후 분쟁을 위한 검증 가능한 기록 생성' : language === 'ru' ? 'Создайте проверяемую запись для будущих споров' : 'Build a verifiable record for future disputes',
         route: createPageUrl("EvidenceVault"),
         completed: false
       });
@@ -823,7 +823,7 @@ function DashboardContent() {
     } else {
       suggestions.push({
         action: language === 'th' ? 'เปิดใช้งานการแจ้งเตือน/การเตือน' : language === 'zh' ? '启用提醒/通知' : language === 'ja' ? 'リマインダー/通知を有効化' : language === 'ko' ? '알림/리마인더 활성화' : language === 'ru' ? 'Включите напоминания/уведомления' : 'Enable reminders/notifications',
-        points: 15,
+        benefit: language === 'th' ? 'รับการแจ้งเตือนอัตโนมัติเพื่อไม่พลาดกำหนดสำคัญ' : language === 'zh' ? '接收自动提醒，不错过重要截止日期' : language === 'ja' ? '自動リマインダーで重要な期限を逃さない' : language === 'ko' ? '자동 알림으로 중요한 마감일을 놓치지 마세요' : language === 'ru' ? 'Получайте напоминания, чтобы не пропустить важные сроки' : 'Get automated reminders to never miss critical deadlines',
         route: createPageUrl("Account") + "#notifications",
         completed: false
       });

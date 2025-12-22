@@ -48,15 +48,14 @@ export default function ProtectionScoreDetails({
 
   const t = {
     en: { 
-      protectionScore: 'Protection Score',
-      howToImprove: 'How to Improve Your Score',
-      pointsEach: 'points each',
+      protectionScore: 'Protection Coverage',
+      howToImprove: 'Complete Your Coverage',
       close: 'Close',
       lockedTitle: '🔒 Full Protection Locked',
       lockedMessage: 'Your current plan allows protection up to {cap}/100.',
       lockedSecureOnly: 'Only Secure members can unlock Fully Covered (100%).',
       upgradeToSecure: 'Upgrade to Secure',
-      tierCapped: 'Tier Cap: {cap}/100'
+      tierCapped: 'Coverage Cap: {cap}/100'
     },
     th: { 
       protectionScore: 'คะแนนการป้องกัน',
@@ -70,48 +69,44 @@ export default function ProtectionScoreDetails({
       tierCapped: 'ขีดจำกัดแผน: {cap}/100'
     },
     zh: { 
-      protectionScore: '保护分数',
-      howToImprove: '如何提高分数',
-      pointsEach: '每个积分',
+      protectionScore: '保护覆盖',
+      howToImprove: '完成您的覆盖',
       close: '关闭',
       lockedTitle: '🔒 完全保护已锁定',
       lockedMessage: '您当前的计划允许保护最高达{cap}/100',
       lockedSecureOnly: '只有Secure会员才能解锁完全覆盖（100%）',
       upgradeToSecure: '升级到Secure',
-      tierCapped: '等级上限：{cap}/100'
+      tierCapped: '覆盖上限：{cap}/100'
     },
     ja: { 
-      protectionScore: '保護スコア',
-      howToImprove: 'スコアの改善方法',
-      pointsEach: 'ポイント',
+      protectionScore: '保護カバレッジ',
+      howToImprove: 'カバレッジを完了',
       close: '閉じる',
       lockedTitle: '🔒 完全保護がロック',
       lockedMessage: '現在のプランでは最大{cap}/100まで保護可能',
       lockedSecureOnly: 'Secureメンバーのみが完全カバー（100%）をアンロック可能',
       upgradeToSecure: 'Secureにアップグレード',
-      tierCapped: 'ティア上限：{cap}/100'
+      tierCapped: 'カバレッジ上限：{cap}/100'
     },
     ko: { 
-      protectionScore: '보호 점수',
-      howToImprove: '점수를 향상시키는 방법',
-      pointsEach: '각 포인트',
+      protectionScore: '보호 범위',
+      howToImprove: '범위 완료',
       close: '닫기',
       lockedTitle: '🔒 완전 보호 잠김',
       lockedMessage: '현재 플랜은 최대 {cap}/100까지 보호 허용',
       lockedSecureOnly: 'Secure 회원만 완전 보장（100%）을 잠금 해제할 수 있습니다',
       upgradeToSecure: 'Secure로 업그레이드',
-      tierCapped: '티어 상한：{cap}/100'
+      tierCapped: '범위 상한：{cap}/100'
     },
     ru: { 
-      protectionScore: 'Уровень защиты',
-      howToImprove: 'Как улучшить уровень',
-      pointsEach: 'баллов каждый',
+      protectionScore: 'Охват защиты',
+      howToImprove: 'Завершите охват',
       close: 'Закрыть',
       lockedTitle: '🔒 Полная защита заблокирована',
       lockedMessage: 'Ваш текущий план позволяет защиту до {cap}/100',
       lockedSecureOnly: 'Только участники Secure могут разблокировать полное покрытие（100%）',
       upgradeToSecure: 'Обновить до Secure',
-      tierCapped: 'Лимит тарифа：{cap}/100'
+      tierCapped: 'Лимит охвата：{cap}/100'
     }
   };
 
@@ -356,7 +351,7 @@ export default function ProtectionScoreDetails({
             </div>
           </div>
 
-          {/* Suggestions */}
+          {/* Coverage Tasks */}
           {suggestions && suggestions.length > 0 && (
             <div>
               <h3 className="text-base font-bold mb-4" style={{ color: colors.textPrimary }}>
@@ -387,23 +382,64 @@ export default function ProtectionScoreDetails({
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          {suggestion.completed ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          ) : (
-                            <AlertCircle className="w-4 h-4 text-amber-600" />
-                          )}
+                          <AlertCircle className="w-4 h-4 text-amber-600" />
                           <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
                             {suggestion.action}
                           </p>
                         </div>
-                        <p className="text-xs" style={{ color: colors.textSecondary }}>
-                          +{suggestion.points} {strings.pointsEach}
+                        <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
+                          {suggestion.benefit}
                         </p>
                       </div>
                       <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: '#10B981' }} />
                     </div>
                   </div>
                 ))}
+                
+                {/* Final Secure-only task */}
+                {userTier !== 'secure' && (
+                  <div
+                    onClick={() => {
+                      haptic.medium();
+                      onClose();
+                      navigate(createPageUrl("Account") + "?showPlans=true");
+                    }}
+                    className="cursor-pointer card-interactive"
+                    style={{
+                      padding: '16px',
+                      backgroundColor: isDarkMode ? '#2D2520' : '#FFFBEB',
+                      borderRadius: '12px',
+                      border: `2px solid #C7A338`,
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#0C3B2E';
+                      e.currentTarget.style.transform = 'translateX(4px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#C7A338';
+                      e.currentTarget.style.transform = 'translateX(0)';
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7A338" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                          </svg>
+                          <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                            {language === 'th' ? 'อัปเกรดเป็น Secure เพื่อปลดล็อกการป้องกันเต็มรูปแบบ' : language === 'zh' ? '升级到Secure以解锁完全保护' : language === 'ja' ? 'Secureにアップグレードして完全保護をアンロック' : language === 'ko' ? 'Secure로 업그레이드하여 완전 보호 잠금 해제' : language === 'ru' ? 'Обновите до Secure для полной защиты' : 'Upgrade to Secure to unlock full protection'}
+                          </p>
+                        </div>
+                        <p className="text-xs leading-relaxed" style={{ color: isDarkMode ? '#FDE68A' : '#B45309' }}>
+                          {language === 'th' ? 'ปลดล็อกการป้องกันระดับพรีเมียมและครอบคลุม 100%' : language === 'zh' ? '解锁高级保护并达到100%覆盖' : language === 'ja' ? 'プレミアム保護と100%カバレッジをアンロック' : language === 'ko' ? '프리미엄 보호 및 100% 보장 잠금 해제' : language === 'ru' ? 'Разблокируйте премиум защиту и 100% покрытие' : 'Unlock premium protection and 100% coverage'}
+                        </p>
+                      </div>
+                      <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: '#C7A338' }} />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
