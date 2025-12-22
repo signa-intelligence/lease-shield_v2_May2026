@@ -220,18 +220,18 @@ function UploadScanPageContent() {
       agreeAndContinue: "Agree & Continue",
       disclaimerCancel: "Cancel",
       disclaimerText: {
-        p1: "Lease Shield provides automated analysis, general guidance, and document templates for informational purposes only.",
-        p2: "Lease Shield is not a law firm, does not provide legal advice, and does not provide legal representation. No lawyer-client relationship is created by using this service.",
-        p3: "Results may be incomplete, inaccurate, or outdated. Lease Shield does not guarantee the accuracy, completeness, or suitability of scan results, recommendations, or generated documents.",
-        responsibleTitle: "You remain fully responsible for:",
+        p1: "Lease Shield provides automated lease analysis, practical guidance, and document templates to help users better understand rental agreements and common risk areas. All information is provided for general informational purposes only.",
+        p2: "Lease Shield is not a law firm and does not provide legal advice or legal representation. Use of this service does not create a lawyer–client relationship.",
+        p3: "While Lease Shield uses structured analysis and up-to-date reference data, results may vary depending on document quality, language, and jurisdiction. Lease Shield does not warrant that scan results, recommendations, or generated documents are complete, error-free, or suitable for every situation.",
+        responsibleTitle: "You remain responsible for:",
         responsibilities: [
-          "Reviewing your lease documents",
-          "Verifying the accuracy of all information",
-          "Seeking independent legal advice before taking action",
-          "Deciding whether and how to use any output provided"
+          "Reviewing and understanding your lease documents",
+          "Confirming the accuracy of all information",
+          "Seeking independent professional or legal advice where appropriate",
+          "Deciding whether and how to rely on any outputs provided"
         ],
-        p4: "Lease Shield is not a party to your lease and assumes no liability for decisions, disputes, losses, or outcomes arising from the use of this service.",
-        p5: "By proceeding, you acknowledge and accept that you use Lease Shield at your own risk."
+        p4: "Lease Shield is not a party to any lease agreement and is not responsible for decisions made, disputes arising, or outcomes resulting from use of this service.",
+        p5: "By continuing, you acknowledge that Lease Shield is a support and insight tool, and that you use it at your own discretion and risk."
       }
     },
     th: {
@@ -314,18 +314,18 @@ function UploadScanPageContent() {
       agreeAndContinue: "ยอมรับและดำเนินการต่อ",
       disclaimerCancel: "ยกเลิก",
       disclaimerText: {
-        p1: "Lease Shield ให้บริการวิเคราะห์อัตโนมัติ คำแนะนำทั่วไป และเทมเพลตเอกสารเพื่อวัตถุประสงค์ในการให้ข้อมูลเท่านั้น",
-        p2: "Lease Shield ไม่ใช่สำนักงานกฎหมาย ไม่ให้คำปรึกษาด้านกฎหมาย และไม่ให้การเป็นตัวแทนทางกฎหมาย การใช้บริการนี้ไม่ก่อให้เกิดความสัมพันธ์ทนายความ-ลูกความ",
-        p3: "ผลลัพธ์อาจไม่ครบถ้วน ไม่ถูกต้อง หรือไม่เป็นปัจจุบัน Lease Shield ไม่รับประกันความถูกต้อง ความครบถ้วน หรือความเหมาะสมของผลการสแกน คำแนะนำ หรือเอกสารที่สร้างขึ้น",
-        responsibleTitle: "คุณยังคงต้องรับผิดชอบทั้งหมดสำหรับ:",
+        p1: "Lease Shield ให้บริการวิเคราะห์สัญญาเช่าอัตโนมัติ คำแนะนำเชิงปฏิบัติ และเทมเพลตเอกสารเพื่อช่วยให้ผู้ใช้เข้าใจสัญญาเช่าและจุดเสี่ยงทั่วไปได้ดีขึ้น ข้อมูลทั้งหมดมีไว้เพื่อวัตถุประสงค์ในการให้ข้อมูลทั่วไปเท่านั้น",
+        p2: "Lease Shield ไม่ใช่สำนักงานกฎหมาย และไม่ให้คำปรึกษาด้านกฎหมายหรือการเป็นตัวแทนทางกฎหมาย การใช้บริการนี้ไม่ก่อให้เกิดความสัมพันธ์ทนายความ-ลูกความ",
+        p3: "แม้ว่า Lease Shield ใช้การวิเคราะห์ที่มีโครงสร้างและข้อมูลอ้างอิงที่เป็นปัจจุบัน แต่ผลลัพธ์อาจแตกต่างกันไปตามคุณภาพเอกสาร ภาษา และเขตอำนาจศาล Lease Shield ไม่รับประกันว่าผลการสแกน คำแนะนำ หรือเอกสารที่สร้างขึ้นจะครบถ้วน ปราศจากข้อผิดพลาด หรือเหมาะสมกับทุกสถานการณ์",
+        responsibleTitle: "คุณยังคงมีหน้าที่รับผิดชอบในการ:",
         responsibilities: [
-          "การตรวจสอบเอกสารสัญญาเช่าของคุณ",
-          "การตรวจสอบความถูกต้องของข้อมูลทั้งหมด",
-          "การขอคำปรึกษากฎหมายจากผู้เชี่ยวชาญอิสระก่อนดำเนินการ",
-          "การตัดสินใจว่าจะใช้ผลลัพธ์อย่างไรและในกรณีใด"
+          "ตรวจสอบและทำความเข้าใจเอกสารสัญญาเช่าของคุณ",
+          "ยืนยันความถูกต้องของข้อมูลทั้งหมด",
+          "ขอคำปรึกษาจากผู้เชี่ยวชาญหรือทนายความอิสระเมื่อจำเป็น",
+          "ตัดสินใจว่าจะพึ่งพาผลลัพธ์ที่ให้มาหรือไม่ และอย่างไร"
         ],
-        p4: "Lease Shield ไม่ได้เป็นคู่สัญญาในสัญญาเช่าของคุณ และไม่รับผิดชอบต่อการตัดสินใจ ข้อพิพาท ความเสียหาย หรือผลลัพธ์ใด ๆ ที่เกิดจากการใช้บริการนี้",
-        p5: "เมื่อดำเนินการต่อ คุณรับทราบและยอมรับว่าการใช้ Lease Shield เป็นความเสี่ยงของคุณเอง"
+        p4: "Lease Shield ไม่ได้เป็นคู่สัญญาในสัญญาเช่าใด ๆ และไม่รับผิดชอบต่อการตัดสินใจที่ทำ ข้อพิพาทที่เกิดขึ้น หรือผลลัพธ์ที่เกิดจากการใช้บริการนี้",
+        p5: "เมื่อดำเนินการต่อ คุณรับทราบว่า Lease Shield เป็นเครื่องมือช่วยเหลือและให้ข้อมูลเชิงลึก และคุณใช้งานด้วยดุลยพินิจและความเสี่ยงของคุณเอง"
       }
     },
     zh: {
@@ -408,18 +408,18 @@ function UploadScanPageContent() {
       agreeAndContinue: "同意并继续",
       disclaimerCancel: "取消",
       disclaimerText: {
-        p1: "Lease Shield 仅提供自动化分析、一般性建议和文档模板，供信息参考之用。",
-        p2: "Lease Shield 不是律师事务所，不提供法律意见，也不提供法律代理服务。使用本服务不会建立律师—客户关系。",
-        p3: "结果可能不完整、不准确或已过期。Lease Shield 不保证扫描结果、建议或生成文件的准确性、完整性或适用性。",
-        responsibleTitle: "您仍需对以下事项承担全部责任：",
+        p1: "Lease Shield 提供自动化租约分析、实用指导和文档模板，帮助用户更好地理解租赁协议和常见风险领域。所有信息仅供一般参考之用。",
+        p2: "Lease Shield 不是律师事务所，不提供法律意见或法律代理服务。使用本服务不会建立律师-客户关系。",
+        p3: "虽然 Lease Shield 使用结构化分析和最新参考数据，但结果可能因文档质量、语言和司法管辖区而异。Lease Shield 不保证扫描结果、建议或生成文档完整、无误或适用于每种情况。",
+        responsibleTitle: "您仍需承担以下责任：",
         responsibilities: [
-          "审阅您的租赁文件",
-          "核实所有信息的准确性",
-          "在采取行动前寻求独立法律意见",
-          "决定是否以及如何使用任何输出内容"
+          "审阅并理解您的租赁文件",
+          "确认所有信息的准确性",
+          "在适当情况下寻求独立的专业或法律意见",
+          "决定是否以及如何依赖所提供的任何输出内容"
         ],
-        p4: "Lease Shield 不是您租约的合同当事方，对因使用本服务所产生的决定、纠纷、损失或结果不承担任何责任。",
-        p5: "继续即表示您确认并接受：使用 Lease Shield 风险自负。"
+        p4: "Lease Shield 不是任何租约协议的当事方，对因使用本服务而做出的决定、产生的纠纷或造成的结果不承担责任。",
+        p5: "继续操作即表示您确认 Lease Shield 是一种支持和洞察工具，您自行决定使用并承担风险。"
       }
     },
     ja: {
@@ -502,18 +502,18 @@ function UploadScanPageContent() {
       agreeAndContinue: "同意して続行",
       disclaimerCancel: "キャンセル",
       disclaimerText: {
-        p1: "Lease Shield は情報提供目的で、自動分析・一般的なガイダンス・文書テンプレートを提供します。",
-        p2: "Lease Shield は法律事務所ではなく、法律助言や法的代理を提供しません。本サービスの利用により弁護士—依頼者関係は成立しません。",
-        p3: "結果は不完全、不正確、または最新でない可能性があります。Lease Shield はスキャン結果、推奨事項、生成文書の正確性・完全性・適合性を保証しません。",
-        responsibleTitle: "以下については利用者が全責任を負います：",
+        p1: "Lease Shield は、ユーザーが賃貸契約書および一般的なリスク領域をよりよく理解できるよう、自動リース分析、実用的なガイダンス、および文書テンプレートを提供します。すべての情報は一般的な情報提供のみを目的として提供されます。",
+        p2: "Lease Shield は法律事務所ではなく、法律助言や法的代理を提供しません。本サービスの利用により弁護士-依頼者関係は成立しません。",
+        p3: "Lease Shield は構造化された分析と最新の参照データを使用していますが、結果は文書の品質、言語、および管轄区域によって異なる場合があります。Lease Shield は、スキャン結果、推奨事項、または生成された文書が完全で、エラーがなく、またはすべての状況に適していることを保証しません。",
+        responsibleTitle: "以下については利用者が責任を負います：",
         responsibilities: [
-          "賃貸契約書類の確認",
-          "すべての情報の正確性の検証",
-          "行動前に独立した法律助言を求めること",
-          "出力結果を使用するかどうか、および使用方法の判断"
+          "賃貸契約書類の確認と理解",
+          "すべての情報の正確性の確認",
+          "必要に応じて独立した専門家または法律助言を求めること",
+          "提供された出力に依拠するかどうか、およびその方法を決定すること"
         ],
-        p4: "Lease Shield は賃貸契約の当事者ではなく、本サービス利用に起因する判断、紛争、損害、結果について一切責任を負いません。",
-        p5: "続行することで、Lease Shield の利用は自己責任であることを確認し同意したものとします。"
+        p4: "Lease Shield はいかなる賃貸契約の当事者でもなく、本サービスの利用から生じた決定、紛争、または結果について責任を負いません。",
+        p5: "続行することで、Lease Shield がサポートおよび洞察ツールであり、ご自身の裁量とリスクでご利用いただくことを認識したものとします。"
       }
     },
     ko: {
@@ -596,18 +596,18 @@ function UploadScanPageContent() {
       agreeAndContinue: "동의 및 계속",
       disclaimerCancel: "취소",
       disclaimerText: {
-        p1: "Lease Shield는 정보 제공 목적의 자동 분석, 일반 안내 및 문서 템플릿을 제공합니다.",
-        p2: "Lease Shield는 법률사무소가 아니며 법률 자문 또는 법률 대리를 제공하지 않습니다. 본 서비스를 사용한다고 해서 변호사-의뢰인 관계가 성립되지 않습니다.",
-        p3: "결과는 불완전하거나 부정확하거나 최신이 아닐 수 있습니다. Lease Shield는 스캔 결과, 권고 또는 생성 문서의 정확성, 완전성, 적합성을 보장하지 않습니다.",
-        responsibleTitle: "귀하는 다음에 대해 전적으로 책임이 있습니다:",
+        p1: "Lease Shield는 사용자가 임대 계약 및 일반적인 위험 영역을 더 잘 이해할 수 있도록 자동 임대 분석, 실용적인 지침 및 문서 템플릿을 제공합니다. 모든 정보는 일반 정보 제공 목적으로만 제공됩니다.",
+        p2: "Lease Shield는 법률사무소가 아니며 법률 자문 또는 법률 대리를 제공하지 않습니다. 본 서비스 사용으로 변호사-의뢰인 관계가 성립되지 않습니다.",
+        p3: "Lease Shield는 구조화된 분석 및 최신 참조 데이터를 사용하지만, 결과는 문서 품질, 언어 및 관할 구역에 따라 달라질 수 있습니다. Lease Shield는 스캔 결과, 권장 사항 또는 생성된 문서가 완전하거나 오류가 없거나 모든 상황에 적합하다는 것을 보증하지 않습니다.",
+        responsibleTitle: "귀하는 다음에 대한 책임이 있습니다:",
         responsibilities: [
-          "임대차 계약서 검토",
+          "임대차 계약 문서 검토 및 이해",
           "모든 정보의 정확성 확인",
-          "조치 전 독립적인 법률 자문 구하기",
-          "출력 결과를 사용할지 및 사용 방법 결정"
+          "적절한 경우 독립적인 전문가 또는 법률 자문 구하기",
+          "제공된 결과물을 신뢰할지 여부 및 방법 결정"
         ],
-        p4: "Lease Shield는 귀하의 임대차 계약의 당사자가 아니며, 본 서비스 사용으로 인한 결정, 분쟁, 손실 또는 결과에 대해 책임을 지지 않습니다.",
-        p5: "계속 진행하면 Lease Shield 사용은 본인 책임임을 인정하고 동의하는 것입니다."
+        p4: "Lease Shield는 어떠한 임대 계약의 당사자도 아니며, 본 서비스 사용으로 인해 내린 결정, 발생한 분쟁 또는 초래된 결과에 대해 책임을 지지 않습니다.",
+        p5: "계속 진행하면 Lease Shield가 지원 및 인사이트 도구임을 인정하고 귀하의 재량과 위험 부담으로 사용하는 것에 동의하는 것입니다."
       }
     },
     ru: {
@@ -690,18 +690,18 @@ function UploadScanPageContent() {
       agreeAndContinue: "Согласиться и продолжить",
       disclaimerCancel: "Отмена",
       disclaimerText: {
-        p1: "Lease Shield предоставляет автоматизированный анализ, общие рекомендации и шаблоны документов исключительно в информационных целях.",
-        p2: "Lease Shield не является юридической фирмой, не предоставляет юридические консультации и не осуществляет юридическое представительство. Использование сервиса не создаёт отношений «адвокат—клиент».",
-        p3: "Результаты могут быть неполными, неточными или устаревшими. Lease Shield не гарантирует точность, полноту или пригодность результатов сканирования, рекомендаций или сгенерированных документов.",
-        responsibleTitle: "Вы полностью несёте ответственность за:",
+        p1: "Lease Shield предоставляет автоматизированный анализ договора аренды, практическое руководство и шаблоны документов, чтобы помочь пользователям лучше понимать договоры аренды и общие области риска. Вся информация предоставляется исключительно в общих информационных целях.",
+        p2: "Lease Shield не является юридической фирмой и не предоставляет юридические консультации или юридическое представительство. Использование данного сервиса не создаёт отношений адвокат-клиент.",
+        p3: "Хотя Lease Shield использует структурированный анализ и актуальные справочные данные, результаты могут различаться в зависимости от качества документа, языка и юрисдикции. Lease Shield не гарантирует, что результаты сканирования, рекомендации или сгенерированные документы являются полными, безошибочными или подходящими для каждой ситуации.",
+        responsibleTitle: "Вы несёте ответственность за:",
         responsibilities: [
-          "Проверку ваших документов аренды",
-          "Проверку точности всей информации",
-          "Обращение за независимой юридической консультацией перед действиями",
-          "Решение о том, использовать ли и как использовать любые результаты"
+          "Просмотр и понимание ваших документов аренды",
+          "Подтверждение точности всей информации",
+          "Обращение за независимой профессиональной или юридической консультацией при необходимости",
+          "Решение о том, полагаться ли на предоставленные результаты и каким образом"
         ],
-        p4: "Lease Shield не является стороной вашего договора аренды и не несёт ответственности за решения, споры, убытки или последствия, возникающие в результате использования сервиса.",
-        p5: "Продолжая, вы подтверждаете и принимаете, что используете Lease Shield на свой страх и риск."
+        p4: "Lease Shield не является стороной какого-либо договора аренды и не несёт ответственности за принятые решения, возникшие споры или последствия, вытекающие из использования данного сервиса.",
+        p5: "Продолжая, вы признаёте, что Lease Shield является инструментом поддержки и аналитики, и что вы используете его по своему усмотрению и на свой риск."
       }
     }
   };
