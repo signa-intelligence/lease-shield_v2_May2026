@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import mammoth from 'npm:mammoth@1.6.0';
 
 Deno.serve(async (req) => {
   const requestId = crypto.randomUUID().slice(0, 8);
@@ -25,8 +24,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < fileUrls.length; i++) {
       const url = fileUrls[i];
       const filename = url.split('/').pop().split('?')[0];
-      const isDocx = filename.toLowerCase().endsWith('.docx') || filename.toLowerCase().endsWith('.doc');
-      console.log(`[${requestId}] File ${i + 1}: ${filename} | isDocx: ${isDocx}`);
+      console.log(`[${requestId}] File ${i + 1}: ${filename}`);
       
       // Fetch file to check size and type
       try {
@@ -37,78 +35,11 @@ Deno.serve(async (req) => {
         console.error(`[${requestId}] Failed to fetch file metadata:`, err.message);
       }
     }
-
-    // DOCX EXTRACTION: Pre-process DOCX files to extract text
-    const processedFileUrls = [];
-    let extractedTextForDiagnostics = '';
     
-    for (const url of fileUrls) {
-      const filename = url.split('/').pop().split('?')[0];
-      const isDocx = filename.toLowerCase().endsWith('.docx') || filename.toLowerCase().endsWith('.doc');
-      
-      if (isDocx) {
-        console.log(`[${requestId}] DOCX detected: ${filename} | Starting text extraction...`);
-        
-        try {
-          // Download the DOCX file
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch DOCX: HTTP ${response.status}`);
-          }
-          
-          const arrayBuffer = await response.arrayBuffer();
-          console.log(`[${requestId}] DOCX downloaded: ${arrayBuffer.byteLength} bytes`);
-          
-          // Extract text using mammoth
-          const result = await mammoth.extractRawText({ arrayBuffer });
-          const extractedText = result.value;
-          
-          console.log(`[${requestId}] DOCX extraction success | Text length: ${extractedText.length} chars`);
-          extractedTextForDiagnostics = extractedText.slice(0, 200); // Store first 200 chars for diagnostics
-          
-          if (!extractedText || extractedText.trim().length < 50) {
-            console.error(`[${requestId}] DOCX extraction returned insufficient text (${extractedText.length} chars)`);
-            return Response.json({
-              success: false,
-              error: 'No readable text found in DOCX file',
-              details: 'The Word document appears to be empty or unreadable. Please try converting to PDF or uploading images of the lease pages.',
-              diagnostic: {
-                requestId,
-                filename,
-                extractedLength: extractedText.length
-              }
-            }, { status: 400 });
-          }
-          
-          // For DOCX files, we'll pass the extracted text directly to the LLM
-          // (InvokeLLM can't read DOCX directly, so we pre-extract)
-          // We'll modify the prompt to include the text
-          processedFileUrls.push({ url, isDocx: true, extractedText });
-          
-        } catch (extractError) {
-          console.error(`[${requestId}] DOCX extraction failed:`, extractError);
-          return Response.json({
-            success: false,
-            error: 'Failed to extract text from Word document',
-            details: `DOCX parsing error: ${extractError.message}. Please convert to PDF or upload images.`,
-            diagnostic: {
-              requestId,
-              filename,
-              error: extractError.message,
-              stack: extractError.stack
-            }
-          }, { status: 400 });
-        }
-      } else {
-        // PDF or image - can be passed directly to InvokeLLM
-        processedFileUrls.push({ url, isDocx: false });
-      }
-    }
+    console.log(`[${requestId}] Invoking LLM for analysis`);
     
-    console.log(`[${requestId}] File processing complete | Total: ${processedFileUrls.length}`);
-    
-    // Build prompt and file_urls for LLM
-    let finalPrompt = `Analyze this rental lease agreement and identify potential issues for the tenant.
+    const scanResult = await base44.integrations.Core.InvokeLLM({
+      prompt: `Analyze this rental lease agreement and identify potential issues for the tenant.
 
 INSTRUCTIONS:
 1. Read the document carefully
@@ -132,26 +63,8 @@ INSTRUCTIONS:
    - notice_period_days (integer, 0 if not found)
    - language_detected (en, th, or mixed)
 
-6. Write a summary paragraph`;
-
-    // If we have DOCX with extracted text, append it to the prompt
-    const docxFiles = processedFileUrls.filter(f => f.isDocx);
-    if (docxFiles.length > 0) {
-      finalPrompt += '\n\n--- DOCUMENT TEXT (extracted from Word file) ---\n\n';
-      docxFiles.forEach((f, idx) => {
-        finalPrompt += `\nDocument ${idx + 1}:\n${f.extractedText}\n`;
-      });
-      console.log(`[${requestId}] Added ${docxFiles.length} DOCX text(s) to prompt | Total prompt length: ${finalPrompt.length} chars`);
-    }
-    
-    // Pass only PDF/image URLs to file_urls (LLM can read these directly)
-    const nonDocxUrls = processedFileUrls.filter(f => !f.isDocx).map(f => f.url);
-    
-    console.log(`[${requestId}] Invoking LLM | PDFs/images: ${nonDocxUrls.length} | DOCX text in prompt: ${docxFiles.length > 0 ? 'YES' : 'NO'}`);
-    
-    const scanResult = await base44.integrations.Core.InvokeLLM({
-      prompt: finalPrompt,
-      file_urls: nonDocxUrls.length > 0 ? nonDocxUrls : undefined,
+6. Write a summary paragraph`,
+      file_urls: fileUrls,
       response_json_schema: {
         type: "object",
         properties: {
@@ -203,12 +116,9 @@ INSTRUCTIONS:
       success: true,
       result: scanResult,
       diagnostic: {
-        buildTag: "scanLease-docx-v3",
+        buildTag: "scanLease-pdf-only-v4",
         requestId,
-        filesProcessed: processedFileUrls.length,
-        docxFilesCount: docxFiles.length,
-        docxExtractSuccess: docxFiles.length > 0,
-        extractedTextSample: extractedTextForDiagnostics.slice(0, 100)
+        filesProcessed: fileUrls.length
       }
     });
 

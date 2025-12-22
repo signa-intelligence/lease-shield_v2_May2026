@@ -90,6 +90,20 @@ const FAQ_DATA = {
         answerRu: 'Наш ИИ проверяет ваш договор аренды、чтобы выделить необычные условия、важные даты、отсутствующую информацию и потенциальные риски。'
       },
       {
+        questionEn: 'What file types can I upload for a lease scan?',
+        questionTh: 'ฉันสามารถอัปโหลดไฟล์ประเภทใดสำหรับการสแกนสัญญาเช่า?',
+        questionZh: '我可以上传哪些文件类型进行租约扫描？',
+        questionJa: 'リーススキャンにはどのファイルタイプをアップロードできますか？',
+        questionKo: '임대 계약 스캔을 위해 어떤 파일 유형을 업로드할 수 있나요?',
+        questionRu: 'Какие типы файлов я могу загрузить для сканирования договора?',
+        answerEn: 'Lease Shield currently supports PDF files and clear images (PNG or JPG).\n\nWord documents (DOC/DOCX) are not supported at this time. If your lease is in Word format, please export or save it as a PDF before uploading.',
+        answerTh: 'ปัจจุบัน Lease Shield รองรับไฟล์ PDF และรูปภาพที่ชัดเจน (PNG หรือ JPG)\n\nไม่รองรับเอกสาร Word (DOC/DOCX) ในขณะนี้ หากสัญญาเช่าของคุณอยู่ในรูปแบบ Word กรุณาส่งออกหรือบันทึกเป็น PDF ก่อนอัปโหลด',
+        answerZh: 'Lease Shield当前支持PDF文件和清晰的图像（PNG或JPG）。\n\n目前不支持Word文档（DOC/DOCX）。如果您的租约是Word格式，请在上传前将其导出或保存为PDF。',
+        answerJa: 'Lease ShieldはPDFファイルと鮮明な画像（PNGまたはJPG）をサポートしています。\n\nWord文書（DOC/DOCX）は現在サポートされていません。リース契約がWord形式の場合は、アップロード前にPDFとしてエクスポートまたは保存してください。',
+        answerKo: 'Lease Shield는 현재 PDF 파일과 선명한 이미지（PNG 또는 JPG）를 지원합니다。\n\nWord 문서（DOC/DOCX）는 현재 지원되지 않습니다。임대 계약이 Word 형식인 경우 업로드하기 전에 PDF로 내보내거나 저장하세요。',
+        answerRu: 'Lease Shield в настоящее время поддерживает PDF-файлы и чёткие изображения（PNG или JPG）。\n\nДокументы Word（DOC/DOCX）в настоящее время не поддерживаются。Если ваш договор в формате Word、пожалуйста、экспортируйте или сохраните его как PDF перед загрузкой。'
+      },
+      {
         questionEn: 'Does Lease Shield give legal advice?',
         questionTh: 'Lease Shield ให้คำแนะนำทางกฎหมายหรือไม่?',
         questionZh: 'Lease Shield提供法律建议吗？',
