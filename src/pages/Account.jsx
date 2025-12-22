@@ -599,8 +599,11 @@ function AccountContent() {
     juristic_line: user?.juristic_line || ''
   });
 
+  // CRITICAL: Only sync form state from user data when NOT editing
+  // Dependency on user?.id (not entire user object) prevents overwrite during save flow
   React.useEffect(() => {
     if (user && !isEditing) {
+      console.log('[FORM_SYNC] Syncing form state from user:', user);
       const isDark = document.documentElement.classList.contains('dark');
       const initialTheme = isDark ? 'dark' : 'light';
       
@@ -629,7 +632,7 @@ function AccountContent() {
         juristic_line: user.juristic_line || ''
       });
     }
-  }, [user, isEditing]);
+  }, [user?.id, user?.full_name, user?.phone, user?.tenant_address, isEditing]);
 
   const updateProfileMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
@@ -651,17 +654,37 @@ function AccountContent() {
     e.preventDefault();
     haptic.medium();
     
+    // DATA PIPELINE: Read source = base44.auth.me() -> User entity
+    //                Write source = base44.auth.updateMe() -> User entity (current auth user)
+    //                Key = authenticated user's ID (auto-managed by auth.me/updateMe)
+    
+    console.log('[PROFILE_SAVE] Starting save with data:', formData);
+    
     try {
-      await base44.auth.updateMe(formData);
-      queryClient.setQueryData(['currentUser'], (old) => ({ ...old, ...formData }));
-      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      await refetchUser();
+      const response = await base44.auth.updateMe(formData);
+      console.log('[PROFILE_SAVE] Save response:', response);
+      
+      if (!response) {
+        throw new Error('No response from server');
+      }
+      
+      // Force immediate cache update
+      queryClient.setQueryData(['currentUser'], (oldData) => {
+        const updated = { ...oldData, ...formData };
+        console.log('[PROFILE_SAVE] Cache updated:', updated);
+        return updated;
+      });
+      
+      // Refetch from server to ensure consistency
+      const freshUser = await refetchUser();
+      console.log('[PROFILE_SAVE] Fresh user data:', freshUser.data);
+      
       setIsEditing(false);
       toast.success(language === 'th' ? 'บันทึกโปรไฟล์แล้ว' : language === 'zh' ? '个人资料已保存' : language === 'ja' ? 'プロフィールを保存しました' : language === 'ko' ? '프로필 저장됨' : language === 'ru' ? 'Профиль сохранён' : 'Profile updated');
       haptic.success();
     } catch (error) {
-      console.error('Profile update failed:', error);
-      toast.error(language === 'th' ? 'ไม่สามารถบันทึกโปรไฟล์ได้: ' + error.message : language === 'zh' ? '无法保存个人资料: ' + error.message : language === 'ja' ? 'プロフィールを保存できませんでした: ' + error.message : language === 'ko' ? '프로필을 저장할 수 없습니다: ' + error.message : language === 'ru' ? 'Не удалось сохранить профиль: ' + error.message : 'Failed to save profile: ' + error.message);
+      console.error('[PROFILE_SAVE] Save failed:', error);
+      toast.error(`${language === 'th' ? 'ไม่สามารถบันทึกโปรไฟล์ได้' : language === 'zh' ? '无法保存个人资料' : language === 'ja' ? 'プロフィールを保存できませんでした' : language === 'ko' ? '프로필을 저장할 수 없습니다' : language === 'ru' ? 'Не удалось сохранить профиль' : 'Failed to save profile'}: ${error.message || 'Unknown error'}`);
       haptic.error();
     }
   };
