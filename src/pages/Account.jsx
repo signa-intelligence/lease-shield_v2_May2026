@@ -632,9 +632,17 @@ function AccountContent() {
 
   const updateProfileMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await refetchUser();
       setIsEditing(false);
+      toast.success(language === 'th' ? 'บันทึกโปรไฟล์แล้ว' : language === 'zh' ? '个人资料已保存' : language === 'ja' ? 'プロフィールを保存しました' : language === 'ko' ? '프로필 저장됨' : language === 'ru' ? 'Профиль сохранён' : 'Profile updated');
+      haptic.success();
+    },
+    onError: (error) => {
+      console.error('Profile update failed:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถบันทึกโปรไฟล์ได้ กรุณาลองอีกครั้ง' : language === 'zh' ? '无法保存个人资料，请重试' : language === 'ja' ? 'プロフィールを保存できませんでした。もう一度お試しください' : language === 'ko' ? '프로필을 저장할 수 없습니다. 다시 시도하세요' : language === 'ru' ? 'Не удалось сохранить профиль. Попробуйте снова' : 'Failed to save profile. Please try again.');
+      haptic.error();
     },
   });
 
@@ -644,14 +652,33 @@ function AccountContent() {
     updateProfileMutation.mutate(formData);
   };
 
-  const handleNotificationUpdate = (data) => {
-    updateProfileMutation.mutate(data);
+  const handleNotificationUpdate = async (data) => {
+    try {
+      await base44.auth.updateMe(data);
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await refetchUser();
+      toast.success(language === 'th' ? 'อัปเดตการตั้งค่าการแจ้งเตือนแล้ว' : language === 'zh' ? '通知设置已更新' : language === 'ja' ? '通知設定を更新しました' : language === 'ko' ? '알림 설정 업데이트됨' : language === 'ru' ? 'Настройки уведомлений обновлены' : 'Notification settings updated');
+      haptic.success();
+    } catch (error) {
+      console.error('Notification update failed:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถอัปเดตการตั้งค่าได้' : language === 'zh' ? '无法更新设置' : language === 'ja' ? '設定を更新できませんでした' : language === 'ko' ? '설정을 업데이트할 수 없습니다' : language === 'ru' ? 'Не удалось обновить настройки' : 'Failed to update settings');
+      haptic.error();
+    }
   };
 
-  const handleThemeToggle = (newTheme) => {
+  const handleThemeToggle = async (newTheme) => {
     haptic.light();
     setFormData({...formData, theme: newTheme});
-    updateProfileMutation.mutate({ theme: newTheme });
+    try {
+      await base44.auth.updateMe({ theme: newTheme });
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await refetchUser();
+      haptic.success();
+    } catch (error) {
+      console.error('Theme update failed:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถเปลี่ยนธีมได้' : language === 'zh' ? '无法更改主题' : language === 'ja' ? 'テーマを変更できませんでした' : language === 'ko' ? '테마를 변경할 수 없습니다' : language === 'ru' ? 'Не удалось изменить тему' : 'Failed to change theme');
+      haptic.error();
+    }
   };
 
   const handleSubscribe = async (planKey, interval) => {
@@ -932,14 +959,34 @@ function AccountContent() {
     }
   };
 
-  const handleLandlordUpdate = () => {
+  const handleLandlordUpdate = async () => {
     haptic.medium();
-    updateProfileMutation.mutate(landlordData);
+    try {
+      await base44.auth.updateMe(landlordData);
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await refetchUser();
+      toast.success(language === 'th' ? 'บันทึกข้อมูลเจ้าของบ้านแล้ว' : language === 'zh' ? '房东信息已保存' : language === 'ja' ? '家主情報を保存しました' : language === 'ko' ? '집주인 정보 저장됨' : language === 'ru' ? 'Информация арендодателя сохранена' : 'Landlord info saved');
+      haptic.success();
+    } catch (error) {
+      console.error('Landlord update failed:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถบันทึกได้ กรุณาลองอีกครั้ง' : language === 'zh' ? '无法保存，请重试' : language === 'ja' ? '保存できませんでした。もう一度お試しください' : language === 'ko' ? '저장 실패, 다시 시도하세요' : language === 'ru' ? 'Не удалось сохранить. Попробуйте снова' : 'Failed to save. Please try again.');
+      haptic.error();
+    }
   };
 
-  const handleJuristicUpdate = () => {
+  const handleJuristicUpdate = async () => {
     haptic.medium();
-    updateProfileMutation.mutate(juristicData);
+    try {
+      await base44.auth.updateMe(juristicData);
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await refetchUser();
+      toast.success(language === 'th' ? 'บันทึกข้อมูลนิติบุคคลแล้ว' : language === 'zh' ? '物业信息已保存' : language === 'ja' ? '管理事務所情報を保存しました' : language === 'ko' ? '관리 사무소 정보 저장됨' : language === 'ru' ? 'Информация управляющей компании сохранена' : 'Juristic info saved');
+      haptic.success();
+    } catch (error) {
+      console.error('Juristic update failed:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถบันทึกได้ กรุณาลองอีกครั้ง' : language === 'zh' ? '无法保存，请重试' : language === 'ja' ? '保存できませんでした。もう一度お試しください' : language === 'ko' ? '저장 실패, 다시 시도하세요' : language === 'ru' ? 'Не удалось сохранить. Попробуйте снова' : 'Failed to save. Please try again.');
+      haptic.error();
+    }
   };
 
   const generateLineOALink = (role) => {
