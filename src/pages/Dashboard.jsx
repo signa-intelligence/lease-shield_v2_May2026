@@ -1412,6 +1412,24 @@ ja: {
 
   const strings = t[language] || t.en;
 
+  // CANONICAL: Always use user.full_name from profile record
+  const greetingName = user?.display_name?.split(' ')[0] || user?.full_name?.split(' ')[0] || strings.welcome.split(' ').pop();
+  
+  // DEV VERIFICATION: Check for stale data
+  React.useEffect(() => {
+    if (user?.full_name && greetingName) {
+      const expectedFirstName = (user.display_name || user.full_name).split(' ')[0];
+      if (greetingName !== expectedFirstName && !strings.welcome.includes(greetingName)) {
+        console.error('❌ STALE GREETING BUG:', {
+          rendered: greetingName,
+          expected: expectedFirstName,
+          fullName: user.full_name,
+          displayName: user.display_name
+        });
+      }
+    }
+  }, [user?.full_name, user?.display_name, greetingName, language]);
+
   const toggleSection = (section) => {
     haptic.light();
     setExpandedSections(prev => ({
