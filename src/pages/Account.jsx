@@ -661,37 +661,48 @@ function AccountContent() {
     e.preventDefault();
     haptic.medium();
     
-    // DATA PIPELINE: Read source = base44.auth.me() -> User entity
-    //                Write source = base44.auth.updateMe() -> User entity (current auth user)
-    //                Key = authenticated user's ID (auto-managed by auth.me/updateMe)
+    // DATA PIPELINE: Read = base44.auth.me() -> User entity
+    //                Write = base44.auth.updateMe() -> User entity (custom field: display_name)
+    //                Key = authenticated user ID (auto-managed)
+    // ROOT CAUSE FIX: full_name is READ-ONLY built-in field. Use display_name instead.
     
-    console.log('[PROFILE_SAVE] Starting save with data:', formData);
+    const savePayload = {
+      display_name: formData.full_name,
+      phone: formData.phone,
+      country: formData.country,
+      language: formData.language,
+      theme: formData.theme,
+      tenant_address: formData.tenant_address,
+      tenant_city: formData.tenant_city,
+      tenant_state: formData.tenant_state,
+      tenant_zip: formData.tenant_zip
+    };
+    
+    console.log('[PROFILE_SAVE] Payload:', savePayload);
     
     try {
-      const response = await base44.auth.updateMe(formData);
-      console.log('[PROFILE_SAVE] Save response:', response);
+      const response = await base44.auth.updateMe(savePayload);
+      console.log('[PROFILE_SAVE] Response:', response);
       
       if (!response) {
-        throw new Error('No response from server');
+        throw new Error('Empty response from server');
       }
       
-      // Force immediate cache update
-      queryClient.setQueryData(['currentUser'], (oldData) => {
-        const updated = { ...oldData, ...formData };
-        console.log('[PROFILE_SAVE] Cache updated:', updated);
-        return updated;
-      });
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      const freshData = await refetchUser();
+      console.log('[PROFILE_SAVE] Fresh data:', freshData.data);
       
-      // Refetch from server to ensure consistency
-      const freshUser = await refetchUser();
-      console.log('[PROFILE_SAVE] Fresh user data:', freshUser.data);
+      const savedName = freshData.data?.display_name || freshData.data?.full_name || 'N/A';
+      const savedPhone = freshData.data?.phone || 'N/A';
+      const timestamp = new Date().toLocaleTimeString();
       
       setIsEditing(false);
-      toast.success(language === 'th' ? 'บันทึกโปรไฟล์แล้ว' : language === 'zh' ? '个人资料已保存' : language === 'ja' ? 'プロフィールを保存しました' : language === 'ko' ? '프로필 저장됨' : language === 'ru' ? 'Профиль сохранён' : 'Profile updated');
+      
+      toast.success(`✅ Saved: name=${savedName} phone=${savedPhone} @${timestamp}`);
       haptic.success();
     } catch (error) {
-      console.error('[PROFILE_SAVE] Save failed:', error);
-      toast.error(`${language === 'th' ? 'ไม่สามารถบันทึกโปรไฟล์ได้' : language === 'zh' ? '无法保存个人资料' : language === 'ja' ? 'プロフィールを保存できませんでした' : language === 'ko' ? '프로필을 저장할 수 없습니다' : language === 'ru' ? 'Не удалось сохранить профиль' : 'Failed to save profile'}: ${error.message || 'Unknown error'}`);
+      console.error('[PROFILE_SAVE] Failed:', error);
+      toast.error(`❌ Save failed: ${error.message || 'Unknown error'}`);
       haptic.error();
     }
   };
