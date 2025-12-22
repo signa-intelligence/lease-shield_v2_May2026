@@ -16,6 +16,7 @@ import DepositAlert from "../components/dashboard/DepositAlert";
 import RecentLeases from "../components/dashboard/RecentLeases";
 import ProtectionScoreEnhanced from "../components/dashboard/ProtectionScoreEnhanced";
 import NotificationSummary from "../components/dashboard/NotificationSummary";
+import ProtectionScoreDetails from "../components/dashboard/ProtectionScoreDetails";
 import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
@@ -44,6 +45,7 @@ function DashboardContent() {
   const [showOnboarding, setShowOnboarding] = React.useState(false);
   const [showTour, setShowTour] = React.useState(false);
   const [showQuickGuide, setShowQuickGuide] = React.useState(false);
+  const [showProtectionDetails, setShowProtectionDetails] = React.useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -751,78 +753,77 @@ function DashboardContent() {
 
   const calculateProtectionScore = () => {
     let score = 0;
-    let breakdown = {
-      documentation: 0,
-      activeProtections: 0,
-      proactiveActions: 0
-    };
+    const suggestions = [];
 
-    const scannedLeases = leases.filter(l => l.status === 'scanned' || l.status === 'paid');
-    if (scannedLeases.length > 0) breakdown.documentation += 15;
-    if (deposits.length > 0) breakdown.documentation += 10;
-    if (documents.length > 0) breakdown.documentation += 10;
-    if (documents.length >= 5) breakdown.documentation += 5;
+    // Lease uploaded/scanned: 30 points
+    const hasScannedLease = leases.some(l => l.status === 'scanned' || l.status === 'paid');
+    if (hasScannedLease) {
+      score += 30;
+    } else {
+      suggestions.push({
+        action: language === 'th' ? 'อัปโหลดสัญญาเช่าเพื่อสแกนเต็มรูปแบบ' : language === 'zh' ? '上传租约进行完整扫描' : language === 'ja' ? 'リースをアップロードしてフルスキャン' : language === 'ko' ? '전체 스캔을 위해 임대 계약 업로드' : language === 'ru' ? 'Загрузите договор для полного сканирования' : 'Upload your lease for a full scan',
+        points: 30,
+        route: createPageUrl("UploadScan"),
+        completed: false
+      });
+    }
 
-    const activeDepositsForProtectionScore = deposits.filter(d => d.status === 'tracking');
-    if (activeDepositsForProtectionScore.length > 0) breakdown.activeProtections += 10;
+    // Deposit tracker completed: 20 points
+    const hasDeposit = deposits.some(d => d.deposit_amount && d.expected_return_date);
+    if (hasDeposit) {
+      score += 20;
+    } else {
+      suggestions.push({
+        action: language === 'th' ? 'เพิ่มรายละเอียดเงินมัดจำของคุณ' : language === 'zh' ? '添加押金详细信息' : language === 'ja' ? '敷金詳細を追加' : language === 'ko' ? '보증금 세부 정보 추가' : language === 'ru' ? 'Добавьте данные депозита' : 'Add your deposit details',
+        points: 20,
+        route: createPageUrl("PropertyTracker") + "#deposit",
+        completed: false
+      });
+    }
 
-    const rentAlertsEnabled = deposits.some(d => d.rent_alerts_enabled);
-    if (rentAlertsEnabled) breakdown.activeProtections += 7;
+    // Property details/lease dates completed: 20 points
+    const hasLeaseDates = leases.some(l => l.start_date && l.end_date && l.notice_period_days);
+    if (hasLeaseDates) {
+      score += 20;
+    } else {
+      suggestions.push({
+        action: language === 'th' ? 'เพิ่มวันที่สำคัญของสัญญาเช่า (เริ่ม/สิ้นสุด/แจ้ง)' : language === 'zh' ? '添加关键租约日期（开始/结束/通知）' : language === 'ja' ? '重要なリース日付を追加（開始/終了/通知）' : language === 'ko' ? '주요 임대 날짜 추가（시작/종료/통지）' : language === 'ru' ? 'Добавьте ключевые даты договора（начало/конец/уведомление）' : 'Add key lease dates (start/end/notice)',
+        points: 20,
+        route: createPageUrl("PropertyTracker"),
+        completed: false
+      });
+    }
 
-    if (maintenanceRequests.length > 0) breakdown.activeProtections += 6;
-
-    if (user?.email_notifications || user?.line_notifications) breakdown.activeProtections += 7;
-
-    const now = new Date();
-    const recentLeases = leases.filter(l => {
-      const leaseDate = new Date(l.created_date);
-      const daysSinceCreated = differenceInDays(now, leaseDate);
-      return daysSinceCreated <= 90;
-    });
-    if (recentLeases.length > 0) breakdown.proactiveActions += 10;
-
-    const recentDeposits = deposits.filter(d => {
-      const depositDate = new Date(d.created_date);
-      const daysSinceCreated = differenceInDays(now, depositDate);
-      return daysSinceCreated <= 90;
-    });
-    if (recentDeposits.length > 0) breakdown.proactiveActions += 8;
-
-    const recentDocuments = documents.filter(doc => {
-      const docDate = new Date(doc.created_date);
-      const daysSinceCreated = differenceInDays(now, docDate);
-      return daysSinceCreated <= 30;
-    });
-    if (recentDocuments.length > 0) breakdown.proactiveActions += 7;
-
-    if (recentDocuments.length >= 3) breakdown.proactiveActions += 5;
-
-    score = breakdown.documentation + breakdown.activeProtections + breakdown.proactiveActions;
-
-    const recommendations = [];
-
-    if (scannedLeases.length === 0) {
-      recommendations.push({
-        action: language === 'th' ? 'สแกนสัญญาเช่า' : 'Scan your lease',
+    // Evidence vault has at least 1 item: 15 points
+    if (documents.length > 0) {
+      score += 15;
+    } else {
+      suggestions.push({
+        action: language === 'th' ? 'อัปโหลดรูปภาพ/ไฟล์ไปยัง Evidence Vault' : language === 'zh' ? '上传照片/文件到证据保管库' : language === 'ja' ? 'Evidence Vaultに写真/ファイルをアップロード' : language === 'ko' ? 'Evidence Vault에 사진/파일 업로드' : language === 'ru' ? 'Загрузите фото/файлы в Хранилище доказательств' : 'Upload photos/files to Evidence Vault',
         points: 15,
-        route: 'UploadScan',
-        icon: 'FileText'
-      });
-    }
-    if (deposits.length === 0) {
-      recommendations.push({
-        action: language === 'th' ? 'เริ่มติดตามเงินมัดจำ' : 'Start tracking deposit',
-        points: 10,
-        route: 'DepositTracker',
-        icon: 'Shield'
+        route: createPageUrl("EvidenceVault"),
+        completed: false
       });
     }
 
-    return { score, breakdown, recommendations: recommendations.slice(0, 5) };
+    // Notifications enabled: 15 points
+    const hasNotifications = user?.email_notifications || user?.line_notifications;
+    if (hasNotifications) {
+      score += 15;
+    } else {
+      suggestions.push({
+        action: language === 'th' ? 'เปิดใช้งานการแจ้งเตือน/การเตือน' : language === 'zh' ? '启用提醒/通知' : language === 'ja' ? 'リマインダー/通知を有効化' : language === 'ko' ? '알림/리마인더 활성화' : language === 'ru' ? 'Включите напоминания/уведомления' : 'Enable reminders/notifications',
+        points: 15,
+        route: createPageUrl("Account") + "#notifications",
+        completed: false
+      });
+    }
+
+    return { score, suggestions: suggestions.slice(0, 5) };
   };
 
   const protectionData = calculateProtectionScore();
-  const { score: protectionScore, breakdown, recommendations } = protectionData;
+  const { score: protectionScore, suggestions: protectionSuggestions } = protectionData;
 
   const activeDeposits = deposits.filter(d => d.status === 'tracking' || d.status === 'dispute');
   
@@ -2581,32 +2582,33 @@ ja: {
                               </p>
                             </div>
                           </div>
-                          <Link to={createPageUrl("Analytics")}>
-                            <button
-                              onClick={() => haptic.light()}
-                              style={{
-                                padding: '8px 16px',
-                                borderRadius: '8px',
-                                backgroundColor: 'transparent',
-                                border: `2px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.1)'}`,
-                                color: colors.textPrimary,
-                                fontSize: '13px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = '#10B981';
-                                e.currentTarget.style.color = '#10B981';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.1)';
-                                e.currentTarget.style.color = colors.textPrimary;
-                              }}
-                            >
-                              {language === 'th' ? 'ดูรายละเอียด' : language === 'zh' ? '查看详情' : language === 'ja' ? '詳細を見る' : language === 'ko' ? '세부 정보 보기' : language === 'ru' ? 'Подробнее' : 'View Details'} →
-                            </button>
-                          </Link>
+                          <button
+                            onClick={() => {
+                              haptic.light();
+                              setShowProtectionDetails(true);
+                            }}
+                            style={{
+                              padding: '8px 16px',
+                              borderRadius: '8px',
+                              backgroundColor: 'transparent',
+                              border: `2px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.1)'}`,
+                              color: colors.textPrimary,
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = '#10B981';
+                              e.currentTarget.style.color = '#10B981';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.1)';
+                              e.currentTarget.style.color = colors.textPrimary;
+                            }}
+                          >
+                            {language === 'th' ? 'ดูรายละเอียด' : language === 'zh' ? '查看详情' : language === 'ja' ? '詳細を見る' : language === 'ko' ? '세부 정보 보기' : language === 'ru' ? 'Подробнее' : 'View Details'} →
+                          </button>
                         </div>
                       </CardContent>
                     </Card>
@@ -2901,6 +2903,16 @@ ja: {
 
 
         </div>
+
+        {/* Protection Score Details Modal */}
+        <ProtectionScoreDetails
+          isOpen={showProtectionDetails}
+          onClose={() => setShowProtectionDetails(false)}
+          score={protectionScore}
+          suggestions={protectionSuggestions}
+          isDarkMode={isDarkMode}
+          language={language}
+        />
       </div>
     </PullToRefresh>
   );
