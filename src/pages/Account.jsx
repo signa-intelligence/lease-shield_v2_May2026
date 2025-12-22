@@ -110,7 +110,7 @@ const PLAN_DETAILS = [
   {
     key: 'lite',
     label: 'Lite',
-    priceMonthly: 158,
+    priceMonthly: 190,
     priceAnnual: 1900,
     savingsAnnual: 380,
     tagline: 'Essential Protection',
@@ -191,7 +191,7 @@ const PLAN_DETAILS = [
   {
     key: 'protect',
     label: 'Protect',
-    priceMonthly: 325,
+    priceMonthly: 390,
     priceAnnual: 3900,
     savingsAnnual: 780,
     tagline: 'Complete Prevention Suite',
@@ -279,7 +279,7 @@ const PLAN_DETAILS = [
   {
     key: 'secure',
     label: 'Secure',
-    priceMonthly: 825,
+    priceMonthly: 990,
     priceAnnual: 9900,
     savingsAnnual: 1980,
     tagline: 'Premium Protection',
@@ -5157,8 +5157,8 @@ function AccountContent() {
                       {strings.payMonthly}
                     </p>
                     <p className="text-sm" style={{ color: colors.textSecondary, whiteSpace: 'normal' }}>
-                      {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
-                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceMonthly}/${language === 'th' ? 'เดือน' : language === 'zh' ? '月' : language === 'ja' ? '月' : language === 'ko' ? '월' : language === 'ru' ? 'месяц' : 'month'}` 
+                      {selectedPlan && PRICING[selectedPlan]
+                        ? `฿${PRICING[selectedPlan].monthly.amount}/${language === 'th' ? 'เดือน' : language === 'zh' ? '月' : language === 'ja' ? '月' : language === 'ko' ? '월' : language === 'ru' ? 'месяц' : 'month'}` 
                         : '—'}
                     </p>
                   </div>
@@ -5197,12 +5197,14 @@ function AccountContent() {
                       </Badge>
                     </div>
                     <p className="text-sm mb-1" style={{ color: colors.textSecondary, whiteSpace: 'normal' }}>
-                      {selectedPlan && PLAN_DETAILS.find(p => p.key === selectedPlan) 
-                        ? `฿${PLAN_DETAILS.find(p => p.key === selectedPlan).priceAnnual}/${language === 'th' ? 'ปี' : language === 'zh' ? '年' : language === 'ja' ? '年' : language === 'ko' ? '년' : language === 'ru' ? 'год' : 'year'}` 
+                      {selectedPlan && PRICING[selectedPlan]
+                        ? `฿${PRICING[selectedPlan].annual.amount}/${language === 'th' ? 'ปี' : language === 'zh' ? '年' : language === 'ja' ? '年' : language === 'ko' ? '년' : language === 'ru' ? 'год' : 'year'}` 
                         : '—'}
                     </p>
                     <p className="text-xs font-medium" style={{ color: '#10B981', whiteSpace: 'normal' }}>
-                      {language === 'th' ? '12 เดือนของการป้องกันเต็มรูปแบบในราคา 10 เดือน' : language === 'zh' ? '12个月的全面保护，只需支付10个月的价格' : language === 'ja' ? '10ヶ月分の価格で12ヶ月の完全な保護' : language === 'ko' ? '10개월 가격으로 12개월 완전 보호' : language === 'ru' ? '12 месяцев полной защиты по цене 10' : '12 months of full protection for the price of 10'}
+                      {selectedPlan && PRICING[selectedPlan]
+                        ? `${language === 'th' ? 'เท่ากับ' : language === 'zh' ? '相当于' : language === 'ja' ? '同等' : language === 'ko' ? '해당' : language === 'ru' ? 'Эквивалент' : 'Equivalent to'} ฿${Math.round(PRICING[selectedPlan].annual.amount / 12)}/${language === 'th' ? 'เดือน' : language === 'zh' ? '月' : language === 'ja' ? '月' : language === 'ko' ? '월' : language === 'ru' ? 'мес.' : 'month'}`
+                        : '—'}
                     </p>
                   </div>
                   {selectedInterval === 'annual' && (
