@@ -441,6 +441,7 @@ function AccountContent() {
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     staleTime: 0,
+    cacheTime: 0,
   });
 
   // Generate referral code on first load if missing
@@ -599,7 +600,7 @@ function AccountContent() {
   });
 
   React.useEffect(() => {
-    if (user) {
+    if (user && !isEditing) {
       const isDark = document.documentElement.classList.contains('dark');
       const initialTheme = isDark ? 'dark' : 'light';
       
@@ -628,7 +629,7 @@ function AccountContent() {
         juristic_line: user.juristic_line || ''
       });
     }
-  }, [user]);
+  }, [user, isEditing]);
 
   const updateProfileMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
@@ -646,10 +647,23 @@ function AccountContent() {
     },
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     haptic.medium();
-    updateProfileMutation.mutate(formData);
+    
+    try {
+      await base44.auth.updateMe(formData);
+      queryClient.setQueryData(['currentUser'], (old) => ({ ...old, ...formData }));
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await refetchUser();
+      setIsEditing(false);
+      toast.success(language === 'th' ? 'บันทึกโปรไฟล์แล้ว' : language === 'zh' ? '个人资料已保存' : language === 'ja' ? 'プロフィールを保存しました' : language === 'ko' ? '프로필 저장됨' : language === 'ru' ? 'Профиль сохранён' : 'Profile updated');
+      haptic.success();
+    } catch (error) {
+      console.error('Profile update failed:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถบันทึกโปรไฟล์ได้: ' + error.message : language === 'zh' ? '无法保存个人资料: ' + error.message : language === 'ja' ? 'プロフィールを保存できませんでした: ' + error.message : language === 'ko' ? '프로필을 저장할 수 없습니다: ' + error.message : language === 'ru' ? 'Не удалось сохранить профиль: ' + error.message : 'Failed to save profile: ' + error.message);
+      haptic.error();
+    }
   };
 
   const handleNotificationUpdate = async (data) => {
