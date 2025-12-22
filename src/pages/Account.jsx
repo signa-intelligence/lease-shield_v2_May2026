@@ -110,7 +110,7 @@ const PLAN_DETAILS = [
   {
     key: 'lite',
     label: 'Lite',
-    priceMonthly: 190,
+    priceMonthly: 158,
     priceAnnual: 1900,
     savingsAnnual: 380,
     tagline: 'Essential Protection',
@@ -191,7 +191,7 @@ const PLAN_DETAILS = [
   {
     key: 'protect',
     label: 'Protect',
-    priceMonthly: 390,
+    priceMonthly: 325,
     priceAnnual: 3900,
     savingsAnnual: 780,
     tagline: 'Complete Prevention Suite',
@@ -279,7 +279,7 @@ const PLAN_DETAILS = [
   {
     key: 'secure',
     label: 'Secure',
-    priceMonthly: 990,
+    priceMonthly: 825,
     priceAnnual: 9900,
     savingsAnnual: 1980,
     tagline: 'Premium Protection',
@@ -1190,6 +1190,11 @@ function AccountContent() {
       signupFree: "Sign Up to Get Free",
       startPlan: "Start",
       processing: "Processing...",
+      monthlyBillingAvailable: "Monthly billing available at checkout",
+      save17OnLite: "Save 17% on Lite",
+      save17OnProtect: "Save 17% on Protect",
+      save17OnSecure: "Save 17% on Secure",
+      discountSubtext: "17% OFF — paid annually",
       logout: "Logout",
       notProvided: "Not provided",
       manageSubscription: "Manage Subscription",
@@ -1625,7 +1630,12 @@ function AccountContent() {
       desktopInstructions: "在桌面上:\n1. 点击地址栏中的安装图标\n2. 或使用浏览器菜单 > '安装 Lease Shield'",
       gotIt: "知道了",
       install: "安装",
-      alreadyInstalled: "已安装"
+      alreadyInstalled: "已安装",
+      monthlyBillingAvailable: "结账时可选择按月计费",
+      save17OnLite: "Lite 省 17%",
+      save17OnProtect: "Protect 省 17%",
+      save17OnSecure: "Secure 省 17%",
+      discountSubtext: "17% 折扣 — 按年支付",
     },
     ja: {
       pageTitle: "マイアカウント",
@@ -1804,7 +1814,12 @@ function AccountContent() {
       desktopInstructions: "デスクトップで:\n1. アドレスバーのインストールアイコンをクリック\n2. またはブラウザメニュー > 「Lease Shieldをインストール」",
       gotIt: "了解",
       install: "インストール",
-      alreadyInstalled: "インストール済み"
+      alreadyInstalled: "インストール済み",
+      monthlyBillingAvailable: "月払いもチェックアウト時に選択可能",
+      save17OnLite: "Lite で 17% 節約",
+      save17OnProtect: "Protect で 17% 節約",
+      save17OnSecure: "Secure で 17% 節約",
+      discountSubtext: "17% OFF — 年払い",
     },
     ko: {
       pageTitle: "내 계정",
@@ -1983,7 +1998,12 @@ function AccountContent() {
       desktopInstructions: "데스크톱에서:\n1. 주소 표시줄의 설치 아이콘 클릭\n2. 또는 브라우저 메뉴 > 'Lease Shield 설치'",
       gotIt: "알겠습니다",
       install: "설치",
-      alreadyInstalled: "이미 설치됨"
+      alreadyInstalled: "이미 설치됨",
+      monthlyBillingAvailable: "체크아웃 시 월별 결제 가능",
+      save17OnLite: "Lite에서 17% 절약",
+      save17OnProtect: "Protect에서 17% 절약",
+      save17OnSecure: "Secure에서 17% 절약",
+      discountSubtext: "17% 할인 — 연간 결제",
     },
     ru: {
       pageTitle: "Мой аккаунт",
@@ -2162,7 +2182,12 @@ function AccountContent() {
       desktopInstructions: "На компьютере:\n1. Нажмите значок установки в адресной строке\n2. Или меню браузера > 'Установить Lease Shield'",
       gotIt: "Понятно",
       install: "Установить",
-      alreadyInstalled: "Уже установлено"
+      alreadyInstalled: "Уже установлено",
+      monthlyBillingAvailable: "Ежемесячная оплата доступна при оформлении",
+      save17OnLite: "Экономия 17% на Lite",
+      save17OnProtect: "Экономия 17% на Protect",
+      save17OnSecure: "Экономия 17% на Secure",
+      discountSubtext: "Скидка 17% — годовая оплата",
     }
   };
 
@@ -4622,68 +4647,11 @@ function AccountContent() {
 
         <section id="plan-selector" ref={plansSectionRef}>
           <div className="mb-6">
-            <div className="flex items-center justify-center mb-6">
-              <div className="rounded-xl p-2 shadow-md inline-flex items-center gap-3" style={{ backgroundColor: colors.cardBg }}>
-                <button
-                  onClick={() => {
-                    haptic.light();
-                    setBillingPeriod('monthly');
-                  }}
-                  className="btn-interaction"
-                  style={{
-                    padding: '10px 24px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    backgroundColor: billingPeriod === 'monthly' ? '#0C3B2E' : 'transparent',
-                    color: billingPeriod === 'monthly' ? '#FFFFFF' : colors.textPrimary
-                  }}
-                >
-                  {strings.monthly}
-                </button>
-                <button
-                  onClick={() => {
-                    haptic.light();
-                    setBillingPeriod('annual');
-                  }}
-                  className="btn-interaction"
-                  style={{
-                    padding: '10px 24px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    backgroundColor: billingPeriod === 'annual' ? '#0C3B2E' : 'transparent',
-                    color: billingPeriod === 'annual' ? '#FFFFFF' : colors.textPrimary,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  {strings.annual}
-                  <span style={{
-                    padding: '2px 8px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    backgroundColor: '#C7A338',
-                    color: '#FFFFFF'
-                  }}>
-                    {language === 'th' ? 'ฟรี 2 เดือน' : language === 'zh' ? '免费2个月' : language === 'ja' ? '2ヶ月無料' : language === 'ko' ? '2개월 무료' : language === 'ru' ? '2 месяца бесплатно' : '2 months free'}
-                  </span>
-                </button>
-              </div>
-            </div>
 
             <h2 className="text-2xl font-bold mb-2 text-center" style={{ color: colors.textPrimary }}>{strings.choosePlan}</h2>
             <p className="mb-3 text-center" style={{ color: colors.textSecondary }}>{strings.planDesc}</p>
             <p className="mb-6 text-center text-sm" style={{ color: '#10B981', fontWeight: '600' }}>
-              {language === 'th' ? 'คุณสามารถจ่ายรายเดือนหรือรายปีได้ การจ่ายรายปีฟรี 2 เดือน' : language === 'zh' ? '您可以按月或按年付款。年付包含2个月免费。' : language === 'ja' ? '月払いまたは年払いをお選びいただけます。年払いには2ヶ月無料が含まれます。' : language === 'ko' ? '월별 또는 연간 결제를 선택할 수 있습니다. 연간 결제 시 2개월 무료.' : language === 'ru' ? 'Вы можете платить ежемесячно или ежегодно. Годовая оплата включает 2 бесплатных месяца.' : 'You can pay monthly or yearly. Yearly includes 2 months free.'}
+              {strings.monthlyBillingAvailable}
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -4777,57 +4745,20 @@ function AccountContent() {
                         </>
                       ) : hasPricing ? (
                         <>
-                          {billingPeriod === 'monthly' ? (
-                            <>
-                              {/* MONTHLY TOGGLE ACTIVE */}
-                              <div className="mb-2">
-                                <div className="text-3xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
-                                  ฿{plan.priceMonthly.toLocaleString()}
-                                </div>
-                                <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                                  {language === 'th' ? '/เดือน' : language === 'zh' ? '/月' : language === 'ja' ? '/月' : language === 'ko' ? '/월' : language === 'ru' ? '/месяц' : '/month'}
-                                </div>
-                              </div>
-                              <div className="pt-2" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
-                                <p className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>
-                                  {language === 'th' ? 'เรียกเก็บรายเดือน' : language === 'zh' ? '按月计费' : language === 'ja' ? '月額請求' : language === 'ko' ? '월별 청구' : language === 'ru' ? 'Ежемесячная оплата' : 'Billed monthly'}
-                                </p>
-                                <p className="text-xs font-semibold" style={{ color: '#10B981' }}>
-                                  {language === 'th' 
-                                    ? `เปลี่ยนเป็นรายปี · ฟรี 2 เดือน (ประหยัด ฿${plan.savingsAnnual.toLocaleString()})`
-                                    : language === 'zh'
-                                      ? `切换到年付 · 免费2个月 (节省 ฿${plan.savingsAnnual.toLocaleString()})`
-                                      : language === 'ja'
-                                        ? `年払いに切替 · 2ヶ月無料 (฿${plan.savingsAnnual.toLocaleString()}節約)`
-                                        : language === 'ko'
-                                          ? `연간 결제로 전환 · 2개월 무료 (฿${plan.savingsAnnual.toLocaleString()} 절약)`
-                                          : language === 'ru'
-                                            ? `На годовую оплату · 2 месяца бесплатно (экономия ฿${plan.savingsAnnual.toLocaleString()})`
-                                            : `Switch to Annual · 2 months free (save ฿${plan.savingsAnnual.toLocaleString()})`}
-                                </p>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              {/* ANNUAL TOGGLE ACTIVE */}
-                              <div className="mb-2">
-                                <div className="text-3xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
-                                  ฿{plan.priceAnnual.toLocaleString()}
-                                </div>
-                                <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                                  {language === 'th' ? '/ปี' : language === 'zh' ? '/年' : language === 'ja' ? '/年' : language === 'ko' ? '/년' : language === 'ru' ? '/год' : '/year'}
-                                </div>
-                              </div>
-                              <div className="pt-2" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
-                                <p className="text-xs font-medium mb-1" style={{ color: colors.textSecondary }}>
-                                  {language === 'th' ? 'เท่ากับ' : language === 'zh' ? '相当于' : language === 'ja' ? '相当' : language === 'ko' ? '동등한' : language === 'ru' ? 'Эквивалент' : 'Equivalent to'} <span className="font-bold">฿{Math.round(plan.priceAnnual / 12).toLocaleString()}</span> {language === 'th' ? '/เดือน' : language === 'zh' ? '/月' : language === 'ja' ? '/月' : language === 'ko' ? '/월' : language === 'ru' ? '/месяц' : '/month'}
-                                </p>
-                                <Badge className="bg-emerald-100 text-emerald-700 text-xs font-bold">
-                                  {language === 'th' ? 'รวมฟรี 2 เดือน' : language === 'zh' ? '包含2个月免费' : language === 'ja' ? '2ヶ月無料含む' : language === 'ko' ? '2개월 무료 포함' : language === 'ru' ? 'Включает 2 месяца бесплатно' : 'Includes 2 months free'}
-                                </Badge>
-                              </div>
-                            </>
-                          )}
+                          {/* Always show monthly price */}
+                          <div className="mb-2">
+                            <div className="text-3xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
+                              ฿{plan.priceMonthly.toLocaleString()}
+                            </div>
+                            <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                              {language === 'th' ? '/ เดือน' : language === 'zh' ? '/ 月' : language === 'ja' ? '/ 月' : language === 'ko' ? '/ 월' : language === 'ru' ? '/ месяц' : '/ month'}
+                            </div>
+                          </div>
+                          <div className="pt-2" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
+                            <p className="text-xs font-semibold" style={{ color: '#10B981' }}>
+                              {strings.discountSubtext}
+                            </p>
+                          </div>
                         </>
                       ) : (
                         <div className="text-sm font-semibold" style={{ color: '#EF4444' }}>
@@ -4917,7 +4848,7 @@ function AccountContent() {
                         <Button
                           onClick={() => {
                             haptic.medium();
-                            handleSubscribe(plan.key, billingPeriod);
+                            handleSubscribe(plan.key, 'annual');
                           }}
                           disabled={isSubscribingForPlan}
                           className="w-full h-10 btn-interaction"
@@ -4926,14 +4857,15 @@ function AccountContent() {
                             color: '#FFFFFF',
                             cursor: isSubscribingForPlan ? 'not-allowed' : 'pointer',
                             opacity: isSubscribingForPlan ? 0.7 : 1,
-                            fontSize: isSecureTierLocal ? '15px' : '14px',
+                            fontSize: isSecureTierLocal ? '14px' : '13px',
                             fontWeight: isSecureTierLocal ? '700' : '600'
                           }}
                         >
                           {isSubscribingForPlan ? strings.processing : (
-                            billingPeriod === 'annual' 
-                              ? `${strings.startPlan} ${plan.label} (${language === 'th' ? 'ประหยัด' : language === 'zh' ? '节省' : language === 'ja' ? '節約' : language === 'ko' ? '절약' : language === 'ru' ? 'экономия' : 'save'} ฿${plan.savingsAnnual.toLocaleString()})`
-                              : `${strings.startPlan} ${plan.label}`
+                            plan.key === 'lite' ? strings.save17OnLite :
+                            plan.key === 'protect' ? strings.save17OnProtect :
+                            plan.key === 'secure' ? strings.save17OnSecure :
+                            `${strings.startPlan} ${plan.label}`
                           )}
                         </Button>
                       )}
