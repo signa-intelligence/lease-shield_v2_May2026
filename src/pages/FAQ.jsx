@@ -210,6 +210,20 @@ const FAQ_DATA = {
     titleRu: 'Планы и цены',
     questions: [
       {
+        questionEn: 'How does billing work — monthly or annual?',
+        questionTh: 'การเรียกเก็บเงินทำงานอย่างไร — รายเดือนหรือรายปี?',
+        questionZh: '计费如何运作 — 按月还是按年？',
+        questionJa: '請求はどのように機能しますか — 月額または年額？',
+        questionKo: '청구는 어떻게 작동합니까 — 월별 또는 연간?',
+        questionRu: 'Как работает оплата — ежемесячно или ежегодно?',
+        answerEn: 'Plans are displayed as monthly prices. You can choose to pay monthly or annually at checkout. Annual plans include a 17% discount and are offered as the best-value option.',
+        answerTh: 'แผนจะแสดงเป็นราคารายเดือน คุณสามารถเลือกจ่ายรายเดือนหรือรายปีได้ที่หน้าชำระเงิน แผนรายปีมีส่วนลด 17% และเป็นตัวเลือกที่คุ้มค่าที่สุด',
+        answerZh: '计划显示为每月价格。您可以在结账时选择按月或按年付款。年度计划享有 17% 折扣，是最具价值的选择。',
+        answerJa: 'プランは月額料金として表示されます。チェックアウト時に月払いまたは年払いを選択できます。年間プランには17%割引が含まれており、最もお得なオプションとして提供されています。',
+        answerKo: '플랜은 월별 가격으로 표시됩니다。결제 시 월별 또는 연간 결제를 선택할 수 있습니다。연간 플랜에는 17% 할인이 포함되어 있으며 최고의 가치 옵션으로 제공됩니다。',
+        answerRu: 'Планы отображаются в виде ежемесячных цен。Вы можете выбрать ежемесячную или годовую оплату при оформлении заказа。Годовые планы включают скидку 17% и предлагаются как вариант с лучшей ценностью。'
+      },
+      {
         questionEn: 'What is the One-Time Lease Scan?',
         questionTh: 'การสแกนสัญญาเช่าครั้งเดียวคืออะไร?',
         questionZh: '一次性租约扫描是什么？',
@@ -230,12 +244,12 @@ const FAQ_DATA = {
         questionJa: 'どのようなプランがありますか？',
         questionKo: '어떤 플랜이 있나요?',
         questionRu: 'Какие планы доступны?',
-        answerEn: 'Lite\n฿190/month or ฿1,900/year (save ฿380)\n• 6 lease scans/year\n• Email alerts\n• 3 letter credits\n• 1GB storage\n\nProtect\n฿390/month or ฿3,900/year (save ฿780)\n• Everything in Lite\n• 12 scans/year\n• LINE alerts\n• 5 letter credits\n• 5GB storage\n\nSecure\n฿990/month or ฿9,900/year (save ฿1,980)\n• Everything in Protect\n• Unlimited scans\n• 20GB storage\n• 1 Resolve case/year (included)\n• Unlimited FastTrack (complimentary)',
-        answerTh: 'Lite\n฿190/เดือน หรือ ฿1,900/ปี (ประหยัด ฿380)\n• 6 การสแกน/ปี\n• อีเมลแจ้งเตือน\n• 3 เครดิตจดหมาย\n• พื้นที่ 1GB\n\nProtect\n฿390/เดือน หรือ ฿3,900/ปี (ประหยัด ฿780)\n• ทุกอย่างใน Lite\n• 12 การสแกน/ปี\n• LINE แจ้งเตือน\n• 5 เครดิตจดหมาย\n• พื้นที่ 5GB\n\nSecure\n฿990/เดือน หรือ ฿9,900/ปี (ประหยัด ฿1,980)\n• ทุกอย่างใน Protect\n• สแกนไม่จำกัด\n• พื้นที่ 20GB\n• 1 คดี Resolve/ปี (รวม)\n• FastTrack ไม่จำกัด (ฟรี)',
-        answerZh: 'Lite\n฿190/月 或 ฿1,900/年（节省 ฿380）\n• 每年6次租约扫描\n• 电子邮件提醒\n• 3个信件积分\n• 1GB存储\n\nProtect\n฿390/月 或 ฿3,900/年（节省 ฿780）\n• Lite所有功能\n• 每年12次扫描\n• LINE提醒\n• 5个信件积分\n• 5GB存储\n\nSecure\n฿990/月 或 ฿9,900/年（节省 ฿1,980）\n• Protect所有功能\n• 无限扫描\n• 20GB存储\n• 每年1个Resolve案件（包含）\n• 无限FastTrack（免费）',
-        answerJa: 'Lite\n฿190/月 または ฿1,900/年（฿380節約）\n• 年6回リーススキャン\n• メールアラート\n• 3レタークレジット\n• 1GBストレージ\n\nProtect\n฿390/月 または ฿3,900/年（฿780節約）\n• Liteの全機能\n• 年12回スキャン\n• LINE通知\n• 5レタークレジット\n• 5GBストレージ\n\nSecure\n฿990/月 または ฿9,900/年（฿1,980節約）\n• Protectの全機能\n• 無制限スキャン\n• 20GBストレージ\n• 年1件Resolveケース（含）\n• 無制限FastTrack（無料）',
-        answerKo: 'Lite\n฿190/월 또는 ฿1,900/년（฿380 절약）\n• 연간 6회 임대 계약 스캔\n• 이메일 알림\n• 3개 레터 크레딧\n• 1GB 저장소\n\nProtect\n฿390/월 또는 ฿3,900/년（฿780 절약）\n• Lite 모든 기능\n• 연간 12회 스캔\n• LINE 알림\n• 5개 레터 크레딧\n• 5GB 저장소\n\nSecure\n฿990/월 또는 ฿9,900/년（฿1,980 절약）\n• Protect 모든 기능\n• 무제한 스캔\n• 20GB 저장소\n• 연간 1건 Resolve 케이스（포함）\n• 무제한 FastTrack（무료）',
-        answerRu: 'Lite\n฿190/месяц или ฿1,900/год（экономия ฿380）\n• 6 сканирований договора/год\n• Email-уведомления\n• 3 кредита писем\n• 1GB хранилище\n\nProtect\n฿390/месяц или ฿3,900/год（экономия ฿780）\n• Всё из Lite\n• 12 сканирований/год\n• LINE-уведомления\n• 5 кредитов писем\n• 5GB хранилище\n\nSecure\n฿990/месяц или ฿9,900/год（экономия ฿1,980）\n• Всё из Protect\n• Безлимит сканирований\n• 20GB хранилище\n• 1 дело Resolve/год（включено）\n• Безлимит FastTrack（бесплатно）'
+        answerEn: 'Lite\n฿158/month — 17% OFF (paid annually)\n• 6 lease scans/year\n• Email alerts\n• 3 letter credits\n• 1GB storage\n\nProtect\n฿325/month — 17% OFF (paid annually)\n• Everything in Lite\n• 12 scans/year\n• LINE alerts\n• 5 letter credits\n• 5GB storage\n\nSecure\n฿825/month — 17% OFF (paid annually)\n• Everything in Protect\n• Unlimited scans\n• 20GB storage\n• 1 Resolve case/year (included)\n• Unlimited FastTrack (complimentary)\n\nMonthly billing also available at checkout.',
+        answerTh: 'Lite\n฿158/เดือน — ลด 17% (ชำระรายปี)\n• 6 การสแกน/ปี\n• อีเมลแจ้งเตือน\n• 3 เครดิตจดหมาย\n• พื้นที่ 1GB\n\nProtect\n฿325/เดือน — ลด 17% (ชำระรายปี)\n• ทุกอย่างใน Lite\n• 12 การสแกน/ปี\n• LINE แจ้งเตือน\n• 5 เครดิตจดหมาย\n• พื้นที่ 5GB\n\nSecure\n฿825/เดือน — ลด 17% (ชำระรายปี)\n• ทุกอย่างใน Protect\n• สแกนไม่จำกัด\n• พื้นที่ 20GB\n• 1 คดี Resolve/ปี (รวม)\n• FastTrack ไม่จำกัด (ฟรี)\n\nชำระเงินรายเดือนก็มีให้เลือกที่หน้าชำระเงิน',
+        answerZh: 'Lite\n฿158/月 — 17% 折扣（按年支付）\n• 每年6次租约扫描\n• 电子邮件提醒\n• 3个信件积分\n• 1GB存储\n\nProtect\n฿325/月 — 17% 折扣（按年支付）\n• Lite所有功能\n• 每年12次扫描\n• LINE提醒\n• 5个信件积分\n• 5GB存储\n\nSecure\n฿825/月 — 17% 折扣（按年支付）\n• Protect所有功能\n• 无限扫描\n• 20GB存储\n• 每年1个Resolve案件（包含）\n• 无限FastTrack（免费）\n\n结账时也可选择按月计费。',
+        answerJa: 'Lite\n฿158/月 — 17% OFF（年払い）\n• 年6回リーススキャン\n• メールアラート\n• 3レタークレジット\n• 1GBストレージ\n\nProtect\n฿325/月 — 17% OFF（年払い）\n• Liteの全機能\n• 年12回スキャン\n• LINE通知\n• 5レタークレジット\n• 5GBストレージ\n\nSecure\n฿825/月 — 17% OFF（年払い）\n• Protectの全機能\n• 無制限スキャン\n• 20GBストレージ\n• 年1件Resolveケース（含）\n• 無制限FastTrack（無料）\n\n月払いもチェックアウト時に選択可能。',
+        answerKo: 'Lite\n฿158/월 — 17% OFF（연간 결제）\n• 연간 6회 임대 계약 스캔\n• 이메일 알림\n• 3개 레터 크레딧\n• 1GB 저장소\n\nProtect\n฿325/월 — 17% OFF（연간 결제）\n• Lite 모든 기능\n• 연간 12회 스캔\n• LINE 알림\n• 5개 레터 크레딧\n• 5GB 저장소\n\nSecure\n฿825/월 — 17% OFF（연간 결제）\n• Protect 모든 기능\n• 무제한 스캔\n• 20GB 저장소\n• 연간 1건 Resolve 케이스（포함）\n• 무제한 FastTrack（무료）\n\n체크아웃 시 월별 결제도 가능합니다。',
+        answerRu: 'Lite\n฿158/месяц — 17% OFF（годовая оплата）\n• 6 сканирований договора/год\n• Email-уведомления\n• 3 кредита писем\n• 1GB хранилище\n\nProtect\n฿325/месяц — 17% OFF（годовая оплата）\n• Всё из Lite\n• 12 сканирований/год\n• LINE-уведомления\n• 5 кредитов писем\n• 5GB хранилище\n\nSecure\n฿825/месяц — 17% OFF（годовая оплата）\n• Всё из Protect\n• Безлимит сканирований\n• 20GB хранилище\n• 1 дело Resolve/год（включено）\n• Безлимит FastTrack（бесплатно）\n\nЕжемесячная оплата также доступна при оформлении。'
       },
       {
         questionEn: 'How is the One-Time Scan different from subscriptions?',
