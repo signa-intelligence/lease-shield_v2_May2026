@@ -761,13 +761,13 @@ function DashboardContent() {
   };
 
   const calculateProtectionScore = () => {
-    let score = 0;
+    let actionScore = 0;
     const suggestions = [];
 
     // Lease uploaded/scanned: 30 points
     const hasScannedLease = leases.some(l => l.status === 'scanned' || l.status === 'paid');
     if (hasScannedLease) {
-      score += 30;
+      actionScore += 30;
     } else {
       suggestions.push({
         action: language === 'th' ? 'อัปโหลดสัญญาเช่าเพื่อสแกนเต็มรูปแบบ' : language === 'zh' ? '上传租约进行完整扫描' : language === 'ja' ? 'リースをアップロードしてフルスキャン' : language === 'ko' ? '전체 스캔을 위해 임대 계약 업로드' : language === 'ru' ? 'Загрузите договор для полного сканирования' : 'Upload your lease for a full scan',
@@ -780,7 +780,7 @@ function DashboardContent() {
     // Deposit tracker completed: 20 points
     const hasDeposit = deposits.some(d => d.deposit_amount && d.expected_return_date);
     if (hasDeposit) {
-      score += 20;
+      actionScore += 20;
     } else {
       suggestions.push({
         action: language === 'th' ? 'เพิ่มรายละเอียดเงินมัดจำของคุณ' : language === 'zh' ? '添加押金详细信息' : language === 'ja' ? '敷金詳細を追加' : language === 'ko' ? '보증금 세부 정보 추가' : language === 'ru' ? 'Добавьте данные депозита' : 'Add your deposit details',
@@ -793,7 +793,7 @@ function DashboardContent() {
     // Property details/lease dates completed: 20 points
     const hasLeaseDates = leases.some(l => l.start_date && l.end_date && l.notice_period_days);
     if (hasLeaseDates) {
-      score += 20;
+      actionScore += 20;
     } else {
       suggestions.push({
         action: language === 'th' ? 'เพิ่มวันที่สำคัญของสัญญาเช่า (เริ่ม/สิ้นสุด/แจ้ง)' : language === 'zh' ? '添加关键租约日期（开始/结束/通知）' : language === 'ja' ? '重要なリース日付を追加（開始/終了/通知）' : language === 'ko' ? '주요 임대 날짜 추가（시작/종료/통지）' : language === 'ru' ? 'Добавьте ключевые даты договора（начало/конец/уведомление）' : 'Add key lease dates (start/end/notice)',
@@ -805,7 +805,7 @@ function DashboardContent() {
 
     // Evidence vault has at least 1 item: 15 points
     if (documents.length > 0) {
-      score += 15;
+      actionScore += 15;
     } else {
       suggestions.push({
         action: language === 'th' ? 'อัปโหลดรูปภาพ/ไฟล์ไปยัง Evidence Vault' : language === 'zh' ? '上传照片/文件到证据保管库' : language === 'ja' ? 'Evidence Vaultに写真/ファイルをアップロード' : language === 'ko' ? 'Evidence Vault에 사진/파일 업로드' : language === 'ru' ? 'Загрузите фото/файлы в Хранилище доказательств' : 'Upload photos/files to Evidence Vault',
@@ -818,7 +818,7 @@ function DashboardContent() {
     // Notifications enabled: 15 points
     const hasNotifications = user?.email_notifications || user?.line_notifications;
     if (hasNotifications) {
-      score += 15;
+      actionScore += 15;
     } else {
       suggestions.push({
         action: language === 'th' ? 'เปิดใช้งานการแจ้งเตือน/การเตือน' : language === 'zh' ? '启用提醒/通知' : language === 'ja' ? 'リマインダー/通知を有効化' : language === 'ko' ? '알림/리마인더 활성화' : language === 'ru' ? 'Включите напоминания/уведомления' : 'Enable reminders/notifications',
@@ -828,11 +828,31 @@ function DashboardContent() {
       });
     }
 
-    return { score, suggestions: suggestions.slice(0, 5) };
+    // TIER-BASED CAPS (hard limits)
+    const tierCaps = {
+      free: 30,
+      lite: 60,
+      protect: 85,
+      secure: 100
+    };
+    
+    const userTier = user?.plan_tier || 'free';
+    const tierCap = tierCaps[userTier] || 30;
+    const displayedScore = Math.min(actionScore, tierCap);
+    const isLocked = actionScore >= 85 && userTier !== 'secure';
+
+    return { 
+      score: displayedScore, 
+      actionScore,
+      tierCap,
+      isLocked,
+      userTier,
+      suggestions: suggestions.slice(0, 5) 
+    };
   };
 
   const protectionData = calculateProtectionScore();
-  const { score: protectionScore, suggestions: protectionSuggestions } = protectionData;
+  const { score: protectionScore, actionScore, tierCap, isLocked, userTier, suggestions: protectionSuggestions } = protectionData;
 
   const activeDeposits = deposits.filter(d => d.status === 'tracking' || d.status === 'dispute');
   
@@ -2604,9 +2624,16 @@ ja: {
                               <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
                                 {language === 'th' ? 'คะแนนการป้องกัน' : language === 'zh' ? '保护分数' : language === 'ja' ? '保護スコア' : language === 'ko' ? '보호 점수' : language === 'ru' ? 'Уровень защиты' : 'Protection Score'}
                               </p>
-                              <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                                {protectionScore}/100
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                                  {protectionScore}/{tierCap}
+                                </p>
+                                {isLocked && (
+                                  <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
+                                    <Crown className="w-4 h-4 text-amber-600" />
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <button
@@ -2936,6 +2963,10 @@ ja: {
           isOpen={showProtectionDetails}
           onClose={() => setShowProtectionDetails(false)}
           score={protectionScore}
+          actionScore={actionScore}
+          tierCap={tierCap}
+          isLocked={isLocked}
+          userTier={userTier}
           suggestions={protectionSuggestions}
           isDarkMode={isDarkMode}
           language={language}
