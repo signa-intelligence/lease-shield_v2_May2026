@@ -688,9 +688,13 @@ function AccountContent() {
         throw new Error('Empty response from server');
       }
       
+      // CRITICAL: Invalidate and refetch to update canonical profile
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       const freshData = await refetchUser();
       console.log('[PROFILE_SAVE] Fresh data:', freshData.data);
+      
+      // Broadcast profile update event for reactive pages
+      window.dispatchEvent(new CustomEvent('profile:updated'));
       
       const savedName = freshData.data?.display_name || freshData.data?.full_name || 'N/A';
       const savedPhone = freshData.data?.phone || 'N/A';

@@ -1515,7 +1515,7 @@ ja: {
 
           <div className="mb-6">
             <PageHeader
-              title={`${strings.welcome}, ${user?.full_name?.split(' ')[0] || 'User'}`}
+              title={`${strings.welcome}, ${greetingName}`}
               subtitle={strings.subtitle}
               isDarkMode={isDarkMode}
               actions={
