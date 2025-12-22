@@ -4745,10 +4745,10 @@ function AccountContent() {
                         </>
                       ) : hasPricing ? (
                         <>
-                          {/* Always show monthly price */}
+                          {/* Show annual-equivalent monthly price */}
                           <div className="mb-2">
                             <div className="text-3xl font-bold" style={{ color: isSecureTierLocal ? '#0C3B2E' : '#C7A338' }}>
-                              ฿{plan.priceMonthly.toLocaleString()}
+                              ฿{Math.round(plan.priceAnnual / 12)}
                             </div>
                             <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
                               {language === 'th' ? '/ เดือน' : language === 'zh' ? '/ 月' : language === 'ja' ? '/ 月' : language === 'ko' ? '/ 월' : language === 'ru' ? '/ месяц' : '/ month'}
