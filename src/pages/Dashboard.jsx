@@ -145,6 +145,7 @@ function DashboardContent() {
   const isDarkMode = user?.theme === 'dark';
   const isLitePlan = user?.plan_tier === 'lite';
   const isFreeTier = !user?.plan_tier || user.plan_tier === 'free';
+  const isSecureTier = user?.plan_tier === 'secure';
 
   const colors = isDarkMode ? {
     bg: '#111827',
