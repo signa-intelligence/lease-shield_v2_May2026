@@ -144,7 +144,7 @@ function UploadScanPageContent() {
       title: "Scan Your Lease",
       subtitle: "Upload your lease agreement for automated analysis",
       uploadArea: "Drop your lease files here or click to browse",
-      supportedFormats: "PDF, Word (DOC/DOCX), PNG, JPG (Max 10MB each)",
+      supportedFormats: "PDF or image files only (PDF, PNG, JPG). Max 10MB per file.",
       selectFiles: "Select Files",
       uploadAll: "Upload & Analyze",
       uploading: "Uploading files...",
@@ -238,7 +238,7 @@ function UploadScanPageContent() {
       title: "สแกนสัญญาเช่า",
       subtitle: "อัปโหลดสัญญาเช่าเพื่อวิเคราะห์อัตโนมัติ",
       uploadArea: "วางไฟล์สัญญาเช่าที่นี่ หรือคลิกเพื่อเลือกไฟล์",
-      supportedFormats: "รองรับ PDF, Word (DOC/DOCX), PNG, JPG (ไฟล์ละไม่เกิน 10MB)",
+      supportedFormats: "รองรับเฉพาะ PDF หรือไฟล์รูปภาพ (PDF, PNG, JPG) ไฟล์ละไม่เกิน 10MB",
       selectFiles: "เลือกไฟล์",
       uploadAll: "อัปโหลดและวิเคราะห์",
       uploading: "กำลังอัปโหลดไฟล์...",
@@ -332,7 +332,7 @@ function UploadScanPageContent() {
       title: "扫描租约",
       subtitle: "上传您的租赁协议进行自动分析",
       uploadArea: "将租约文件拖放到此处或点击浏览",
-      supportedFormats: "支持 PDF、Word (DOC/DOCX)、PNG、JPG（每个文件最大 10MB）",
+      supportedFormats: "仅支持 PDF 或图像文件（PDF、PNG、JPG），每个文件最大 10MB",
       selectFiles: "选择文件",
       uploadAll: "上传并分析",
       uploading: "正在上传文件...",
@@ -426,7 +426,7 @@ function UploadScanPageContent() {
       title: "賃貸契約をスキャン",
       subtitle: "賃貸契約書をアップロードして自動分析",
       uploadArea: "ここに賃貸契約ファイルをドロップまたはクリックして参照",
-      supportedFormats: "PDF、Word (DOC/DOCX)、PNG、JPG（各ファイル最大10MB）",
+      supportedFormats: "PDF または画像ファイルのみ（PDF、PNG、JPG）。各ファイル最大10MB",
       selectFiles: "ファイルを選択",
       uploadAll: "アップロードして分析",
       uploading: "ファイルをアップロード中...",
@@ -520,7 +520,7 @@ function UploadScanPageContent() {
       title: "임대 계약 스캔",
       subtitle: "임대 계약서를 업로드하여 자동 분석",
       uploadArea: "여기에 임대 계약 파일을 드롭하거나 클릭하여 찾아보기",
-      supportedFormats: "PDF, Word (DOC/DOCX), PNG, JPG 지원 (파일당 최대 10MB)",
+      supportedFormats: "PDF 또는 이미지 파일만 지원 (PDF, PNG, JPG). 파일당 최대 10MB",
       selectFiles: "파일 선택",
       uploadAll: "업로드 및 분석",
       uploading: "파일 업로드 중...",
@@ -614,7 +614,7 @@ function UploadScanPageContent() {
       title: "Сканировать договор",
       subtitle: "Загрузите договор аренды для автоматического анализа",
       uploadArea: "Перетащите файлы договора сюда или нажмите, чтобы выбрать",
-      supportedFormats: "PDF, Word (DOC/DOCX), PNG, JPG (до 10 МБ каждый)",
+      supportedFormats: "Только PDF или изображения (PDF, PNG, JPG). Максимум 10 МБ на файл",
       selectFiles: "Выбрать файлы",
       uploadAll: "Загрузить и проанализировать",
       uploading: "Загрузка файлов...",
@@ -985,16 +985,7 @@ function UploadScanPageContent() {
           const backendError = err.details || err.message;
           const diagnostic = err.diagnostic || {};
           
-          if (isWordDoc) {
-            errorMessage = language === 'th'
-              ? `ไม่สามารถวิเคราะห์ไฟล์ Word ได้\n\n${backendError ? `ข้อผิดพลาด: ${backendError}\n\n` : ''}💡 กรุณาลอง:\n• แปลงเป็น PDF ก่อนอัปโหลด\n• ถ่ายภาพหน้าสัญญาแทน\n• เปิดด้วย Google Docs แล้ว Download เป็น PDF`
-              : `Unable to analyze Word document\n\n${backendError ? `Error: ${backendError}\n\n` : ''}💡 Please try:\n• Convert to PDF before uploading\n• Take photos of lease pages\n• Open in Google Docs and save as PDF`;
-            
-            // Add diagnostic info if available
-            if (diagnostic.requestId) {
-              errorMessage += `\n\n🔍 Request ID: ${diagnostic.requestId}`;
-            }
-          } else if (err.message?.toLowerCase().includes('timeout')) {
+          if (err.message?.toLowerCase().includes('timeout')) {
             errorMessage = language === 'th'
               ? `การวิเคราะห์ใช้เวลานานเกินไป\n\n${backendError ? `ข้อผิดพลาด: ${backendError}\n\n` : ''}💡 กรุณาลอง:\n• ใช้ไฟล์ที่เล็กกว่า\n• แยกอัปโหลดทีละหน้า\n• ถ่ายภาพที่ชัดเจนกว่า`
               : `Analysis timed out\n\n${backendError ? `Error: ${backendError}\n\n` : ''}💡 Please try:\n• Use smaller files\n• Upload pages separately\n• Take clearer photos`;
@@ -1144,8 +1135,45 @@ function UploadScanPageContent() {
     // Only allow file selection if upload is allowed
     if (!scanStatus.allowed) return;
     const files = Array.from(e.target.files || e.dataTransfer?.files || []);
-    setSelectedFiles(prev => [...prev, ...files]);
-    setError(null);
+    
+    // Validate file types
+    const validFiles = [];
+    const invalidFiles = [];
+    
+    files.forEach(file => {
+      const ext = file.name.toLowerCase().split('.').pop();
+      const validExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
+      const validMimeTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+      
+      if (validExtensions.includes(ext) || validMimeTypes.includes(file.type)) {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(file.name);
+      }
+    });
+    
+    if (invalidFiles.length > 0) {
+      const errorMsg = language === 'th'
+        ? `ไม่รองรับไฟล์ Word กรุณาอัปโหลด PDF หรือไฟล์รูปภาพ\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
+        : language === 'zh'
+          ? `不支持 Word 文档。请上传 PDF 或图像文件\n\n不支持的文件: ${invalidFiles.join(', ')}`
+          : language === 'ja'
+            ? `Word文書はサポートされていません。PDFまたは画像ファイルをアップロードしてください\n\nサポートされていないファイル: ${invalidFiles.join(', ')}`
+            : language === 'ko'
+              ? `Word 문서는 지원되지 않습니다. PDF 또는 이미지 파일을 업로드하세요\n\n지원되지 않는 파일: ${invalidFiles.join(', ')}`
+              : language === 'ru'
+                ? `Документы Word не поддерживаются. Загрузите PDF или изображения\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
+                : `Word documents are not supported. Please upload a PDF or image file.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
+      
+      setError(errorMsg);
+      setTimeout(() => setError(null), 5000);
+    }
+    
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+      setError(null);
+    }
+    
     setDragActive(false);
   };
 
@@ -1155,8 +1183,44 @@ function UploadScanPageContent() {
     e.preventDefault();
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
-    setSelectedFiles(prev => [...prev, ...files]);
-    setError(null);
+    
+    // Validate file types
+    const validFiles = [];
+    const invalidFiles = [];
+    
+    files.forEach(file => {
+      const ext = file.name.toLowerCase().split('.').pop();
+      const validExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
+      const validMimeTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+      
+      if (validExtensions.includes(ext) || validMimeTypes.includes(file.type)) {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(file.name);
+      }
+    });
+    
+    if (invalidFiles.length > 0) {
+      const errorMsg = language === 'th'
+        ? `ไม่รองรับไฟล์ Word กรุณาอัปโหลด PDF หรือไฟล์รูปภาพ\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
+        : language === 'zh'
+          ? `不支持 Word 文档。请上传 PDF 或图像文件\n\n不支持的文件: ${invalidFiles.join(', ')}`
+          : language === 'ja'
+            ? `Word文書はサポートされていません。PDFまたは画像ファイルをアップロードしてください\n\nサポートされていないファイル: ${invalidFiles.join(', ')}`
+            : language === 'ko'
+              ? `Word 문서는 지원되지 않습니다. PDF 또는 이미지 파일을 업로드하세요\n\n지원되지 않는 파일: ${invalidFiles.join(', ')}`
+              : language === 'ru'
+                ? `Документы Word не поддерживаются. Загрузите PDF или изображения\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
+                : `Word documents are not supported. Please upload a PDF or image file.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
+      
+      setError(errorMsg);
+      setTimeout(() => setError(null), 5000);
+    }
+    
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+      setError(null);
+    }
   };
 
   const handleRemoveFile = (index) => {
@@ -1831,7 +1895,7 @@ function UploadScanPageContent() {
                       <input
                         type="file"
                         multiple
-                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
+                        accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
                         onChange={handleFileSelect}
                         className="hidden"
                         disabled={!scanStatus.allowed}
