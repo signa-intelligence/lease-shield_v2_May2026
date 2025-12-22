@@ -50,10 +50,19 @@ function DashboardContent() {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  const { data: user } = useQuery({
+  const { data: user, refetch: refetchUser } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
+
+  // Listen for profile updates from Account page
+  React.useEffect(() => {
+    const handleProfileUpdate = () => {
+      refetchUser();
+    };
+    window.addEventListener('profile:updated', handleProfileUpdate);
+    return () => window.removeEventListener('profile:updated', handleProfileUpdate);
+  }, [refetchUser]);
 
   // Generate referral code on first login if missing
   React.useEffect(() => {
