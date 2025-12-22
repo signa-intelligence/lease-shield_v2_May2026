@@ -875,8 +875,26 @@ function UploadScanPageContent() {
           fileUrls: fileUrls
         });
 
+        // DIAGNOSTIC: Log backend response
+        console.log('Scan response:', {
+          success: scanResponse?.success,
+          hasResult: !!scanResponse?.result,
+          buildTag: scanResponse?.diagnostic?.buildTag,
+          requestId: scanResponse?.diagnostic?.requestId,
+          error: scanResponse?.error,
+          details: scanResponse?.details
+        });
+
         if (!scanResponse || !scanResponse.success) {
-          throw new Error(scanResponse?.error || 'Scan failed');
+          const backendError = scanResponse?.error || 'Scan failed';
+          const backendDetails = scanResponse?.details || '';
+          const diagnostic = scanResponse?.diagnostic || {};
+          
+          // Throw detailed error for better debugging
+          const errorObj = new Error(backendError);
+          errorObj.details = backendDetails;
+          errorObj.diagnostic = diagnostic;
+          throw errorObj;
         }
 
         const scanResult = scanResponse.result;
@@ -932,6 +950,8 @@ function UploadScanPageContent() {
 
       } catch (err) {
         console.error('❌ Upload/Analysis error:', err);
+        console.error('Error details:', err.details);
+        console.error('Error diagnostic:', err.diagnostic);
 
         const isWordDoc = selectedFiles.some(f =>
           f.name.toLowerCase().endsWith('.doc') ||
@@ -960,19 +980,28 @@ function UploadScanPageContent() {
           return attemptUpload();
         } else {
           let errorMessage;
-
+          
+          // Show real backend error if available
+          const backendError = err.details || err.message;
+          const diagnostic = err.diagnostic || {};
+          
           if (isWordDoc) {
             errorMessage = language === 'th'
-              ? 'ไม่สามารถวิเคราะห์ไฟล์ Word ได้\n\n💡 กรุณาลอง:\n• แปลงเป็น PDF ก่อนอัปโหลด\n• ถ่ายภาพหน้าสัญญาแทน\n• เปิดด้วย Google Docs แล้ว Download เป็น PDF'
-              : 'Unable to analyze Word document\n\n💡 Please try:\n• Convert to PDF before uploading\n• Take photos of lease pages\n• Open in Google Docs and save as PDF';
+              ? `ไม่สามารถวิเคราะห์ไฟล์ Word ได้\n\n${backendError ? `ข้อผิดพลาด: ${backendError}\n\n` : ''}💡 กรุณาลอง:\n• แปลงเป็น PDF ก่อนอัปโหลด\n• ถ่ายภาพหน้าสัญญาแทน\n• เปิดด้วย Google Docs แล้ว Download เป็น PDF`
+              : `Unable to analyze Word document\n\n${backendError ? `Error: ${backendError}\n\n` : ''}💡 Please try:\n• Convert to PDF before uploading\n• Take photos of lease pages\n• Open in Google Docs and save as PDF`;
+            
+            // Add diagnostic info if available
+            if (diagnostic.requestId) {
+              errorMessage += `\n\n🔍 Request ID: ${diagnostic.requestId}`;
+            }
           } else if (err.message?.toLowerCase().includes('timeout')) {
             errorMessage = language === 'th'
-              ? 'การวิเคราะห์ใช้เวลานานเกินไป\n\n💡 กรุณาลอง:\n• ใช้ไฟล์ที่เล็กกว่า\n• แยกอัปโหลดทีละหน้า\n• ถ่ายภาพที่ชัดเจนกว่า'
-              : 'Analysis timed out\n\n💡 Please try:\n• Use smaller files\n• Upload pages separately\n• Take clearer photos';
+              ? `การวิเคราะห์ใช้เวลานานเกินไป\n\n${backendError ? `ข้อผิดพลาด: ${backendError}\n\n` : ''}💡 กรุณาลอง:\n• ใช้ไฟล์ที่เล็กกว่า\n• แยกอัปโหลดทีละหน้า\n• ถ่ายภาพที่ชัดเจนกว่า`
+              : `Analysis timed out\n\n${backendError ? `Error: ${backendError}\n\n` : ''}💡 Please try:\n• Use smaller files\n• Upload pages separately\n• Take clearer photos`;
           } else {
             errorMessage = language === 'th'
-              ? 'ไม่สามารถวิเคราะห์ได้\n\n💡 กรุณาตรวจสอบ:\n• ไฟล์เป็นสัญญาเช่าที่อ่านได้\n• ขนาดไฟล์ไม่เกิน 10MB\n• ภาพชัดเจนและอ่านได้'
-              : 'Analysis failed\n\n💡 Please check:\n• File is a readable lease agreement\n• File size is under 10MB\n• Images are clear and readable';
+              ? `ไม่สามารถวิเคราะห์ได้\n\n${backendError ? `ข้อผิดพลาด: ${backendError}\n\n` : ''}💡 กรุณาตรวจสอบ:\n• ไฟล์เป็นสัญญาเช่าที่อ่านได้\n• ขนาดไฟล์ไม่เกิน 10MB\n• ภาพชัดเจนและอ่านได้`
+              : `Analysis failed\n\n${backendError ? `Error: ${backendError}\n\n` : ''}💡 Please check:\n• File is a readable lease agreement\n• File size is under 10MB\n• Images are clear and readable`;
           }
 
           setError(errorMessage);

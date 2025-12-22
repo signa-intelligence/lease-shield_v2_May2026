@@ -201,7 +201,15 @@ INSTRUCTIONS:
 
     return Response.json({
       success: true,
-      result: scanResult
+      result: scanResult,
+      diagnostic: {
+        buildTag: "scanLease-docx-v3",
+        requestId,
+        filesProcessed: processedFileUrls.length,
+        docxFilesCount: docxFiles.length,
+        docxExtractSuccess: docxFiles.length > 0,
+        extractedTextSample: extractedTextForDiagnostics.slice(0, 100)
+      }
     });
 
   } catch (error) {
