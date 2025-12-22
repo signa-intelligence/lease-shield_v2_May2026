@@ -573,7 +573,7 @@ function AccountContent() {
   // isDark and initialTheme moved inside useEffect for formData for better reactivity.
   // The state definitions below use a direct check for the initial render fallback.
   const [formData, setFormData] = useState({
-    full_name: user?.full_name || '',
+    full_name: user?.display_name || user?.full_name || '',
     phone: user?.phone || '',
     country: user?.country || '',
     language: user?.language || 'en',
@@ -600,15 +600,22 @@ function AccountContent() {
   });
 
   // CRITICAL: Only sync form state from user data when NOT editing
-  // Dependency on user?.id (not entire user object) prevents overwrite during save flow
   React.useEffect(() => {
     if (user && !isEditing) {
-      console.log('[FORM_SYNC] Syncing form state from user:', user);
+      console.log('[FORM_SYNC] Loading form from user data:', { 
+        full_name: user.full_name, 
+        display_name: user.display_name,
+        phone: user.phone 
+      });
+      
       const isDark = document.documentElement.classList.contains('dark');
       const initialTheme = isDark ? 'dark' : 'light';
       
+      // Use display_name if available, fallback to full_name (built-in, read-only)
+      const effectiveName = user.display_name || user.full_name || '';
+      
       setFormData({
-        full_name: user.full_name || '',
+        full_name: effectiveName,
         phone: user.phone || '',
         country: user.country || '',
         language: user.language || 'en',
@@ -632,7 +639,7 @@ function AccountContent() {
         juristic_line: user.juristic_line || ''
       });
     }
-  }, [user?.id, user?.full_name, user?.phone, user?.tenant_address, isEditing]);
+  }, [user?.id, user?.display_name, user?.full_name, user?.phone, isEditing]);
 
   const updateProfileMutation = useMutation({
     mutationFn: (data) => base44.auth.updateMe(data),
@@ -2360,7 +2367,7 @@ function AccountContent() {
                       </div>
                       <div className="flex-1">
                         <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.fullName}</p>
-                        <p className="font-bold text-lg" style={{ color: colors.textPrimary }}>{user?.full_name}</p>
+                        <p className="font-bold text-lg" style={{ color: colors.textPrimary }}>{user?.display_name || user?.full_name}</p>
                       </div>
                     </div>
                   </div>
