@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, User, HelpCircle, Globe, Users, TrendingUp, LogOut, ChevronRight } from 'lucide-react';
+import { X, User, HelpCircle, Globe, Users, TrendingUp, LogOut, ChevronRight, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -14,6 +14,7 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       languageOption: 'Language',
       referralProgram: 'Referral Program',
       upgradePlan: 'Upgrade Plan',
+      insights: 'Insights',
       logout: 'Logout'
     },
     th: {
@@ -23,6 +24,7 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       languageOption: 'ภาษา',
       referralProgram: 'โปรแกรมแนะนำเพื่อน',
       upgradePlan: 'อัปเกรดแผน',
+      insights: 'ข้อมูลเชิงลึก',
       logout: 'ออกจากระบบ'
     },
     zh: {
@@ -32,6 +34,7 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       languageOption: '语言',
       referralProgram: '推荐计划',
       upgradePlan: '升级计划',
+      insights: '洞察',
       logout: '登出'
     },
     ja: {
@@ -41,6 +44,7 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       languageOption: '言語',
       referralProgram: '紹介プログラム',
       upgradePlan: 'プランをアップグレード',
+      insights: 'インサイト',
       logout: 'ログアウト'
     },
     ko: {
@@ -50,6 +54,7 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       languageOption: '언어',
       referralProgram: '추천 프로그램',
       upgradePlan: '플랜 업그레이드',
+      insights: '인사이트',
       logout: '로그아웃'
     },
     ru: {
@@ -59,6 +64,7 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       languageOption: 'Язык',
       referralProgram: 'Реферальная программа',
       upgradePlan: 'Повысить план',
+      insights: 'Аналитика',
       logout: 'Выйти'
     }
   };
@@ -88,6 +94,11 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
     return createPageUrl('Account') + `?showPlans=true&highlight=${nextTier}`;
   };
 
+  // Check if user is admin/super_admin/va
+  const accessLevel = user?.access_level || 'user';
+  const userRole = user?.role || 'user';
+  const isAdminOrVA = ['admin', 'super_admin', 'va'].includes(accessLevel) || ['admin', 'super_admin', 'va'].includes(userRole);
+
   const menuItems = [
     {
       icon: User,
@@ -114,6 +125,12 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       scrollTo: 'referral',
       color: '#10B981'
     },
+    ...(isAdminOrVA ? [{
+      icon: BarChart3,
+      label: strings.insights,
+      route: createPageUrl('Analytics'),
+      color: '#6B7280'
+    }] : []),
     {
       icon: TrendingUp,
       label: strings.upgradePlan,
