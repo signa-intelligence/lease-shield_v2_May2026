@@ -177,7 +177,17 @@ function ResolveCaseContent() {
       });
       
       // Step 3: Create case in database
+      console.log('[CASE_CREATION] 📤 Creating case with evidence:', {
+        evidence_count: secureCase.evidence?.length || 0,
+        evidence_files: secureCase.evidence || []
+      });
+      
       const createdCase = await base44.entities.Case.create(secureCase);
+      
+      console.log('[CASE_CREATION] ✅ Case created with attachments:', {
+        case_id: createdCase.id,
+        evidence_stored: createdCase.evidence?.length || 0
+      });
       
       // Step 4: CRITICAL VERIFICATION - Confirm user_email persisted correctly
       console.log('[CASE_CREATION] ✅ Case created - VERIFYING user binding:', {

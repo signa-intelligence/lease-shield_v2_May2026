@@ -87,11 +87,23 @@ export default function CaseKanban({ cases = [], onStatusChange, colors, languag
     return matchesSearch && matchesType;
   });
 
-  // Group cases by status
+  // Group cases by status with fallback mapping
   const casesByStatus = STATUS_COLUMNS.reduce((acc, column) => {
     acc[column.id] = filteredCases.filter(c => c.status === column.id);
     return acc;
   }, {});
+
+  // Handle cases with unknown/unmapped statuses -> fallback to pending_review
+  const unmappedCases = filteredCases.filter(c => !STATUS_COLUMNS.find(col => col.id === c.status));
+  if (unmappedCases.length > 0) {
+    console.warn('⚠️ [KANBAN] Found cases with unmapped statuses:', unmappedCases.map(c => ({ id: c.id, status: c.status })));
+    // Add to pending_review as fallback
+    casesByStatus['pending_review'] = [...(casesByStatus['pending_review'] || []), ...unmappedCases];
+  }
+
+  console.log('📊 [KANBAN] Cases grouped by status:', 
+    Object.entries(casesByStatus).map(([status, cases]) => ({ status, count: cases.length }))
+  );
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -112,6 +124,16 @@ export default function CaseKanban({ cases = [], onStatusChange, colors, languag
       case 'damages': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getCaseTypeLabel = (type) => {
+    const labels = {
+      deposit: language === 'th' ? 'มัดจำ' : language === 'zh' ? '押金' : language === 'ja' ? '敷金' : language === 'ko' ? '보증금' : 'Deposit',
+      early_termination: language === 'th' ? 'ยกเลิก' : language === 'zh' ? '提前终止' : language === 'ja' ? '早期解約' : language === 'ko' ? '조기 종료' : 'Early Term',
+      damages: language === 'th' ? 'ความเสียหาย' : language === 'zh' ? '损害' : language === 'ja' ? '損害' : language === 'ko' ? '손해' : 'Damages',
+      other: language === 'th' ? 'อื่นๆ' : language === 'zh' ? '其他' : language === 'ja' ? 'その他' : language === 'ko' ? '기타' : 'Other'
+    };
+    return labels[type] || type;
   };
 
   const getPriorityIndicator = (caseItem) => {
@@ -294,7 +316,7 @@ export default function CaseKanban({ cases = [], onStatusChange, colors, languag
 
                                         {/* Type Badge */}
                                         <Badge className={`${getCaseTypeColor(caseItem.type)} mb-3 text-xs`}>
-                                          {caseItem.type}
+                                          {getCaseTypeLabel(caseItem.type)}
                                         </Badge>
 
                                         {/* Landlord */}

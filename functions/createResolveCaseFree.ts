@@ -35,7 +35,14 @@ Deno.serve(async (req) => {
 
     console.log('✅ [FREE_RESOLVE] Eligibility confirmed');
 
-    // Step 2: Update case status to paid (via free entitlement)
+    // Step 2: Update case status to intake and mark as paid via free entitlement
+    const existingCase = (await base44.entities.Case.filter({ id: caseId }))[0];
+    
+    console.log('📎 [FREE_RESOLVE] Case evidence before update:', {
+      evidence_count: existingCase?.evidence?.length || 0,
+      evidence: existingCase?.evidence || []
+    });
+    
     await base44.asServiceRole.entities.Case.update(caseId, {
       status: 'intake',
       paid_at: new Date().toISOString(),
@@ -43,7 +50,7 @@ Deno.serve(async (req) => {
       pricing_type: 'free_entitlement',
       stripe_payment_intent_id: 'free_entitlement',
       timeline: [
-        ...(await base44.entities.Case.filter({ id: caseId }))[0].timeline || [],
+        ...(existingCase?.timeline || []),
         {
           timestamp: new Date().toISOString(),
           event: 'Case activated via free Resolve entitlement (Annual Secure)',
@@ -51,11 +58,14 @@ Deno.serve(async (req) => {
           meta: {
             payment_type: 'free_entitlement',
             plan: 'secure',
-            billing: 'annual'
+            billing: 'annual',
+            evidence_count: existingCase?.evidence?.length || 0
           }
         }
       ]
     });
+    
+    console.log('📎 [FREE_RESOLVE] Case updated - evidence preserved');
 
     console.log('✅ [FREE_RESOLVE] Case status updated to intake');
 

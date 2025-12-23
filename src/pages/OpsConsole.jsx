@@ -73,7 +73,20 @@ function OpsConsoleContent() {
     queryKey: ['allCases'],
     queryFn: async () => {
       const result = await base44.entities.Case.list('-created_date', 100);
-      return result.filter(c => !c.is_deleted);
+      // PAYMENT GATE: Only show paid or free_entitlement cases in Ops
+      const paidCases = result.filter(c => 
+        !c.is_deleted && 
+        (c.paid_at || c.stripe_payment_intent_id === 'free_entitlement')
+      );
+      
+      console.log('🔍 [OPS_CONSOLE] Cases query results:', {
+        total_fetched: result.length,
+        paid_cases: paidCases.length,
+        first_case_id: paidCases[0]?.id,
+        excluded_unpaid: result.length - paidCases.length
+      });
+      
+      return paidCases;
     },
     enabled: hasOpsAccess,
   });
@@ -334,6 +347,14 @@ function OpsConsoleContent() {
       c.user_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.summary?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
+  });
+
+  console.log('📋 [OPS_CONSOLE_LIST] Filtered cases for display:', {
+    total_cases: cases.length,
+    filtered_count: filteredCases.length,
+    filter_status: filterStatus,
+    search_query: searchQuery,
+    first_case: filteredCases[0]?.case_number
   });
 
   const handleUpdateStatus = (caseId, newStatus) => {
@@ -627,13 +648,26 @@ function OpsConsoleContent() {
         {casesLoading ? (
           <SkeletonLoader variant="card" count={4} isDarkMode={isDarkMode} />
         ) : viewMode === 'kanban' ? (
-          <CaseKanban
-            cases={filteredCases}
-            users={users}
-            onUpdateStatus={handleUpdateStatus}
-            language={language}
-            colors={colors}
-          />
+          <>
+            {(() => {
+              console.log('📊 [OPS_CONSOLE_KANBAN] Rendering Kanban with cases:', {
+                total_cases: filteredCases.length,
+                statuses: filteredCases.reduce((acc, c) => {
+                  acc[c.status] = (acc[c.status] || 0) + 1;
+                  return acc;
+                }, {}),
+                first_case: filteredCases[0]?.case_number
+              });
+              return null;
+            })()}
+            <CaseKanban
+              cases={filteredCases}
+              users={users}
+              onUpdateStatus={handleUpdateStatus}
+              language={language}
+              colors={colors}
+            />
+          </>
         ) : (
           <div className="grid gap-4">
             {filteredCases.map((caseItem) => {

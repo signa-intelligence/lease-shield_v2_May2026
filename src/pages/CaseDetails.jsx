@@ -64,7 +64,17 @@ function CaseDetailsContent() {
     queryKey: ['case', caseId],
     queryFn: async () => {
       const cases = await base44.entities.Case.list();
-      return cases.find(c => c.id === caseId);
+      const foundCase = cases.find(c => c.id === caseId);
+      
+      // DEBUG: Log attachments data
+      console.log('📎 [CASE_DETAILS] Case attachments loaded:', {
+        case_id: caseId,
+        case_number: foundCase?.case_number,
+        attachments_count: foundCase?.evidence?.length || 0,
+        attachments: foundCase?.evidence || []
+      });
+      
+      return foundCase;
     },
     enabled: !!caseId,
   });
