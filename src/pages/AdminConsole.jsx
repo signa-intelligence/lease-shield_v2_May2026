@@ -49,6 +49,8 @@ function AdminConsoleContent() {
   const usersPerPage = 10;
   const [migratingUsers, setMigratingUsers] = useState(false);
   const [migrationResult, setMigrationResult] = useState(null);
+  const [hardDeleting, setHardDeleting] = useState(false);
+  const [hardDeleteResult, setHardDeleteResult] = useState(null);
   const [hardDeletingUsers, setHardDeletingUsers] = useState(false);
   const [hardDeleteResult, setHardDeleteResult] = useState(null);
 
@@ -1206,6 +1208,45 @@ function AdminConsoleContent() {
   };
 
   const handleHardDeleteTestUsers = async () => {
+    if (!isSuperAdmin) {
+      alert('Super Admin access required');
+      return;
+    }
+
+    const confirmMsg = `⚠️ PERMANENT DELETION WARNING\n\nThis will HARD DELETE these 5 test users:\n\n1) jay.p@signa-consultants.com\n2) steve.d.lockhart+5@gmail.com\n3) steve.l+1@signa-consultants.com\n4) steve.d.lockhart+2@gmail.com\n5) steve.d.lockhart+1@gmail.com\n\nActions:\n✓ Permanently delete user records\n✓ Remove auth identities\n✓ Anonymize related data (leases/cases/etc)\n\n⚠️ THIS CANNOT BE UNDONE ⚠️\n\nType "PURGE" to confirm:`;
+    
+    const userInput = prompt(confirmMsg);
+    
+    if (userInput !== 'PURGE') {
+      alert('Purge cancelled.');
+      return;
+    }
+
+    setHardDeleting(true);
+    setHardDeleteResult(null);
+
+    try {
+      console.log('🗑️ [ADMIN] Starting hard delete...');
+      const response = await base44.functions.invoke('hardDeleteTestUsers');
+      console.log('✅ [ADMIN] Hard delete response:', response.data);
+      
+      setHardDeleteResult(response.data);
+      
+      if (response.data?.success) {
+        alert(`✅ PURGE COMPLETE\n\nTarget: ${response.data.target_count}\nFound: ${response.data.found_count}\nPurged: ${response.data.purged_count}\nFailed: ${response.data.failed_count}\n\nUsers permanently removed from database.`);
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      } else {
+        alert('❌ Purge failed: ' + response.data?.error);
+      }
+    } catch (error) {
+      console.error('❌ [ADMIN] Hard delete failed:', error);
+      alert('Hard delete failed: ' + error.message);
+    } finally {
+      setHardDeleting(false);
+    }
+  };
+
+  const handleHardDeleteTestUsers = async () => {
     const testEmails = [
       'jay.p@signa-consultants.com',
       'steve.d.lockhart+5@gmail.com',
@@ -1727,6 +1768,60 @@ function AdminConsoleContent() {
                         }}>
                           <pre className="text-xs" style={{ color: colors.textPrimary }}>
                             {JSON.stringify(migrationResult.results, null, 2)}
+                          </pre>
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                )}
+
+                {hardDeleteResult && (
+                  <div className="mt-4 p-4 rounded-lg" style={{
+                    backgroundColor: hardDeleteResult.success 
+                      ? (isDarkMode ? '#1E4435' : '#ECFDF5')
+                      : (isDarkMode ? '#3A2626' : '#FEF2F2'),
+                    border: `2px solid ${hardDeleteResult.success ? '#10B981' : '#EF4444'}`
+                  }}>
+                    <div className="flex items-start gap-3 mb-3">
+                      {hardDeleteResult.success ? (
+                        <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-bold text-sm mb-1" style={{
+                          color: hardDeleteResult.success ? '#10B981' : '#EF4444'
+                        }}>
+                          {hardDeleteResult.message}
+                        </p>
+                        {hardDeleteResult.success && (
+                          <div className="text-xs space-y-1" style={{ color: colors.textPrimary }}>
+                            <p>Target: {hardDeleteResult.target_count}</p>
+                            <p>Found: {hardDeleteResult.found_count}</p>
+                            <p>Purged: {hardDeleteResult.purged_count}</p>
+                            <p>Failed: {hardDeleteResult.failed_count}</p>
+                            <p>Verified: {hardDeleteResult.verification ? '✅ Yes' : '❌ No'}</p>
+                            {hardDeleteResult.note && (
+                              <p className="mt-2 italic" style={{ color: colors.textSecondary }}>
+                                {hardDeleteResult.note}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {hardDeleteResult.results && hardDeleteResult.results.length > 0 && (
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                          View Details ({hardDeleteResult.results.length} users)
+                        </summary>
+                        <div className="overflow-auto max-h-64 p-3 rounded" style={{
+                          backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
+                          border: `1px solid ${colors.borderColor}`
+                        }}>
+                          <pre className="text-xs" style={{ color: colors.textPrimary }}>
+                            {JSON.stringify(hardDeleteResult.results, null, 2)}
                           </pre>
                         </div>
                       </details>
