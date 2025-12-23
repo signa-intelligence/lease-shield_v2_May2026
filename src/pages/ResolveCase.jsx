@@ -32,11 +32,34 @@ function ResolveCaseContent() {
   });
   const [uploading, setUploading] = useState(false);
   const [autoFilledFromDeposit, setAutoFilledFromDeposit] = useState(false);
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
+  const [freeResolveEligible, setFreeResolveEligible] = useState(false);
+  const [eligibilityData, setEligibilityData] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
+
+  // Check free Resolve eligibility on mount
+  React.useEffect(() => {
+    if (user?.id) {
+      setCheckingEligibility(true);
+      base44.functions.invoke('isFreeResolveEligible', { userId: user.id })
+        .then(response => {
+          console.log('🎯 [RESOLVE_PAGE] Eligibility check result:', response.data);
+          setFreeResolveEligible(response.data?.eligible || false);
+          setEligibilityData(response.data);
+        })
+        .catch(error => {
+          console.error('❌ [RESOLVE_PAGE] Eligibility check failed:', error);
+          setFreeResolveEligible(false);
+        })
+        .finally(() => {
+          setCheckingEligibility(false);
+        });
+    }
+  }, [user?.id]);
 
   const { data: deposits = [] } = useQuery({
     queryKey: ['deposits'],
@@ -90,7 +113,7 @@ function ResolveCaseContent() {
   };
 
   const createCaseMutation = useMutation({
-    mutationFn: async ({ caseData }) => {
+    mutationFn: async ({ caseData, useFreeEntitlement }) => {
       /**
        * ═══════════════════════════════════════════════════════════════
        * CASE CREATION - OWNERSHIP BINDING FIX
@@ -201,28 +224,52 @@ function ResolveCaseContent() {
         userEmail: authenticatedUser.email 
       };
     },
-    onSuccess: async ({ createdCase, userId, userEmail }) => {
+    onSuccess: async ({ createdCase, userId, userEmail, useFreeEntitlement }) => {
       console.log('[RESOLVE_FLOW] ✅ Case created successfully:', {
         id: createdCase.id,
         case_number: createdCase.case_number,
         status: createdCase.status,
         user_email: createdCase.user_email,
-        type: createdCase.type,
-        dispute_amount: createdCase.dispute_amount,
-        property_address: createdCase.property_address,
-        landlord_name: createdCase.landlord_name,
-        landlord_email: createdCase.landlord_email,
-        summary: createdCase.summary?.substring(0, 50),
-        evidence_count: createdCase.evidence?.length || 0
+        useFreeEntitlement
       });
       
       // Invalidate queries to ensure fresh data
       await queryClient.invalidateQueries({ queryKey: ['cases'] });
       
-      // CRITICAL FIX: Use unified pricing system
+      // If using free entitlement, activate case directly
+      if (useFreeEntitlement) {
+        console.log('🎁 [RESOLVE_FLOW] Using free Resolve entitlement');
+        try {
+          const activateResponse = await base44.functions.invoke('createResolveCaseFree', {
+            caseId: createdCase.id
+          });
+          
+          if (activateResponse.data?.success) {
+            toast.success(
+              language === 'th' ? '✅ คดีถูกเปิดโดยใช้สิทธิ์ Resolve ฟรี'
+              : language === 'zh' ? '✅ 案件已使用免费Resolve权益激活'
+              : language === 'ja' ? '✅ 無料Resolve権利を使用してケースが開設されました'
+              : language === 'ko' ? '✅ 무료 Resolve 권한으로 사례 개설됨'
+              : language === 'ru' ? '✅ Дело открыто с использованием бесплатного Resolve'
+              : '✅ Case opened using free Resolve entitlement'
+            );
+            navigate(createPageUrl("cases"));
+            return;
+          } else {
+            throw new Error('Failed to activate free case');
+          }
+        } catch (freeError) {
+          console.error('❌ [RESOLVE_FLOW] Free activation failed:', freeError);
+          toast.error(
+            language === 'th' ? 'ไม่สามารถใช้สิทธิ์ฟรีได้ กรุณาชำระเงิน'
+            : 'Failed to use free entitlement. Please proceed to payment.'
+          );
+        }
+      }
+      
+      // Standard paid flow - Create Stripe checkout
       const pricing = getResolvePricingForUser(user);
       
-      // Create Stripe checkout session (server will re-validate pricing)
       const response = await base44.functions.invoke('createResolveCheckout', {
         userId: userId,
         userEmail: userEmail,
@@ -425,8 +472,11 @@ function ResolveCaseContent() {
         ]
       };
 
-      // Pass case data to mutation (user_email will be re-forced from auth.me())
-      createCaseMutation.mutate({ caseData });
+      // Pass case data to mutation with free entitlement flag
+      createCaseMutation.mutate({ 
+        caseData,
+        useFreeEntitlement: freeResolveEligible
+      });
     } catch (error) {
       toast.error(
         language === 'th' ? 'ไม่สามารถส่งคดีได้: ' + error.message
@@ -765,14 +815,115 @@ function ResolveCaseContent() {
           </div>
         )}
 
+        {/* Free Resolve Entitlement Banner */}
+        {freeResolveEligible && (
+          <Card className="border-none shadow-xl mb-6" style={{ 
+            backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5',
+            borderLeft: '6px solid #10B981'
+          }}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                  flexShrink: 0
+                }}>
+                  <Crown className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold mb-1" style={{ color: '#10B981' }}>
+                    {language === 'th' ? '🎁 ใช้ Resolve ฟรี (รวมในแผน Secure)'
+                    : language === 'zh' ? '🎁 使用免费Resolve（包含在Secure计划中）'
+                    : language === 'ja' ? '🎁 無料Resolveを使用（Secureプランに含まれます）'
+                    : language === 'ko' ? '🎁 무료 Resolve 사용（Secure 플랜 포함）'
+                    : language === 'ru' ? '🎁 Использовать бесплатный Resolve（включен в Secure）'
+                    : '🎁 Use Free Resolve Case (included in Annual Secure)'}
+                  </h3>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'คุณมีสิทธิ์ 1 คดี Resolve ฟรีต่อปี • ไม่มีค่าใช้จ่าย'
+                    : language === 'zh' ? '您有权每年获得1个免费Resolve案件 • 无费用'
+                    : language === 'ja' ? '年間1件の無料Resolveケースの権利があります • 費用なし'
+                    : language === 'ko' ? '연간 1건의 무료 Resolve 케이스 권한 • 무료'
+                    : language === 'ru' ? 'У вас есть право на 1 бесплатное дело Resolve в год • Без оплаты'
+                    : 'You have 1 free Resolve case per year • No charge'}
+                  </p>
+                  {eligibilityData?.period_end && (
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                      {language === 'th' ? `รีเซ็ตเมื่อ: ${new Date(eligibilityData.period_end).toLocaleDateString()}`
+                      : language === 'zh' ? `重置于: ${new Date(eligibilityData.period_end).toLocaleDateString()}`
+                      : language === 'ja' ? `リセット: ${new Date(eligibilityData.period_end).toLocaleDateString()}`
+                      : language === 'ko' ? `초기화: ${new Date(eligibilityData.period_end).toLocaleDateString()}`
+                      : language === 'ru' ? `Сброс: ${new Date(eligibilityData.period_end).toLocaleDateString()}`
+                      : `Resets: ${new Date(eligibilityData.period_end).toLocaleDateString()}`}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Ineligibility Message */}
+        {!freeResolveEligible && eligibilityData?.reason === 'not_annual_secure' && (
+          <Card className="border-none shadow-lg mb-6" style={{ 
+            backgroundColor: isDarkMode ? '#2A2020' : '#FEF3C7',
+            borderLeft: '4px solid #F59E0B'
+          }}>
+            <CardContent className="p-4">
+              <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                ℹ️ {language === 'th' ? 'Resolve ฟรีรวมอยู่ในแผน Annual Secure เท่านั้น'
+                : language === 'zh' ? '免费Resolve仅包含在Annual Secure计划中'
+                : language === 'ja' ? '無料ResolveはAnnual Secureプランにのみ含まれます'
+                : language === 'ko' ? '무료 Resolve는 Annual Secure 플랜에만 포함됩니다'
+                : language === 'ru' ? 'Бесплатный Resolve включен только в годовой план Secure'
+                : 'Free Resolve is included with Annual Secure only.'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!freeResolveEligible && eligibilityData?.reason === 'already_used' && (
+          <Card className="border-none shadow-lg mb-6" style={{ 
+            backgroundColor: isDarkMode ? '#2A2020' : '#FEE2E2',
+            borderLeft: '4px solid #EF4444'
+          }}>
+            <CardContent className="p-4">
+              <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                ⚠️ {language === 'th' ? 'คุณใช้ Resolve ฟรีไปแล้วในรอบนี้'
+                : language === 'zh' ? '您已在本期使用了免费Resolve'
+                : language === 'ja' ? '今期の無料Resolveは既に使用済みです'
+                : language === 'ko' ? '이번 기간에 무료 Resolve를 이미 사용했습니다'
+                : language === 'ru' ? 'Вы уже использовали бесплатный Resolve в этом периоде'
+                : 'Free Resolve already used this period'}
+              </p>
+              {eligibilityData?.period_end && (
+                <p className="text-xs" style={{ color: colors.textSecondary }}>
+                  {language === 'th' ? `รีเซ็ตเมื่อ: ${new Date(eligibilityData.period_end).toLocaleDateString()}`
+                  : language === 'zh' ? `重置于: ${new Date(eligibilityData.period_end).toLocaleDateString()}`
+                  : language === 'ja' ? `リセット: ${new Date(eligibilityData.period_end).toLocaleDateString()}`
+                  : language === 'ko' ? `초기화: ${new Date(eligibilityData.period_end).toLocaleDateString()}`
+                  : language === 'ru' ? `Сброс: ${new Date(eligibilityData.period_end).toLocaleDateString()}`
+                  : `Resets: ${new Date(eligibilityData.period_end).toLocaleDateString()}`}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Resolve Service Pricing */}
         <Card className="border-none shadow-xl mb-6" style={{ 
           backgroundColor: colors.cardBg,
-          borderLeft: hasMemberPricing(user) ? '4px solid #10B981' : '4px solid #C7A338'
+          borderLeft: freeResolveEligible ? '4px solid #10B981' : (hasMemberPricing(user) ? '4px solid #10B981' : '4px solid #C7A338')
         }}>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <Shield className="w-6 h-6" style={{ color: hasMemberPricing(user) ? '#10B981' : '#C7A338' }} />
+              <Shield className="w-6 h-6" style={{ color: freeResolveEligible ? '#10B981' : (hasMemberPricing(user) ? '#10B981' : '#C7A338') }} />
               <CardTitle style={{ color: colors.textPrimary }}>{str.resolveService}</CardTitle>
             </div>
           </CardHeader>
@@ -802,7 +953,17 @@ function ResolveCaseContent() {
                 <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
                  {str.resolvePricing}
                 </span>
-                {(() => {
+                {freeResolveEligible ? (
+                  <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                    <Crown className="w-3 h-3 mr-1" />
+                    {language === 'th' ? 'ฟรี'
+                    : language === 'zh' ? '免费'
+                    : language === 'ja' ? '無料'
+                    : language === 'ko' ? '무료'
+                    : language === 'ru' ? 'Бесплатно'
+                    : 'FREE'}
+                  </Badge>
+                ) : (() => {
                  const membership = getMembershipInfo(user);
                  const daysRemaining = membership.daysUntilMemberBenefits;
 
@@ -829,7 +990,31 @@ function ResolveCaseContent() {
                 })()}
               </div>
 
-              {(() => {
+              {freeResolveEligible ? (
+                <>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-3xl font-bold" style={{ color: '#10B981' }}>
+                      ฿0
+                    </span>
+                    <span className="text-sm line-through" style={{ color: colors.textSecondary }}>
+                      ฿{RESOLVE_PRICING.MEMBER_RATE.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 rounded-lg" style={{ 
+                    backgroundColor: isDarkMode ? '#1E4435' : '#D1FAE5' 
+                  }}>
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <span className="text-sm font-semibold" style={{ color: '#10B981' }}>
+                      {language === 'th' ? 'รวมในการสมัคร Secure รายปีของคุณ • ฟรี'
+                      : language === 'zh' ? '包含在您的年度Secure订阅中 • 免费'
+                      : language === 'ja' ? '年間Secureサブスクリプションに含まれています • 無料'
+                      : language === 'ko' ? '연간 Secure 구독에 포함 • 무료'
+                      : language === 'ru' ? 'Включено в вашу годовую подписку Secure • Бесплатно'
+                      : 'Included in your Annual Secure subscription • Free'}
+                    </span>
+                  </div>
+                </>
+              ) : (() => {
                 const membership = getMembershipInfo(user);
                 const daysRemaining = membership.daysUntilMemberBenefits;
                 
@@ -1109,22 +1294,33 @@ function ResolveCaseContent() {
 
           <Button
             type="submit"
-            disabled={createCaseMutation.isPending || uploading}
+            disabled={createCaseMutation.isPending || uploading || checkingEligibility}
             className="w-full btn-interaction"
             style={{
-              backgroundColor: createCaseMutation.isPending || uploading ? '#9CA3AF' : '#DC2626',
+              backgroundColor: createCaseMutation.isPending || uploading || checkingEligibility ? '#9CA3AF' : (freeResolveEligible ? '#10B981' : '#DC2626'),
               color: '#FFFFFF',
               padding: '18px',
               fontSize: '18px',
               fontWeight: '700',
               borderRadius: '12px',
-              minHeight: '64px'
+              minHeight: '64px',
+              border: freeResolveEligible ? '2px solid #059669' : 'none'
             }}
           >
             {createCaseMutation.isPending ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 {str.submitting}
+              </>
+            ) : freeResolveEligible ? (
+              <>
+                <Crown className="w-5 h-5 mr-2" />
+                {language === 'th' ? 'ส่งคดี（ใช้สิทธิ์ฟรี）'
+                : language === 'zh' ? '提交案件（使用免费权益）'
+                : language === 'ja' ? 'ケースを送信（無料権利を使用）'
+                : language === 'ko' ? '사례 제출（무료 권한 사용）'
+                : language === 'ru' ? 'Отправить дело（использовать бесплатное право）'
+                : 'Submit Case (Use Free Entitlement)'}
               </>
             ) : (
               <>
