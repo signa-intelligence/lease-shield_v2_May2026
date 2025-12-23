@@ -59,14 +59,11 @@ function AdminConsoleContent() {
   const { data: users = [] } = useQuery({
     queryKey: ['allUsers'],
     queryFn: async () => {
-      console.log('🔍 [ADMIN] Fetching active users via getAllUsers function...');
+      console.log('🔍 [ADMIN] Fetching active users via adminListUsers function...');
       try {
-        const response = await base44.functions.invoke('getAllUsers');
+        const response = await base44.functions.invoke('adminListUsers');
         console.log('📊 [ADMIN] Function response:', response.data);
-        let userList = response.data?.users || response.data || [];
-        
-        // Filter to ONLY active users
-        userList = userList.filter(u => u.status === 'active' || !u.status);
+        const userList = response.data?.users || [];
         
         console.log('📊 [ADMIN] Active users count:', userList.length);
         return userList;
@@ -119,7 +116,7 @@ function AdminConsoleContent() {
 
   const { data: supportTickets = [] } = useQuery({
     queryKey: ['adminSupportTickets'],
-    queryFn: () => base44.asServiceRole.entities.SupportTicket.list('-created_date'),
+    queryFn: () => base44.entities.SupportTicket.list('-created_date'),
     enabled: !!user && (
       ['admin', 'super_admin', 'va'].includes(user.access_level) ||
       ['admin', 'super_admin', 'va'].includes(user.role)
@@ -170,29 +167,35 @@ function AdminConsoleContent() {
         timestamp: new Date().toISOString()
       });
       
-      // CRITICAL: Use asServiceRole to bypass RLS
-      // Regular base44.entities.User.update() is subject to RLS and may fail
-      const result = await base44.asServiceRole.entities.User.update(userId, data);
-      
-      console.log('✅ [USER_UPDATE] Database update succeeded:', {
-        id: result.id,
-        email: result.email,
-        access_level: result.access_level,
-        plan_tier: result.plan_tier,
-        letter_credits: result.letter_credits,
-        is_active: result.is_active
-      });
-      
-      // Verify role update if access_level was changed
-      if (data.access_level && result.access_level !== data.access_level) {
-        console.error('❌ [USER_UPDATE] CRITICAL MISMATCH:', {
-          expected: data.access_level,
-          actual: result.access_level,
-          userId: result.id
+      // Handle role updates via server function
+      if (data.access_level) {
+        const response = await base44.functions.invoke('adminUpdateUserRole', { 
+          userId, 
+          role: data.access_level 
         });
-        throw new Error(`Role update verification failed: expected ${data.access_level}, got ${result.access_level}`);
+        if (!response.data.success) {
+          throw new Error(response.data.error || 'Role update failed');
+        }
+        console.log('✅ [USER_UPDATE] Role updated via server function');
+        return response.data;
       }
       
+      // Handle tier updates via server function
+      if (data.plan_tier) {
+        const response = await base44.functions.invoke('adminUpdateUserTier', { 
+          userId, 
+          tier: data.plan_tier 
+        });
+        if (!response.data.success) {
+          throw new Error(response.data.error || 'Tier update failed');
+        }
+        console.log('✅ [USER_UPDATE] Tier updated via server function');
+        return response.data;
+      }
+      
+      // For other updates (credits, permissions, is_active) use direct update
+      const result = await base44.entities.User.update(userId, data);
+      console.log('✅ [USER_UPDATE] Direct update succeeded');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       return result;
     },
@@ -261,7 +264,7 @@ function AdminConsoleContent() {
   });
 
   const deactivateUserMutation = useMutation({
-    mutationFn: (userId) => base44.asServiceRole.entities.User.update(userId, { 
+    mutationFn: (userId) => base44.entities.User.update(userId, { 
       is_active: false,
       status: 'deleted'
     }),
@@ -272,10 +275,33 @@ function AdminConsoleContent() {
 
   const handleCaseStatusChange = async (caseId, newStatus) => {
     try {
-      await base44.asServiceRole.entities.Case.update(caseId, { status: newStatus });
+      await base44.entities.Case.update(caseId, { status: newStatus });
       queryClient.invalidateQueries({ queryKey: ['allCases'] });
     } catch (error) {
       console.error('Failed to update case status:', error);
+    }
+  };
+
+  const [deduplicating, setDeduplicating] = useState(false);
+
+  const handleDeduplicate = async () => {
+    if (!confirm(strings.deduplicateConfirm)) return;
+    
+    setDeduplicating(true);
+    
+    try {
+      const { data } = await base44.functions.invoke('adminDeduplicateUsers', {});
+      if (data.success) {
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+        alert(strings.deduplicateSuccess.replace('{count}', data.deduped) + '\n\nLog:\n' + JSON.stringify(data.log, null, 2));
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      console.error('Dedupe error:', error);
+      alert(strings.deduplicateFailed + '\n\n' + error.message);
+    } finally {
+      setDeduplicating(false);
     }
   };
 
@@ -1496,6 +1522,24 @@ function AdminConsoleContent() {
                   >
                     <Database className="w-4 h-4 mr-2" />
                     Export Backup
+                  </Button>
+
+                  <Button
+                    onClick={handleDeduplicate}
+                    disabled={deduplicating}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    {deduplicating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {strings.deduplicating}
+                      </>
+                    ) : (
+                      <>
+                        <Users className="w-4 h-4 mr-2" />
+                        {strings.deduplicateUsers}
+                      </>
+                    )}
                   </Button>
                 </div>
 
