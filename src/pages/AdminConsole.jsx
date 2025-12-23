@@ -46,6 +46,7 @@ function AdminConsoleContent() {
   const [restoringUsers, setRestoringUsers] = useState(false);
   const [userManagementExpanded, setUserManagementExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [userStatusFilter, setUserStatusFilter] = useState('active'); // 'active', 'disabled', 'deleted', 'all'
   const usersPerPage = 10;
 
   const queryClient = useQueryClient();
@@ -1140,7 +1141,13 @@ function AdminConsoleContent() {
     }
   };
 
-  const sortedUsers = [...users].sort((a, b) => {
+  // Filter by status
+  const filteredUsers = users.filter(u => {
+    if (userStatusFilter === 'all') return true;
+    return u.status === userStatusFilter;
+  });
+
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
     if (sortOrder === 'asc') {
@@ -1779,10 +1786,48 @@ function AdminConsoleContent() {
             onClick={() => setUserManagementExpanded(!userManagementExpanded)}
           >
             <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
                 <Users className="w-5 h-5 text-ls-forest" />
-                {strings.userManagement} <span style={{ color: colors.textSecondary, fontWeight: 'normal' }}>({users.length} users)</span>
+                {strings.userManagement}
               </CardTitle>
+              {userManagementExpanded && (
+                <div className="flex gap-2 ml-4">
+                  <Button
+                    size="sm"
+                    variant={userStatusFilter === 'active' ? 'default' : 'outline'}
+                    onClick={() => setUserStatusFilter('active')}
+                    className="h-8"
+                  >
+                    Active ({users.filter(u => u.status === 'active').length})
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={userStatusFilter === 'disabled' ? 'default' : 'outline'}
+                    onClick={() => setUserStatusFilter('disabled')}
+                    className="h-8"
+                  >
+                    Disabled ({users.filter(u => u.status === 'disabled').length})
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={userStatusFilter === 'deleted' ? 'default' : 'outline'}
+                    onClick={() => setUserStatusFilter('deleted')}
+                    className="h-8"
+                  >
+                    Deleted ({users.filter(u => u.status === 'deleted').length})
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={userStatusFilter === 'all' ? 'default' : 'outline'}
+                    onClick={() => setUserStatusFilter('all')}
+                    className="h-8"
+                  >
+                    All ({users.length})
+                  </Button>
+                </div>
+              )}
+            </div>
               {userManagementExpanded ? (
                 <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
               ) : (
@@ -1821,8 +1866,8 @@ function AdminConsoleContent() {
                     const isCurrentUserSuperAdmin = user?.access_level === 'super_admin';
                     const isTargetUserSuperAdmin = u.access_level === 'super_admin';
                     const canChangeRole = !(isTargetUserSuperAdmin && superAdminCount <= MINIMUM_SUPER_ADMINS);
-                    const isDisabled = u.is_active === false;
-                    const isDeleted = !!u.deleted_at;
+                    const isDisabled = u.status === 'disabled';
+                    const isDeleted = u.status === 'deleted';
                     const isSelf = u.id === user.id;
                     
                     return (
