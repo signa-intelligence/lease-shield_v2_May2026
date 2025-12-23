@@ -2521,7 +2521,7 @@ ja: {
                         miniStats: [
                           { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
                         ],
-                        route: createPageUrl("PropertyTracker") + "#deposit",
+                        route: createPageUrl("PropertyTracker") + "#deposits",
                         label: strings.trackDeposit,
                         compactTitle: language === 'ru'
                       },
