@@ -169,11 +169,20 @@ export const formatErrorForUser = (error, requestId, language = 'en') => {
 };
 
 export const createDebugLog = (requestId, stages) => {
+  const ua = navigator.userAgent.toLowerCase();
+  const platform = {
+    isAndroid: /android/.test(ua),
+    isIOS: /iphone|ipad|ipod/.test(ua),
+    isChrome: /chrome/.test(ua) && !/edg/.test(ua),
+    isSafari: /safari/.test(ua) && !/chrome/.test(ua),
+    platform: /android/.test(ua) ? 'android' : /iphone|ipad|ipod/.test(ua) ? 'ios' : 'desktop'
+  };
+
   return {
     requestId,
     timestamp: new Date().toISOString(),
     stages,
-    platform: detectPlatform(),
+    platform,
     userAgent: navigator.userAgent
   };
 };

@@ -35,8 +35,8 @@ import SwipeToDelete from "../components/shared/SwipeToDelete";
 import AuthGuard from "../components/shared/AuthGuard";
 import { FEATURE_COLORS } from "../components/shared/featureTheme";
 import TrustBadge from "../components/shared/TrustBadge";
-import { generateRequestId, normalizeFiles, detectPlatform, createDebugLog } from "../components/shared/FileNormalizer";
-import { formatErrorForUser } from "../components/shared/ErrorCategorizer";
+import { generateRequestId, normalizeFiles, detectPlatform } from "../components/shared/FileNormalizer";
+import { formatErrorForUser, createDebugLog } from "../components/shared/ErrorCategorizer";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
