@@ -3767,15 +3767,15 @@ function AccountContent() {
                       <Download className="w-5 h-5 text-white" />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#0C3B2E', marginBottom: '2px' }}>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: colors.textPrimary, marginBottom: '2px' }}>
                         {language === 'th' ? 'ติดตั้งแอป Lease Shield' : language === 'zh' ? '安装 Lease Shield 应用' : language === 'ja' ? 'Lease Shield アプリをインストール' : language === 'ko' ? 'Lease Shield 앱 설치' : language === 'ru' ? 'Установить приложение Lease Shield' : 'Install Lease Shield App'}
                       </div>
-                      <div style={{ fontSize: '13px', fontWeight: '500', color: '#0C3B2E' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '500', color: colors.textSecondary }}>
                         {language === 'th' ? 'เพิ่มลงในหน้าจอหลักเพื่อเข้าถึงง่ายๆ' : language === 'zh' ? '添加到主屏幕以便快速访问' : language === 'ja' ? 'ホーム画面に追加して素早くアクセス' : language === 'ko' ? '빠른 액세스를 위해 홈 화면에 추가' : language === 'ru' ? 'Добавьте на главный экран для быстрого доступа' : 'Add to home screen for quick access'}
                       </div>
                     </div>
                   </div>
-                  <ArrowRight className="w-5 h-5" style={{ color: '#0C3B2E' }} />
+                  <ArrowRight className="w-5 h-5" style={{ color: colors.textPrimary }} />
                 </div>
               </div>
 
@@ -3881,13 +3881,26 @@ function AccountContent() {
                   haptic.light();
                   setShowInstallInstructions(false);
                 }}
-                className="w-full"
+                className="w-full btn-interaction"
                 style={{
                   backgroundColor: '#0C3B2E',
-                  color: '#FFFFFF',
-                  minHeight: '48px',
-                  fontSize: '15px',
-                  fontWeight: '700'
+                  color: '#C9A227',
+                  minHeight: '52px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#084D38';
+                  e.currentTarget.style.color = '#D9BC7E';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0C3B2E';
+                  e.currentTarget.style.color = '#C9A227';
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
                 {strings.gotIt}
