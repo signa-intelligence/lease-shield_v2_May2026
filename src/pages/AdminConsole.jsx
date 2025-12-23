@@ -1736,58 +1736,66 @@ function AdminConsoleContent() {
                   </div>
                 )}
 
-  const handleHardDeleteTestUsers = async () => {
-    if (!isSuperAdmin) {
-      alert('Super Admin access required');
-      return;
-    }
+                {hardDeleteResult && (
+                 <div className="mt-4 p-4 rounded-lg" style={{
+                   backgroundColor: hardDeleteResult.success 
+                     ? (isDarkMode ? '#1E4435' : '#ECFDF5')
+                     : (isDarkMode ? '#3A2626' : '#FEF2F2'),
+                   border: `2px solid ${hardDeleteResult.success ? '#10B981' : '#EF4444'}`
+                 }}>
+                   <div className="flex items-start gap-3 mb-3">
+                     {hardDeleteResult.success ? (
+                       <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+                     ) : (
+                       <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                     )}
+                     <div className="flex-1">
+                       <p className="font-bold text-sm mb-1" style={{
+                         color: hardDeleteResult.success ? '#10B981' : '#EF4444'
+                       }}>
+                         {hardDeleteResult.message}
+                       </p>
+                       {hardDeleteResult.success && (
+                         <div className="text-xs space-y-1" style={{ color: colors.textPrimary }}>
+                           <p>Target: {hardDeleteResult.target_count}</p>
+                           <p>Found: {hardDeleteResult.found_count}</p>
+                           <p>Purged: {hardDeleteResult.purged_count}</p>
+                           <p>Failed: {hardDeleteResult.failed_count}</p>
+                           <p className="mt-2 font-bold" style={{ 
+                             color: hardDeleteResult.verification ? '#10B981' : '#EF4444' 
+                           }}>
+                             Verification: {hardDeleteResult.verification ? '✅ PASSED' : '❌ FAILED'}
+                           </p>
+                           {hardDeleteResult.note && (
+                             <p className="mt-2 italic" style={{ color: colors.textSecondary }}>
+                               {hardDeleteResult.note}
+                             </p>
+                           )}
+                         </div>
+                       )}
+                     </div>
+                   </div>
 
-    const testEmails = [
-      'jay.p@signa-consultants.com',
-      'steve.d.lockhart+5@gmail.com',
-      'steve.l+1@signa-consultants.com',
-      'steve.d.lockhart+2@gmail.com',
-      'steve.d.lockhart+1@gmail.com'
-    ];
-
-    if (!confirm(`🚨 PERMANENT DELETION WARNING\n\nThis will PERMANENTLY DELETE 5 test users:\n\n${testEmails.join('\n')}\n\n• User records will be PURGED from database\n• Auth identities will be removed\n• Related records will be anonymized\n• This CANNOT be undone\n\nType "PURGE" in the next prompt to confirm.`)) {
-      return;
-    }
-
-    const confirmText = prompt('Type PURGE (all caps) to confirm permanent deletion:');
-    if (confirmText !== 'PURGE') {
-      alert('Deletion cancelled - confirmation text did not match.');
-      return;
-    }
-
-    setHardDeletingUsers(true);
-    setHardDeleteResult(null);
-
-    try {
-      console.log('🗑️ [ADMIN] Starting hard delete of test users...');
-      const response = await base44.functions.invoke('hardDeleteTestUsers');
-      console.log('✅ [ADMIN] Hard delete response:', response.data);
-      
-      setHardDeleteResult(response.data);
-      
-      if (response.data?.success) {
-        alert(`✅ PURGE COMPLETE\n\nTarget: ${response.data.target_count}\nFound: ${response.data.found_count}\nPurged: ${response.data.purged_count}\nFailed: ${response.data.failed_count}\n\nVerification: ${response.data.verification ? '✅ PASSED' : '❌ FAILED'}\n\nRefreshing user list...`);
-        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      } else {
-        alert('❌ Purge failed: ' + response.data?.error);
-      }
-    } catch (error) {
-      console.error('❌ [ADMIN] Hard delete failed:', error);
-      alert('Hard delete failed: ' + error.message);
-    } finally {
-      setHardDeletingUsers(false);
-    }
-  };
-
-  const sortedUsers = [...users].sort((a, b) => {
-              </div>
-            </CardContent>
-          </Card>
+                   {hardDeleteResult.results && hardDeleteResult.results.length > 0 && (
+                     <details className="mt-3">
+                       <summary className="cursor-pointer text-xs font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                         View Details ({hardDeleteResult.results.length} users)
+                       </summary>
+                       <div className="overflow-auto max-h-64 p-3 rounded" style={{
+                         backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
+                         border: `1px solid ${colors.borderColor}`
+                       }}>
+                         <pre className="text-xs" style={{ color: colors.textPrimary }}>
+                           {JSON.stringify(hardDeleteResult.results, null, 2)}
+                         </pre>
+                       </div>
+                     </details>
+                   )}
+                 </div>
+                )}
+                </div>
+                </CardContent>
+                </Card>
 
         <Dialog open={permissionsDialog} onOpenChange={setPermissionsDialog}>
           <DialogContent className="max-w-2xl" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
@@ -1963,6 +1971,45 @@ function AdminConsoleContent() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {isSuperAdmin && (
+          <Card className="mb-6 border-none shadow-lg" style={{ 
+            backgroundColor: colors.cardBg,
+            borderLeft: '6px solid #8B5CF6'
+          }}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div style={{
+                    width: '48px',
+                    height: '48px',
+                    backgroundColor: '#8B5CF6',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                      {strings.manageTemplates}
+                    </h3>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      {strings.manageTemplatesDesc}
+                    </p>
+                  </div>
+                </div>
+                <Link to={createPageUrl("AdminTemplates")}>
+                  <Button className="bg-purple-600 hover:bg-purple-700">
+                    <FileText className="w-4 h-4 mr-2" />
+                    {strings.goToTemplates}
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {isSuperAdmin && (
           <Card className="mb-6 border-none shadow-lg" style={{ 
