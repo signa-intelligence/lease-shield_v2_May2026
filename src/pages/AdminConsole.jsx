@@ -1532,6 +1532,39 @@ function AdminConsoleContent() {
                   </Button>
 
                   <Button
+                    onClick={async () => {
+                      try {
+                        const { data } = await base44.functions.invoke('migrateUserStatus');
+                        alert(`✅ Migration complete!\n\nUpdated: ${data.updated_count}/${data.total_users} users`);
+                        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+                      } catch (error) {
+                        alert('❌ Migration failed: ' + error.message);
+                      }
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Database className="w-4 h-4 mr-2" />
+                    Migrate Status
+                  </Button>
+
+                  <Button
+                    onClick={async () => {
+                      if (!confirm('⚠️ This will DELETE all users except the 2 super admins. Continue?')) return;
+                      try {
+                        const { data } = await base44.functions.invoke('cleanupUsers');
+                        alert(`✅ Cleanup complete!\n\nDeleted: ${data.deleted_count} users\nActive remaining: ${data.active_remaining}`);
+                        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+                      } catch (error) {
+                        alert('❌ Cleanup failed: ' + error.message);
+                      }
+                    }}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Cleanup Users
+                  </Button>
+
+                  <Button
                     onClick={handleDeduplicate}
                     disabled={deduplicating}
                     className="bg-purple-600 hover:bg-purple-700"
