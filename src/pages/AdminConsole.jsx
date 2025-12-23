@@ -1653,23 +1653,43 @@ function AdminConsoleContent() {
                   </Button>
 
                   {isSuperAdmin && (
-                    <Button
-                      onClick={handleHardDeleteTestUsers}
-                      disabled={hardDeletingUsers}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      {hardDeletingUsers ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Purging...
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Hard Delete 5 Test Users
-                        </>
-                      )}
-                    </Button>
+                    <>
+                      <Button
+                        onClick={handleHardDeleteTestUsers}
+                        disabled={hardDeletingUsers}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {hardDeletingUsers ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Purging...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Hard Delete 5 Test Users
+                          </>
+                        )}
+                      </Button>
+                      
+                      <Button
+                        onClick={handleHardResetAllUsers}
+                        disabled={hardDeletingUsers}
+                        className="bg-red-900 hover:bg-red-950 text-white border-2 border-red-400"
+                      >
+                        {hardDeletingUsers ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Resetting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            🔥 HARD RESET (Keep 2)
+                          </>
+                        )}
+                      </Button>
+                    </>
                   )}
                 </div>
 
