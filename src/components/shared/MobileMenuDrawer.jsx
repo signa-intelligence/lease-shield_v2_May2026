@@ -110,7 +110,8 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
     {
       icon: Users,
       label: strings.referralProgram,
-      route: createPageUrl('Account') + '#referral',
+      route: createPageUrl('Account'),
+      scrollTo: 'referral',
       color: '#10B981'
     },
     {
@@ -327,6 +328,16 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
                     onClick={() => {
                       haptic.light();
                       onClose();
+                      
+                      // Handle scroll-to anchoring
+                      if (item.scrollTo) {
+                        setTimeout(() => {
+                          const section = document.getElementById(item.scrollTo);
+                          if (section) {
+                            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }
+                        }, 300);
+                      }
                     }}
                     style={{
                       width: '100%',
