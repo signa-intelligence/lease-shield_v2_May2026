@@ -1171,30 +1171,54 @@ function PropertyTrackerContent() {
     }, 100);
   };
 
-  // Handle hash-based section navigation
+  // Handle hash-based section navigation with robust polling
   useEffect(() => {
     if (!location.hash) return;
 
     const sectionMap = {
-      '#rent': rentRef,
-      '#maintenance': maintenanceRef,
-      '#deposit': depositRef,
-      '#deposits': depositRef
+      '#rent': { ref: rentRef, key: 'rent' },
+      '#maintenance': { ref: maintenanceRef, key: 'maintenance' },
+      '#deposit': { ref: depositRef, key: 'deposit' },
+      '#deposits': { ref: depositRef, key: 'deposit' }
     };
 
-    const targetRef = sectionMap[location.hash];
-    if (targetRef?.current) {
-      setTimeout(() => {
-        targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setExpandedSections(prev => {
-          const newState = { ...prev };
-          if (location.hash === '#rent') newState.rent = true;
-          if (location.hash === '#maintenance') newState.maintenance = true;
-          if (location.hash === '#deposit' || location.hash === '#deposits') newState.deposit = true;
-          return newState;
-        });
-      }, 100);
-    }
+    const target = sectionMap[location.hash];
+    if (!target) return;
+
+    // Expand section immediately
+    setExpandedSections(prev => ({
+      ...prev,
+      [target.key]: true
+    }));
+
+    // Poll for element with retries (up to 2 seconds)
+    let attempts = 0;
+    const maxAttempts = 40; // 40 * 50ms = 2 seconds
+    
+    const pollAndScroll = () => {
+      const element = target.ref.current;
+      
+      if (element) {
+        // Element found - scroll to it
+        const headerOffset = 80;
+        const rect = element.getBoundingClientRect();
+        const offsetTop = window.scrollY + rect.top - headerOffset;
+        
+        window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+        return;
+      }
+      
+      // Element not ready yet - retry
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(pollAndScroll, 50);
+      } else {
+        console.warn('PropertyTracker: Failed to scroll to section after 2s:', location.hash);
+      }
+    };
+
+    // Start polling after brief delay
+    setTimeout(pollAndScroll, 100);
   }, [location.hash]);
 
   const filteredMaintenanceRequests = maintenanceRequests.filter(request => {
