@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle, UserX, UserCheck, Scale, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle, UserX, UserCheck, Scale, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import { format, differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
@@ -107,6 +107,15 @@ function AdminConsoleContent() {
   const { data: documents = [] } = useQuery({
     queryKey: ['allDocuments'],
     queryFn: () => base44.entities.Document.list(),
+    enabled: !!user && (
+      ['admin', 'super_admin', 'va'].includes(user.access_level) ||
+      ['admin', 'super_admin', 'va'].includes(user.role)
+    ),
+  });
+
+  const { data: supportTickets = [] } = useQuery({
+    queryKey: ['adminSupportTickets'],
+    queryFn: () => base44.asServiceRole.entities.SupportTicket.list('-created_date'),
     enabled: !!user && (
       ['admin', 'super_admin', 'va'].includes(user.access_level) ||
       ['admin', 'super_admin', 'va'].includes(user.role)
@@ -482,6 +491,11 @@ function AdminConsoleContent() {
       opsConsole: "Operations Console",
       opsConsoleDesc: "Manage cases and operations",
       goToOps: "Go to Ops Console",
+      supportTickets: "Support Tickets",
+      supportTicketsDesc: "Manage user support requests",
+      goToSupport: "Manage Support",
+      openTickets: "Open",
+      awaitingReply: "Awaiting Reply",
       editCredits: "Edit Credits",
       letterCredits: "Letter Credits",
       currentBalance: "Current Balance",
@@ -566,6 +580,11 @@ function AdminConsoleContent() {
       opsConsole: "คอนโซลปฏิบัติการ",
       opsConsoleDesc: "จัดการคดีและการดำเนินงาน",
       goToOps: "ไปที่คอนโซลปฏิบัติการ",
+      supportTickets: "คำขอสนับสนุน",
+      supportTicketsDesc: "จัดการคำขอสนับสนุนจากผู้ใช้",
+      goToSupport: "จัดการคำขอสนับสนุน",
+      openTickets: "เปิด",
+      awaitingReply: "รอตอบกลับ",
       editCredits: "แก้ไขเครดิต",
       letterCredits: "เครดิตจดหมาย",
       currentBalance: "ยอดคงเหลือปัจจุบัน",
@@ -1195,7 +1214,7 @@ function AdminConsoleContent() {
           </Card>
         )}
 
-        {/* 1. OPERATIONS CONSOLE - MOVED TO TOP */}
+        {/* 1. OPERATIONS CONSOLE */}
         <Card className="mb-6 border-none shadow-lg" style={{ 
           backgroundColor: colors.cardBg,
           borderLeft: '6px solid #3B82F6'
@@ -1227,6 +1246,52 @@ function AdminConsoleContent() {
                 <Button className="bg-blue-600 hover:bg-blue-700">
                   <Scale className="w-4 h-4 mr-2" />
                   {strings.goToOps}
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 2. SUPPORT TICKETS */}
+        <Card className="mb-6 border-none shadow-lg" style={{ 
+          backgroundColor: colors.cardBg,
+          borderLeft: '6px solid #10B981'
+        }}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: '#10B981',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <MessageCircle className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                    {strings.supportTickets}
+                  </h3>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {strings.supportTicketsDesc}
+                  </p>
+                  <div className="flex gap-3 mt-2">
+                    <Badge className="bg-blue-100 text-blue-800">
+                      {supportTickets.filter(t => t.status === 'open').length} {strings.openTickets}
+                    </Badge>
+                    <Badge className="bg-purple-100 text-purple-800">
+                      {supportTickets.filter(t => t.status === 'waiting_user').length} {strings.awaitingReply}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <Link to={createPageUrl("AdminSupport")}>
+                <Button className="bg-emerald-600 hover:bg-emerald-700">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  {strings.goToSupport}
                 </Button>
               </Link>
             </div>

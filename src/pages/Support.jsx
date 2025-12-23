@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Clock, CheckCircle2, HelpCircle, Upload } from "lucide-react";
+import { MessageCircle, Clock, CheckCircle2, HelpCircle, Upload, ArrowRight, AlertCircle, Send } from "lucide-react";
 import { format } from "date-fns";
 import AuthGuard from "../components/shared/AuthGuard";
 import MobileFormInput from "../components/shared/MobileFormInput";
@@ -25,6 +25,9 @@ const STATUS_CONFIG = {
 
 function SupportContent() {
   const [uploading, setUploading] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -70,7 +73,10 @@ function SupportContent() {
   });
 
   const createTicketMutation = useMutation({
-    mutationFn: (data) => base44.entities.SupportTicket.create(data),
+    mutationFn: async (data) => {
+      const { data: response } = await base44.functions.invoke('createSupportTicket', data);
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
       reset();
@@ -119,6 +125,55 @@ function SupportContent() {
     createTicketMutation.mutate(formData);
   };
 
+  const handleSendReply = async () => {
+    if (!replyMessage.trim() || !selectedTicket) return;
+
+    setSendingReply(true);
+    haptic.medium();
+
+    try {
+      const { data: response } = await base44.functions.invoke('replyToTicket', {
+        ticketId: selectedTicket.id,
+        message: replyMessage,
+        attachments: []
+      });
+
+      if (response.success) {
+        queryClient.invalidateQueries({ queryKey: ['tickets'] });
+        setReplyMessage('');
+        toast.success(language === 'th' ? 'ส่งข้อความสำเร็จ' : 'Reply sent');
+        haptic.success();
+        
+        // Refresh selected ticket
+        const updated = await base44.entities.SupportTicket.filter({ id: selectedTicket.id });
+        setSelectedTicket(updated[0]);
+      }
+    } catch (error) {
+      console.error('Reply failed:', error);
+      toast.error(language === 'th' ? 'ส่งข้อความล้มเหลว' : 'Failed to send reply');
+      haptic.error();
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
+  const handleTicketClick = async (ticket) => {
+    haptic.light();
+    setSelectedTicket(ticket);
+    
+    // Mark admin reply as read
+    if (ticket.has_unread_admin_reply) {
+      try {
+        await base44.entities.SupportTicket.update(ticket.id, {
+          has_unread_admin_reply: false
+        });
+        queryClient.invalidateQueries({ queryKey: ['tickets'] });
+      } catch (error) {
+        console.error('Failed to mark as read:', error);
+      }
+    }
+  };
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
@@ -146,7 +201,18 @@ function SupportContent() {
       noTickets: "No Support Tickets",
       noTicketsSub: "Need help? Submit a support request and we'll get back to you.",
       recentTickets: "Recent Tickets",
-      back: "Back"
+      back: "Back",
+      ticketDetails: "Ticket Details",
+      conversation: "Conversation",
+      yourMessage: "Your message",
+      sendReply: "Send Reply",
+      sending: "Sending...",
+      ticketNumber: "Ticket #",
+      openedOn: "Opened on",
+      lastUpdate: "Last updated",
+      closeTicket: "Close Ticket",
+      newReply: "New Reply from Support",
+      you: "You"
     },
     th: {
       title: "ความช่วยเหลือและการสนับสนุน",
@@ -162,7 +228,18 @@ function SupportContent() {
       noTickets: "ไม่มีคำขอสนับสนุน",
       noTicketsSub: "ต้องการความช่วยเหลือ? ส่งคำขอสนับสนุนและเราจะติดต่อกลับ",
       recentTickets: "คำขอล่าสุด",
-      back: "กลับ"
+      back: "กลับ",
+      ticketDetails: "รายละเอียดคำขอ",
+      conversation: "การสนทนา",
+      yourMessage: "ข้อความของคุณ",
+      sendReply: "ส่งตอบกลับ",
+      sending: "กำลังส่ง...",
+      ticketNumber: "คำขอ #",
+      openedOn: "เปิดเมื่อ",
+      lastUpdate: "อัปเดตล่าสุด",
+      closeTicket: "ปิดคำขอ",
+      newReply: "ตอบกลับใหม่จากทีมสนับสนุน",
+      you: "คุณ"
     },
     zh: {
       title: "帮助与支持",
@@ -385,8 +462,12 @@ function SupportContent() {
                   return (
                     <Card 
                       key={ticket.id} 
-                      className="border-none shadow-md hover:shadow-xl transition-all duration-200 card-hover-lift"
-                      style={{ backgroundColor: colors.cardBg }}
+                      className="border-none shadow-md hover:shadow-xl transition-all duration-200 card-hover-lift cursor-pointer"
+                      style={{ 
+                        backgroundColor: colors.cardBg,
+                        border: ticket.has_unread_admin_reply ? '2px solid #10B981' : 'none'
+                      }}
+                      onClick={() => handleTicketClick(ticket)}
                     >
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between mb-3">
@@ -398,17 +479,32 @@ function SupportContent() {
                               <StatusIcon className="w-5 h-5 text-ls-forest" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="font-bold text-base mb-1 break-words" style={{ color: colors.textPrimary }}>
-                                {ticket.subject}
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-bold text-base break-words" style={{ color: colors.textPrimary }}>
+                                  {ticket.subject}
+                                </p>
+                                {ticket.has_unread_admin_reply && (
+                                  <Badge className="bg-emerald-500 text-white text-xs animate-pulse">
+                                    {language === 'th' ? 'ใหม่' : 'NEW'}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs mb-1" style={{ color: colors.textSecondary }}>
+                                {ticket.ticket_number} • {format(new Date(ticket.created_date), 'MMM d, yyyy')}
                               </p>
-                              <p className="text-xs" style={{ color: colors.textSecondary }}>
-                                {language === 'th' ? 'เปิดเมื่อ' : 'Opened'} {format(new Date(ticket.created_date), 'MMM d, yyyy')}
-                              </p>
+                              {ticket.messages && ticket.messages.length > 1 && (
+                                <p className="text-xs" style={{ color: '#10B981' }}>
+                                  💬 {ticket.messages.length} {language === 'th' ? 'ข้อความ' : 'messages'}
+                                </p>
+                              )}
                             </div>
                           </div>
-                          <Badge className={`${statusConfig.color} text-xs flex-shrink-0 ml-2`}>
-                            {statusConfig.label}
-                          </Badge>
+                          <div className="flex flex-col gap-2 items-end">
+                            <Badge className={`${statusConfig.color} text-xs flex-shrink-0`}>
+                              {statusConfig.label}
+                            </Badge>
+                            <ArrowRight className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                          </div>
                         </div>
                         <div className="p-3 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                           <p className="text-sm line-clamp-2 break-words" style={{ color: colors.textSecondary }}>
@@ -428,6 +524,150 @@ function SupportContent() {
             )}
           </div>
         </div>
+
+        {/* Ticket Detail Dialog */}
+        {selectedTicket && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            onClick={() => setSelectedTicket(null)}
+          >
+            <div
+              className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-xl shadow-2xl"
+              style={{ backgroundColor: colors.cardBg }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="p-6 border-b" style={{ borderBottomColor: colors.borderColor }}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MessageCircle className="w-5 h-5 text-ls-forest" />
+                      <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
+                        {strings.ticketDetails}
+                      </h3>
+                    </div>
+                    <p className="text-sm mb-1" style={{ color: colors.textSecondary }}>
+                      {strings.ticketNumber}{selectedTicket.ticket_number}
+                    </p>
+                    <p className="font-semibold" style={{ color: colors.textPrimary }}>
+                      {selectedTicket.subject}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <Badge className={STATUS_CONFIG[selectedTicket.status].color}>
+                      {STATUS_CONFIG[selectedTicket.status].label}
+                    </Badge>
+                    <button
+                      onClick={() => setSelectedTicket(null)}
+                      className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                      style={{ color: colors.textSecondary }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message Thread */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <h4 className="font-semibold text-sm mb-4" style={{ color: colors.textPrimary }}>
+                  {strings.conversation}
+                </h4>
+                {selectedTicket.messages?.map((msg, idx) => {
+                  const isUser = msg.sender_type === 'user';
+                  const isAdminReply = msg.sender_type === 'admin';
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className="max-w-[80%] p-4 rounded-2xl"
+                        style={{
+                          backgroundColor: isUser 
+                            ? '#0C3B2E'
+                            : (isAdminReply ? '#10B981' : (isDarkMode ? '#374151' : '#F3F4F6')),
+                          color: (isUser || isAdminReply) ? '#FFFFFF' : colors.textPrimary
+                        }}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <p className="text-xs font-semibold" style={{ 
+                            color: (isUser || isAdminReply) ? '#FFFFFF' : colors.textSecondary,
+                            opacity: 0.9
+                          }}>
+                            {isUser ? strings.you : msg.sender_name}
+                          </p>
+                          <p className="text-xs" style={{ 
+                            color: (isUser || isAdminReply) ? '#FFFFFF' : colors.textSecondary,
+                            opacity: 0.7
+                          }}>
+                            {format(new Date(msg.timestamp), 'MMM d, h:mm a')}
+                          </p>
+                        </div>
+                        <p className="text-sm whitespace-pre-wrap break-words">
+                          {msg.message}
+                        </p>
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <p className="text-xs mt-2" style={{ 
+                            color: (isUser || isAdminReply) ? '#FFFFFF' : colors.textSecondary,
+                            opacity: 0.8
+                          }}>
+                            📎 {msg.attachments.length} {language === 'th' ? 'ไฟล์' : 'file(s)'}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Reply Input */}
+              {selectedTicket.status !== 'closed' && (
+                <div className="p-6 border-t" style={{ borderTopColor: colors.borderColor }}>
+                  <div className="flex gap-3">
+                    <textarea
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                      placeholder={strings.yourMessage}
+                      rows={3}
+                      className="flex-1 p-3 rounded-lg border-2 resize-none"
+                      style={{
+                        backgroundColor: colors.inputBg,
+                        borderColor: colors.borderColor,
+                        color: colors.textPrimary,
+                        fontSize: '16px'
+                      }}
+                    />
+                    <button
+                      onClick={handleSendReply}
+                      disabled={!replyMessage.trim() || sendingReply}
+                      className="btn-interaction h-fit"
+                      style={{
+                        backgroundColor: (!replyMessage.trim() || sendingReply) ? '#9CA3AF' : '#0C3B2E',
+                        color: '#FFFFFF',
+                        padding: '12px 20px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        cursor: (!replyMessage.trim() || sendingReply) ? 'not-allowed' : 'pointer',
+                        minHeight: '48px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Send className="w-4 h-4" />
+                      <span className="font-semibold">
+                        {sendingReply ? strings.sending : strings.sendReply}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
