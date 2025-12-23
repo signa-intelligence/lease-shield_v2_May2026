@@ -304,6 +304,7 @@ function SupportContent() {
           isDarkMode={isDarkMode}
           showBack={true}
           backLabel={strings.back}
+          backRoute="/dashboard"
         />
 
         <div className="grid lg:grid-cols-5 gap-6">
