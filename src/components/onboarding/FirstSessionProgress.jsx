@@ -93,14 +93,27 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
 
   return (
     <div
-      className="mb-6 p-4 rounded-xl border-2 bg-white dark:bg-gray-800"
+      className="p-4 rounded-xl border-2"
       style={{
-        borderColor: '#C7A338'
+        background: isDarkMode 
+          ? 'linear-gradient(135deg, #1E3A2E 0%, #0C3B2E 100%)'
+          : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+        borderColor: '#C7A338',
+        marginBottom: '24px'
       }}
     >
       <div className="flex items-center justify-between mb-3">
-        <span className="font-bold text-sm text-gray-900 dark:text-gray-50">
-          {strings.title.replace('{done}', completedCount).replace('{total}', totalCount)}
+        <span className="font-bold text-sm" style={{ color: '#FFFFFF' }}>
+          {language === 'en' || language === 'th' || language === 'ru'
+            ? strings.title.replace('{done}', completedCount).replace('{total}', totalCount)
+            : `${strings.title} ${completedCount} / ${totalCount}`
+          }
+        </span>
+        <span className="text-lg font-bold" style={{ 
+          color: '#C7A338',
+          textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+        }}>
+          {completedCount}/{totalCount}
         </span>
       </div>
 
@@ -111,18 +124,18 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
             style={{
               backgroundColor: action.completed 
-                ? (isDarkMode ? '#1E4435' : '#ECFDF5')
-                : (isDarkMode ? '#353A3D' : '#F3F4F6'),
-              border: `1px solid ${action.completed ? '#10B981' : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)')}`
+                ? 'rgba(16, 185, 129, 0.2)'
+                : 'rgba(255, 255, 255, 0.15)',
+              border: `1px solid ${action.completed ? '#10B981' : 'rgba(255, 255, 255, 0.3)'}`
             }}
           >
             {action.completed ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             ) : (
-              <Circle className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
+              <Circle className="w-3.5 h-3.5 text-white opacity-60" />
             )}
             <span className="text-xs font-medium" style={{
-              color: action.completed ? '#10B981' : (isDarkMode ? '#D1D5DB' : '#475569')
+              color: action.completed ? '#ECFDF5' : 'rgba(255, 255, 255, 0.9)'
             }}>
               {action.label}
             </span>
@@ -131,12 +144,12 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
       </div>
 
       {isFreeTier && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3" style={{ borderTop: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)'}` }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.2)' }}>
           <div className="flex-1">
             <p className="text-sm font-bold mb-0.5" style={{ color: '#C7A338' }}>
               {strings.unlockFullCoverage}
             </p>
-            <p className="text-xs" style={{ color: isDarkMode ? '#D1D5DB' : '#475569' }}>
+            <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
               {language === 'th' ? 'เริ่มต้น ฿190/เดือน' : language === 'zh' ? '从฿190/月开始' : language === 'ja' ? '฿190/月から' : language === 'ko' ? '฿190/월부터' : language === 'ru' ? 'От ฿190/мес' : 'Starting at ฿190/month'}
             </p>
           </div>
@@ -152,14 +165,14 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
               className="btn-interaction w-full sm:w-auto"
               style={{
                 padding: '10px 20px',
-                backgroundColor: '#0C3B2E',
-                color: '#FFFFFF',
+                backgroundColor: '#C7A338',
+                color: '#1A1D1F',
                 borderRadius: '8px',
-                border: '2px solid #C7A338',
+                border: 'none',
                 fontWeight: '700',
                 fontSize: '14px',
                 cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(12,59,46,0.25)',
+                boxShadow: '0 2px 6px rgba(199,163,56,0.4)',
                 whiteSpace: 'nowrap'
               }}
             >
