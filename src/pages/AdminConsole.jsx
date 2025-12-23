@@ -49,6 +49,8 @@ function AdminConsoleContent() {
   const usersPerPage = 10;
   const [migratingUsers, setMigratingUsers] = useState(false);
   const [migrationResult, setMigrationResult] = useState(null);
+  const [hardDeletingUsers, setHardDeletingUsers] = useState(false);
+  const [hardDeleteResult, setHardDeleteResult] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -1203,6 +1205,49 @@ function AdminConsoleContent() {
     }
   };
 
+  const handleHardDeleteTestUsers = async () => {
+    const testEmails = [
+      'jay.p@signa-consultants.com',
+      'steve.d.lockhart+5@gmail.com',
+      'steve.l+1@signa-consultants.com',
+      'steve.d.lockhart+2@gmail.com',
+      'steve.d.lockhart+1@gmail.com'
+    ];
+
+    if (!confirm(`🚨 PERMANENT DELETION WARNING\n\nThis will PERMANENTLY DELETE 5 test users:\n\n${testEmails.join('\n')}\n\n• User records will be PURGED from database\n• Auth identities will be removed\n• Related records will be anonymized\n• This CANNOT be undone\n\nType "DELETE" in the next prompt to confirm.`)) {
+      return;
+    }
+
+    const confirmText = prompt('Type DELETE (all caps) to confirm permanent deletion:');
+    if (confirmText !== 'DELETE') {
+      alert('Deletion cancelled - confirmation text did not match.');
+      return;
+    }
+
+    setHardDeletingUsers(true);
+    setHardDeleteResult(null);
+
+    try {
+      console.log('🗑️ [ADMIN] Starting hard delete of test users...');
+      const response = await base44.functions.invoke('hardDeleteUsers', { emails: testEmails });
+      console.log('✅ [ADMIN] Hard delete response:', response.data);
+      
+      setHardDeleteResult(response.data);
+      
+      if (response.data?.success) {
+        alert(`✅ HARD DELETE COMPLETE\n\nDeleted: ${response.data.deleted_count}\nNot Found: ${response.data.not_found_count}\nFailed: ${response.data.failed_count}\n\nVerification: ${response.data.verification?.verification_passed ? '✅ PASSED' : '❌ FAILED'}\n\nRefreshing user list...`);
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      } else {
+        alert('❌ Hard delete failed: ' + response.data?.error);
+      }
+    } catch (error) {
+      console.error('❌ [ADMIN] Hard delete failed:', error);
+      alert('Hard delete failed: ' + error.message);
+    } finally {
+      setHardDeletingUsers(false);
+    }
+  };
+
   const sortedUsers = [...users].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
@@ -1604,6 +1649,26 @@ function AdminConsoleContent() {
                       </>
                     )}
                   </Button>
+
+                  {isSuperAdmin && (
+                    <Button
+                      onClick={handleHardDeleteTestUsers}
+                      disabled={hardDeletingUsers}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      {hardDeletingUsers ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Purging...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Hard Delete 5 Test Users
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
 
                 {debugData && (
@@ -1662,6 +1727,69 @@ function AdminConsoleContent() {
                         }}>
                           <pre className="text-xs" style={{ color: colors.textPrimary }}>
                             {JSON.stringify(migrationResult.results, null, 2)}
+                          </pre>
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                )}
+
+                {hardDeleteResult && (
+                  <div className="mt-4 p-4 rounded-lg" style={{
+                    backgroundColor: hardDeleteResult.success 
+                      ? (isDarkMode ? '#1E4435' : '#ECFDF5')
+                      : (isDarkMode ? '#3A2626' : '#FEF2F2'),
+                    border: `2px solid ${hardDeleteResult.success ? '#10B981' : '#EF4444'}`
+                  }}>
+                    <div className="flex items-start gap-3 mb-3">
+                      {hardDeleteResult.success ? (
+                        <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-bold text-sm mb-1" style={{
+                          color: hardDeleteResult.success ? '#10B981' : '#EF4444'
+                        }}>
+                          {hardDeleteResult.message}
+                        </p>
+                        {hardDeleteResult.success && (
+                          <div className="text-xs space-y-1" style={{ color: colors.textPrimary }}>
+                            <p>Requested: {hardDeleteResult.requested}</p>
+                            <p>Deleted: {hardDeleteResult.deleted_count}</p>
+                            <p>Not Found: {hardDeleteResult.not_found_count}</p>
+                            <p>Failed: {hardDeleteResult.failed_count}</p>
+                            <p className="mt-2 font-bold" style={{ 
+                              color: hardDeleteResult.verification?.verification_passed ? '#10B981' : '#EF4444' 
+                            }}>
+                              Verification: {hardDeleteResult.verification?.verification_passed ? '✅ PASSED' : '❌ FAILED'}
+                            </p>
+                            {hardDeleteResult.verification?.still_exist?.length > 0 && (
+                              <p className="text-red-600">
+                                Still exist: {hardDeleteResult.verification.still_exist.join(', ')}
+                              </p>
+                            )}
+                            {hardDeleteResult.note && (
+                              <p className="mt-2 italic" style={{ color: colors.textSecondary }}>
+                                {hardDeleteResult.note}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {hardDeleteResult.results && hardDeleteResult.results.length > 0 && (
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                          View Details ({hardDeleteResult.results.length} users)
+                        </summary>
+                        <div className="overflow-auto max-h-64 p-3 rounded" style={{
+                          backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
+                          border: `1px solid ${colors.borderColor}`
+                        }}>
+                          <pre className="text-xs" style={{ color: colors.textPrimary }}>
+                            {JSON.stringify(hardDeleteResult.results, null, 2)}
                           </pre>
                         </div>
                       </details>
