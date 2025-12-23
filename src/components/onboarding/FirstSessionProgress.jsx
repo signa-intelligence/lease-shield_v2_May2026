@@ -14,14 +14,16 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
       leaseScan: "Scan a lease",
       propertyAdded: "Add your property",
       depositTracked: "Add your deposit",
-      evidenceUploaded: "Upload evidence"
+      evidenceUploaded: "Upload evidence",
+      unlockFullCoverage: "Unlock Full Coverage (Secure)"
     },
     th: {
       title: "เซสชันแรกของคุณ: {done} / {total} การป้องกันที่ตั้งค่า",
       leaseScan: "สแกนสัญญาเช่า",
       propertyAdded: "เพิ่มทรัพย์สินของคุณ",
       depositTracked: "เพิ่มเงินมัดจำของคุณ",
-      evidenceUploaded: "อัปโหลดหลักฐาน"
+      evidenceUploaded: "อัปโหลดหลักฐาน",
+      unlockFullCoverage: "ปลดล็อกความคุ้มครองเต็มรูปแบบ (Secure)"
     },
     zh: {
       title: "您的第一次会话：",
@@ -29,7 +31,8 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
       leaseScan: "已扫描租约",
       propertyAdded: "已添加物业",
       depositTracked: "已追踪押金",
-      evidenceUploaded: "已上传证据"
+      evidenceUploaded: "已上传证据",
+      unlockFullCoverage: "解锁完全覆盖（Secure）"
     },
     ja: {
       title: "最初のセッション：",
@@ -37,7 +40,8 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
       leaseScan: "賃貸契約スキャン済み",
       propertyAdded: "物件追加済み",
       depositTracked: "敷金追跡済み",
-      evidenceUploaded: "証拠アップロード済み"
+      evidenceUploaded: "証拠アップロード済み",
+      unlockFullCoverage: "完全カバーを解除（Secure）"
     },
     ko: {
       title: "첫 세션:",
@@ -45,14 +49,16 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
       leaseScan: "임대 계약 스캔됨",
       propertyAdded: "부동산 추가됨",
       depositTracked: "보증금 추적됨",
-      evidenceUploaded: "증거 업로드됨"
+      evidenceUploaded: "증거 업로드됨",
+      unlockFullCoverage: "완전 보장 잠금 해제（Secure）"
     },
     ru: {
       title: "Ваша первая сессия: {done} / {total} защит установлено",
       leaseScan: "Отсканировать договор",
       propertyAdded: "Добавить вашу недвижимость",
       depositTracked: "Добавить ваш депозит",
-      evidenceUploaded: "Загрузить доказательства"
+      evidenceUploaded: "Загрузить доказательства",
+      unlockFullCoverage: "Разблокировать полное покрытие（Secure）"
     }
   };
 
@@ -83,6 +89,8 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
   // Hide if all complete
   if (completedCount === totalCount) return null;
 
+  const isFreeTier = !user?.plan_tier || user?.plan_tier === 'free';
+
   return (
     <div
       className="mb-6 p-4 rounded-xl border-2 bg-white dark:bg-gray-800"
@@ -96,7 +104,7 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 mb-4">
         {actions.map((action, idx) => (
           <div
             key={idx}
@@ -121,6 +129,45 @@ export default function FirstSessionProgress({ user, leases, deposits, documents
           </div>
         ))}
       </div>
+
+      {isFreeTier && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-3" style={{ borderTop: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)'}` }}>
+          <div className="flex-1">
+            <p className="text-sm font-bold mb-0.5" style={{ color: '#C7A338' }}>
+              {strings.unlockFullCoverage}
+            </p>
+            <p className="text-xs" style={{ color: isDarkMode ? '#D1D5DB' : '#475569' }}>
+              {language === 'th' ? 'เริ่มต้น ฿190/เดือน' : language === 'zh' ? '从฿190/月开始' : language === 'ja' ? '฿190/月から' : language === 'ko' ? '฿190/월부터' : language === 'ru' ? 'От ฿190/мес' : 'Starting at ฿190/month'}
+            </p>
+          </div>
+          <a 
+            href="/account?showPlans=true"
+            className="w-full sm:w-auto"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = '/account?showPlans=true';
+            }}
+          >
+            <button
+              className="btn-interaction w-full sm:w-auto"
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#0C3B2E',
+                color: '#FFFFFF',
+                borderRadius: '8px',
+                border: '2px solid #C7A338',
+                fontWeight: '700',
+                fontSize: '14px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(12,59,46,0.25)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {language === 'th' ? 'อัปเกรด →' : language === 'zh' ? '升级 →' : language === 'ja' ? 'アップグレード →' : language === 'ko' ? '업그레이드 →' : language === 'ru' ? 'Обновить →' : 'Upgrade →'}
+            </button>
+          </a>
+        </div>
+      )}
     </div>
   );
 }
