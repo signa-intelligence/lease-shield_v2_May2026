@@ -939,7 +939,7 @@ function DashboardContent() {
       noMaintenance: "No requests",
       analytics: "Analytics",
       upgradePromoTitle: "Unlock Full Protection", // Kept this for original free tier upsell, but replaced below
-      upgradePromoText: "Upgrade to access advanced deposit tracking, maintenance workflows, and full AI-powered lease analysis.", // Kept this for original free tier upsell, but replaced below
+      upgradePromoText: "Upgrade to access advanced deposit tracking, maintenance workflows, and full lease analysis.",
       leasesScanned: "Leases Scanned",
       scanNewLease: "Scan New Lease",
       totalValue: "Total Value",
@@ -1029,7 +1029,7 @@ function DashboardContent() {
       noMaintenance: "ไม่มีคำขอ",
       analytics: "วิเคราะห์",
       upgradePromoTitle: "ปลดล็อกการป้องกันเต็มรูปแบบ",
-      upgradePromoText: "อัปเกรดเพื่อเข้าถึงระบบติดตามเงินมัดจำขั้นสูง ระบบซ่อมบำรุง และการวิเคราะห์สัญญาเช่าด้วย AI แบบเต็มรูปแบบ",
+      upgradePromoText: "อัปเกรดเพื่อเข้าถึงระบบติดตามเงินมัดจำขั้นสูง ระบบซ่อมบำรุง และการวิเคราะห์สัญญาเช่าแบบเต็มรูปแบบ",
       leasesScanned: "สัญญาเช่าที่สแกน",
       scanNewLease: "สแกนสัญญาเช่าใหม่",
       totalValue: "มูลค่ารวม",
@@ -1119,7 +1119,7 @@ function DashboardContent() {
       noMaintenance: "无请求",
       analytics: "分析",
       upgradePromoTitle: "解锁全面保护",
-      upgradePromoText: "升级以获取高级押金跟踪、维护工作流和全AI驱动的租约分析。",
+      upgradePromoText: "升级以获取高级押金跟踪、维护工作流和完整租约分析。",
       leasesScanned: "已扫描租约",
       scanNewLease: "扫描新租约",
       totalValue: "总价值",
@@ -1208,7 +1208,7 @@ ja: {
       noMaintenance: "リクエストなし",
       analytics: "分析",
       upgradePromoTitle: "完全な保護を解除",
-      upgradePromoText: "高度な敷金追跡、メンテナンスワークフロー、およびAIを活用した完全な賃貸分析にアクセスするためにアップグレードしてください。",
+      upgradePromoText: "高度な敷金追跡、メンテナンスワークフロー、および完全な賃貸分析にアクセスするためにアップグレードしてください。",
       leasesScanned: "スキャン済み賃貸契約",
       scanNewLease: "新しい賃貸契約をスキャン",
       totalValue: "合計金額",
@@ -1297,7 +1297,7 @@ ja: {
       noMaintenance: "Запросов нет",
       analytics: "Аналитика",
       upgradePromoTitle: "Разблокировать полную защиту",
-      upgradePromoText: "Обновитесь для доступа к расширенному отслеживанию депозитов, рабочим процессам обслуживания и полному анализу договоров с помощью ИИ",
+      upgradePromoText: "Обновитесь для доступа к расширенному отслеживанию депозитов, рабочим процессам обслуживания и полному анализу договоров",
       leasesScanned: "Отсканировано договоров",
       scanNewLease: "Сканировать новый договор",
       totalValue: "Общая стоимость",
@@ -1385,7 +1385,7 @@ ja: {
       noMaintenance: "요청 없음",
       analytics: "분석",
       upgradePromoTitle: "전체 보호 잠금 해제",
-      upgradePromoText: "고급 보증금 추적, 유지보수 워크플로우 및 완전한 AI 기반 임대 계약 분석에 액세스하려면 업그레이드하세요.",
+      upgradePromoText: "고급 보증금 추적, 유지보수 워크플로우 및 완전한 임대 계약 분석에 액세스하려면 업그레이드하세요.",
       leasesScanned: "스캔된 임대 계약",
       scanNewLease: "새 임대 계약 스캔",
       totalValue: "총 가치",
@@ -1922,36 +1922,34 @@ ja: {
               {urgentLeaseNotices.slice(0, 1).map((lease) => {
                 const daysUntil = differenceInDays(new Date(lease.notice_deadline), now);
                 const isCritical = daysUntil <= 3;
-                const isUrgent = daysUntil <= 7;
 
                 return (
                   <Card
                     key={lease.id}
                     className="border-none shadow-xl overflow-hidden"
                     style={{
-                      background: isCritical
-                        ? 'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)'
-                        : isUrgent
-                          ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
-                          : 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+                      backgroundColor: isDarkMode ? '#1E3A2E' : '#F0FDF4',
+                      border: `2px solid ${isDarkMode ? '#0C3B2E' : '#10B981'}`
                     }}
                   >
                     <CardContent className="p-4 md:p-6">
                       <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{
+                          backgroundColor: '#0C3B2E'
+                        }}>
                           <Calendar className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="text-lg font-bold text-white">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
                               {strings.leaseNoticeAlert}
                             </h3>
                             <Badge
                               className="text-xs font-bold"
                               style={{
-                                backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                                backgroundColor: '#C7A338',
                                 color: '#FFFFFF',
-                                border: '1px solid rgba(255, 255, 255, 0.5)'
+                                border: 'none'
                               }}
                             >
                               {daysUntil === 0 ? strings.finalDay : `${daysUntil} ${strings.daysLeft}`}
@@ -1959,17 +1957,17 @@ ja: {
                           </div>
 
                           <div className="space-y-2 mb-4">
-                            <div className="flex items-center gap-2 text-white/90 text-sm">
+                            <div className="flex items-center gap-2 text-sm" style={{ color: colors.textPrimary }}>
                               <span className="font-semibold">{strings.mustNotifyBy}:</span>
                               <span>{format(new Date(lease.notice_deadline), 'MMM d, yyyy')}</span>
                             </div>
                             {lease.property_address && (
-                              <div className="flex items-center gap-2 text-white/80 text-xs">
+                              <div className="flex items-center gap-2 text-xs" style={{ color: colors.textSecondary }}>
                                 <span>🏠</span>
                                 <span className="truncate">{lease.property_address}</span>
                               </div>
                             )}
-                            <div className="flex items-center gap-3 text-white/80 text-xs">
+                            <div className="flex items-center gap-3 text-xs" style={{ color: colors.textSecondary }}>
                               {lease.end_date && (
                                 <span>{strings.leaseEnds}: {format(new Date(lease.end_date), 'MMM d, yyyy')}</span>
                               )}
@@ -1981,13 +1979,17 @@ ja: {
 
                           <div className="flex flex-wrap gap-2">
                             <button
-                              onClick={() => navigate(createPageUrl("templates"))}
+                              onClick={() => {
+                                haptic.light();
+                                navigate(createPageUrl("templates"));
+                              }}
+                              className="btn-interaction"
                               style={{
-                                padding: '8px 16px',
-                                borderRadius: '8px',
-                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                color: '#FFFFFF',
-                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                padding: '10px 18px',
+                                borderRadius: '10px',
+                                backgroundColor: 'transparent',
+                                color: '#0C3B2E',
+                                border: '2px solid #0C3B2E',
                                 fontSize: '14px',
                                 fontWeight: '600',
                                 cursor: 'pointer',
@@ -1997,38 +1999,49 @@ ja: {
                                 gap: '6px'
                               }}
                               onMouseEnter={(e) => {
-                                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+                                e.target.style.backgroundColor = '#0C3B2E';
+                                e.target.style.color = '#FFFFFF';
                               }}
                               onMouseLeave={(e) => {
-                                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                                e.target.style.backgroundColor = 'transparent';
+                                e.target.style.color = '#0C3B2E';
                               }}
                             >
                               <FileText className="w-4 h-4" />
                               {strings.viewTemplates}
                             </button>
                             <button
-                              onClick={() => navigate(createPageUrl("uploadscan") + `?leaseId=${lease.id}`)}
+                              onClick={() => {
+                                haptic.medium();
+                                navigate(createPageUrl("uploadscan") + `?leaseId=${lease.id}`);
+                              }}
+                              className="btn-interaction"
                               style={{
-                                padding: '8px 16px',
-                                borderRadius: '8px',
-                                backgroundColor: '#FFFFFF',
-                                color: isCritical ? '#DC2626' : isUrgent ? '#F59E0B' : '#3B82F6',
-                                border: 'none',
+                                padding: '10px 18px',
+                                borderRadius: '10px',
+                                backgroundColor: '#0C3B2E',
+                                color: '#FFFFFF',
+                                border: '2px solid #C7A338',
                                 fontSize: '14px',
                                 fontWeight: '600',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px'
+                                gap: '6px',
+                                boxShadow: '0 4px 6px rgba(12,59,46,0.3)'
                               }}
                               onMouseEnter={(e) => {
-                                e.target.style.transform = 'translateY(-1px)';
-                                e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                                e.target.style.backgroundColor = '#C7A338';
+                                e.target.style.borderColor = '#C7A338';
+                                e.target.style.color = '#1A1D1F';
+                                e.target.style.boxShadow = '0 6px 10px rgba(199,163,56,0.4)';
                               }}
                               onMouseLeave={(e) => {
-                                e.target.style.transform = 'translateY(0)';
-                                e.target.style.boxShadow = 'none';
+                                e.target.style.backgroundColor = '#0C3B2E';
+                                e.target.style.borderColor = '#C7A338';
+                                e.target.style.color = '#FFFFFF';
+                                e.target.style.boxShadow = '0 4px 6px rgba(12,59,46,0.3)';
                               }}
                             >
                               <Bell className="w-4 h-4" />
