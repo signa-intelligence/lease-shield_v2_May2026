@@ -1,12 +1,14 @@
 import Account from './pages/Account';
 import Acknowledge from './pages/Acknowledge';
 import AcknowledgeMaintenance from './pages/AcknowledgeMaintenance';
+import AdminConsole from './pages/AdminConsole';
 import AdminSupport from './pages/AdminSupport';
 import AdminTemplates from './pages/AdminTemplates';
 import Analytics from './pages/Analytics';
 import CaseDetails from './pages/CaseDetails';
 import Cases from './pages/Cases';
 import CookieSync from './pages/CookieSync';
+import Dashboard from './pages/Dashboard';
 import DepositTracker from './pages/DepositTracker';
 import DocumentVault from './pages/DocumentVault';
 import Documents from './pages/Documents';
@@ -36,8 +38,6 @@ import Timeline from './pages/Timeline';
 import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
-import Dashboard from './pages/Dashboard';
-import AdminConsole from './pages/AdminConsole';
 import __Layout from './Layout.jsx';
 
 
@@ -45,12 +45,14 @@ export const PAGES = {
     "Account": Account,
     "Acknowledge": Acknowledge,
     "AcknowledgeMaintenance": AcknowledgeMaintenance,
+    "AdminConsole": AdminConsole,
     "AdminSupport": AdminSupport,
     "AdminTemplates": AdminTemplates,
     "Analytics": Analytics,
     "CaseDetails": CaseDetails,
     "Cases": Cases,
     "CookieSync": CookieSync,
+    "Dashboard": Dashboard,
     "DepositTracker": DepositTracker,
     "DocumentVault": DocumentVault,
     "Documents": Documents,
@@ -80,8 +82,6 @@ export const PAGES = {
     "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
-    "Dashboard": Dashboard,
-    "AdminConsole": AdminConsole,
 }
 
 export const pagesConfig = {

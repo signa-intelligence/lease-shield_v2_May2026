@@ -194,7 +194,7 @@ function AdminSupportContent() {
           iconColor="#0C3B2E"
           isDarkMode={isDarkMode}
           showBack={true}
-          backRoute={"/admin"}
+          backRoute="/adminconsole"
         />
 
         {/* Stats Cards */}
