@@ -15,18 +15,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden - Super admin access required' }, { status: 403 });
     }
 
-    // Fetch active and disabled users (exclude deleted)
-    const allUsers = await base44.asServiceRole.entities.User.list('-created_date');
-    const users = allUsers.filter(u => u.status !== 'deleted');
+    // Fetch all users
+    const users = await base44.asServiceRole.entities.User.list('-created_date');
 
     return Response.json({ 
       success: true,
-      users,
-      counts: {
-        active: allUsers.filter(u => u.status === 'active').length,
-        disabled: allUsers.filter(u => u.status === 'disabled').length,
-        deleted: allUsers.filter(u => u.status === 'deleted').length
-      }
+      users
     });
 
   } catch (error) {

@@ -46,7 +46,6 @@ function AdminConsoleContent() {
   const [restoringUsers, setRestoringUsers] = useState(false);
   const [userManagementExpanded, setUserManagementExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [userStatusFilter, setUserStatusFilter] = useState('active'); // 'active', 'disabled', 'deleted', 'all'
   const usersPerPage = 10;
 
   const queryClient = useQueryClient();
@@ -1141,13 +1140,7 @@ function AdminConsoleContent() {
     }
   };
 
-  // Filter by status
-  const filteredUsers = users.filter(u => {
-    if (userStatusFilter === 'all') return true;
-    return u.status === userStatusFilter;
-  });
-
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
+  const sortedUsers = [...users].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
     if (sortOrder === 'asc') {
@@ -1819,48 +1812,10 @@ function AdminConsoleContent() {
             onClick={() => setUserManagementExpanded(!userManagementExpanded)}
           >
             <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Users className="w-5 h-5 text-ls-forest" />
-                {strings.userManagement}
-              </CardTitle>
-              {userManagementExpanded && (
-                <div className="flex gap-2 ml-4">
-                  <Button
-                    size="sm"
-                    variant={userStatusFilter === 'active' ? 'default' : 'outline'}
-                    onClick={() => setUserStatusFilter('active')}
-                    className="h-8"
-                  >
-                    Active ({users.filter(u => u.status === 'active').length})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={userStatusFilter === 'disabled' ? 'default' : 'outline'}
-                    onClick={() => setUserStatusFilter('disabled')}
-                    className="h-8"
-                  >
-                    Disabled ({users.filter(u => u.status === 'disabled').length})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={userStatusFilter === 'deleted' ? 'default' : 'outline'}
-                    onClick={() => setUserStatusFilter('deleted')}
-                    className="h-8"
-                  >
-                    Deleted ({users.filter(u => u.status === 'deleted').length})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={userStatusFilter === 'all' ? 'default' : 'outline'}
-                    onClick={() => setUserStatusFilter('all')}
-                    className="h-8"
-                  >
-                    All ({users.length})
-                  </Button>
-                </div>
-              )}
-            </div>
+            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Users className="w-5 h-5 text-ls-forest" />
+              {strings.userManagement} <span style={{ color: colors.textSecondary, fontWeight: 'normal' }}>({users.length} users)</span>
+            </CardTitle>
               {userManagementExpanded ? (
                 <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
               ) : (
@@ -1885,7 +1840,6 @@ function AdminConsoleContent() {
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Ref Code</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Credits / Refs</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
@@ -1893,9 +1847,6 @@ function AdminConsoleContent() {
                     </thead>
                     <tbody>
                       {visibleUsers.map((u, idx) => {
-                    const lastUpdate = new Date(u.updated_date || u.created_date);
-                    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-                    const isOnline = lastUpdate > fiveMinutesAgo;
                     const isCurrentUserSuperAdmin = user?.access_level === 'super_admin';
                     const isTargetUserSuperAdmin = u.access_level === 'super_admin';
                     const canChangeRole = !(isTargetUserSuperAdmin && superAdminCount <= MINIMUM_SUPER_ADMINS);
@@ -1927,21 +1878,14 @@ function AdminConsoleContent() {
                           </code>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex flex-col gap-2">
-                            <Badge className={
-                              u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                              u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
-                              u.access_level === 'va' ? 'bg-amber-100 text-amber-800' :
-                              'bg-slate-100 text-slate-800'
-                            }>
-                              {u.access_level || 'user'}
-                            </Badge>
-                            {(isDisabled || isDeleted) && (
-                              <Badge className="bg-red-100 text-red-800">
-                                {isDeleted ? strings.deleted : strings.disabled}
-                              </Badge>
-                            )}
-                          </div>
+                          <Badge className={
+                            u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                            u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
+                            u.access_level === 'va' ? 'bg-amber-100 text-amber-800' :
+                            'bg-slate-100 text-slate-800'
+                          }>
+                            {u.access_level || 'user'}
+                          </Badge>
                         </td>
                         <td className="px-4 py-3">
                           <Badge className={
@@ -1952,14 +1896,6 @@ function AdminConsoleContent() {
                           }>
                             {u.plan_tier || 'free'}
                           </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                            <span className="text-xs" style={{ color: colors.textSecondary }}>
-                              {isOnline ? 'Online' : 'Offline'}
-                            </span>
-                          </div>
                         </td>
                         <td className="px-4 py-3">
                           {u.line_messaging_token ? (
