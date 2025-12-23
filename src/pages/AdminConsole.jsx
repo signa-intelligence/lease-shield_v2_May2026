@@ -257,7 +257,32 @@ function AdminConsoleContent() {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (userId) => base44.entities.User.update(userId, { deleted_at: new Date().toISOString() }),
+    mutationFn: async ({ userId, adminId }) => {
+      const now = new Date().toISOString();
+      
+      console.log('🗑️ [DELETE_USER] Soft-deleting user:', {
+        userId,
+        deletedBy: adminId,
+        timestamp: now
+      });
+      
+      // Use asServiceRole to bypass RLS and enforce deletion
+      const result = await base44.asServiceRole.entities.User.update(userId, { 
+        status: 'deleted',
+        is_active: false,
+        deleted_at: now,
+        deleted_by: adminId
+      });
+      
+      console.log('✅ [DELETE_USER] User marked as deleted:', {
+        id: result.id,
+        email: result.email,
+        status: result.status,
+        deleted_at: result.deleted_at
+      });
+      
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
     },
@@ -1004,9 +1029,21 @@ function AdminConsoleContent() {
     if (!confirm(strings.confirmDisable)) return;
 
     try {
+      const now = new Date().toISOString();
+      
       await updateUserMutation.mutateAsync({
         userId: targetUser.id,
-        data: { is_active: false }
+        data: { 
+          status: 'suspended',
+          is_active: false,
+          suspended_at: now,
+          suspended_by: user.email || user.id
+        }
+      });
+      
+      console.log('✅ [SUSPEND_USER] User suspended:', {
+        email: targetUser.email,
+        suspendedBy: user.email
       });
     } catch (error) {
       console.error('Failed to disable user:', error);
@@ -1020,7 +1057,18 @@ function AdminConsoleContent() {
     try {
       await updateUserMutation.mutateAsync({
         userId: targetUser.id,
-        data: { is_active: true }
+        data: { 
+          status: 'active',
+          is_active: true,
+          suspended_at: null,
+          suspended_by: null,
+          suspension_reason: null
+        }
+      });
+      
+      console.log('✅ [ENABLE_USER] User re-activated:', {
+        email: targetUser.email,
+        enabledBy: user.email
       });
     } catch (error) {
       console.error('Failed to enable user:', error);
@@ -1043,7 +1091,15 @@ function AdminConsoleContent() {
     if (!confirm(strings.confirmRemove)) return;
 
     try {
-      await deleteUserMutation.mutateAsync(targetUser.id);
+      await deleteUserMutation.mutateAsync({
+        userId: targetUser.id,
+        adminId: user.email || user.id
+      });
+      
+      console.log('✅ [REMOVE_USER] User soft-deleted:', {
+        email: targetUser.email,
+        deletedBy: user.email
+      });
     } catch (error) {
       console.error('Failed to remove user:', error);
       alert(language === 'th' ? 'ไม่สามารถลบผู้ใช้ได้' : 'Failed to remove user');
@@ -1770,8 +1826,9 @@ function AdminConsoleContent() {
                     const isCurrentUserSuperAdmin = user?.access_level === 'super_admin';
                     const isTargetUserSuperAdmin = u.access_level === 'super_admin';
                     const canChangeRole = !(isTargetUserSuperAdmin && superAdminCount <= MINIMUM_SUPER_ADMINS);
-                    const isDisabled = u.is_active === false;
-                    const isDeleted = !!u.deleted_at;
+                    const userStatus = u.status || 'active';
+                    const isDisabled = userStatus === 'suspended' || u.is_active === false;
+                    const isDeleted = userStatus === 'deleted' || !!u.deleted_at;
                     const isSelf = u.id === user.id;
                     
                     return (
@@ -1807,9 +1864,19 @@ function AdminConsoleContent() {
                             }>
                               {u.access_level || 'user'}
                             </Badge>
-                            {(isDisabled || isDeleted) && (
-                              <Badge className="bg-red-100 text-red-800">
-                                {isDeleted ? strings.deleted : strings.disabled}
+                            {isDeleted && (
+                              <Badge className="bg-red-100 text-red-800 font-bold">
+                                {strings.deleted}
+                              </Badge>
+                            )}
+                            {!isDeleted && isDisabled && (
+                              <Badge className="bg-amber-100 text-amber-800 font-bold">
+                                {strings.disabled}
+                              </Badge>
+                            )}
+                            {!isDeleted && !isDisabled && (
+                              <Badge className="bg-emerald-100 text-emerald-800 font-bold">
+                                {strings.active}
                               </Badge>
                             )}
                           </div>
