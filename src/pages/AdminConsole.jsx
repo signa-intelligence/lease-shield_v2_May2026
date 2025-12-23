@@ -123,6 +123,26 @@ function AdminConsoleContent() {
     ),
   });
 
+  // Fetch credits for all users
+  const { data: userCreditsMap = {} } = useQuery({
+    queryKey: ['allUserCredits'],
+    queryFn: async () => {
+      const creditsMap = {};
+      for (const u of users) {
+        try {
+          const response = await base44.functions.invoke('getCreditsBalance', { userId: u.id });
+          if (response.data?.success) {
+            creditsMap[u.id] = response.data.credits;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch credits for ${u.email}:`, error);
+        }
+      }
+      return creditsMap;
+    },
+    enabled: users.length > 0,
+  });
+
   // ✅ ROLE LIMITS CONFIGURATION
   const MINIMUM_SUPER_ADMINS = 2;
   const MAXIMUM_SUPER_ADMINS = 2;
@@ -190,6 +210,10 @@ function AdminConsoleContent() {
           throw new Error(response.data.error || 'Tier update failed');
         }
         console.log('✅ [USER_UPDATE] Tier updated via server function');
+        
+        // Invalidate credits cache immediately for this user
+        queryClient.invalidateQueries({ queryKey: ['allUserCredits'] });
+        
         return response.data;
       }
       
@@ -1912,27 +1936,52 @@ function AdminConsoleContent() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-1">
-                            <button
-                              onClick={() => handleOpenCreditsDialog(u)}
-                              className="flex items-center gap-1 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
-                            >
-                              <Coins className="w-4 h-4 text-amber-600" />
-                              <span className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                                {u.letter_credits || 0}
-                              </span>
-                            </button>
-                            {u.referral_count > 0 && (
-                              <div className="flex items-center gap-1 text-xs" style={{ color: '#10B981' }}>
-                                <Users className="w-3 h-3" />
-                                <span>{u.referral_count} refs</span>
-                              </div>
-                            )}
-                            {(u.referral_credits_thb || 0) > 0 && (
-                              <div className="flex items-center gap-1 text-xs font-bold" style={{ color: '#C7A338' }}>
-                                <TrendingUp className="w-3 h-3" />
-                                <span>฿{u.referral_credits_thb}</span>
-                              </div>
-                            )}
+                            {(() => {
+                              const credits = userCreditsMap[u.id];
+                              const letterRemaining = credits?.letters?.remaining || 0;
+                              const letterPurchased = credits?.letters?.purchased || 0;
+                              const scanRemaining = credits?.scans?.remaining || 0;
+
+                              return (
+                                <>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={() => handleOpenCreditsDialog(u)}
+                                      className="flex items-center gap-1 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
+                                      title={`Purchased: ${letterPurchased}`}
+                                    >
+                                      <FileText className="w-3 h-3 text-blue-600" />
+                                      <span className="font-semibold text-xs" style={{ color: colors.textPrimary }}>
+                                        {letterRemaining}
+                                      </span>
+                                    </button>
+                                    <div className="flex items-center gap-1" title="Scan credits remaining">
+                                      <Shield className="w-3 h-3 text-emerald-600" />
+                                      <span className="font-semibold text-xs" style={{ color: colors.textPrimary }}>
+                                        {scanRemaining === 999999 ? '∞' : scanRemaining}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {letterPurchased > 0 && (
+                                    <div className="text-xs" style={{ color: colors.textSecondary }}>
+                                      Purchased: {letterPurchased}
+                                    </div>
+                                  )}
+                                  {u.referral_count > 0 && (
+                                    <div className="flex items-center gap-1 text-xs" style={{ color: '#10B981' }}>
+                                      <Users className="w-3 h-3" />
+                                      <span>{u.referral_count} refs</span>
+                                    </div>
+                                  )}
+                                  {(u.referral_credits_thb || 0) > 0 && (
+                                    <div className="flex items-center gap-1 text-xs font-bold" style={{ color: '#C7A338' }}>
+                                      <TrendingUp className="w-3 h-3" />
+                                      <span>฿{u.referral_credits_thb}</span>
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </td>
                         <td className="px-4 py-3">
