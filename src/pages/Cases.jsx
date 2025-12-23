@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   Scale, Plus, Crown, Calendar, Zap, FileText, Loader2,
-  CheckCircle2, Eye, Download, ChevronDown, ChevronUp, ArrowLeft, Clock, AlertCircle, Trash2, Check, Square
+  CheckCircle2, Eye, Download, ChevronDown, ChevronUp, ArrowLeft, Clock, AlertCircle, Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { useFeatureAccess } from "@/components/shared/FeatureGate";
@@ -56,9 +56,6 @@ function CasesContent() {
   const [showResolveSuccessBanner, setShowResolveSuccessBanner] = useState(false);
   const [highlightCaseId, setHighlightCaseId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedCases, setSelectedCases] = useState([]);
-  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -561,67 +558,6 @@ function CasesContent() {
     setConfirmDelete(caseItem);
   };
 
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async (caseItems) => {
-      // Create RecycleBin entries and soft delete all selected cases
-      for (const caseItem of caseItems) {
-        await base44.entities.RecycleBin.create({
-          user_email: user.email,
-          item_type: 'case',
-          original_id: caseItem.id,
-          item_snapshot: caseItem,
-          item_label: caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`,
-          deleted_date: new Date().toISOString(),
-          size_bytes: JSON.stringify(caseItem).length
-        });
-
-        await base44.entities.Case.update(caseItem.id, {
-          is_deleted: true,
-          deleted_at: new Date().toISOString()
-        });
-      }
-    },
-    onSuccess: (_, caseItems) => {
-      queryClient.invalidateQueries({ queryKey: ['cases'] });
-      queryClient.invalidateQueries({ queryKey: ['recycleBin'] });
-      toast.success(strings.casesDeleted.replace('{count}', caseItems.length));
-      haptic.success();
-      setSelectedCases([]);
-      setSelectionMode(false);
-      setConfirmBulkDelete(false);
-    },
-    onError: (error) => {
-      console.error('Bulk delete failed:', error);
-      toast.error(strings.deleteFailed);
-      haptic.error();
-      setConfirmBulkDelete(false);
-    }
-  });
-
-  const handleBulkDelete = () => {
-    if (selectedCases.length === 0) return;
-    haptic.medium();
-    setConfirmBulkDelete(true);
-  };
-
-  const toggleSelectAll = () => {
-    haptic.light();
-    if (selectedCases.length === filteredCases.length) {
-      setSelectedCases([]);
-    } else {
-      setSelectedCases(filteredCases.map(c => c.id));
-    }
-  };
-
-  const toggleCaseSelection = (caseId) => {
-    haptic.light();
-    setSelectedCases(prev => 
-      prev.includes(caseId) 
-        ? prev.filter(id => id !== caseId)
-        : [...prev, caseId]
-    );
-  };
-
   // Visible statuses - include awaiting_payment so users can see unpaid cases
   const VISIBLE_STATUSES = ['awaiting_payment', 'intake', 'pending_review', 'under_review', 'ready_drafts', 
                             'client_review', 'awaiting_landlord', 'in_progress', 'resolved', 'closed'];
@@ -796,30 +732,11 @@ function CasesContent() {
           )}
 
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Scale className="w-7 h-7 md:w-8 md:h-8" style={{ color: FEATURE_COLORS.cases.accent }} />
-                <h1 className="text-2xl md:text-3xl font-bold" style={{ color: theme.headerColor }}>
-                  {strings.title}
-                </h1>
-              </div>
-              {visibleCases.length > 0 && (
-                <button
-                  onClick={() => {
-                    haptic.light();
-                    setSelectionMode(!selectionMode);
-                    setSelectedCases([]);
-                  }}
-                  className="btn-interaction px-4 py-2 rounded-lg font-semibold text-sm"
-                  style={{
-                    backgroundColor: selectionMode ? '#EF4444' : (isDarkMode ? '#374151' : '#F3F4F6'),
-                    color: selectionMode ? '#FFFFFF' : colors.textPrimary,
-                    border: selectionMode ? '2px solid #EF4444' : `2px solid ${colors.borderColor}`
-                  }}
-                >
-                  {selectionMode ? strings.doneSelecting : strings.selectMode}
-                </button>
-              )}
+            <div className="flex items-center gap-2 mb-2">
+              <Scale className="w-7 h-7 md:w-8 md:h-8" style={{ color: FEATURE_COLORS.cases.accent }} />
+              <h1 className="text-2xl md:text-3xl font-bold" style={{ color: theme.headerColor }}>
+                {strings.title}
+              </h1>
             </div>
             <p className="text-sm md:text-base" style={{ color: colors.textSecondary }}>
               {strings.subtitle}
@@ -938,80 +855,35 @@ function CasesContent() {
                 language={language}
               />
               
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <Label className="text-xs font-semibold mb-2 block" style={{ color: colors.textSecondary }}>
-                    {strings.filterByStatus}
-                  </Label>
-                  <Select 
-                    value={statusFilter} 
-                    onValueChange={(value) => {
-                      haptic.light();
-                      setStatusFilter(value);
-                    }}
-                  >
-                    <SelectTrigger style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent style={{ backgroundColor: colors.cardBg }}>
-                      <SelectItem value="all">{strings.allStatuses}</SelectItem>
-                      <SelectItem value="awaiting_payment">Awaiting Payment</SelectItem>
-                      <SelectItem value="intake">Intake</SelectItem>
-                      <SelectItem value="pending_review">Pending Review</SelectItem>
-                      <SelectItem value="under_review">Under Review</SelectItem>
-                      <SelectItem value="ready_drafts">Ready Drafts</SelectItem>
-                      <SelectItem value="client_review">Client Review</SelectItem>
-                      <SelectItem value="awaiting_landlord">Awaiting Landlord</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {selectionMode && filteredCases.length > 0 && (
-                  <div className="flex items-end">
-                    <button
-                      onClick={toggleSelectAll}
-                      className="btn-interaction px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap"
-                      style={{
-                        backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                        color: colors.textPrimary,
-                        border: `2px solid ${colors.borderColor}`,
-                        minHeight: '42px'
-                      }}
-                    >
-                      {selectedCases.length === filteredCases.length ? strings.deselectAll : strings.selectAll}
-                    </button>
-                  </div>
-                )}
+              <div>
+                <Label className="text-xs font-semibold mb-2 block" style={{ color: colors.textSecondary }}>
+                  {strings.filterByStatus}
+                </Label>
+                <Select 
+                  value={statusFilter} 
+                  onValueChange={(value) => {
+                    haptic.light();
+                    setStatusFilter(value);
+                  }}
+                >
+                  <SelectTrigger style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                    <SelectItem value="all">{strings.allStatuses}</SelectItem>
+                    <SelectItem value="awaiting_payment">Awaiting Payment</SelectItem>
+                    <SelectItem value="intake">Intake</SelectItem>
+                    <SelectItem value="pending_review">Pending Review</SelectItem>
+                    <SelectItem value="under_review">Under Review</SelectItem>
+                    <SelectItem value="ready_drafts">Ready Drafts</SelectItem>
+                    <SelectItem value="client_review">Client Review</SelectItem>
+                    <SelectItem value="awaiting_landlord">Awaiting Landlord</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-
-              {selectionMode && selectedCases.length > 0 && (
-                <div className="fixed bottom-24 left-0 right-0 p-4 z-40">
-                  <div className="max-w-7xl mx-auto">
-                    <button
-                      onClick={handleBulkDelete}
-                      disabled={bulkDeleteMutation.isPending}
-                      className="w-full btn-interaction px-6 py-4 rounded-xl font-bold text-lg shadow-2xl"
-                      style={{
-                        backgroundColor: '#EF4444',
-                        color: '#FFFFFF',
-                        border: 'none'
-                      }}
-                    >
-                      {bulkDeleteMutation.isPending ? (
-                        <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                      ) : (
-                        <>
-                          <Trash2 className="w-5 h-5 inline mr-2" />
-                          {strings.deleteSelected} ({selectedCases.length})
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -1069,9 +941,7 @@ function CasesContent() {
                 const hasLetters = availableLetters.length > 0;
                 const isExpanded = expandedCase === caseItem.id;
                 const hasEvidence = caseItem.evidence && caseItem.evidence.length > 0;
-
                 const isHighlighted = highlightCaseId === caseItem.id;
-                const isSelected = selectedCases.includes(caseItem.id);
                 
                 return (
                   <SwipeToDelete
@@ -1079,45 +949,23 @@ function CasesContent() {
                     deleteLabel={strings.delete}
                     onDelete={() => handleDeleteCase(caseItem)}
                     colors={colors}
-                    disabled={selectionMode}
                   >
                     <Card
                       className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
                       style={{ 
                         background: isHighlighted ? (isDarkMode ? '#1E4435' : '#F0FDF4') : theme.background,
                         borderLeft: `4px solid ${isHighlighted ? '#10B981' : FEATURE_COLORS.cases.accent}`,
-                        animation: isHighlighted ? 'pulse 2s ease-in-out 3' : 'none',
-                        opacity: selectionMode && !isSelected ? 0.6 : 1
+                        animation: isHighlighted ? 'pulse 2s ease-in-out 3' : 'none'
                       }}
                       onClick={() => {
-                        if (selectionMode) {
-                          toggleCaseSelection(caseItem.id);
-                        } else {
-                          haptic.light();
-                          navigate(createPageUrl("casedetails") + `?caseId=${caseItem.id}`);
-                        }
+                        haptic.light();
+                        navigate(createPageUrl("casedetails") + `?caseId=${caseItem.id}`);
                       }}
                     >
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            {selectionMode ? (
-                              <div
-                                className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 cursor-pointer"
-                                style={{
-                                  backgroundColor: isSelected ? '#0C3B2E' : 'transparent',
-                                  border: `2px solid ${isSelected ? '#0C3B2E' : colors.borderColor}`
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleCaseSelection(caseItem.id);
-                                }}
-                              >
-                                {isSelected && <Check className="w-4 h-4 text-white" />}
-                              </div>
-                            ) : (
-                              <Scale className="w-5 h-5 flex-shrink-0" style={{ color: FEATURE_COLORS.cases.accent }} />
-                            )}
+                            <Scale className="w-5 h-5 flex-shrink-0" style={{ color: FEATURE_COLORS.cases.accent }} />
                             <CardTitle className="text-xl font-bold" style={{ color: theme.headerColor }}>
                               {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
                             </CardTitle>
@@ -1408,60 +1256,7 @@ function CasesContent() {
             </div>
           )}
 
-          {/* Delete Confirmation Dialog - Bulk */}
-          {confirmBulkDelete && (
-            <div
-              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-              onClick={() => setConfirmBulkDelete(false)}
-            >
-              <div
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6 modal-enter"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                    <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
-                  </div>
-                  <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                    {strings.bulkDeleteConfirmTitle}
-                  </h3>
-                </div>
-                <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
-                  {strings.bulkDeleteConfirmMessage.replace('{count}', selectedCases.length)}
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      haptic.light();
-                      setConfirmBulkDelete(false);
-                    }}
-                    className="flex-1 px-4 py-2 rounded-lg font-medium"
-                    style={{
-                      backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
-                      color: colors.textPrimary
-                    }}
-                  >
-                    {strings.cancel || 'Cancel'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      haptic.heavy();
-                      const casesToDelete = filteredCases.filter(c => selectedCases.includes(c.id));
-                      bulkDeleteMutation.mutate(casesToDelete);
-                    }}
-                    disabled={bulkDeleteMutation.isPending}
-                    className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {bulkDeleteMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                    ) : (
-                      strings.confirmBulkDelete.replace('{count}', selectedCases.length)
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
     </PullToRefresh>
