@@ -1247,16 +1247,16 @@ function UploadScanPageContent() {
     
     if (invalidFiles.length > 0) {
       const errorMsg = language === 'th'
-        ? `ไม่รองรับไฟล์ Word กรุณาอัปโหลด PDF หรือไฟล์รูปภาพ\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
+        ? `รองรับเฉพาะ PDF, PNG และ JPG\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
         : language === 'zh'
-          ? `不支持 Word 文档。请上传 PDF 或图像文件\n\n不支持的文件: ${invalidFiles.join(', ')}`
+          ? `仅支持 PDF、PNG 和 JPG\n\n不支持的文件: ${invalidFiles.join(', ')}`
           : language === 'ja'
-            ? `Word文書はサポートされていません。PDFまたは画像ファイルをアップロードしてください\n\nサポートされていないファイル: ${invalidFiles.join(', ')}`
+            ? `PDF、PNG、JPG のみサポート\n\nサポートされていないファイル: ${invalidFiles.join(', ')}`
             : language === 'ko'
-              ? `Word 문서는 지원되지 않습니다. PDF 또는 이미지 파일을 업로드하세요\n\n지원되지 않는 파일: ${invalidFiles.join(', ')}`
+              ? `PDF, PNG, JPG만 지원됩니다\n\n지원되지 않는 파일: ${invalidFiles.join(', ')}`
               : language === 'ru'
-                ? `Документы Word не поддерживаются. Загрузите PDF или изображения\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
-                : `Word documents are not supported. Please upload a PDF or image file.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
+                ? `Поддерживаются только PDF, PNG и JPG\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
+                : `Only PDF, PNG, and JPG files are supported.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
       
       setError(errorMsg);
       setTimeout(() => setError(null), 5000);
@@ -1295,16 +1295,16 @@ function UploadScanPageContent() {
     
     if (invalidFiles.length > 0) {
       const errorMsg = language === 'th'
-        ? `ไม่รองรับไฟล์ Word กรุณาอัปโหลด PDF หรือไฟล์รูปภาพ\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
+        ? `รองรับเฉพาะ PDF, PNG และ JPG\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
         : language === 'zh'
-          ? `不支持 Word 文档。请上传 PDF 或图像文件\n\n不支持的文件: ${invalidFiles.join(', ')}`
+          ? `仅支持 PDF、PNG 和 JPG\n\n不支持的文件: ${invalidFiles.join(', ')}`
           : language === 'ja'
-            ? `Word文書はサポートされていません。PDFまたは画像ファイルをアップロードしてください\n\nサポートされていないファイル: ${invalidFiles.join(', ')}`
+            ? `PDF、PNG、JPG のみサポート\n\nサポートされていないファイル: ${invalidFiles.join(', ')}`
             : language === 'ko'
-              ? `Word 문서는 지원되지 않습니다. PDF 또는 이미지 파일을 업로드하세요\n\n지원되지 않는 파일: ${invalidFiles.join(', ')}`
+              ? `PDF, PNG, JPG만 지원됩니다\n\n지원되지 않는 파일: ${invalidFiles.join(', ')}`
               : language === 'ru'
-                ? `Документы Word не поддерживаются. Загрузите PDF или изображения\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
-                : `Word documents are not supported. Please upload a PDF or image file.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
+                ? `Поддерживаются только PDF, PNG и JPG\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
+                : `Only PDF, PNG, and JPG files are supported.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
       
       setError(errorMsg);
       setTimeout(() => setError(null), 5000);
