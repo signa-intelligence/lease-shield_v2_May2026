@@ -869,7 +869,69 @@ function ResolveCaseContent() {
           </Card>
         )}
 
-        {/* Ineligibility Message */}
+        {/* Ineligibility Messages */}
+        {!freeResolveEligible && eligibilityData?.reason === 'grace_period' && (
+          <Card className="border-none shadow-lg mb-6" style={{ 
+            backgroundColor: isDarkMode ? '#2A2020' : '#FEF3C7',
+            borderLeft: '4px solid #F59E0B'
+          }}>
+            <CardContent className="p-4">
+              <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                ⏳ {language === 'th' ? `Resolve ฟรีจะปลดล็อกในอีก ${eligibilityData.days_remaining} วัน`
+                : language === 'zh' ? `免费Resolve将在${eligibilityData.days_remaining}天后解锁`
+                : language === 'ja' ? `無料Resolveはあと${eligibilityData.days_remaining}日で解除されます`
+                : language === 'ko' ? `무료 Resolve는 ${eligibilityData.days_remaining}일 후 잠금 해제됩니다`
+                : language === 'ru' ? `Бесплатный Resolve разблокируется через ${eligibilityData.days_remaining} дн.`
+                : `Free Resolve unlocks in ${eligibilityData.days_remaining} days`}
+              </p>
+              <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                {language === 'th' ? 'สิทธิ์ Resolve ฟรีใช้ได้หลังจาก 7 วันของการเป็นสมาชิก Annual Secure'
+                : language === 'zh' ? '免费Resolve权益在Annual Secure会员7天后可用'
+                : language === 'ja' ? '無料Resolve権利はAnnual Secure会員資格の7日後に利用可能'
+                : language === 'ko' ? '무료 Resolve 권한은 Annual Secure 회원 7일 후 사용 가능'
+                : language === 'ru' ? 'Бесплатный Resolve доступен через 7 дней участия в Annual Secure'
+                : 'Free Resolve available after 7 days of Annual Secure membership'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!freeResolveEligible && eligibilityData?.reason === 'subscription_not_active' && (
+          <Card className="border-none shadow-lg mb-6" style={{ 
+            backgroundColor: isDarkMode ? '#2A2020' : '#FEE2E2',
+            borderLeft: '4px solid #EF4444'
+          }}>
+            <CardContent className="p-4">
+              <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                ⚠️ {language === 'th' ? 'การสมัครสมาชิกไม่ทำงาน กรุณาต่ออายุเพื่อเข้าถึงสิทธิ์'
+                : language === 'zh' ? '会员资格未激活。请续订以访问权益'
+                : language === 'ja' ? '会員資格がアクティブではありません。特典にアクセスするには更新してください'
+                : language === 'ko' ? '회원 자격이 활성화되지 않았습니다. 혜택을 이용하려면 갱신하세요'
+                : language === 'ru' ? 'Членство не активно. Пожалуйста, продлите для доступа к льготам'
+                : 'Membership not active. Please renew to access included benefits.'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!freeResolveEligible && eligibilityData?.reason === 'scheduled_cancellation' && (
+          <Card className="border-none shadow-lg mb-6" style={{ 
+            backgroundColor: isDarkMode ? '#2A2020' : '#FEE2E2',
+            borderLeft: '4px solid #EF4444'
+          }}>
+            <CardContent className="p-4">
+              <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                ⚠️ {language === 'th' ? 'การสมัครสมาชิกกำลังจะยกเลิก สิทธิ์พิเศษไม่พร้อมใช้งาน'
+                : language === 'zh' ? '订阅计划取消中。特殊权益不可用'
+                : language === 'ja' ? 'サブスクリプションキャンセル予定。特典利用不可'
+                : language === 'ko' ? '구독이 취소 예정입니다. 혜택을 이용할 수 없습니다'
+                : language === 'ru' ? 'Подписка отменяется. Льготы недоступны'
+                : 'Subscription scheduled to cancel. Benefits unavailable.'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {!freeResolveEligible && eligibilityData?.reason === 'not_annual_secure' && (
           <Card className="border-none shadow-lg mb-6" style={{ 
             backgroundColor: isDarkMode ? '#2A2020' : '#FEF3C7',
