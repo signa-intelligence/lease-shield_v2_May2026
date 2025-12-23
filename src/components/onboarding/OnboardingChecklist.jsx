@@ -45,7 +45,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       completed: "Completed!",
       tasks: {
         uploadLease: "Upload your first lease",
-        uploadLeaseDesc: "Get AI risk analysis",
+        uploadLeaseDesc: "Get risk analysis",
         trackDeposit: "Track a security deposit",
         trackDepositDesc: "Never lose your money",
         reportMaintenance: "Report a maintenance issue",
@@ -75,7 +75,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       completed: "เสร็จสมบูรณ์!",
       tasks: {
         uploadLease: "อัปโหลดสัญญาเช่าแรก",
-        uploadLeaseDesc: "รับการวิเคราะห์ความเสี่ยงจาก AI",
+        uploadLeaseDesc: "รับการวิเคราะห์ความเสี่ยง",
         trackDeposit: "ติดตามเงินมัดจำ",
         trackDepositDesc: "ไม่พลาดเงินของคุณ",
         reportMaintenance: "แจ้งปัญหาการซ่อมบำรุง",
@@ -105,7 +105,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       completed: "已完成！",
       tasks: {
         uploadLease: "上传您的第一份租约",
-        uploadLeaseDesc: "获得AI风险分析",
+        uploadLeaseDesc: "获得风险分析",
         trackDeposit: "追踪押金",
         trackDepositDesc: "永不丢失您的钱",
         reportMaintenance: "报告维护问题",
@@ -135,7 +135,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       completed: "完了！",
       tasks: {
         uploadLease: "最初の賃貸契約をアップロード",
-        uploadLeaseDesc: "AIリスク分析を取得",
+        uploadLeaseDesc: "リスク分析を取得",
         trackDeposit: "敷金を追跡",
         trackDepositDesc: "お金を失わないように",
         reportMaintenance: "メンテナンス問題を報告",
@@ -165,7 +165,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       completed: "완료!",
       tasks: {
         uploadLease: "첫 번째 임대 계약 업로드",
-        uploadLeaseDesc: "AI 위험 분석 받기",
+        uploadLeaseDesc: "위험 분석 받기",
         trackDeposit: "보증금 추적",
         trackDepositDesc: "돈을 잃지 마세요",
         reportMaintenance: "유지보수 문제 보고",
@@ -195,7 +195,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       completed: "Завершено!",
       tasks: {
         uploadLease: "Загрузите ваш первый договор",
-        uploadLeaseDesc: "Получите AI-анализ рисков",
+        uploadLeaseDesc: "Получите анализ рисков",
         trackDeposit: "Отслеживайте залог",
         trackDepositDesc: "Не потеряйте свои деньги",
         reportMaintenance: "Сообщите о проблеме",
