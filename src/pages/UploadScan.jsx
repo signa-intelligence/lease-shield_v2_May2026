@@ -1387,61 +1387,7 @@ function UploadScanPageContent() {
     setCurrentStep(0); // Reset step on retry
   };
 
-  const handleCopyDebugLog = () => {
-    if (!debugLog) return;
-    
-    // Create comprehensive debug report with network details
-    const debugReport = {
-      requestId: debugLog.requestId,
-      buildTag: debugLog.buildTag || 'android-fix-v2',
-      timestamp: debugLog.timestamp,
-      
-      errorSummary: {
-        category: error?.category,
-        title: error?.title,
-        message: error?.message,
-        details: error?.details
-      },
-      
-      deviceContext: debugLog.deviceContext || {},
-      
-      userContext: {
-        email: user?.email,
-        tier: userTier,
-        language,
-        platform: debugLog.deviceContext?.platform,
-        isAndroid: debugLog.deviceContext?.isAndroid,
-        detectionMethod: debugLog.deviceContext?.detectionMethod
-      },
-      
-      uploadFlow: {
-        stages: debugLog.stages || [],
-        networkLog: debugLog.networkLog || [],
-        totalStages: (debugLog.stages || []).length,
-        totalNetworkEvents: (debugLog.networkLog || []).length
-      },
-      
-      diagnosticHints: {
-        hadNetworkActivity: (debugLog.networkLog || []).length > 0,
-        reachedUploadStage: (debugLog.stages || []).some(s => s.stage === 'UPLOAD_START'),
-        reachedAnalysisStage: (debugLog.stages || []).some(s => s.stage === 'ANALYSIS_START'),
-        detectedPlatform: debugLog.deviceContext?.platform,
-        isActualAndroid: debugLog.deviceContext?.isAndroid,
-        wasHeuristicDetection: debugLog.deviceContext?.detectionMethod?.includes('heuristic')
-      }
-    };
-    
-    const debugText = JSON.stringify(debugReport, null, 2);
-    navigator.clipboard.writeText(debugText)
-      .then(() => {
-        haptic.success();
-        alert(language === 'th' ? 'คัดลอกข้อมูลดีบักแล้ว' : 'Debug log copied');
-      })
-      .catch(err => {
-        console.error('Copy failed:', err);
-        haptic.error();
-      });
-  };
+
 
   const handleToggleAlerts = async (enabled) => {
     haptic.light();
@@ -1590,7 +1536,7 @@ function UploadScanPageContent() {
         )}
 
         {error && (
-          <div className="mb-6 p-4 rounded-lg border-2 border-red-200 animate-shake" style={{
+          <div className="mb-6 p-4 rounded-lg border-2 border-red-200" style={{
             backgroundColor: isDarkMode ? '#3A2626' : '#FEE2F2'
           }}>
             <div className="flex items-start gap-3">
@@ -1602,22 +1548,6 @@ function UploadScanPageContent() {
                 <p className="text-red-600 text-sm whitespace-pre-line">
                   {typeof error === 'object' ? error.message : error}
                 </p>
-                {typeof error === 'object' && error.requestId && (
-                  <div className="mt-3 p-2 rounded bg-red-100 dark:bg-red-900/20">
-                    <p className="text-xs font-mono text-red-700 dark:text-red-300">
-                      Request ID: {error.requestId}
-                    </p>
-                    {debugLog && (
-                      <button
-                        onClick={handleCopyDebugLog}
-                        className="mt-2 px-3 py-1 rounded text-xs font-semibold flex items-center gap-2 bg-red-600 text-white hover:bg-red-700"
-                      >
-                        <Copy className="w-3 h-3" />
-                        {language === 'th' ? 'คัดลอกข้อมูลดีบัก' : 'Copy Debug Details'}
-                      </button>
-                    )}
-                  </div>
-                )}
                 {retryCount > 0 && retryCount < 3 && (
                   <p className="text-red-500 text-xs mt-2">
                     {language === 'th'
