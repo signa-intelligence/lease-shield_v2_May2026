@@ -1980,8 +1980,40 @@ ja: {
                           <div className="flex flex-wrap gap-2">
                             <button
                               onClick={() => {
+                                haptic.light();
+                                navigate(createPageUrl("templates"));
+                              }}
+                              className="btn-interaction"
+                              style={{
+                                padding: '10px 18px',
+                                borderRadius: '10px',
+                                backgroundColor: 'transparent',
+                                color: '#0C3B2E',
+                                border: '2px solid #0C3B2E',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.backgroundColor = '#0C3B2E';
+                                e.target.style.color = '#FFFFFF';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.backgroundColor = 'transparent';
+                                e.target.style.color = '#0C3B2E';
+                              }}
+                            >
+                              <FileText className="w-4 h-4" />
+                              {strings.viewTemplates}
+                            </button>
+                            <button
+                              onClick={() => {
                                 haptic.medium();
-                                navigate(createPageUrl("NoticeLetter") + `?leaseId=${lease.id}`);
+                                navigate(createPageUrl("uploadscan") + `?leaseId=${lease.id}`);
                               }}
                               className="btn-interaction"
                               style={{
