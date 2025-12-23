@@ -505,34 +505,40 @@ function ScanPreviewContent() {
             })}
 
             {hasMoreIssues && (
-              <div className="p-6 rounded-xl border-2 border-dashed" style={{
-                backgroundColor: isDarkMode ? '#2A2D30' : '#FEF9C3',
-                borderColor: isDarkMode ? '#C7A338' : '#EAB308'
+              <div className="p-6 rounded-xl border-2" style={{
+                backgroundColor: isDarkMode ? '#1E3A2E' : '#F0FDF4',
+                borderColor: '#0C3B2E'
               }}>
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-ls-gold rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{
+                    backgroundColor: '#0C3B2E'
+                  }}>
                     <AlertTriangle className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
                       {language === 'th' 
-                        ? `เหลืออีก ${hiddenCount} ปัญหา${userTier === 'lite' ? ' (อัปเกรดเป็น Protect/Secure เพื่อดูทั้งหมด)' : ''}` 
-                        : `${hiddenCount} More Issue${hiddenCount > 1 ? 's' : ''} Found${userTier === 'lite' ? ' (Upgrade to Protect/Secure)' : ''}`}
+                        ? `เหลืออีก ${hiddenCount} ปัญหา` 
+                        : `${hiddenCount} More Issue${hiddenCount > 1 ? 's' : ''} Found`}
                     </h4>
-                    <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
+                    <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
                       {userTier === 'lite'
                         ? (language === 'th' 
-                            ? 'อัปเกรดเป็น Protect หรือ Secure เพื่อดูปัญหาทั้งหมดพร้อมคำแนะนำโดยละเอียด'
-                            : 'Upgrade to Protect or Secure to view all issues with detailed recommendations')
+                            ? 'อัปเกรดเป็น Protect หรือ Secure เพื่อดูรายงานฉบับเต็มพร้อมคำแนะนำโดยละเอียด'
+                            : 'Upgrade to Protect or Secure to view full report with detailed recommendations')
                         : (language === 'th' 
                             ? 'อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อดูรายงานฉบับเต็มพร้อมคำแนะนำโดยละเอียด'
                             : 'Upgrade to Lite, Protect, or Secure to view full report with detailed recommendations')}
                     </p>
                     <button
-                      onClick={() => navigate(createPageUrl("Account") + '?highlight=plans')}
+                      onClick={() => {
+                        haptic.medium();
+                        navigate(createPageUrl("Account") + '#plans');
+                      }}
+                      className="btn-interaction"
                       style={{
                         width: '100%',
-                        backgroundColor: '#8B5CF6',
+                        backgroundColor: '#0C3B2E',
                         color: '#FFFFFF',
                         padding: '14px 24px',
                         borderRadius: '10px',
@@ -545,26 +551,31 @@ function ScanPreviewContent() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '8px',
-                        boxShadow: '0 4px 6px rgba(139, 92, 246, 0.3)',
-                        marginBottom: '12px'
+                        boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)',
+                        marginBottom: '12px',
+                        minHeight: '52px'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#7C3AED';
+                        e.target.style.backgroundColor = '#0a2f25';
                         e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 6px 10px rgba(139, 92, 246, 0.4)';
+                        e.target.style.boxShadow = '0 6px 10px rgba(12, 59, 46, 0.4)';
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#8B5CF6';
+                        e.target.style.backgroundColor = '#0C3B2E';
                         e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 4px 6px rgba(139, 92, 246, 0.3)';
+                        e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
                       }}
                     >
                       <span style={{ fontWeight: 'bold', fontSize: '16px' }}>
-                        {language === 'th' ? 'อัปเกรดเพื่อปลดล็อค' : 'Upgrade Now'}
+                        {language === 'th' ? 'อัปเกรดตอนนี้' : 'Upgrade Now'}
                       </span>
                     </button>
                     <button
-                      onClick={() => navigate(-1)}
+                      onClick={() => {
+                        haptic.light();
+                        navigate(-1);
+                      }}
+                      className="btn-interaction"
                       style={{
                         width: '100%',
                         backgroundColor: 'transparent',
@@ -579,19 +590,20 @@ function ScanPreviewContent() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '6px'
+                        gap: '6px',
+                        minHeight: '48px'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.borderColor = '#8B5CF6';
-                        e.target.style.color = '#8B5CF6';
+                        e.target.style.backgroundColor = colors.bg;
+                        e.target.style.borderColor = '#0C3B2E';
                       }}
                       onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = 'transparent';
                         e.target.style.borderColor = colors.borderColor;
-                        e.target.style.color = colors.textPrimary;
                       }}
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      <span>{language === 'th' ? 'กลับ' : 'Back'}</span>
+                      <span>{strings.back}</span>
                     </button>
                   </div>
                 </div>
