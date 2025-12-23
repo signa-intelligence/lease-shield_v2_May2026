@@ -55,16 +55,20 @@ function AdminConsoleContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  // Fetch all users using service role to bypass RLS
+  // Fetch all ACTIVE users only - exclude deleted and suspended
   const { data: users = [] } = useQuery({
     queryKey: ['allUsers'],
     queryFn: async () => {
-      console.log('🔍 [ADMIN] Fetching all users via getAllUsers function...');
+      console.log('🔍 [ADMIN] Fetching active users via getAllUsers function...');
       try {
         const response = await base44.functions.invoke('getAllUsers');
         console.log('📊 [ADMIN] Function response:', response.data);
-        const userList = response.data?.users || response.data || [];
-        console.log('📊 [ADMIN] Fetched users count:', userList.length);
+        let userList = response.data?.users || response.data || [];
+        
+        // Filter to ONLY active users
+        userList = userList.filter(u => u.status === 'active' || !u.status);
+        
+        console.log('📊 [ADMIN] Active users count:', userList.length);
         return userList;
       } catch (error) {
         console.error('❌ [ADMIN] Failed to fetch users:', error);
@@ -256,8 +260,11 @@ function AdminConsoleContent() {
     }
   });
 
-  const deleteUserMutation = useMutation({
-    mutationFn: (userId) => base44.entities.User.update(userId, { deleted_at: new Date().toISOString() }),
+  const deactivateUserMutation = useMutation({
+    mutationFn: (userId) => base44.asServiceRole.entities.User.update(userId, { 
+      is_active: false,
+      status: 'deleted'
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
     },
@@ -535,12 +542,12 @@ function AdminConsoleContent() {
       vas: "VAs",
       disableUser: "Disable",
       enableUser: "Enable",
-      removeUser: "Remove",
+      deactivateUser: "Deactivate User",
       confirmDisable: "Are you sure you want to disable this user? They will not be able to sign in.",
       confirmEnable: "Enable this user account?",
-      confirmRemove: "Are you sure you want to remove this user? This is a soft delete and can be reversed.",
+      confirmDeactivate: "Are you sure you want to deactivate this user? They will be blocked from authentication and removed from this list.",
       cannotDisableSelf: "Cannot disable yourself",
-      cannotRemoveSelf: "Cannot remove yourself",
+      cannotDeactivateSelf: "Cannot deactivate yourself",
       disabled: "Disabled",
       deleted: "Deleted",
       manageTemplatesDesc: "Upload and manage letter templates for users",
@@ -624,12 +631,12 @@ function AdminConsoleContent() {
       vas: "VAs",
       disableUser: "ปิดใช้งาน",
       enableUser: "เปิดใช้งาน",
-      removeUser: "ลบ",
+      deactivateUser: "ปิดการใช้งานผู้ใช้",
       confirmDisable: "คุณแน่ใจหรือไม่ว่าต้องการปิดใช้งานผู้ใช้นี้? พวกเขาจะไม่สามารถเข้าสู่ระบบได้",
       confirmEnable: "เปิดใช้งานบัญชีผู้ใช้นี้?",
-      confirmRemove: "คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้นี้? นี่คือการลบแบบซอฟต์และสามารถกู้คืนได้",
+      confirmDeactivate: "คุณแน่ใจหรือไม่ว่าต้องการปิดการใช้งานผู้ใช้นี้? พวกเขาจะถูกบล็อกจากการเข้าสู่ระบบและจะถูกลบออกจากรายการนี้",
       cannotDisableSelf: "ไม่สามารถปิดใช้งานตัวเองได้",
-      cannotRemoveSelf: "ไม่สามารถลบตัวเองได้",
+      cannotDeactivateSelf: "ไม่สามารถปิดการใช้งานตัวเองได้",
       disabled: "ปิดใช้งาน",
       deleted: "ถูกลบ",
       manageTemplatesDesc: "อัปโหลดและจัดการเทมเพลตจดหมายสำหรับผู้ใช้",
@@ -1028,9 +1035,9 @@ function AdminConsoleContent() {
     }
   };
 
-  const handleRemoveUser = async (targetUser) => {
+  const handleDeactivateUser = async (targetUser) => {
     if (targetUser.id === user.id) {
-      alert(strings.cannotRemoveSelf);
+      alert(strings.cannotDeactivateSelf);
       return;
     }
 
@@ -1040,13 +1047,13 @@ function AdminConsoleContent() {
       return;
     }
 
-    if (!confirm(strings.confirmRemove)) return;
+    if (!confirm(strings.confirmDeactivate)) return;
 
     try {
-      await deleteUserMutation.mutateAsync(targetUser.id);
+      await deactivateUserMutation.mutateAsync(targetUser.id);
     } catch (error) {
-      console.error('Failed to remove user:', error);
-      alert(language === 'th' ? 'ไม่สามารถลบผู้ใช้ได้' : 'Failed to remove user');
+      console.error('Failed to deactivate user:', error);
+      alert(language === 'th' ? 'ไม่สามารถปิดการใช้งานผู้ใช้ได้' : 'Failed to deactivate user');
     }
   };
 
@@ -2028,44 +2035,40 @@ function AdminConsoleContent() {
                               </Button>
                             )}
                             <div className="flex gap-1 mt-2">
-                              {isDeleted ? (
-                                <Badge variant="outline" className="text-xs bg-red-50 text-red-700">
-                                  {strings.deleted}
-                                </Badge>
-                              ) : isDisabled ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleEnableUser(u)}
-                                  className="text-xs h-7 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                >
-                                  <UserCheck className="w-3 h-3 mr-1" />
-                                  {strings.enableUser}
-                                </Button>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleDisableUser(u)}
-                                  disabled={!canChangeRole && isSelf}
-                                  className="text-xs h-7 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                                >
-                                  <Ban className="w-3 h-3 mr-1" />
-                                  {strings.disableUser}
-                                </Button>
-                              )}
-                              {!isDeleted && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleRemoveUser(u)}
-                                  disabled={(!canChangeRole && isSelf) || isSelf}
-                                  className="text-xs h-7 bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                                >
-                                  <UserX className="w-3 h-3 mr-1" />
-                                  {strings.removeUser}
-                                </Button>
-                              )}
+                             {isDisabled ? (
+                               <Button
+                                 size="sm"
+                                 variant="outline"
+                                 onClick={() => handleEnableUser(u)}
+                                 className="text-xs h-7 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                               >
+                                 <UserCheck className="w-3 h-3 mr-1" />
+                                 {strings.enableUser}
+                               </Button>
+                             ) : (
+                               <>
+                                 <Button
+                                   size="sm"
+                                   variant="outline"
+                                   onClick={() => handleDisableUser(u)}
+                                   disabled={isSelf}
+                                   className="text-xs h-7 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                 >
+                                   <Ban className="w-3 h-3 mr-1" />
+                                   {strings.disableUser}
+                                 </Button>
+                                 <Button
+                                   size="sm"
+                                   variant="outline"
+                                   onClick={() => handleDeactivateUser(u)}
+                                   disabled={isSelf || (!canChangeRole && isTargetUserSuperAdmin)}
+                                   className="text-xs h-7 bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                                 >
+                                   <UserX className="w-3 h-3 mr-1" />
+                                   {strings.deactivateUser}
+                                 </Button>
+                               </>
+                             )}
                             </div>
                           </div>
                         </td>

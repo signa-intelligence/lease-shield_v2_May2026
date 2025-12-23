@@ -20,6 +20,13 @@ const AuthGuard = ({ children }) => {
         if (cancelled) return;
 
         if (me) {
+          // Block access if account is deactivated
+          if (me.is_active === false) {
+            console.warn("AuthGuard: Account deactivated");
+            alert("Your account has been deactivated. Please contact support.");
+            window.location.href = `/login`;
+            return;
+          }
           setIsAuthed(true);
         } else {
           // Redirect to login with next parameter
