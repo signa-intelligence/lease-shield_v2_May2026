@@ -22,7 +22,8 @@ import {
   Save,
   Shield,
   Eye,
-  ExternalLink
+  ExternalLink,
+  Copy
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +35,8 @@ import SwipeToDelete from "../components/shared/SwipeToDelete";
 import AuthGuard from "../components/shared/AuthGuard";
 import { FEATURE_COLORS } from "../components/shared/featureTheme";
 import TrustBadge from "../components/shared/TrustBadge";
+import { generateRequestId, normalizeFiles, detectPlatform, createDebugLog } from "../components/shared/FileNormalizer";
+import { formatErrorForUser } from "../components/shared/ErrorCategorizer";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
@@ -42,6 +45,7 @@ function UploadScanPageContent() {
   const [analyzing, setAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState(null);
+  const [debugLog, setDebugLog] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -755,6 +759,24 @@ function UploadScanPageContent() {
   const proceedWithUpload = async () => {
     // Reset post-scan hint at the start of a new upload attempt
     setShowPostScanHint(false);
+    
+    // Generate unique request ID for tracking
+    const requestId = generateRequestId();
+    const platform = detectPlatform();
+    const stages = [];
+    
+    const logStage = (stage, data) => {
+      const entry = { stage, timestamp: new Date().toISOString(), ...data };
+      stages.push(entry);
+      console.log(`[${requestId}] ${stage}:`, data);
+    };
+
+    logStage('INIT', { 
+      platform: platform.platform,
+      isAndroid: platform.isAndroid,
+      filesCount: selectedFiles.length,
+      userTier
+    });
 
     // ✅ CHECK SCAN LIMIT BEFORE UPLOAD
     if (!scanStatus.allowed) {
@@ -829,9 +851,10 @@ function UploadScanPageContent() {
       return; // Crucially, exit here for batch mode
     }
 
-    // SINGLE MODE: Keep existing logic
+    // SINGLE MODE: Keep existing logic with file normalization
     setUploading(true);
     setError(null);
+    setDebugLog(null);
     setUploadProgress(0);
     setRetryCount(0);
     setAnalysisStage('uploading');
@@ -843,15 +866,56 @@ function UploadScanPageContent() {
 
     const attemptUpload = async () => {
       try {
+        // STEP 1: Normalize files (critical for Google Drive PDFs on Android)
+        logStage('FILE_NORMALIZATION_START', {
+          filesCount: selectedFiles.length,
+          fileDetails: selectedFiles.map(f => ({
+            name: f.name,
+            size: f.size,
+            type: f.type,
+            lastModified: f.lastModified
+          }))
+        });
+
+        const normalizedResults = await normalizeFiles(selectedFiles, requestId);
+        
+        const failedFiles = normalizedResults.filter(r => !r.success);
+        if (failedFiles.length > 0) {
+          logStage('FILE_NORMALIZATION_FAILED', {
+            failedCount: failedFiles.length,
+            errors: failedFiles.map(f => ({ name: f.original.name, error: f.error }))
+          });
+          throw new Error(`FILE_NORMALIZATION_FAILED: ${failedFiles[0].error}`);
+        }
+
+        const normalizedFiles = normalizedResults.map(r => r.normalized);
+        logStage('FILE_NORMALIZATION_SUCCESS', {
+          normalizedCount: normalizedFiles.length,
+          wasNormalized: normalizedResults.some(r => r.wasNormalized)
+        });
+
         setAnalysisStage('uploading');
         setUploadProgress(10);
 
-        const uploadPromises = selectedFiles.map(file =>
+        // STEP 2: Upload normalized files
+        logStage('UPLOAD_START', { filesCount: normalizedFiles.length });
+        const uploadStartTime = Date.now();
+
+        const uploadPromises = normalizedFiles.map(file =>
           base44.integrations.Core.UploadFile({ file })
         );
 
         const uploadResults = await Promise.all(uploadPromises);
+        const uploadDuration = Date.now() - uploadStartTime;
+        
         const fileUrls = uploadResults.map(result => result.file_url);
+        
+        logStage('UPLOAD_SUCCESS', {
+          duration: uploadDuration,
+          filesUploaded: fileUrls.length,
+          urls: fileUrls
+        });
+        
         setUploadProgress(30);
 
         setAnalysisStage('creating');
@@ -871,18 +935,24 @@ function UploadScanPageContent() {
         setAnalysisStage('scanning');
         setUploadProgress(60);
 
+        // STEP 3: Invoke analysis
+        logStage('ANALYSIS_START', { fileUrls });
+        const analysisStartTime = Date.now();
+
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
-          fileUrls: fileUrls
+          fileUrls: fileUrls,
+          requestId // Pass requestId to backend
         });
 
-        // DIAGNOSTIC: Log backend response
-        console.log('Scan response:', {
+        const analysisDuration = Date.now() - analysisStartTime;
+        
+        logStage('ANALYSIS_RESPONSE', {
+          duration: analysisDuration,
           success: scanResponse?.success,
           hasResult: !!scanResponse?.result,
+          backendRequestId: scanResponse?.diagnostic?.requestId,
           buildTag: scanResponse?.diagnostic?.buildTag,
-          requestId: scanResponse?.diagnostic?.requestId,
-          error: scanResponse?.error,
-          details: scanResponse?.details
+          error: scanResponse?.error
         });
 
         if (!scanResponse || !scanResponse.success) {
@@ -890,12 +960,24 @@ function UploadScanPageContent() {
           const backendDetails = scanResponse?.details || '';
           const diagnostic = scanResponse?.diagnostic || {};
           
+          logStage('ANALYSIS_FAILED', {
+            error: backendError,
+            details: backendDetails,
+            diagnostic
+          });
+          
           // Throw detailed error for better debugging
           const errorObj = new Error(backendError);
           errorObj.details = backendDetails;
           errorObj.diagnostic = diagnostic;
+          errorObj.requestId = requestId;
           throw errorObj;
         }
+        
+        logStage('ANALYSIS_SUCCESS', {
+          riskScore: scanResponse.result?.risk_score,
+          flagsCount: scanResponse.result?.flags?.length
+        });
 
         const scanResult = scanResponse.result;
         setAnalysisStage('extracting');
@@ -949,14 +1031,12 @@ function UploadScanPageContent() {
         queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       } catch (err) {
-        console.error('❌ Upload/Analysis error:', err);
-        console.error('Error details:', err.details);
-        console.error('Error diagnostic:', err.diagnostic);
-
-        const isWordDoc = selectedFiles.some(f =>
-          f.name.toLowerCase().endsWith('.doc') ||
-          f.name.toLowerCase().endsWith('.docx')
-        );
+        logStage('ERROR_CAUGHT', {
+          error: err.message,
+          details: err.details,
+          stage: analysisStage,
+          retryAttempt: currentRetry
+        });
 
         currentRetry++;
         setRetryCount(currentRetry);
@@ -979,23 +1059,17 @@ function UploadScanPageContent() {
 
           return attemptUpload();
         } else {
-          let errorMessage;
+          // Final failure after all retries - categorize and format error
+          const formattedError = formatErrorForUser(err, requestId, language);
+          const debugData = createDebugLog(requestId, stages);
           
-          // Show real backend error if available
-          const backendError = err.details || err.message;
-          const diagnostic = err.diagnostic || {};
-          
-          if (err.message?.toLowerCase().includes('timeout')) {
-            errorMessage = language === 'th'
-              ? `การวิเคราะห์ใช้เวลานานเกินไป\n\n${backendError ? `ข้อผิดพลาด: ${backendError}\n\n` : ''}💡 กรุณาลอง:\n• ใช้ไฟล์ที่เล็กกว่า\n• แยกอัปโหลดทีละหน้า\n• ถ่ายภาพที่ชัดเจนกว่า`
-              : `Analysis timed out\n\n${backendError ? `Error: ${backendError}\n\n` : ''}💡 Please try:\n• Use smaller files\n• Upload pages separately\n• Take clearer photos`;
-          } else {
-            errorMessage = language === 'th'
-              ? `ไม่สามารถวิเคราะห์ได้\n\n${backendError ? `ข้อผิดพลาด: ${backendError}\n\n` : ''}💡 กรุณาตรวจสอบ:\n• ไฟล์เป็นสัญญาเช่าที่อ่านได้\n• ขนาดไฟล์ไม่เกิน 10MB\n• ภาพชัดเจนและอ่านได้`
-              : `Analysis failed\n\n${backendError ? `Error: ${backendError}\n\n` : ''}💡 Please check:\n• File is a readable lease agreement\n• File size is under 10MB\n• Images are clear and readable`;
-          }
+          logStage('FINAL_FAILURE', {
+            category: formattedError.category,
+            retriesExhausted: true
+          });
 
-          setError(errorMessage);
+          setError(formattedError);
+          setDebugLog(debugData);
 
           if (createdLeaseId) {
             try {
@@ -1229,11 +1303,27 @@ function UploadScanPageContent() {
 
   const handleRetry = () => {
     setError(null);
+    setDebugLog(null);
     setSelectedFiles([]);
     setUploadProgress(0);
     setRetryCount(0);
     setAnalysisStage('');
     setCurrentStep(0); // Reset step on retry
+  };
+
+  const handleCopyDebugLog = () => {
+    if (!debugLog) return;
+    
+    const debugText = JSON.stringify(debugLog, null, 2);
+    navigator.clipboard.writeText(debugText)
+      .then(() => {
+        haptic.success();
+        alert(language === 'th' ? 'คัดลอกข้อมูลดีบักแล้ว' : 'Debug log copied');
+      })
+      .catch(err => {
+        console.error('Copy failed:', err);
+        haptic.error();
+      });
   };
 
   const handleToggleAlerts = async (enabled) => {
@@ -1390,9 +1480,27 @@ function UploadScanPageContent() {
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-red-600 font-semibold mb-1">
-                  {language === 'th' ? 'เกิดข้อผิดพลาด' : 'Error Occurred'}
+                  {typeof error === 'object' ? error.title : (language === 'th' ? 'เกิดข้อผิดพลาด' : 'Error Occurred')}
                 </p>
-                <p className="text-red-600 text-sm whitespace-pre-line">{error}</p>
+                <p className="text-red-600 text-sm whitespace-pre-line">
+                  {typeof error === 'object' ? error.message : error}
+                </p>
+                {typeof error === 'object' && error.requestId && (
+                  <div className="mt-3 p-2 rounded bg-red-100 dark:bg-red-900/20">
+                    <p className="text-xs font-mono text-red-700 dark:text-red-300">
+                      Request ID: {error.requestId}
+                    </p>
+                    {debugLog && (
+                      <button
+                        onClick={handleCopyDebugLog}
+                        className="mt-2 px-3 py-1 rounded text-xs font-semibold flex items-center gap-2 bg-red-600 text-white hover:bg-red-700"
+                      >
+                        <Copy className="w-3 h-3" />
+                        {language === 'th' ? 'คัดลอกข้อมูลดีบัก' : 'Copy Debug Details'}
+                      </button>
+                    )}
+                  </div>
+                )}
                 {retryCount > 0 && retryCount < 3 && (
                   <p className="text-red-500 text-xs mt-2">
                     {language === 'th'
