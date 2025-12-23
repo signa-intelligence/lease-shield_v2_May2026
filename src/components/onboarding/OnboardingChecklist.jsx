@@ -376,10 +376,11 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
                       <Badge
                         className="flex-shrink-0"
                         style={{
-                          backgroundColor: isDarkMode ? `${theme.iconBg}40` : `${theme.iconBg}30`,
-                          color: theme.metricColor,
-                          border: `1px solid ${theme.borderColor}`,
-                          fontSize: '10px'
+                          backgroundColor: '#0C3B2E',
+                          color: '#C7A338',
+                          border: '1px solid #C7A338',
+                          fontSize: '10px',
+                          fontWeight: '700'
                         }}
                       >
                         +{task.points}
