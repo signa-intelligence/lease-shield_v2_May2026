@@ -9,7 +9,9 @@ export const generateRequestId = () => {
   return `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 };
 
+// DEPRECATED: Use getDeviceContext from DeviceContext.js instead
 export const detectPlatform = () => {
+  console.warn('detectPlatform is deprecated. Use getDeviceContext from DeviceContext.js');
   const ua = navigator.userAgent.toLowerCase();
   return {
     isAndroid: /android/.test(ua),

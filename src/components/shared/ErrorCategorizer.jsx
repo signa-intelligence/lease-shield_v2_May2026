@@ -181,21 +181,17 @@ export const formatErrorForUser = (error, requestId, language = 'en') => {
   };
 };
 
-export const createDebugLog = (requestId, stages) => {
-  const ua = navigator.userAgent.toLowerCase();
-  const platform = {
-    isAndroid: /android/.test(ua),
-    isIOS: /iphone|ipad|ipod/.test(ua),
-    isChrome: /chrome/.test(ua) && !/edg/.test(ua),
-    isSafari: /safari/.test(ua) && !/chrome/.test(ua),
-    platform: /android/.test(ua) ? 'android' : /iphone|ipad|ipod/.test(ua) ? 'ios' : 'desktop'
-  };
-
+export const createDebugLog = (requestId, stages, deviceContext, networkLog) => {
   return {
     requestId,
     timestamp: new Date().toISOString(),
-    stages,
-    platform,
-    userAgent: navigator.userAgent
+    stages: stages || [],
+    deviceContext: deviceContext || {
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      error: 'Device context not provided'
+    },
+    networkLog: networkLog || [],
+    buildTag: 'android-fix-v1'
   };
 };

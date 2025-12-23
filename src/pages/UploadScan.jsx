@@ -35,8 +35,10 @@ import SwipeToDelete from "../components/shared/SwipeToDelete";
 import AuthGuard from "../components/shared/AuthGuard";
 import { FEATURE_COLORS } from "../components/shared/featureTheme";
 import TrustBadge from "../components/shared/TrustBadge";
-import { generateRequestId, normalizeFiles, detectPlatform, preflightCheck } from "../components/shared/FileNormalizer";
+import { generateRequestId, normalizeFiles, preflightCheck } from "../components/shared/FileNormalizer";
 import { formatErrorForUser, createDebugLog } from "../components/shared/ErrorCategorizer";
+import { getDeviceContext } from "../components/shared/DeviceContext";
+import { uploadFileWithSession, uploadMultipleFiles } from "../components/shared/MobileUploader";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
@@ -762,8 +764,9 @@ function UploadScanPageContent() {
     
     // Generate unique request ID for tracking
     const requestId = generateRequestId();
-    const platform = detectPlatform();
+    const deviceContext = getDeviceContext();
     const stages = [];
+    const networkLog = [];
     
     const logStage = (stage, data) => {
       const entry = { stage, timestamp: new Date().toISOString(), ...data };
@@ -771,9 +774,14 @@ function UploadScanPageContent() {
       console.log(`[${requestId}] ${stage}:`, data);
     };
 
+    const logNetwork = (stage, data) => {
+      const entry = { stage, timestamp: new Date().toISOString(), ...data };
+      networkLog.push(entry);
+      console.log(`[${requestId}] NETWORK ${stage}:`, data);
+    };
+
     logStage('INIT', { 
-      platform: platform.platform,
-      isAndroid: platform.isAndroid,
+      deviceContext,
       filesCount: selectedFiles.length,
       userTier
     });
@@ -916,23 +924,62 @@ function UploadScanPageContent() {
         setAnalysisStage('uploading');
         setUploadProgress(10);
 
-        // STEP 2: Upload normalized files
+        // STEP 2: Upload normalized files using mobile-proof uploader
         logStage('UPLOAD_START', { filesCount: normalizedFiles.length });
+        logNetwork('UPLOAD_CONFIG', {
+          method: 'POST',
+          integration: 'Core.UploadFile',
+          filesCount: normalizedFiles.length,
+          totalBytes: normalizedFiles.reduce((sum, f) => sum + f.size, 0),
+          timeout: UPLOAD_TIMEOUT_MS,
+          deviceContext: deviceContext.platform
+        });
+
         const uploadStartTime = Date.now();
 
-        const uploadPromises = normalizedFiles.map(file =>
-          base44.integrations.Core.UploadFile({ file })
+        const uploadResults = await uploadMultipleFiles(
+          normalizedFiles,
+          requestId,
+          (fileIndex, progress) => {
+            const overallProgress = 10 + (fileIndex / normalizedFiles.length * 20) + (progress / 100 * (20 / normalizedFiles.length));
+            setUploadProgress(Math.round(overallProgress));
+          }
         );
 
-        const uploadResults = await Promise.all(uploadPromises);
         const uploadDuration = Date.now() - uploadStartTime;
         
-        const fileUrls = uploadResults.map(result => result.file_url);
+        // Check for failures
+        const failedUploads = uploadResults.filter(r => !r.success);
+        if (failedUploads.length > 0) {
+          logStage('UPLOAD_FAILED', {
+            failedCount: failedUploads.length,
+            errors: failedUploads.map(r => ({ file: r.fileName, error: r.error }))
+          });
+          
+          // Merge network logs
+          failedUploads.forEach(r => {
+            if (r.networkLog) {
+              networkLog.push(...r.networkLog);
+            }
+          });
+          
+          throw new Error(`UPLOAD_FAILED: ${failedUploads[0].error}`);
+        }
+        
+        const fileUrls = uploadResults.map(r => r.file_url);
+        
+        // Merge all network logs
+        uploadResults.forEach(r => {
+          if (r.networkLog) {
+            networkLog.push(...r.networkLog);
+          }
+        });
         
         logStage('UPLOAD_SUCCESS', {
           duration: uploadDuration,
           filesUploaded: fileUrls.length,
-          urls: fileUrls
+          totalBytesUploaded: uploadResults.reduce((sum, r) => sum + (r.bytesUploaded || 0), 0),
+          urls: fileUrls.map(url => url.substring(0, 100) + '...')
         });
         
         setUploadProgress(30);
@@ -1080,11 +1127,13 @@ function UploadScanPageContent() {
         } else {
           // Final failure after all retries - categorize and format error
           const formattedError = formatErrorForUser(err, requestId, language);
-          const debugData = createDebugLog(requestId, stages);
+          const debugData = createDebugLog(requestId, stages, deviceContext, networkLog);
           
           logStage('FINAL_FAILURE', {
             category: formattedError.category,
-            retriesExhausted: true
+            retriesExhausted: true,
+            devicePlatform: deviceContext.platform,
+            isAndroid: deviceContext.isAndroid
           });
 
           setError(formattedError);
@@ -1333,7 +1382,22 @@ function UploadScanPageContent() {
   const handleCopyDebugLog = () => {
     if (!debugLog) return;
     
-    const debugText = JSON.stringify(debugLog, null, 2);
+    // Create comprehensive debug report
+    const debugReport = {
+      ...debugLog,
+      errorSummary: {
+        category: error?.category,
+        title: error?.title,
+        message: error?.message
+      },
+      userContext: {
+        email: user?.email,
+        tier: userTier,
+        language
+      }
+    };
+    
+    const debugText = JSON.stringify(debugReport, null, 2);
     navigator.clipboard.writeText(debugText)
       .then(() => {
         haptic.success();
