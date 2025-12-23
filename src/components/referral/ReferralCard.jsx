@@ -28,9 +28,7 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       autoApplied: "Auto-Applied",
       autoAppliedDesc: "Credit reduces next billing automatically",
       yourLink: "Your Referral Link",
-      yourCode: "Your Code",
       copyLink: "Copy Link",
-      copyCode: "Copy Code",
       shareLink: "Share Link",
       linkCopied: "Copied!",
       friendsReferred: "Friends Who Subscribed",
@@ -55,9 +53,7 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       autoApplied: "ใช้อัตโนมัติ",
       autoAppliedDesc: "เครดิตหักยอดรอบถัดไปโดยอัตโนมัติ",
       yourLink: "ลิงก์แนะนำของคุณ",
-      yourCode: "โค้ดของคุณ",
       copyLink: "คัดลอกลิงก์",
-      copyCode: "คัดลอกโค้ด",
       shareLink: "แชร์ลิงก์",
       linkCopied: "คัดลอกแล้ว!",
       friendsReferred: "เพื่อนที่สมัครแล้ว",
@@ -82,9 +78,7 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       autoApplied: "自动应用",
       autoAppliedDesc: "额度自动抵扣下次账单",
       yourLink: "您的推荐链接",
-      yourCode: "您的代码",
       copyLink: "复制链接",
-      copyCode: "复制代码",
       shareLink: "分享链接",
       linkCopied: "已复制！",
       friendsReferred: "已订阅好友",
@@ -109,9 +103,7 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       autoApplied: "自動適用",
       autoAppliedDesc: "クレジットが次回請求を自動的に減額",
       yourLink: "あなたの紹介リンク",
-      yourCode: "あなたのコード",
       copyLink: "リンクをコピー",
-      copyCode: "コードをコピー",
       shareLink: "リンクを共有",
       linkCopied: "コピーしました！",
       friendsReferred: "購読した友達",
@@ -136,9 +128,7 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       autoApplied: "자동 적용",
       autoAppliedDesc: "크레딧이 다음 청구를 자동 감소",
       yourLink: "귀하의 추천 링크",
-      yourCode: "귀하의 코드",
       copyLink: "링크 복사",
-      copyCode: "코드 복사",
       shareLink: "링크 공유",
       linkCopied: "복사됨!",
       friendsReferred: "구독한 친구",
@@ -163,9 +153,7 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       autoApplied: "Автоприменение",
       autoAppliedDesc: "Кредит автоматически уменьшает следующий счёт",
       yourLink: "Ваша реферальная ссылка",
-      yourCode: "Ваш код",
       copyLink: "Скопировать ссылку",
-      copyCode: "Скопировать код",
       shareLink: "Поделиться ссылкой",
       linkCopied: "Скопировано!",
       friendsReferred: "Подписались друзей",
@@ -188,13 +176,12 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
     ? `https://app.leaseshield.asia/welcome?ref=${user.referral_code}`
     : '';
 
-  const handleCopy = async (type) => {
+  const handleCopy = async () => {
     haptic.light();
-    const textToCopy = type === 'link' ? referralLink : user?.referral_code;
     
     try {
-      await navigator.clipboard.writeText(textToCopy);
-      setCopiedItem(type);
+      await navigator.clipboard.writeText(referralLink);
+      setCopiedItem('link');
       haptic.success();
       toast.success(strings.linkCopied);
       setTimeout(() => setCopiedItem(null), 2000);
@@ -210,16 +197,16 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       ? 'Lease Shield - ป้องกันเงินมัดจำค่าเช่า'
       : 'Lease Shield - Protect Your Rental Deposit';
     const text = language === 'th'
-      ? `มาป้องกันเงินมัดจำด้วย Lease Shield กัน! ใช้โค้ดของฉัน: ${user?.referral_code}`
+      ? 'มาป้องกันเงินมัดจำด้วย Lease Shield กัน!'
       : language === 'zh'
-        ? `加入我在Lease Shield保护您的租赁押金！使用我的代码：${user?.referral_code}`
+        ? '加入我在Lease Shield保护您的租赁押金！'
         : language === 'ja'
-          ? `Lease Shieldで一緒に敷金を守りましょう！私のコードを使用：${user?.referral_code}`
+          ? 'Lease Shieldで一緒に敷金を守りましょう！'
           : language === 'ko'
-            ? `Lease Shield에서 보증금을 보호하세요！내 코드 사용：${user?.referral_code}`
+            ? 'Lease Shield에서 보증금을 보호하세요！'
             : language === 'ru'
-              ? `Присоединяйтесь ко мне в Lease Shield для защиты депозита！Используйте мой код：${user?.referral_code}`
-              : `Join me on Lease Shield to protect your rental deposit! Use my code: ${user?.referral_code}`;
+              ? 'Присоединяйтесь ко мне в Lease Shield для защиты депозита！'
+              : 'Join me on Lease Shield to protect your rental deposit!';
 
     if (navigator.share) {
       try {
@@ -231,11 +218,11 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
         toast.success(language === 'th' ? 'แชร์แล้ว!' : 'Shared!');
       } catch (err) {
         if (err.name !== 'AbortError') {
-          await handleCopy('link');
+          await handleCopy();
         }
       }
     } else {
-      await handleCopy('link');
+      await handleCopy();
     }
   };
 
@@ -352,107 +339,65 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
           </div>
         )}
 
-        {/* Referral link/code */}
-        <div className="space-y-3 mb-6">
-          <div>
-            <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-              {strings.yourLink}
-            </p>
-            <div className="flex gap-2">
-              <div className="flex-1 p-3 rounded-lg text-sm font-mono truncate" style={{
-                backgroundColor: colors.fieldBg,
-                border: `1px solid ${colors.borderColor}`,
-                color: colors.textPrimary
-              }}>
-                {referralLink}
-              </div>
-              <button
-                onClick={() => handleCopy('link')}
-                className="btn-interaction"
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  backgroundColor: copiedItem === 'link' ? '#10B981' : '#0C3B2E',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {copiedItem === 'link' ? (
-                  <CheckCircle2 className="w-4 h-4" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-                <span className="hidden sm:inline">{copiedItem === 'link' ? strings.linkCopied : strings.copyLink}</span>
-              </button>
-              <button
-                onClick={handleShare}
-                className="btn-interaction"
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  backgroundColor: '#C7A338',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                <Share2 className="w-4 h-4" />
-                <span className="hidden sm:inline">{strings.shareLink}</span>
-              </button>
+        {/* Referral link */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
+            {strings.yourLink}
+          </p>
+          <div className="flex gap-2">
+            <div className="flex-1 p-3 rounded-lg text-sm font-mono truncate" style={{
+              backgroundColor: colors.fieldBg,
+              border: `1px solid ${colors.borderColor}`,
+              color: colors.textPrimary
+            }}>
+              {referralLink}
             </div>
-          </div>
-
-          <div>
-            <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-              {strings.yourCode}
-            </p>
-            <div className="flex gap-2">
-              <div className="flex-1 p-3 rounded-lg text-center text-2xl font-bold tracking-widest" style={{
-                backgroundColor: colors.fieldBg,
-                border: `2px solid ${colors.borderColor}`,
-                color: '#C7A338'
-              }}>
-                {user?.referral_code || '------'}
-              </div>
-              <button
-                onClick={() => handleCopy('code')}
-                className="btn-interaction"
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  backgroundColor: copiedItem === 'code' ? '#10B981' : colors.cardBg,
-                  color: copiedItem === 'code' ? '#FFFFFF' : colors.textPrimary,
-                  border: `2px solid ${copiedItem === 'code' ? '#10B981' : colors.borderColor}`,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {copiedItem === 'code' ? (
-                  <CheckCircle2 className="w-4 h-4" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-                <span className="hidden sm:inline">{copiedItem === 'code' ? strings.linkCopied : strings.copyCode}</span>
-              </button>
-            </div>
+            <button
+              onClick={handleCopy}
+              className="btn-interaction"
+              style={{
+                padding: '12px 16px',
+                borderRadius: '8px',
+                backgroundColor: copiedItem === 'link' ? '#10B981' : '#0C3B2E',
+                color: '#FFFFFF',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: '600',
+                fontSize: '14px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {copiedItem === 'link' ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                <Copy className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline">{copiedItem === 'link' ? strings.linkCopied : strings.copyLink}</span>
+            </button>
+            <button
+              onClick={handleShare}
+              className="btn-interaction"
+              style={{
+                padding: '12px 16px',
+                borderRadius: '8px',
+                backgroundColor: '#C7A338',
+                color: '#FFFFFF',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: '600',
+                fontSize: '14px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <Share2 className="w-4 h-4" />
+              <span className="hidden sm:inline">{strings.shareLink}</span>
+            </button>
           </div>
         </div>
 

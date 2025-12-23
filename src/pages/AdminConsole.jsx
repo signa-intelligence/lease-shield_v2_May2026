@@ -1861,7 +1861,6 @@ function AdminConsoleContent() {
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Ref Code</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
@@ -1891,15 +1890,7 @@ function AdminConsoleContent() {
                           <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{u.full_name}</p>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-xs" style={{ color: colors.textSecondary }}>{u.email}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <code className="text-xs font-mono px-2 py-1 rounded" style={{
-                            backgroundColor: colors.fieldBg,
-                            color: '#C7A338'
-                          }}>
-                            {u.referral_code || '—'}
-                          </code>
+                         <p className="text-xs" style={{ color: colors.textSecondary }}>{u.email}</p>
                         </td>
                         <td className="px-4 py-3">
                           <Badge className={
