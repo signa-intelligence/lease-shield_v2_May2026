@@ -304,7 +304,7 @@ function SupportContent() {
           isDarkMode={isDarkMode}
           showBack={true}
           backLabel={strings.back}
-          backRoute="/dashboard"
+          backRoute={createPageUrl("AdminConsole")}
         />
 
         <div className="grid lg:grid-cols-5 gap-6">
