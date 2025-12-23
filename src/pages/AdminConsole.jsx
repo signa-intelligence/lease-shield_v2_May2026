@@ -2066,10 +2066,26 @@ function AdminConsoleContent() {
                            )}
                             <Select
                               value={u.plan_tier || 'free'}
-                              onValueChange={(val) => updateUserMutation.mutate({
-                                userId: u.id,
-                                data: { plan_tier: val }
-                              })}
+                              onValueChange={async (val) => {
+                                console.log('🎯 [TIER_SELECT] User clicked tier change:', {
+                                  targetUser: u.email,
+                                  currentTier: u.plan_tier,
+                                  selectedTier: val
+                                });
+
+                                try {
+                                  await updateUserMutation.mutateAsync({
+                                    userId: u.id,
+                                    data: { plan_tier: val }
+                                  });
+
+                                  console.log('✅ [TIER_SELECT] SUCCESS - tier updated');
+                                  alert(`✅ Plan tier updated!\n\n${u.full_name}\n${u.email}\n\n${u.plan_tier || 'free'} → ${val}`);
+                                } catch (error) {
+                                  console.error('❌ [TIER_SELECT] MUTATION FAILED:', error);
+                                  alert(`❌ TIER UPDATE FAILED\n\nUser: ${u.email}\nAttempted: ${u.plan_tier} → ${val}\n\nError: ${error.message}`);
+                                }
+                              }}
                             >
                               <SelectTrigger className="w-24 h-8 text-xs">
                                 <SelectValue />

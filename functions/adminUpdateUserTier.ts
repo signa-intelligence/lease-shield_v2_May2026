@@ -27,12 +27,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid tier' }, { status: 400 });
     }
 
+    console.log('🔄 Updating user tier:', { userId, tier });
+
     // Update user using service role
-    await base44.asServiceRole.entities.User.update(userId, { plan_tier: tier });
+    const updatedUser = await base44.asServiceRole.entities.User.update(userId, { plan_tier: tier });
+
+    console.log('✅ Tier update complete:', updatedUser);
 
     return Response.json({ 
       success: true,
-      message: `User tier updated to ${tier}`
+      message: `User tier updated to ${tier}`,
+      user: updatedUser
     });
 
   } catch (error) {

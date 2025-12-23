@@ -27,12 +27,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid role' }, { status: 400 });
     }
 
-    // Update user using service role
-    await base44.asServiceRole.entities.User.update(userId, { role });
+    console.log('🔄 Updating user role:', { userId, role });
+
+    // Update user using service role (access_level, not role)
+    const updatedUser = await base44.asServiceRole.entities.User.update(userId, { access_level: role });
+
+    console.log('✅ Role update complete:', updatedUser);
 
     return Response.json({ 
       success: true,
-      message: `User role updated to ${role}`
+      message: `User role updated to ${role}`,
+      user: updatedUser
     });
 
   } catch (error) {
