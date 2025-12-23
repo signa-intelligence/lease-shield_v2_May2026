@@ -1251,6 +1251,54 @@ function AdminConsoleContent() {
     } finally {
       setHardDeletingUsers(false);
     }
+  };
+
+  const handleHardResetAllUsers = async () => {
+    if (!isSuperAdmin) {
+      alert('Super Admin access required');
+      return;
+    }
+
+    const keepEmails = [
+      'steve.l@signa-consultants.com',
+      'steve.d.lockhart@gmail.com'
+    ];
+
+    if (!confirm(`🔥 HARD RESET - USER MANAGEMENT\n\nThis will DELETE ALL USERS except:\n\n${keepEmails.join('\n')}\n\nAll other users will be:\n• PERMANENTLY DELETED from database\n• Auth identities REMOVED\n• Related data ANONYMIZED\n• Able to re-register in future\n\nType "RESET" in next prompt to confirm.`)) {
+      return;
+    }
+
+    const confirmText = prompt('Type RESET (all caps) to confirm hard reset:');
+    if (confirmText !== 'RESET') {
+      alert('Reset cancelled - confirmation text did not match.');
+      return;
+    }
+
+    setHardDeletingUsers(true);
+    setHardDeleteResult(null);
+
+    try {
+      console.log('🔥 [ADMIN] Starting hard reset of user management...');
+      const response = await base44.functions.invoke('hardResetUserManagement');
+      console.log('✅ [ADMIN] Hard reset response:', response.data);
+      
+      setHardDeleteResult(response.data);
+      
+      if (response.data?.success) {
+        alert(`✅ HARD RESET COMPLETE\n\nDeleted: ${response.data.deleted_count}\nFailed: ${response.data.failed_count}\nRemaining: ${response.data.remaining_count}\n\nVerification: ${response.data.verification ? '✅ PASSED' : '❌ FAILED'}\n\nRefreshing user list...`);
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      } else {
+        alert('❌ Hard reset failed: ' + response.data?.error);
+      }
+    } catch (error) {
+      console.error('❌ [ADMIN] Hard reset failed:', error);
+      alert('Hard reset failed: ' + error.message);
+    } finally {
+      setHardDeletingUsers(false);
+    }
+  };
+
+  const sortedUsers = [...users].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
     if (sortOrder === 'asc') {
