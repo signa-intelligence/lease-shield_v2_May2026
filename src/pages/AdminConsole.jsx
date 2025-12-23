@@ -47,6 +47,8 @@ function AdminConsoleContent() {
   const [userManagementExpanded, setUserManagementExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
+  const [migratingUsers, setMigratingUsers] = useState(false);
+  const [migrationResult, setMigrationResult] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -128,10 +130,19 @@ function AdminConsoleContent() {
   const MAXIMUM_ADMINS = 6;
   const MAXIMUM_VAS = 10;
   
-  // Compute active role counts
-  const superAdmins = users.filter(u => u.access_level === 'super_admin' && u.is_active !== false && !u.deleted_at);
-  const admins = users.filter(u => u.access_level === 'admin' && u.is_active !== false && !u.deleted_at);
-  const vas = users.filter(u => u.access_level === 'va' && u.is_active !== false && !u.deleted_at);
+  // Compute active role counts (exclude deleted and suspended users)
+  const superAdmins = users.filter(u => {
+    const status = u.status || 'active';
+    return u.access_level === 'super_admin' && status === 'active';
+  });
+  const admins = users.filter(u => {
+    const status = u.status || 'active';
+    return u.access_level === 'admin' && status === 'active';
+  });
+  const vas = users.filter(u => {
+    const status = u.status || 'active';
+    return u.access_level === 'va' && status === 'active';
+  });
   
   const superAdminCount = superAdmins.length;
   const adminCount = admins.length;
@@ -1163,6 +1174,35 @@ function AdminConsoleContent() {
     }
   };
 
+  const handleMigrateLegacyUsers = async () => {
+    if (!confirm('⚠️ ONE-TIME MIGRATION\n\nThis will:\n1. Find all legacy "Deleted" users\n2. Normalize them to status="deleted"\n3. Revoke their access permanently\n\nThis cannot be undone.\n\nProceed?')) {
+      return;
+    }
+
+    setMigratingUsers(true);
+    setMigrationResult(null);
+
+    try {
+      console.log('🔧 [ADMIN] Starting legacy user migration...');
+      const response = await base44.functions.invoke('migrateLegacyDeletedUsers');
+      console.log('✅ [ADMIN] Migration response:', response.data);
+      
+      setMigrationResult(response.data);
+      
+      if (response.data?.success) {
+        alert(`✅ MIGRATION COMPLETE\n\nAffected: ${response.data.affected_count}\nMigrated: ${response.data.migrated_count}\nFailed: ${response.data.failed_count}\n\nCheck console for details.`);
+        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      } else {
+        alert('❌ Migration failed: ' + response.data?.error);
+      }
+    } catch (error) {
+      console.error('❌ [ADMIN] Migration failed:', error);
+      alert('Migration failed: ' + error.message);
+    } finally {
+      setMigratingUsers(false);
+    }
+  };
+
   const sortedUsers = [...users].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
@@ -1546,6 +1586,24 @@ function AdminConsoleContent() {
                     <Database className="w-4 h-4 mr-2" />
                     Export Backup
                   </Button>
+
+                  <Button
+                    onClick={handleMigrateLegacyUsers}
+                    disabled={migratingUsers}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    {migratingUsers ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Migrating...
+                      </>
+                    ) : (
+                      <>
+                        <UserX className="w-4 h-4 mr-2" />
+                        Migrate Legacy Deleted
+                      </>
+                    )}
+                  </Button>
                 </div>
 
                 {debugData && (
@@ -1556,6 +1614,58 @@ function AdminConsoleContent() {
                     <pre className="text-xs" style={{ color: colors.textPrimary }}>
                       {JSON.stringify(debugData, null, 2)}
                     </pre>
+                  </div>
+                )}
+
+                {migrationResult && (
+                  <div className="mt-4 p-4 rounded-lg" style={{
+                    backgroundColor: migrationResult.success 
+                      ? (isDarkMode ? '#1E4435' : '#ECFDF5')
+                      : (isDarkMode ? '#3A2626' : '#FEF2F2'),
+                    border: `2px solid ${migrationResult.success ? '#10B981' : '#EF4444'}`
+                  }}>
+                    <div className="flex items-start gap-3 mb-3">
+                      {migrationResult.success ? (
+                        <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+                      ) : (
+                        <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-bold text-sm mb-1" style={{
+                          color: migrationResult.success ? '#10B981' : '#EF4444'
+                        }}>
+                          {migrationResult.message}
+                        </p>
+                        {migrationResult.success && (
+                          <div className="text-xs space-y-1" style={{ color: colors.textPrimary }}>
+                            <p>Affected: {migrationResult.affected_count}</p>
+                            <p>Migrated: {migrationResult.migrated_count}</p>
+                            <p>Failed: {migrationResult.failed_count}</p>
+                            {migrationResult.note && (
+                              <p className="mt-2 italic" style={{ color: colors.textSecondary }}>
+                                {migrationResult.note}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {migrationResult.results && migrationResult.results.length > 0 && (
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                          View Details ({migrationResult.results.length} users)
+                        </summary>
+                        <div className="overflow-auto max-h-64 p-3 rounded" style={{
+                          backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
+                          border: `1px solid ${colors.borderColor}`
+                        }}>
+                          <pre className="text-xs" style={{ color: colors.textPrimary }}>
+                            {JSON.stringify(migrationResult.results, null, 2)}
+                          </pre>
+                        </div>
+                      </details>
+                    )}
                   </div>
                 )}
               </div>
