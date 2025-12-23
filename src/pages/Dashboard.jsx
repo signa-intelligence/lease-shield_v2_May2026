@@ -67,7 +67,7 @@ function DashboardContent() {
   // Generate referral code on first login if missing
   React.useEffect(() => {
     if (user && !user.referral_code) {
-      base44.functions.invoke('generateReferralCode')
+      base44.functions.invoke('ensureReferralCode')
         .then(() => queryClient.invalidateQueries({ queryKey: ['currentUser'] }))
         .catch(err => console.error('[DASHBOARD] Failed to generate referral code:', err));
     }
