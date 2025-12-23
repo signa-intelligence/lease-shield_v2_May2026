@@ -1977,77 +1977,43 @@ ja: {
                             </div>
                           </div>
 
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() => {
-                                haptic.light();
-                                navigate(createPageUrl("templates"));
-                              }}
-                              className="btn-interaction"
-                              style={{
-                                padding: '10px 18px',
-                                borderRadius: '10px',
-                                backgroundColor: 'transparent',
-                                color: '#0C3B2E',
-                                border: '2px solid #0C3B2E',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.target.style.backgroundColor = '#0C3B2E';
-                                e.target.style.color = '#FFFFFF';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.backgroundColor = 'transparent';
-                                e.target.style.color = '#0C3B2E';
-                              }}
-                            >
-                              <FileText className="w-4 h-4" />
-                              {strings.viewTemplates}
-                            </button>
-                            <button
-                              onClick={() => {
-                                haptic.medium();
-                                navigate(createPageUrl("Templates"));
-                              }}
-                              className="btn-interaction"
-                              style={{
-                                padding: '10px 18px',
-                                borderRadius: '10px',
-                                backgroundColor: '#0C3B2E',
-                                color: '#FFFFFF',
-                                border: '2px solid #C7A338',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                boxShadow: '0 4px 6px rgba(12,59,46,0.3)'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.target.style.backgroundColor = '#C7A338';
-                                e.target.style.borderColor = '#C7A338';
-                                e.target.style.color = '#1A1D1F';
-                                e.target.style.boxShadow = '0 6px 10px rgba(199,163,56,0.4)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.backgroundColor = '#0C3B2E';
-                                e.target.style.borderColor = '#C7A338';
-                                e.target.style.color = '#FFFFFF';
-                                e.target.style.boxShadow = '0 4px 6px rgba(12,59,46,0.3)';
-                              }}
-                            >
-                              <Bell className="w-4 h-4" />
-                              {strings.notifyLandlord}
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => {
+                              haptic.medium();
+                              navigate(createPageUrl("Templates"));
+                            }}
+                            className="btn-interaction"
+                            style={{
+                              padding: '10px 18px',
+                              borderRadius: '10px',
+                              backgroundColor: '#0C3B2E',
+                              color: '#FFFFFF',
+                              border: '2px solid #C7A338',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              boxShadow: '0 4px 6px rgba(12,59,46,0.3)'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.backgroundColor = '#C7A338';
+                              e.target.style.borderColor = '#C7A338';
+                              e.target.style.color = '#1A1D1F';
+                              e.target.style.boxShadow = '0 6px 10px rgba(199,163,56,0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.backgroundColor = '#0C3B2E';
+                              e.target.style.borderColor = '#C7A338';
+                              e.target.style.color = '#FFFFFF';
+                              e.target.style.boxShadow = '0 4px 6px rgba(12,59,46,0.3)';
+                            }}
+                          >
+                            <Bell className="w-4 h-4" />
+                            {strings.notifyLandlord}
+                          </button>
                         </div>
                       </div>
                     </CardContent>
