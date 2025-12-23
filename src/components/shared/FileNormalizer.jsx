@@ -54,6 +54,47 @@ export const isPDFFile = async (file) => {
   }
 };
 
+export const preflightCheck = async (file, requestId) => {
+  const log = (msg, data) => {
+    console.log(`[${requestId}] Preflight: ${msg}`, data || '');
+  };
+
+  try {
+    log('Starting preflight check', { name: file.name, size: file.size, type: file.type });
+
+    // Try to read first 64KB or full file if smaller
+    const checkSize = Math.min(file.size, 64 * 1024);
+    const slice = file.slice(0, checkSize);
+    
+    const canRead = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      const timeout = setTimeout(() => {
+        reader.abort();
+        reject(new Error('PREFLIGHT_TIMEOUT: File read timeout'));
+      }, 5000);
+
+      reader.onload = () => {
+        clearTimeout(timeout);
+        resolve(true);
+      };
+
+      reader.onerror = (e) => {
+        clearTimeout(timeout);
+        reject(new Error('PREFLIGHT_READ_FAILED: Cannot access file'));
+      };
+
+      reader.readAsArrayBuffer(slice);
+    });
+
+    log('Preflight passed', { canRead, bytesChecked: checkSize });
+    return { success: true, readable: true };
+
+  } catch (err) {
+    log('Preflight failed', { error: err.message });
+    return { success: false, error: err.message };
+  }
+};
+
 export const normalizeFile = async (file, requestId) => {
   const log = (msg, data) => {
     console.log(`[${requestId}] FileNormalizer: ${msg}`, data || '');
@@ -79,11 +120,14 @@ export const normalizeFile = async (file, requestId) => {
       needsNormalization: isContentURI || hasZeroSize || hasBadMime
     });
 
-    // If file looks good, validate PDF and return as-is
+    // If file looks good, validate type and return as-is
     if (!isContentURI && !hasZeroSize && !hasBadMime) {
       const isPDF = await isPDFFile(file);
-      if (!isPDF) {
-        throw new Error('FILE_TYPE_INVALID: File is not a valid PDF');
+      const ext = file.name.toLowerCase().split('.').pop();
+      const isImage = ['png', 'jpg', 'jpeg'].includes(ext) || file.type.startsWith('image/');
+      
+      if (!isPDF && !isImage) {
+        throw new Error('FILE_TYPE_INVALID: Only PDF, PNG, and JPG files are supported');
       }
       log('File OK, no normalization needed');
       return { file, normalized: false };
@@ -119,21 +163,28 @@ export const normalizeFile = async (file, requestId) => {
 
     log('Blob created successfully', { size: fileBlob.size });
 
-    // Step 3: Verify PDF magic bytes
+    // Step 3: Verify file type (PDF or image)
     const slice = fileBlob.slice(0, 5);
     const buffer = await slice.arrayBuffer();
     const bytes = new Uint8Array(buffer);
     const header = String.fromCharCode(...bytes);
     
-    if (header !== '%PDF-') {
-      log('❌ Not a valid PDF', { header });
-      throw new Error('PDF_VALIDATION_FAILED: File does not have PDF magic bytes');
+    // Determine if PDF or image
+    const ext = file.name?.toLowerCase().split('.').pop() || '';
+    const isPDF = header === '%PDF-';
+    const isImage = ['png', 'jpg', 'jpeg'].includes(ext);
+    
+    if (!isPDF && !isImage) {
+      log('❌ Not a valid PDF or image', { header, ext });
+      throw new Error('FILE_TYPE_INVALID: Only PDF, PNG, and JPG files are supported');
     }
 
     // Step 4: Create new File object with correct metadata
-    const filename = file.name || `lease_${Date.now()}.pdf`;
+    const mimeType = isPDF ? 'application/pdf' : 
+                     ext === 'png' ? 'image/png' : 'image/jpeg';
+    const filename = file.name || `lease_${Date.now()}.${isPDF ? 'pdf' : 'jpg'}`;
     const normalizedFile = new File([fileBlob], filename, {
-      type: 'application/pdf',
+      type: mimeType,
       lastModified: file.lastModified || Date.now()
     });
 

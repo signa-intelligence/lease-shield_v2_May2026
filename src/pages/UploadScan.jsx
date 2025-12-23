@@ -35,7 +35,7 @@ import SwipeToDelete from "../components/shared/SwipeToDelete";
 import AuthGuard from "../components/shared/AuthGuard";
 import { FEATURE_COLORS } from "../components/shared/featureTheme";
 import TrustBadge from "../components/shared/TrustBadge";
-import { generateRequestId, normalizeFiles, detectPlatform } from "../components/shared/FileNormalizer";
+import { generateRequestId, normalizeFiles, detectPlatform, preflightCheck } from "../components/shared/FileNormalizer";
 import { formatErrorForUser, createDebugLog } from "../components/shared/ErrorCategorizer";
 
 function UploadScanPageContent() {
@@ -148,7 +148,7 @@ function UploadScanPageContent() {
       title: "Scan Your Lease",
       subtitle: "Upload your lease agreement for automated analysis",
       uploadArea: "Drop your lease files here or click to browse",
-      supportedFormats: "PDF or image files only (PDF, PNG, JPG). Max 10MB per file.",
+      supportedFormats: "PDF, PNG, or JPG only. Max 10MB per file.",
       selectFiles: "Select Files",
       uploadAll: "Upload & Analyze",
       uploading: "Uploading files...",
@@ -242,7 +242,7 @@ function UploadScanPageContent() {
       title: "สแกนสัญญาเช่า",
       subtitle: "อัปโหลดสัญญาเช่าเพื่อวิเคราะห์อัตโนมัติ",
       uploadArea: "วางไฟล์สัญญาเช่าที่นี่ หรือคลิกเพื่อเลือกไฟล์",
-      supportedFormats: "รองรับเฉพาะ PDF หรือไฟล์รูปภาพ (PDF, PNG, JPG) ไฟล์ละไม่เกิน 10MB",
+      supportedFormats: "รองรับเฉพาะ PDF, PNG หรือ JPG ไฟล์ละไม่เกิน 10MB",
       selectFiles: "เลือกไฟล์",
       uploadAll: "อัปโหลดและวิเคราะห์",
       uploading: "กำลังอัปโหลดไฟล์...",
@@ -336,7 +336,7 @@ function UploadScanPageContent() {
       title: "扫描租约",
       subtitle: "上传您的租赁协议进行自动分析",
       uploadArea: "将租约文件拖放到此处或点击浏览",
-      supportedFormats: "仅支持 PDF 或图像文件（PDF、PNG、JPG），每个文件最大 10MB",
+      supportedFormats: "仅支持 PDF、PNG 或 JPG，每个文件最大 10MB",
       selectFiles: "选择文件",
       uploadAll: "上传并分析",
       uploading: "正在上传文件...",
@@ -430,7 +430,7 @@ function UploadScanPageContent() {
       title: "賃貸契約をスキャン",
       subtitle: "賃貸契約書をアップロードして自動分析",
       uploadArea: "ここに賃貸契約ファイルをドロップまたはクリックして参照",
-      supportedFormats: "PDF または画像ファイルのみ（PDF、PNG、JPG）。各ファイル最大10MB",
+      supportedFormats: "PDF、PNG、JPG のみ。各ファイル最大10MB",
       selectFiles: "ファイルを選択",
       uploadAll: "アップロードして分析",
       uploading: "ファイルをアップロード中...",
@@ -524,7 +524,7 @@ function UploadScanPageContent() {
       title: "임대 계약 스캔",
       subtitle: "임대 계약서를 업로드하여 자동 분석",
       uploadArea: "여기에 임대 계약 파일을 드롭하거나 클릭하여 찾아보기",
-      supportedFormats: "PDF 또는 이미지 파일만 지원 (PDF, PNG, JPG). 파일당 최대 10MB",
+      supportedFormats: "PDF, PNG, JPG만 지원. 파일당 최대 10MB",
       selectFiles: "파일 선택",
       uploadAll: "업로드 및 분석",
       uploading: "파일 업로드 중...",
@@ -618,7 +618,7 @@ function UploadScanPageContent() {
       title: "Сканировать договор",
       subtitle: "Загрузите договор аренды для автоматического анализа",
       uploadArea: "Перетащите файлы договора сюда или нажмите, чтобы выбрать",
-      supportedFormats: "Только PDF или изображения (PDF, PNG, JPG). Максимум 10 МБ на файл",
+      supportedFormats: "Только PDF, PNG или JPG. Максимум 10 МБ на файл",
       selectFiles: "Выбрать файлы",
       uploadAll: "Загрузить и проанализировать",
       uploading: "Загрузка файлов...",
@@ -866,6 +866,25 @@ function UploadScanPageContent() {
 
     const attemptUpload = async () => {
       try {
+        // STEP 0: Preflight check - verify files are readable
+        logStage('PREFLIGHT_CHECK_START', {
+          filesCount: selectedFiles.length
+        });
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const preflightResult = await preflightCheck(selectedFiles[i], requestId);
+          if (!preflightResult.success) {
+            logStage('PREFLIGHT_FAILED', {
+              fileIndex: i,
+              fileName: selectedFiles[i].name,
+              error: preflightResult.error
+            });
+            throw new Error(`PREFLIGHT_READ_FAILED: ${preflightResult.error}`);
+          }
+        }
+
+        logStage('PREFLIGHT_CHECK_PASSED', { filesCount: selectedFiles.length });
+
         // STEP 1: Normalize files (critical for Google Drive PDFs on Android)
         logStage('FILE_NORMALIZATION_START', {
           filesCount: selectedFiles.length,
@@ -1996,7 +2015,14 @@ function UploadScanPageContent() {
                   <h3 className="text-lg md:text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
                     {strings.uploadArea}
                   </h3>
-                  <p className="mb-4" style={{ color: colors.textSecondary }}>{strings.supportedFormats}</p>
+                  <p className="mb-2 font-semibold" style={{ color: colors.textPrimary }}>{strings.supportedFormats}</p>
+                  <p className="mb-4 text-xs" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? '⚠️ หากเลือกจาก Google Drive บน Android ไม่สามารถอ่านไฟล์ได้ กรุณาดาวน์โหลดไปยังอุปกรณ์ก่อน'
+                      : language === 'ru'
+                        ? '⚠️ Если выбираете из Google Drive на Android и не можете прочитать, сначала скачайте на устройство'
+                        : '⚠️ If selecting from Google Drive on Android fails, download to device first'}
+                  </p>
 
                   <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
                     <label className="inline-block">
@@ -2024,7 +2050,7 @@ function UploadScanPageContent() {
                       <input
                         type="file"
                         multiple
-                        accept="image/*"
+                        accept="image/png,image/jpeg,.png,.jpg,.jpeg"
                         capture="environment"
                         onChange={handleFileSelect}
                         className="hidden"

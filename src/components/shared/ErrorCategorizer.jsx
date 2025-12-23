@@ -117,40 +117,53 @@ export const formatErrorForUser = (error, requestId, language = 'en') => {
     httpStatus: error?.status || error?.response?.status
   });
   
+  // Special handling for Google Drive/file access errors
+  const isFileAccessError = 
+    error?.message?.includes('PREFLIGHT') ||
+    error?.message?.includes('FILE_READ_FAILED') ||
+    error?.message?.includes('content://') ||
+    error?.message?.includes('DocumentProvider');
+
   const translations = {
     en: {
-      [ERROR_CATEGORIES.UPLOAD_FAILED.code]: 'Failed to read or upload file',
+      [ERROR_CATEGORIES.UPLOAD_FAILED.code]: isFileAccessError
+        ? 'Could not read file from Google Drive. Please download the file to your device or choose from Files app.'
+        : 'Failed to read or upload file',
       [ERROR_CATEGORIES.REQUEST_TIMEOUT.code]: 'Operation timed out - please try a smaller file',
       [ERROR_CATEGORIES.HTTP_ERROR.code]: 'Server error occurred',
       [ERROR_CATEGORIES.BACKEND_VALIDATION_ERROR.code]: 'File validation failed',
       [ERROR_CATEGORIES.ANALYSIS_ERROR.code]: 'AI analysis failed',
       [ERROR_CATEGORIES.CORS_OR_BLOCKED.code]: 'Request was blocked - check connection',
       [ERROR_CATEGORIES.AUTH_ERROR.code]: 'Authentication failed',
-      [ERROR_CATEGORIES.FILE_TYPE_INVALID.code]: 'File is not a valid PDF',
+      [ERROR_CATEGORIES.FILE_TYPE_INVALID.code]: 'Only PDF, PNG, and JPG files are supported',
       [ERROR_CATEGORIES.FILE_SIZE_EXCEEDED.code]: 'File size exceeds 10MB limit',
       [ERROR_CATEGORIES.NETWORK_ERROR.code]: 'Network connection failed'
     },
     th: {
-      [ERROR_CATEGORIES.UPLOAD_FAILED.code]: 'ไม่สามารถอ่านหรืออัปโหลดไฟล์',
+      [ERROR_CATEGORIES.UPLOAD_FAILED.code]: isFileAccessError
+        ? 'ไม่สามารถอ่านไฟล์จาก Google Drive กรุณาดาวน์โหลดไฟล์ไปยังอุปกรณ์ของคุณหรือเลือกจากแอปไฟล์'
+        : 'ไม่สามารถอ่านหรืออัปโหลดไฟล์',
       [ERROR_CATEGORIES.REQUEST_TIMEOUT.code]: 'หมดเวลา - กรุณาใช้ไฟล์ที่เล็กกว่า',
       [ERROR_CATEGORIES.HTTP_ERROR.code]: 'เกิดข้อผิดพลาดเซิร์ฟเวอร์',
       [ERROR_CATEGORIES.BACKEND_VALIDATION_ERROR.code]: 'การตรวจสอบไฟล์ล้มเหลว',
       [ERROR_CATEGORIES.ANALYSIS_ERROR.code]: 'การวิเคราะห์ AI ล้มเหลว',
       [ERROR_CATEGORIES.CORS_OR_BLOCKED.code]: 'คำขอถูกบล็อก - ตรวจสอบการเชื่อมต่อ',
       [ERROR_CATEGORIES.AUTH_ERROR.code]: 'การตรวจสอบสิทธิ์ล้มเหลว',
-      [ERROR_CATEGORIES.FILE_TYPE_INVALID.code]: 'ไฟล์ไม่ใช่ PDF ที่ถูกต้อง',
+      [ERROR_CATEGORIES.FILE_TYPE_INVALID.code]: 'รองรับเฉพาะไฟล์ PDF, PNG และ JPG',
       [ERROR_CATEGORIES.FILE_SIZE_EXCEEDED.code]: 'ไฟล์เกินขนาดจำกัด 10MB',
       [ERROR_CATEGORIES.NETWORK_ERROR.code]: 'การเชื่อมต่อเครือข่ายล้มเหลว'
     },
     ru: {
-      [ERROR_CATEGORIES.UPLOAD_FAILED.code]: 'Не удалось прочитать или загрузить файл',
+      [ERROR_CATEGORIES.UPLOAD_FAILED.code]: isFileAccessError
+        ? 'Не удалось прочитать файл из Google Drive. Скачайте файл на устройство или выберите из приложения Файлы.'
+        : 'Не удалось прочитать или загрузить файл',
       [ERROR_CATEGORIES.REQUEST_TIMEOUT.code]: 'Превышено время ожидания - попробуйте файл меньшего размера',
       [ERROR_CATEGORIES.HTTP_ERROR.code]: 'Произошла ошибка сервера',
       [ERROR_CATEGORIES.BACKEND_VALIDATION_ERROR.code]: 'Проверка файла не удалась',
       [ERROR_CATEGORIES.ANALYSIS_ERROR.code]: 'Анализ ИИ не удался',
       [ERROR_CATEGORIES.CORS_OR_BLOCKED.code]: 'Запрос заблокирован - проверьте соединение',
       [ERROR_CATEGORIES.AUTH_ERROR.code]: 'Ошибка аутентификации',
-      [ERROR_CATEGORIES.FILE_TYPE_INVALID.code]: 'Файл не является допустимым PDF',
+      [ERROR_CATEGORIES.FILE_TYPE_INVALID.code]: 'Поддерживаются только PDF, PNG и JPG файлы',
       [ERROR_CATEGORIES.FILE_SIZE_EXCEEDED.code]: 'Размер файла превышает лимит 10 МБ',
       [ERROR_CATEGORIES.NETWORK_ERROR.code]: 'Ошибка сетевого подключения'
     }
