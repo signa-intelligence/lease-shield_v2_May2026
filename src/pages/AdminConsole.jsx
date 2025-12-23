@@ -47,10 +47,6 @@ function AdminConsoleContent() {
   const [userManagementExpanded, setUserManagementExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
-  const [migratingUsers, setMigratingUsers] = useState(false);
-  const [migrationResult, setMigrationResult] = useState(null);
-  const [hardDeletingUsers, setHardDeletingUsers] = useState(false);
-  const [hardDeleteResult, setHardDeleteResult] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -132,19 +128,10 @@ function AdminConsoleContent() {
   const MAXIMUM_ADMINS = 6;
   const MAXIMUM_VAS = 10;
   
-  // Compute active role counts (exclude deleted and suspended users)
-  const superAdmins = users.filter(u => {
-    const status = u.status || 'active';
-    return u.access_level === 'super_admin' && status === 'active';
-  });
-  const admins = users.filter(u => {
-    const status = u.status || 'active';
-    return u.access_level === 'admin' && status === 'active';
-  });
-  const vas = users.filter(u => {
-    const status = u.status || 'active';
-    return u.access_level === 'va' && status === 'active';
-  });
+  // Compute active role counts
+  const superAdmins = users.filter(u => u.access_level === 'super_admin' && u.is_active !== false && !u.deleted_at);
+  const admins = users.filter(u => u.access_level === 'admin' && u.is_active !== false && !u.deleted_at);
+  const vas = users.filter(u => u.access_level === 'va' && u.is_active !== false && !u.deleted_at);
   
   const superAdminCount = superAdmins.length;
   const adminCount = admins.length;
@@ -270,32 +257,7 @@ function AdminConsoleContent() {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: async ({ userId, adminId }) => {
-      const now = new Date().toISOString();
-      
-      console.log('🗑️ [DELETE_USER] Soft-deleting user:', {
-        userId,
-        deletedBy: adminId,
-        timestamp: now
-      });
-      
-      // Use asServiceRole to bypass RLS and enforce deletion
-      const result = await base44.asServiceRole.entities.User.update(userId, { 
-        status: 'deleted',
-        is_active: false,
-        deleted_at: now,
-        deleted_by: adminId
-      });
-      
-      console.log('✅ [DELETE_USER] User marked as deleted:', {
-        id: result.id,
-        email: result.email,
-        status: result.status,
-        deleted_at: result.deleted_at
-      });
-      
-      return result;
-    },
+    mutationFn: (userId) => base44.entities.User.update(userId, { deleted_at: new Date().toISOString() }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allUsers'] });
     },
@@ -1042,21 +1004,9 @@ function AdminConsoleContent() {
     if (!confirm(strings.confirmDisable)) return;
 
     try {
-      const now = new Date().toISOString();
-      
       await updateUserMutation.mutateAsync({
         userId: targetUser.id,
-        data: { 
-          status: 'suspended',
-          is_active: false,
-          suspended_at: now,
-          suspended_by: user.email || user.id
-        }
-      });
-      
-      console.log('✅ [SUSPEND_USER] User suspended:', {
-        email: targetUser.email,
-        suspendedBy: user.email
+        data: { is_active: false }
       });
     } catch (error) {
       console.error('Failed to disable user:', error);
@@ -1070,18 +1020,7 @@ function AdminConsoleContent() {
     try {
       await updateUserMutation.mutateAsync({
         userId: targetUser.id,
-        data: { 
-          status: 'active',
-          is_active: true,
-          suspended_at: null,
-          suspended_by: null,
-          suspension_reason: null
-        }
-      });
-      
-      console.log('✅ [ENABLE_USER] User re-activated:', {
-        email: targetUser.email,
-        enabledBy: user.email
+        data: { is_active: true }
       });
     } catch (error) {
       console.error('Failed to enable user:', error);
@@ -1104,15 +1043,7 @@ function AdminConsoleContent() {
     if (!confirm(strings.confirmRemove)) return;
 
     try {
-      await deleteUserMutation.mutateAsync({
-        userId: targetUser.id,
-        adminId: user.email || user.id
-      });
-      
-      console.log('✅ [REMOVE_USER] User soft-deleted:', {
-        email: targetUser.email,
-        deletedBy: user.email
-      });
+      await deleteUserMutation.mutateAsync(targetUser.id);
     } catch (error) {
       console.error('Failed to remove user:', error);
       alert(language === 'th' ? 'ไม่สามารถลบผู้ใช้ได้' : 'Failed to remove user');
@@ -1173,128 +1104,6 @@ function AdminConsoleContent() {
     } catch (error) {
       console.error('Export failed:', error);
       alert('Export failed: ' + error.message);
-    }
-  };
-
-  const handleMigrateLegacyUsers = async () => {
-    if (!confirm('⚠️ ONE-TIME MIGRATION\n\nThis will:\n1. Find all legacy "Deleted" users\n2. Normalize them to status="deleted"\n3. Revoke their access permanently\n\nThis cannot be undone.\n\nProceed?')) {
-      return;
-    }
-
-    setMigratingUsers(true);
-    setMigrationResult(null);
-
-    try {
-      console.log('🔧 [ADMIN] Starting legacy user migration...');
-      const response = await base44.functions.invoke('migrateLegacyDeletedUsers');
-      console.log('✅ [ADMIN] Migration response:', response.data);
-      
-      setMigrationResult(response.data);
-      
-      if (response.data?.success) {
-        alert(`✅ MIGRATION COMPLETE\n\nAffected: ${response.data.affected_count}\nMigrated: ${response.data.migrated_count}\nFailed: ${response.data.failed_count}\n\nCheck console for details.`);
-        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      } else {
-        alert('❌ Migration failed: ' + response.data?.error);
-      }
-    } catch (error) {
-      console.error('❌ [ADMIN] Migration failed:', error);
-      alert('Migration failed: ' + error.message);
-    } finally {
-      setMigratingUsers(false);
-    }
-  };
-
-  const handleHardDeleteTestUsers = async () => {
-    if (!isSuperAdmin) {
-      alert('Super Admin access required');
-      return;
-    }
-
-    const testEmails = [
-      'jay.p@signa-consultants.com',
-      'steve.d.lockhart+5@gmail.com',
-      'steve.l+1@signa-consultants.com',
-      'steve.d.lockhart+2@gmail.com',
-      'steve.d.lockhart+1@gmail.com'
-    ];
-
-    if (!confirm(`🚨 PERMANENT DELETION WARNING\n\nThis will PERMANENTLY DELETE 5 test users:\n\n${testEmails.join('\n')}\n\n• User records will be PURGED from database\n• Auth identities will be removed\n• Related records will be anonymized\n• This CANNOT be undone\n\nType "PURGE" in the next prompt to confirm.`)) {
-      return;
-    }
-
-    const confirmText = prompt('Type PURGE (all caps) to confirm permanent deletion:');
-    if (confirmText !== 'PURGE') {
-      alert('Deletion cancelled - confirmation text did not match.');
-      return;
-    }
-
-    setHardDeletingUsers(true);
-    setHardDeleteResult(null);
-
-    try {
-      console.log('🗑️ [ADMIN] Starting hard delete of test users...');
-      const response = await base44.functions.invoke('hardDeleteTestUsers');
-      console.log('✅ [ADMIN] Hard delete response:', response.data);
-      
-      setHardDeleteResult(response.data);
-      
-      if (response.data?.success) {
-        alert(`✅ PURGE COMPLETE\n\nTarget: ${response.data.target_count}\nFound: ${response.data.found_count}\nPurged: ${response.data.purged_count}\nFailed: ${response.data.failed_count}\n\nVerification: ${response.data.verification ? '✅ PASSED' : '❌ FAILED'}\n\nRefreshing user list...`);
-        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      } else {
-        alert('❌ Purge failed: ' + response.data?.error);
-      }
-    } catch (error) {
-      console.error('❌ [ADMIN] Hard delete failed:', error);
-      alert('Hard delete failed: ' + error.message);
-    } finally {
-      setHardDeletingUsers(false);
-    }
-  };
-
-  const handleHardResetAllUsers = async () => {
-    if (!isSuperAdmin) {
-      alert('Super Admin access required');
-      return;
-    }
-
-    const keepEmails = [
-      'steve.l@signa-consultants.com',
-      'steve.d.lockhart@gmail.com'
-    ];
-
-    if (!confirm(`🔥 HARD RESET - USER MANAGEMENT\n\nThis will DELETE ALL USERS except:\n\n${keepEmails.join('\n')}\n\nAll other users will be:\n• PERMANENTLY DELETED from database\n• Auth identities REMOVED\n• Related data ANONYMIZED\n• Able to re-register in future\n\nType "RESET" in next prompt to confirm.`)) {
-      return;
-    }
-
-    const confirmText = prompt('Type RESET (all caps) to confirm hard reset:');
-    if (confirmText !== 'RESET') {
-      alert('Reset cancelled - confirmation text did not match.');
-      return;
-    }
-
-    setHardDeletingUsers(true);
-    setHardDeleteResult(null);
-
-    try {
-      console.log('🔥 [ADMIN] Starting hard reset of user management...');
-      const response = await base44.functions.invoke('hardResetUserManagement');
-      console.log('✅ [ADMIN] Hard reset response:', response.data);
-      
-      setHardDeleteResult(response.data);
-      
-      if (response.data?.success) {
-        alert(`✅ HARD RESET COMPLETE\n\nDeleted: ${response.data.deleted_count}\nFailed: ${response.data.failed_count}\nRemaining: ${response.data.remaining_count}\n\nVerification: ${response.data.verification ? '✅ PASSED' : '❌ FAILED'}\n\nRefreshing user list...`);
-        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      } else {
-        alert('❌ Hard reset failed: ' + response.data?.error);
-      }
-    } catch (error) {
-      console.error('❌ [ADMIN] Hard reset failed:', error);
-      alert('Hard reset failed: ' + error.message);
-    } finally {
-      setHardDeletingUsers(false);
     }
   };
 
@@ -1681,64 +1490,6 @@ function AdminConsoleContent() {
                     <Database className="w-4 h-4 mr-2" />
                     Export Backup
                   </Button>
-
-                  <Button
-                    onClick={handleMigrateLegacyUsers}
-                    disabled={migratingUsers}
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    {migratingUsers ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Migrating...
-                      </>
-                    ) : (
-                      <>
-                        <UserX className="w-4 h-4 mr-2" />
-                        Migrate Legacy Deleted
-                      </>
-                    )}
-                  </Button>
-
-                  {isSuperAdmin && (
-                    <>
-                      <Button
-                        onClick={handleHardDeleteTestUsers}
-                        disabled={hardDeletingUsers}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        {hardDeletingUsers ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Purging...
-                          </>
-                        ) : (
-                          <>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Hard Delete 5 Test Users
-                          </>
-                        )}
-                      </Button>
-                      
-                      <Button
-                        onClick={handleHardResetAllUsers}
-                        disabled={hardDeletingUsers}
-                        className="bg-red-900 hover:bg-red-950 text-white border-2 border-red-400"
-                      >
-                        {hardDeletingUsers ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Resetting...
-                          </>
-                        ) : (
-                          <>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            🔥 HARD RESET (Keep 2)
-                          </>
-                        )}
-                      </Button>
-                    </>
-                  )}
                 </div>
 
                 {debugData && (
@@ -1751,119 +1502,9 @@ function AdminConsoleContent() {
                     </pre>
                   </div>
                 )}
-
-                {migrationResult && (
-                  <div className="mt-4 p-4 rounded-lg" style={{
-                    backgroundColor: migrationResult.success 
-                      ? (isDarkMode ? '#1E4435' : '#ECFDF5')
-                      : (isDarkMode ? '#3A2626' : '#FEF2F2'),
-                    border: `2px solid ${migrationResult.success ? '#10B981' : '#EF4444'}`
-                  }}>
-                    <div className="flex items-start gap-3 mb-3">
-                      {migrationResult.success ? (
-                        <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />
-                      ) : (
-                        <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
-                      )}
-                      <div className="flex-1">
-                        <p className="font-bold text-sm mb-1" style={{
-                          color: migrationResult.success ? '#10B981' : '#EF4444'
-                        }}>
-                          {migrationResult.message}
-                        </p>
-                        {migrationResult.success && (
-                          <div className="text-xs space-y-1" style={{ color: colors.textPrimary }}>
-                            <p>Affected: {migrationResult.affected_count}</p>
-                            <p>Migrated: {migrationResult.migrated_count}</p>
-                            <p>Failed: {migrationResult.failed_count}</p>
-                            {migrationResult.note && (
-                              <p className="mt-2 italic" style={{ color: colors.textSecondary }}>
-                                {migrationResult.note}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {migrationResult.results && migrationResult.results.length > 0 && (
-                      <details className="mt-3">
-                        <summary className="cursor-pointer text-xs font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                          View Details ({migrationResult.results.length} users)
-                        </summary>
-                        <div className="overflow-auto max-h-64 p-3 rounded" style={{
-                          backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
-                          border: `1px solid ${colors.borderColor}`
-                        }}>
-                          <pre className="text-xs" style={{ color: colors.textPrimary }}>
-                            {JSON.stringify(migrationResult.results, null, 2)}
-                          </pre>
-                        </div>
-                      </details>
-                    )}
-                  </div>
-                )}
-
-                {hardDeleteResult && (
-                 <div className="mt-4 p-4 rounded-lg" style={{
-                   backgroundColor: hardDeleteResult.success 
-                     ? (isDarkMode ? '#1E4435' : '#ECFDF5')
-                     : (isDarkMode ? '#3A2626' : '#FEF2F2'),
-                   border: `2px solid ${hardDeleteResult.success ? '#10B981' : '#EF4444'}`
-                 }}>
-                   <div className="flex items-start gap-3 mb-3">
-                     {hardDeleteResult.success ? (
-                       <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />
-                     ) : (
-                       <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
-                     )}
-                     <div className="flex-1">
-                       <p className="font-bold text-sm mb-1" style={{
-                         color: hardDeleteResult.success ? '#10B981' : '#EF4444'
-                       }}>
-                         {hardDeleteResult.message}
-                       </p>
-                       {hardDeleteResult.success && (
-                         <div className="text-xs space-y-1" style={{ color: colors.textPrimary }}>
-                           <p>Target: {hardDeleteResult.target_count}</p>
-                           <p>Found: {hardDeleteResult.found_count}</p>
-                           <p>Purged: {hardDeleteResult.purged_count}</p>
-                           <p>Failed: {hardDeleteResult.failed_count}</p>
-                           <p className="mt-2 font-bold" style={{ 
-                             color: hardDeleteResult.verification ? '#10B981' : '#EF4444' 
-                           }}>
-                             Verification: {hardDeleteResult.verification ? '✅ PASSED' : '❌ FAILED'}
-                           </p>
-                           {hardDeleteResult.note && (
-                             <p className="mt-2 italic" style={{ color: colors.textSecondary }}>
-                               {hardDeleteResult.note}
-                             </p>
-                           )}
-                         </div>
-                       )}
-                     </div>
-                   </div>
-
-                   {hardDeleteResult.results && hardDeleteResult.results.length > 0 && (
-                     <details className="mt-3">
-                       <summary className="cursor-pointer text-xs font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                         View Details ({hardDeleteResult.results.length} users)
-                       </summary>
-                       <div className="overflow-auto max-h-64 p-3 rounded" style={{
-                         backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
-                         border: `1px solid ${colors.borderColor}`
-                       }}>
-                         <pre className="text-xs" style={{ color: colors.textPrimary }}>
-                           {JSON.stringify(hardDeleteResult.results, null, 2)}
-                         </pre>
-                       </div>
-                     </details>
-                   )}
-                 </div>
-                )}
-                </div>
-                </CardContent>
-                </Card>
+              </div>
+            </CardContent>
+          </Card>
 
         <Dialog open={permissionsDialog} onOpenChange={setPermissionsDialog}>
           <DialogContent className="max-w-2xl" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
@@ -2079,45 +1720,6 @@ function AdminConsoleContent() {
           </Card>
         )}
 
-        {isSuperAdmin && (
-          <Card className="mb-6 border-none shadow-lg" style={{ 
-            backgroundColor: colors.cardBg,
-            borderLeft: '6px solid #8B5CF6'
-          }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    backgroundColor: '#8B5CF6',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-                      {strings.manageTemplates}
-                    </h3>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
-                      {strings.manageTemplatesDesc}
-                    </p>
-                  </div>
-                </div>
-                <Link to={createPageUrl("AdminTemplates")}>
-                  <Button className="bg-purple-600 hover:bg-purple-700">
-                    <FileText className="w-4 h-4 mr-2" />
-                    {strings.goToTemplates}
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* 3. USER MANAGEMENT - COLLAPSIBLE */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader 
@@ -2168,9 +1770,8 @@ function AdminConsoleContent() {
                     const isCurrentUserSuperAdmin = user?.access_level === 'super_admin';
                     const isTargetUserSuperAdmin = u.access_level === 'super_admin';
                     const canChangeRole = !(isTargetUserSuperAdmin && superAdminCount <= MINIMUM_SUPER_ADMINS);
-                    const userStatus = u.status || 'active';
-                    const isDisabled = userStatus === 'suspended' || u.is_active === false;
-                    const isDeleted = userStatus === 'deleted' || !!u.deleted_at;
+                    const isDisabled = u.is_active === false;
+                    const isDeleted = !!u.deleted_at;
                     const isSelf = u.id === user.id;
                     
                     return (
@@ -2206,19 +1807,9 @@ function AdminConsoleContent() {
                             }>
                               {u.access_level || 'user'}
                             </Badge>
-                            {isDeleted && (
-                              <Badge className="bg-red-100 text-red-800 font-bold">
-                                {strings.deleted}
-                              </Badge>
-                            )}
-                            {!isDeleted && isDisabled && (
-                              <Badge className="bg-amber-100 text-amber-800 font-bold">
-                                {strings.disabled}
-                              </Badge>
-                            )}
-                            {!isDeleted && !isDisabled && (
-                              <Badge className="bg-emerald-100 text-emerald-800 font-bold">
-                                {strings.active}
+                            {(isDisabled || isDeleted) && (
+                              <Badge className="bg-red-100 text-red-800">
+                                {isDeleted ? strings.deleted : strings.disabled}
                               </Badge>
                             )}
                           </div>
