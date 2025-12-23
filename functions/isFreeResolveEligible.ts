@@ -3,6 +3,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 // HARDCODED ANNUAL SECURE PRICE ID - SOURCE OF TRUTH
 const STRIPE_PRICE_SECURE_ANNUAL = 'price_1SbtaWQwol6NhlUxAfPLTDeE';
 
+// GRACE PERIOD - ANTI-ABUSE MEASURE
+const FREE_RESOLVE_GRACE_PERIOD_DAYS = 7;
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -82,7 +85,31 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Condition 4: Not already used in current period
+    // Condition 4: 7-day grace period (anti-abuse)
+    if (userData.current_period_start) {
+      const periodStart = new Date(userData.current_period_start);
+      const gracePeriodEnd = new Date(periodStart);
+      gracePeriodEnd.setDate(gracePeriodEnd.getDate() + FREE_RESOLVE_GRACE_PERIOD_DAYS);
+      const now = new Date();
+      
+      if (now < gracePeriodEnd) {
+        const daysRemaining = Math.ceil((gracePeriodEnd - now) / (1000 * 60 * 60 * 24));
+        console.log('❌ [FREE_RESOLVE_CHECK] Not eligible: grace period active');
+        console.log('Period start:', periodStart);
+        console.log('Grace period ends:', gracePeriodEnd);
+        console.log('Days remaining:', daysRemaining);
+        return Response.json({
+          eligible: false,
+          reason: 'grace_period',
+          message: 'Free Resolve unlocks after 7 days of active Annual Secure membership.',
+          days_remaining: daysRemaining,
+          unlocks_at: gracePeriodEnd.toISOString(),
+          period_start: userData.current_period_start
+        });
+      }
+    }
+
+    // Condition 5: Not already used in current period
     if (userData.resolve_entitlement_used_at) {
       const usedAt = new Date(userData.resolve_entitlement_used_at);
       const periodStart = new Date(userData.current_period_start);
