@@ -28,8 +28,21 @@ function SupportContent() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const toast = useToast();
   const queryClient = useQueryClient();
+
+  // Log mount
+  React.useEffect(() => {
+    console.log('✅ [SUPPORT_PAGE] Mounted successfully', {
+      timestamp: new Date().toISOString(),
+      route: window.location.pathname
+    });
+    return () => {
+      console.log('🔻 [SUPPORT_PAGE] Unmounted');
+    };
+  }, []);
 
   const validationSchema = {
     subject: [
@@ -61,21 +74,64 @@ function SupportContent() {
     validationSchema
   );
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading, error: userError } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      console.log('🔍 [SUPPORT_PAGE] Fetching user...');
+      try {
+        const result = await base44.auth.me();
+        console.log('✅ [SUPPORT_PAGE] User fetched:', result?.email);
+        return result;
+      } catch (err) {
+        console.error('❌ [SUPPORT_PAGE] User fetch failed:', err);
+        throw err;
+      }
+    },
+    retry: 3,
+    retryDelay: 1000,
   });
 
-  const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
+  const { data: tickets = [], isLoading: ticketsLoading, error: ticketsError, refetch: refetchTickets } = useQuery({
     queryKey: ['tickets'],
-    queryFn: () => base44.entities.SupportTicket.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: async () => {
+      console.log('🔍 [SUPPORT_PAGE] Fetching tickets for user:', user?.email);
+      try {
+        const result = await Promise.race([
+          base44.entities.SupportTicket.filter({ created_by: user?.email }, '-created_date'),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Ticket fetch timeout')), 15000)
+          )
+        ]);
+        console.log('✅ [SUPPORT_PAGE] Tickets fetched:', result.length);
+        return result;
+      } catch (err) {
+        console.error('❌ [SUPPORT_PAGE] Tickets fetch failed:', err);
+        setHasError(true);
+        setErrorMessage(err.message || 'Failed to load tickets');
+        return [];
+      }
+    },
     enabled: !!user,
+    retry: 2,
+    retryDelay: 2000,
   });
 
   const createTicketMutation = useMutation({
     mutationFn: async (data) => {
-      const { data: response } = await base44.functions.invoke('createSupportTicket', data);
-      return response;
+      console.log('📤 [SUPPORT_PAGE] Creating ticket:', data);
+      try {
+        const result = await Promise.race([
+          base44.functions.invoke('createSupportTicket', data),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Ticket creation timeout')), 15000)
+          )
+        ]);
+        console.log('✅ [SUPPORT_PAGE] Ticket created:', result.data);
+        return result.data;
+      } catch (err) {
+        console.error('❌ [SUPPORT_PAGE] Ticket creation failed:', err);
+        throw err;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
@@ -83,7 +139,8 @@ function SupportContent() {
       toast.success(language === 'th' ? 'ส่งคำขอสำเร็จ' : 'Ticket submitted successfully');
       haptic.success();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('❌ [SUPPORT_PAGE] Mutation error:', error);
       toast.error(language === 'th' ? 'การส่งล้มเหลว' : 'Failed to submit ticket');
       haptic.error();
     }
@@ -96,16 +153,25 @@ function SupportContent() {
     setUploading(true);
     haptic.light();
     
+    console.log('📤 [SUPPORT_PAGE] Uploading files:', files.length);
+    
     try {
       const urls = [];
       for (const file of files) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        urls.push(file_url);
+        console.log('📎 [SUPPORT_PAGE] Uploading file:', file.name);
+        const result = await Promise.race([
+          base44.integrations.Core.UploadFile({ file }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('File upload timeout')), 20000)
+          )
+        ]);
+        urls.push(result.file_url);
       }
+      console.log('✅ [SUPPORT_PAGE] Files uploaded:', urls.length);
       setValues({ ...formData, attachments: [...formData.attachments, ...urls] });
       toast.success(language === 'th' ? `อัปโหลด ${files.length} ไฟล์สำเร็จ` : `${files.length} file(s) uploaded`);
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error('❌ [SUPPORT_PAGE] Upload failed:', error);
       toast.error(language === 'th' ? 'การอัปโหลดล้มเหลว' : 'Upload failed');
     } finally {
       setUploading(false);
@@ -131,14 +197,22 @@ function SupportContent() {
     setSendingReply(true);
     haptic.medium();
 
-    try {
-      const { data: response } = await base44.functions.invoke('replyToTicket', {
-        ticketId: selectedTicket.id,
-        message: replyMessage,
-        attachments: []
-      });
+    console.log('📤 [SUPPORT_PAGE] Sending reply to ticket:', selectedTicket.id);
 
-      if (response.success) {
+    try {
+      const result = await Promise.race([
+        base44.functions.invoke('replyToTicket', {
+          ticketId: selectedTicket.id,
+          message: replyMessage,
+          attachments: []
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Reply timeout')), 15000)
+        )
+      ]);
+
+      if (result.data?.success) {
+        console.log('✅ [SUPPORT_PAGE] Reply sent successfully');
         queryClient.invalidateQueries({ queryKey: ['tickets'] });
         setReplyMessage('');
         toast.success(language === 'th' ? 'ส่งข้อความสำเร็จ' : 'Reply sent');
@@ -149,7 +223,7 @@ function SupportContent() {
         setSelectedTicket(updated[0]);
       }
     } catch (error) {
-      console.error('Reply failed:', error);
+      console.error('❌ [SUPPORT_PAGE] Reply failed:', error);
       toast.error(language === 'th' ? 'ส่งข้อความล้มเหลว' : 'Failed to send reply');
       haptic.error();
     } finally {
@@ -159,6 +233,7 @@ function SupportContent() {
 
   const handleTicketClick = async (ticket) => {
     haptic.light();
+    console.log('🔍 [SUPPORT_PAGE] Ticket clicked:', ticket.id);
     setSelectedTicket(ticket);
     
     // Mark admin reply as read
@@ -168,8 +243,9 @@ function SupportContent() {
           has_unread_admin_reply: false
         });
         queryClient.invalidateQueries({ queryKey: ['tickets'] });
+        console.log('✅ [SUPPORT_PAGE] Ticket marked as read');
       } catch (error) {
-        console.error('Failed to mark as read:', error);
+        console.error('❌ [SUPPORT_PAGE] Failed to mark as read:', error);
       }
     }
   };
@@ -293,8 +369,79 @@ function SupportContent() {
 
   const strings = t[language] || t.en;
 
+  // Error boundary fallback
+  if (userError) {
+    console.error('❌ [SUPPORT_PAGE] User error:', userError);
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: colors.bg }}>
+        <Card className="border-none shadow-xl max-w-md w-full" style={{ backgroundColor: colors.cardBg }}>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-600" />
+            <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {language === 'th' ? 'ไม่สามารถโหลดได้' : 'Failed to Load'}
+            </h2>
+            <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
+              {language === 'th' ? 'เกิดข้อผิดพลาดในการโหลดหน้านี้' : 'An error occurred loading this page'}
+            </p>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => window.location.reload()}
+                className="flex-1"
+                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+              >
+                {language === 'th' ? 'ลองอีกครั้ง' : 'Retry'}
+              </Button>
+              <Link to={createPageUrl("Account")} className="flex-1">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  style={{ borderColor: colors.borderColor }}
+                >
+                  {language === 'th' ? 'กลับ' : 'Go Back'}
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Loading state
+  if (userLoading) {
+    return (
+      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6">
+            <div className="h-8 w-48 rounded bg-gray-200 dark:bg-gray-700 animate-pulse mb-2"></div>
+            <div className="h-4 w-64 rounded bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
+          </div>
+          <SkeletonLoader variant="card" count={2} isDarkMode={isDarkMode} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+      {/* Debug info - hidden by default */}
+      {false && (
+        <div style={{
+          position: 'fixed',
+          bottom: '80px',
+          right: '10px',
+          padding: '4px 8px',
+          backgroundColor: '#10B981',
+          color: '#FFFFFF',
+          fontSize: '10px',
+          borderRadius: '4px',
+          zIndex: 9999,
+          fontFamily: 'monospace'
+        }}>
+          SupportPage OK | v1.0 | {window.location.pathname} | {user?.id?.slice(0, 8)}
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto">
         <PageHeader
           title={strings.title}
@@ -304,7 +451,7 @@ function SupportContent() {
           isDarkMode={isDarkMode}
           showBack={true}
           backLabel={strings.back}
-          backRoute={createPageUrl("AdminConsole")}
+          backRoute={createPageUrl("Account")}
         />
 
         <div className="grid lg:grid-cols-5 gap-6">
@@ -440,7 +587,32 @@ function SupportContent() {
           {/* Right Side - Tickets List (3/5) */}
           <div className="lg:col-span-3">
             <h3 className="font-bold text-lg mb-4" style={{ color: colors.textPrimary }}>{strings.recentTickets}</h3>
-            {ticketsLoading ? (
+            
+            {ticketsError ? (
+              <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+                <CardContent className="p-6">
+                  <div className="text-center py-8">
+                    <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-600" />
+                    <h3 className="font-bold text-lg mb-2" style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? 'ไม่สามารถโหลดตั๋วได้' : 'Failed to Load Tickets'}
+                    </h3>
+                    <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                      {errorMessage || (language === 'th' ? 'กรุณาลองอีกครั้ง' : 'Please try again')}
+                    </p>
+                    <Button
+                      onClick={() => {
+                        setHasError(false);
+                        setErrorMessage('');
+                        refetchTickets();
+                      }}
+                      style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                    >
+                      {language === 'th' ? 'ลองอีกครั้ง' : 'Retry'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : ticketsLoading ? (
               <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
             ) : tickets.length === 0 ? (
               <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
@@ -674,12 +846,83 @@ function SupportContent() {
   );
 }
 
+class SupportErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    console.error('❌ [SUPPORT_ERROR_BOUNDARY] Caught error:', error);
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('❌ [SUPPORT_ERROR_BOUNDARY] Error details:', {
+      error: error.toString(),
+      stack: error.stack,
+      componentStack: errorInfo.componentStack
+    });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: '#F8FAFC' }}>
+          <Card className="border-none shadow-xl max-w-md w-full" style={{ backgroundColor: '#FFFFFF' }}>
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-600" />
+              <h2 className="text-xl font-bold mb-2" style={{ color: '#0F172A' }}>
+                Support Temporarily Unavailable
+              </h2>
+              <p className="text-sm mb-6" style={{ color: '#475569' }}>
+                An unexpected error occurred. Please try again.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    this.setState({ hasError: false, error: null });
+                    window.location.reload();
+                  }}
+                  className="flex-1"
+                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                >
+                  Retry
+                </Button>
+                <Link to={createPageUrl("Account")} className="flex-1">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Go Back
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export default function Support() {
+  React.useEffect(() => {
+    console.log('🔗 [SUPPORT_ROUTE] Support page route accessed', {
+      pathname: window.location.pathname,
+      timestamp: new Date().toISOString()
+    });
+  }, []);
+
   return (
-    <AuthGuard>
-      <ToastProvider>
-        <SupportContent />
-      </ToastProvider>
-    </AuthGuard>
+    <SupportErrorBoundary>
+      <AuthGuard>
+        <ToastProvider>
+          <SupportContent />
+        </ToastProvider>
+      </AuthGuard>
+    </SupportErrorBoundary>
   );
 }
