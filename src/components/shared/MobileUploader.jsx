@@ -17,7 +17,20 @@ import { base44 } from "@/api/base44Client";
 import { normalizeFile } from "./FileNormalizer";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const UPLOAD_TIMEOUT_MS = 60000; // 60 seconds for mobile
+
+// CRITICAL: Always define timeout with fallback, never rely on env vars
+const UPLOAD_TIMEOUT_MS = (() => {
+  try {
+    const envTimeout = typeof process !== 'undefined' ? process.env?.UPLOAD_TIMEOUT_MS : undefined;
+    const parsed = Number(envTimeout);
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
+  } catch (e) {
+    // Env not available or parse failed
+  }
+  return 120000; // Default: 120 seconds for mobile
+})();
 
 export const createNetworkDebugLog = (stage, data) => {
   const log = {
@@ -82,13 +95,27 @@ export const uploadFileWithSession = async (file, requestId, onProgress) => {
       integration: 'Core.UploadFile',
       fileName: file.name,
       fileType: file.type,
-      bytes: fileBuffer.byteLength
+      bytes: fileBuffer.byteLength,
+      timeoutMs: UPLOAD_TIMEOUT_MS
     });
 
     const uploadStartTime = Date.now();
     
+    // Create a new File from buffer to ensure it's uploadable
+    const uploadableFile = new File([fileBuffer], file.name, {
+      type: file.type,
+      lastModified: file.lastModified || Date.now()
+    });
+
+    log('FILE_REWRAPPED', {
+      originalSize: file.size,
+      bufferSize: fileBuffer.byteLength,
+      newFileSize: uploadableFile.size,
+      sizeMatch: uploadableFile.size === fileBuffer.byteLength
+    });
+    
     const uploadResult = await base44.integrations.Core.UploadFile({ 
-      file: file 
+      file: uploadableFile 
     });
 
     const uploadDuration = Date.now() - uploadStartTime;
@@ -139,26 +166,44 @@ export const uploadMultipleFiles = async (files, requestId, onFileProgress) => {
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     
-    const result = await uploadFileWithSession(
-      file,
-      `${requestId}_file${i + 1}`,
-      (progress) => {
-        if (onFileProgress) {
-          onFileProgress(i, progress);
+    try {
+      const result = await uploadFileWithSession(
+        file,
+        `${requestId}_file${i + 1}`,
+        (progress) => {
+          if (onFileProgress) {
+            onFileProgress(i, progress);
+          }
         }
+      );
+      
+      results.push({
+        fileName: file.name,
+        ...result
+      });
+      
+      // Stop on first failure
+      if (!result.success) {
+        break;
       }
-    );
-    
-    results.push({
-      fileName: file.name,
-      ...result
-    });
-    
-    // Stop on first failure
-    if (!result.success) {
+    } catch (err) {
+      // Catch any unexpected errors
+      results.push({
+        fileName: file.name,
+        success: false,
+        error: err.message,
+        networkLog: [{
+          stage: 'UPLOAD_EXCEPTION',
+          error: err.message,
+          stack: err.stack
+        }]
+      });
       break;
     }
   }
   
   return results;
 };
+
+// Export timeout constant for use in debug logs
+export const getUploadTimeout = () => UPLOAD_TIMEOUT_MS;

@@ -14,10 +14,26 @@ export const getDeviceContext = () => {
     brands: navigator.userAgentData.brands?.map(b => `${b.brand}/${b.version}`) || []
   } : null;
 
-  // Android detection
+  // Android detection - ROBUST with heuristics
   const isAndroidUA = /Android/i.test(ua);
   const isAndroidPlatform = /Android/i.test(platform);
-  const isAndroid = isAndroidUA || isAndroidPlatform || (uaData?.platform === 'Android');
+  const isAndroidUAData = uaData?.platform === 'Android';
+  
+  // Heuristic detection for disguised Android (common in PWAs/WebViews)
+  const hasARM = /arm|aarch64/i.test(platform) || /arm/i.test(ua);
+  const hasLinuxPlatform = /Linux/i.test(platform);
+  const hasTouchScreen = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+  const hasSmallScreen = window.screen.width <= 1024 || window.screen.height <= 1024;
+  const hasAndroidVendor = /android/i.test(navigator.vendor || '');
+  
+  // Heuristic: Linux + ARM + Touch + Small screen = likely Android tablet
+  const isAndroidHeuristic = 
+    hasLinuxPlatform && 
+    hasARM && 
+    hasTouchScreen && 
+    (hasSmallScreen || hasAndroidVendor);
+  
+  const isAndroid = isAndroidUA || isAndroidPlatform || isAndroidUAData || isAndroidHeuristic;
 
   // iOS detection
   const isIOSUA = /iPhone|iPad|iPod/i.test(ua);
@@ -65,6 +81,11 @@ export const getDeviceContext = () => {
     wrapperName = 'standalone';
   }
 
+  // Tablet detection
+  const isTablet = 
+    (isAndroid && hasSmallScreen && window.screen.width >= 600) ||
+    (isIOS && /iPad/i.test(ua));
+
   // Determine platform
   let detectedPlatform = 'unknown';
   if (isAndroid) detectedPlatform = 'android';
@@ -73,12 +94,20 @@ export const getDeviceContext = () => {
   else if (/Win/i.test(platform)) detectedPlatform = 'windows';
   else if (/Linux/i.test(platform) && !isAndroid) detectedPlatform = 'linux';
 
+  // Detection method for debugging
+  let detectionMethod = [];
+  if (isAndroidUA) detectionMethod.push('ua-string');
+  if (isAndroidPlatform) detectionMethod.push('navigator.platform');
+  if (isAndroidUAData) detectionMethod.push('uaData.platform');
+  if (isAndroidHeuristic) detectionMethod.push('heuristic');
+
   return {
     // Core detection
     platform: detectedPlatform,
     isAndroid,
     isIOS,
     isDesktop: !isAndroid && !isIOS,
+    isTablet,
     
     // Runtime environment
     runtime,
@@ -93,14 +122,31 @@ export const getDeviceContext = () => {
     isSafari,
     isFirefox,
     
+    // Detection details (for debugging)
+    detectionMethod: detectionMethod.join('+') || 'unknown',
+    isAndroidUA,
+    isAndroidHeuristic,
+    heuristics: {
+      hasARM,
+      hasLinuxPlatform,
+      hasTouchScreen,
+      hasSmallScreen,
+      hasAndroidVendor,
+      screenWidth: window.screen.width,
+      screenHeight: window.screen.height,
+      maxTouchPoints: navigator.maxTouchPoints
+    },
+    
     // Raw data
     userAgent: ua,
     navigatorPlatform: platform,
+    navigatorVendor: navigator.vendor || '',
     uaData,
     
     // Capabilities
     supportsFileAPI: typeof File !== 'undefined' && typeof FileReader !== 'undefined',
     supportsFormData: typeof FormData !== 'undefined',
+    supportsArrayBuffer: typeof ArrayBuffer !== 'undefined',
     
     // Timestamp
     detectedAt: new Date().toISOString()

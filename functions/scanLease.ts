@@ -198,7 +198,7 @@ INSTRUCTIONS:
       success: true,
       result: scanResult,
       diagnostic: {
-        buildTag: "scanLease-normalized-v5",
+        buildTag: "android-fix-v2",
         requestId,
         filesProcessed: fileUrls.length,
         totalDuration: analysisDuration,

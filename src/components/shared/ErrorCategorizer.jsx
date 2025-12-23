@@ -3,6 +3,11 @@
  */
 
 export const ERROR_CATEGORIES = {
+  CLIENT_CONFIG_ERROR: {
+    code: 'CLIENT_CONFIG_ERROR',
+    title: 'App Configuration Error',
+    description: 'Upload failed due to app configuration'
+  },
   UPLOAD_FAILED: {
     code: 'UPLOAD_FAILED',
     title: 'Upload Failed',
@@ -59,6 +64,14 @@ export const categorizeError = (error, context = {}) => {
   const errorMessage = error?.message || error?.toString() || '';
   const errorDetails = error?.details || '';
   const httpStatus = context.httpStatus || error?.status;
+  const uploadStage = context.uploadStage || '';
+  
+  // Client configuration errors (before network)
+  if (errorMessage.includes('is not defined') || 
+      errorMessage.includes('ReferenceError') ||
+      errorMessage.includes('CLIENT_CONFIG')) {
+    return ERROR_CATEGORIES.CLIENT_CONFIG_ERROR;
+  }
   
   // File validation errors
   if (errorMessage.includes('FILE_TYPE_INVALID') || errorMessage.includes('not a valid PDF')) {
@@ -69,7 +82,9 @@ export const categorizeError = (error, context = {}) => {
     return ERROR_CATEGORIES.FILE_SIZE_EXCEEDED;
   }
   
-  if (errorMessage.includes('FILE_READ_FAILED') || errorMessage.includes('BLOB_EMPTY')) {
+  if (errorMessage.includes('FILE_READ_FAILED') || 
+      errorMessage.includes('BLOB_EMPTY') ||
+      errorMessage.includes('PREFLIGHT_READ_FAILED')) {
     return ERROR_CATEGORIES.UPLOAD_FAILED;
   }
   
@@ -88,8 +103,11 @@ export const categorizeError = (error, context = {}) => {
     return ERROR_CATEGORIES.BACKEND_VALIDATION_ERROR;
   }
   
-  // Analysis-specific errors
-  if (errorMessage.includes('analysis') || errorMessage.includes('scan') || errorMessage.includes('InvokeLLM')) {
+  // Analysis-specific errors (only if we reached analysis stage)
+  if ((errorMessage.includes('analysis') || 
+       errorMessage.includes('scan') || 
+       errorMessage.includes('InvokeLLM')) &&
+      (uploadStage === 'scanning' || uploadStage === 'extracting' || uploadStage === 'finalizing')) {
     return ERROR_CATEGORIES.ANALYSIS_ERROR;
   }
   
@@ -103,18 +121,28 @@ export const categorizeError = (error, context = {}) => {
     return ERROR_CATEGORIES.CORS_OR_BLOCKED;
   }
   
-  // Generic network error (last resort)
+  // Upload failures (before analysis)
+  if (errorMessage.includes('UPLOAD_FAILED') || uploadStage === 'uploading') {
+    return ERROR_CATEGORIES.UPLOAD_FAILED;
+  }
+  
+  // Generic network error
   if (errorMessage.includes('network') || errorMessage.includes('connection')) {
     return ERROR_CATEGORIES.NETWORK_ERROR;
   }
   
-  // Default to analysis error if unknown
-  return ERROR_CATEGORIES.ANALYSIS_ERROR;
+  // Default based on stage
+  if (uploadStage === 'uploading' || uploadStage === 'creating') {
+    return ERROR_CATEGORIES.UPLOAD_FAILED;
+  }
+  
+  return ERROR_CATEGORIES.NETWORK_ERROR;
 };
 
-export const formatErrorForUser = (error, requestId, language = 'en') => {
+export const formatErrorForUser = (error, requestId, language = 'en', context = {}) => {
   const category = categorizeError(error, {
-    httpStatus: error?.status || error?.response?.status
+    httpStatus: error?.status || error?.response?.status,
+    uploadStage: context.uploadStage
   });
   
   // Special handling for Google Drive/file access errors
@@ -126,6 +154,7 @@ export const formatErrorForUser = (error, requestId, language = 'en') => {
 
   const translations = {
     en: {
+      [ERROR_CATEGORIES.CLIENT_CONFIG_ERROR.code]: 'Upload failed due to app configuration. Please update the app.',
       [ERROR_CATEGORIES.UPLOAD_FAILED.code]: isFileAccessError
         ? 'Could not read file from Google Drive. Please download the file to your device or choose from Files app.'
         : 'Failed to read or upload file',
@@ -140,6 +169,7 @@ export const formatErrorForUser = (error, requestId, language = 'en') => {
       [ERROR_CATEGORIES.NETWORK_ERROR.code]: 'Network connection failed'
     },
     th: {
+      [ERROR_CATEGORIES.CLIENT_CONFIG_ERROR.code]: 'อัปโหลดล้มเหลวเนื่องจากการกำหนดค่าแอป กรุณาอัปเดตแอป',
       [ERROR_CATEGORIES.UPLOAD_FAILED.code]: isFileAccessError
         ? 'ไม่สามารถอ่านไฟล์จาก Google Drive กรุณาดาวน์โหลดไฟล์ไปยังอุปกรณ์ของคุณหรือเลือกจากแอปไฟล์'
         : 'ไม่สามารถอ่านหรืออัปโหลดไฟล์',
@@ -154,6 +184,7 @@ export const formatErrorForUser = (error, requestId, language = 'en') => {
       [ERROR_CATEGORIES.NETWORK_ERROR.code]: 'การเชื่อมต่อเครือข่ายล้มเหลว'
     },
     ru: {
+      [ERROR_CATEGORIES.CLIENT_CONFIG_ERROR.code]: 'Загрузка не удалась из-за конфигурации приложения. Обновите приложение.',
       [ERROR_CATEGORIES.UPLOAD_FAILED.code]: isFileAccessError
         ? 'Не удалось прочитать файл из Google Drive. Скачайте файл на устройство или выберите из приложения Файлы.'
         : 'Не удалось прочитать или загрузить файл',

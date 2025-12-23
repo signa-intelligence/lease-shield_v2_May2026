@@ -38,7 +38,7 @@ import TrustBadge from "../components/shared/TrustBadge";
 import { generateRequestId, normalizeFiles, preflightCheck } from "../components/shared/FileNormalizer";
 import { formatErrorForUser, createDebugLog } from "../components/shared/ErrorCategorizer";
 import { getDeviceContext } from "../components/shared/DeviceContext";
-import { uploadFileWithSession, uploadMultipleFiles } from "../components/shared/MobileUploader";
+import { uploadFileWithSession, uploadMultipleFiles, getUploadTimeout } from "../components/shared/MobileUploader";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
@@ -925,14 +925,19 @@ function UploadScanPageContent() {
         setUploadProgress(10);
 
         // STEP 2: Upload normalized files using mobile-proof uploader
+        const uploadTimeoutMs = getUploadTimeout();
+        
         logStage('UPLOAD_START', { filesCount: normalizedFiles.length });
         logNetwork('UPLOAD_CONFIG', {
           method: 'POST',
           integration: 'Core.UploadFile',
           filesCount: normalizedFiles.length,
           totalBytes: normalizedFiles.reduce((sum, f) => sum + f.size, 0),
-          timeout: UPLOAD_TIMEOUT_MS,
-          deviceContext: deviceContext.platform
+          timeoutMs: uploadTimeoutMs,
+          timeoutConfigured: uploadTimeoutMs > 0,
+          devicePlatform: deviceContext.platform,
+          isAndroid: deviceContext.isAndroid,
+          runtime: deviceContext.runtime
         });
 
         const uploadStartTime = Date.now();
@@ -1126,14 +1131,17 @@ function UploadScanPageContent() {
           return attemptUpload();
         } else {
           // Final failure after all retries - categorize and format error
-          const formattedError = formatErrorForUser(err, requestId, language);
+          const formattedError = formatErrorForUser(err, requestId, language, {
+            uploadStage: analysisStage
+          });
           const debugData = createDebugLog(requestId, stages, deviceContext, networkLog);
           
           logStage('FINAL_FAILURE', {
             category: formattedError.category,
             retriesExhausted: true,
             devicePlatform: deviceContext.platform,
-            isAndroid: deviceContext.isAndroid
+            isAndroid: deviceContext.isAndroid,
+            uploadStage: analysisStage
           });
 
           setError(formattedError);
@@ -1382,18 +1390,44 @@ function UploadScanPageContent() {
   const handleCopyDebugLog = () => {
     if (!debugLog) return;
     
-    // Create comprehensive debug report
+    // Create comprehensive debug report with network details
     const debugReport = {
-      ...debugLog,
+      requestId: debugLog.requestId,
+      buildTag: debugLog.buildTag || 'android-fix-v2',
+      timestamp: debugLog.timestamp,
+      
       errorSummary: {
         category: error?.category,
         title: error?.title,
-        message: error?.message
+        message: error?.message,
+        details: error?.details
       },
+      
+      deviceContext: debugLog.deviceContext || {},
+      
       userContext: {
         email: user?.email,
         tier: userTier,
-        language
+        language,
+        platform: debugLog.deviceContext?.platform,
+        isAndroid: debugLog.deviceContext?.isAndroid,
+        detectionMethod: debugLog.deviceContext?.detectionMethod
+      },
+      
+      uploadFlow: {
+        stages: debugLog.stages || [],
+        networkLog: debugLog.networkLog || [],
+        totalStages: (debugLog.stages || []).length,
+        totalNetworkEvents: (debugLog.networkLog || []).length
+      },
+      
+      diagnosticHints: {
+        hadNetworkActivity: (debugLog.networkLog || []).length > 0,
+        reachedUploadStage: (debugLog.stages || []).some(s => s.stage === 'UPLOAD_START'),
+        reachedAnalysisStage: (debugLog.stages || []).some(s => s.stage === 'ANALYSIS_START'),
+        detectedPlatform: debugLog.deviceContext?.platform,
+        isActualAndroid: debugLog.deviceContext?.isAndroid,
+        wasHeuristicDetection: debugLog.deviceContext?.detectionMethod?.includes('heuristic')
       }
     };
     
