@@ -2013,7 +2013,7 @@ ja: {
                             <button
                               onClick={() => {
                                 haptic.medium();
-                                navigate(createPageUrl("uploadscan") + `?leaseId=${lease.id}`);
+                                navigate(createPageUrl("Templates"));
                               }}
                               className="btn-interaction"
                               style={{
