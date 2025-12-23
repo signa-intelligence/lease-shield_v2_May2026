@@ -154,12 +154,12 @@ function UploadScanPageContent() {
       selectFiles: "Select Files",
       uploadAll: "Upload & Analyze",
       uploading: "Uploading files...",
-      analyzingTitle: "Analyzing Your Lease",
-      analyzingDesc: "Our AI is reviewing your lease agreement. This may take up to 30 seconds...",
+      analyzingTitle: "Analysing Your Lease",
+      analyzingDesc: "Reviewing your lease agreement. This may take up to 30 seconds...",
       analyzing: {
         uploading: "Uploading files...",
         creating: "Creating lease record...",
-        scanning: "AI analyzing document...",
+        scanning: "Analysing document...",
         extracting: "Extracting lease details...",
         finalizing: "Finalizing analysis..."
       },
@@ -216,7 +216,7 @@ function UploadScanPageContent() {
       singleUpload: "Single Upload",
       filesWillBeSeparate: "Each file will be uploaded as a separate lease",
       stepUpload: "Upload",
-      stepAnalyze: "Analyze",
+      stepAnalyze: "Analyse",
       stepResults: "Results",
       stepTrack: "Track",
       upgradeHintText: "Upgrade to unlock unlimited scans and advanced lease analysis.",
@@ -249,11 +249,11 @@ function UploadScanPageContent() {
       uploadAll: "อัปโหลดและวิเคราะห์",
       uploading: "กำลังอัปโหลดไฟล์...",
       analyzingTitle: "กำลังวิเคราะห์สัญญาเช่า",
-      analyzingDesc: "AI กำลังตรวจสอบสัญญาเช่าของคุณ อาจใช้เวลาประมาณ 30 วินาที...",
+      analyzingDesc: "กำลังตรวจสอบสัญญาเช่าของคุณ อาจใช้เวลาประมาณ 30 วินาที...",
       analyzing: {
         uploading: "กำลังอัปโหลดไฟล์...",
         creating: "กำลังสร้างบันทึกสัญญาเช่า...",
-        scanning: "AI กำลังวิเคราะห์เอกสาร...",
+        scanning: "กำลังวิเคราะห์เอกสาร...",
         extracting: "กำลังดึงข้อมูลสัญญาเช่า...",
         finalizing: "กำลังสรุปการวิเคราะห์..."
       },
@@ -343,11 +343,11 @@ function UploadScanPageContent() {
       uploadAll: "上传并分析",
       uploading: "正在上传文件...",
       analyzingTitle: "正在分析您的租约",
-      analyzingDesc: "我们的AI正在审查您的租赁协议。这可能需要30秒...",
+      analyzingDesc: "正在审查您的租赁协议。这可能需要30秒...",
       analyzing: {
         uploading: "正在上传文件...",
         creating: "正在创建租约记录...",
-        scanning: "AI正在分析文档...",
+        scanning: "正在分析文档...",
         extracting: "正在提取租约详情...",
         finalizing: "正在完成分析..."
       },
@@ -437,11 +437,11 @@ function UploadScanPageContent() {
       uploadAll: "アップロードして分析",
       uploading: "ファイルをアップロード中...",
       analyzingTitle: "賃貸契約を分析中",
-      analyzingDesc: "AIが賃貸契約を確認しています。最大30秒かかる場合があります...",
+      analyzingDesc: "賃貸契約を確認しています。最大30秒かかる場合があります...",
       analyzing: {
         uploading: "ファイルをアップロード中...",
         creating: "賃貸契約記録を作成中...",
-        scanning: "AIがドキュメントを分析中...",
+        scanning: "ドキュメントを分析中...",
         extracting: "賃貸契約の詳細を抽出中...",
         finalizing: "分析を完了中..."
       },
@@ -531,11 +531,11 @@ function UploadScanPageContent() {
       uploadAll: "업로드 및 분석",
       uploading: "파일 업로드 중...",
       analyzingTitle: "임대 계약 분석 중",
-      analyzingDesc: "AI가 귀하의 임대 계약을 검토하고 있습니다. 최대 30초 소요될 수 있습니다...",
+      analyzingDesc: "임대 계약을 검토하고 있습니다. 최대 30초 소요될 수 있습니다...",
       analyzing: {
         uploading: "파일 업로드 중...",
         creating: "임대 계약 기록 생성 중...",
-        scanning: "AI가 문서를 분석 중...",
+        scanning: "문서를 분석 중...",
         extracting: "임대 계약 세부 정보 추출 중...",
         finalizing: "분석 완료 중..."
       },
@@ -625,11 +625,11 @@ function UploadScanPageContent() {
       uploadAll: "Загрузить и проанализировать",
       uploading: "Загрузка файлов...",
       analyzingTitle: "Анализ вашего договора",
-      analyzingDesc: "Наш ИИ проверяет договор аренды. Это может занять до 30 секунд...",
+      analyzingDesc: "Проверка договора аренды. Это может занять до 30 секунд...",
       analyzing: {
         uploading: "Загрузка файлов...",
         creating: "Создание записи договора...",
-        scanning: "ИИ анализирует документ...",
+        scanning: "Анализ документа...",
         extracting: "Извлечение деталей договора...",
         finalizing: "Завершение анализа..."
       },
@@ -717,7 +717,7 @@ function UploadScanPageContent() {
   // NEW: Define breadcrumb steps
   const breadcrumbSteps = [
     { label: strings.stepUpload, sublabel: language === 'th' ? 'เลือกไฟล์' : language === 'zh' ? '选择文件' : language === 'ja' ? 'ファイルを選択' : language === 'ko' ? '파일 선택' : language === 'ru' ? 'Выберите файлы' : 'Select files' },
-    { label: strings.stepAnalyze, sublabel: language === 'th' ? 'AI สแกน' : language === 'zh' ? 'AI扫描' : language === 'ja' ? 'AIスキャン' : language === 'ko' ? 'AI 스캔' : language === 'ru' ? 'ИИ сканирование' : 'AI scan' },
+    { label: strings.stepAnalyze, sublabel: language === 'th' ? 'สแกน' : language === 'zh' ? '扫描' : language === 'ja' ? 'スキャン' : language === 'ko' ? '스캔' : language === 'ru' ? 'Сканирование' : 'Scan' },
     { label: strings.stepResults, sublabel: language === 'th' ? 'ดูผล' : language === 'zh' ? '查看结果' : language === 'ja' ? '結果を見る' : language === 'ko' ? '결과 보기' : language === 'ru' ? 'Просмотр результатов' : 'View results' },
     { label: strings.stepTrack, sublabel: language === 'th' ? 'ติดตามมัดจำ' : language === 'zh' ? '追踪押金' : language === 'ja' ? '敷金を追跡' : language === 'ko' ? '보증금 추적' : language === 'ru' ? 'Отслеживать депозит' : 'Track deposit' }
   ];
@@ -1670,7 +1670,19 @@ function UploadScanPageContent() {
                 </div>
                 <Button
                   onClick={handleConfirmLeaseDetails}
-                  className="w-full bg-ls-forest hover:bg-ls-forest/90 py-6 text-base font-bold"
+                  className="w-full py-6 text-base font-bold"
+                  style={{
+                    backgroundColor: '#0C3B2E',
+                    color: '#FFFFFF',
+                    minHeight: '56px',
+                    fontSize: '16px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#0a2f25';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#0C3B2E';
+                  }}
                 >
                   {strings.setReminder}
                 </Button>
