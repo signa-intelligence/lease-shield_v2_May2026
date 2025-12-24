@@ -700,12 +700,7 @@ function ReportFullContent() {
                       <Button
                         onClick={() => {
                           haptic.medium();
-                          const params = new URLSearchParams({
-                            lease_id: lease.id,
-                            ...(scan?.id && { scan_id: scan.id }),
-                            ...(scan?.risk_score && { risk_score: scan.risk_score.toString() })
-                          });
-                          navigate(createPageUrl("Templates") + `?${params.toString()}`);
+                          navigate(createPageUrl("Templates"));
                         }}
                         className="w-full btn-interaction"
                         style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
