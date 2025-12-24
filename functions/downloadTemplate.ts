@@ -40,12 +40,33 @@ Deno.serve(async (req) => {
       }, { status: 402 });
     }
 
-    // Validate file_path exists
+    // Validate file_path exists - if not, try to generate it
     if (!template.file_path) {
-      return Response.json({ 
-        error: 'Template file not configured',
-        message: 'This template is not ready for download. Please contact support.'
-      }, { status: 400 });
+      console.log(`⚠️ Template ${template.template_key} has no file_path - attempting generation`);
+      
+      // Try to auto-generate the file
+      try {
+        const genResponse = await base44.functions.invoke('generateTemplateFile', { template_id });
+        
+        if (genResponse.data?.ok) {
+          // Refresh template data
+          const refreshedTemplates = await base44.entities.TemplateLibrary.filter({ id: template_id });
+          if (refreshedTemplates && refreshedTemplates.length > 0) {
+            template.file_path = refreshedTemplates[0].file_path;
+            console.log(`✅ File generated: ${template.file_path}`);
+          }
+        }
+      } catch (genError) {
+        console.error('Auto-generation failed:', genError);
+      }
+      
+      // If still no file_path, return error
+      if (!template.file_path) {
+        return Response.json({ 
+          error: 'Template file not available',
+          message: 'This template is not ready for download. Please contact support.'
+        }, { status: 400 });
+      }
     }
 
     // Initialize Supabase client for storage operations

@@ -35,6 +35,8 @@ function TemplatesContent() {
     queryKey: ['templateAssets'],
     queryFn: async () => {
       const allResults = await base44.entities.TemplateLibrary.list();
+      
+      console.log(`📦 Fetched ${allResults.length} total templates from DB`);
 
       // Filter: only active templates
       const activeTemplates = allResults.filter(t => t.status === 'active');
@@ -64,13 +66,19 @@ function TemplatesContent() {
         return (a.sort_order || 100) - (b.sort_order || 100);
       });
 
-      console.log(`✅ ${uniqueTemplates.length} unique templates loaded`);
+      console.log(`✅ ${uniqueTemplates.length} unique active templates loaded`);
+      console.log('Template keys:', uniqueTemplates.map(t => t.template_key).join(', '));
+      
       return uniqueTemplates;
-    }
+    },
+    staleTime: 0 // Always fetch fresh data
   });
 
   const handleDownloadClick = (template) => {
     console.log('📋 Template Full Record:', JSON.stringify(template, null, 2));
+    console.log('📋 Has preview_en?', !!template.preview_en, 'Length:', template.preview_en?.length || 0);
+    console.log('📋 Has preview_th?', !!template.preview_th, 'Length:', template.preview_th?.length || 0);
+    console.log('📋 Has file_path?', !!template.file_path, 'Path:', template.file_path);
     setConfirmTemplate(template);
     // Lock body scroll when modal opens
     document.body.style.overflow = 'hidden';
