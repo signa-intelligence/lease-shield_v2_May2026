@@ -344,9 +344,10 @@ function ReportFullContent() {
 
   // Generate negotiation letter from scan recommendations
   const analyzeAndGenerateLetters = async () => {
-    if (!scan || !lease || !user) {
-      console.error('[Letter Generation] Missing required data:', { scan: !!scan, lease: !!lease, user: !!user });
-      toast.error(strings.failedToGenerateLetters);
+    if (!lease || !user) {
+      const missingData = { lease: !!lease, user: !!user };
+      console.error('[LETTER_GENERATION_ERROR] Missing required data:', missingData);
+      toast.error(`Cannot generate letter: Missing ${!lease ? 'lease' : 'user'} data`);
       return;
     }
 
@@ -354,29 +355,43 @@ function ReportFullContent() {
       userId: user.id,
       userEmail: user.email,
       leaseId: lease.id, 
-      scanId: scan.id, 
-      riskScore: scan.risk_score,
-      flagsCount: scan.scan_full?.flags?.length || 0
+      scanId: scan?.id || 'no-scan',
+      riskScore: scan?.risk_score || 0,
+      flagsCount: scan?.scan_full?.flags?.length || 0,
+      hasScanData: !!scan
     });
 
     setGeneratingLetters(true);
     setGenerationResult(null);
 
     try {
-      const fullFlags = scan.scan_full?.flags || [];
+      // Build letter content - handle missing/incomplete scan data gracefully
+      const fullFlags = scan?.scan_full?.flags || scan?.flags || [];
+      const riskScore = scan?.risk_score || 0;
+      const summary = scan?.summary || '';
 
-      if (fullFlags.length === 0) {
-        console.warn('[Letter Generation] No recommendations found');
-        throw new Error('No recommendations found in scan');
-      }
+      console.log('[Letter Generation] Scan data:', { 
+        flagsAvailable: fullFlags.length,
+        riskScore,
+        hasSummary: !!summary
+      });
 
-      // Build letter content from top recommendations
-      const topIssues = fullFlags.slice(0, 5);
-      const issuesList = topIssues.map((flag, idx) => {
-        return `${idx + 1}. **${flag.title || flag.category}**\n   ${flag.explanation || flag.description}\n   *Recommendation:* ${flag.recommendation}`;
-      }).join('\n\n');
+      let letterBody = '';
+      let recommendationsUsed = [];
 
-      const letterBody = `Dear Landlord,
+      if (fullFlags.length > 0) {
+        // Generate from recommendations
+        const topIssues = fullFlags.slice(0, 5);
+        recommendationsUsed = topIssues.map(f => f.title || f.category || 'Unknown');
+        
+        const issuesList = topIssues.map((flag, idx) => {
+          const title = flag.title || flag.category || 'Issue';
+          const explanation = flag.explanation || flag.description || 'This clause may require review';
+          const recommendation = flag.recommendation || 'Please consider reviewing this clause';
+          return `${idx + 1}. ${title}\n   ${explanation}\n   Recommendation: ${recommendation}`;
+        }).join('\n\n');
+
+        letterBody = `Dear Landlord,
 
 I am writing regarding the lease agreement for ${lease.property_address || 'the property'}.
 
@@ -389,51 +404,124 @@ I believe these amendments would create a more balanced agreement that protects 
 Thank you for your consideration.
 
 Sincerely,
-${user.full_name}`;
+${user.full_name || 'Tenant'}`;
+      } else if (riskScore > 0) {
+        // Generic letter based on risk score
+        console.log('[Letter Generation] No flags, generating generic letter based on risk score');
+        
+        const riskLevel = riskScore >= 70 ? 'high' : riskScore >= 40 ? 'medium' : 'low';
+        const riskText = riskScore >= 70 
+          ? 'several significant concerns' 
+          : riskScore >= 40 
+            ? 'some areas that warrant discussion'
+            : 'a few points for clarification';
+
+        letterBody = `Dear Landlord,
+
+I am writing regarding the lease agreement for ${lease.property_address || 'the property'}.
+
+After reviewing the lease terms, I have identified ${riskText} that I would like to discuss before signing. Based on my analysis, the lease has a risk score of ${riskScore}/100, which suggests that some clauses may benefit from clarification or amendment.
+
+I would appreciate the opportunity to discuss these matters with you to ensure we have a fair and balanced agreement that protects both parties' interests.
+
+The main areas I'd like to review include:
+- Security deposit terms and return conditions
+- Maintenance and repair responsibilities
+- Notice periods and termination procedures
+- Rent adjustment clauses
+- Landlord access and privacy rights
+
+Thank you for your consideration. I look forward to discussing these points with you.
+
+Sincerely,
+${user.full_name || 'Tenant'}`;
+        recommendationsUsed = ['generic_risk_based'];
+      } else {
+        // Minimal fallback letter
+        console.log('[Letter Generation] No scan data, generating minimal fallback letter');
+        
+        letterBody = `Dear Landlord,
+
+I am writing regarding the lease agreement for ${lease.property_address || 'the property'}.
+
+I would like to request an opportunity to discuss the lease terms before signing to ensure I fully understand all clauses and that we have a mutually beneficial agreement.
+
+Could we schedule a time to review the following:
+- Security deposit terms
+- Maintenance responsibilities
+- Notice requirements
+- Any special conditions
+
+Thank you for your time and consideration.
+
+Sincerely,
+${user.full_name || 'Tenant'}`;
+        recommendationsUsed = ['minimal_fallback'];
+      }
 
       const letterData = {
         user_id: user.id,
         lease_id: lease.id,
-        scan_id: scan.id,
+        scan_id: scan?.id || null,
         title: `Lease Negotiation Letter - ${lease.property_address || 'Property'}`,
         language: language,
         body: letterBody,
         format: 'text',
-        status: 'ready',
-        recommendations_used: topIssues.map(f => f.title || f.category)
+        status: 'draft',
+        recommendations_used: recommendationsUsed
       };
 
       console.log('[Letter Generation] Creating Letter with data:', { 
         user_id: letterData.user_id,
         lease_id: letterData.lease_id,
+        scan_id: letterData.scan_id,
         titleLength: letterData.title.length,
-        bodyLength: letterData.body.length
+        bodyLength: letterData.body.length,
+        recommendationsCount: recommendationsUsed.length
       });
 
       // Create Letter record
-      const newLetter = await base44.entities.Letter.create(letterData);
+      let newLetter;
+      try {
+        newLetter = await base44.entities.Letter.create(letterData);
+        console.log('[Letter Generation] Create response:', newLetter);
+      } catch (createError) {
+        console.error('[LETTER_GENERATION_ERROR] Database create failed:', {
+          error: createError,
+          message: createError.message,
+          stack: createError.stack,
+          name: createError.name,
+          response: createError.response?.data
+        });
+        throw new Error(`Database error: ${createError.message || 'Failed to save letter'}`);
+      }
 
       if (!newLetter || !newLetter.id) {
-        console.error('[Letter Generation] No ID returned:', newLetter);
-        throw new Error('Failed to create letter - no ID returned');
+        console.error('[LETTER_GENERATION_ERROR] No ID returned:', newLetter);
+        throw new Error('Failed to create letter - no ID returned from database');
       }
 
       console.log('[Letter Generation] Success:', { 
         letterId: newLetter.id,
-        recommendationsUsed: topIssues.length,
+        recommendationsUsed: recommendationsUsed.length,
         letterCreated: true
       });
 
-      // Verify letter was created by fetching it back
-      const verifyLetters = await base44.entities.Letter.filter({ id: newLetter.id });
-      console.log('[Letter Generation] Verification query:', {
-        letterId: newLetter.id,
-        found: verifyLetters.length > 0
-      });
+      // Verify letter was created
+      try {
+        const verifyLetters = await base44.entities.Letter.filter({ id: newLetter.id });
+        console.log('[Letter Generation] Verification query:', {
+          letterId: newLetter.id,
+          found: verifyLetters.length > 0
+        });
 
-      if (verifyLetters.length === 0) {
-        console.error('[Letter Generation] Letter not found after creation!');
-        throw new Error('Letter created but not found - possible permission issue');
+        if (verifyLetters.length === 0) {
+          console.error('[LETTER_GENERATION_ERROR] Letter not found after creation - possible RLS issue');
+          throw new Error('Letter created but not retrievable - check permissions');
+        }
+      } catch (verifyError) {
+        console.error('[LETTER_GENERATION_ERROR] Verification failed:', verifyError);
+        // Don't fail the whole operation if verification fails - letter was created
       }
 
       setGenerationResult({
@@ -448,13 +536,15 @@ ${user.full_name}`;
       haptic.success();
 
     } catch (error) {
-      console.error('[Letter Generation] Failed:', error);
-      console.error('[Letter Generation] Error details:', {
+      console.error('[LETTER_GENERATION_ERROR] Full error:', {
         message: error.message,
         stack: error.stack,
-        name: error.name
+        name: error.name,
+        error: error
       });
-      toast.error(strings.failedToGenerateLetters);
+      
+      const errorMessage = error.message || 'Unknown error occurred';
+      toast.error(`Failed to generate letter: ${errorMessage}`);
       haptic.error();
       setGenerationResult(null);
     } finally {
