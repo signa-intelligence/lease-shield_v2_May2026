@@ -10,6 +10,7 @@ import LisaFAB from "./components/shared/LisaFAB";
 import MobileMenuDrawer from "./components/shared/MobileMenuDrawer";
 import LanguageSelector from "./components/shared/LanguageSelector";
 import QuickGuide from "./components/shared/QuickGuide";
+import ErrorBoundary from "./components/shared/ErrorBoundary";
 
 
 // Animation utilities inlined
@@ -64,6 +65,18 @@ const createRipple = (event, element) => {
   element.appendChild(ripple);
   setTimeout(() => ripple.remove(), 600);
 };
+
+// Global error handlers
+if (typeof window !== 'undefined') {
+  window.onerror = (message, source, lineno, colno, error) => {
+    console.error('[Global Error]', { message, source, lineno, colno, error });
+    return false;
+  };
+
+  window.onunhandledrejection = (event) => {
+    console.error('[Unhandled Promise Rejection]', event.reason);
+  };
+}
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -867,7 +880,9 @@ export default function Layout({ children, currentPageName }) {
           maxWidth: '100vw'
         }}
       >
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </main>
 
       {/* Bottom Navigation */}
