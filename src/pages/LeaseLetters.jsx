@@ -120,28 +120,43 @@ ${user.full_name}`;
 
       // Verify creation
       const verify = await base44.entities.Letter.filter({ id: newLetter.id });
-      console.log('[CreateBlankLetter] Verification:', { found: verify.length > 0 });
+      console.log('[CreateBlankLetter] Verification:', { 
+        found: verify.length > 0,
+        letterId: newLetter.id,
+        verifyResults: verify
+      });
 
       if (verify.length === 0) {
-        throw new Error('Letter created but not retrievable');
+        console.error('[CreateBlankLetter] Letter not retrievable:', {
+          expectedId: newLetter.id,
+          queryUsed: { lease_id: leaseId }
+        });
+        throw new Error('Letter created but not retrievable. Please refresh the page.');
       }
 
       // Log credit transaction
-      await base44.entities.CreditLedger.create({
-        user_id: user.id,
-        user_email: user.email,
-        action_type: 'USE',
-        amount: -1,
-        previous_balance: letterCredits,
-        new_balance: letterCredits - 1,
-        reason: 'Blank letter created',
-        related_entity_id: newLetter.id
-      });
+      try {
+        await base44.entities.CreditLedger.create({
+          user_id: user.id,
+          user_email: user.email,
+          action_type: 'USE',
+          amount: -1,
+          previous_balance: letterCredits,
+          new_balance: letterCredits - 1,
+          reason: 'Blank letter created',
+          related_entity_id: newLetter.id
+        });
 
-      // Decrement user credits
-      await base44.auth.updateMe({
-        letter_credits: Math.max(0, letterCredits - 1)
-      });
+        // Decrement user credits
+        await base44.auth.updateMe({
+          letter_credits: Math.max(0, letterCredits - 1)
+        });
+
+        console.log('[CreateBlankLetter] Credits deducted');
+      } catch (creditError) {
+        console.error('[CreateBlankLetter] Credit update failed:', creditError);
+        // Don't fail - letter was created successfully
+      }
 
       queryClient.invalidateQueries({ queryKey: ['letters', leaseId] });
       toast.success(language === 'th' ? 'สร้างจดหมายว่างแล้ว' : 'Blank letter created');

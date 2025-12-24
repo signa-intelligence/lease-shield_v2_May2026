@@ -2,6 +2,7 @@ import Account from './pages/Account';
 import Acknowledge from './pages/Acknowledge';
 import AcknowledgeMaintenance from './pages/AcknowledgeMaintenance';
 import AdminConsole from './pages/AdminConsole';
+import AdminCredits from './pages/AdminCredits';
 import AdminSupport from './pages/AdminSupport';
 import AdminTemplates from './pages/AdminTemplates';
 import Analytics from './pages/Analytics';
@@ -17,8 +18,10 @@ import FAQ from './pages/FAQ';
 import Home from './pages/Home';
 import Index from './pages/Index';
 import LeaseDetails from './pages/LeaseDetails';
+import LeaseLetters from './pages/LeaseLetters';
 import LeaseViewer from './pages/LeaseViewer';
 import Leases from './pages/Leases';
+import LetterReview from './pages/LetterReview';
 import MaintenanceTracker from './pages/MaintenanceTracker';
 import OpsConsole from './pages/OpsConsole';
 import PaymentSuccess from './pages/PaymentSuccess';
@@ -39,9 +42,6 @@ import Timeline from './pages/Timeline';
 import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
-import LetterReview from './pages/LetterReview';
-import LeaseLetters from './pages/LeaseLetters';
-import AdminCredits from './pages/AdminCredits';
 import __Layout from './Layout.jsx';
 
 
@@ -50,6 +50,7 @@ export const PAGES = {
     "Acknowledge": Acknowledge,
     "AcknowledgeMaintenance": AcknowledgeMaintenance,
     "AdminConsole": AdminConsole,
+    "AdminCredits": AdminCredits,
     "AdminSupport": AdminSupport,
     "AdminTemplates": AdminTemplates,
     "Analytics": Analytics,
@@ -65,8 +66,10 @@ export const PAGES = {
     "Home": Home,
     "Index": Index,
     "LeaseDetails": LeaseDetails,
+    "LeaseLetters": LeaseLetters,
     "LeaseViewer": LeaseViewer,
     "Leases": Leases,
+    "LetterReview": LetterReview,
     "MaintenanceTracker": MaintenanceTracker,
     "OpsConsole": OpsConsole,
     "PaymentSuccess": PaymentSuccess,
@@ -87,9 +90,6 @@ export const PAGES = {
     "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
-    "LetterReview": LetterReview,
-    "LeaseLetters": LeaseLetters,
-    "AdminCredits": AdminCredits,
 }
 
 export const pagesConfig = {

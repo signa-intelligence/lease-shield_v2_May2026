@@ -499,7 +499,7 @@ ${user.full_name || 'Tenant'}`;
       try {
         newLetter = await base44.entities.Letter.create(letterData);
         console.log('[Letter Generation] Create response:', newLetter);
-      } catch (createError) {
+        } catch (createError) {
         console.error('[LETTER_GENERATION_ERROR] Database create failed:', {
           error: createError,
           message: createError.message,
@@ -508,55 +508,103 @@ ${user.full_name || 'Tenant'}`;
           response: createError.response?.data
         });
         throw new Error(`Database error: ${createError.message || 'Failed to save letter'}`);
-      }
+        }
 
-      if (!newLetter || !newLetter.id) {
+        if (!newLetter || !newLetter.id) {
         console.error('[LETTER_GENERATION_ERROR] No ID returned:', newLetter);
         throw new Error('Failed to create letter - no ID returned from database');
-      }
+        }
 
-      console.log('[Letter Generation] Success:', { 
+        console.log('[Letter Generation] Letter created:', { 
         letterId: newLetter.id,
-        recommendationsUsed: recommendationsUsed.length,
-        letterCreated: true
-      });
-
-      // Verify letter was created
-      try {
-        const verifyLetters = await base44.entities.Letter.filter({ id: newLetter.id });
-        console.log('[Letter Generation] Verification query:', {
-          letterId: newLetter.id,
-          found: verifyLetters.length > 0
+        userId: letterData.user_id,
+        leaseId: letterData.lease_id,
+        recommendationsUsed: recommendationsUsed.length
         });
 
-        if (verifyLetters.length === 0) {
-          console.error('[LETTER_GENERATION_ERROR] Letter not found after creation - possible RLS issue');
-          throw new Error('Letter created but not retrievable - check permissions');
+        // Log credit transaction
+        try {
+        await base44.entities.CreditLedger.create({
+          user_id: user.id,
+          user_email: user.email,
+          action_type: 'USE',
+          amount: -1,
+          previous_balance: letterCredits,
+          new_balance: letterCredits - 1,
+          reason: 'Letter generated from scan',
+          related_entity_id: newLetter.id
+        });
+
+        // Decrement user credits
+        await base44.auth.updateMe({
+          letter_credits: Math.max(0, letterCredits - 1)
+        });
+
+        console.log('[Letter Generation] Credits deducted:', {
+          previous: letterCredits,
+          new: letterCredits - 1
+        });
+        } catch (creditError) {
+        console.error('[Letter Generation] Credit update failed:', creditError);
+        // Don't fail the whole operation - letter was created
         }
-      } catch (verifyError) {
-        console.error('[LETTER_GENERATION_ERROR] Verification failed:', verifyError);
-        // Don't fail the whole operation if verification fails - letter was created
-      }
 
-      // Final verification before showing success
-      const finalVerify = await base44.entities.Letter.filter({ lease_id: lease.id });
-      console.log('[Letter Generation] Final verification - letters for lease:', {
-        leaseId: lease.id,
-        count: finalVerify.length
-      });
+        // Critical verification: Can we retrieve the letter?
+        let verificationAttempts = 0;
+        let letterFound = false;
+        const maxAttempts = 3;
 
-      setGenerationResult({
+        while (!letterFound && verificationAttempts < maxAttempts) {
+        verificationAttempts++;
+        console.log(`[Letter Generation] Verification attempt ${verificationAttempts}/${maxAttempts}`);
+
+        try {
+          const verifyByLeaseId = await base44.entities.Letter.filter({ 
+            lease_id: lease.id,
+            user_id: user.id 
+          });
+
+          console.log('[Letter Generation] Query result:', {
+            attemptNo: verificationAttempts,
+            queryParams: { lease_id: lease.id, user_id: user.id },
+            foundCount: verifyByLeaseId.length,
+            letterIds: verifyByLeaseId.map(l => l.id)
+          });
+
+          if (verifyByLeaseId.some(l => l.id === newLetter.id)) {
+            letterFound = true;
+            console.log('[Letter Generation] ✅ Letter verified successfully');
+            break;
+          }
+
+          // Wait 500ms before retry
+          if (verificationAttempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        } catch (verifyError) {
+          console.error(`[Letter Generation] Verification attempt ${verificationAttempts} failed:`, verifyError);
+        }
+        }
+
+        if (!letterFound) {
+        console.error('[LETTER_GENERATION_ERROR] Letter not retrievable after creation');
+        throw new Error('Letter created but cannot be retrieved. Please refresh and check Lease Letters page.');
+        }
+
+        // Success!
+        setGenerationResult({
         letterId: newLetter.id,
         leaseId: lease.id,
         totalGenerated: 1
-      });
+        });
 
-      queryClient.invalidateQueries({ queryKey: ['letters'] });
-      queryClient.invalidateQueries({ queryKey: ['letters', lease.id] });
-      queryClient.invalidateQueries({ queryKey: ['letter', newLetter.id] });
-      
-      toast.success(language === 'th' ? 'สร้างจดหมายเรียบร้อย' : 'Letter generated successfully');
-      haptic.success();
+        queryClient.invalidateQueries({ queryKey: ['letters'] });
+        queryClient.invalidateQueries({ queryKey: ['letters', lease.id] });
+        queryClient.invalidateQueries({ queryKey: ['letter', newLetter.id] });
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+
+        toast.success(`${language === 'th' ? 'สร้างจดหมาย 1 ฉบับเรียบร้อย' : '1 letter generated successfully'}`);
+        haptic.success();
 
     } catch (error) {
       console.error('[LETTER_GENERATION_ERROR] Full error:', {
@@ -969,15 +1017,19 @@ ${user.full_name || 'Tenant'}`;
                           </p>
                           <Button
                             onClick={() => {
-                              console.log('[Navigation] Going to LeaseLetters with leaseId:', lease.id);
+                              console.log('[Navigation] Going to LeaseLetters:', {
+                                leaseId: generationResult.leaseId,
+                                letterId: generationResult.letterId,
+                                fullUrl: createPageUrl("LeaseLetters") + `?leaseId=${generationResult.leaseId}`
+                              });
                               haptic.medium();
-                              navigate(createPageUrl("LeaseLetters") + `?leaseId=${lease.id}`);
+                              navigate(createPageUrl("LeaseLetters") + `?leaseId=${generationResult.leaseId}`);
                             }}
                             style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                             className="w-full"
                           >
                             <FileText className="w-4 h-4 mr-2" />
-                            {language === 'th' ? 'ดูจดหมาย' : 'View Letters'}
+                            {language === 'th' ? 'ดูจดหมาย (1)' : 'View Letters (1)'}
                           </Button>
                         </div>
                       </div>
