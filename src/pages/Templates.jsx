@@ -497,37 +497,7 @@ function TemplatesContent() {
                 </div>
               ) : null}
               
-              {/* Fallback for templates without preview data */}
-              {!confirmTemplate.preview_headings && !confirmTemplate.preview_bullets && !confirmTemplate.preview_placeholders ? (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'โครงสร้างมาตรฐาน:' : 'Standard structure:'}
-                  </p>
-                  {confirmTemplate.category === 'checklists' ? (
-                    <ul className="space-y-1 text-sm" style={{ color: colors.textSecondary }}>
-                      <li>✓ Comprehensive checklist items</li>
-                      <li>✓ Organized by priority</li>
-                      <li>✓ Clear action steps</li>
-                      <li>✓ Ready to print and use</li>
-                    </ul>
-                  ) : confirmTemplate.category === 'pre_signing' ? (
-                    <ul className="space-y-1 text-sm" style={{ color: colors.textSecondary }}>
-                      <li>§ Formal salutation and introduction</li>
-                      <li>§ Current situation and concerns</li>
-                      <li>§ Requested modifications or terms</li>
-                      <li>§ Professional closing and signature</li>
-                    </ul>
-                  ) : (
-                    <ul className="space-y-1 text-sm" style={{ color: colors.textSecondary }}>
-                      <li>§ Formal header and date</li>
-                      <li>§ Statement of issue/request</li>
-                      <li>§ Legal references and obligations</li>
-                      <li>§ Timeline for response</li>
-                      <li>§ Signature section</li>
-                    </ul>
-                  )}
-                </div>
-              ) : null}
+
             </div>
 
             {/* Cost Info */}
