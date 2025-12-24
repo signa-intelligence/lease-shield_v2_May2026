@@ -21,6 +21,14 @@ function LeaseLettersContent() {
   const urlParams = new URLSearchParams(window.location.search);
   const leaseId = urlParams.get('leaseId');
 
+  React.useEffect(() => {
+    console.log('[LeaseLetters] Page loaded/URL changed:', {
+      leaseId,
+      fullUrl: window.location.href,
+      search: window.location.search
+    });
+  }, [leaseId]);
+
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me()
@@ -38,12 +46,31 @@ function LeaseLettersContent() {
   const { data: letters = [], isLoading } = useQuery({
     queryKey: ['letters', leaseId],
     queryFn: async () => {
-      console.log('[LeaseLetters] Fetching letters for:', { leaseId, userId: user?.id });
-      const result = await base44.entities.Letter.filter({ lease_id: leaseId }, '-created_date');
-      console.log('[LeaseLetters] Query result:', { count: result.length, leaseId });
-      return result;
+      if (!leaseId) {
+        console.log('[LeaseLetters] No leaseId provided');
+        return [];
+      }
+      
+      console.log('[LeaseLetters] Querying letters:', {
+        leaseId,
+        userId: user?.id,
+        userEmail: user?.email
+      });
+
+      // Query by lease_id only - RLS handles user filtering
+      const results = await base44.entities.Letter.filter({ lease_id: leaseId }, '-created_date');
+      
+      console.log('[LeaseLetters] Query results:', {
+        count: results.length,
+        letterIds: results.map(l => l.id),
+        letters: results
+      });
+
+      return results;
     },
     enabled: !!leaseId && !!user,
+    staleTime: 0,
+    refetchOnMount: true,
     initialData: []
   });
 
