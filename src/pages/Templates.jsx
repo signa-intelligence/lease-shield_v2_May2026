@@ -27,10 +27,24 @@ function TemplatesContent() {
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['templateAssets'],
     queryFn: async () => {
-      const results = await base44.entities.TemplateLibrary.list();
+      const results = await base44.entities.TemplateLibrary.filter(
+        { status: 'active' },
+        '-sort_order,template_key'
+      );
       console.log('📄 Templates fetched:', results.length);
       console.log('📄 Template IDs:', results.map(t => t.id));
-      return results;
+      
+      // Deduplicate by template_key (keep first occurrence which is newest due to sort)
+      const uniqueTemplates = [];
+      const seenKeys = new Set();
+      for (const t of results) {
+        if (t.template_key && !seenKeys.has(t.template_key)) {
+          seenKeys.add(t.template_key);
+          uniqueTemplates.push(t);
+        }
+      }
+      console.log('📄 Unique templates after deduplication:', uniqueTemplates.length);
+      return uniqueTemplates;
     }
   });
 
@@ -272,6 +286,125 @@ function TemplatesContent() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmTemplate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setConfirmTemplate(null)}>
+          <div 
+            className="rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4"
+            style={{ backgroundColor: colors.cardBg }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#0C3B2E' }}>
+                <Download className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
+                  {language === 'th' ? 'ดาวน์โหลดเทมเพลต?' : 'Download template?'}
+                </h3>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  {language === 'th' 
+                    ? `การดาวน์โหลดจะใช้ ${confirmTemplate.cost_credits || 1} เครดิต` 
+                    : `This will deduct ${confirmTemplate.cost_credits || 1} credit${(confirmTemplate.cost_credits || 1) > 1 ? 's' : ''}.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmTemplate(null)}
+                className="flex-1"
+                style={{
+                  borderColor: colors.borderColor,
+                  color: colors.textPrimary
+                }}
+              >
+                {language === 'th' ? 'ยกเลิก' : 'Cancel'}
+              </Button>
+              <Button
+                onClick={handleConfirmDownload}
+                className="flex-1"
+                style={{
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF'
+                }}
+              >
+                {language === 'th' ? 'ยืนยันดาวน์โหลด' : 'Confirm Download'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewTemplate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setPreviewTemplate(null)}>
+          <div 
+            className="rounded-2xl shadow-2xl max-w-2xl w-full p-6 space-y-4"
+            style={{ backgroundColor: colors.cardBg, maxHeight: '80vh', overflow: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
+                  {language === 'th' ? previewTemplate.title_th : previewTemplate.title_en}
+                </h3>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  {language === 'th' ? 'ตัวอย่างเบลอ - ดาวน์โหลดเพื่อดูเนื้อหาเต็ม' : 'Blurred preview - download to see full content'}
+                </p>
+              </div>
+              <button
+                onClick={() => setPreviewTemplate(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: colors.fieldBg }}
+              >
+                <span className="text-xl" style={{ color: colors.textPrimary }}>×</span>
+              </button>
+            </div>
+
+            {previewTemplate.preview_image_url && (
+              <div className="relative rounded-lg overflow-hidden" style={{ minHeight: '400px', backgroundColor: colors.fieldBg }}>
+                <img 
+                  src={previewTemplate.preview_image_url} 
+                  alt="Template preview"
+                  className="w-full h-auto object-contain"
+                  style={{ filter: 'blur(12px)' }}
+                />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <div className="text-center space-y-3">
+                    <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center" style={{ backgroundColor: '#0C3B2E' }}>
+                      <FileText className="w-8 h-8 text-white" />
+                    </div>
+                    <p className="text-white font-semibold">
+                      {language === 'th' ? 'ดาวน์โหลดเพื่อดูเนื้อหาที่ชัดเจน' : 'Download to see clear content'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Button
+              onClick={() => {
+                setPreviewTemplate(null);
+                handleDownloadClick(previewTemplate);
+              }}
+              disabled={letterCredits < (previewTemplate.cost_credits || 1)}
+              className="w-full"
+              style={{
+                backgroundColor: letterCredits >= (previewTemplate.cost_credits || 1) ? '#0C3B2E' : '#9CA3AF',
+                color: '#FFFFFF'
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {letterCredits >= (previewTemplate.cost_credits || 1)
+                ? (language === 'th' ? `ดาวน์โหลด (${previewTemplate.cost_credits || 1} เครดิต)` : `Download (${previewTemplate.cost_credits || 1} credit${(previewTemplate.cost_credits || 1) > 1 ? 's' : ''})`)
+                : (language === 'th' ? 'เครดิตไม่เพียงพอ' : 'Insufficient Credits')}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
