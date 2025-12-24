@@ -1767,12 +1767,7 @@ function UploadScanPageContent() {
                 backgroundColor: colors.cardBg,
                 borderBottom: `1px solid ${colors.borderColor}`
               }}>
-                <div className="flex items-center justify-between">
-                  <DialogTitle className="text-lg" style={{ color: colors.textPrimary }}>{strings.leaseDetails}</DialogTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedLease(null)}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
+                <DialogTitle className="text-lg" style={{ color: colors.textPrimary }}>{strings.leaseDetails}</DialogTitle>
               </DialogHeader>
 
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">

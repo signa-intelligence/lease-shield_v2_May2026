@@ -98,14 +98,18 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
 
   return (
     <Button
-      onClick={handleRetry}
+      onClick={(e) => {
+        e.stopPropagation(); // Prevent card click
+        handleRetry();
+      }}
       disabled={retrying}
       size="sm"
       variant="outline"
       className="flex items-center gap-2"
       style={{
         borderColor: retrying ? colors?.borderColor : '#3B82F6',
-        color: retrying ? colors?.textSecondary : '#3B82F6'
+        color: retrying ? colors?.textSecondary : '#3B82F6',
+        minHeight: '32px'
       }}
     >
       {retrying ? (
