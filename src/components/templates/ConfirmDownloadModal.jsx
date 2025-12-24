@@ -43,10 +43,11 @@ export default function ConfirmDownloadModal({
 
   const t = strings[language] || strings.en;
 
-  const hasPreviewContent = 
-    (template.preview_headings && template.preview_headings.length > 0) ||
-    (template.preview_bullets && template.preview_bullets.length > 0) ||
-    (template.preview_placeholders && template.preview_placeholders.length > 0);
+  const previewText = language === 'th' 
+    ? (template.preview_th || template.preview_en || '')
+    : (template.preview_en || template.preview_th || '');
+
+  const hasPreviewContent = !!previewText.trim();
 
   return (
     <div 
@@ -110,68 +111,21 @@ export default function ConfirmDownloadModal({
           }}
         >
           {hasPreviewContent ? (
-            <div className="border rounded-lg p-4 space-y-3" style={{ 
+            <div className="border rounded-lg p-4" style={{ 
               borderColor: colors.borderColor,
               backgroundColor: colors.fieldBg 
             }}>
-              <h4 className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+              <h4 className="text-sm font-semibold mb-3" style={{ color: colors.textPrimary }}>
                 {t.insideTemplate}
               </h4>
-              
-              {template.preview_headings && template.preview_headings.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
-                    {t.mainSections}
-                  </p>
-                  <ul className="space-y-1">
-                    {template.preview_headings.map((heading, i) => (
-                      <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textPrimary }}>
-                        <span className="font-bold" style={{ color: '#0C3B2E' }}>§</span>
-                        <span className="font-medium">{heading}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              {template.preview_bullets && template.preview_bullets.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
-                    {t.includes}
-                  </p>
-                  <ul className="space-y-1">
-                    {template.preview_bullets.map((bullet, i) => (
-                      <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textSecondary }}>
-                        <span className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#0C3B2E' }} />
-                        <span>{bullet}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              
-              {template.preview_placeholders && template.preview_placeholders.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
-                    {t.fillInFields}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {template.preview_placeholders.map((placeholder, i) => (
-                      <span 
-                        key={i} 
-                        className="text-xs px-2 py-1 rounded font-mono"
-                        style={{ 
-                          backgroundColor: colors.cardBg,
-                          border: `1px solid ${colors.borderColor}`,
-                          color: colors.textSecondary 
-                        }}
-                      >
-                        {placeholder}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div style={{ 
+                whiteSpace: 'pre-line',
+                fontSize: '14px',
+                lineHeight: '1.6',
+                color: colors.textPrimary
+              }}>
+                {previewText}
+              </div>
             </div>
           ) : (
             <div className="border rounded-lg p-4 text-center" style={{ 
@@ -192,7 +146,9 @@ export default function ConfirmDownloadModal({
             }}>
               <div><strong>Key:</strong> {template.template_key || 'missing'}</div>
               <div><strong>ID:</strong> {template.id}</div>
-              <div><strong>File:</strong> {template.file_path || template.docx_url || template.pdf_url || 'missing'}</div>
+              <div><strong>File:</strong> {template.file_path ? '✓' : '✗'}</div>
+              <div><strong>PreviewEN:</strong> {template.preview_en ? '✓' : '✗'}</div>
+              <div><strong>PreviewTH:</strong> {template.preview_th ? '✓' : '✗'}</div>
               <div><strong>Status:</strong> {template.status || 'unknown'}</div>
             </div>
           )}

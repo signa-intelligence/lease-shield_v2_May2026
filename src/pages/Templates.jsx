@@ -273,7 +273,7 @@ function TemplatesContent() {
                 <div className="pt-2">
                   {templates.map(t => (
                     <div key={t.id} className="mb-1">
-                      • {t.template_key}: file={t.file_path ? '✓' : '✗'} preview={t.preview_headings?.length > 0 ? '✓' : '✗'}
+                      • {t.template_key}: file={t.file_path ? '✓' : '✗'} EN={t.preview_en ? '✓' : '✗'} TH={t.preview_th ? '✓' : '✗'}
                     </div>
                   ))}
                 </div>
