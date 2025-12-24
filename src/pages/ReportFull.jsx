@@ -521,7 +521,7 @@ function ReportFullContent() {
       critical: "text-red-600 bg-red-50 border-red-200",
       high: "text-orange-600 bg-orange-50 border-orange-200",
       medium: "text-amber-600 bg-amber-50 border-amber-200",
-      low: "text-blue-600 bg-blue-50 border-blue-200"
+      low: "text-emerald-600 bg-emerald-50 border-emerald-200"
     };
     return colors[severity] || "text-slate-600 bg-slate-50 border-slate-200";
   };
@@ -572,7 +572,8 @@ function ReportFullContent() {
             isDarkMode={isDarkMode}
             actions={
               <Button 
-                className="bg-blue-600 hover:bg-blue-700 btn-interaction"
+                className="btn-interaction"
+                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                 onClick={handleDownloadPDF}
                 disabled={downloadingPDF}
               >
@@ -593,7 +594,10 @@ function ReportFullContent() {
 
           {/* Risk Score Summary */}
           <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-            <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+            <CardHeader style={{ 
+              backgroundColor: riskLevel?.color || '#0C3B2E',
+              color: '#FFFFFF'
+            }}>
               <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <span>{strings.riskAssessment}</span>
                 <div className="flex flex-wrap items-center gap-2">
@@ -605,8 +609,8 @@ function ReportFullContent() {
                     {strings.score}: {scan.risk_score}/100
                   </Badge>
                   <Badge className="text-sm px-3 py-1.5 font-bold flex items-center gap-1" style={{
-                    backgroundColor: riskLevel?.color || '#10B981',
-                    color: '#FFFFFF'
+                    backgroundColor: '#FFFFFF',
+                    color: riskLevel?.color || '#10B981'
                   }}>
                     {riskLevel?.level === 'high' && <AlertTriangle className="w-4 h-4" />}
                     {riskLevel?.label || 'LOW RISK'}
@@ -640,7 +644,7 @@ function ReportFullContent() {
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
                 <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <FileText className="w-5 h-5 text-blue-600" />
+                  <FileText className="w-5 h-5" style={{ color: '#0C3B2E' }} />
                   {strings.keyLeaseTerms}
                 </CardTitle>
               </CardHeader>
@@ -837,10 +841,12 @@ function ReportFullContent() {
               {isSecureTier ? (
                 <div className="mb-4 p-4 rounded-xl border-2" style={{
                   backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
-                  borderColor: '#C7A338'
+                  borderColor: '#0C3B2E'
                 }}>
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{
+                      backgroundColor: '#0C3B2E'
+                    }}>
                       <Sparkles className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
@@ -848,7 +854,7 @@ function ReportFullContent() {
                         <h4 className="font-bold" style={{ color: colors.textPrimary }}>
                           {strings.autoGenerateLetters}
                         </h4>
-                        <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                        <Badge style={{ backgroundColor: '#C7A338', color: '#FFFFFF', border: 'none' }}>
                           <Crown className="w-3 h-3 mr-1" />
                           {strings.secureTierOnly}
                         </Badge>
@@ -872,7 +878,8 @@ function ReportFullContent() {
                           </div>
                           <Button
                             onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${generationResult.caseId}`)}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700"
+                            style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                            className="w-full"
                           >
                             {strings.viewLetters}
                           </Button>
@@ -884,7 +891,8 @@ function ReportFullContent() {
                             analyzeAndGenerateLetters();
                           }}
                           disabled={generatingLetters}
-                          className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 btn-interaction"
+                          className="w-full btn-interaction"
+                          style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                         >
                           {generatingLetters ? (
                             <>
@@ -916,7 +924,7 @@ function ReportFullContent() {
                         <h4 className="font-bold" style={{ color: colors.textPrimary }}>
                           {strings.autoGenerateLetters}
                         </h4>
-                        <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                        <Badge style={{ backgroundColor: '#C7A338', color: '#FFFFFF', border: 'none' }}>
                           <Crown className="w-3 h-3 mr-1" />
                           {strings.secureTierOnly}
                         </Badge>
@@ -927,8 +935,8 @@ function ReportFullContent() {
                       <Button
                         onClick={() => navigate(createPageUrl("Account"))}
                         variant="outline"
-                        className="w-full border-purple-600 text-purple-600 hover:bg-purple-50"
-                        style={isDarkMode ? { borderColor: '#8B5CF6', color: '#8B5CF6', backgroundColor: '#3A3D40' } : {}}
+                        className="w-full"
+                        style={{ borderColor: '#0C3B2E', color: '#0C3B2E' }}
                       >
                         <Crown className="w-4 h-4 mr-2" />
                         {strings.upgradeToSecure}
