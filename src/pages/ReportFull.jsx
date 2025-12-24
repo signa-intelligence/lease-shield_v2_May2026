@@ -344,9 +344,15 @@ function ReportFullContent() {
 
   // Generate negotiation letter from scan recommendations
   const analyzeAndGenerateLetters = async () => {
-    if (!scan || !lease) return;
+    if (!scan || !lease || !user) {
+      console.error('[Letter Generation] Missing required data:', { scan: !!scan, lease: !!lease, user: !!user });
+      toast.error(strings.failedToGenerateLetters);
+      return;
+    }
 
     console.log('[Letter Generation] Starting:', { 
+      userId: user.id,
+      userEmail: user.email,
       leaseId: lease.id, 
       scanId: scan.id, 
       riskScore: scan.risk_score,
@@ -360,6 +366,7 @@ function ReportFullContent() {
       const fullFlags = scan.scan_full?.flags || [];
 
       if (fullFlags.length === 0) {
+        console.warn('[Letter Generation] No recommendations found');
         throw new Error('No recommendations found in scan');
       }
 
@@ -384,8 +391,7 @@ Thank you for your consideration.
 Sincerely,
 ${user.full_name}`;
 
-      // Create Letter record
-      const newLetter = await base44.entities.Letter.create({
+      const letterData = {
         user_id: user.id,
         lease_id: lease.id,
         scan_id: scan.id,
@@ -395,12 +401,40 @@ ${user.full_name}`;
         format: 'text',
         status: 'ready',
         recommendations_used: topIssues.map(f => f.title || f.category)
+      };
+
+      console.log('[Letter Generation] Creating Letter with data:', { 
+        user_id: letterData.user_id,
+        lease_id: letterData.lease_id,
+        titleLength: letterData.title.length,
+        bodyLength: letterData.body.length
       });
+
+      // Create Letter record
+      const newLetter = await base44.entities.Letter.create(letterData);
+
+      if (!newLetter || !newLetter.id) {
+        console.error('[Letter Generation] No ID returned:', newLetter);
+        throw new Error('Failed to create letter - no ID returned');
+      }
 
       console.log('[Letter Generation] Success:', { 
         letterId: newLetter.id,
-        recommendationsUsed: topIssues.length
+        recommendationsUsed: topIssues.length,
+        letterCreated: true
       });
+
+      // Verify letter was created by fetching it back
+      const verifyLetters = await base44.entities.Letter.filter({ id: newLetter.id });
+      console.log('[Letter Generation] Verification query:', {
+        letterId: newLetter.id,
+        found: verifyLetters.length > 0
+      });
+
+      if (verifyLetters.length === 0) {
+        console.error('[Letter Generation] Letter not found after creation!');
+        throw new Error('Letter created but not found - possible permission issue');
+      }
 
       setGenerationResult({
         letterId: newLetter.id,
@@ -408,13 +442,21 @@ ${user.full_name}`;
       });
 
       queryClient.invalidateQueries({ queryKey: ['letters'] });
+      queryClient.invalidateQueries({ queryKey: ['letter', newLetter.id] });
+      
       toast.success(language === 'th' ? 'สร้างจดหมายเรียบร้อย' : 'Letter generated successfully');
       haptic.success();
 
     } catch (error) {
       console.error('[Letter Generation] Failed:', error);
+      console.error('[Letter Generation] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       toast.error(strings.failedToGenerateLetters);
       haptic.error();
+      setGenerationResult(null);
     } finally {
       setGeneratingLetters(false);
     }
@@ -779,48 +821,42 @@ ${user.full_name}`;
 
               {/* Auto-Generate Letters - Secure Tier Only */}
               {isSecureTier ? (
-                <div className="mb-4 p-4 rounded-xl border-2" style={{
+                <div className="mb-4 rounded-xl border-2 overflow-hidden" style={{
                   backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
                   borderColor: '#0C3B2E'
                 }}>
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{
-                      backgroundColor: '#0C3B2E'
-                    }}>
-                      <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-bold" style={{ color: colors.textPrimary }}>
-                          {strings.autoGenerateLetters}
-                        </h4>
-                        <Badge style={{ backgroundColor: '#C7A338', color: '#FFFFFF', border: 'none' }}>
-                          <Crown className="w-3 h-3 mr-1" />
-                          {strings.secureTierOnly}
-                        </Badge>
+                  {generatingLetters ? (
+                    <div className="p-6">
+                      <div className="flex flex-col items-center justify-center py-6">
+                        <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: '#0C3B2E' }} />
+                        <p className="font-semibold text-base mb-2" style={{ color: colors.textPrimary }}>
+                          {strings.generating}
+                        </p>
+                        <p className="text-sm text-center" style={{ color: colors.textSecondary }}>
+                          {language === 'th' 
+                            ? 'กำลังสร้างจดหมายจากคำแนะนำของการสแกน...'
+                            : 'Creating letter from scan recommendations...'}
+                        </p>
                       </div>
-                      <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
-                        {strings.autoGenerateDesc}
-                      </p>
-                      
-                      {generationResult ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 p-3 rounded-lg border" style={{ 
-                            backgroundColor: isDarkMode ? '#1E3A2E' : '#D1FAE5',
-                            borderColor: '#10B981'
-                          }}>
-                            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                            <div>
-                              <p className="font-semibold" style={{ color: isDarkMode ? colors.textPrimary : '#065F46' }}>
-                                {strings.generated}
-                              </p>
-                              <p className="text-sm" style={{ color: isDarkMode ? colors.textSecondary : '#047857' }}>
-                                {language === 'th' ? 'พร้อมสำหรับการตรวจสอบและแก้ไข' : 'Ready for review and editing'}
-                              </p>
-                            </div>
-                          </div>
+                    </div>
+                  ) : generationResult ? (
+                    <div className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{
+                          backgroundColor: '#10B981'
+                        }}>
+                          <CheckCircle2 className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold mb-1" style={{ color: colors.textPrimary }}>
+                            {strings.generated}
+                          </h4>
+                          <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                            {language === 'th' ? 'พร้อมสำหรับการตรวจสอบและแก้ไข' : 'Ready for review and editing'}
+                          </p>
                           <Button
                             onClick={() => {
+                              console.log('[Navigation] Going to LetterReview with letterId:', generationResult.letterId);
                               haptic.medium();
                               navigate(createPageUrl("LetterReview") + `?letterId=${generationResult.letterId}`);
                             }}
@@ -831,31 +867,45 @@ ${user.full_name}`;
                             {language === 'th' ? 'ตรวจสอบจดหมาย' : 'Review Letter'}
                           </Button>
                         </div>
-                      ) : (
-                        <Button
-                          onClick={() => {
-                            haptic.medium();
-                            analyzeAndGenerateLetters();
-                          }}
-                          disabled={generatingLetters}
-                          className="w-full btn-interaction"
-                          style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-                        >
-                          {generatingLetters ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              {strings.generating}
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="w-4 h-4 mr-2" />
-                              {strings.autoGenerateLetters}
-                            </>
-                          )}
-                        </Button>
-                      )}
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{
+                          backgroundColor: '#0C3B2E'
+                        }}>
+                          <Sparkles className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-bold" style={{ color: colors.textPrimary }}>
+                              {strings.autoGenerateLetters}
+                            </h4>
+                            <Badge style={{ backgroundColor: '#C7A338', color: '#FFFFFF', border: 'none' }}>
+                              <Crown className="w-3 h-3 mr-1" />
+                              {strings.secureTierOnly}
+                            </Badge>
+                          </div>
+                          <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
+                            {strings.autoGenerateDesc}
+                          </p>
+                          <Button
+                            onClick={() => {
+                              haptic.medium();
+                              analyzeAndGenerateLetters();
+                            }}
+                            disabled={generatingLetters}
+                            className="w-full btn-interaction"
+                            style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                          >
+                            <Sparkles className="w-4 h-4 mr-2" />
+                            {strings.autoGenerateLetters}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="mb-4 p-4 rounded-xl border-2 border-dashed" style={{

@@ -31,10 +31,24 @@ function LetterReviewContent() {
     queryFn: () => base44.auth.me()
   });
 
-  const { data: letter, isLoading } = useQuery({
+  const { data: letter, isLoading, error: letterError } = useQuery({
     queryKey: ['letter', letterId],
     queryFn: async () => {
+      console.log('[LetterReview] Fetching letter:', { letterId });
+      
+      if (!letterId) {
+        console.error('[LetterReview] No letterId provided');
+        return null;
+      }
+
       const letters = await base44.entities.Letter.filter({ id: letterId });
+      
+      console.log('[LetterReview] Query result:', { 
+        found: letters.length,
+        letterId,
+        hasData: !!letters[0]
+      });
+
       const l = letters[0];
       if (l) {
         setEditedTitle(l.title);
@@ -42,7 +56,8 @@ function LetterReviewContent() {
       }
       return l;
     },
-    enabled: !!letterId
+    enabled: !!letterId,
+    retry: 1
   });
 
   const updateLetterMutation = useMutation({
@@ -176,7 +191,9 @@ function LetterReviewContent() {
     );
   }
 
-  if (!letter) {
+  if (!letter && !isLoading) {
+    console.error('[LetterReview] Letter not found. Params:', { letterId, error: letterError });
+    
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
@@ -185,13 +202,26 @@ function LetterReviewContent() {
             <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
               {strings.letterNotFound}
             </h2>
-            <Button
-              onClick={() => navigate(createPageUrl("UploadScan"))}
-              style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {strings.back || 'Back'}
-            </Button>
+            <p className="text-sm mb-6 text-center" style={{ color: colors.textSecondary }}>
+              {language === 'th' 
+                ? 'จดหมายที่คุณกำลังมองหาไม่พบ กรุณาลองสร้างใหม่'
+                : 'The letter you\'re looking for was not found. Please try generating again.'}
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => navigate(-1)}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {strings.back || 'Back'}
+              </Button>
+              <Button
+                onClick={() => navigate(createPageUrl("UploadScan"))}
+                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+              >
+                {language === 'th' ? 'กลับไปสแกน' : 'Back to Scans'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
