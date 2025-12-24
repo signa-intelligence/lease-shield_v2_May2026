@@ -180,7 +180,7 @@ function UploadScanPageContent() {
         creating: "Creating lease record...",
         scanning: "Analysing document...",
         extracting: "Extracting lease details...",
-        finalizing: "Finalizing analysis..."
+        finalizing: "Finalising analysis..."
       },
       recentScans: "Recent Scans",
       viewAll: "View All Leases",
