@@ -39,6 +39,7 @@ import { generateRequestId, normalizeFiles, preflightCheck } from "../components
 import { formatErrorForUser, createDebugLog } from "../components/shared/ErrorCategorizer";
 import { getDeviceContext } from "../components/shared/DeviceContext";
 import { uploadFileWithSession, uploadMultipleFiles, getUploadTimeout } from "../components/shared/MobileUploader";
+import RetryAnalysis from "../components/shared/RetryAnalysis";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
@@ -86,6 +87,15 @@ function UploadScanPageContent() {
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
     initialData: [],
+    refetchInterval: (data) => {
+      // Poll every 5 seconds if any lease is in pending/queued/processing state
+      const hasPendingScans = data?.some(l => 
+        l.status === 'uploaded' || 
+        l.status === 'queued' || 
+        l.status === 'processing'
+      );
+      return hasPendingScans ? 5000 : false;
+    }
   });
 
   const { data: allScans = [] } = useQuery({
@@ -808,55 +818,168 @@ function UploadScanPageContent() {
 
     haptic.medium();
 
-    // BATCH MODE: Upload multiple leases separately
+    // BATCH MODE: Upload multiple leases AND trigger analysis for each
     if (selectedFiles.length > 1) {
       setBatchMode(true);
       setUploading(true);
-      setAnalyzing(false); // Batch upload is just uploading, not analyzing immediately
+      setAnalyzing(false);
       setError(null);
-      setUploadProgress(0); // Reset progress for batch
-      setCurrentStep(1); // Move to analyzing step
-      const batchResultsTemp = []; // Use a temporary array to store results for this batch operation
+      setUploadProgress(0);
+      setCurrentStep(1);
+      const batchResultsTemp = [];
+
+      logStage('BATCH_MODE_START', { 
+        filesCount: selectedFiles.length,
+        userTier
+      });
 
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
+        const fileRequestId = `${requestId}-file-${i + 1}`;
+        
         try {
           setAnalysisStage(language === 'th' ? `กำลังอัปโหลดไฟล์ ${i + 1}/${selectedFiles.length}` : `Uploading file ${i + 1}/${selectedFiles.length}`);
           setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
 
+          logStage(`BATCH_FILE_${i + 1}_START`, {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            fileRequestId
+          });
+
           const { file_url } = await base44.integrations.Core.UploadFile({ file });
           
+          logStage(`BATCH_FILE_${i + 1}_UPLOADED`, {
+            fileRequestId,
+            urlLength: file_url.length
+          });
+
           const lease = await base44.entities.Lease.create({
             file_url: file_url,
-            file_urls: [file_url], // Assuming each file is a single lease document
-            status: 'uploaded', // Leases created in batch mode are 'uploaded', not yet 'scanned'
-            created_by: user?.email // Ensure created_by is set
+            file_urls: [file_url],
+            status: 'queued', // Changed from 'uploaded' to 'queued' to indicate analysis pending
+            created_by: user?.email
           });
-          batchResultsTemp.push({ file: file.name, leaseId: lease.id, success: true });
+
+          logStage(`BATCH_FILE_${i + 1}_LEASE_CREATED`, {
+            leaseId: lease.id,
+            status: 'queued',
+            fileRequestId
+          });
+
+          // 🔥 CRITICAL FIX: Trigger analysis immediately for each file
+          try {
+            const scanStartTime = Date.now();
+            const { data: scanResponse } = await base44.functions.invoke('scanLease', {
+              fileUrls: [file_url],
+              requestId: fileRequestId
+            });
+
+            const scanDuration = Date.now() - scanStartTime;
+
+            if (scanResponse?.success) {
+              const scanResult = scanResponse.result;
+              
+              await base44.entities.Lease.update(lease.id, {
+                status: 'scanned',
+                property_address: scanResult.property_address || null,
+                start_date: scanResult.start_date || null,
+                end_date: scanResult.end_date || null,
+                rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
+                deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
+                language_detected: scanResult.language_detected || 'en'
+              });
+
+              await base44.entities.LeaseScan.create({
+                lease_id: lease.id,
+                risk_score: scanResult.risk_score,
+                flags: scanResult.flags || [],
+                summary: scanResult.summary,
+                scan_full: scanResult,
+                version: '1.0'
+              });
+
+              logStage(`BATCH_FILE_${i + 1}_ANALYZED`, {
+                leaseId: lease.id,
+                riskScore: scanResult.risk_score,
+                scanDuration,
+                fileRequestId
+              });
+
+              batchResultsTemp.push({ 
+                file: file.name, 
+                leaseId: lease.id, 
+                success: true,
+                scanned: true 
+              });
+            } else {
+              throw new Error(scanResponse?.error || 'Scan failed');
+            }
+          } catch (scanErr) {
+            console.error(`Analysis failed for file ${file.name}:`, scanErr);
+            
+            // Mark lease as failed
+            await base44.entities.Lease.update(lease.id, {
+              status: 'failed'
+            });
+
+            logStage(`BATCH_FILE_${i + 1}_SCAN_FAILED`, {
+              leaseId: lease.id,
+              error: scanErr.message,
+              fileRequestId
+            });
+
+            batchResultsTemp.push({ 
+              file: file.name, 
+              leaseId: lease.id,
+              success: true, // Upload succeeded
+              scanned: false,
+              scanError: scanErr.message
+            });
+          }
         } catch (err) {
           console.error(`Batch upload error for file ${file.name}:`, err);
-          batchResultsTemp.push({ file: file.name, success: false, error: err.message });
-          // If one file fails, continue with others in the batch
+          
+          logStage(`BATCH_FILE_${i + 1}_UPLOAD_FAILED`, {
+            error: err.message,
+            fileRequestId
+          });
+
+          batchResultsTemp.push({ 
+            file: file.name, 
+            success: false, 
+            error: err.message 
+          });
         }
       }
 
-      setBatchResults(batchResultsTemp); // Store all batch results
+      logStage('BATCH_MODE_COMPLETE', {
+        totalFiles: selectedFiles.length,
+        successful: batchResultsTemp.filter(r => r.success).length,
+        scanned: batchResultsTemp.filter(r => r.scanned).length,
+        failed: batchResultsTemp.filter(r => !r.success).length
+      });
+
+      setBatchResults(batchResultsTemp);
       setUploading(false);
-      setBatchMode(false); // Exit batch mode
-      setSelectedFiles([]); // Clear selected files after batch upload attempt
+      setBatchMode(false);
+      setSelectedFiles([]);
       setUploadProgress(0);
-      setAnalysisStage(''); // Clear stage
-      setCurrentStep(0); // Reset after batch upload
-      queryClient.invalidateQueries({ queryKey: ['leases'] }); // Invalidate to show new 'uploaded' leases
+      setAnalysisStage('');
+      setCurrentStep(0);
+      queryClient.invalidateQueries({ queryKey: ['leases'] });
+      queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       const successCount = batchResultsTemp.filter(r => r.success).length;
-      // Provide a summary alert
+      const scannedCount = batchResultsTemp.filter(r => r.scanned).length;
+      
       alert(
         language === 'th'
-          ? `อัปโหลดสำเร็จ ${successCount}/${batchResultsTemp.length} ไฟล์\n\nไฟล์ที่อัปโหลดสำเร็จแล้วจะปรากฏในรายการ "สัญญาเช่าทั้งหมด" และคุณสามารถเริ่มการวิเคราะห์ได้จากที่นั่น`
-          : `Successfully uploaded ${successCount}/${batchResultsTemp.length} files.\n\nSuccessfully uploaded files will appear in "All Leases" list, where you can initiate analysis.`
+          ? `อัปโหลดสำเร็จ ${successCount}/${batchResultsTemp.length} ไฟล์\nวิเคราะห์สำเร็จ ${scannedCount} ไฟล์\n\nตรวจสอบรายการ "สัญญาเช่าทั้งหมด" ด้านล่าง`
+          : `Successfully uploaded ${successCount}/${batchResultsTemp.length} files.\nAnalyzed ${scannedCount} files.\n\nCheck "All Leases" list below.`
       );
-      return; // Crucially, exit here for batch mode
+      return;
     }
 
     // SINGLE MODE: Keep existing logic with file normalization
@@ -1012,7 +1135,9 @@ function UploadScanPageContent() {
 
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
           fileUrls: fileUrls,
-          requestId // Pass requestId to backend
+          requestId, // Pass requestId to backend
+          leaseId: createdLeaseId, // Pass leaseId for status tracking
+          scanId: createdLeaseId // Use leaseId as scanId for tracing
         });
 
         const analysisDuration = Date.now() - analysisStartTime;
@@ -2200,7 +2325,7 @@ function UploadScanPageContent() {
                             {strings.scanDate}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                           {lease.status === 'scanned' && (
                             <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
                               <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -2208,10 +2333,44 @@ function UploadScanPageContent() {
                             </Badge>
                           )}
                           {lease.status === 'uploaded' && (
-                            <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                            <>
+                              <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                {language === 'th' ? 'รอการวิเคราะห์' : language === 'ru' ? 'Ожидание анализа' : 'Awaiting Analysis'}
+                              </Badge>
+                              <RetryAnalysis 
+                                lease={lease} 
+                                language={language}
+                                colors={colors}
+                                onSuccess={() => queryClient.invalidateQueries({ queryKey: ['leases', 'allScans'] })}
+                              />
+                            </>
+                          )}
+                          {lease.status === 'queued' && (
+                            <Badge className="bg-blue-100 text-blue-700 border-blue-200">
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              {language === 'th' ? 'รอการวิเคราะห์' : language === 'ru' ? 'Ожидание анализа' : 'Awaiting Analysis'}
+                              {language === 'th' ? 'อยู่ในคิว' : language === 'ru' ? 'В очереди' : 'Queued'}
                             </Badge>
+                          )}
+                          {lease.status === 'processing' && (
+                            <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              {language === 'th' ? 'กำลังประมวลผล' : language === 'ru' ? 'Обработка' : 'Processing'}
+                            </Badge>
+                          )}
+                          {lease.status === 'failed' && (
+                            <>
+                              <Badge className="bg-red-100 text-red-700 border-red-200">
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                {language === 'th' ? 'ล้มเหลว' : language === 'ru' ? 'Ошибка' : 'Failed'}
+                              </Badge>
+                              <RetryAnalysis 
+                                lease={lease} 
+                                language={language}
+                                colors={colors}
+                                onSuccess={() => queryClient.invalidateQueries({ queryKey: ['leases', 'allScans'] })}
+                              />
+                            </>
                           )}
                         </div>
                       </div>

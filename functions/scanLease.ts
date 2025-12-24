@@ -4,16 +4,23 @@ Deno.serve(async (req) => {
   const body = await req.json();
   const requestId = body.requestId || crypto.randomUUID().slice(0, 8);
   const startTime = Date.now();
+  const scanId = body.scanId || crypto.randomUUID();
   
   const logStage = (stage, data) => {
-    console.log(`[${requestId}] ${stage}:`, { ...data, elapsed: Date.now() - startTime });
+    console.log(`[SCAN:${scanId}][REQ:${requestId}] ${stage}:`, { 
+      ...data, 
+      elapsed: Date.now() - startTime,
+      timestamp: new Date().toISOString()
+    });
   };
 
   try {
     logStage('REQUEST_START', {
       method: req.method,
       contentType: req.headers.get('content-type'),
-      userAgent: req.headers.get('user-agent')
+      userAgent: req.headers.get('user-agent'),
+      hasRequestId: !!body.requestId,
+      hasScanId: !!body.scanId
     });
 
     const base44 = createClientFromRequest(req);
@@ -31,7 +38,7 @@ Deno.serve(async (req) => {
 
     logStage('AUTH_SUCCESS', { userEmail: user.email });
 
-    const { fileUrls } = body;
+    const { fileUrls, leaseId } = body;
     
     if (!fileUrls || fileUrls.length === 0) {
       logStage('VALIDATION_FAILED', { reason: 'No file URLs provided' });
@@ -39,11 +46,37 @@ Deno.serve(async (req) => {
         success: false,
         error: 'BACKEND_VALIDATION_ERROR',
         details: 'No file URLs provided',
-        diagnostic: { requestId, errorCategory: 'BACKEND_VALIDATION_ERROR' }
+        diagnostic: { 
+          scanId,
+          requestId, 
+          errorCategory: 'BACKEND_VALIDATION_ERROR' 
+        }
       }, { status: 400 });
     }
 
-    logStage('FILE_URLS_RECEIVED', { count: fileUrls.length });
+    logStage('FILE_URLS_RECEIVED', { 
+      count: fileUrls.length,
+      leaseId: leaseId || 'not_provided',
+      urls: fileUrls.map(url => url.substring(0, 80) + '...')
+    });
+
+    // If leaseId provided, update status to 'processing'
+    if (leaseId) {
+      try {
+        await base44.asServiceRole.entities.Lease.update(leaseId, {
+          status: 'processing'
+        });
+        logStage('LEASE_STATUS_UPDATED', { 
+          leaseId, 
+          newStatus: 'processing' 
+        });
+      } catch (statusErr) {
+        logStage('LEASE_STATUS_UPDATE_FAILED', {
+          leaseId,
+          error: statusErr.message
+        });
+      }
+    }
     
     // DIAGNOSTIC: Fetch and validate file metadata
     const fileMetadata = [];
@@ -198,11 +231,13 @@ INSTRUCTIONS:
       success: true,
       result: scanResult,
       diagnostic: {
-        buildTag: "android-fix-v2",
+        buildTag: "batch-fix-v1",
+        scanId,
         requestId,
         filesProcessed: fileUrls.length,
         totalDuration: analysisDuration,
-        fileMetadata
+        fileMetadata,
+        timestamp: new Date().toISOString()
       }
     });
 
@@ -238,6 +273,21 @@ INSTRUCTIONS:
       errorDetails = error.message;
     }
     
+    // If leaseId provided, mark as failed
+    if (body.leaseId) {
+      try {
+        await base44.asServiceRole.entities.Lease.update(body.leaseId, {
+          status: 'failed'
+        });
+        logStage('LEASE_MARKED_FAILED', { leaseId: body.leaseId });
+      } catch (failMarkErr) {
+        logStage('FAILED_TO_MARK_LEASE_FAILED', { 
+          leaseId: body.leaseId,
+          error: failMarkErr.message 
+        });
+      }
+    }
+
     logStage('ERROR_RESPONSE', {
       category: errorCategory,
       message: errorMessage,
@@ -249,6 +299,7 @@ INSTRUCTIONS:
       error: errorMessage,
       details: errorDetails,
       diagnostic: {
+        scanId,
         requestId,
         errorCategory,
         errorType: error.name,
