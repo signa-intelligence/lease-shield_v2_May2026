@@ -264,19 +264,84 @@ function TemplatesContent() {
             borderColor: '#C7A338'
           }}>
             <CardContent className="p-4">
-              <h3 className="text-sm font-bold mb-2" style={{ color: colors.textPrimary }}>
-                🔧 Admin Debug Panel
+              <h3 className="text-sm font-bold mb-3" style={{ color: colors.textPrimary }}>
+                🔧 Template Debug Panel
               </h3>
-              <div className="text-xs font-mono space-y-1" style={{ color: colors.textSecondary }}>
-                <div>Templates loaded: {templates.length}</div>
-                <div>Keys: {templates.map(t => t.template_key).join(', ')}</div>
-                <div className="pt-2">
-                  {templates.map(t => (
-                    <div key={t.id} className="mb-1">
-                      • {t.template_key}: file={t.file_path ? '✓' : '✗'} EN={t.preview_en ? '✓' : '✗'} TH={t.preview_th ? '✓' : '✗'}
-                    </div>
-                  ))}
+              
+              {/* Summary Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4 text-xs font-mono">
+                <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
+                  <div style={{ color: colors.textSecondary }}>Total</div>
+                  <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{templates.length}</div>
                 </div>
+                <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
+                  <div style={{ color: colors.textSecondary }}>Missing EN</div>
+                  <div className="text-lg font-bold" style={{ color: templates.filter(t => !t.preview_en).length > 0 ? '#DC2626' : '#059669' }}>
+                    {templates.filter(t => !t.preview_en).length}
+                  </div>
+                </div>
+                <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
+                  <div style={{ color: colors.textSecondary }}>Missing TH</div>
+                  <div className="text-lg font-bold" style={{ color: templates.filter(t => !t.preview_th).length > 0 ? '#DC2626' : '#059669' }}>
+                    {templates.filter(t => !t.preview_th).length}
+                  </div>
+                </div>
+                <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
+                  <div style={{ color: colors.textSecondary }}>Missing File</div>
+                  <div className="text-lg font-bold" style={{ color: templates.filter(t => !t.file_path).length > 0 ? '#DC2626' : '#059669' }}>
+                    {templates.filter(t => !t.file_path).length}
+                  </div>
+                </div>
+                <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
+                  <div style={{ color: colors.textSecondary }}>Active</div>
+                  <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                    {templates.filter(t => t.status === 'active').length}
+                  </div>
+                </div>
+              </div>
+
+              {/* Template Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-mono" style={{ borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: `2px solid ${colors.borderColor}` }}>
+                      <th className="text-left p-2" style={{ color: colors.textPrimary }}>Key</th>
+                      <th className="text-left p-2" style={{ color: colors.textPrimary }}>Category</th>
+                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>Active</th>
+                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>EN</th>
+                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>TH</th>
+                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>File</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {templates.map(t => (
+                      <tr key={t.id} style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+                        <td className="p-2" style={{ color: colors.textPrimary }}>{t.template_key}</td>
+                        <td className="p-2" style={{ color: colors.textSecondary }}>{t.category}</td>
+                        <td className="p-2 text-center">
+                          <span style={{ color: t.status === 'active' ? '#059669' : '#DC2626' }}>
+                            {t.status === 'active' ? '✓' : '✗'}
+                          </span>
+                        </td>
+                        <td className="p-2 text-center">
+                          <span style={{ color: t.preview_en ? '#059669' : '#DC2626' }}>
+                            {t.preview_en ? '✓' : '✗'}
+                          </span>
+                        </td>
+                        <td className="p-2 text-center">
+                          <span style={{ color: t.preview_th ? '#059669' : '#DC2626' }}>
+                            {t.preview_th ? '✓' : '✗'}
+                          </span>
+                        </td>
+                        <td className="p-2 text-center">
+                          <span style={{ color: t.file_path ? '#059669' : '#DC2626' }}>
+                            {t.file_path ? '✓' : '✗'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
