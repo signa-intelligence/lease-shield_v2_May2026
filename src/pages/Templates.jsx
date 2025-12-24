@@ -121,10 +121,7 @@ export default function Templates() {
       <div
         key={template.id}
         onClick={() => {
-          const params = new URLSearchParams({ subject: template.template_key });
-          if (leaseIdParam) params.append('lease_id', leaseIdParam);
-          if (scanIdParam) params.append('scan_id', scanIdParam);
-          navigate(createPageUrl("TemplateForm") + `?${params.toString()}`);
+          navigate(createPageUrl("TemplateStore"));
         }}
         className="rounded-xl shadow-md hover:shadow-xl transition-all p-6 cursor-pointer"
         style={{ 
