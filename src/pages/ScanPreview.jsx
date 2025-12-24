@@ -340,86 +340,291 @@ function ScanPreviewContent() {
           {strings.backToScans}
         </Button>
 
-        {shouldShowTrackDepositCard && (
-          <Card 
-            className="mb-6 border-none shadow-xl overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-              animation: 'slideDown 0.5s ease-out'
-            }}
-          >
-            <style>
-              {`
-                @keyframes slideDown {
-                  from {
-                    opacity: 0;
-                    transform: translateY(-20px);
-                  }
-                  to {
-                    opacity: 1;
-                    transform: translateY(0);
-                  }
-                }
-              `}
-            </style>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-xl font-bold text-white">{strings.nextStep}</h3>
+        {/* Risk-Aware Next Step Card */}
+        {(() => {
+          const isHighRisk = riskLevel?.level === 'high';
+          const isMediumRisk = riskLevel?.level === 'medium';
+          const isLowRisk = riskLevel?.level === 'low';
+          
+          // HIGH RISK: Urgent action required
+          if (isHighRisk) {
+            return (
+              <Card 
+                className="mb-6 border-none shadow-xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                  animation: 'slideDown 0.5s ease-out'
+                }}
+              >
+                <style>
+                  {`
+                    @keyframes slideDown {
+                      from { opacity: 0; transform: translateY(-20px); }
+                      to { opacity: 1; transform: translateY(0); }
+                    }
+                  `}
+                </style>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <AlertTriangle className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white mb-2">
+                        {language === 'th' ? '⚠️ ความเสี่ยงสูง — ดำเนินการก่อนเซ็น' : 'High Risk — Act Before You Sign'}
+                      </h3>
+                      <p className="text-white/90 mb-4 text-sm leading-relaxed">
+                        {language === 'th' 
+                          ? 'สัญญานี้มีข้อกำหนดที่เอื้อประโยชน์ต่อเจ้าของบ้านอย่างมาก ตรวจสอบความเสี่ยงและสร้างจดหมายเจรจาก่อนเซ็น'
+                          : 'This lease contains clauses that may heavily favour the landlord. Review the risks and generate a negotiation letter before signing.'}
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => {
+                            haptic.medium();
+                            window.scrollTo({ top: 600, behavior: 'smooth' });
+                          }}
+                          className="btn-interaction"
+                          style={{
+                            width: '100%',
+                            backgroundColor: '#FFFFFF',
+                            color: '#DC2626',
+                            padding: '14px 20px',
+                            borderRadius: '10px',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                          }}
+                        >
+                          <AlertTriangle className="w-5 h-5" />
+                          <span>{language === 'th' ? 'ตรวจสอบความเสี่ยง' : 'Review Risks'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            haptic.medium();
+                            navigate(createPageUrl("Templates") + `?leaseId=${lease.id}&scanId=${scan.id}`);
+                          }}
+                          className="btn-interaction"
+                          style={{
+                            width: '100%',
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                            color: '#FFFFFF',
+                            padding: '12px 20px',
+                            borderRadius: '10px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            border: '2px solid rgba(255,255,255,0.4)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                          }}
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span>{language === 'th' ? 'สร้างจดหมายเจรจา' : 'Generate Negotiation Letter'}</span>
+                        </button>
+                        {shouldShowTrackDepositCard && (
+                          <button
+                            onClick={() => {
+                              haptic.light();
+                              navigate(createPageUrl("PropertyTracker"));
+                            }}
+                            style={{
+                              width: '100%',
+                              backgroundColor: 'transparent',
+                              color: 'rgba(255,255,255,0.8)',
+                              padding: '8px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              textDecoration: 'underline'
+                            }}
+                          >
+                            {language === 'th' ? 'หรือติดตามเงินมัดจำ →' : 'Or track deposit →'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-white/90 mb-2 text-base">
-                    {strings.nextStepDesc}
-                  </p>
-                  <div className="flex items-center gap-2 text-white/80 text-sm mb-4">
-                    <Wallet className="w-4 h-4" />
-                    <span className="font-semibold">{strings.depositAmount}:</span>
-                    <span className="text-lg font-bold">฿{lease.deposit_amount.toLocaleString()}</span>
+                </CardContent>
+              </Card>
+            );
+          }
+          
+          // MEDIUM RISK: Balanced guidance
+          if (isMediumRisk) {
+            return (
+              <Card 
+                className="mb-6 border-none shadow-xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                  animation: 'slideDown 0.5s ease-out'
+                }}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Info className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white mb-2">
+                        {language === 'th' ? '📋 ขั้นตอนถัดไป' : '📋 Next Step'}
+                      </h3>
+                      <p className="text-white/90 mb-4 text-sm leading-relaxed">
+                        {language === 'th' 
+                          ? 'สัญญานี้มีความเสี่ยงปานกลาง ตรวจสอบคำแนะนำและติดตามเงินมัดจำ'
+                          : 'This lease has moderate risk. Review recommendations and track your deposit.'}
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => {
+                            haptic.medium();
+                            navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`, { replace: false });
+                          }}
+                          className="btn-interaction"
+                          style={{
+                            width: '100%',
+                            backgroundColor: '#FFFFFF',
+                            color: '#D97706',
+                            padding: '14px 20px',
+                            borderRadius: '10px',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                          }}
+                        >
+                          <FileText className="w-5 h-5" />
+                          <span>{language === 'th' ? 'ดูคำแนะนำ' : 'Review Recommendations'}</span>
+                        </button>
+                        {shouldShowTrackDepositCard && (
+                          <button
+                            onClick={() => {
+                              haptic.medium();
+                              navigate(createPageUrl("PropertyTracker"));
+                            }}
+                            className="btn-interaction"
+                            style={{
+                              width: '100%',
+                              backgroundColor: 'rgba(255,255,255,0.2)',
+                              color: '#FFFFFF',
+                              padding: '12px 20px',
+                              borderRadius: '10px',
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              border: '2px solid rgba(255,255,255,0.4)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px'
+                            }}
+                          >
+                            <Wallet className="w-4 h-4" />
+                            <span>{language === 'th' ? 'ติดตามเงินมัดจำ' : 'Track Deposit'}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      haptic.medium();
-                      navigate(createPageUrl("PropertyTracker"));
-                    }}
-                    className="btn-interaction"
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#FFFFFF',
-                      color: '#10B981',
-                      padding: '14px 24px',
-                      borderRadius: '10px',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 6px 10px rgba(0, 0, 0, 0.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-                    }}
-                  >
-                    <Wallet className="w-5 h-5" />
-                    <span>{strings.trackDeposit}</span>
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </CardContent>
+              </Card>
+            );
+          }
+          
+          // LOW RISK: Focus on deposit tracking (existing green card)
+          if (isLowRisk && shouldShowTrackDepositCard) {
+            return (
+              <Card 
+                className="mb-6 border-none shadow-xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  animation: 'slideDown 0.5s ease-out'
+                }}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white mb-2">{strings.nextStep}</h3>
+                      <p className="text-white/90 mb-2 text-base">
+                        {strings.nextStepDesc}
+                      </p>
+                      <div className="flex items-center gap-2 text-white/80 text-sm mb-4">
+                        <Wallet className="w-4 h-4" />
+                        <span className="font-semibold">{strings.depositAmount}:</span>
+                        <span className="text-lg font-bold">฿{lease.deposit_amount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => {
+                            haptic.medium();
+                            navigate(createPageUrl("PropertyTracker"));
+                          }}
+                          className="btn-interaction"
+                          style={{
+                            width: '100%',
+                            backgroundColor: '#FFFFFF',
+                            color: '#10B981',
+                            padding: '14px 24px',
+                            borderRadius: '10px',
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                          }}
+                        >
+                          <Wallet className="w-5 h-5" />
+                          <span>{strings.trackDeposit}</span>
+                          <ArrowRight className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            haptic.light();
+                            navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`, { replace: false });
+                          }}
+                          style={{
+                            width: '100%',
+                            backgroundColor: 'transparent',
+                            color: 'rgba(255,255,255,0.9)',
+                            padding: '8px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          {language === 'th' ? 'หรือดูรายงานฉบับเต็ม →' : 'Or view full report →'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          }
+          
+          return null;
+        })()}
 
         {hasDepositForLease && lease?.deposit_amount > 0 && (
           <Card 
