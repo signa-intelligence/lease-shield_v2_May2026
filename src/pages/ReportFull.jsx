@@ -526,6 +526,14 @@ function ReportFullContent() {
     return colors[severity] || "text-slate-600 bg-slate-50 border-slate-200";
   };
 
+  const getRiskLevel = (score) => {
+    if (score >= 70) return { level: 'high', label: language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий риск' : 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' };
+    if (score >= 40) return { level: 'medium', label: language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний риск' : 'MEDIUM RISK', color: '#F59E0B', bg: '#FEF3C7' };
+    return { level: 'low', label: language === 'th' ? 'ความเสี่ยงต่ำ' : language === 'ru' ? 'Низкий риск' : 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
+  };
+
+  const riskLevel = scan ? getRiskLevel(scan.risk_score) : null;
+
   // LIMIT FLAGS BASED ON TIER (consistent with ScanPreview)
   const getFullDisplayFlags = () => {
     const allFlags = scan.scan_full?.flags || [];
@@ -585,13 +593,42 @@ function ReportFullContent() {
           {/* Risk Score Summary */}
           <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <span>{strings.riskAssessment}</span>
-                <Badge className="bg-white text-blue-800 text-lg px-4 py-2">
-                  {strings.score}: {scan.risk_score}/100
-                </Badge>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="text-lg px-4 py-2" style={{
+                    backgroundColor: riskLevel?.bg || '#fff',
+                    color: riskLevel?.color || '#1F2937',
+                    border: `2px solid ${riskLevel?.color || '#D1D5DB'}`
+                  }}>
+                    {strings.score}: {scan.risk_score}/100
+                  </Badge>
+                  <Badge className="text-sm px-3 py-1.5 font-bold flex items-center gap-1" style={{
+                    backgroundColor: riskLevel?.color || '#10B981',
+                    color: '#FFFFFF'
+                  }}>
+                    {riskLevel?.level === 'high' && <AlertTriangle className="w-4 h-4" />}
+                    {riskLevel?.label || 'LOW RISK'}
+                  </Badge>
+                </div>
               </CardTitle>
             </CardHeader>
+            {riskLevel?.level === 'high' && (
+              <div className="px-6 pt-4 pb-2">
+                <div className="p-3 rounded-lg border-l-4" style={{
+                  backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                  borderLeftColor: '#EF4444'
+                }}>
+                  <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
+                    {language === 'th' 
+                      ? 'ความเสี่ยงสูง: สัญญานี้มีข้อกำหนดที่เอื้อประโยชน์ต่อเจ้าของบ้านอย่างมาก ตรวจสอบก่อนเซ็น'
+                      : language === 'ru'
+                        ? 'Высокий риск: этот договор содержит условия, которые сильно благоприятствуют арендодателю. Проверьте перед подписанием.'
+                        : 'High risk: this lease contains clauses that heavily favour the landlord. Review before signing.'}
+                  </p>
+                </div>
+              </div>
+            )}
             <CardContent className="p-6">
               <p className="leading-relaxed" style={{ color: colors.textPrimary }}>{scan.summary}</p>
             </CardContent>
