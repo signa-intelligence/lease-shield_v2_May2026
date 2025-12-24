@@ -499,7 +499,7 @@ ${user.full_name || 'Tenant'}`;
       try {
         newLetter = await base44.entities.Letter.create(letterData);
         console.log('[Letter Generation] Create response:', newLetter);
-        } catch (createError) {
+      } catch (createError) {
         console.error('[LETTER_GENERATION_ERROR] Database create failed:', {
           error: createError,
           message: createError.message,
@@ -508,22 +508,22 @@ ${user.full_name || 'Tenant'}`;
           response: createError.response?.data
         });
         throw new Error(`Database error: ${createError.message || 'Failed to save letter'}`);
-        }
+      }
 
-        if (!newLetter || !newLetter.id) {
+      if (!newLetter || !newLetter.id) {
         console.error('[LETTER_GENERATION_ERROR] No ID returned:', newLetter);
         throw new Error('Failed to create letter - no ID returned from database');
-        }
+      }
 
-        console.log('[Letter Generation] Letter created:', { 
+      console.log('[Letter Generation] Letter created successfully:', { 
         letterId: newLetter.id,
         userId: letterData.user_id,
         leaseId: letterData.lease_id,
         recommendationsUsed: recommendationsUsed.length
-        });
+      });
 
-        // Log credit transaction
-        try {
+      // Log credit transaction
+      try {
         await base44.entities.CreditLedger.create({
           user_id: user.id,
           user_email: user.email,
@@ -544,67 +544,23 @@ ${user.full_name || 'Tenant'}`;
           previous: letterCredits,
           new: letterCredits - 1
         });
-        } catch (creditError) {
+      } catch (creditError) {
         console.error('[Letter Generation] Credit update failed:', creditError);
         // Don't fail the whole operation - letter was created
-        }
+      }
 
-        // Critical verification: Can we retrieve the letter?
-        let verificationAttempts = 0;
-        let letterFound = false;
-        const maxAttempts = 3;
+      // Invalidate queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['letters'] });
+      queryClient.invalidateQueries({ queryKey: ['letters', lease.id] });
+      queryClient.invalidateQueries({ queryKey: ['letter', newLetter.id] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
 
-        while (!letterFound && verificationAttempts < maxAttempts) {
-        verificationAttempts++;
-        console.log(`[Letter Generation] Verification attempt ${verificationAttempts}/${maxAttempts}`);
-
-        try {
-          const verifyByLeaseId = await base44.entities.Letter.filter({ 
-            lease_id: lease.id,
-            user_id: user.id 
-          });
-
-          console.log('[Letter Generation] Query result:', {
-            attemptNo: verificationAttempts,
-            queryParams: { lease_id: lease.id, user_id: user.id },
-            foundCount: verifyByLeaseId.length,
-            letterIds: verifyByLeaseId.map(l => l.id)
-          });
-
-          if (verifyByLeaseId.some(l => l.id === newLetter.id)) {
-            letterFound = true;
-            console.log('[Letter Generation] ✅ Letter verified successfully');
-            break;
-          }
-
-          // Wait 500ms before retry
-          if (verificationAttempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        } catch (verifyError) {
-          console.error(`[Letter Generation] Verification attempt ${verificationAttempts} failed:`, verifyError);
-        }
-        }
-
-        if (!letterFound) {
-        console.error('[LETTER_GENERATION_ERROR] Letter not retrievable after creation');
-        throw new Error('Letter created but cannot be retrieved. Please refresh and check Lease Letters page.');
-        }
-
-        // Success!
-        setGenerationResult({
-        letterId: newLetter.id,
-        leaseId: lease.id,
-        totalGenerated: 1
-        });
-
-        queryClient.invalidateQueries({ queryKey: ['letters'] });
-        queryClient.invalidateQueries({ queryKey: ['letters', lease.id] });
-        queryClient.invalidateQueries({ queryKey: ['letter', newLetter.id] });
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-
-        toast.success(`${language === 'th' ? 'สร้างจดหมาย 1 ฉบับเรียบร้อย' : '1 letter generated successfully'}`);
-        haptic.success();
+      // Navigate directly to letter editor
+      toast.success(`${language === 'th' ? 'สร้างจดหมาย 1 ฉบับเรียบร้อย' : '1 letter generated successfully'}`);
+      haptic.success();
+      
+      // Navigate to letter review page
+      navigate(createPageUrl("LetterReview") + `?letterId=${newLetter.id}&leaseId=${lease.id}`);
 
     } catch (error) {
       console.error('[LETTER_GENERATION_ERROR] Full error:', {

@@ -44,21 +44,24 @@ function LeaseLettersContent() {
   });
 
   const { data: letters = [], isLoading } = useQuery({
-    queryKey: ['letters', leaseId],
+    queryKey: ['letters', leaseId, user?.id],
     queryFn: async () => {
-      if (!leaseId) {
-        console.log('[LeaseLetters] No leaseId provided');
+      if (!leaseId || !user?.id) {
+        console.log('[LeaseLetters] Missing required data:', { leaseId, userId: user?.id });
         return [];
       }
       
       console.log('[LeaseLetters] Querying letters:', {
         leaseId,
-        userId: user?.id,
-        userEmail: user?.email
+        userId: user.id,
+        userEmail: user.email
       });
 
-      // Query by lease_id only - RLS handles user filtering
-      const results = await base44.entities.Letter.filter({ lease_id: leaseId }, '-created_date');
+      // Query by lease_id AND user_id explicitly
+      const results = await base44.entities.Letter.filter({ 
+        lease_id: leaseId,
+        user_id: user.id 
+      }, '-created_date');
       
       console.log('[LeaseLetters] Query results:', {
         count: results.length,
@@ -68,7 +71,7 @@ function LeaseLettersContent() {
 
       return results;
     },
-    enabled: !!leaseId && !!user,
+    enabled: !!leaseId && !!user?.id,
     staleTime: 0,
     refetchOnMount: true,
     initialData: []
@@ -84,8 +87,8 @@ function LeaseLettersContent() {
   });
 
   const createBlankLetter = async () => {
-    if (!user || !leaseId) {
-      console.error('[CreateBlankLetter] Missing required data:', { user: !!user, leaseId });
+    if (!user?.id || !leaseId) {
+      console.error('[CreateBlankLetter] Missing required data:', { userId: user?.id, leaseId });
       toast.error('Cannot create letter - missing data');
       return;
     }
@@ -126,40 +129,20 @@ ${user.full_name}`;
         language: language
       };
 
-      console.log('[CreateBlankLetter] Creating with data:', {
+      console.log('[CreateBlankLetter] Creating letter:', {
         user_id: letterData.user_id,
-        lease_id: letterData.lease_id,
-        titleLength: letterData.title.length,
-        bodyLength: letterData.body.length
+        lease_id: letterData.lease_id
       });
 
       const newLetter = await base44.entities.Letter.create(letterData);
-
-      console.log('[CreateBlankLetter] Create response:', { 
-        hasId: !!newLetter?.id, 
-        letterId: newLetter?.id,
-        fullResponse: newLetter
-      });
 
       if (!newLetter || !newLetter.id) {
         throw new Error('No letter ID returned from create');
       }
 
-      // Verify creation
-      const verify = await base44.entities.Letter.filter({ id: newLetter.id });
-      console.log('[CreateBlankLetter] Verification:', { 
-        found: verify.length > 0,
-        letterId: newLetter.id,
-        verifyResults: verify
+      console.log('[CreateBlankLetter] Letter created successfully:', { 
+        letterId: newLetter.id
       });
-
-      if (verify.length === 0) {
-        console.error('[CreateBlankLetter] Letter not retrievable:', {
-          expectedId: newLetter.id,
-          queryUsed: { lease_id: leaseId }
-        });
-        throw new Error('Letter created but not retrievable. Please refresh the page.');
-      }
 
       // Log credit transaction
       try {
@@ -174,7 +157,6 @@ ${user.full_name}`;
           related_entity_id: newLetter.id
         });
 
-        // Decrement user credits
         await base44.auth.updateMe({
           letter_credits: Math.max(0, letterCredits - 1)
         });
@@ -182,18 +164,18 @@ ${user.full_name}`;
         console.log('[CreateBlankLetter] Credits deducted');
       } catch (creditError) {
         console.error('[CreateBlankLetter] Credit update failed:', creditError);
-        // Don't fail - letter was created successfully
       }
 
-      queryClient.invalidateQueries({ queryKey: ['letters', leaseId] });
+      queryClient.invalidateQueries({ queryKey: ['letters', leaseId, user.id] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
       toast.success(language === 'th' ? 'สร้างจดหมายว่างแล้ว' : 'Blank letter created');
+      haptic.success();
+      
+      // Navigate directly to letter editor
       navigate(createPageUrl("LetterReview") + `?letterId=${newLetter.id}&leaseId=${leaseId}`);
     } catch (error) {
-      console.error('[CreateBlankLetter] ERROR:', {
-        message: error.message,
-        stack: error.stack,
-        error
-      });
+      console.error('[CreateBlankLetter] ERROR:', error);
       toast.error(`Failed to create letter: ${error.message}`);
       haptic.error();
     }
