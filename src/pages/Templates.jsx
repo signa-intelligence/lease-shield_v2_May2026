@@ -73,15 +73,22 @@ function TemplatesContent() {
     setConfirmTemplate(template);
     // Lock body scroll when modal opens
     document.body.style.overflow = 'hidden';
+    // Hide chat FAB to prevent overlap
+    const lisaFab = document.querySelector('.fab-bottom');
+    if (lisaFab) lisaFab.style.display = 'none';
   };
 
   React.useEffect(() => {
-    // Unlock body scroll when modal closes
+    // Unlock body scroll and restore chat FAB when modal closes
     if (!confirmTemplate && !previewTemplate) {
       document.body.style.overflow = '';
+      const lisaFab = document.querySelector('.fab-bottom');
+      if (lisaFab) lisaFab.style.display = '';
     }
     return () => {
       document.body.style.overflow = '';
+      const lisaFab = document.querySelector('.fab-bottom');
+      if (lisaFab) lisaFab.style.display = '';
     };
   }, [confirmTemplate, previewTemplate]);
 
@@ -415,23 +422,32 @@ function TemplatesContent() {
       {/* Confirmation Modal */}
       {confirmTemplate && (
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" 
           onClick={() => setConfirmTemplate(null)}
-          style={{ overflow: 'hidden' }}
+          style={{ 
+            overflow: 'hidden',
+            padding: '12px'
+          }}
         >
           <div 
-            className="rounded-2xl shadow-2xl max-w-lg w-full flex flex-col"
+            className="rounded-2xl shadow-2xl flex flex-col"
             style={{ 
               backgroundColor: colors.cardBg,
-              maxHeight: '85vh',
-              height: 'auto'
+              maxHeight: 'calc(100dvh - 24px)',
+              width: 'min(92vw, 520px)',
+              display: 'flex',
+              flexDirection: 'column'
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Scrollable Content */}
-            <div className="overflow-y-auto flex-1 p-6 space-y-4" style={{ 
-              paddingBottom: '0'
-            }}>
+            <div 
+              className="overflow-y-auto flex-1 p-6 space-y-4"
+              style={{ 
+                WebkitOverflowScrolling: 'touch',
+                paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))'
+              }}
+            >
             <div className="text-center mb-4">
               <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: '#0C3B2E' }}>
                 <Download className="w-8 h-8 text-white" />
@@ -554,11 +570,20 @@ function TemplatesContent() {
 
             {/* Sticky Footer with CTAs */}
             <div 
-              className="sticky bottom-0 border-t p-4 flex gap-3"
+              className="border-t flex gap-3"
               style={{
+                position: 'sticky',
+                bottom: 0,
+                zIndex: 50,
                 backgroundColor: colors.cardBg,
                 borderTopColor: colors.borderColor,
-                paddingBottom: `calc(16px + env(safe-area-inset-bottom, 0px))`
+                borderTopWidth: '1px',
+                borderTopStyle: 'solid',
+                padding: '12px',
+                paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+                alignItems: 'stretch',
+                borderBottomLeftRadius: '16px',
+                borderBottomRightRadius: '16px'
               }}
             >
               <Button
@@ -568,7 +593,9 @@ function TemplatesContent() {
                 style={{
                   borderColor: colors.borderColor,
                   color: colors.textPrimary,
-                  minHeight: '48px'
+                  minHeight: '48px',
+                  fontSize: '16px',
+                  fontWeight: '600'
                 }}
               >
                 {strings.cancel}
@@ -579,11 +606,17 @@ function TemplatesContent() {
                 style={{
                   backgroundColor: '#0C3B2E',
                   color: '#FFFFFF',
-                  minHeight: '48px'
+                  minHeight: '48px',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
                 }}
               >
-                <Download className="w-4 h-4 mr-2" />
-                {strings.confirmDownload}
+                <Download className="w-4 h-4" />
+                <span>{strings.confirmDownload}</span>
               </Button>
             </div>
           </div>
