@@ -15,7 +15,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { template_id } = await req.json();
+    const { template_id, debug } = await req.json();
+    
+    if (debug) {
+      console.log('🔧 [DEBUG] Download request for template:', template_id);
+    }
 
     if (!template_id) {
       return Response.json({ error: 'Missing template_id' }, { status: 400 });
@@ -40,33 +44,49 @@ Deno.serve(async (req) => {
       }, { status: 402 });
     }
 
-    // Validate file_path exists - if not, try to generate it
+    // Step 1: Validate file_path exists - if not, try to generate it
     if (!template.file_path) {
-      console.log(`⚠️ Template ${template.template_key} has no file_path - attempting generation`);
+      if (debug) {
+        console.log(`🔧 [DEBUG] No file_path - attempting generation for ${template.template_key}`);
+      }
       
       // Try to auto-generate the file
       try {
-        const genResponse = await base44.functions.invoke('generateTemplateFile', { template_id });
+        const genResponse = await base44.asServiceRole.functions.invoke('generateTemplateFile', { template_id });
+        
+        if (debug) {
+          console.log('🔧 [DEBUG] Generation response:', genResponse.data);
+        }
         
         if (genResponse.data?.ok) {
           // Refresh template data
-          const refreshedTemplates = await base44.entities.TemplateLibrary.filter({ id: template_id });
+          const refreshedTemplates = await base44.asServiceRole.entities.TemplateLibrary.filter({ id: template_id });
           if (refreshedTemplates && refreshedTemplates.length > 0) {
             template.file_path = refreshedTemplates[0].file_path;
-            console.log(`✅ File generated: ${template.file_path}`);
+            if (debug) {
+              console.log(`🔧 [DEBUG] File generated: ${template.file_path}`);
+            }
           }
         }
       } catch (genError) {
         console.error('Auto-generation failed:', genError);
+        return Response.json({ 
+          error: 'File generation failed',
+          details: genError.message
+        }, { status: 500 });
       }
       
       // If still no file_path, return error
       if (!template.file_path) {
         return Response.json({ 
           error: 'Template file not available',
-          message: 'This template is not ready for download. Please contact support.'
+          details: 'Generation completed but file_path not set'
         }, { status: 400 });
       }
+    }
+    
+    if (debug) {
+      console.log(`🔧 [DEBUG] Template file_path: ${template.file_path}`);
     }
 
     // Initialize Supabase client for storage operations
@@ -86,7 +106,11 @@ Deno.serve(async (req) => {
     const folder = lastSlashIndex > 0 ? template.file_path.substring(0, lastSlashIndex) : '';
     const filename = template.file_path.substring(lastSlashIndex + 1);
 
-    // Verify file exists in storage BEFORE deducting credits
+    // Step 2: Verify file exists in storage BEFORE deducting credits
+    if (debug) {
+      console.log(`🔧 [DEBUG] Checking file existence in bucket: ${bucketName}, path: ${template.file_path}`);
+    }
+    
     const { data: fileList, error: checkError } = await supabase
       .storage
       .from(bucketName)
@@ -96,14 +120,56 @@ Deno.serve(async (req) => {
 
     if (checkError || !fileList || fileList.length === 0) {
       console.error('File verification failed:', checkError, 'Path:', template.file_path);
-      return Response.json({ 
-        error: 'Template file not found',
-        message: 'The template file is missing from storage. Please contact support.',
-        file_path: template.file_path
-      }, { status: 404 });
+      
+      // Try to regenerate file if missing
+      if (debug) {
+        console.log('🔧 [DEBUG] File not found in storage, attempting regeneration');
+      }
+      
+      try {
+        const genResponse = await base44.asServiceRole.functions.invoke('generateTemplateFile', { template_id });
+        
+        if (genResponse.data?.ok) {
+          // Refresh and retry verification
+          const refreshedTemplates = await base44.asServiceRole.entities.TemplateLibrary.filter({ id: template_id });
+          if (refreshedTemplates && refreshedTemplates.length > 0) {
+            template.file_path = refreshedTemplates[0].file_path;
+            
+            // Re-extract folder/filename
+            const newLastSlashIndex = template.file_path.lastIndexOf('/');
+            const newFolder = newLastSlashIndex > 0 ? template.file_path.substring(0, newLastSlashIndex) : '';
+            const newFilename = template.file_path.substring(newLastSlashIndex + 1);
+            
+            const { data: newFileList, error: newCheckError } = await supabase
+              .storage
+              .from(bucketName)
+              .list(newFolder || undefined, {
+                search: newFilename
+              });
+              
+            if (!newCheckError && newFileList && newFileList.length > 0) {
+              if (debug) {
+                console.log('🔧 [DEBUG] File regenerated and verified');
+              }
+            } else {
+              return Response.json({ 
+                error: 'File regeneration failed',
+                details: 'Generated but still not found in storage'
+              }, { status: 500 });
+            }
+          }
+        }
+      } catch (regenError) {
+        return Response.json({ 
+          error: 'Template file not found',
+          details: 'File missing from storage and regeneration failed: ' + regenError.message
+        }, { status: 404 });
+      }
     }
 
-    console.log(`✅ File verified: ${template.file_path}`);
+    if (debug) {
+      console.log(`🔧 [DEBUG] File verified: ${template.file_path}`);
+    }
 
     // Generate signed URL (valid for 5 minutes)
     const { data: signedData, error: signError } = await supabase
@@ -119,9 +185,11 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    console.log(`✅ Signed URL generated for: ${template.file_path}`);
+    if (debug) {
+      console.log(`🔧 [DEBUG] Signed URL generated: ${signedData.signedUrl.substring(0, 100)}...`);
+    }
 
-    // NOW deduct credits atomically (only after file verification succeeded)
+    // Step 3: NOW deduct credits atomically (only after file verification succeeded)
     try {
       await base44.asServiceRole.entities.CreditsLedger.create({
         user_id: user.id,
@@ -136,10 +204,15 @@ Deno.serve(async (req) => {
         letter_credits: Math.max(0, currentCredits - creditCost)
       });
 
-      console.log(`✅ Credits deducted: ${creditCost} from ${user.email}`);
+      if (debug) {
+        console.log(`🔧 [DEBUG] Credits deducted: ${creditCost} from ${user.email}`);
+      }
     } catch (creditError) {
       console.error('Credit deduction failed:', creditError);
-      return Response.json({ error: 'Credit deduction failed' }, { status: 500 });
+      return Response.json({ 
+        error: 'Credit deduction failed',
+        details: creditError.message
+      }, { status: 500 });
     }
 
     // Log download usage
@@ -160,9 +233,11 @@ Deno.serve(async (req) => {
     const fileType = template.file_path.endsWith('.pdf') ? 'pdf' : 'docx';
     const downloadFilename = `${template.template_key}.${fileType}`;
 
-    console.log(`✅ Download authorized: ${downloadFilename} for ${user.email}`);
+    if (debug) {
+      console.log(`🔧 [DEBUG] Download authorized: ${downloadFilename} for ${user.email}`);
+    }
 
-    // Return signed download URL
+    // Step 4: Return signed download URL
     return Response.json({ 
       ok: true,
       download_url: signedData.signedUrl,

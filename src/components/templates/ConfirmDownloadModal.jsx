@@ -74,6 +74,23 @@ export default function ConfirmDownloadModal({
     }
 
     previewText = generated.trim();
+    
+    // Auto-save generated preview back to DB
+    if (previewText) {
+      const updateData = {};
+      if (language === 'th') {
+        updateData.preview_th = previewText;
+      } else {
+        updateData.preview_en = previewText;
+      }
+      
+      // Silent background update
+      import('@/api/base44Client').then(({ base44 }) => {
+        base44.entities.TemplateLibrary.update(template.id, updateData).catch(err => {
+          console.warn('Failed to auto-save preview:', err);
+        });
+      });
+    }
   }
 
   const hasPreviewContent = !!previewText.trim();

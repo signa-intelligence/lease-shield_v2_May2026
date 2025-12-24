@@ -23,8 +23,36 @@ function TemplatesContent() {
   const [previewTemplate, setPreviewTemplate] = useState(null);
   
   // Debug mode from query param
-  const urlParams = new URLSearchParams(window.location.search);
-  const debugMode = urlParams.get('debug') === '1';
+  const debugMode = React.useMemo(() => {
+    return new URLSearchParams(window.location.search).get('debug') === '1';
+  }, []);
+
+  const [fileExistsMap, setFileExistsMap] = React.useState({});
+
+  // Check file existence for debug mode
+  React.useEffect(() => {
+    if (!debugMode || templates.length === 0) return;
+
+    const checkFiles = async () => {
+      const results = {};
+      for (const t of templates) {
+        if (t.file_path) {
+          try {
+            const url = `https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/template-files/${t.file_path}`;
+            const response = await fetch(url, { method: 'HEAD' });
+            results[t.id] = response.ok;
+          } catch {
+            results[t.id] = false;
+          }
+        } else {
+          results[t.id] = false;
+        }
+      }
+      setFileExistsMap(results);
+    };
+
+    checkFiles();
+  }, [debugMode, templates]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -112,13 +140,25 @@ function TemplatesContent() {
     
     try {
       setDownloading(template.id);
+      
+      if (debugMode) {
+        console.log('🔧 [DEBUG] Starting download for:', template.template_key);
+        console.log('🔧 [DEBUG] Template has file_path:', !!template.file_path);
+      }
+      
       const response = await base44.functions.invoke('downloadTemplate', {
-        template_id: template.id
+        template_id: template.id,
+        debug: debugMode
       });
+
+      if (debugMode) {
+        console.log('🔧 [DEBUG] Download response:', response.data);
+      }
 
       if (!response.data?.ok) {
         const errorMsg = response.data?.error || 'Download failed';
-        toast.error(errorMsg);
+        const errorDetail = response.data?.details || '';
+        toast.error(`${errorMsg}${errorDetail ? ': ' + errorDetail : ''}`);
         haptic.error();
         return;
       }
@@ -138,7 +178,8 @@ function TemplatesContent() {
       haptic.success();
     } catch (error) {
       console.error('Download error:', error);
-      toast.error(language === 'th' ? 'ดาวน์โหลดล้มเหลว - ไม่มีการหักเครดิต' : 'Download failed - no credit deducted');
+      const errorMsg = error.response?.data?.error || error.message || 'Download failed';
+      toast.error(`${language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed'}: ${errorMsg}`);
       haptic.error();
     } finally {
       setDownloading(null);
@@ -265,16 +306,56 @@ function TemplatesContent() {
           }
         />
 
-        {/* Admin Debug Panel */}
+        {/* Debug Panel - Always Visible in Debug Mode */}
         {debugMode && (
-          <Card className="mb-6 border-2" style={{ 
-            backgroundColor: isDarkMode ? '#1F2937' : '#FEF9C3',
-            borderColor: '#C7A338'
-          }}>
-            <CardContent className="p-4">
-              <h3 className="text-sm font-bold mb-3" style={{ color: colors.textPrimary }}>
-                🔧 Templates Debug Panel
-              </h3>
+          <>
+            {/* Debug Bar */}
+            <div className="mb-4 p-3 rounded-lg" style={{ 
+              backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7',
+              border: `2px solid #C7A338`
+            }}>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-bold" style={{ color: colors.textPrimary }}>
+                  🔧 DEBUG ENABLED
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const debugData = templates.map(t => ({
+                      template_key: t.template_key,
+                      title_en: t.title_en,
+                      preview_en_ok: !!t.preview_en,
+                      preview_th_ok: !!t.preview_th,
+                      file_path_ok: !!t.file_path,
+                      file_exists: fileExistsMap[t.id] || false
+                    }));
+                    navigator.clipboard.writeText(JSON.stringify(debugData, null, 2));
+                    toast.success('Debug JSON copied to clipboard');
+                  }}
+                  style={{ backgroundColor: '#C7A338', color: '#000' }}
+                >
+                  COPY DEBUG JSON
+                </Button>
+              </div>
+              <div className="text-xs space-y-1" style={{ color: colors.textSecondary, fontFamily: 'monospace' }}>
+                <div>URL: {window.location.origin}{window.location.pathname}?debug=1</div>
+                <div>Templates loaded: {templates.length}</div>
+                <div>Missing preview EN: {templates.filter(t => !t.preview_en).length}</div>
+                <div>Missing preview TH: {templates.filter(t => !t.preview_th).length}</div>
+                <div>Missing file_path: {templates.filter(t => !t.file_path).length}</div>
+                <div>Missing file exists: {templates.filter(t => !fileExistsMap[t.id]).length}</div>
+              </div>
+            </div>
+
+            {/* Debug Table */}
+            <Card className="mb-6 border-2" style={{ 
+              backgroundColor: isDarkMode ? '#1F2937' : '#FEF9C3',
+              borderColor: '#C7A338'
+            }}>
+              <CardContent className="p-4">
+                <h3 className="text-sm font-bold mb-3" style={{ color: colors.textPrimary }}>
+                  🔧 Templates Validation Table
+                </h3>
 
               {/* Summary Stats */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4 text-xs font-mono">
@@ -314,22 +395,21 @@ function TemplatesContent() {
                   <thead>
                     <tr style={{ borderBottom: `2px solid ${colors.borderColor}` }}>
                       <th className="text-left p-2" style={{ color: colors.textPrimary }}>Key</th>
-                      <th className="text-left p-2" style={{ color: colors.textPrimary }}>Category</th>
-                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>Active</th>
-                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>EN</th>
-                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>TH</th>
-                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>File</th>
+                      <th className="text-left p-2" style={{ color: colors.textPrimary }}>Title EN</th>
+                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>Preview EN</th>
+                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>Preview TH</th>
+                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>File Path</th>
+                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>File Exists</th>
                     </tr>
                   </thead>
                   <tbody>
                     {templates.map(t => (
                       <tr key={t.id} style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-                        <td className="p-2" style={{ color: colors.textPrimary }}>{t.template_key}</td>
-                        <td className="p-2" style={{ color: colors.textSecondary }}>{t.category}</td>
-                        <td className="p-2 text-center">
-                          <span style={{ color: t.status === 'active' ? '#059669' : '#DC2626' }}>
-                            {t.status === 'active' ? '✓' : '✗'}
-                          </span>
+                        <td className="p-2" style={{ color: colors.textPrimary, maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {t.template_key}
+                        </td>
+                        <td className="p-2" style={{ color: colors.textSecondary, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {t.title_en}
                         </td>
                         <td className="p-2 text-center">
                           <span style={{ color: t.preview_en ? '#059669' : '#DC2626' }}>
@@ -346,14 +426,20 @@ function TemplatesContent() {
                             {t.file_path ? '✓' : '✗'}
                           </span>
                         </td>
+                        <td className="p-2 text-center">
+                          <span style={{ color: fileExistsMap[t.id] ? '#059669' : '#DC2626' }}>
+                            {fileExistsMap[t.id] ? '✓' : '✗'}
+                          </span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+              </Card>
+              </>
+              )}
 
         {templates.length === 0 ? (
           <div className="text-center py-12">
