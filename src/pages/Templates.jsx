@@ -143,62 +143,12 @@ function TemplatesContent() {
   const strings = t[language] || t.en;
 
   // Group templates by category
-  const checklistTemplates = displayTemplates.filter(t => t.category === 'checklists');
-  const preSigningTemplates = displayTemplates.filter(t => t.category === 'pre_signing');
-  const initialResolutionTemplates = displayTemplates.filter(t => t.category === 'initial_resolution');
-  const professionalTemplates = displayTemplates.filter(t => t.category === 'professional');
-  const finalTemplates = displayTemplates.filter(t => t.category === 'final');
-
-  // Auto-scroll to pre-signing if coming from scan - only after templates loaded
-  React.useEffect(() => {
-    if (leaseIdParam && !isLoading && preSigningTemplates.length > 0) {
-      const timer = setTimeout(() => {
-        const section = document.querySelector('[data-category="pre_signing"]');
-        if (section) {
-          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 400);
-      return () => clearTimeout(timer);
-    }
-  }, [leaseIdParam, isLoading, preSigningTemplates.length]);
-
-  const renderTemplateCard = (template, gradientClass) => {
-    const title = language === 'th' && template.title_th ? template.title_th : template.title_en;
-    const description = language === 'th' && template.description_th ? template.description_th : template.description_en || '';
-    
-    return (
-      <div
-        key={template.id}
-        onClick={() => {
-          navigate(createPageUrl("TemplateStore"));
-        }}
-        className="rounded-xl shadow-md hover:shadow-xl transition-all p-6 cursor-pointer"
-        style={{ 
-          backgroundColor: colors.cardBg, 
-          border: `1px solid ${colors.borderColor}`
-        }}
-      >
-        <div className={`h-1 ${gradientClass} rounded-t-xl mb-4`} />
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="text-lg font-bold flex-1" style={{ color: colors.textPrimary }}>
-            {title}
-          </h3>
-          <span className="ml-2 px-2 py-1 text-xs font-semibold rounded" style={{
-            backgroundColor: '#FEF3C7',
-            color: '#92400E'
-          }}>
-            {template.credit_cost} {template.credit_cost === 1 ? 'credit' : 'credits'}
-          </span>
-        </div>
-        <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
-          {description}
-        </p>
-        <button className="text-sm font-medium text-emerald-700 hover:underline">
-          {strings.openTemplate} →
-        </button>
-      </div>
-    );
-  };
+  const categorizedTemplates = templates.reduce((acc, template) => {
+    const cat = template.category || 'other';
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(template);
+    return acc;
+  }, {});
 
   if (isLoading) {
     return (
