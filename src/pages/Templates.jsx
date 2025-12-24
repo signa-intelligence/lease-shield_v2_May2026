@@ -33,18 +33,6 @@ export default function Templates() {
     credit_cost: t.cost_credits || 1
   }));
 
-  // Auto-scroll to pre-signing if coming from scan
-  React.useEffect(() => {
-    if (leaseIdParam && !isLoading) {
-      setTimeout(() => {
-        const section = document.querySelector('[data-category="pre_signing"]');
-        if (section) {
-          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 300);
-    }
-  }, [leaseIdParam, isLoading]);
-
   const colors = isDarkMode ? {
     bg: '#111827',
     cardBg: '#1F2937',
@@ -112,15 +100,16 @@ export default function Templates() {
   const professionalTemplates = displayTemplates.filter(t => t.category === 'professional');
   const finalTemplates = displayTemplates.filter(t => t.category === 'final');
 
-  // Auto-scroll to pre-signing if coming from scan
+  // Auto-scroll to pre-signing if coming from scan - only after templates loaded
   React.useEffect(() => {
     if (leaseIdParam && !isLoading && preSigningTemplates.length > 0) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         const section = document.querySelector('[data-category="pre_signing"]');
         if (section) {
           section.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-      }, 300);
+      }, 400);
+      return () => clearTimeout(timer);
     }
   }, [leaseIdParam, isLoading, preSigningTemplates.length]);
 

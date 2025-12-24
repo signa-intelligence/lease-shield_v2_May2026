@@ -811,7 +811,7 @@ function TemplateFormContent() {
             title={strings.reviewEditLetter}
             subtitle={strings.reviewEditLetterDesc}
             icon={Edit2}
-            iconColor="#8B5CF6"
+            iconColor="#0C3B2E"
             showBack={true}
             backRoute={() => handleCancelReview()}
             isDarkMode={isDarkMode}
@@ -836,7 +836,7 @@ function TemplateFormContent() {
           <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
               <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Edit2 className="w-5 h-5 text-purple-600" />
+                <Edit2 className="w-5 h-5" style={{ color: '#0C3B2E' }} />
                 {strings.editContent}
               </CardTitle>
             </CardHeader>
@@ -849,7 +849,7 @@ function TemplateFormContent() {
                       <Globe className="w-4 h-4" />
                       {label}
                       {langCode === languagePack.primary && (
-                        <Badge className="bg-blue-100 text-blue-700 text-xs">Primary</Badge>
+                        <Badge className="text-xs" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>Primary</Badge>
                       )}
                     </label>
                     <textarea
@@ -919,7 +919,8 @@ function TemplateFormContent() {
                     }
                   }}
                   disabled={saving}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white btn-interaction"
+                  className="flex-1 btn-interaction"
+                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   {strings.downloadWord}
@@ -930,7 +931,8 @@ function TemplateFormContent() {
                     handleSaveAfterReview();
                   }}
                   disabled={saving || Object.keys(editedContent).length === 0}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white btn-interaction"
+                  className="flex-1 btn-interaction"
+                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                 >
                   {saving ? (
                     <>
@@ -976,7 +978,7 @@ function TemplateFormContent() {
                 value={65}
                 label={strings.generating}
                 showPercentage={false}
-                color="#8B5CF6"
+                color="#0C3B2E"
                 isDarkMode={isDarkMode}
                 animated={true}
               />
@@ -999,7 +1001,7 @@ function TemplateFormContent() {
         <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
             <CardTitle className="flex items-center gap-3" style={{ color: colors.textPrimary }}>
-              <FileText className="w-6 h-6 text-purple-600" />
+              <FileText className="w-6 h-6" style={{ color: '#0C3B2E' }} />
               <div className="flex-1">
                 <div className="text-xl font-bold">{strings.generateLetter}</div>
                 <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
@@ -1374,7 +1376,8 @@ function TemplateFormContent() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                  className="flex-1 btn-interaction"
+                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                   disabled={generating || userCredits < 1}
                 >
                   {generating ? (
