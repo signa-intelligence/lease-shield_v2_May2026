@@ -27,10 +27,9 @@ function TemplatesContent() {
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['templateAssets'],
     queryFn: async () => {
-      const results = await base44.entities.TemplateLibrary.filter(
-        { status: 'active' },
-        'category,sort_order'
-      );
+      const results = await base44.entities.TemplateLibrary.list();
+      console.log('📄 Templates fetched:', results.length);
+      console.log('📄 Template IDs:', results.map(t => t.id));
       return results;
     }
   });
@@ -191,7 +190,7 @@ function TemplatesContent() {
           <EmptyState
             icon={FileText}
             title={strings.noTemplates}
-            description={language === 'th' ? 'ไม่มีเทมเพลตในขณะนี้' : 'No templates available at this time'}
+            description="Templates exist but are not visible due to filters. Check entity data."
             isDarkMode={isDarkMode}
           />
         ) : (
@@ -206,9 +205,10 @@ function TemplatesContent() {
                 </h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {categoryTemplates.map((template) => {
-                    const title = language === 'th' ? template.title_th : template.title_en;
-                    const description = language === 'th' ? template.description_th : template.description_en;
-                    const canDownload = letterCredits >= (template.cost_credits || 1);
+                    const title = language === 'th' ? (template.title_th || template.title_en) : (template.title_en || template.title_th || 'Untitled Template');
+                    const description = language === 'th' ? (template.description_th || template.description_en) : (template.description_en || template.description_th || '');
+                    const creditCost = template.cost_credits || 1;
+                    const canDownload = letterCredits >= creditCost;
                     const isDownloadingThis = downloading === template.id;
 
                     return (
@@ -221,7 +221,7 @@ function TemplatesContent() {
                           <CardTitle className="flex items-start justify-between gap-2" style={{ color: colors.textPrimary }}>
                             <span className="text-base line-clamp-2">{title}</span>
                             <Badge className="flex-shrink-0 text-xs" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
-                              {template.cost_credits || 1} {strings.credit}
+                              {creditCost} {strings.credit}
                             </Badge>
                           </CardTitle>
                         </CardHeader>
