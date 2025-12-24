@@ -33,14 +33,6 @@ function TemplatesContent() {
       const allResults = await base44.entities.TemplateLibrary.list();
       console.log('🔍 DIAGNOSTIC: Total templates in DB (no filters):', allResults.length);
       
-      // Group by status
-      const byStatus = allResults.reduce((acc, t) => {
-        const status = t.status || 'undefined';
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      }, {});
-      console.log('🔍 DIAGNOSTIC: Templates by status:', byStatus);
-      
       // RELAXED FILTER: Only exclude explicitly inactive templates
       const results = allResults.filter(t => {
         return t.status !== 'inactive' && t.status !== false;
@@ -54,37 +46,54 @@ function TemplatesContent() {
       
       console.log('📄 Templates after relaxed filter:', results.length);
       
-      // Deduplicate and track duplicates for deactivation
+      // Generate template_key if missing and track for update
+      const needsKeyGeneration = [];
+      for (const t of results) {
+        if (!t.template_key) {
+          const generatedKey = `${(t.title_en || t.title_th || '').toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${t.category}`;
+          t.template_key = generatedKey;
+          needsKeyGeneration.push({ id: t.id, template_key: generatedKey });
+        }
+      }
+      
+      if (needsKeyGeneration.length > 0) {
+        console.log(`🔧 Generating template_key for ${needsKeyGeneration.length} templates`);
+        Promise.all(
+          needsKeyGeneration.map(({ id, template_key }) => 
+            base44.entities.TemplateLibrary.update(id, { template_key })
+              .catch(err => console.error(`Failed to update template_key for ${id}:`, err))
+          )
+        );
+      }
+      
+      // Deduplicate by template_key - keep newest (first in sorted array)
       const uniqueTemplates = [];
       const duplicatesToDeactivate = [];
-      const seenKeys = new Map(); // Map of key -> first template
+      const seenKeys = new Map();
       
       for (const t of results) {
-        // Primary key: template_key
-        // Fallback key: title_en + category + (language indicator)
-        const primaryKey = t.template_key;
-        const fallbackKey = `${t.title_en || t.title_th}_${t.category}_${t.description_en?.includes('TH+EN') ? 'bilingual' : 'single'}`;
-        const dedupeKey = primaryKey || fallbackKey;
+        const key = t.template_key;
         
-        if (!seenKeys.has(dedupeKey)) {
-          seenKeys.set(dedupeKey, t);
+        if (!seenKeys.has(key)) {
+          seenKeys.set(key, t);
           uniqueTemplates.push(t);
         } else {
           // This is a duplicate - mark for deactivation
-          console.warn(`⚠️ Duplicate detected: ${t.title_en} (ID: ${t.id}, key: ${dedupeKey})`);
+          const existing = seenKeys.get(key);
+          console.warn(`⚠️ DUPLICATE: "${t.title_en}" (ID: ${t.id}) - keeping newer version (ID: ${existing.id})`);
           duplicatesToDeactivate.push(t.id);
         }
       }
       
-      console.log('📄 Unique templates after deduplication:', uniqueTemplates.length);
-      console.log('📄 Duplicates found:', duplicatesToDeactivate.length);
+      console.log('✅ Unique templates:', uniqueTemplates.length);
+      console.log('⚠️ Duplicates to deactivate:', duplicatesToDeactivate.length);
       
-      // Deactivate duplicates in background (don't block UI)
+      // Permanently deactivate duplicates
       if (duplicatesToDeactivate.length > 0) {
         Promise.all(
           duplicatesToDeactivate.map(id => 
             base44.entities.TemplateLibrary.update(id, { status: 'inactive' })
-              .catch(err => console.error(`Failed to deactivate template ${id}:`, err))
+              .catch(err => console.error(`Failed to deactivate duplicate ${id}:`, err))
           )
         ).then(() => {
           console.log(`✅ Deactivated ${duplicatesToDeactivate.length} duplicate templates`);
@@ -403,36 +412,103 @@ function TemplatesContent() {
             </div>
 
             {/* Preview Section */}
-            <div className="border rounded-lg p-4" style={{ 
+            <div className="border rounded-lg p-4 space-y-3" style={{ 
               borderColor: colors.borderColor,
               backgroundColor: colors.fieldBg 
             }}>
-              <h4 className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'ตัวอย่างเนื้อหา:' : 'Template Preview:'}
+              <h4 className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? '📋 ภายในเทมเพลตนี้:' : '📋 Inside this template:'}
               </h4>
               
+              {/* Headings */}
+              {confirmTemplate.preview_headings && confirmTemplate.preview_headings.length > 0 ? (
+                <div>
+                  <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'หัวข้อหลัก:' : 'Main sections:'}
+                  </p>
+                  <ul className="space-y-1">
+                    {confirmTemplate.preview_headings.map((heading, i) => (
+                      <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textPrimary }}>
+                        <span className="font-bold" style={{ color: '#0C3B2E' }}>§</span>
+                        <span className="font-medium">{heading}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              
+              {/* Bullets */}
               {confirmTemplate.preview_bullets && confirmTemplate.preview_bullets.length > 0 ? (
-                <ul className="space-y-1.5">
-                  {confirmTemplate.preview_bullets.map((bullet, i) => (
-                    <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textSecondary }}>
-                      <span className="mt-1.5 w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: colors.textSecondary }} />
-                      <span>{bullet}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : confirmTemplate.preview_text ? (
-                <p className="text-sm leading-relaxed" style={{ color: colors.textSecondary }}>
-                  {confirmTemplate.preview_text.length > 600 
-                    ? confirmTemplate.preview_text.substring(0, 600) + '...' 
-                    : confirmTemplate.preview_text}
-                </p>
-              ) : (
-                <p className="text-sm leading-relaxed italic" style={{ color: colors.textSecondary }}>
-                  {language === 'th' 
-                    ? `เทมเพลตนี้รวมถึง: ${confirmTemplate.description_th || confirmTemplate.description_en}`
-                    : `This template includes: ${confirmTemplate.description_en || confirmTemplate.description_th}`}
-                </p>
-              )}
+                <div>
+                  <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'รวมถึง:' : 'Includes:'}
+                  </p>
+                  <ul className="space-y-1">
+                    {confirmTemplate.preview_bullets.slice(0, 6).map((bullet, i) => (
+                      <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textSecondary }}>
+                        <span className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#0C3B2E' }} />
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              
+              {/* Placeholders */}
+              {confirmTemplate.preview_placeholders && confirmTemplate.preview_placeholders.length > 0 ? (
+                <div>
+                  <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'จุดกรอกข้อมูล:' : 'Fill-in fields:'}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {confirmTemplate.preview_placeholders.map((placeholder, i) => (
+                      <span 
+                        key={i} 
+                        className="text-xs px-2 py-1 rounded font-mono"
+                        style={{ 
+                          backgroundColor: colors.cardBg,
+                          border: `1px solid ${colors.borderColor}`,
+                          color: colors.textSecondary 
+                        }}
+                      >
+                        {placeholder}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              
+              {/* Fallback for templates without preview data */}
+              {!confirmTemplate.preview_headings && !confirmTemplate.preview_bullets && !confirmTemplate.preview_placeholders ? (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'โครงสร้างมาตรฐาน:' : 'Standard structure:'}
+                  </p>
+                  {confirmTemplate.category === 'checklists' ? (
+                    <ul className="space-y-1 text-sm" style={{ color: colors.textSecondary }}>
+                      <li>✓ Comprehensive checklist items</li>
+                      <li>✓ Organized by priority</li>
+                      <li>✓ Clear action steps</li>
+                      <li>✓ Ready to print and use</li>
+                    </ul>
+                  ) : confirmTemplate.category === 'pre_signing' ? (
+                    <ul className="space-y-1 text-sm" style={{ color: colors.textSecondary }}>
+                      <li>§ Formal salutation and introduction</li>
+                      <li>§ Current situation and concerns</li>
+                      <li>§ Requested modifications or terms</li>
+                      <li>§ Professional closing and signature</li>
+                    </ul>
+                  ) : (
+                    <ul className="space-y-1 text-sm" style={{ color: colors.textSecondary }}>
+                      <li>§ Formal header and date</li>
+                      <li>§ Statement of issue/request</li>
+                      <li>§ Legal references and obligations</li>
+                      <li>§ Timeline for response</li>
+                      <li>§ Signature section</li>
+                    </ul>
+                  )}
+                </div>
+              ) : null}
             </div>
 
             {/* Cost Info */}
