@@ -74,6 +74,14 @@ function UploadScanPageContent() {
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
   const [disclaimerCheckboxTicked, setDisclaimerCheckboxTicked] = useState(false);
 
+  // NEW: State for completion modal
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completedLeaseId, setCompletedLeaseId] = useState(null);
+
+  // NEW: State for add pages flow
+  const [addingPagesToLease, setAddingPagesToLease] = useState(null);
+  const [additionalFiles, setAdditionalFiles] = useState([]);
+
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -819,167 +827,178 @@ function UploadScanPageContent() {
 
     haptic.medium();
 
-    // BATCH MODE: Upload multiple leases AND trigger analysis for each
+    // MULTI-FILE MODE: Upload ALL files as ONE lease (pages of the same document)
     if (selectedFiles.length > 1) {
-      setBatchMode(true);
       setUploading(true);
       setAnalyzing(false);
       setError(null);
       setUploadProgress(0);
       setCurrentStep(1);
-      const batchResultsTemp = [];
 
-      logStage('BATCH_MODE_START', { 
+      logStage('MULTI_PAGE_MODE_START', { 
         filesCount: selectedFiles.length,
         userTier
       });
 
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        const fileRequestId = `${requestId}-file-${i + 1}`;
+      try {
+        // Upload all files first
+        const uploadedUrls = [];
         
-        try {
-          setAnalysisStage(language === 'th' ? `กำลังอัปโหลดไฟล์ ${i + 1}/${selectedFiles.length}` : `Uploading file ${i + 1}/${selectedFiles.length}`);
-          setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          
+          setAnalysisStage(language === 'th' ? `กำลังอัปโหลดหน้า ${i + 1}/${selectedFiles.length}` : `Uploading page ${i + 1}/${selectedFiles.length}`);
+          setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 30));
 
-          logStage(`BATCH_FILE_${i + 1}_START`, {
+          logStage(`PAGE_${i + 1}_UPLOAD_START`, {
             fileName: file.name,
             fileSize: file.size,
             fileType: file.type,
-            fileRequestId
+            pageIndex: i + 1
           });
 
           const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          uploadedUrls.push(file_url);
           
-          logStage(`BATCH_FILE_${i + 1}_UPLOADED`, {
-            fileRequestId,
-            urlLength: file_url.length
-          });
-
-          const lease = await base44.entities.Lease.create({
-            file_url: file_url,
-            file_urls: [file_url],
-            status: 'queued', // Changed from 'uploaded' to 'queued' to indicate analysis pending
-            created_by: user?.email
-          });
-
-          logStage(`BATCH_FILE_${i + 1}_LEASE_CREATED`, {
-            leaseId: lease.id,
-            status: 'queued',
-            fileRequestId
-          });
-
-          // 🔥 CRITICAL FIX: Trigger analysis immediately for each file
-          try {
-            const scanStartTime = Date.now();
-            const { data: scanResponse } = await base44.functions.invoke('scanLease', {
-              fileUrls: [file_url],
-              requestId: fileRequestId
-            });
-
-            const scanDuration = Date.now() - scanStartTime;
-
-            if (scanResponse?.success) {
-              const scanResult = scanResponse.result;
-              
-              await base44.entities.Lease.update(lease.id, {
-                status: 'scanned',
-                property_address: scanResult.property_address || null,
-                start_date: scanResult.start_date || null,
-                end_date: scanResult.end_date || null,
-                rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
-                deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
-                language_detected: scanResult.language_detected || 'en'
-              });
-
-              await base44.entities.LeaseScan.create({
-                lease_id: lease.id,
-                risk_score: scanResult.risk_score,
-                flags: scanResult.flags || [],
-                summary: scanResult.summary,
-                scan_full: scanResult,
-                version: '1.0'
-              });
-
-              logStage(`BATCH_FILE_${i + 1}_ANALYZED`, {
-                leaseId: lease.id,
-                riskScore: scanResult.risk_score,
-                scanDuration,
-                fileRequestId
-              });
-
-              batchResultsTemp.push({ 
-                file: file.name, 
-                leaseId: lease.id, 
-                success: true,
-                scanned: true 
-              });
-            } else {
-              throw new Error(scanResponse?.error || 'Scan failed');
-            }
-          } catch (scanErr) {
-            console.error(`Analysis failed for file ${file.name}:`, scanErr);
-            
-            // Mark lease as failed
-            await base44.entities.Lease.update(lease.id, {
-              status: 'failed'
-            });
-
-            logStage(`BATCH_FILE_${i + 1}_SCAN_FAILED`, {
-              leaseId: lease.id,
-              error: scanErr.message,
-              fileRequestId
-            });
-
-            batchResultsTemp.push({ 
-              file: file.name, 
-              leaseId: lease.id,
-              success: true, // Upload succeeded
-              scanned: false,
-              scanError: scanErr.message
-            });
-          }
-        } catch (err) {
-          console.error(`Batch upload error for file ${file.name}:`, err);
-          
-          logStage(`BATCH_FILE_${i + 1}_UPLOAD_FAILED`, {
-            error: err.message,
-            fileRequestId
-          });
-
-          batchResultsTemp.push({ 
-            file: file.name, 
-            success: false, 
-            error: err.message 
+          logStage(`PAGE_${i + 1}_UPLOADED`, {
+            urlLength: file_url.length,
+            pageIndex: i + 1
           });
         }
+
+        setAnalysisStage('creating');
+        setUploadProgress(40);
+
+        // Create ONE lease with all file URLs
+        const lease = await base44.entities.Lease.create({
+          file_url: uploadedUrls[0], // Primary file
+          file_urls: uploadedUrls, // All pages
+          status: 'queued',
+          created_by: user?.email
+        });
+        createdLeaseId = lease.id;
+
+        logStage('LEASE_CREATED', {
+          leaseId: lease.id,
+          pagesCount: uploadedUrls.length,
+          status: 'queued'
+        });
+
+        setUploadProgress(50);
+        setAnalyzing(true);
+        setUploading(false);
+        setAnalysisStage('scanning');
+        setUploadProgress(60);
+
+        // Trigger analysis with all pages
+        logStage('ANALYSIS_START', { 
+          leaseId: lease.id,
+          pagesCount: uploadedUrls.length 
+        });
+        
+        const analysisStartTime = Date.now();
+        const { data: scanResponse } = await base44.functions.invoke('scanLease', {
+          fileUrls: uploadedUrls,
+          requestId,
+          leaseId: lease.id,
+          scanId: lease.id
+        });
+
+        const analysisDuration = Date.now() - analysisStartTime;
+        
+        logStage('ANALYSIS_RESPONSE', {
+          duration: analysisDuration,
+          success: scanResponse?.success,
+          hasResult: !!scanResponse?.result,
+          leaseId: lease.id
+        });
+
+        if (!scanResponse || !scanResponse.success) {
+          throw new Error(scanResponse?.error || 'Scan failed');
+        }
+        
+        const scanResult = scanResponse.result;
+        setAnalysisStage('extracting');
+        setUploadProgress(70);
+
+        await base44.entities.Lease.update(lease.id, {
+          status: 'scanned',
+          property_address: scanResult.property_address || null,
+          start_date: scanResult.start_date || null,
+          end_date: scanResult.end_date || null,
+          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
+          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
+          language_detected: scanResult.language_detected || 'en'
+        });
+        setUploadProgress(80);
+
+        setAnalysisStage('finalizing');
+
+        await base44.entities.LeaseScan.create({
+          lease_id: lease.id,
+          risk_score: scanResult.risk_score,
+          flags: scanResult.flags || [],
+          summary: scanResult.summary,
+          scan_full: scanResult,
+          version: '1.0'
+        });
+        setUploadProgress(100);
+        setCurrentStep(2);
+
+        logStage('MULTI_PAGE_COMPLETE', {
+          leaseId: lease.id,
+          riskScore: scanResult.risk_score,
+          totalPages: uploadedUrls.length
+        });
+
+        // Show completion flow
+        if (scanResult.end_date) {
+          setLeaseDetails({
+            end_date: scanResult.end_date,
+            notice_period_days: scanResult.notice_period_days || 30
+          });
+          setPendingLeaseId(lease.id);
+          setShowConfirmation(true);
+        } else {
+          const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
+          const newLease = updatedLeases.find(l => l.id === lease.id);
+          setSelectedLease(newLease);
+          setCurrentStep(2);
+          if (userTier === 'free') {
+            setShowPostScanHint(true);
+          }
+        }
+
+        setSelectedFiles([]);
+        queryClient.invalidateQueries({ queryKey: ['leases'] });
+        queryClient.invalidateQueries({ queryKey: ['allScans'] });
+
+      } catch (err) {
+        logStage('MULTI_PAGE_ERROR', {
+          error: err.message,
+          leaseId: createdLeaseId
+        });
+
+        if (createdLeaseId) {
+          try {
+            await base44.entities.Lease.update(createdLeaseId, { status: 'failed' });
+          } catch (updateErr) {
+            console.error('Failed to mark lease as failed:', updateErr);
+          }
+        }
+
+        const formattedError = formatErrorForUser(err, requestId, language, {
+          uploadStage: analysisStage
+        });
+        setError(formattedError);
+        setCurrentStep(0);
+      } finally {
+        setUploading(false);
+        setAnalyzing(false);
+        setUploadProgress(0);
+        setAnalysisStage('');
       }
-
-      logStage('BATCH_MODE_COMPLETE', {
-        totalFiles: selectedFiles.length,
-        successful: batchResultsTemp.filter(r => r.success).length,
-        scanned: batchResultsTemp.filter(r => r.scanned).length,
-        failed: batchResultsTemp.filter(r => !r.success).length
-      });
-
-      setBatchResults(batchResultsTemp);
-      setUploading(false);
-      setBatchMode(false);
-      setSelectedFiles([]);
-      setUploadProgress(0);
-      setAnalysisStage('');
-      setCurrentStep(0);
-      queryClient.invalidateQueries({ queryKey: ['leases'] });
-      queryClient.invalidateQueries({ queryKey: ['allScans'] });
-
-      const successCount = batchResultsTemp.filter(r => r.success).length;
-      const scannedCount = batchResultsTemp.filter(r => r.scanned).length;
       
-      alert(
-        language === 'th'
-          ? `อัปโหลดสำเร็จ ${successCount}/${batchResultsTemp.length} ไฟล์\nวิเคราะห์สำเร็จ ${scannedCount} ไฟล์\n\nตรวจสอบรายการ "สัญญาเช่าทั้งหมด" ด้านล่าง`
-          : `Successfully uploaded ${successCount}/${batchResultsTemp.length} files.\nAnalyzed ${scannedCount} files.\n\nCheck "All Leases" list below.`
-      );
       return;
     }
 
@@ -1204,23 +1223,16 @@ function UploadScanPageContent() {
         setUploadProgress(100);
         setCurrentStep(2); // Move to results step
 
+        // Show completion modal
+        setCompletedLeaseId(createdLeaseId);
+        setShowCompletionModal(true);
+        
         if (scanResult.end_date) {
           setLeaseDetails({
             end_date: scanResult.end_date,
             notice_period_days: scanResult.notice_period_days || 30
           });
           setPendingLeaseId(createdLeaseId);
-          setShowConfirmation(true);
-          // showPostScanHint will be set in handleConfirmLeaseDetails or handleSkipConfirmation
-        } else {
-          // Open details modal instead of navigating
-          const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
-          const newLease = updatedLeases.find(l => l.id === createdLeaseId);
-          setSelectedLease(newLease);
-          setCurrentStep(2); // Still results step if no end date
-          if (userTier === 'free') {
-            setShowPostScanHint(true); // Show hint immediately if no end_date
-          }
         }
 
         setSelectedFiles([]);
@@ -1322,41 +1334,149 @@ function UploadScanPageContent() {
 
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       setShowConfirmation(false);
-      setCurrentStep(3); // Move to track deposit step
-
-      // Open in modal instead of navigating
-      const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
-      const updatedLease = updatedLeases.find(l => l.id === pendingLeaseId);
-      setSelectedLease(updatedLease);
+      setCurrentStep(3);
       haptic.success();
-      if (userTier === 'free') {
-        setShowPostScanHint(true); // Show hint after confirming notice details
-      }
     } catch (err) {
       console.error('Failed to update lease details:', err);
-      // Still open the modal even if update fails
-      const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
-      const updatedLease = updatedLeases.find(l => l.id === pendingLeaseId);
-      setSelectedLease(updatedLease);
-      setCurrentStep(3); // Even on error, we attempted to set it, so move to track
+      setShowConfirmation(false);
+      setCurrentStep(3);
       haptic.error();
-      if (userTier === 'free') {
-        setShowPostScanHint(true); // Show hint even if update failed
-      }
     }
   };
 
-  const handleSkipConfirmation = async () => {
+  const handleCompletionViewResults = async () => {
+    haptic.medium();
+    setShowCompletionModal(false);
+    
+    const lease = leases.find(l => l.id === completedLeaseId);
+    if (lease) {
+      setSelectedLease(lease);
+    }
+  };
+
+  const handleCompletionDone = () => {
+    haptic.light();
+    setShowCompletionModal(false);
+    setCompletedLeaseId(null);
+    setCurrentStep(0);
+    if (userTier === 'free') {
+      setShowPostScanHint(true);
+    }
+  };
+
+  const handleSkipConfirmation = () => {
     haptic.light();
     setShowConfirmation(false);
-    setCurrentStep(2); // Stay on results step
-    if (pendingLeaseId) {
-      const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
-      const skippedLease = updatedLeases.find(l => l.id === pendingLeaseId);
-      setSelectedLease(skippedLease);
-      if (userTier === 'free') {
-        setShowPostScanHint(true); // Show hint after skipping notice details
+    setCurrentStep(2);
+  };
+
+  const handleAddPages = async () => {
+    if (!addingPagesToLease || additionalFiles.length === 0) return;
+
+    setUploading(true);
+    setError(null);
+    setUploadProgress(0);
+    setAnalysisStage('uploading');
+
+    try {
+      const existingUrls = addingPagesToLease.file_urls || [addingPagesToLease.file_url];
+      const newUrls = [];
+
+      logStage('ADD_PAGES_START', {
+        leaseId: addingPagesToLease.id,
+        existingPages: existingUrls.length,
+        newPages: additionalFiles.length
+      });
+
+      // Upload new pages
+      for (let i = 0; i < additionalFiles.length; i++) {
+        const file = additionalFiles[i];
+        
+        setAnalysisStage(language === 'th' ? `กำลังอัปโหลดหน้าใหม่ ${i + 1}/${additionalFiles.length}` : `Uploading new page ${i + 1}/${additionalFiles.length}`);
+        setUploadProgress(Math.round(((i + 1) / additionalFiles.length) * 30));
+
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        newUrls.push(file_url);
       }
+
+      const allUrls = [...existingUrls, ...newUrls];
+
+      // Update lease with new pages and set to re-analyzing
+      await base44.entities.Lease.update(addingPagesToLease.id, {
+        file_urls: allUrls,
+        status: 'processing'
+      });
+
+      setUploadProgress(40);
+      setAnalysisStage('scanning');
+      setUploadProgress(50);
+
+      // Re-trigger analysis
+      const { data: scanResponse } = await base44.functions.invoke('scanLease', {
+        fileUrls: allUrls,
+        requestId: `reanalyze-${Date.now()}`,
+        leaseId: addingPagesToLease.id,
+        scanId: addingPagesToLease.id
+      });
+
+      if (!scanResponse || !scanResponse.success) {
+        throw new Error(scanResponse?.error || 'Re-analysis failed');
+      }
+
+      const scanResult = scanResponse.result;
+      setAnalysisStage('extracting');
+      setUploadProgress(70);
+
+      await base44.entities.Lease.update(addingPagesToLease.id, {
+        status: 'scanned',
+        property_address: scanResult.property_address || null,
+        start_date: scanResult.start_date || null,
+        end_date: scanResult.end_date || null,
+        rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
+        deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
+        language_detected: scanResult.language_detected || 'en'
+      });
+
+      // Update existing scan
+      const existingScans = await base44.entities.LeaseScan.filter({ lease_id: addingPagesToLease.id });
+      if (existingScans.length > 0) {
+        await base44.entities.LeaseScan.update(existingScans[0].id, {
+          risk_score: scanResult.risk_score,
+          flags: scanResult.flags || [],
+          summary: scanResult.summary,
+          scan_full: scanResult,
+          version: '1.0'
+        });
+      }
+
+      setUploadProgress(100);
+
+      logStage('ADD_PAGES_COMPLETE', {
+        leaseId: addingPagesToLease.id,
+        totalPages: allUrls.length,
+        newPages: newUrls.length
+      });
+
+      // Show completion modal
+      setCompletedLeaseId(addingPagesToLease.id);
+      setShowCompletionModal(true);
+      setAddingPagesToLease(null);
+      setAdditionalFiles([]);
+      queryClient.invalidateQueries({ queryKey: ['leases'] });
+      queryClient.invalidateQueries({ queryKey: ['allScans'] });
+
+    } catch (err) {
+      console.error('Failed to add pages:', err);
+      setError(formatErrorForUser(err, requestId, language, { uploadStage: analysisStage }));
+      
+      if (addingPagesToLease) {
+        await base44.entities.Lease.update(addingPagesToLease.id, { status: 'failed' });
+      }
+    } finally {
+      setUploading(false);
+      setAnalyzing(false);
+      setUploadProgress(0);
+      setAnalysisStage('');
     }
   };
 
@@ -1980,6 +2100,21 @@ function UploadScanPageContent() {
 
                 {/* Actions */}
                 <div className="flex flex-col gap-2 pt-4 border-t" style={{ borderColor: colors.borderColor }}>
+                  {selectedLease.status === 'scanned' && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        haptic.medium();
+                        setAddingPagesToLease(selectedLease);
+                        setSelectedLease(null);
+                      }}
+                      className="w-full justify-start"
+                      style={{ borderColor: '#0C3B2E', color: '#0C3B2E' }}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {language === 'th' ? 'เพิ่มหน้าเข้าสัญญานี้' : language === 'ru' ? 'Добавить страницы' : 'Add pages to this lease'}
+                    </Button>
+                  )}
                   {selectedLease.file_url && (
                     <Button
                       variant="outline"
@@ -2003,6 +2138,176 @@ function UploadScanPageContent() {
             </DialogContent>
           </Dialog>
         )}
+
+        {/* Completion Modal */}
+        <Dialog open={showCompletionModal} onOpenChange={setShowCompletionModal}>
+          <DialogContent
+            className="max-w-md w-[90vw]"
+            style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}
+          >
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl" style={{ color: colors.textPrimary }}>
+                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                {language === 'th' ? 'วิเคราะห์เสร็จสิ้น' : language === 'ru' ? 'Анализ завершен' : 'Lease Analyzed'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
+                  ? 'สัญญาเช่าของคุณได้รับการวิเคราะห์เรียบร้อยแล้ว'
+                  : language === 'ru'
+                    ? 'Ваш договор аренды успешно проанализирован'
+                    : 'Your lease has been successfully analyzed'}
+              </p>
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={handleCompletionViewResults}
+                  className="w-full"
+                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  {language === 'th' ? 'ดูผลลัพธ์' : language === 'ru' ? 'Посмотреть результаты' : 'View Results'}
+                </Button>
+                <Button
+                  onClick={handleCompletionDone}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {language === 'th' ? 'เสร็จสิ้น' : language === 'ru' ? 'Готово' : 'Done'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Pages Modal */}
+        <Dialog open={!!addingPagesToLease} onOpenChange={() => {
+          setAddingPagesToLease(null);
+          setAdditionalFiles([]);
+        }}>
+          <DialogContent
+            className="max-w-lg w-[95vw]"
+            style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}
+          >
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'เพิ่มหน้าเข้าสัญญา' : language === 'ru' ? 'Добавить страницы' : 'Add Pages to Lease'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {uploading ? (
+                <UploadProgress
+                  currentStage={analysisStage}
+                  progress={uploadProgress}
+                  fileCount={additionalFiles.length}
+                  primaryColor={colors.textPrimary}
+                  secondaryColor={colors.textSecondary}
+                  language={language}
+                  isAnalyzing={analyzing}
+                  isUploading={uploading}
+                  strings={strings}
+                />
+              ) : (
+                <>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? `สัญญาปัจจุบัน: ${addingPagesToLease?.file_urls?.length || 1} หน้า`
+                      : language === 'ru'
+                        ? `Текущий договор: ${addingPagesToLease?.file_urls?.length || 1} стр.`
+                        : `Current lease: ${addingPagesToLease?.file_urls?.length || 1} page(s)`}
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        capture="environment"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setAdditionalFiles(files);
+                        }}
+                        className="hidden"
+                      />
+                      <div className="p-4 border-2 border-dashed rounded-lg text-center"
+                        style={{ borderColor: colors.borderColor }}
+                      >
+                        <Camera className="w-8 h-8 mx-auto mb-2" style={{ color: colors.textSecondary }} />
+                        <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'ถ่ายรูปหน้าเพิ่มเติม' : language === 'ru' ? 'Сфотографировать страницы' : 'Take photos of additional pages'}
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        multiple
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setAdditionalFiles(files);
+                        }}
+                        className="hidden"
+                      />
+                      <div className="p-4 border-2 border-dashed rounded-lg text-center"
+                        style={{ borderColor: colors.borderColor }}
+                      >
+                        <FileText className="w-8 h-8 mx-auto mb-2" style={{ color: colors.textSecondary }} />
+                        <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'เลือกไฟล์' : language === 'ru' ? 'Выбрать файлы' : 'Browse files'}
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {additionalFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                        {language === 'th' ? `เลือกแล้ว ${additionalFiles.length} ไฟล์` : language === 'ru' ? `Выбрано ${additionalFiles.length} файлов` : `${additionalFiles.length} file(s) selected`}
+                      </p>
+                      {additionalFiles.map((file, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-2 rounded" style={{ backgroundColor: colors.fieldBg }}>
+                          <FileText className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                          <span className="text-xs flex-1" style={{ color: colors.textPrimary }}>{file.name}</span>
+                          <button onClick={() => setAdditionalFiles(prev => prev.filter((_, i) => i !== idx))}>
+                            <X className="w-4 h-4 text-red-600" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setAddingPagesToLease(null);
+                        setAdditionalFiles([]);
+                      }}
+                      className="flex-1"
+                    >
+                      {language === 'th' ? 'ยกเลิก' : language === 'ru' ? 'Отмена' : 'Cancel'}
+                    </Button>
+                    <Button
+                      onClick={handleAddPages}
+                      disabled={additionalFiles.length === 0}
+                      className="flex-1"
+                      style={{ 
+                        backgroundColor: additionalFiles.length > 0 ? '#0C3B2E' : '#9CA3AF',
+                        color: '#FFFFFF'
+                      }}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {language === 'th' ? 'อัปโหลด' : language === 'ru' ? 'Загрузить' : 'Upload'}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Disclaimer Modal */}
         <Dialog open={showDisclaimerModal} onOpenChange={setShowDisclaimerModal}>
@@ -2317,9 +2622,14 @@ function UploadScanPageContent() {
                               {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : language === 'ru' ? 'Договор аренды' : 'Lease Agreement')}
                             </h3>
                           </div>
-                          <p className="text-sm" style={{ color: colors.textSecondary }}>
-                            {strings.scanDate}: {format(new Date(lease.created_date), 'MMM d, yyyy')}
-                          </p>
+                          <div className="flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
+                            <span>{strings.scanDate}: {format(new Date(lease.created_date), 'MMM d, yyyy')}</span>
+                            {lease.file_urls && lease.file_urls.length > 1 && (
+                              <Badge className="bg-blue-100 text-blue-700 text-xs">
+                                {language === 'th' ? `${lease.file_urls.length} หน้า` : language === 'ru' ? `${lease.file_urls.length} стр.` : `Pages: ${lease.file_urls.length}`}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                           {lease.status === 'scanned' && (

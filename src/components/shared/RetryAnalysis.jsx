@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { haptic } from "./HapticFeedback";
 
-export default function RetryAnalysis({ lease, onSuccess, language = 'en', colors }) {
+export default function RetryAnalysis({ lease, onSuccess, language = 'en', colors, onStatusChange }) {
   const [retrying, setRetrying] = useState(false);
 
   const handleRetry = async () => {
@@ -16,10 +16,15 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
       
       console.log(`[RETRY] Starting analysis retry for lease ${lease.id}`);
       
-      // Update status to queued
+      // Update status to processing (not queued, since we're actively processing)
       await base44.entities.Lease.update(lease.id, {
-        status: 'queued'
+        status: 'processing'
       });
+
+      // Notify parent to update UI immediately
+      if (onStatusChange) {
+        onStatusChange(lease.id, 'processing');
+      }
 
       const fileUrls = lease.file_urls || [lease.file_url];
       
@@ -47,7 +52,6 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
         const existingScans = await base44.entities.LeaseScan.filter({ lease_id: lease.id });
         
         if (existingScans.length > 0) {
-          // Update existing scan
           await base44.entities.LeaseScan.update(existingScans[0].id, {
             risk_score: scanResult.risk_score,
             flags: scanResult.flags || [],
@@ -56,7 +60,6 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
             version: '1.0'
           });
         } else {
-          // Create new scan
           await base44.entities.LeaseScan.create({
             lease_id: lease.id,
             risk_score: scanResult.risk_score,
@@ -83,14 +86,11 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
         status: 'failed'
       });
 
+      if (onStatusChange) {
+        onStatusChange(lease.id, 'failed');
+      }
+
       haptic.error();
-      alert(
-        language === 'th'
-          ? `ไม่สามารถวิเคราะห์ได้: ${error.message}\n\nลองอีกครั้งหรือติดต่อฝ่ายสนับสนุน`
-          : language === 'ru'
-            ? `Ошибка анализа: ${error.message}\n\nПопробуйте снова или свяжитесь с поддержкой`
-            : `Analysis failed: ${error.message}\n\nPlease try again or contact support`
-      );
     } finally {
       setRetrying(false);
     }
