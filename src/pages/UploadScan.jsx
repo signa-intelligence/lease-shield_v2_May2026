@@ -2305,7 +2305,7 @@ function UploadScanPageContent() {
                   
                   // Navigate to document viewer page for multi-page, or open single page
                   if (documentToView?.file_urls && documentToView.file_urls.length > 1) {
-                    navigate(createPageUrl("LeaseDetails") + `?leaseId=${documentToView.id}&mode=view`);
+                    navigate(createPageUrl("LeaseViewer") + `?leaseId=${documentToView.id}`);
                   } else {
                     window.open(documentToView?.file_url, '_blank');
                   }

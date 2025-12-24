@@ -1,18 +1,33 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, FileText, ArrowLeft, ExternalLink, Loader2, Wallet, ArrowRight, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { useFeatureAccess } from "../components/shared/FeatureGate";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  Shield,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  AlertCircle,
+  FileText,
+  ArrowLeft,
+  ExternalLink,
+  Download,
+  Loader2,
+  RefreshCw,
+  Wallet,
+  ArrowRight,
+  Sparkles
+} from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
-import PageHeader from "../components/shared/PageHeader";
+import { useFeatureAccess } from "../components/shared/FeatureGate";
 
 const SEVERITY_CONFIG = {
   low: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Low' },
@@ -23,25 +38,48 @@ const SEVERITY_CONFIG = {
 
 function ScanPreviewContent() {
   const navigate = useNavigate();
+  const [showDepositTrackerPrompt, setShowDepositTrackerPrompt] = useState(false);
+  const [error, setError] = useState(null);
+
+  const { data: user, isLoading: userLoading } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me(),
+  });
+
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
   const leaseId = urlParams.get('leaseId');
 
-  const { data: user, isLoading: userLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+  // DEV LOGGING: Check params received
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[ScanPreview] Route params:', { scanId, leaseId });
+  }
+
+  const { data: leaseResults, isLoading: leaseLoading, error: leaseError } = useQuery({
+    queryKey: ['lease', leaseId],
+    queryFn: async () => {
+      if (!leaseId) return null;
+      const results = await base44.entities.Lease.filter({ id: leaseId });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ScanPreview] Lease fetch result:', { count: results?.length, exists: !!results?.[0] });
+      }
+      return results;
+    },
+    enabled: !!leaseId,
+    retry: 1
   });
 
-  const { data: leases = [], isLoading: leasesLoading } = useQuery({
-    queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }),
+  const { data: scans, isLoading: scansLoading, error: scansError } = useQuery({
+    queryKey: ['scans'],
+    queryFn: async () => {
+      const allScans = await base44.entities.LeaseScan.list();
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ScanPreview] Scans fetched:', { total: allScans?.length });
+      }
+      return allScans;
+    },
     enabled: !!user,
-  });
-
-  const { data: allScans = [], isLoading: scansLoading } = useQuery({
-    queryKey: ['allScans'],
-    queryFn: () => base44.entities.LeaseScan.list(),
-    enabled: !!user && leases.length > 0,
+    retry: 1
   });
 
   // Check if user has deposits tracked
@@ -53,32 +91,29 @@ function ScanPreviewContent() {
 
   const { hasAccess: hasFullReportAccess } = useFeatureAccess('full_report');
 
-  const scan = allScans.find(s => {
-    if (scanId) return s.id === scanId;
-    if (leaseId) return s.lease_id === leaseId;
-    return false;
-  });
+  const relevantLease = leaseResults && leaseResults.length > 0 ? leaseResults[0] : null;
+  const scan = scans?.find(s => s.id === scanId) || scans?.find(s => s.lease_id === leaseId);
 
-  const lease = leases.find(l => {
-    if (leaseId) return l.id === leaseId;
-    if (scan) return l.id === scan.lease_id;
-    return false;
-  });
+  // DEV LOGGING: Check data presence
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[ScanPreview] Data resolved:', { 
+      hasLease: !!relevantLease, 
+      hasScan: !!scan, 
+      scanRiskScore: scan?.risk_score 
+    });
+  }
 
-  const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
-  const userTier = user?.plan_tier || 'free';
+  const isLoading = userLoading || leaseLoading || scansLoading;
+  const hasError = leaseError || scansError;
 
-  // FIXED: Better logic to check if deposit is tracked
-  // Check by: 1) matching property address (if exists), OR 2) deposit amount matches
+  const lease = relevantLease;
+
   const hasDepositForLease = deposits.some(d => {
-    // Match by property address if both exist and are not "N/A"
     if (d.property_address && lease?.property_address && 
         d.property_address !== 'N/A' && lease.property_address !== 'N/A') {
       return d.property_address === lease.property_address;
     }
     
-    // Fallback: Match by deposit amount if lease has one
     if (lease?.deposit_amount && d.deposit_amount === lease.deposit_amount) {
       return true;
     }
@@ -86,8 +121,119 @@ function ScanPreviewContent() {
     return false;
   });
 
-  // Show the card if lease has a deposit amount and it's not tracked
   const shouldShowTrackDepositCard = lease?.deposit_amount && lease.deposit_amount > 0 && !hasDepositForLease;
+
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+  const userTier = user?.plan_tier || 'free';
+
+  // LOADING STATE
+  if (isLoading) {
+    return (
+      <div className="min-h-screen p-6" style={{ backgroundColor: isDarkMode ? '#1A1D1F' : '#F9FAFB' }}>
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: '#0C3B2E' }} />
+            <p className="text-lg font-semibold" style={{ color: isDarkMode ? '#ECEFED' : '#1A1D1F' }}>
+              {language === 'th' ? 'กำลังโหลด...' : language === 'ru' ? 'Загрузка...' : 'Loading...'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ERROR STATE
+  if (hasError || !leaseId || !scanId) {
+    return (
+      <div className="min-h-screen p-6" style={{ backgroundColor: isDarkMode ? '#1A1D1F' : '#F9FAFB' }}>
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col items-center justify-center py-20">
+            <AlertCircle className="w-16 h-16 mb-4 text-red-600" />
+            <h2 className="text-xl font-bold mb-2" style={{ color: isDarkMode ? '#ECEFED' : '#1A1D1F' }}>
+              {language === 'th' ? 'เกิดข้อผิดพลาด' : language === 'ru' ? 'Произошла ошибка' : 'Error Loading Scan'}
+            </h2>
+            <p className="text-sm mb-6 text-center" style={{ color: isDarkMode ? '#A8ABAD' : '#64748b' }}>
+              {language === 'th' 
+                ? 'ไม่พบข้อมูลการสแกน กรุณาลองอีกครั้ง' 
+                : language === 'ru'
+                  ? 'Данные сканирования не найдены. Пожалуйста, попробуйте снова.'
+                  : 'Scan data not found. Please try again.'}
+            </p>
+            <Button
+              onClick={() => {
+                haptic.medium();
+                navigate(createPageUrl("UploadScan"));
+              }}
+              style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {language === 'th' ? 'กลับไปยังหน้าสแกน' : language === 'ru' ? 'Вернуться к сканированию' : 'Back to Scan Your Lease'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // DATA NOT READY STATE
+  if (!relevantLease || !scan) {
+    return (
+      <div className="min-h-screen p-6" style={{ backgroundColor: isDarkMode ? '#1A1D1F' : '#F9FAFB' }}>
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col items-center justify-center py-20">
+            <AlertCircle className="w-16 h-16 mb-4 text-amber-600" />
+            <h2 className="text-xl font-bold mb-2" style={{ color: isDarkMode ? '#ECEFED' : '#1A1D1F' }}>
+              {language === 'th' ? 'ผลการสแกนยังไม่พร้อม' : language === 'ru' ? 'Результаты еще не готовы' : 'Scan Results Not Ready'}
+            </h2>
+            <p className="text-sm mb-6 text-center" style={{ color: isDarkMode ? '#A8ABAD' : '#64748b' }}>
+              {language === 'th' 
+                ? 'การวิเคราะห์กำลังดำเนินการ กรุณารอสักครู่' 
+                : language === 'ru'
+                  ? 'Анализ в процессе. Пожалуйста, подождите.'
+                  : 'Analysis in progress. Please wait a moment.'}
+            </p>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  haptic.light();
+                  window.location.reload();
+                }}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                {language === 'th' ? 'รีเฟรช' : language === 'ru' ? 'Обновить' : 'Retry'}
+              </Button>
+              <Button
+                onClick={() => {
+                  haptic.medium();
+                  navigate(createPageUrl("UploadScan"));
+                }}
+                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {language === 'th' ? 'กลับ' : language === 'ru' ? 'Назад' : 'Back'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40'
+  } : {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB'
+  };
 
   const t = {
     en: {
@@ -112,7 +258,7 @@ function ScanPreviewContent() {
       depositTracked: "Deposit Already Tracked",
       viewDeposits: "View Deposits",
       depositAmount: "Security Deposit",
-      leaseScanned: "Lease Analyzed Successfully!",
+      leaseScanned: "Lease Analysed Successfully!",
       upgradeToUnlock: "Upgrade to Unlock",
       upgradeNow: "Upgrade Now",
       back: "Back"
@@ -143,87 +289,6 @@ function ScanPreviewContent() {
       upgradeToUnlock: "อัปเกรดเพื่อปลดล็อค",
       upgradeNow: "อัปเกรดตอนนี้",
       back: "กลับ"
-    },
-    zh: {
-      backToScans: "返回扫描",
-      riskScore: "风险评分",
-      summary: "摘要",
-      topIssues: "发现的主要问题",
-      allIssues: "发现的所有问题",
-      viewFullReport: "查看完整报告",
-      viewLease: "查看租约",
-      lowRisk: "低风险",
-      moderateRisk: "中等风险",
-      highRisk: "高风险",
-      criticalRisk: "严重风险",
-      loading: "正在加载扫描结果...",
-      noScanFound: "未找到扫描",
-      noScanDesc: "找不到您要查找的扫描。",
-      nextStep: "✅ 下一步",
-      nextStepTitle: "保护您的押金",
-      nextStepDesc: "现在您的租约已扫描，追踪您的押金以确保按时返还。",
-      trackDeposit: "立即追踪押金",
-      depositTracked: "押金已追踪",
-      viewDeposits: "查看押金",
-      depositAmount: "押金",
-      leaseScanned: "租约分析成功！",
-      upgradeToUnlock: "升级以解锁",
-      upgradeNow: "立即升级",
-      back: "返回"
-    },
-    ja: {
-      backToScans: "スキャンに戻る",
-      riskScore: "リスクスコア",
-      summary: "概要",
-      topIssues: "見つかった主な問題",
-      allIssues: "見つかったすべての問題",
-      viewFullReport: "完全なレポートを表示",
-      viewLease: "賃貸契約を表示",
-      lowRisk: "低リスク",
-      moderateRisk: "中リスク",
-      highRisk: "高リスク",
-      criticalRisk: "重大リスク",
-      loading: "スキャン結果を読み込み中...",
-      noScanFound: "スキャンが見つかりません",
-      noScanDesc: "お探しのスキャンが見つかりませんでした。",
-      nextStep: "✅ 次のステップ",
-      nextStepTitle: "敷金を保護",
-      nextStepDesc: "賃貸契約がスキャンされたので、敷金を追跡して時間通りに返金されることを確認します。",
-      trackDeposit: "今すぐ敷金を追跡",
-      depositTracked: "敷金は既に追跡中",
-      viewDeposits: "敷金を表示",
-      depositAmount: "敷金",
-      leaseScanned: "賃貸契約分析成功！",
-      upgradeToUnlock: "アップグレードしてロックを解除",
-      upgradeNow: "今すぐアップグレード",
-      back: "戻る"
-    },
-    ko: {
-      backToScans: "스캔으로 돌아가기",
-      riskScore: "위험 점수",
-      summary: "요약",
-      topIssues: "발견된 주요 문제",
-      allIssues: "발견된 모든 문제",
-      viewFullReport: "전체 보고서 보기",
-      viewLease: "임대 계약 보기",
-      lowRisk: "낮은 위험",
-      moderateRisk: "중간 위험",
-      highRisk: "높은 위험",
-      criticalRisk: "심각한 위험",
-      loading: "스캔 결과 로딩 중...",
-      noScanFound: "스캔을 찾을 수 없음",
-      noScanDesc: "찾으시는 스캔을 찾을 수 없습니다.",
-      nextStep: "✅ 다음 단계",
-      nextStepTitle: "보증금 보호",
-      nextStepDesc: "이제 임대 계약이 스캔되었으므로 제때 반환되도록 보증금을 추적하세요.",
-      trackDeposit: "지금 보증금 추적",
-      depositTracked: "보증금이 이미 추적 중",
-      viewDeposits: "보증금 보기",
-      depositAmount: "보증금",
-      leaseScanned: "임대 계약 분석 성공！",
-      upgradeToUnlock: "업그레이드하여 잠금 해제",
-      upgradeNow: "지금 업그레이드",
-      back: "뒤로"
     }
   };
 
@@ -236,20 +301,6 @@ function ScanPreviewContent() {
   };
 
   const riskLevel = scan ? getRiskLevel(scan.risk_score) : null;
-
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F',
-    cardBg: '#2A2D30',
-    textPrimary: '#ECEFED',
-    textSecondary: '#A8ABAD',
-    borderColor: '#3A3D40'
-  } : {
-    bg: '#F8FAFC',
-    cardBg: '#FFFFFF',
-    textPrimary: '#1A1D1F',
-    textSecondary: '#64748b',
-    borderColor: '#E5E7EB'
-  };
 
   const getDisplayFlags = () => {
     const allFlags = scan?.flags || [];
@@ -270,48 +321,6 @@ function ScanPreviewContent() {
   const hasMoreIssues = displayFlags.length < totalFlags;
   const hiddenCount = totalFlags - displayFlags.length;
 
-  if (userLoading || leasesLoading || scansLoading) {
-    return (
-      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-4xl mx-auto">
-          <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
-        </div>
-      </div>
-    );
-  }
-
-  if (!scan || !lease) {
-    return (
-      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-4xl mx-auto">
-          <PageHeader
-            title={strings.noScanFound}
-            subtitle={strings.noScanDesc}
-            icon={AlertTriangle}
-            iconColor="#F59E0B"
-            showBack={true}
-            isDarkMode={isDarkMode}
-          />
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-0">
-              <EmptyState
-                icon={FileText}
-                title={strings.noScanFound}
-                description={strings.noScanDesc}
-                actionLabel={strings.backToScans}
-                onAction={() => navigate(createPageUrl("UploadScan"))}
-                isDarkMode={isDarkMode}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  const riskColor = getRiskColor(scan.risk_score);
-  const riskLabel = getRiskLabel(scan.risk_score);
-
   return (
     <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg, paddingBottom: '180px' }}>
       <div className="max-w-4xl mx-auto">
@@ -319,7 +328,6 @@ function ScanPreviewContent() {
           variant="ghost"
           onClick={() => {
             haptic.light();
-            // Check if we can go back in history, otherwise go to UploadScan
             if (window.history.length > 1) {
               navigate(-1);
             } else {
@@ -332,7 +340,6 @@ function ScanPreviewContent() {
           {strings.backToScans}
         </Button>
 
-        {/* IMPROVED: Next Step Guidance Card - Now shows for all deposits with amount */}
         {shouldShowTrackDepositCard && (
           <Card 
             className="mb-6 border-none shadow-xl overflow-hidden"
@@ -414,7 +421,6 @@ function ScanPreviewContent() {
           </Card>
         )}
 
-        {/* Show alternative if deposit already tracked */}
         {hasDepositForLease && lease?.deposit_amount > 0 && (
           <Card 
             className="mb-6 border-none shadow-xl"
@@ -639,7 +645,7 @@ function ScanPreviewContent() {
           </CardContent>
         </Card>
 
-        {/* Fixed Action Bar - Enhanced Visibility */}
+        {/* Fixed Action Bar */}
         <div className="fixed bottom-0 left-0 right-0 z-30" style={{
           backgroundColor: isDarkMode ? '#1A1D1F' : '#FFFFFF',
           borderTop: `2px solid ${isDarkMode ? '#3A3D40' : '#E5E7EB'}`,
@@ -651,7 +657,6 @@ function ScanPreviewContent() {
               <button
                 onClick={() => {
                   haptic.medium();
-                  // Use push navigation instead of replace
                   navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`, { replace: false });
                 }}
                 className="btn-interaction"
