@@ -2010,31 +2010,6 @@ function UploadScanPageContent() {
 
                       {/* Secondary Actions */}
                       <div className="flex flex-col gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            haptic.light();
-                            setSelectedLease(null);
-                            // Ensure both IDs are explicitly passed
-                            const scanIdToUse = selectedScan?.id;
-                            const leaseIdToUse = selectedLease?.id;
-                            
-                            if (process.env.NODE_ENV === 'development') {
-                              console.log('[Navigation] View Scan Results:', { scanIdToUse, leaseIdToUse });
-                            }
-                            
-                            navigate(createPageUrl("ScanPreview") + `?scanId=${scanIdToUse}&leaseId=${leaseIdToUse}`, { replace: false });
-                          }}
-                          className="w-full justify-center py-3"
-                          style={{
-                            borderColor: colors.borderColor,
-                            color: colors.textPrimary
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          {strings.viewScanResults}
-                        </Button>
-
                         {selectedLease.file_url && (
                           <Button
                             variant="outline"
@@ -2053,7 +2028,7 @@ function UploadScanPageContent() {
                             <FileText className="w-4 h-4 mr-2" />
                             {strings.viewLease}
                             {selectedLease.file_urls && selectedLease.file_urls.length > 1 && (
-                              <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
+                              <Badge className="ml-2 text-xs bg-emerald-100 text-emerald-700">
                                 {selectedLease.file_urls.length} {language === 'th' ? 'หน้า' : language === 'ru' ? 'стр.' : 'pages'}
                               </Badge>
                             )}
