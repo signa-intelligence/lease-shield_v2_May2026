@@ -36,7 +36,6 @@ import RevenueAnalytics from './pages/RevenueAnalytics';
 import ScanPreview from './pages/ScanPreview';
 import Search from './pages/Search';
 import Support from './pages/Support';
-import TemplateForm from './pages/TemplateForm';
 import Templates from './pages/Templates';
 import Timeline from './pages/Timeline';
 import UploadScan from './pages/UploadScan';
@@ -85,7 +84,6 @@ export const PAGES = {
     "ScanPreview": ScanPreview,
     "Search": Search,
     "Support": Support,
-    "TemplateForm": TemplateForm,
     "Templates": Templates,
     "Timeline": Timeline,
     "UploadScan": UploadScan,
