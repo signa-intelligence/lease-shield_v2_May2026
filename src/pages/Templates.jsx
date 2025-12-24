@@ -29,23 +29,57 @@ function TemplatesContent() {
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['templateAssets'],
     queryFn: async () => {
-      const results = await base44.entities.TemplateLibrary.filter(
-        { status: 'active' },
-        '-sort_order,template_key'
-      );
-      console.log('📄 Templates fetched:', results.length);
-      console.log('📄 Template IDs:', results.map(t => t.id));
+      // DIAGNOSTIC: Fetch ALL templates first (no filters)
+      const allResults = await base44.entities.TemplateLibrary.list();
+      console.log('🔍 DIAGNOSTIC: Total templates in DB (no filters):', allResults.length);
       
-      // Deduplicate by template_key (keep first occurrence which is newest due to sort)
+      // Group by status
+      const byStatus = allResults.reduce((acc, t) => {
+        const status = t.status || 'undefined';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      console.log('🔍 DIAGNOSTIC: Templates by status:', byStatus);
+      
+      // Group by category
+      const byCategory = allResults.reduce((acc, t) => {
+        const cat = t.category || 'undefined';
+        acc[cat] = (acc[cat] || 0) + 1;
+        return acc;
+      }, {});
+      console.log('🔍 DIAGNOSTIC: Templates by category:', byCategory);
+      
+      // Check for file URLs
+      const withFiles = allResults.filter(t => t.file_path || t.docx_url || t.pdf_url).length;
+      console.log('🔍 DIAGNOSTIC: Templates with file URLs:', withFiles, '/', allResults.length);
+      
+      // RELAXED FILTER: Only exclude explicitly inactive templates
+      const results = allResults.filter(t => {
+        // Include if status is missing OR status is 'active' OR status is truthy
+        return t.status !== 'inactive' && t.status !== false;
+      }).sort((a, b) => {
+        // Sort by sort_order, then by created_date (newest first)
+        if (a.sort_order !== b.sort_order) {
+          return (a.sort_order || 100) - (b.sort_order || 100);
+        }
+        return new Date(b.created_date || 0) - new Date(a.created_date || 0);
+      });
+      
+      console.log('📄 Templates after relaxed filter:', results.length);
+      console.log('📄 Template keys:', results.map(t => t.template_key || t.id));
+      
+      // Deduplicate by template_key (keep first occurrence)
       const uniqueTemplates = [];
       const seenKeys = new Set();
       for (const t of results) {
-        if (t.template_key && !seenKeys.has(t.template_key)) {
-          seenKeys.add(t.template_key);
+        const key = t.template_key || t.id;
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
           uniqueTemplates.push(t);
         }
       }
       console.log('📄 Unique templates after deduplication:', uniqueTemplates.length);
+      
       return uniqueTemplates;
     }
   });
@@ -194,12 +228,29 @@ function TemplatesContent() {
         />
 
         {templates.length === 0 ? (
-          <EmptyState
-            icon={FileText}
-            title={strings.noTemplates}
-            description="Templates exist but are not visible due to filters. Check entity data."
-            isDarkMode={isDarkMode}
-          />
+          <div className="text-center py-12">
+            <EmptyState
+              icon={FileText}
+              title={strings.noTemplates}
+              description={language === 'th' 
+                ? 'ไม่พบเทมเพลต ตรวจสอบคอนโซลสำหรับข้อมูล' 
+                : 'No templates found. Check console for diagnostics.'}
+              isDarkMode={isDarkMode}
+            />
+            <div className="mt-6 p-4 rounded-lg" style={{ 
+              backgroundColor: isDarkMode ? '#374151' : '#FEF3C7',
+              border: `1px solid ${isDarkMode ? '#4B5563' : '#FDE68A'}`
+            }}>
+              <p className="text-sm font-semibold mb-2" style={{ color: isDarkMode ? '#F9FAFB' : '#92400E' }}>
+                🔍 {language === 'th' ? 'การวินิจฉัย' : 'Diagnostics'}
+              </p>
+              <p className="text-xs" style={{ color: isDarkMode ? '#D1D5DB' : '#78350F' }}>
+                {language === 'th' 
+                  ? 'เปิดคอนโซลเบราว์เซอร์เพื่อดูรายละเอียดการโหลดเทมเพลต'
+                  : 'Open browser console to see detailed template loading diagnostics.'}
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="space-y-8">
             {Object.entries(categorizedTemplates).map(([category, categoryTemplates]) => (
