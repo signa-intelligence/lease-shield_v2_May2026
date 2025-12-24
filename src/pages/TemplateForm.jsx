@@ -31,36 +31,32 @@ function TemplateFormContent() {
   const urlParams = new URLSearchParams(window.location.search);
   const preSelectedSubject = urlParams.get('subject');
 
+  // NORMALIZED MASTER INPUT SCHEMA - Used by ALL templates
   const [formData, setFormData] = useState({
-    subject: '',
+    template_key: '',
+    // SECTION 1: Parties
     tenant_name: '',
     tenant_address: '',
+    tenant_email: '',
+    tenant_phone: '',
     landlord_name: '',
     landlord_address: '',
+    // SECTION 2: Property
     property_address: '',
     property_name: '',
     unit_number: '',
-    notice_period_days: '',
     contract_ref: '',
-    deposit_amount: '',
-    example_item_1: '',
-    example_item_2: '',
-    example_item_3: '',
-    breach_summary: '',
-    settlement_amount: '',
-    settlement_date: '',
-    concerns_list: '',
-    // Multi-language options
+    // SECTION 3: Language
     recipientType: 'landlord',
     includeTenantCopy: false,
     includeThaiCopy: false,
     includeLandlordCopy: false
   });
 
-  // Effect to set initial subject from URL, runs once on mount
+  // Effect to set initial template from URL, runs once on mount
   useEffect(() => {
     if (preSelectedSubject) {
-      setFormData(prev => ({ ...prev, subject: preSelectedSubject }));
+      setFormData(prev => ({ ...prev, template_key: preSelectedSubject }));
     }
   }, [preSelectedSubject]);
 
@@ -621,13 +617,14 @@ function TemplateFormContent() {
     e.preventDefault();
     setError(null);
 
-    if (!formData.subject) {
+    // Validate required fields
+    if (!formData.template_key) {
       setError(strings.selectTypeFirst);
       haptic.error();
       return;
     }
-    if (!formData.tenant_name || !formData.landlord_name) {
-      setError(strings.errorFillRequired);
+    if (!formData.tenant_name?.trim() || !formData.tenant_address?.trim() || !formData.landlord_name?.trim() || !formData.property_address?.trim()) {
+      setError(language === 'th' ? 'กรุณากรอกข้อมูลที่จำเป็นทั้งหมด' : 'Please fill in all required fields');
       haptic.error();
       return;
     }
@@ -640,94 +637,37 @@ function TemplateFormContent() {
 
     haptic.medium();
     setGenerating(true);
+    
     try {
-      // Find template from DB by template_key
-      const dbTemplate = dbTemplates.find(t => t.template_key === formData.subject);
-      
-      if (dbTemplate && dbTemplate.content_en && dbTemplate.content_th) {
-        // Handle bilingual template with merge fields
-        const mergeData = {
-          tenant_name: formData.tenant_name || '[ADD YOUR NAME]',
-          tenant_address: formData.tenant_address || '[ADD YOUR ADDRESS]',
-          landlord_name: formData.landlord_name || '[ADD LANDLORD NAME]',
-          landlord_address: formData.landlord_address || formData.property_address || '[ADD LANDLORD ADDRESS]',
-          property_address: formData.property_address || '[ADD PROPERTY ADDRESS]',
-          property_name: formData.property_name || formData.property_address || '[ADD PROPERTY NAME]',
-          unit_number: formData.unit_number || '[ADD UNIT NUMBER]',
-          today_date: new Date().toLocaleDateString('en-GB'),
-          notice_period_days: formData.notice_period_days || '[ADD NOTICE PERIOD]',
-          deposit_amount: formData.deposit_amount || '[ADD DEPOSIT AMOUNT]',
-          move_out_date: formData.move_out_date || '[ADD MOVE OUT DATE]',
-          contract_date: formData.contract_ref || '[ADD CONTRACT DATE]',
-          breach_details: formData.breach_summary || '[ADD BREACH DETAILS]',
-          settlement_amount: formData.settlement_amount || '[ADD SETTLEMENT AMOUNT]',
-          settlement_date: formData.settlement_date || '[ADD SETTLEMENT DATE]',
-          payment_method: formData.payment_method || '[ADD PAYMENT METHOD]',
-          previous_letter_date: '[PREVIOUS LETTER DATE]',
-          deadline_date: '[DEADLINE DATE]',
-          final_deadline_date: '[FINAL DEADLINE DATE]'
-        };
+      // Use new master letter generator
+      const response = await base44.functions.invoke('generateMasterLetter', {
+        template_key: formData.template_key,
+        tenant_name: formData.tenant_name,
+        tenant_address: formData.tenant_address,
+        tenant_email: formData.tenant_email,
+        tenant_phone: formData.tenant_phone,
+        landlord_name: formData.landlord_name,
+        landlord_address: formData.landlord_address,
+        property_address: formData.property_address,
+        property_name: formData.property_name,
+        unit_number: formData.unit_number,
+        contract_ref: formData.contract_ref,
+        recipientType: formData.recipientType,
+        includeTenantCopy: formData.includeTenantCopy,
+        includeThaiCopy: formData.includeThaiCopy,
+        includeLandlordCopy: formData.includeLandlordCopy
+      });
 
-        // Replace merge fields in both languages
-        let letterContentEn = dbTemplate.content_en;
-        let letterContentTh = dbTemplate.content_th;
-        
-        Object.entries(mergeData).forEach(([key, value]) => {
-          const placeholder = `{{${key}}}`;
-          letterContentEn = letterContentEn.replace(new RegExp(placeholder, 'g'), value);
-          letterContentTh = letterContentTh.replace(new RegExp(placeholder, 'g'), value);
-        });
-
-        // Build language pack
-        const languagePack = buildLetterLanguagePack({
-          recipientType: formData.recipientType,
-          tenantLanguage: user?.language || 'en',
-          landlordLanguage: user?.landlord_language || 'th',
-          includeTenantCopy: formData.includeTenantCopy,
-          includeThaiCopy: formData.includeThaiCopy,
-          includeLandlordCopy: formData.includeLandlordCopy
-        });
-
-        // Build letter content for all languages
-        const letterContent = {};
-        languagePack.allLanguages.forEach(lang => {
-          if (lang === 'en') {
-            letterContent[lang] = letterContentEn;
-          } else if (lang === 'th') {
-            letterContent[lang] = letterContentTh;
-          } else {
-            // For other languages, use English as fallback
-            letterContent[lang] = letterContentEn;
-          }
-        });
-
-        // Deduct credit based on template cost
-        const creditsToDeduct = dbTemplate.cost_credits || 1;
-        const newCredits = userCredits - creditsToDeduct;
-        await base44.auth.updateMe({ letter_credits: newCredits });
-
+      if (response.data?.ok) {
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-        setGeneratedLetter({ ok: true, credits_remaining: newCredits, language_pack: languagePack, letter_content: letterContent });
-        setLanguagePack(languagePack);
-        setEditedContent(letterContent);
+        setGeneratedLetter(response.data);
+        setLanguagePack(response.data.language_pack);
+        setEditedContent(response.data.letter_content || {});
         setReviewMode(true);
         haptic.success();
-        toast.success(strings.creditDeductedRemaining.replace('{credits_remaining}', newCredits));
+        toast.success(strings.creditDeductedRemaining.replace('{credits_remaining}', response.data.credits_remaining || 0));
       } else {
-        // Legacy built-in template - use existing backend function
-        const response = await base44.functions.invoke('generatePhase1Letter', formData);
-
-        if (response.data?.ok) {
-          queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-          setGeneratedLetter(response.data);
-          setLanguagePack(response.data.language_pack);
-          setEditedContent(response.data.letter_content || {});
-          setReviewMode(true);
-          haptic.success();
-          toast.success(strings.creditDeductedRemaining.replace('{credits_remaining}', response.data.credits_remaining || 0));
-        } else {
-          throw new Error(response.data?.error || strings.errorGenerationFailed);
-        }
+        throw new Error(response.data?.error || strings.errorGenerationFailed);
       }
     } catch (err) {
       console.error('Generation error:', err);
@@ -753,7 +693,7 @@ function TemplateFormContent() {
     try {
       // Save the reviewed multi-language content (no credit deduction - already done)
       const response = await base44.functions.invoke('saveReviewedLetter', {
-        subject: formData.subject,
+        subject: formData.template_key,
         tenant_name: formData.tenant_name,
         landlord_name: formData.landlord_name,
         property_address: formData.property_address,
@@ -845,28 +785,39 @@ function TemplateFormContent() {
                 const label = getLanguageLabel(langCode, language);
                 return (
                   <div key={langCode}>
-                    <label htmlFor={`letter_${langCode}`} className="text-base font-semibold mb-2 block flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                      <Globe className="w-4 h-4" />
+                    <label htmlFor={`letter_${langCode}`} className="text-base font-semibold mb-3 block flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                      <Globe className="w-4 h-4" style={{ color: '#0C3B2E' }} />
                       {label}
                       {langCode === languagePack.primary && (
                         <Badge className="text-xs" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>Primary</Badge>
                       )}
                     </label>
+                    <div className="mb-2 p-3 rounded-lg text-xs" style={{ 
+                      backgroundColor: isDarkMode ? '#1F2937' : '#F0FDF4',
+                      color: colors.textSecondary,
+                      border: `1px solid ${isDarkMode ? '#374151' : '#86EFAC'}`
+                    }}>
+                      💡 {language === 'th' 
+                        ? 'จดหมายมีโครงสร้างมาตรฐาน: วันที่ → ผู้รับ → หัวข้อ → เนื้อหา → ลายเซ็น'
+                        : 'Letter follows standard structure: Date → Recipient → Subject → Body → Signature'}
+                    </div>
                     <textarea
                       id={`letter_${langCode}`}
                       value={editedContent[langCode] || ''}
                       onChange={(e) => setEditedContent(prev => ({ ...prev, [langCode]: e.target.value }))}
-                      rows={12}
+                      rows={20}
                       className="font-sans w-full"
                       style={{
                         backgroundColor: colors.fieldBg,
                         borderColor: colors.borderColor,
                         color: colors.textPrimary,
                         whiteSpace: 'pre-wrap',
-                        padding: '12px 16px',
+                        padding: '16px',
                         borderRadius: '12px',
                         border: `2px solid ${colors.borderColor}`,
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        lineHeight: '1.8',
+                        fontFamily: 'system-ui, -apple-system, sans-serif'
                       }}
                     />
                   </div>
@@ -899,7 +850,7 @@ function TemplateFormContent() {
                       const response = await base44.functions.invoke('generateDocx', {
                         letterContent: editedContent,
                         languagePack: languagePack,
-                        subject: formData.subject,
+                        subject: formData.template_key,
                         tenant_name: formData.tenant_name,
                         landlord_name: formData.landlord_name,
                         property_address: formData.property_address,
@@ -1174,19 +1125,6 @@ function TemplateFormContent() {
                 </div>
               </div>
 
-              {/* Conditional fields for specific templates */}
-              {['deposit', 'deductions'].includes(formData.subject) && (
-                <MobileFormInput
-                  label={strings.depositAmount}
-                  type="number"
-                  value={formData.deposit_amount}
-                  onChange={(e) => handleInputChange('deposit_amount', e.target.value)}
-                  placeholder="25000"
-                  colors={colors}
-                  disabled={generating}
-                />
-              )}
-
               {/* SECTION 3: LANGUAGE OPTIONS */}
               <div>
                 <h3 className="text-sm font-bold mb-4 pb-2 border-b" style={{ color: colors.textPrimary, borderColor: colors.borderColor }}>
@@ -1194,12 +1132,6 @@ function TemplateFormContent() {
                 </h3>
                 <Card className="border-2" style={{ borderColor: '#C7A338', backgroundColor: colors.fieldBg }}>
                 <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Globe className="w-5 h-5 text-ls-gold" />
-                    <h3 className="font-bold text-sm" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? 'ตัวเลือกภาษา' : language === 'zh' ? '语言选项' : language === 'ja' ? '言語オプション' : language === 'ko' ? '언어 옵션' : language === 'ru' ? 'Языковые опции' : 'Language Options'}
-                    </h3>
-                  </div>
 
                   {formData.recipientType === 'juristic' && (
                     <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#374151' : '#F0FDF4', border: `1px solid ${isDarkMode ? '#4B5563' : '#86EFAC'}` }}>
@@ -1220,91 +1152,39 @@ function TemplateFormContent() {
                   )}
 
                   {formData.recipientType === 'landlord' && user && (
-                    <>
+                    <div className="space-y-3">
                       <div className="text-xs space-y-2" style={{ color: colors.textSecondary }}>
                         <p>
                           <strong style={{ color: colors.textPrimary }}>
-                            {language === 'th' ? 'ภาษาหลัก:' : language === 'zh' ? '主要语言:' : language === 'ja' ? '主要言語:' : language === 'ko' ? '주 언어:' : language === 'ru' ? 'Основной язык:' : 'Primary language:'}
-                          </strong> {getLanguageLabel(user?.landlord_language || 'th', language)}
-                        </p>
-                        <p>
-                          ✓ {language === 'th' ? 'อังกฤษจะถูกเพิ่มโดยอัตโนมัติ' : language === 'zh' ? '英语将自动包含' : language === 'ja' ? '英語は自動的に含まれます' : language === 'ko' ? '영어가 자동으로 포함됩니다' : language === 'ru' ? 'Английский будет включен автоматически' : 'English will be included automatically'}
+                            {language === 'th' ? 'ภาษาหลัก:' : 'Primary language:'}
+                          </strong> {language === 'th' ? 'ไทย + อังกฤษ' : 'Thai + English'}
                         </p>
                       </div>
-                      <div className="space-y-2 pt-2">
+                      <div className="space-y-2">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
-                            checked={formData.includeTenantCopy}
-                            onChange={(e) => handleInputChange('includeTenantCopy', e.target.checked)}
+                            checked={formData.includeThaiCopy}
+                            onChange={(e) => handleInputChange('includeThaiCopy', e.target.checked)}
                             disabled={generating}
-                            className="w-4 h-4"
+                            className="w-4 h-4 accent-ls-forest"
                           />
                           <span className="text-sm" style={{ color: colors.textPrimary }}>
-                            {language === 'th' ? 'รวมสำเนาภาษาผู้เช่า' : language === 'zh' ? '包含租户语言副本' : language === 'ja' ? '借主言語のコピーを含める' : language === 'ko' ? '임차인 언어 사본 포함' : language === 'ru' ? 'Включить копию на языке арендатора' : 'Include tenant language copy'} ({getLanguageLabel(user?.language || 'en', language)})
+                            {language === 'th' ? 'รวมภาษาไทย' : 'Include Thai translation'}
                           </span>
                         </label>
-                        {(user?.landlord_language || 'th') !== 'th' && (
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={formData.includeThaiCopy}
-                              onChange={(e) => handleInputChange('includeThaiCopy', e.target.checked)}
-                              disabled={generating}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-sm" style={{ color: colors.textPrimary }}>
-                              {language === 'th' ? 'รวมภาษาไทย' : language === 'zh' ? '包含泰语' : language === 'ja' ? 'タイ語を含める' : language === 'ko' ? '태국어 포함' : language === 'ru' ? 'Включить тайский' : 'Include Thai copy'}
-                            </span>
-                          </label>
-                        )}
                       </div>
-                    </>
+                    </div>
                   )}
 
                   {formData.recipientType === 'tenant' && user && (
-                    <>
-                      <div className="text-xs space-y-2" style={{ color: colors.textSecondary }}>
-                        <p>
-                          <strong style={{ color: colors.textPrimary }}>
-                            {language === 'th' ? 'ภาษาของคุณ:' : language === 'zh' ? '您的语言:' : language === 'ja' ? 'あなたの言語:' : language === 'ko' ? '귀하의 언어:' : language === 'ru' ? 'Ваш язык:' : 'Your language:'}
-                          </strong> {getLanguageLabel(user?.language || 'en', language)}
-                        </p>
-                        <p>
-                          ✓ {language === 'th' ? 'อังกฤษจะถูกเพิ่มโดยอัตโนมัติ' : language === 'zh' ? '英语将自动包含' : language === 'ja' ? '英語は自動的に含まれます' : language === 'ko' ? '영어가 자동으로 포함됩니다' : language === 'ru' ? 'Английский будет включен автоматически' : 'English will be included automatically'}
-                        </p>
-                      </div>
-                      <div className="space-y-2 pt-2">
-                        {user?.landlord_language && (
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={formData.includeLandlordCopy}
-                              onChange={(e) => handleInputChange('includeLandlordCopy', e.target.checked)}
-                              disabled={generating}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-sm" style={{ color: colors.textPrimary }}>
-                              {language === 'th' ? 'รวมภาษาเจ้าของบ้าน' : language === 'zh' ? '包含房东语言' : language === 'ja' ? '家主の言語を含める' : language === 'ko' ? '집주인 언어 포함' : language === 'ru' ? 'Включить язык арендодателя' : 'Include landlord language'} ({getLanguageLabel(user?.landlord_language || 'th', language)})
-                            </span>
-                          </label>
-                        )}
-                        {(user?.language || 'en') !== 'th' && (
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={formData.includeThaiCopy}
-                              onChange={(e) => handleInputChange('includeThaiCopy', e.target.checked)}
-                              disabled={generating}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-sm" style={{ color: colors.textPrimary }}>
-                              {language === 'th' ? 'รวมภาษาไทย' : language === 'zh' ? '包含泰语' : language === 'ja' ? 'タイ語を含める' : language === 'ko' ? '태국어 포함' : language === 'ru' ? 'Включить тайский' : 'Include Thai copy'}
-                            </span>
-                          </label>
-                        )}
-                      </div>
-                    </>
+                    <div className="text-xs space-y-2" style={{ color: colors.textSecondary }}>
+                      <p>
+                        <strong style={{ color: colors.textPrimary }}>
+                          {language === 'th' ? 'ภาษาของคุณ:' : 'Your language:'}
+                        </strong> {getLanguageLabel(user?.language || 'en', language)} + {language === 'th' ? 'อังกฤษ' : 'English'}
+                      </p>
+                    </div>
                   )}
                 </CardContent>
                 </Card>
@@ -1345,44 +1225,10 @@ function TemplateFormContent() {
                   )}
                 </Button>
               </div>
-              <div className="text-xs text-center pt-2 space-y-2" style={{ color: colors.textSecondary }}>
+              <div className="text-xs text-center pt-2" style={{ color: colors.textSecondary }}>
                 <p>{language === 'th' 
-                  ? '1 เครดิตจะถูกหักเมื่อคุณสร้างจดหมาย ครอบคลุมทุกภาษาที่เลือก'
-                  : language === 'zh'
-                  ? '当您生成此信件时将扣除 1 个信用。这包括所有选定的语言。'
-                  : language === 'ja'
-                  ? 'このレターを生成すると 1 クレジットが差し引かれます。選択したすべての言語が含まれます。'
-                  : language === 'ko'
-                  ? '이 편지를 생성하면 1 크레딧이 차감됩니다. 선택한 모든 언어가 포함됩니다.'
-                  : language === 'ru'
-                  ? 'При создании этого письма будет списан 1 кредит. Это покрывает все выбранные языки.'
-                  : '1 credit will be deducted when you generate this letter. This covers all selected languages.'}</p>
-                {formData.recipientType && (
-                  <p className="font-semibold" style={{ color: '#C7A338' }}>
-                    {(() => {
-                      const pack = buildLetterLanguagePack({
-                        recipientType: formData.recipientType,
-                        tenantLanguage: user?.language || 'en',
-                        landlordLanguage: user?.landlord_language || 'th',
-                        includeTenantCopy: formData.includeTenantCopy,
-                        includeThaiCopy: formData.includeThaiCopy,
-                        includeLandlordCopy: formData.includeLandlordCopy
-                      });
-                      const langList = formatLanguageList(pack.allLanguages, language);
-                      return language === 'th' 
-                        ? `📦 จะสร้าง: ${langList} (${pack.allLanguages.length} ภาษา)`
-                        : language === 'zh'
-                        ? `📦 将生成: ${langList} (${pack.allLanguages.length}种语言)`
-                        : language === 'ja'
-                        ? `📦 生成予定: ${langList} (${pack.allLanguages.length}言語)`
-                        : language === 'ko'
-                        ? `📦 생성 예정: ${langList} (${pack.allLanguages.length}개 언어)`
-                        : language === 'ru'
-                        ? `📦 Будет создано: ${langList} (${pack.allLanguages.length} языков)`
-                        : `📦 Will generate: ${langList} (${pack.allLanguages.length} languages)`;
-                    })()}
-                  </p>
-                )}
+                  ? '💳 1 เครดิตจะถูกหักเมื่อสร้าง (ครอบคลุมทุกภาษา)'
+                  : '💳 1 credit will be deducted on generation (covers all languages)'}</p>
               </div>
             </form>
           </CardContent>
