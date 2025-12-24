@@ -101,9 +101,9 @@ const CLOSING_PARAGRAPH = {
 };
 
 /**
- * Build complete letter following master layout
+ * Build structured LetterDocument (NOT raw text)
  */
-function buildMasterLetter(params, langCode) {
+function buildLetterDocument(params, langCode) {
   const {
     tenant_name,
     tenant_address,
@@ -122,35 +122,78 @@ function buildMasterLetter(params, langCode) {
   );
 
   const signOff = langCode === 'th' ? 'ขอแสดงความนับถือ' : 'Sincerely';
-  const subjectPrefix = langCode === 'th' ? 'เรื่อง' : 'Subject';
+  const subjectText = langCode === 'th' 
+    ? `ขอชี้แจงและแก้ไขเงื่อนไขสัญญาเช่า – ${property_address}`
+    : `Request to Clarify and Amend Lease Terms – ${property_address}`;
 
-  // Build signature block
-  let signature = `${signOff},\n\n${tenant_name}`;
-  if (tenant_address) signature += `\n${tenant_address}`;
-  if (tenant_phone) signature += `\n${tenant_phone}`;
-  if (tenant_email) signature += `\n${tenant_email}`;
+  const greeting = langCode === 'th' ? `เรียน ${landlord_name}` : `Dear ${landlord_name}`;
 
-  // Assemble letter
-  const letter = `${today}
+  // Build recipient lines (omit empty)
+  const recipientLines = [
+    landlord_name,
+    landlord_address || property_address
+  ].filter(Boolean);
 
-${landlord_name}
-${landlord_address || property_address}
+  // Build signature lines (omit empty)
+  const signatureLines = [
+    signOff,
+    '',
+    tenant_name,
+    tenant_address,
+    tenant_phone,
+    tenant_email
+  ].filter(Boolean);
 
-${subjectPrefix}: ${langCode === 'th' ? 'ขอชี้แจงและแก้ไขเงื่อนไขสัญญาเช่า' : 'Request to Clarify and Amend Lease Terms'} – ${property_address}
+  return {
+    meta: {
+      template_key,
+      language: langCode,
+      created_at: new Date().toISOString(),
+      recipient_type: 'landlord'
+    },
+    blocks: [
+      { type: 'date', value: today },
+      { type: 'recipient', lines: recipientLines },
+      { type: 'subject', value: `Subject: ${subjectText}` },
+      { type: 'paragraph', value: greeting + ',' },
+      { type: 'paragraph', value: OPENING_PARAGRAPH[langCode] },
+      { type: 'paragraph', value: BODY_INTRO[langCode] },
+      { type: 'bullets', items: bullets },
+      { type: 'closing', value: CLOSING_PARAGRAPH[langCode] },
+      { type: 'signature', lines: signatureLines }
+    ]
+  };
+}
 
-${langCode === 'th' ? `เรียน ${landlord_name}` : `Dear ${landlord_name}`},
+/**
+ * Convert LetterDocument to plain text (for textarea fallback/copy)
+ */
+function letterDocumentToText(letterDoc) {
+  if (!letterDoc || !letterDoc.blocks) return '';
+  
+  let text = '';
+  
+  letterDoc.blocks.forEach(block => {
+    if (block.type === 'date') {
+      text += block.value + '\n\n';
+    } else if (block.type === 'recipient') {
+      text += block.lines.join('\n') + '\n\n';
+    } else if (block.type === 'subject') {
+      text += block.value + '\n\n';
+    } else if (block.type === 'paragraph') {
+      text += block.value + '\n\n';
+    } else if (block.type === 'bullets') {
+      block.items.forEach((item, i) => {
+        text += `${i + 1}. ${item}\n\n`;
+      });
+    } else if (block.type === 'closing') {
+      text += block.value + '\n\n';
+    } else if (block.type === 'signature') {
+      text += block.lines.join('\n');
+    }
+  });
 
-${OPENING_PARAGRAPH[langCode]}
-
-${BODY_INTRO[langCode]}
-
-${bullets.map((b, i) => `${i + 1}. ${b}`).join('\n\n')}
-
-${CLOSING_PARAGRAPH[langCode]}
-
-${signature}`;
-
-  return letter;
+  return text;
 }
 
 /**
@@ -222,13 +265,13 @@ Deno.serve(async (req) => {
 
     console.log('🌍 Languages:', languagePack.allLanguages);
 
-    // Generate letters for all languages
+    // Generate letters for all languages as LetterDocuments
     const generatedLetters = {};
     
     for (const langCode of languagePack.allLanguages) {
       const bullets = selectBullets(template_key, langCode, scan_data);
       
-      const letter = buildMasterLetter({
+      const letterDoc = buildLetterDocument({
         tenant_name,
         tenant_address,
         tenant_email,
@@ -240,8 +283,13 @@ Deno.serve(async (req) => {
         bullets
       }, langCode);
 
-      generatedLetters[langCode] = letter;
-      console.log(`✅ Generated ${langCode} letter`);
+      // Also provide plain text version for backward compatibility
+      generatedLetters[langCode] = {
+        document: letterDoc,
+        text: letterDocumentToText(letterDoc)
+      };
+      
+      console.log(`✅ Generated ${langCode} letter (${bullets.length} bullets)`);
     }
 
     // Deduct 1 credit

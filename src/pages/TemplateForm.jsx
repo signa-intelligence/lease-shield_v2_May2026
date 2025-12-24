@@ -14,6 +14,8 @@ import { haptic } from "../components/shared/HapticFeedback";
 import MobileFormInput from "../components/shared/MobileFormInput";
 import PageHeader from "../components/shared/PageHeader";
 import ProgressBar from "../components/shared/ProgressBar";
+import LetterPreview from "../components/letters/LetterPreview";
+import { Copy, Download, X, Globe } from "lucide-react";
 
 function TemplateFormContent() {
   const navigate = useNavigate();
@@ -25,6 +27,7 @@ function TemplateFormContent() {
   const [generatedLetter, setGeneratedLetter] = useState(null);
   const [reviewMode, setReviewMode] = useState(false);
   const [editedContent, setEditedContent] = useState({});
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [languagePack, setLanguagePack] = useState(null);
 
   // Get subject from URL parameter
@@ -680,7 +683,7 @@ function TemplateFormContent() {
   };
 
   const handleSaveAfterReview = async () => {
-    if (!generatedLetter || !languagePack || Object.keys(editedContent).length === 0) {
+    if (!generatedLetter || !languagePack) {
       setError(strings.reviewContentRequired);
       haptic.error();
       return;
@@ -691,13 +694,20 @@ function TemplateFormContent() {
     setError(null);
 
     try {
+      // Prepare letter documents for save
+      const letterDocuments = {};
+      Object.keys(generatedLetter.letter_content).forEach(langCode => {
+        const data = generatedLetter.letter_content[langCode];
+        letterDocuments[langCode] = data.document || data;
+      });
+
       // Save the reviewed multi-language content (no credit deduction - already done)
       const response = await base44.functions.invoke('saveReviewedLetter', {
         subject: formData.template_key,
         tenant_name: formData.tenant_name,
         landlord_name: formData.landlord_name,
         property_address: formData.property_address,
-        reviewedLetters: editedContent,
+        reviewedLetters: letterDocuments,
         languagePack: languagePack,
         recipientType: formData.recipientType
       });
@@ -743,20 +753,63 @@ function TemplateFormContent() {
     }
   };
 
+  const handleCopyText = (langCode) => {
+    const letterData = generatedLetter?.letter_content?.[langCode];
+    const textToCopy = letterData?.text || '';
+    
+    navigator.clipboard.writeText(textToCopy);
+    toast.success(language === 'th' ? 'คัดลอกแล้ว' : 'Copied to clipboard');
+    haptic.light();
+  };
+
+  const handleDownloadDocx = async (langCode) => {
+    const letterData = generatedLetter?.letter_content?.[langCode];
+    if (!letterData?.document) return;
+
+    haptic.medium();
+    setSaving(true);
+
+    try {
+      const response = await base44.functions.invoke('exportLetterDocx', {
+        letterDoc: letterData.document,
+        filename: `${formData.template_key}_${langCode}_${new Date().getTime()}`
+      });
+
+      if (response.data?.ok && response.data?.file_url) {
+        const link = document.createElement('a');
+        link.href = response.data.file_url;
+        link.download = response.data.filename;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast.success(language === 'th' ? 'กำลังดาวน์โหลด' : 'Downloading DOCX');
+        haptic.success();
+      }
+    } catch (err) {
+      console.error('DOCX download failed:', err);
+      toast.error(language === 'th' ? 'ไม่สามารถสร้าง DOCX ได้' : 'Failed to generate DOCX');
+      haptic.error();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (reviewMode && generatedLetter) {
     return (
-      <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-5xl mx-auto">
+      <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg, paddingBottom: '120px' }}>
+        <div className="max-w-4xl mx-auto">
           <PageHeader
             title={strings.reviewEditLetter}
-            subtitle={strings.reviewEditLetterDesc}
-            icon={Edit2}
+            subtitle={language === 'th' ? 'ตรวจสอบและบันทึกจดหมาย' : 'Review and save your letter'}
+            icon={FileText}
             iconColor="#0C3B2E"
             showBack={true}
             backRoute={() => handleCancelReview()}
             isDarkMode={isDarkMode}
             actions={
-              <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+              <Badge className="text-xs px-3 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
                 {strings.creditDeductedRemaining.replace('{credits_remaining}', generatedLetter.credits_remaining || 0)}
               </Badge>
             }
@@ -773,147 +826,129 @@ function TemplateFormContent() {
             </Card>
           )}
 
-          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <Edit2 className="w-5 h-5" style={{ color: '#0C3B2E' }} />
-                {strings.editContent}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              {languagePack && languagePack.allLanguages.map((langCode) => {
-                const label = getLanguageLabel(langCode, language);
-                return (
-                  <div key={langCode}>
-                    <label htmlFor={`letter_${langCode}`} className="text-base font-semibold mb-3 block flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                      <Globe className="w-4 h-4" style={{ color: '#0C3B2E' }} />
+          {/* Letter Previews */}
+          {languagePack && languagePack.allLanguages.map((langCode) => {
+            const letterData = generatedLetter.letter_content?.[langCode];
+            const label = getLanguageLabel(langCode, language);
+            
+            return (
+              <Card key={langCode} className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+                <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+                  <CardTitle className="flex items-center justify-between" style={{ color: colors.textPrimary }}>
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-5 h-5" style={{ color: '#0C3B2E' }} />
                       {label}
                       {langCode === languagePack.primary && (
                         <Badge className="text-xs" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>Primary</Badge>
                       )}
-                    </label>
-                    <div className="mb-2 p-3 rounded-lg text-xs" style={{ 
-                      backgroundColor: isDarkMode ? '#1F2937' : '#F0FDF4',
-                      color: colors.textSecondary,
-                      border: `1px solid ${isDarkMode ? '#374151' : '#86EFAC'}`
-                    }}>
-                      💡 {language === 'th' 
-                        ? 'จดหมายมีโครงสร้างมาตรฐาน: วันที่ → ผู้รับ → หัวข้อ → เนื้อหา → ลายเซ็น'
-                        : 'Letter follows standard structure: Date → Recipient → Subject → Body → Signature'}
                     </div>
-                    <textarea
-                      id={`letter_${langCode}`}
-                      value={editedContent[langCode] || ''}
-                      onChange={(e) => setEditedContent(prev => ({ ...prev, [langCode]: e.target.value }))}
-                      rows={20}
-                      className="font-sans w-full"
-                      style={{
-                        backgroundColor: colors.fieldBg,
-                        borderColor: colors.borderColor,
-                        color: colors.textPrimary,
-                        whiteSpace: 'pre-wrap',
-                        padding: '16px',
-                        borderRadius: '12px',
-                        border: `2px solid ${colors.borderColor}`,
-                        fontSize: '14px',
-                        lineHeight: '1.8',
-                        fontFamily: 'system-ui, -apple-system, sans-serif'
-                      }}
-                    />
-                  </div>
-                );
-              })}
-
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    haptic.light();
-                    handleCancelReview();
-                  }}
-                  disabled={saving}
-                  className="flex-1 btn-interaction"
-                  style={{
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary,
-                  }}
-                >
-                  {strings.cancel}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    haptic.medium();
-                    try {
-                      const response = await base44.functions.invoke('generateDocx', {
-                        letterContent: editedContent,
-                        languagePack: languagePack,
-                        subject: formData.template_key,
-                        tenant_name: formData.tenant_name,
-                        landlord_name: formData.landlord_name,
-                        property_address: formData.property_address,
-                        recipientType: formData.recipientType
-                      });
-                      
-                      if (response.data?.ok && response.data?.docx_url) {
-                        const a = document.createElement('a');
-                        a.href = response.data.docx_url;
-                        a.download = response.data.filename || 'letter.docx';
-                        a.click();
-                        toast.success(language === 'th' ? 'ดาวน์โหลด DOCX สำเร็จ' : 'DOCX downloaded successfully');
-                      }
-                    } catch (err) {
-                      console.error('DOCX generation failed:', err);
-                      toast.error(language === 'th' ? 'ไม่สามารถสร้าง DOCX ได้' : 'Failed to generate DOCX');
-                    }
-                  }}
-                  disabled={saving}
-                  className="flex-1 btn-interaction"
-                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  {strings.downloadWord}
-                </Button>
-                <Button
-                  onClick={() => {
-                    haptic.medium();
-                    handleSaveAfterReview();
-                  }}
-                  disabled={saving || Object.keys(editedContent).length === 0}
-                  className="flex-1 btn-interaction"
-                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {strings.saving}
-                    </>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCopyText(langCode)}
+                        className="btn-interaction"
+                        style={{ borderColor: colors.borderColor, color: colors.textPrimary }}
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        {language === 'th' ? 'คัดลอก' : 'Copy'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleDownloadDocx(langCode)}
+                        disabled={saving}
+                        className="btn-interaction"
+                        style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        DOCX
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {letterData?.document ? (
+                    <LetterPreview letterDoc={letterData.document} isDarkMode={isDarkMode} />
                   ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      {strings.saveLetter}
-                    </>
+                    <div className="p-6">
+                      <textarea
+                        value={letterData?.text || editedContent[langCode] || ''}
+                        onChange={(e) => setEditedContent(prev => ({ ...prev, [langCode]: e.target.value }))}
+                        rows={20}
+                        className="font-sans w-full"
+                        style={{
+                          backgroundColor: colors.fieldBg,
+                          borderColor: colors.borderColor,
+                          color: colors.textPrimary,
+                          whiteSpace: 'pre-wrap',
+                          padding: '16px',
+                          borderRadius: '12px',
+                          border: `2px solid ${colors.borderColor}`,
+                          fontSize: '14px',
+                          lineHeight: '1.8',
+                          fontFamily: 'system-ui, -apple-system, sans-serif'
+                        }}
+                      />
+                    </div>
                   )}
-                </Button>
-              </div>
+                </CardContent>
+              </Card>
+            );
+          })}
 
-              <div className="text-xs text-center pt-2" style={{ color: colors.textSecondary }}>
-                {language === 'th'
-                  ? 'เมื่อบันทึก จดหมายจะถูกเก็บในคลังหลักฐาน (เครดิตถูกหักไปแล้วเมื่อสร้าง)'
-                  : language === 'zh'
-                  ? '保存时，信件将存储在证据库中（生成时已扣除信用）'
-                  : language === 'ja'
-                  ? '保存時、レターは証拠保管庫に保存されます（生成時にクレジットは既に差し引かれています）'
-                  : language === 'ko'
-                  ? '저장 시 편지가 증거 보관소에 저장됩니다（생성 시 크레딧이 이미 차감됨）'
-                  : language === 'ru'
-                  ? 'При сохранении письмо будет сохранено в хранилище доказательств (кредит уже списан при генерации)'
-                  : 'On save, the letter will be stored in Evidence Vault (credit already deducted on generation)'}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Save Button */}
+          <div className="sticky bottom-20 md:bottom-6 left-0 right-0 px-4 py-4" style={{
+            backgroundColor: colors.bg,
+            borderTop: `1px solid ${colors.borderColor}`,
+            boxShadow: isDarkMode ? '0 -4px 12px rgba(0,0,0,0.3)' : '0 -4px 12px rgba(0,0,0,0.08)'
+          }}>
+            <div className="max-w-4xl mx-auto flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  haptic.light();
+                  handleCancelReview();
+                }}
+                disabled={saving}
+                className="flex-1 btn-interaction"
+                style={{
+                  backgroundColor: colors.cardBg,
+                  borderColor: colors.borderColor,
+                  color: colors.textPrimary,
+                }}
+              >
+                <X className="w-4 h-4 mr-2" />
+                {strings.cancel}
+              </Button>
+              <Button
+                onClick={() => {
+                  haptic.medium();
+                  handleSaveAfterReview();
+                }}
+                disabled={saving}
+                className="flex-1 btn-interaction"
+                style={{ backgroundColor: '#10B981', color: '#FFFFFF' }}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {strings.saving}
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    {strings.saveLetter}
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-center mt-2 max-w-4xl mx-auto" style={{ color: colors.textSecondary }}>
+              {language === 'th'
+                ? 'เครดิตถูกหักแล้ว - จดหมายจะบันทึกในคลังหลักฐาน'
+                : 'Credit deducted - letter will be saved to Evidence Vault'}
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -1225,11 +1260,11 @@ function TemplateFormContent() {
                   )}
                 </Button>
               </div>
-              <div className="text-xs text-center pt-2" style={{ color: colors.textSecondary }}>
-                <p>{language === 'th' 
+              <p className="text-xs text-center pt-3" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
                   ? '💳 1 เครดิตจะถูกหักเมื่อสร้าง (ครอบคลุมทุกภาษา)'
-                  : '💳 1 credit will be deducted on generation (covers all languages)'}</p>
-              </div>
+                  : '💳 1 credit deducted on generation (covers all languages)'}
+              </p>
             </form>
           </CardContent>
         </Card>

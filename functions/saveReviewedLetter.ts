@@ -83,16 +83,63 @@ Deno.serve(async (req) => {
       ru: 'Русский (Russian)'
     };
 
+    /**
+     * Convert LetterDocument to HTML
+     */
+    function letterDocToHTML(letterDoc) {
+      if (!letterDoc || !letterDoc.blocks) {
+        return '<p>No content</p>';
+      }
+
+      let html = '';
+      
+      letterDoc.blocks.forEach(block => {
+        if (block.type === 'date') {
+          html += `<div style="text-align: right; margin-bottom: 30px; font-size: 10pt; color: #666;">${block.value}</div>`;
+        } else if (block.type === 'recipient') {
+          html += '<div style="margin-bottom: 25px;">';
+          block.lines?.forEach(line => {
+            if (line) html += `${line}<br/>`;
+          });
+          html += '</div>';
+        } else if (block.type === 'subject') {
+          html += `<div style="font-weight: bold; margin-bottom: 25px;">${block.value}</div>`;
+        } else if (block.type === 'paragraph') {
+          html += `<p style="margin-bottom: 20px; text-align: justify; line-height: 1.7;">${block.value}</p>`;
+        } else if (block.type === 'bullets') {
+          html += '<ul style="margin: 20px 0; padding-left: 20px;">';
+          block.items?.forEach(item => {
+            if (item) html += `<li style="margin-bottom: 15px; line-height: 1.7;">${item}</li>`;
+          });
+          html += '</ul>';
+        } else if (block.type === 'closing') {
+          html += `<p style="margin-top: 25px; margin-bottom: 20px;">${block.value}</p>`;
+        } else if (block.type === 'signature') {
+          html += '<div style="margin-top: 40px; line-height: 1.4;">';
+          block.lines?.forEach(line => {
+            if (line) html += `${line}<br/>`;
+          });
+          html += '</div>';
+        }
+      });
+
+      return html;
+    }
+
     // Build combined HTML with all languages
     let languageSections = '';
     languagePack.allLanguages.forEach(langCode => {
-      const letterContent = reviewedLetters[langCode] || reviewedLetters['en'] || '';
-      const processedContent = replacePlaceholders(letterContent);
+      const letterData = reviewedLetters[langCode];
+      
+      // Check if it's a LetterDocument structure or raw text
+      const letterHTML = letterData?.blocks 
+        ? letterDocToHTML(letterData)
+        : `<div class="content">${replacePlaceholders(letterData || '')}</div>`;
       
       languageSections += `
   <div class="section">
     <div class="section-title">📄 ${languageLabels[langCode] || langCode.toUpperCase()}</div>
-    <div class="content">${processedContent}</div>
+    ${letterHTML}
   </div>`;
     });
 
