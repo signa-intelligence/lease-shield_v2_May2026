@@ -319,7 +319,12 @@ function ScanPreviewContent() {
           variant="ghost"
           onClick={() => {
             haptic.light();
-            navigate(createPageUrl("UploadScan"));
+            // Check if we can go back in history, otherwise go to UploadScan
+            if (window.history.length > 1) {
+              navigate(-1);
+            } else {
+              navigate(createPageUrl("UploadScan"));
+            }
           }}
           className="mb-6 btn-interaction"
         >
@@ -646,7 +651,8 @@ function ScanPreviewContent() {
               <button
                 onClick={() => {
                   haptic.medium();
-                  navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`);
+                  // Use push navigation instead of replace
+                  navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`, { replace: false });
                 }}
                 className="btn-interaction"
                 style={{

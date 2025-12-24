@@ -171,7 +171,7 @@ function UploadScanPageContent() {
       uploadArea: "Drop your lease files here or click to browse",
       supportedFormats: "PDF, PNG, or JPG only. Max 10MB per file.",
       selectFiles: "Select Files",
-      uploadAll: "Upload & Analyze",
+      uploadAll: "Upload & Analyse",
       uploading: "Uploading files...",
       analyzingTitle: "Analysing Your Lease",
       analyzingDesc: "Reviewing your lease agreement. This may take up to 30 seconds...",
@@ -1810,70 +1810,60 @@ function UploadScanPageContent() {
           </Dialog>
         )}
 
-        {/* Lease Details Modal - FIXED FOR MOBILE */}
+        {/* Lease Details Modal - REDESIGNED CLEAN & STRUCTURED */}
         {selectedLease && (
           <Dialog open={!!selectedLease} onOpenChange={() => setSelectedLease(null)}>
             <DialogContent
-              className="max-w-4xl w-[95vw] h-[90vh] max-h-[90vh] flex flex-col p-0"
+              className="max-w-2xl w-[95vw] max-h-[90vh] flex flex-col p-0"
               style={{ backgroundColor: colors.cardBg }}
             >
-              <DialogHeader className="px-4 py-4 border-b flex-shrink-0" style={{
+              <DialogHeader className="px-6 py-4 border-b flex-shrink-0 flex flex-row items-center justify-between" style={{
                 backgroundColor: colors.cardBg,
                 borderBottom: `1px solid ${colors.borderColor}`
               }}>
-                <DialogTitle className="text-lg" style={{ color: colors.textPrimary }}>{strings.leaseDetails}</DialogTitle>
+                <DialogTitle className="text-xl font-bold" style={{ color: colors.textPrimary }}>{strings.leaseDetails}</DialogTitle>
               </DialogHeader>
 
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+              <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
                 {/* Basic Info */}
-                <Card className="border-none" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base" style={{ color: colors.textPrimary }}>
-                      <Home className="w-4 h-4 text-ls-forest" />
-                      {strings.basicInfo}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-1 gap-4 text-sm">
-                    <div>
+                <div className="space-y-3">
+                  <h3 className="font-bold text-sm" style={{ color: colors.textSecondary }}>{strings.basicInfo}</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                       <p className="font-semibold mb-1 text-xs" style={{ color: colors.textSecondary }}>{strings.propertyAddress}</p>
-                      <p className="break-words" style={{ color: colors.textPrimary }}>{selectedLease.property_address || 'N/A'}</p>
+                      <p className="break-words text-sm" style={{ color: colors.textPrimary }}>{selectedLease.property_address || 'N/A'}</p>
                     </div>
                     {selectedLease.rent_amount > 0 && (
-                      <div>
+                      <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                         <p className="font-semibold mb-1 text-xs" style={{ color: colors.textSecondary }}>{strings.monthlyRent}</p>
-                        <p className="flex items-center" style={{ color: colors.textPrimary }}>
+                        <p className="flex items-center text-sm" style={{ color: colors.textPrimary }}>
                           <DollarSign className="w-4 h-4 mr-1"/>฿{selectedLease.rent_amount.toLocaleString()}
                         </p>
                       </div>
                     )}
                     {selectedLease.deposit_amount > 0 && (
-                      <div>
+                      <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                         <p className="font-semibold mb-1 text-xs" style={{ color: colors.textSecondary }}>{strings.securityDeposit}</p>
-                        <p className="flex items-center" style={{ color: colors.textPrimary }}>
+                        <p className="flex items-center text-sm" style={{ color: colors.textPrimary }}>
                           <DollarSign className="w-4 h-4 mr-1"/>฿{selectedLease.deposit_amount.toLocaleString()}
                         </p>
                       </div>
                     )}
                     {(selectedLease.start_date || selectedLease.end_date) && (
-                      <div>
+                      <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                         <p className="font-semibold mb-1 text-xs" style={{ color: colors.textSecondary }}>{strings.leasePeriod}</p>
-                        <p className="break-words" style={{ color: colors.textPrimary }}>
+                        <p className="break-words text-sm" style={{ color: colors.textPrimary }}>
                           {selectedLease.start_date ? format(new Date(selectedLease.start_date), 'MMM d, yyyy') : 'N/A'} {strings.to} {selectedLease.end_date ? format(new Date(selectedLease.end_date), 'MMM d, yyyy') : 'N/A'}
                         </p>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
                 {/* Notice Settings */}
-                <Card className="border-none" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base" style={{ color: colors.textPrimary }}>
-                      <Bell className="w-4 h-4 text-ls-forest" />
-                      {strings.noticeSettings}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <h3 className="font-bold text-sm" style={{ color: colors.textSecondary }}>{strings.noticeSettings}</h3>
+                  <div className="space-y-4">
                     <div className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: colors.cardBg }}>
                       <div className="flex-1 pr-3">
                         <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{strings.noticeAlertsEnabled}</p>
@@ -1949,123 +1939,166 @@ function UploadScanPageContent() {
                         </div>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
-                {/* Risk Analysis - IMPROVED BUTTON VISIBILITY */}
-                {selectedScan && (
-                  <Card className="border-none" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2 text-base" style={{ color: colors.textPrimary }}>
-                        <Shield className="w-4 h-4 text-ls-forest" />
-                        {strings.riskAnalysis}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex flex-col gap-4">
-                        <div>
-                          <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.riskScore}</p>
-                          <div className="flex items-center gap-2">
-                            <span className="text-3xl font-bold" style={{ color: getRiskColor(selectedScan.risk_score) }}>
-                              {selectedScan.risk_score}
-                            </span>
-                            <span className="text-lg" style={{ color: colors.textSecondary }}>/100</span>
+                {/* Risk Summary Section */}
+                {selectedScan && (() => {
+                  const riskLevel = selectedScan.risk_score >= 70 
+                    ? { level: 'high', label: language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий' : 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' }
+                    : selectedScan.risk_score >= 40
+                      ? { level: 'medium', label: language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний' : 'MEDIUM RISK', color: '#F59E0B', bg: '#FEF3C7' }
+                      : { level: 'low', label: language === 'th' ? 'ความเสี่ยงต่ำ' : language === 'ru' ? 'Низкий' : 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
+                  
+                  return (
+                    <div className="space-y-4">
+                      <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>{strings.riskAnalysis}</h3>
+                      
+                      <div className="p-5 rounded-xl border-2" style={{
+                        backgroundColor: riskLevel.bg,
+                        borderColor: riskLevel.color
+                      }}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="text-xs font-semibold mb-1 opacity-80" style={{ color: riskLevel.color }}>{strings.riskScore}</p>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-4xl font-bold" style={{ color: riskLevel.color }}>
+                                {selectedScan.risk_score}
+                              </span>
+                              <span className="text-xl font-semibold" style={{ color: riskLevel.color }}>/100</span>
+                            </div>
                           </div>
+                          <Badge className="text-sm font-bold px-3 py-1" style={{
+                            backgroundColor: riskLevel.color,
+                            color: '#FFFFFF'
+                          }}>
+                            {riskLevel.label}
+                          </Badge>
                         </div>
-                        
-                        {/* ✅ IMPROVED: More visible, prominent buttons */}
-                        <div className="flex flex-col gap-3">
-                          <Button
-                            onClick={() => {
-                              setSelectedLease(null);
-                              navigate(createPageUrl("ScanPreview") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
-                            }}
-                            className="w-full justify-center py-3 text-sm font-bold"
-                            style={{
-                              backgroundColor: isDarkMode ? '#4B5563' : '#F3F4F6',
-                              color: colors.textPrimary,
-                              border: `2px solid ${colors.borderColor}`
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = isDarkMode ? '#6B7280' : '#E5E7EB';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = isDarkMode ? '#4B5563' : '#F3F4F6';
-                            }}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            {strings.viewScanResults}
-                          </Button>
-                          
-                          <Button
-                            onClick={() => {
-                              setSelectedLease(null);
-                              navigate(createPageUrl("ReportFull") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
-                            }}
-                            className="w-full justify-center py-3 text-sm font-bold"
-                            style={{
-                              backgroundColor: '#0C3B2E',
-                              color: '#FFFFFF',
-                              border: 'none'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#0a2f25';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = '#0C3B2E';
-                            }}
-                          >
-                            <FileText className="w-4 h-4 mr-2" />
-                            {strings.viewFullReport}
-                          </Button>
-                        </div>
+                        {selectedScan.summary && (
+                          <p className="text-xs leading-relaxed mt-3 pt-3 border-t" style={{
+                            color: riskLevel.color,
+                            borderTopColor: `${riskLevel.color}50`
+                          }}>
+                            {selectedScan.summary}
+                          </p>
+                        )}
                       </div>
-                      {selectedScan.summary && (
-                        <p className="text-sm p-3 rounded-lg break-words" style={{
-                          backgroundColor: colors.cardBg,
-                          color: colors.textSecondary
-                        }}>
-                          {selectedScan.summary}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
 
-                {/* Actions */}
-                <div className="flex flex-col gap-2 pt-4 border-t" style={{ borderColor: colors.borderColor }}>
-                  {selectedLease.status === 'scanned' && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        haptic.medium();
-                        setAddingPagesToLease(selectedLease);
-                        setSelectedLease(null);
-                      }}
-                      className="w-full justify-start"
-                      style={{ borderColor: '#0C3B2E', color: '#0C3B2E' }}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {language === 'th' ? 'เพิ่มหน้าเข้าสัญญานี้' : language === 'ru' ? 'Добавить страницы' : 'Add pages to this lease'}
-                    </Button>
-                  )}
-                  {selectedLease.file_url && (
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open(selectedLease.file_url, '_blank')}
-                      className="w-full justify-start"
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      {strings.viewLease}
-                    </Button>
-                  )}
+                      {/* Primary Action: View Full Report */}
+                      <Button
+                        onClick={() => {
+                          haptic.medium();
+                          setSelectedLease(null);
+                          navigate(createPageUrl("ReportFull") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
+                        }}
+                        className="w-full py-4 text-base font-bold"
+                        style={{
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          minHeight: '56px'
+                        }}
+                      >
+                        <FileText className="w-5 h-5 mr-2" />
+                        {strings.viewFullReport}
+                      </Button>
+
+                      {/* Secondary Actions */}
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            haptic.light();
+                            setSelectedLease(null);
+                            navigate(createPageUrl("ScanPreview") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
+                          }}
+                          className="w-full justify-center py-3"
+                          style={{
+                            borderColor: colors.borderColor,
+                            color: colors.textPrimary
+                          }}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          {strings.viewScanResults}
+                        </Button>
+
+                        {selectedLease.file_url && (
+                          <Button
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              haptic.light();
+                              
+                              // Handle multi-page documents
+                              if (selectedLease.file_urls && selectedLease.file_urls.length > 1) {
+                                const urls = selectedLease.file_urls;
+                                urls.forEach((url, idx) => {
+                                  setTimeout(() => {
+                                    window.open(url, '_blank');
+                                  }, idx * 300);
+                                });
+                              } else {
+                                window.open(selectedLease.file_url, '_blank');
+                              }
+                            }}
+                            className="w-full justify-center py-3"
+                            style={{
+                              borderColor: colors.borderColor,
+                              color: colors.textPrimary
+                            }}
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            {strings.viewLease}
+                            {selectedLease.file_urls && selectedLease.file_urls.length > 1 && (
+                              <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
+                                {selectedLease.file_urls.length} {language === 'th' ? 'หน้า' : language === 'ru' ? 'стр.' : 'pages'}
+                              </Badge>
+                            )}
+                          </Button>
+                        )}
+
+                        {selectedLease.status === 'scanned' && (
+                          <Button
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              haptic.medium();
+                              setAddingPagesToLease(selectedLease);
+                              setSelectedLease(null);
+                            }}
+                            className="w-full justify-center py-2 text-sm"
+                            style={{
+                              borderColor: '#0C3B2E',
+                              color: '#0C3B2E'
+                            }}
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            {language === 'th' ? 'เพิ่มหน้า' : language === 'ru' ? 'Добавить страницы' : 'Add pages'}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Destructive Action */}
+                <div className="pt-4 border-t" style={{ borderColor: colors.borderColor }}>
                   <Button
                     variant="outline"
-                    onClick={(e) => handleDeleteLease(selectedLease.id, e)}
-                    className="w-full justify-start text-red-600 hover:text-red-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      haptic.heavy();
+                      handleDeleteLease(selectedLease.id, e);
+                    }}
+                    className="w-full justify-center py-3 text-sm font-semibold border-red-600 text-red-600 hover:bg-red-50"
+                    style={isDarkMode ? { 
+                      backgroundColor: '#3A2626',
+                      borderColor: '#EF4444',
+                      color: '#FCA5A5'
+                    } : {}}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {language === 'th' ? 'ลบ' : language === 'ru' ? 'Удалить' : 'Delete'}
+                    {language === 'th' ? 'ลบสัญญาเช่านี้' : language === 'ru' ? 'Удалить договор' : 'Delete This Lease'}
                   </Button>
                 </div>
               </div>
@@ -2081,8 +2114,8 @@ function UploadScanPageContent() {
           >
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl" style={{ color: colors.textPrimary }}>
-                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                {language === 'th' ? 'วิเคราะห์เสร็จสิ้น' : language === 'ru' ? 'Анализ завершен' : 'Lease Analyzed'}
+              <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+              {language === 'th' ? 'วิเคราะห์เสร็จสิ้น' : language === 'ru' ? 'Анализ завершен' : 'Lease Analysed'}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -2091,7 +2124,7 @@ function UploadScanPageContent() {
                   ? 'สัญญาเช่าของคุณได้รับการวิเคราะห์เรียบร้อยแล้ว'
                   : language === 'ru'
                     ? 'Ваш договор аренды успешно проанализирован'
-                    : 'Your lease has been successfully analyzed'}
+                    : 'Your lease has been successfully analysed'}
               </p>
               <div className="flex flex-col gap-2">
                 <Button
@@ -2567,10 +2600,10 @@ function UploadScanPageContent() {
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
                           {lease.status === 'scanned' && (
-                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              {language === 'th' ? 'วิเคราะห์แล้ว' : language === 'ru' ? 'Проанализировано' : 'Analyzed'}
-                            </Badge>
+                           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                             <CheckCircle2 className="w-3 h-3 mr-1" />
+                             {language === 'th' ? 'วิเคราะห์แล้ว' : language === 'ru' ? 'Проанализировано' : 'Analysed'}
+                           </Badge>
                           )}
                           {lease.status === 'uploaded' && (
                             <>
