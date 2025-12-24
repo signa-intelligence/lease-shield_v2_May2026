@@ -7,7 +7,10 @@ import { AlertCircle } from "lucide-react";
 
 export default function Templates() {
   const navigate = useNavigate();
-
+  const urlParams = new URLSearchParams(window.location.search);
+  const leaseIdParam = urlParams.get('lease_id');
+  const scanIdParam = urlParams.get('scan_id');
+  const riskScoreParam = urlParams.get('risk_score');
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -23,6 +26,18 @@ export default function Templates() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userCredits = user?.letter_credits || 0;
+
+  // Scroll to pre-signing category if context params provided
+  React.useEffect(() => {
+    if (leaseIdParam && document.querySelector('[data-category="pre_signing"]')) {
+      setTimeout(() => {
+        document.querySelector('[data-category="pre_signing"]')?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 300);
+    }
+  }, [leaseIdParam, allTemplates]);
 
   // Use templates directly from DB (already filtered by status=active)
   const displayTemplates = allTemplates.map(t => ({
@@ -239,9 +254,17 @@ export default function Templates() {
 
             {/* Pre-Signing */}
             {preSigningTemplates.length > 0 && (
-              <div className="mb-12">
+              <div className="mb-12" data-category="pre_signing">
                 <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
                   {(categoryLabels[language] || categoryLabels.en).pre_signing}
+                  {leaseIdParam && (
+                    <span className="ml-2 text-sm font-normal px-2 py-1 rounded" style={{
+                      backgroundColor: '#FEF3C7',
+                      color: '#92400E'
+                    }}>
+                      {language === 'th' ? '← แนะนำจากการสแกน' : '← Recommended from scan'}
+                    </span>
+                  )}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {preSigningTemplates.map(t => renderTemplateCard(t, 'bg-gradient-to-r from-amber-400 to-orange-600'))}
