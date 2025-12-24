@@ -1049,109 +1049,132 @@ function TemplateFormContent() {
               </div>
             )}
 
-            <form onSubmit={handleGenerate} className="space-y-4">
-              <MobileFormInput
-                label={language === 'th' ? 'ผู้รับจดหมาย *' : language === 'zh' ? '收件人 *' : language === 'ja' ? '受取人 *' : language === 'ko' ? '수신자 *' : language === 'ru' ? 'Получатель *' : 'Letter Recipient *'}
-                type="select"
-                value={formData.recipientType}
-                onChange={(e) => handleInputChange('recipientType', e.target.value)}
-                colors={colors}
-                disabled={generating}
-                options={[
-                  { value: 'tenant', label: language === 'th' ? 'ผู้เช่า (ตัวเอง)' : language === 'zh' ? '租户（本人）' : language === 'ja' ? '借主（自分）' : language === 'ko' ? '임차인 (본인)' : language === 'ru' ? 'Арендатор (себе)' : 'Tenant (Myself)' },
-                  { value: 'landlord', label: language === 'th' ? 'เจ้าของบ้าน' : language === 'zh' ? '房东' : language === 'ja' ? '家主' : language === 'ko' ? '집주인' : language === 'ru' ? 'Арендодатель' : 'Landlord' },
-                  { value: 'juristic', label: language === 'th' ? 'นิติบุคคล' : language === 'zh' ? '法人' : language === 'ja' ? '法人' : language === 'ko' ? '법인' : language === 'ru' ? 'Юридическое лицо' : 'Juristic Office' }
-                ]}
-              />
+            <form onSubmit={handleGenerate} className="space-y-6">
+              {/* SECTION 1: PARTIES */}
+              <div>
+                <h3 className="text-sm font-bold mb-4 pb-2 border-b" style={{ color: colors.textPrimary, borderColor: colors.borderColor }}>
+                  {language === 'th' ? 'คู่สัญญา' : 'Parties'}
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <MobileFormInput
+                    label={`${strings.yourName} *`}
+                    value={formData.tenant_name}
+                    onChange={(e) => handleInputChange('tenant_name', e.target.value)}
+                    placeholder="John Smith"
+                    required
+                    colors={colors}
+                    disabled={generating}
+                  />
+                  
+                  <MobileFormInput
+                    label={`${strings.landlordName} *`}
+                    value={formData.landlord_name}
+                    onChange={(e) => handleInputChange('landlord_name', e.target.value)}
+                    placeholder="Jane Doe"
+                    required
+                    colors={colors}
+                    disabled={generating}
+                  />
+                </div>
 
-              <MobileFormInput
-                label={`${strings.yourName} *`}
-                value={formData.tenant_name}
-                onChange={(e) => handleInputChange('tenant_name', e.target.value)}
-                placeholder={strings.yourNamePlaceholder}
-                required
-                colors={colors}
-                disabled={generating}
-              />
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <MobileFormInput
+                    label={language === 'th' ? 'ที่อยู่ผู้เช่า *' : 'Tenant Address *'}
+                    value={formData.tenant_address}
+                    onChange={(e) => handleInputChange('tenant_address', e.target.value)}
+                    placeholder="123 Sukhumvit Rd, Bangkok 10110"
+                    multiline
+                    rows={3}
+                    colors={colors}
+                    disabled={generating}
+                    required
+                  />
 
-              <MobileFormInput
-                label={`${strings.landlordName} *`}
-                value={formData.landlord_name}
-                onChange={(e) => handleInputChange('landlord_name', e.target.value)}
-                placeholder={strings.landlordNamePlaceholder}
-                required
-                colors={colors}
-                disabled={generating}
-              />
+                  <MobileFormInput
+                    label={language === 'th' ? 'ที่อยู่เจ้าของบ้าน' : "Landlord Address"}
+                    value={formData.landlord_address}
+                    onChange={(e) => handleInputChange('landlord_address', e.target.value)}
+                    placeholder="456 Silom Rd, Bangkok 10500"
+                    multiline
+                    rows={3}
+                    colors={colors}
+                    disabled={generating}
+                  />
+                </div>
 
-              <MobileFormInput
-                label={language === 'th' ? 'ที่อยู่ผู้เช่า' : 'Your Address'}
-                value={formData.tenant_address}
-                onChange={(e) => handleInputChange('tenant_address', e.target.value)}
-                placeholder={language === 'th' ? '456 ถนนสุขุมวิท กรุงเทพฯ' : '456 Sukhumvit Rd, Bangkok'}
-                colors={colors}
-                disabled={generating}
-              />
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <MobileFormInput
+                    label={language === 'th' ? 'อีเมล' : 'Email'}
+                    type="email"
+                    value={formData.tenant_email || ''}
+                    onChange={(e) => handleInputChange('tenant_email', e.target.value)}
+                    placeholder="tenant@example.com"
+                    colors={colors}
+                    disabled={generating}
+                  />
 
-              <MobileFormInput
-                label={language === 'th' ? 'ที่อยู่เจ้าของบ้าน' : "Landlord's Address"}
-                value={formData.landlord_address}
-                onChange={(e) => handleInputChange('landlord_address', e.target.value)}
-                placeholder={language === 'th' ? '789 ถนนพระราม 4 กรุงเทพฯ' : '789 Rama IV Rd, Bangkok'}
-                colors={colors}
-                disabled={generating}
-              />
-
-              <MobileFormInput
-                label={strings.propertyAddress}
-                value={formData.property_address}
-                onChange={(e) => handleInputChange('property_address', e.target.value)}
-                placeholder={strings.propertyAddressPlaceholder}
-                colors={colors}
-                disabled={generating}
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <MobileFormInput
-                  label={language === 'th' ? 'ชื่อโครงการ/อาคาร' : 'Property/Building Name'}
-                  value={formData.property_name}
-                  onChange={(e) => handleInputChange('property_name', e.target.value)}
-                  placeholder={language === 'th' ? 'เดอะ เรสซิเดนซ์' : 'The Residence'}
-                  colors={colors}
-                  disabled={generating}
-                />
-
-                <MobileFormInput
-                  label={language === 'th' ? 'หมายเลขห้อง' : 'Unit Number'}
-                  value={formData.unit_number}
-                  onChange={(e) => handleInputChange('unit_number', e.target.value)}
-                  placeholder="12A"
-                  colors={colors}
-                  disabled={generating}
-                />
+                  <MobileFormInput
+                    label={language === 'th' ? 'เบอร์โทร' : 'Phone'}
+                    type="tel"
+                    value={formData.tenant_phone || ''}
+                    onChange={(e) => handleInputChange('tenant_phone', e.target.value)}
+                    placeholder="+66 2 123 4567"
+                    colors={colors}
+                    disabled={generating}
+                  />
+                </div>
               </div>
 
-              {['notice_intent_to_vacate'].includes(formData.subject) && (
-                <MobileFormInput
-                  label={language === 'th' ? 'จำนวนวันแจ้งล่วงหน้า' : 'Notice Period (days)'}
-                  type="number"
-                  value={formData.notice_period_days}
-                  onChange={(e) => handleInputChange('notice_period_days', e.target.value)}
-                  placeholder="30"
-                  colors={colors}
-                  disabled={generating}
-                />
-              )}
+              {/* SECTION 2: PROPERTY */}
+              <div>
+                <h3 className="text-sm font-bold mb-4 pb-2 border-b" style={{ color: colors.textPrimary, borderColor: colors.borderColor }}>
+                  {language === 'th' ? 'ทรัพย์สิน' : 'Property'}
+                </h3>
+                <div className="space-y-4">
+                  <MobileFormInput
+                    label={`${strings.propertyAddress} *`}
+                    value={formData.property_address}
+                    onChange={(e) => handleInputChange('property_address', e.target.value)}
+                    placeholder="789 Rama IV Rd, Khlong Toei, Bangkok 10110"
+                    multiline
+                    rows={3}
+                    colors={colors}
+                    disabled={generating}
+                    required
+                  />
 
-              <MobileFormInput
-                label={strings.contractRef}
-                value={formData.contract_ref}
-                onChange={(e) => handleInputChange('contract_ref', e.target.value)}
-                placeholder={strings.contractRefPlaceholder}
-                colors={colors}
-                disabled={generating}
-              />
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <MobileFormInput
+                      label={language === 'th' ? 'ชื่อโครงการ/อาคาร' : 'Building / Project Name'}
+                      value={formData.property_name}
+                      onChange={(e) => handleInputChange('property_name', e.target.value)}
+                      placeholder="The Residence"
+                      colors={colors}
+                      disabled={generating}
+                    />
 
+                    <MobileFormInput
+                      label={language === 'th' ? 'หมายเลขห้อง' : 'Unit Number'}
+                      value={formData.unit_number}
+                      onChange={(e) => handleInputChange('unit_number', e.target.value)}
+                      placeholder="12A"
+                      colors={colors}
+                      disabled={generating}
+                    />
+                  </div>
+
+                  <MobileFormInput
+                    label={strings.contractRef}
+                    value={formData.contract_ref}
+                    onChange={(e) => handleInputChange('contract_ref', e.target.value)}
+                    placeholder="Lease dated 15 January 2024"
+                    colors={colors}
+                    disabled={generating}
+                  />
+                </div>
+              </div>
+
+              {/* Conditional fields for specific templates */}
               {['deposit', 'deductions'].includes(formData.subject) && (
                 <MobileFormInput
                   label={strings.depositAmount}
@@ -1164,85 +1187,12 @@ function TemplateFormContent() {
                 />
               )}
 
-              {formData.subject === 'condition_dispute' && (
-                <>
-                  <MobileFormInput
-                    label={strings.exampleItem1}
-                    value={formData.example_item_1}
-                    onChange={(e) => handleInputChange('example_item_1', e.target.value)}
-                    placeholder={strings.exampleItem1Placeholder}
-                    colors={colors}
-                    disabled={generating}
-                  />
-                  <MobileFormInput
-                    label={strings.exampleItem2}
-                    value={formData.example_item_2}
-                    onChange={(e) => handleInputChange('example_item_2', e.target.value)}
-                    placeholder={strings.exampleItem2Placeholder}
-                    colors={colors}
-                    disabled={generating}
-                  />
-                  <MobileFormInput
-                    label={strings.exampleItem3}
-                    value={formData.example_item_3}
-                    onChange={(e) => handleInputChange('example_item_3', e.target.value)}
-                    placeholder={strings.exampleItem3Placeholder}
-                    colors={colors}
-                    disabled={generating}
-                  />
-                </>
-              )}
-
-              {formData.subject === 'non_compliance' && (
-                <MobileFormInput
-                  label={strings.breachSummary}
-                  value={formData.breach_summary}
-                  onChange={(e) => handleInputChange('breach_summary', e.target.value)}
-                  placeholder={strings.breachSummaryPlaceholder}
-                  multiline
-                  rows={4}
-                  colors={colors}
-                  disabled={generating}
-                />
-              )}
-
-              {formData.subject === 'settlement' && (
-                <>
-                  <MobileFormInput
-                    label={strings.settlementAmount}
-                    type="number"
-                    value={formData.settlement_amount}
-                    onChange={(e) => handleInputChange('settlement_amount', e.target.value)}
-                    placeholder={strings.settlementAmountPlaceholder}
-                    colors={colors}
-                    disabled={generating}
-                  />
-                  <MobileFormInput
-                    label={strings.settlementDate}
-                    type="date"
-                    value={formData.settlement_date}
-                    onChange={(e) => handleInputChange('settlement_date', e.target.value)}
-                    colors={colors}
-                    disabled={generating}
-                  />
-                </>
-              )}
-
-              {formData.subject === 'general_concerns' && (
-                <MobileFormInput
-                  label={strings.concernsList}
-                  value={formData.concerns_list}
-                  onChange={(e) => handleInputChange('concerns_list', e.target.value)}
-                  placeholder={strings.concernsListPlaceholder}
-                  multiline
-                  rows={4}
-                  colors={colors}
-                  disabled={generating}
-                />
-              )}
-
-              {/* Language Options */}
-              <Card className="border-2" style={{ borderColor: '#C7A338', backgroundColor: colors.inputBg }}>
+              {/* SECTION 3: LANGUAGE OPTIONS */}
+              <div>
+                <h3 className="text-sm font-bold mb-4 pb-2 border-b" style={{ color: colors.textPrimary, borderColor: colors.borderColor }}>
+                  {language === 'th' ? 'ตัวเลือกภาษา' : 'Language Options'}
+                </h3>
+                <Card className="border-2" style={{ borderColor: '#C7A338', backgroundColor: colors.fieldBg }}>
                 <CardContent className="p-4 space-y-3">
                   <div className="flex items-center gap-2 mb-2">
                     <Globe className="w-5 h-5 text-ls-gold" />
@@ -1357,9 +1307,11 @@ function TemplateFormContent() {
                     </>
                   )}
                 </CardContent>
-              </Card>
+                </Card>
+              </div>
 
-              <div className="flex gap-3 pt-4">
+              {/* ACTION BUTTONS */}
+              <div className="flex gap-3 pt-2">
                 <Button
                   type="button"
                   variant="outline"

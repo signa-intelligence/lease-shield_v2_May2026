@@ -278,15 +278,22 @@ function LetterReviewContent() {
                   setEditedBody(e.target.value);
                   setHasEdits(true);
                 }}
-                rows={20}
-                className="font-mono text-sm"
+                rows={24}
+                className="text-sm"
                 style={{
                   backgroundColor: colors.inputBg,
                   borderColor: colors.borderColor,
                   color: colors.textPrimary,
-                  lineHeight: '1.6'
+                  lineHeight: '1.8',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  whiteSpace: 'pre-wrap'
                 }}
               />
+              <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
+                  ? '💡 จดหมายควรมีโครงสร้างที่สมบูรณ์: วันที่, ผู้รับจดหมาย, หัวข้อ, เนื้อหา, และลายเซ็น'
+                  : '💡 Letters should include: Date, Recipient, Subject, Body with bullet points, and Signature'}
+              </p>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -315,18 +322,18 @@ function LetterReviewContent() {
                 <Button
                   onClick={handleDownload}
                   disabled={downloading}
-                  variant="outline"
-                  style={{ borderColor: '#0C3B2E', color: '#0C3B2E' }}
+                  className="btn-interaction"
+                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                 >
                   {downloading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {strings.downloadingPDF}
+                      {language === 'th' ? 'กำลังสร้าง...' : 'Generating...'}
                     </>
                   ) : (
                     <>
                       <Download className="w-4 h-4 mr-2" />
-                      {strings.download}
+                      {language === 'th' ? 'ดาวน์โหลด DOCX' : 'Download DOCX'}
                     </>
                   )}
                 </Button>
@@ -340,6 +347,27 @@ function LetterReviewContent() {
                   {strings.copyToClipboard}
                 </Button>
               </div>
+
+              {hasEdits && (
+                <Button
+                  onClick={handleSave}
+                  disabled={updateLetterMutation.isPending}
+                  className="w-full btn-interaction"
+                  style={{ backgroundColor: '#10B981', color: '#FFFFFF' }}
+                >
+                  {updateLetterMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {language === 'th' ? 'กำลังบันทึก...' : 'Saving...'}
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {strings.saveChanges}
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
