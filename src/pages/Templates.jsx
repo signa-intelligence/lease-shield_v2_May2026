@@ -27,17 +27,17 @@ export default function Templates() {
   const isDarkMode = user?.theme === 'dark';
   const userCredits = user?.letter_credits || 0;
 
-  // Scroll to pre-signing category if context params provided
+  // Auto-scroll to pre-signing if coming from scan
   React.useEffect(() => {
-    if (leaseIdParam && document.querySelector('[data-category="pre_signing"]')) {
+    if (leaseIdParam && preSigningTemplates.length > 0) {
       setTimeout(() => {
-        document.querySelector('[data-category="pre_signing"]')?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
-        });
-      }, 300);
+        const section = document.getElementById('pre-signing-section');
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
     }
-  }, [leaseIdParam, allTemplates]);
+  }, [leaseIdParam, preSigningTemplates.length]);
 
   // Use templates directly from DB (already filtered by status=active)
   const displayTemplates = allTemplates.map(t => ({
@@ -119,7 +119,12 @@ export default function Templates() {
     return (
       <div
         key={template.id}
-        onClick={() => navigate(createPageUrl("TemplateForm") + `?subject=${template.template_key}`)}
+        onClick={() => {
+          const params = new URLSearchParams({ subject: template.template_key });
+          if (leaseIdParam) params.append('lease_id', leaseIdParam);
+          if (scanIdParam) params.append('scan_id', scanIdParam);
+          navigate(createPageUrl("TemplateForm") + `?${params.toString()}`);
+        }}
         className="rounded-xl shadow-md hover:shadow-xl transition-all p-6 cursor-pointer"
         style={{ 
           backgroundColor: colors.cardBg, 
@@ -252,17 +257,17 @@ export default function Templates() {
               </div>
             )}
 
-            {/* Pre-Signing */}
+            {/* Pre-Signing - Auto-scroll if coming from scan */}
             {preSigningTemplates.length > 0 && (
-              <div className="mb-12" data-category="pre_signing">
+              <div className="mb-12" id="pre-signing-section">
                 <h2 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
                   {(categoryLabels[language] || categoryLabels.en).pre_signing}
                   {leaseIdParam && (
-                    <span className="ml-2 text-sm font-normal px-2 py-1 rounded" style={{
-                      backgroundColor: '#FEF3C7',
-                      color: '#92400E'
+                    <span className="ml-3 text-sm font-normal px-3 py-1 rounded-full" style={{
+                      backgroundColor: isDarkMode ? '#2A2D30' : '#FEF3C7',
+                      color: isDarkMode ? '#C7A338' : '#92400E'
                     }}>
-                      {language === 'th' ? '← แนะนำจากการสแกน' : '← Recommended from scan'}
+                      {language === 'th' ? 'แนะนำจากการสแกน' : 'Recommended from scan'}
                     </span>
                   )}
                 </h2>

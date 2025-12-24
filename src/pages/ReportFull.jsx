@@ -69,6 +69,9 @@ function ReportFullContent() {
 
   const t = {
     en: {
+      negotiateBeforeSigning: "Next Step: Negotiate Before Signing",
+      negotiateDesc: "Your scan highlights clauses to negotiate. Before you sign, send a pre-signing negotiation letter to your landlord/agent to request changes in writing.",
+      openLetterTemplates: "Open Letter Templates",
       noScanReportFound: "No scan report found",
       uploadALease: "Upload a Lease",
       fullLeaseReport: "Full Lease Report",
@@ -94,14 +97,14 @@ function ReportFullContent() {
       suggestedNextSteps: "Suggested Next Steps",
       enableDepositShield: "Enable Deposit Shield",
       trackYourSecurityDeposit: "Track your security deposit",
-      generateLetter: "Generate Letter",
-      professionalTenantLetters: "Professional tenant letters",
-      failedToGenerateLetters: "Failed to generate letters. Please try again.",
       moreDetailedIssues: "More Detailed Issue(s)",
       upgradeToUnlock: "Upgrade to Unlock",
       backToSummary: "Back to Summary"
     },
     th: {
+      negotiateBeforeSigning: "ขั้นตอนถัดไป: เจรจาก่อนลงนาม",
+      negotiateDesc: "การสแกนของคุณเน้นข้อกำหนดที่ควรเจรจา ก่อนลงนาม ส่งจดหมายเจรจาไปยังเจ้าของบ้าน/ตัวแทนเพื่อขอเปลี่ยนแปลงเป็นลายลักษณ์อักษร",
+      openLetterTemplates: "เปิดเทมเพลตจดหมาย",
       noScanReportFound: "ไม่พบรายงานการสแกน",
       uploadALease: "อัปโหลดสัญญาเช่า",
       fullLeaseReport: "รายงานการเช่าฉบับเต็ม",
@@ -127,9 +130,6 @@ function ReportFullContent() {
       suggestedNextSteps: "ขั้นตอนที่แนะนำ",
       enableDepositShield: "เปิดใช้งาน Deposit Shield",
       trackYourSecurityDeposit: "ติดตามเงินมัดจำของคุณ",
-      generateLetter: "สร้างจดหมาย",
-      professionalTenantLetters: "จดหมายสำหรับผู้เช่ามืออาชีพ",
-      failedToGenerateLetters: "ไม่สามารถสร้างจดหมายได้ กรุณาลองอีกครั้ง",
       moreDetailedIssues: "เหลืออีก {count} ปัญหาโดยละเอียด",
       upgradeToUnlock: "อัปเกรดเพื่อปลดล็อค",
       backToSummary: "กลับไปที่สรุป"
@@ -678,7 +678,7 @@ function ReportFullContent() {
                 {strings.suggestedNextSteps}
               </h3>
 
-              {/* Negotiate Before Signing CTA */}
+              {/* Open Letter Templates */}
               <div className="mb-4 rounded-xl border-2 overflow-hidden" style={{
                 backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
                 borderColor: '#0C3B2E'
@@ -692,29 +692,26 @@ function ReportFullContent() {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
-                        {language === 'th' ? 'ขั้นตอนถัดไป: เจรจาก่อนเซ็นสัญญา' : 'Next Step: Negotiate Before Signing'}
+                        {strings.negotiateBeforeSigning}
                       </h4>
                       <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
-                        {language === 'th' 
-                          ? 'การสแกนของคุณเน้นข้อที่ควรเจรจา ก่อนเซ็นสัญญา ส่งจดหมายเจรจาเพื่อขอแก้ไขเป็นลายลักษณ์อักษร'
-                          : 'Your scan highlights clauses to negotiate. Before you sign, send a pre-signing negotiation letter to your landlord/agent to request changes in writing.'}
+                        {strings.negotiateDesc}
                       </p>
                       <Button
                         onClick={() => {
                           haptic.medium();
-                          const queryParams = new URLSearchParams();
-                          if (lease?.id) queryParams.set('lease_id', lease.id);
-                          if (scan?.id) queryParams.set('scan_id', scan.id);
-                          if (scan?.risk_score) queryParams.set('risk_score', scan.risk_score.toString());
-
-                          const url = createPageUrl("Templates") + (queryParams.toString() ? `?${queryParams.toString()}` : '');
-                          navigate(url);
+                          const params = new URLSearchParams({
+                            lease_id: lease.id,
+                            ...(scan?.id && { scan_id: scan.id }),
+                            ...(scan?.risk_score && { risk_score: scan.risk_score.toString() })
+                          });
+                          navigate(createPageUrl("Templates") + `?${params.toString()}`);
                         }}
                         className="w-full btn-interaction"
                         style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                       >
                         <FileText className="w-4 h-4 mr-2" />
-                        {language === 'th' ? 'เปิดเทมเพลตจดหมาย' : 'Open Letter Templates'}
+                        {strings.openLetterTemplates}
                       </Button>
                     </div>
                   </div>
