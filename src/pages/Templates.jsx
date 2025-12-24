@@ -27,23 +27,23 @@ export default function Templates() {
   const isDarkMode = user?.theme === 'dark';
   const userCredits = user?.letter_credits || 0;
 
-  // Auto-scroll to pre-signing if coming from scan
-  React.useEffect(() => {
-    if (leaseIdParam && preSigningTemplates.length > 0) {
-      setTimeout(() => {
-        const section = document.getElementById('pre-signing-section');
-        if (section) {
-          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 100);
-    }
-  }, [leaseIdParam, preSigningTemplates.length]);
-
   // Use templates directly from DB (already filtered by status=active)
   const displayTemplates = allTemplates.map(t => ({
     ...t,
     credit_cost: t.cost_credits || 1
   }));
+
+  // Auto-scroll to pre-signing if coming from scan
+  React.useEffect(() => {
+    if (leaseIdParam && !isLoading) {
+      setTimeout(() => {
+        const section = document.querySelector('[data-category="pre_signing"]');
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    }
+  }, [leaseIdParam, isLoading]);
 
   const colors = isDarkMode ? {
     bg: '#111827',
@@ -111,6 +111,18 @@ export default function Templates() {
   const initialResolutionTemplates = displayTemplates.filter(t => t.category === 'initial_resolution');
   const professionalTemplates = displayTemplates.filter(t => t.category === 'professional');
   const finalTemplates = displayTemplates.filter(t => t.category === 'final');
+
+  // Auto-scroll to pre-signing if coming from scan
+  React.useEffect(() => {
+    if (leaseIdParam && !isLoading && preSigningTemplates.length > 0) {
+      setTimeout(() => {
+        const section = document.querySelector('[data-category="pre_signing"]');
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    }
+  }, [leaseIdParam, isLoading, preSigningTemplates.length]);
 
   const renderTemplateCard = (template, gradientClass) => {
     const title = language === 'th' && template.title_th ? template.title_th : template.title_en;
