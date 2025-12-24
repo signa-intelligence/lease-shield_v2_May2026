@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
         cost_credits: 1,
         status: 'active',
         sort_order: 10,
-        docx_url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/templates/pre_signing_negotiation.docx',
+        docx_url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/templates/pre_signing_negotiation.docx',
         pdf_url: null,
         preview_image_url: null,
         seed_version: 'v1'
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
         cost_credits: 1,
         status: 'active',
         sort_order: 20,
-        docx_url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/templates/deposit_return_request.docx',
+        docx_url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/templates/deposit_return_request.docx',
         pdf_url: null,
         preview_image_url: null,
         seed_version: 'v1'
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
         cost_credits: 1,
         status: 'active',
         sort_order: 30,
-        docx_url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/templates/maintenance_request.docx',
+        docx_url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/templates/maintenance_request.docx',
         pdf_url: null,
         preview_image_url: null,
         seed_version: 'v1'
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
         cost_credits: 1,
         status: 'active',
         sort_order: 40,
-        docx_url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/templates/early_termination_notice.docx',
+        docx_url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/templates/early_termination_notice.docx',
         pdf_url: null,
         preview_image_url: null,
         seed_version: 'v1'
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
         cost_credits: 1,
         status: 'active',
         sort_order: 50,
-        docx_url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/templates/final_demand_deposit.docx',
+        docx_url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/templates/final_demand_deposit.docx',
         pdf_url: null,
         preview_image_url: null,
         seed_version: 'v1'

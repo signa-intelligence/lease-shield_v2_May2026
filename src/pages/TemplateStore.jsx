@@ -37,36 +37,24 @@ function TemplateStoreContent() {
 
   const downloadMutation = useMutation({
     mutationFn: async (template) => {
-      const letterCredits = user?.letter_credits || 0;
+      const response = await base44.functions.invoke('downloadTemplate', {
+        template_id: template.id
+      });
 
-      if (letterCredits < (template.cost_credits || 1)) {
-        throw new Error('INSUFFICIENT_CREDITS');
+      if (!response.data?.ok) {
+        throw new Error(response.data?.error || 'Download failed');
       }
 
-      // Deduct credit
-      await base44.entities.CreditsLedger.create({
-        user_id: user.id,
-        user_email: user.email,
-        type: 'letters',
-        delta: -(template.cost_credits || 1),
-        reason: 'purchase',
-        source_ref: `Template: ${template.template_key}`
-      });
-
-      await base44.auth.updateMe({
-        letter_credits: Math.max(0, letterCredits - (template.cost_credits || 1))
-      });
-
-      return template;
+      return response.data;
     },
-    onSuccess: (template) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       
-      // Open download
-      if (template.docx_url) {
+      // Trigger file download
+      if (data.download_url) {
         const link = document.createElement('a');
-        link.href = template.docx_url;
-        link.download = `${template.template_key}.docx`;
+        link.href = data.download_url;
+        link.download = data.filename || 'template.docx';
         link.target = '_blank';
         document.body.appendChild(link);
         link.click();
@@ -78,11 +66,16 @@ function TemplateStoreContent() {
       setDownloading(null);
     },
     onError: (error) => {
-      if (error.message === 'INSUFFICIENT_CREDITS') {
+      const errorMsg = error.message || '';
+      
+      if (errorMsg.includes('Insufficient credits')) {
         toast.error(language === 'th' ? 'เครดิตไม่เพียงพอ' : 'Insufficient credits');
+      } else if (errorMsg.includes('not found')) {
+        toast.error(language === 'th' ? 'ไม่พบเทมเพลต' : 'Template not found');
       } else {
         toast.error(language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed');
       }
+      
       haptic.error();
       setDownloading(null);
     }
