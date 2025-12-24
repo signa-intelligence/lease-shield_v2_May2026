@@ -442,10 +442,11 @@ function TemplatesContent() {
           >
             {/* Scrollable Content */}
             <div 
-              className="overflow-y-auto flex-1 p-6 space-y-4"
+              className="overflow-y-auto flex-1 space-y-4"
               style={{ 
                 WebkitOverflowScrolling: 'touch',
-                paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))'
+                padding: '24px 20px',
+                paddingBottom: '24px'
               }}
             >
             <div className="text-center mb-4">
@@ -568,47 +569,58 @@ function TemplatesContent() {
             )}
             </div>
 
-            {/* Sticky Footer with CTAs */}
+            {/* Always-Visible Fixed Footer with CTAs */}
             <div 
-              className="border-t flex gap-3"
               style={{
+                flex: '0 0 auto',
                 position: 'sticky',
                 bottom: 0,
-                zIndex: 50,
+                left: 0,
+                right: 0,
+                zIndex: 100,
                 backgroundColor: colors.cardBg,
-                borderTopColor: colors.borderColor,
-                borderTopWidth: '1px',
-                borderTopStyle: 'solid',
-                padding: '12px',
+                borderTop: `1px solid ${colors.borderColor}`,
+                padding: '12px 16px',
                 paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-                alignItems: 'stretch',
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '12px',
                 borderBottomLeftRadius: '16px',
-                borderBottomRightRadius: '16px'
+                borderBottomRightRadius: '16px',
+                boxShadow: '0 -2px 8px rgba(0,0,0,0.08)'
               }}
             >
-              <Button
-                variant="outline"
+              <button
                 onClick={() => setConfirmTemplate(null)}
-                className="flex-1"
+                className="btn-interaction"
                 style={{
-                  borderColor: colors.borderColor,
+                  backgroundColor: 'transparent',
+                  border: `2px solid ${colors.borderColor}`,
                   color: colors.textPrimary,
                   minHeight: '48px',
                   fontSize: '16px',
-                  fontWeight: '600'
+                  fontWeight: '600',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 {strings.cancel}
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={handleConfirmDownload}
-                className="flex-1"
+                className="btn-interaction"
                 style={{
                   backgroundColor: '#0C3B2E',
                   color: '#FFFFFF',
                   minHeight: '48px',
                   fontSize: '16px',
                   fontWeight: '700',
+                  borderRadius: '10px',
+                  border: 'none',
+                  cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -617,7 +629,7 @@ function TemplatesContent() {
               >
                 <Download className="w-4 h-4" />
                 <span>{strings.confirmDownload}</span>
-              </Button>
+              </button>
             </div>
           </div>
         </div>
