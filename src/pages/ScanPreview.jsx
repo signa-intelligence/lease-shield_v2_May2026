@@ -408,7 +408,7 @@ function ScanPreviewContent() {
                         <button
                           onClick={() => {
                             haptic.medium();
-                            navigate(createPageUrl("Templates") + `?leaseId=${lease.id}&scanId=${scan.id}`);
+                            navigate(createPageUrl("Templates"));
                           }}
                           className="btn-interaction"
                           style={{
@@ -428,7 +428,7 @@ function ScanPreviewContent() {
                           }}
                         >
                           <FileText className="w-4 h-4" />
-                          <span>{language === 'th' ? 'สร้างจดหมายเจรจา' : 'Generate Negotiation Letter'}</span>
+                          <span>{language === 'th' ? 'ดูเทมเพลตจดหมาย' : 'View Letter Templates'}</span>
                         </button>
                         {shouldShowTrackDepositCard && (
                           <button

@@ -134,35 +134,53 @@ function TemplatesContent() {
 
   const t = {
     en: {
-      title: "Templates & Documents",
-      subtitle: "Download editable Word templates. Fill in names and addresses yourself.",
+      title: "Document Templates",
+      subtitle: "Download ready-to-use templates. Fill in your details and send to landlord.",
       creditsBalance: "Credits:",
       download: "Download",
       buyCredits: "Buy Credits",
       credit: "credit",
       noTemplates: "No templates available",
+      confirmDownloadTitle: "Confirm Download",
+      creditWillBeDeducted: "1 credit will be deducted",
+      cancel: "Cancel",
+      confirmDownload: "Confirm Download",
+      previewUnavailable: "Preview not available",
+      insideTemplate: "Inside this template:",
+      mainSections: "Main sections:",
+      includes: "Includes:",
+      fillInFields: "Fill-in fields:",
       categories: {
         checklists: "Checklists",
         pre_signing: "Pre-Signing",
         initial_resolution: "Initial Resolution",
         professional: "Professional",
-        final: "Final Demand"
+        final: "Final Notice"
       }
     },
     th: {
-      title: "เทมเพลตและเอกสาร",
-      subtitle: "ดาวน์โหลดเทมเพลต Word ที่แก้ไขได้ กรอกชื่อและที่อยู่ด้วยตัวเอง",
+      title: "เทมเพลตเอกสาร",
+      subtitle: "ดาวน์โหลดเทมเพลตพร้อมใช้ กรอกข้อมูลและส่งให้เจ้าของบ้าน",
       creditsBalance: "เครดิต:",
       download: "ดาวน์โหลด",
       buyCredits: "ซื้อเครดิต",
       credit: "เครดิต",
       noTemplates: "ไม่มีเทมเพลต",
+      confirmDownloadTitle: "ยืนยันการดาวน์โหลด",
+      creditWillBeDeducted: "จะหัก 1 เครดิต",
+      cancel: "ยกเลิก",
+      confirmDownload: "ยืนยันดาวน์โหลด",
+      previewUnavailable: "ไม่มีตัวอย่าง",
+      insideTemplate: "ภายในเทมเพลต:",
+      mainSections: "ส่วนหลัก:",
+      includes: "รวมถึง:",
+      fillInFields: "ช่องกรอกข้อมูล:",
       categories: {
         checklists: "รายการตรวจสอบ",
         pre_signing: "ก่อนลงนาม",
         initial_resolution: "แก้ไขเบื้องต้น",
         professional: "มืออาชีพ",
-        final: "เรียกร้องครั้งสุดท้าย"
+        final: "แจ้งเตือนสุดท้าย"
       }
     }
   };
@@ -214,29 +232,41 @@ function TemplatesContent() {
           }
         />
 
+        {/* Admin Debug Panel */}
+        {debugMode && user?.role === 'admin' && (
+          <Card className="mb-6 border-2" style={{ 
+            backgroundColor: isDarkMode ? '#1F2937' : '#FEF9C3',
+            borderColor: '#C7A338'
+          }}>
+            <CardContent className="p-4">
+              <h3 className="text-sm font-bold mb-2" style={{ color: colors.textPrimary }}>
+                🔧 Admin Debug Panel
+              </h3>
+              <div className="text-xs font-mono space-y-1" style={{ color: colors.textSecondary }}>
+                <div>Templates loaded: {templates.length}</div>
+                <div>Keys: {templates.map(t => t.template_key).join(', ')}</div>
+                <div className="pt-2">
+                  {templates.map(t => (
+                    <div key={t.id} className="mb-1">
+                      • {t.template_key}: file={t.file_path ? '✓' : '✗'} preview={t.preview_headings?.length > 0 ? '✓' : '✗'}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {templates.length === 0 ? (
           <div className="text-center py-12">
             <EmptyState
               icon={FileText}
               title={strings.noTemplates}
               description={language === 'th' 
-                ? 'ไม่พบเทมเพลต ตรวจสอบคอนโซลสำหรับข้อมูล' 
-                : 'No templates found. Check console for diagnostics.'}
+                ? 'ไม่พบเทมเพลต' 
+                : 'No templates found'}
               isDarkMode={isDarkMode}
             />
-            <div className="mt-6 p-4 rounded-lg" style={{ 
-              backgroundColor: isDarkMode ? '#374151' : '#FEF3C7',
-              border: `1px solid ${isDarkMode ? '#4B5563' : '#FDE68A'}`
-            }}>
-              <p className="text-sm font-semibold mb-2" style={{ color: isDarkMode ? '#F9FAFB' : '#92400E' }}>
-                🔍 {language === 'th' ? 'การวินิจฉัย' : 'Diagnostics'}
-              </p>
-              <p className="text-xs" style={{ color: isDarkMode ? '#D1D5DB' : '#78350F' }}>
-                {language === 'th' 
-                  ? 'เปิดคอนโซลเบราว์เซอร์เพื่อดูรายละเอียดการโหลดเทมเพลต'
-                  : 'Open browser console to see detailed template loading diagnostics.'}
-              </p>
-            </div>
           </div>
         ) : (
           <div className="space-y-8">
@@ -378,102 +408,109 @@ function TemplatesContent() {
             style={{ backgroundColor: colors.cardBg }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#0C3B2E' }}>
-                <Download className="w-5 h-5 text-white" />
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: '#0C3B2E' }}>
+                <Download className="w-8 h-8 text-white" />
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? confirmTemplate.title_th : confirmTemplate.title_en}
-                </h3>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  {language === 'th' ? confirmTemplate.description_th : confirmTemplate.description_en}
+              <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                {strings.confirmDownloadTitle}
+              </h3>
+              <p className="text-lg font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? confirmTemplate.title_th : confirmTemplate.title_en}
+              </p>
+              <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
+                {language === 'th' ? confirmTemplate.description_th : confirmTemplate.description_en}
+              </p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
+                backgroundColor: isDarkMode ? '#374151' : '#FEF3C7',
+                border: `1px solid ${isDarkMode ? '#4B5563' : '#FDE68A'}`
+              }}>
+                <AlertCircle className="w-4 h-4" style={{ color: '#D97706' }} />
+                <span className="text-sm font-bold" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                  {strings.creditWillBeDeducted}
+                </span>
+              </div>
+            </div>
+
+            {/* Preview Section - Only show if data exists */}
+            {(confirmTemplate.preview_headings?.length > 0 || 
+              confirmTemplate.preview_bullets?.length > 0 || 
+              confirmTemplate.preview_placeholders?.length > 0) ? (
+              <div className="border rounded-lg p-4 space-y-3" style={{ 
+                borderColor: colors.borderColor,
+                backgroundColor: colors.fieldBg 
+              }}>
+                <h4 className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                  {strings.insideTemplate}
+                </h4>
+                
+                {confirmTemplate.preview_headings && confirmTemplate.preview_headings.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
+                      {strings.mainSections}
+                    </p>
+                    <ul className="space-y-1">
+                      {confirmTemplate.preview_headings.map((heading, i) => (
+                        <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textPrimary }}>
+                          <span className="font-bold" style={{ color: '#0C3B2E' }}>§</span>
+                          <span className="font-medium">{heading}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {confirmTemplate.preview_bullets && confirmTemplate.preview_bullets.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
+                      {strings.includes}
+                    </p>
+                    <ul className="space-y-1">
+                      {confirmTemplate.preview_bullets.map((bullet, i) => (
+                        <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textSecondary }}>
+                          <span className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#0C3B2E' }} />
+                          <span>{bullet}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {confirmTemplate.preview_placeholders && confirmTemplate.preview_placeholders.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
+                      {strings.fillInFields}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {confirmTemplate.preview_placeholders.map((placeholder, i) => (
+                        <span 
+                          key={i} 
+                          className="text-xs px-2 py-1 rounded font-mono"
+                          style={{ 
+                            backgroundColor: colors.cardBg,
+                            border: `1px solid ${colors.borderColor}`,
+                            color: colors.textSecondary 
+                          }}
+                        >
+                          {placeholder}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="border rounded-lg p-4 text-center" style={{ 
+                borderColor: colors.borderColor,
+                backgroundColor: colors.fieldBg 
+              }}>
+                <p className="text-sm italic" style={{ color: colors.textSecondary }}>
+                  {strings.previewUnavailable}
                 </p>
               </div>
-            </div>
+            )}
 
-            {/* Preview Section */}
-            <div className="border rounded-lg p-4 space-y-3" style={{ 
-              borderColor: colors.borderColor,
-              backgroundColor: colors.fieldBg 
-            }}>
-              <h4 className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? '📋 ภายในเทมเพลตนี้:' : '📋 Inside this template:'}
-              </h4>
-              
-              {/* Headings */}
-              {confirmTemplate.preview_headings && confirmTemplate.preview_headings.length > 0 ? (
-                <div>
-                  <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'หัวข้อหลัก:' : 'Main sections:'}
-                  </p>
-                  <ul className="space-y-1">
-                    {confirmTemplate.preview_headings.map((heading, i) => (
-                      <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textPrimary }}>
-                        <span className="font-bold" style={{ color: '#0C3B2E' }}>§</span>
-                        <span className="font-medium">{heading}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              
-              {/* Bullets */}
-              {confirmTemplate.preview_bullets && confirmTemplate.preview_bullets.length > 0 ? (
-                <div>
-                  <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'รวมถึง:' : 'Includes:'}
-                  </p>
-                  <ul className="space-y-1">
-                    {confirmTemplate.preview_bullets.slice(0, 6).map((bullet, i) => (
-                      <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textSecondary }}>
-                        <span className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#0C3B2E' }} />
-                        <span>{bullet}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              
-              {/* Placeholders */}
-              {confirmTemplate.preview_placeholders && confirmTemplate.preview_placeholders.length > 0 ? (
-                <div>
-                  <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'จุดกรอกข้อมูล:' : 'Fill-in fields:'}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {confirmTemplate.preview_placeholders.map((placeholder, i) => (
-                      <span 
-                        key={i} 
-                        className="text-xs px-2 py-1 rounded font-mono"
-                        style={{ 
-                          backgroundColor: colors.cardBg,
-                          border: `1px solid ${colors.borderColor}`,
-                          color: colors.textSecondary 
-                        }}
-                      >
-                        {placeholder}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              
 
-            </div>
-
-            {/* Cost Info */}
-            <div className="flex items-center justify-between p-3 rounded-lg" style={{ 
-              backgroundColor: colors.fieldBg,
-              border: `1px solid ${colors.borderColor}`
-            }}>
-              <span className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'ค่าใช้จ่าย:' : 'Cost:'}
-              </span>
-              <Badge className="text-sm font-bold" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
-                {confirmTemplate.cost_credits || 1} {language === 'th' ? 'เครดิต' : 'credit' + ((confirmTemplate.cost_credits || 1) > 1 ? 's' : '')}
-              </Badge>
-            </div>
 
             {/* Debug Meta Line */}
             {debugMode && (
@@ -490,7 +527,7 @@ function TemplatesContent() {
               </div>
             )}
 
-            <div className="pt-2 flex gap-3">
+            <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => setConfirmTemplate(null)}
@@ -500,7 +537,7 @@ function TemplatesContent() {
                   color: colors.textPrimary
                 }}
               >
-                {language === 'th' ? 'ยกเลิก' : 'Cancel'}
+                {strings.cancel}
               </Button>
               <Button
                 onClick={handleConfirmDownload}
@@ -511,7 +548,7 @@ function TemplatesContent() {
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
-                {language === 'th' ? 'ยืนยันดาวน์โหลด' : 'Confirm Download'}
+                {strings.confirmDownload}
               </Button>
             </div>
           </div>

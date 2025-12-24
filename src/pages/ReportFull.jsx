@@ -69,9 +69,9 @@ function ReportFullContent() {
 
   const t = {
     en: {
-      negotiateBeforeSigning: "Next Step: Negotiate Before Signing",
-      negotiateDesc: "Your scan highlights clauses to negotiate. Before you sign, send a pre-signing negotiation letter to your landlord/agent to request changes in writing.",
-      openLetterTemplates: "Open Letter Templates",
+      negotiateBeforeSigning: "Recommended: Review Letter Templates",
+      negotiateDesc: "Download editable document templates to communicate with your landlord. Choose the template that matches your situation.",
+      openLetterTemplates: "View Document Templates",
       noScanReportFound: "No scan report found",
       uploadALease: "Upload a Lease",
       fullLeaseReport: "Full Lease Report",
@@ -102,9 +102,9 @@ function ReportFullContent() {
       backToSummary: "Back to Summary"
     },
     th: {
-      negotiateBeforeSigning: "ขั้นตอนถัดไป: เจรจาก่อนลงนาม",
-      negotiateDesc: "การสแกนของคุณเน้นข้อกำหนดที่ควรเจรจา ก่อนลงนาม ส่งจดหมายเจรจาไปยังเจ้าของบ้าน/ตัวแทนเพื่อขอเปลี่ยนแปลงเป็นลายลักษณ์อักษร",
-      openLetterTemplates: "เปิดเทมเพลตจดหมาย",
+      negotiateBeforeSigning: "แนะนำ: ดูเทมเพลตเอกสาร",
+      negotiateDesc: "ดาวน์โหลดเทมเพลตที่แก้ไขได้เพื่อติดต่อกับเจ้าของบ้าน เลือกเทมเพลตที่ตรงกับสถานการณ์ของคุณ",
+      openLetterTemplates: "ดูเทมเพลตเอกสาร",
       noScanReportFound: "ไม่พบรายงานการสแกน",
       uploadALease: "อัปโหลดสัญญาเช่า",
       fullLeaseReport: "รายงานการเช่าฉบับเต็ม",
