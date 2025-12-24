@@ -834,11 +834,8 @@ function UploadScanPageContent() {
       setError(null);
       setUploadProgress(0);
       setCurrentStep(1);
-
-      logStage('MULTI_PAGE_MODE_START', { 
-        filesCount: selectedFiles.length,
-        userTier
-      });
+      
+      let createdLeaseId = null;
 
       try {
         // Upload all files first
@@ -850,20 +847,8 @@ function UploadScanPageContent() {
           setAnalysisStage(language === 'th' ? `กำลังอัปโหลดหน้า ${i + 1}/${selectedFiles.length}` : `Uploading page ${i + 1}/${selectedFiles.length}`);
           setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 30));
 
-          logStage(`PAGE_${i + 1}_UPLOAD_START`, {
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type,
-            pageIndex: i + 1
-          });
-
           const { file_url } = await base44.integrations.Core.UploadFile({ file });
           uploadedUrls.push(file_url);
-          
-          logStage(`PAGE_${i + 1}_UPLOADED`, {
-            urlLength: file_url.length,
-            pageIndex: i + 1
-          });
         }
 
         setAnalysisStage('creating');
@@ -878,12 +863,6 @@ function UploadScanPageContent() {
         });
         createdLeaseId = lease.id;
 
-        logStage('LEASE_CREATED', {
-          leaseId: lease.id,
-          pagesCount: uploadedUrls.length,
-          status: 'queued'
-        });
-
         setUploadProgress(50);
         setAnalyzing(true);
         setUploading(false);
@@ -891,26 +870,11 @@ function UploadScanPageContent() {
         setUploadProgress(60);
 
         // Trigger analysis with all pages
-        logStage('ANALYSIS_START', { 
-          leaseId: lease.id,
-          pagesCount: uploadedUrls.length 
-        });
-        
-        const analysisStartTime = Date.now();
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
           fileUrls: uploadedUrls,
           requestId,
           leaseId: lease.id,
           scanId: lease.id
-        });
-
-        const analysisDuration = Date.now() - analysisStartTime;
-        
-        logStage('ANALYSIS_RESPONSE', {
-          duration: analysisDuration,
-          success: scanResponse?.success,
-          hasResult: !!scanResponse?.result,
-          leaseId: lease.id
         });
 
         if (!scanResponse || !scanResponse.success) {
@@ -945,28 +909,16 @@ function UploadScanPageContent() {
         setUploadProgress(100);
         setCurrentStep(2);
 
-        logStage('MULTI_PAGE_COMPLETE', {
-          leaseId: lease.id,
-          riskScore: scanResult.risk_score,
-          totalPages: uploadedUrls.length
-        });
-
-        // Show completion flow
+        // Show completion modal
+        setCompletedLeaseId(createdLeaseId);
+        setShowCompletionModal(true);
+        
         if (scanResult.end_date) {
           setLeaseDetails({
             end_date: scanResult.end_date,
             notice_period_days: scanResult.notice_period_days || 30
           });
-          setPendingLeaseId(lease.id);
-          setShowConfirmation(true);
-        } else {
-          const updatedLeases = await base44.entities.Lease.filter({ created_by: user?.email }, '-created_date');
-          const newLease = updatedLeases.find(l => l.id === lease.id);
-          setSelectedLease(newLease);
-          setCurrentStep(2);
-          if (userTier === 'free') {
-            setShowPostScanHint(true);
-          }
+          setPendingLeaseId(createdLeaseId);
         }
 
         setSelectedFiles([]);
@@ -974,10 +926,7 @@ function UploadScanPageContent() {
         queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       } catch (err) {
-        logStage('MULTI_PAGE_ERROR', {
-          error: err.message,
-          leaseId: createdLeaseId
-        });
+        console.error('[MULTI_PAGE_ERROR]', err);
 
         if (createdLeaseId) {
           try {
@@ -987,10 +936,7 @@ function UploadScanPageContent() {
           }
         }
 
-        const formattedError = formatErrorForUser(err, requestId, language, {
-          uploadStage: analysisStage
-        });
-        setError(formattedError);
+        setError(typeof err === 'string' ? err : err.message);
         setCurrentStep(0);
       } finally {
         setUploading(false);
@@ -1382,12 +1328,6 @@ function UploadScanPageContent() {
       const existingUrls = addingPagesToLease.file_urls || [addingPagesToLease.file_url];
       const newUrls = [];
 
-      logStage('ADD_PAGES_START', {
-        leaseId: addingPagesToLease.id,
-        existingPages: existingUrls.length,
-        newPages: additionalFiles.length
-      });
-
       // Upload new pages
       for (let i = 0; i < additionalFiles.length; i++) {
         const file = additionalFiles[i];
@@ -1451,12 +1391,6 @@ function UploadScanPageContent() {
 
       setUploadProgress(100);
 
-      logStage('ADD_PAGES_COMPLETE', {
-        leaseId: addingPagesToLease.id,
-        totalPages: allUrls.length,
-        newPages: newUrls.length
-      });
-
       // Show completion modal
       setCompletedLeaseId(addingPagesToLease.id);
       setShowCompletionModal(true);
@@ -1467,7 +1401,7 @@ function UploadScanPageContent() {
 
     } catch (err) {
       console.error('Failed to add pages:', err);
-      setError(formatErrorForUser(err, requestId, language, { uploadStage: analysisStage }));
+      setError(typeof err === 'string' ? err : err.message);
       
       if (addingPagesToLease) {
         await base44.entities.Lease.update(addingPagesToLease.id, { status: 'failed' });

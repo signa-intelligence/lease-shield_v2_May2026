@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, Loader2 } from "lucide-react";
 import { haptic } from "./HapticFeedback";
 
-export default function RetryAnalysis({ lease, onSuccess, language = 'en', colors, onStatusChange }) {
+export default function RetryAnalysis({ lease, onSuccess, language = 'en', colors = {}, onStatusChange }) {
   const [retrying, setRetrying] = useState(false);
 
   const handleRetry = async () => {
