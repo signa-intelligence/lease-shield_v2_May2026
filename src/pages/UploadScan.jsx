@@ -63,6 +63,10 @@ function UploadScanPageContent() {
   const [selectedLease, setSelectedLease] = useState(null);
   const [editingNotice, setEditingNotice] = useState(false);
   const [noticeSettings, setNoticeSettings] = useState({ notice_period_days: 30 });
+  
+  // NEW: Document viewer modal state
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [documentToView, setDocumentToView] = useState(null);
 
   // NEW: Track current step for breadcrumb
   const [currentStep, setCurrentStep] = useState(0);
@@ -2010,7 +2014,15 @@ function UploadScanPageContent() {
                           onClick={() => {
                             haptic.light();
                             setSelectedLease(null);
-                            navigate(createPageUrl("ScanPreview") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
+                            // Ensure both IDs are explicitly passed
+                            const scanIdToUse = selectedScan?.id;
+                            const leaseIdToUse = selectedLease?.id;
+                            
+                            if (process.env.NODE_ENV === 'development') {
+                              console.log('[Navigation] View Scan Results:', { scanIdToUse, leaseIdToUse });
+                            }
+                            
+                            navigate(createPageUrl("ScanPreview") + `?scanId=${scanIdToUse}&leaseId=${leaseIdToUse}`, { replace: false });
                           }}
                           className="w-full justify-center py-3"
                           style={{
@@ -2028,18 +2040,8 @@ function UploadScanPageContent() {
                             onClick={(e) => {
                               e.stopPropagation();
                               haptic.light();
-                              
-                              // Handle multi-page documents
-                              if (selectedLease.file_urls && selectedLease.file_urls.length > 1) {
-                                const urls = selectedLease.file_urls;
-                                urls.forEach((url, idx) => {
-                                  setTimeout(() => {
-                                    window.open(url, '_blank');
-                                  }, idx * 300);
-                                });
-                              } else {
-                                window.open(selectedLease.file_url, '_blank');
-                              }
+                              setDocumentToView(selectedLease);
+                              setShowDocumentModal(true);
                             }}
                             className="w-full justify-center py-3"
                             style={{
@@ -2047,7 +2049,7 @@ function UploadScanPageContent() {
                               color: colors.textPrimary
                             }}
                           >
-                            <ExternalLink className="w-4 h-4 mr-2" />
+                            <FileText className="w-4 h-4 mr-2" />
                             {strings.viewLease}
                             {selectedLease.file_urls && selectedLease.file_urls.length > 1 && (
                               <Badge className="ml-2 text-xs bg-blue-100 text-blue-700">
@@ -2272,6 +2274,93 @@ function UploadScanPageContent() {
                   </div>
                 </>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Document Viewer Modal */}
+        <Dialog open={showDocumentModal} onOpenChange={setShowDocumentModal}>
+          <DialogContent
+            className="max-w-md w-[90vw]"
+            style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}
+          >
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'เอกสารสัญญาเช่า' : language === 'ru' ? 'Документ аренды' : 'Lease Document'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3 py-4">
+              <p className="text-sm" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
+                  ? 'เลือกวิธีดูเอกสาร' 
+                  : language === 'ru'
+                    ? 'Выберите способ просмотра'
+                    : 'Choose how to view your document'}
+              </p>
+              
+              <Button
+                onClick={() => {
+                  haptic.medium();
+                  setShowDocumentModal(false);
+                  
+                  // Navigate to document viewer page for multi-page, or open single page
+                  if (documentToView?.file_urls && documentToView.file_urls.length > 1) {
+                    navigate(createPageUrl("LeaseDetails") + `?leaseId=${documentToView.id}&mode=view`);
+                  } else {
+                    window.open(documentToView?.file_url, '_blank');
+                  }
+                }}
+                className="w-full py-4"
+                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+              >
+                <ExternalLink className="w-5 h-5 mr-2" />
+                {language === 'th' ? 'ดูออนไลน์' : language === 'ru' ? 'Посмотреть онлайн' : 'View Online'}
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => {
+                  haptic.light();
+                  setShowDocumentModal(false);
+                  
+                  // Download all pages
+                  if (documentToView?.file_urls && documentToView.file_urls.length > 1) {
+                    documentToView.file_urls.forEach((url, idx) => {
+                      setTimeout(() => {
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `lease-page-${idx + 1}`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }, idx * 500);
+                    });
+                  } else {
+                    const link = document.createElement('a');
+                    link.href = documentToView?.file_url;
+                    link.download = 'lease-document';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }
+                }}
+                className="w-full py-3"
+              >
+                <Download className="w-5 h-5 mr-2" />
+                {language === 'th' ? 'ดาวน์โหลด' : language === 'ru' ? 'Скачать' : 'Download'}
+              </Button>
+              
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  haptic.light();
+                  setShowDocumentModal(false);
+                  setDocumentToView(null);
+                }}
+                className="w-full"
+              >
+                {language === 'th' ? 'ยกเลิก' : language === 'ru' ? 'Отмена' : 'Cancel'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -2560,7 +2649,7 @@ function UploadScanPageContent() {
             <h2 className="text-2xl font-bold mb-4" style={{ color: colors.textPrimary }}>
               {strings.allLeases} ({leases.length})
             </h2>
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {leases.map((lease) => (
                 <SwipeToDelete
                   key={lease.id}
@@ -2569,81 +2658,76 @@ function UploadScanPageContent() {
                   colors={colors}
                 >
                   <Card
-                    className="border-none shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                    className="border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
                     style={{ backgroundColor: colors.cardBg }}
                     onClick={() => {
                       haptic.light();
                       handleViewDetails(lease);
                     }}
                   >
-                    <CardContent className="p-4 md:p-6">
-                      <div className="flex items-start justify-between gap-3">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <FileText className="w-5 h-5 text-ls-forest flex-shrink-0 mt-0.5" />
+
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-2">
-                            <FileText className="w-5 h-5 text-ls-forest flex-shrink-0" />
-                            <h3 className="font-bold text-sm break-words line-clamp-2" style={{
-                              color: colors.textPrimary,
-                              overflowWrap: 'break-word',
-                              wordBreak: 'break-word'
-                            }}>
-                              {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : language === 'ru' ? 'Договор аренды' : 'Lease Agreement')}
-                            </h3>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
-                            <span>{strings.scanDate}: {format(new Date(lease.created_date), 'MMM d, yyyy')}</span>
-                            {lease.file_urls && lease.file_urls.length > 1 && (
-                              <Badge className="bg-blue-100 text-blue-700 text-xs">
-                                {language === 'th' ? `${lease.file_urls.length} หน้า` : language === 'ru' ? `${lease.file_urls.length} стр.` : `Pages: ${lease.file_urls.length}`}
-                              </Badge>
-                            )}
-                          </div>
+                          <h3 className="font-bold text-base mb-1 line-clamp-2" style={{
+                            color: colors.textPrimary,
+                            overflowWrap: 'break-word',
+                            wordBreak: 'break-word',
+                            lineHeight: '1.4'
+                          }}>
+                            {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : language === 'ru' ? 'Договор аренды' : 'Lease Agreement')}
+                          </h3>
+                          <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                            {strings.scanDate}: {format(new Date(lease.created_date), 'dd MMM yyyy')}
+                          </p>
+                          {lease.file_urls && lease.file_urls.length > 1 && (
+                            <Badge className="bg-blue-50 text-blue-700 text-xs border-blue-200">
+                              {lease.file_urls.length} {language === 'th' ? 'หน้า' : language === 'ru' ? 'стр.' : 'pages'}
+                            </Badge>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+
+                        <div className="flex flex-col items-end gap-2 flex-shrink-0">
                           {lease.status === 'scanned' && (
-                           <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-                             <CheckCircle2 className="w-3 h-3 mr-1" />
-                             {language === 'th' ? 'วิเคราะห์แล้ว' : language === 'ru' ? 'Проанализировано' : 'Analysed'}
-                           </Badge>
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                              {language === 'th' ? 'วิเคราะห์แล้ว' : language === 'ru' ? 'Проанализировано' : 'Analysed'}
+                            </Badge>
                           )}
                           {lease.status === 'uploaded' && (
-                            <>
-                              <Badge className="bg-amber-100 text-amber-700 border-amber-200">
-                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                {language === 'th' ? 'รอการวิเคราะห์' : language === 'ru' ? 'Ожидание анализа' : 'Awaiting Analysis'}
-                              </Badge>
-                              <RetryAnalysis 
-                                lease={lease} 
-                                language={language}
-                                colors={colors}
-                                onSuccess={() => queryClient.invalidateQueries({ queryKey: ['leases', 'allScans'] })}
-                              />
-                            </>
+                            <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs">
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              {language === 'th' ? 'รอ' : language === 'ru' ? 'Ожидание' : 'Pending'}
+                            </Badge>
                           )}
                           {lease.status === 'queued' && (
-                            <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                            <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              {language === 'th' ? 'อยู่ในคิว' : language === 'ru' ? 'В очереди' : 'Queued'}
+                              {language === 'th' ? 'คิว' : language === 'ru' ? 'В очереди' : 'Queued'}
                             </Badge>
                           )}
                           {lease.status === 'processing' && (
-                            <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                            <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
                               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              {language === 'th' ? 'กำลังประมวลผล' : language === 'ru' ? 'Обработка' : 'Processing'}
+                              {language === 'th' ? 'ประมวลผล' : language === 'ru' ? 'Обработка' : 'Processing'}
                             </Badge>
                           )}
                           {lease.status === 'failed' && (
-                            <>
-                              <Badge className="bg-red-100 text-red-700 border-red-200">
-                                <AlertCircle className="w-3 h-3 mr-1" />
-                                {language === 'th' ? 'ล้มเหลว' : language === 'ru' ? 'Ошибка' : 'Failed'}
-                              </Badge>
+                            <Badge className="bg-red-100 text-red-700 border-red-200 text-xs">
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              {language === 'th' ? 'ล้มเหลว' : language === 'ru' ? 'Ошибка' : 'Failed'}
+                            </Badge>
+                          )}
+                          
+                          {(lease.status === 'uploaded' || lease.status === 'failed') && (
+                            <div onClick={(e) => e.stopPropagation()}>
                               <RetryAnalysis 
                                 lease={lease} 
                                 language={language}
                                 colors={colors}
                                 onSuccess={() => queryClient.invalidateQueries({ queryKey: ['leases', 'allScans'] })}
                               />
-                            </>
+                            </div>
                           )}
                         </div>
                       </div>
