@@ -41,10 +41,24 @@ Deno.serve(async (req) => {
 
     // Validate file exists
     if (!template.docx_url && !template.pdf_url) {
-      return Response.json({ error: 'Template file not available' }, { status: 404 });
+      console.error(`❌ Template ${template.template_key} has no file URL`);
+      return Response.json({ 
+        ok: false,
+        error: 'Template file not available. Contact support.' 
+      }, { status: 404 });
     }
 
-    // Deduct credits atomically
+    // Verify file URL is accessible (basic check)
+    const downloadUrl = template.docx_url || template.pdf_url;
+    if (!downloadUrl || downloadUrl.includes('undefined') || downloadUrl.includes('null')) {
+      console.error(`❌ Invalid file URL for template ${template.template_key}: ${downloadUrl}`);
+      return Response.json({ 
+        ok: false,
+        error: 'Invalid template file URL. Contact support.' 
+      }, { status: 404 });
+    }
+
+    // CRITICAL: Deduct credits ONLY after verifying file exists
     try {
       await base44.entities.CreditsLedger.create({
         user_id: user.id,
@@ -61,8 +75,11 @@ Deno.serve(async (req) => {
 
       console.log(`✅ Credits deducted: ${creditCost} from user ${user.email}`);
     } catch (creditError) {
-      console.error('Credit deduction failed:', creditError);
-      return Response.json({ error: 'Credit deduction failed' }, { status: 500 });
+      console.error('❌ Credit deduction failed:', creditError);
+      return Response.json({ 
+        ok: false,
+        error: 'Credit deduction failed' 
+      }, { status: 500 });
     }
 
     // Log download
@@ -80,12 +97,13 @@ Deno.serve(async (req) => {
       // Non-critical, continue
     }
 
-    // Return download URL (prefer DOCX over PDF)
-    const downloadUrl = template.docx_url || template.pdf_url;
+    // Generate clean filename
     const fileType = template.docx_url ? 'docx' : 'pdf';
-    const filename = `${template.template_key}.${fileType}`;
+    const sanitizedKey = template.template_key.replace(/[^a-z0-9_-]/gi, '_');
+    const filename = `${sanitizedKey}.${fileType}`;
 
     console.log(`✅ Download authorized: ${filename} for user ${user.email}`);
+    console.log(`   File URL: ${downloadUrl}`);
 
     return Response.json({
       ok: true,
