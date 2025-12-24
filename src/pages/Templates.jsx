@@ -31,7 +31,7 @@ function TemplatesContent() {
 
   // Check file existence for debug mode
   React.useEffect(() => {
-    if (!debugMode || templates.length === 0) return;
+    if (!debugMode || !templates || templates.length === 0) return;
 
     const checkFiles = async () => {
       const results = {};
