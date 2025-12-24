@@ -15,7 +15,7 @@ import MobileFormInput from "../components/shared/MobileFormInput";
 import PageHeader from "../components/shared/PageHeader";
 import ProgressBar from "../components/shared/ProgressBar";
 import LetterPreview from "../components/letters/LetterPreview";
-import { Copy, Download, X, Globe } from "lucide-react";
+import { Copy, Download, X } from "lucide-react";
 
 function TemplateFormContent() {
   const navigate = useNavigate();
