@@ -266,16 +266,16 @@ function TemplatesContent() {
         />
 
         {/* Admin Debug Panel */}
-        {debugMode && user?.role === 'admin' && (
+        {debugMode && (
           <Card className="mb-6 border-2" style={{ 
             backgroundColor: isDarkMode ? '#1F2937' : '#FEF9C3',
             borderColor: '#C7A338'
           }}>
             <CardContent className="p-4">
               <h3 className="text-sm font-bold mb-3" style={{ color: colors.textPrimary }}>
-                🔧 Template Debug Panel
+                🔧 Templates Debug Panel
               </h3>
-              
+
               {/* Summary Stats */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4 text-xs font-mono">
                 <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
