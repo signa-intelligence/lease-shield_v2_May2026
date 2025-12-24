@@ -351,6 +351,20 @@ function ReportFullContent() {
       return;
     }
 
+    // Check letter credits
+    const letterCredits = user.letter_credits || 0;
+    const userTier = user.plan_tier || 'free';
+    console.log('[Letter Generation] Credits check:', { letterCredits, userTier });
+
+    if (letterCredits <= 0 && userTier !== 'secure') {
+      console.warn('[Letter Generation] No credits available');
+      toast.error(language === 'th' 
+        ? 'ไม่มีเครดิตจดหมาย กรุณาอัปเกรดหรือซื้อเครดิต'
+        : 'No letter credits available. Upgrade or purchase credits.');
+      haptic.error();
+      return;
+    }
+
     console.log('[Letter Generation] Starting:', { 
       userId: user.id,
       userEmail: user.email,

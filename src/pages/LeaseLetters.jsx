@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Loader2, Plus, ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { FileText, Loader2, Plus, ArrowLeft, Edit, Trash2, AlertCircle } from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
 import { ToastProvider, useToast } from "../components/shared/Toast";
@@ -60,6 +60,20 @@ function LeaseLettersContent() {
     if (!user || !leaseId) {
       console.error('[CreateBlankLetter] Missing required data:', { user: !!user, leaseId });
       toast.error('Cannot create letter - missing data');
+      return;
+    }
+
+    // Check letter credits
+    const letterCredits = user.letter_credits || 0;
+    const userTier = user.plan_tier || 'free';
+    console.log('[CreateBlankLetter] Credits check:', { letterCredits, userTier });
+
+    if (letterCredits <= 0 && userTier !== 'secure') {
+      console.warn('[CreateBlankLetter] No credits available');
+      toast.error(language === 'th' 
+        ? 'ไม่มีเครดิตจดหมาย กรุณาอัปเกรดหรือซื้อเครดิต'
+        : 'No letter credits available. Upgrade or purchase credits.');
+      haptic.error();
       return;
     }
 
@@ -217,24 +231,52 @@ ${user.full_name}`;
         />
 
         {letters.length === 0 ? (
-          <EmptyState
-            icon={FileText}
-            title={strings.noLetters}
-            description={strings.noLettersDesc}
-            isDarkMode={isDarkMode}
-            actions={[
-              {
-                label: strings.createBlank,
-                onClick: createBlankLetter,
-                variant: 'primary'
-              },
-              {
-                label: strings.backToScan,
-                onClick: () => navigate(createPageUrl("ReportFull") + `?scanId=${lease?.id}&leaseId=${leaseId}`),
-                variant: 'secondary'
-              }
-            ]}
-          />
+          <div className="space-y-4">
+            <EmptyState
+              icon={FileText}
+              title={strings.noLetters}
+              description={strings.noLettersDesc}
+              isDarkMode={isDarkMode}
+              actions={[
+                {
+                  label: strings.createBlank,
+                  onClick: createBlankLetter,
+                  variant: 'primary'
+                },
+                {
+                  label: strings.backToScan,
+                  onClick: () => navigate(createPageUrl("ReportFull") + `?scanId=${lease?.id}&leaseId=${leaseId}`),
+                  variant: 'secondary'
+                }
+              ]}
+            />
+            
+            {(user?.letter_credits || 0) <= 0 && user?.plan_tier !== 'secure' && (
+              <Card className="border-2 border-amber-500" style={{ backgroundColor: colors.cardBg }}>
+                <CardContent className="p-6 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{
+                    backgroundColor: isDarkMode ? '#78350F' : '#FEF3C7'
+                  }}>
+                    <AlertCircle className="w-8 h-8 text-amber-600" />
+                  </div>
+                  <h3 className="font-bold text-lg mb-2" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? 'ไม่มีเครดิตจดหมาย' : 'No Letter Credits'}
+                  </h3>
+                  <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? 'คุณต้องมีเครดิตเพื่อสร้างจดหมายเจรจา อัปเกรดหรือซื้อเครดิตเพื่อดำเนินการต่อ'
+                      : 'You need credits to create negotiation letters. Upgrade or purchase credits to continue.'}
+                  </p>
+                  <Button
+                    onClick={() => navigate(createPageUrl("Account"))}
+                    style={{ backgroundColor: '#C7A338', color: '#FFFFFF' }}
+                  >
+                    {language === 'th' ? 'อัปเกรดหรือซื้อเครดิต' : 'Upgrade or Buy Credits'}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         ) : (
           <div className="space-y-4">
             {letters.map((letter) => {
