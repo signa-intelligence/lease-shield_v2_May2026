@@ -41,44 +41,55 @@ function TemplatesContent() {
       }, {});
       console.log('🔍 DIAGNOSTIC: Templates by status:', byStatus);
       
-      // Group by category
-      const byCategory = allResults.reduce((acc, t) => {
-        const cat = t.category || 'undefined';
-        acc[cat] = (acc[cat] || 0) + 1;
-        return acc;
-      }, {});
-      console.log('🔍 DIAGNOSTIC: Templates by category:', byCategory);
-      
-      // Check for file URLs
-      const withFiles = allResults.filter(t => t.file_path || t.docx_url || t.pdf_url).length;
-      console.log('🔍 DIAGNOSTIC: Templates with file URLs:', withFiles, '/', allResults.length);
-      
       // RELAXED FILTER: Only exclude explicitly inactive templates
       const results = allResults.filter(t => {
-        // Include if status is missing OR status is 'active' OR status is truthy
         return t.status !== 'inactive' && t.status !== false;
       }).sort((a, b) => {
-        // Sort by sort_order, then by created_date (newest first)
-        if (a.sort_order !== b.sort_order) {
-          return (a.sort_order || 100) - (b.sort_order || 100);
-        }
-        return new Date(b.created_date || 0) - new Date(a.created_date || 0);
+        // Sort by updated_date (newest first), then sort_order
+        const dateA = new Date(a.updated_date || a.created_date || 0);
+        const dateB = new Date(b.updated_date || b.created_date || 0);
+        if (dateB - dateA !== 0) return dateB - dateA;
+        return (a.sort_order || 100) - (b.sort_order || 100);
       });
       
       console.log('📄 Templates after relaxed filter:', results.length);
-      console.log('📄 Template keys:', results.map(t => t.template_key || t.id));
       
-      // Deduplicate by template_key (keep first occurrence)
+      // Deduplicate and track duplicates for deactivation
       const uniqueTemplates = [];
-      const seenKeys = new Set();
+      const duplicatesToDeactivate = [];
+      const seenKeys = new Map(); // Map of key -> first template
+      
       for (const t of results) {
-        const key = t.template_key || t.id;
-        if (!seenKeys.has(key)) {
-          seenKeys.add(key);
+        // Primary key: template_key
+        // Fallback key: title_en + category + (language indicator)
+        const primaryKey = t.template_key;
+        const fallbackKey = `${t.title_en || t.title_th}_${t.category}_${t.description_en?.includes('TH+EN') ? 'bilingual' : 'single'}`;
+        const dedupeKey = primaryKey || fallbackKey;
+        
+        if (!seenKeys.has(dedupeKey)) {
+          seenKeys.set(dedupeKey, t);
           uniqueTemplates.push(t);
+        } else {
+          // This is a duplicate - mark for deactivation
+          console.warn(`⚠️ Duplicate detected: ${t.title_en} (ID: ${t.id}, key: ${dedupeKey})`);
+          duplicatesToDeactivate.push(t.id);
         }
       }
+      
       console.log('📄 Unique templates after deduplication:', uniqueTemplates.length);
+      console.log('📄 Duplicates found:', duplicatesToDeactivate.length);
+      
+      // Deactivate duplicates in background (don't block UI)
+      if (duplicatesToDeactivate.length > 0) {
+        Promise.all(
+          duplicatesToDeactivate.map(id => 
+            base44.entities.TemplateLibrary.update(id, { status: 'inactive' })
+              .catch(err => console.error(`Failed to deactivate template ${id}:`, err))
+          )
+        ).then(() => {
+          console.log(`✅ Deactivated ${duplicatesToDeactivate.length} duplicate templates`);
+        });
+      }
       
       return uniqueTemplates;
     }
@@ -373,7 +384,7 @@ function TemplatesContent() {
       {confirmTemplate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setConfirmTemplate(null)}>
           <div 
-            className="rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4"
+            className="rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto"
             style={{ backgroundColor: colors.cardBg }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -383,14 +394,58 @@ function TemplatesContent() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'ดาวน์โหลดเทมเพลต?' : 'Download template?'}
+                  {language === 'th' ? confirmTemplate.title_th : confirmTemplate.title_en}
                 </h3>
                 <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  {language === 'th' 
-                    ? `การดาวน์โหลดจะใช้ ${confirmTemplate.cost_credits || 1} เครดิต` 
-                    : `This will deduct ${confirmTemplate.cost_credits || 1} credit${(confirmTemplate.cost_credits || 1) > 1 ? 's' : ''}.`}
+                  {language === 'th' ? confirmTemplate.description_th : confirmTemplate.description_en}
                 </p>
               </div>
+            </div>
+
+            {/* Preview Section */}
+            <div className="border rounded-lg p-4" style={{ 
+              borderColor: colors.borderColor,
+              backgroundColor: colors.fieldBg 
+            }}>
+              <h4 className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'ตัวอย่างเนื้อหา:' : 'Template Preview:'}
+              </h4>
+              
+              {confirmTemplate.preview_bullets && confirmTemplate.preview_bullets.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {confirmTemplate.preview_bullets.map((bullet, i) => (
+                    <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textSecondary }}>
+                      <span className="mt-1.5 w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: colors.textSecondary }} />
+                      <span>{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : confirmTemplate.preview_text ? (
+                <p className="text-sm leading-relaxed" style={{ color: colors.textSecondary }}>
+                  {confirmTemplate.preview_text.length > 600 
+                    ? confirmTemplate.preview_text.substring(0, 600) + '...' 
+                    : confirmTemplate.preview_text}
+                </p>
+              ) : (
+                <p className="text-sm leading-relaxed italic" style={{ color: colors.textSecondary }}>
+                  {language === 'th' 
+                    ? `เทมเพลตนี้รวมถึง: ${confirmTemplate.description_th || confirmTemplate.description_en}`
+                    : `This template includes: ${confirmTemplate.description_en || confirmTemplate.description_th}`}
+                </p>
+              )}
+            </div>
+
+            {/* Cost Info */}
+            <div className="flex items-center justify-between p-3 rounded-lg" style={{ 
+              backgroundColor: colors.fieldBg,
+              border: `1px solid ${colors.borderColor}`
+            }}>
+              <span className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'ค่าใช้จ่าย:' : 'Cost:'}
+              </span>
+              <Badge className="text-sm font-bold" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
+                {confirmTemplate.cost_credits || 1} {language === 'th' ? 'เครดิต' : 'credit' + ((confirmTemplate.cost_credits || 1) > 1 ? 's' : '')}
+              </Badge>
             </div>
 
             <div className="pt-2 flex gap-3">
@@ -413,6 +468,7 @@ function TemplatesContent() {
                   color: '#FFFFFF'
                 }}
               >
+                <Download className="w-4 h-4 mr-2" />
                 {language === 'th' ? 'ยืนยันดาวน์โหลด' : 'Confirm Download'}
               </Button>
             </div>
