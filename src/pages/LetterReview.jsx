@@ -194,6 +194,9 @@ function LetterReviewContent() {
   if (!letter && !isLoading) {
     console.error('[LetterReview] Letter not found. Params:', { letterId, error: letterError });
     
+    // Try to get leaseId from URL or referrer
+    const leaseIdFromUrl = urlParams.get('leaseId');
+    
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
@@ -204,22 +207,28 @@ function LetterReviewContent() {
             </h2>
             <p className="text-sm mb-6 text-center" style={{ color: colors.textSecondary }}>
               {language === 'th' 
-                ? 'จดหมายที่คุณกำลังมองหาไม่พบ กรุณาลองสร้างใหม่'
-                : 'The letter you\'re looking for was not found. Please try generating again.'}
+                ? 'จดหมายที่คุณกำลังมองหาไม่พบ'
+                : 'The letter you\'re looking for was not found'}
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 w-full max-w-xs">
+              {leaseIdFromUrl && (
+                <Button
+                  onClick={() => {
+                    haptic.light();
+                    navigate(createPageUrl("LeaseLetters") + `?leaseId=${leaseIdFromUrl}`);
+                  }}
+                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  {language === 'th' ? 'ดูจดหมายทั้งหมด' : 'View All Letters'}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => navigate(-1)}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {strings.back || 'Back'}
-              </Button>
-              <Button
-                onClick={() => navigate(createPageUrl("UploadScan"))}
-                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-              >
-                {language === 'th' ? 'กลับไปสแกน' : 'Back to Scans'}
               </Button>
             </div>
           </div>

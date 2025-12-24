@@ -40,6 +40,7 @@ import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
 import LetterReview from './pages/LetterReview';
+import LeaseLetters from './pages/LeaseLetters';
 import __Layout from './Layout.jsx';
 
 
@@ -86,6 +87,7 @@ export const PAGES = {
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
     "LetterReview": LetterReview,
+    "LeaseLetters": LeaseLetters,
 }
 
 export const pagesConfig = {

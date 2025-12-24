@@ -946,15 +946,15 @@ ${user.full_name || 'Tenant'}`;
                           </p>
                           <Button
                             onClick={() => {
-                              console.log('[Navigation] Going to LetterReview with letterId:', generationResult.letterId);
+                              console.log('[Navigation] Going to LeaseLetters with leaseId:', lease.id);
                               haptic.medium();
-                              navigate(createPageUrl("LetterReview") + `?letterId=${generationResult.letterId}`);
+                              navigate(createPageUrl("LeaseLetters") + `?leaseId=${lease.id}`);
                             }}
                             style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                             className="w-full"
                           >
                             <FileText className="w-4 h-4 mr-2" />
-                            {language === 'th' ? 'ตรวจสอบจดหมาย' : 'Review Letter'}
+                            {language === 'th' ? 'ดูจดหมาย' : 'View Letters'}
                           </Button>
                         </div>
                       </div>
