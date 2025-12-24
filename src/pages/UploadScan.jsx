@@ -23,7 +23,8 @@ import {
   Shield,
   Eye,
   ExternalLink,
-  Copy
+  Copy,
+  Download
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
