@@ -71,7 +71,19 @@ function TemplatesContent() {
   const handleDownloadClick = (template) => {
     console.log('📋 Template Full Record:', JSON.stringify(template, null, 2));
     setConfirmTemplate(template);
+    // Lock body scroll when modal opens
+    document.body.style.overflow = 'hidden';
   };
+
+  React.useEffect(() => {
+    // Unlock body scroll when modal closes
+    if (!confirmTemplate && !previewTemplate) {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [confirmTemplate, previewTemplate]);
 
   const handleConfirmDownload = async () => {
     const template = confirmTemplate;
@@ -402,12 +414,24 @@ function TemplatesContent() {
 
       {/* Confirmation Modal */}
       {confirmTemplate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setConfirmTemplate(null)}>
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" 
+          onClick={() => setConfirmTemplate(null)}
+          style={{ overflow: 'hidden' }}
+        >
           <div 
-            className="rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto"
-            style={{ backgroundColor: colors.cardBg }}
+            className="rounded-2xl shadow-2xl max-w-lg w-full flex flex-col"
+            style={{ 
+              backgroundColor: colors.cardBg,
+              maxHeight: '85vh',
+              height: 'auto'
+            }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto flex-1 p-6 space-y-4" style={{ 
+              paddingBottom: '0'
+            }}>
             <div className="text-center mb-4">
               <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: '#0C3B2E' }}>
                 <Download className="w-8 h-8 text-white" />
@@ -526,15 +550,25 @@ function TemplatesContent() {
                 <div><strong>Status:</strong> {confirmTemplate.status || 'unknown'}</div>
               </div>
             )}
+            </div>
 
-            <div className="flex gap-3">
+            {/* Sticky Footer with CTAs */}
+            <div 
+              className="sticky bottom-0 border-t p-4 flex gap-3"
+              style={{
+                backgroundColor: colors.cardBg,
+                borderTopColor: colors.borderColor,
+                paddingBottom: `calc(16px + env(safe-area-inset-bottom, 0px))`
+              }}
+            >
               <Button
                 variant="outline"
                 onClick={() => setConfirmTemplate(null)}
                 className="flex-1"
                 style={{
                   borderColor: colors.borderColor,
-                  color: colors.textPrimary
+                  color: colors.textPrimary,
+                  minHeight: '48px'
                 }}
               >
                 {strings.cancel}
@@ -544,7 +578,8 @@ function TemplatesContent() {
                 className="flex-1"
                 style={{
                   backgroundColor: '#0C3B2E',
-                  color: '#FFFFFF'
+                  color: '#FFFFFF',
+                  minHeight: '48px'
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
