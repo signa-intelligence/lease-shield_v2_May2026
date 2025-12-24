@@ -44,34 +44,31 @@ function LeaseLettersContent() {
   });
 
   const { data: letters = [], isLoading } = useQuery({
-    queryKey: ['letters', leaseId, user?.id],
+    queryKey: ['letters', leaseId],
     queryFn: async () => {
-      if (!leaseId || !user?.id) {
-        console.log('[LeaseLetters] Missing required data:', { leaseId, userId: user?.id });
+      if (!leaseId) {
+        console.log('[LeaseLetters] No leaseId provided');
         return [];
       }
       
       console.log('[LeaseLetters] Querying letters:', {
         leaseId,
-        userId: user.id,
-        userEmail: user.email
+        userId: user?.id
       });
 
-      // Query by lease_id AND user_id explicitly
+      // Query by lease_id - RLS filters by user automatically
       const results = await base44.entities.Letter.filter({ 
-        lease_id: leaseId,
-        user_id: user.id 
+        lease_id: leaseId
       }, '-created_date');
       
       console.log('[LeaseLetters] Query results:', {
         count: results.length,
-        letterIds: results.map(l => l.id),
-        letters: results
+        letterIds: results.map(l => l.id)
       });
 
       return results;
     },
-    enabled: !!leaseId && !!user?.id,
+    enabled: !!leaseId && !!user,
     staleTime: 0,
     refetchOnMount: true,
     initialData: []

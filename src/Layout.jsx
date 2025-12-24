@@ -66,15 +66,28 @@ const createRipple = (event, element) => {
   setTimeout(() => ripple.remove(), 600);
 };
 
-// Global error handlers
+// Enhanced global error handlers with more detail
 if (typeof window !== 'undefined') {
   window.onerror = (message, source, lineno, colno, error) => {
-    console.error('[Global Error]', { message, source, lineno, colno, error });
+    console.error('[GLOBAL ERROR]', {
+      message,
+      source,
+      lineno,
+      colno,
+      error,
+      stack: error?.stack,
+      timestamp: new Date().toISOString()
+    });
     return false;
   };
 
   window.onunhandledrejection = (event) => {
-    console.error('[Unhandled Promise Rejection]', event.reason);
+    console.error('[UNHANDLED PROMISE REJECTION]', {
+      reason: event.reason,
+      promise: event.promise,
+      stack: event.reason?.stack,
+      timestamp: new Date().toISOString()
+    });
   };
 }
 
