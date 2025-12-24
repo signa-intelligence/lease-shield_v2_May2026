@@ -80,8 +80,8 @@ function ReportFullContent() {
       viewLetters: "View Letters",
       upgradeToSecure: "Upgrade to Secure",
       upgradeDesc: "Get automatic letter generation based on your lease scan findings",
-      lettersGenerated: "letters generated successfully",
-      analysisComplete: "Analysis complete - letters created from scan recommendations",
+      lettersGenerated: "letter generated successfully",
+      analysisComplete: "Letter created from scan recommendations",
       noScanReportFound: "No scan report found",
       uploadALease: "Upload a Lease",
       fullLeaseReport: "Full Lease Report",
@@ -124,7 +124,7 @@ function ReportFullContent() {
       upgradeToSecure: "อัปเกรดเป็น Secure",
       upgradeDesc: "รับการสร้างจดหมายอัตโนมัติตามผลการสแกนสัญญาเช่าของคุณ",
       lettersGenerated: "สร้างจดหมายสำเร็จแล้ว",
-      analysisComplete: "วิเคราะห์เสร็จสิ้น - สร้างจดหมายจากคำแนะนำของการสแกน",
+      analysisComplete: "สร้างจดหมายจากคำแนะนำของการสแกน",
       noScanReportFound: "ไม่พบรายงานการสแกน",
       uploadALease: "อัปโหลดสัญญาเช่า",
       fullLeaseReport: "รายงานการเช่าฉบับเต็ม",
@@ -342,137 +342,77 @@ function ReportFullContent() {
     }
   };
 
-  // Analyze scan to determine which letters to generate
+  // Generate negotiation letter from scan recommendations
   const analyzeAndGenerateLetters = async () => {
     if (!scan || !lease) return;
+
+    console.log('[Letter Generation] Starting:', { 
+      leaseId: lease.id, 
+      scanId: scan.id, 
+      riskScore: scan.risk_score,
+      flagsCount: scan.scan_full?.flags?.length || 0
+    });
 
     setGeneratingLetters(true);
     setGenerationResult(null);
 
     try {
-      const lettersToGenerate = [];
       const fullFlags = scan.scan_full?.flags || [];
 
-      // NEW: Generate pre-signing negotiation letter if there are any flags
-      if (fullFlags.length > 0) {
-        // Build concerns list from flags
-        const concerns = fullFlags
-          .slice(0, 5) // Take top 5 issues
-          .map((flag, idx) => {
-            const num = idx + 1;
-            return `${num}. ${flag.title || flag.category}: ${flag.explanation || flag.description || ''}`;
-          })
-          .join('\n');
-
-        lettersToGenerate.push({
-          subject: 'lease_negotiation',
-          params: {
-            concerns_list: concerns
-          }
-        });
+      if (fullFlags.length === 0) {
+        throw new Error('No recommendations found in scan');
       }
 
-      // Check for deposit-related issues (post-signing)
-      const hasDepositIssues = fullFlags.some(f => 
-        f.category?.toLowerCase().includes('deposit') || 
-        f.title?.toLowerCase().includes('deposit')
-      );
-      if (hasDepositIssues) {
-        lettersToGenerate.push({ subject: 'deposit', params: {} });
-      }
+      // Build letter content from top recommendations
+      const topIssues = fullFlags.slice(0, 5);
+      const issuesList = topIssues.map((flag, idx) => {
+        return `${idx + 1}. **${flag.title || flag.category}**\n   ${flag.explanation || flag.description}\n   *Recommendation:* ${flag.recommendation}`;
+      }).join('\n\n');
 
-      // Check for damage/deduction issues
-      const hasDamageIssues = fullFlags.some(f => 
-        f.category?.toLowerCase().includes('damage') ||
-        f.category?.toLowerCase().includes('deduction') ||
-        f.title?.toLowerCase().includes('damage')
-      );
-      if (hasDamageIssues) {
-        lettersToGenerate.push({ subject: 'deductions', params: {} });
-      }
+      const letterBody = `Dear Landlord,
 
-      // Check for termination issues
-      const hasTerminationIssues = fullFlags.some(f => 
-        f.category?.toLowerCase().includes('termination') ||
-        f.category?.toLowerCase().includes('notice') ||
-        f.title?.toLowerCase().includes('termination')
-      );
-      if (hasTerminationIssues) {
-        lettersToGenerate.push({ subject: 'early_termination', params: {} });
-      }
+I am writing regarding the lease agreement for ${lease.property_address || 'the property'}.
 
-      // Create a case if one doesn't exist
-      const existingCases = await base44.entities.Case.filter({ lease_id: lease.id });
-      let caseId;
+After carefully reviewing the lease terms, I have identified several points that I would like to discuss and potentially amend before signing:
 
-      if (existingCases && existingCases.length > 0) {
-        caseId = existingCases[0].id;
-      } else {
-        // Create new case
-        const newCase = await base44.entities.Case.create({
-          user_email: user.email,
-          lease_id: lease.id,
-          type: 'deposit',
-          status: 'ready_drafts',
-          dispute_amount: lease.deposit_amount || 0,
-          summary: `Auto-generated from lease scan - Risk Score: ${scan.risk_score}/100`,
-          landlord_name: user.landlord_name || '',
-          timeline: [{
-            timestamp: new Date().toISOString(),
-            event: 'case_created_from_scan',
-            actor: user.email,
-            meta: { scan_id: scanId, auto_generated: true }
-          }]
-        });
-        caseId = newCase.id;
-      }
+${issuesList}
 
-      // Generate each recommended letter
-      const results = [];
-      for (const letterConfig of lettersToGenerate) {
-        try {
-          const response = await base44.functions.invoke('generatePhase1Letter', {
-            caseId: caseId,
-            subject: letterConfig.subject,
-            tenant_name: user.full_name,
-            landlord_name: user.landlord_name || 'Landlord',
-            property_address: lease.property_address || '',
-            deposit_amount: lease.deposit_amount || 0,
-            contract_ref: lease.start_date 
-              ? `Lease dated ${new Date(lease.start_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` 
-              : 'Lease Agreement',
-            ...letterConfig.params
-          });
+I believe these amendments would create a more balanced agreement that protects both parties' interests. I would appreciate the opportunity to discuss these points with you.
 
-          if (response.data?.ok) {
-            results.push({
-              subject: letterConfig.subject,
-              success: true,
-              urls: response.data.urls
-            });
-          }
-        } catch (error) {
-          console.error(`Failed to generate ${letterConfig.subject} letter:`, error);
-          results.push({
-            subject: letterConfig.subject,
-            success: false,
-            error: error.message
-          });
-        }
-      }
+Thank you for your consideration.
 
-      setGenerationResult({
-        caseId,
-        letters: results,
-        totalGenerated: results.filter(r => r.success).length
+Sincerely,
+${user.full_name}`;
+
+      // Create Letter record
+      const newLetter = await base44.entities.Letter.create({
+        user_id: user.id,
+        lease_id: lease.id,
+        scan_id: scan.id,
+        title: `Lease Negotiation Letter - ${lease.property_address || 'Property'}`,
+        language: language,
+        body: letterBody,
+        format: 'text',
+        status: 'ready',
+        recommendations_used: topIssues.map(f => f.title || f.category)
       });
 
-      queryClient.invalidateQueries({ queryKey: ['case', caseId] });
-      toast.success(strings.analysisComplete);
+      console.log('[Letter Generation] Success:', { 
+        letterId: newLetter.id,
+        recommendationsUsed: topIssues.length
+      });
+
+      setGenerationResult({
+        letterId: newLetter.id,
+        totalGenerated: 1
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['letters'] });
+      toast.success(language === 'th' ? 'สร้างจดหมายเรียบร้อย' : 'Letter generated successfully');
       haptic.success();
 
     } catch (error) {
-      console.error('Letter generation failed:', error);
+      console.error('[Letter Generation] Failed:', error);
       toast.error(strings.failedToGenerateLetters);
       haptic.error();
     } finally {
@@ -865,23 +805,30 @@ function ReportFullContent() {
                       
                       {generationResult ? (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#D1FAE5' }}>
+                          <div className="flex items-center gap-2 p-3 rounded-lg border" style={{ 
+                            backgroundColor: isDarkMode ? '#1E3A2E' : '#D1FAE5',
+                            borderColor: '#10B981'
+                          }}>
                             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                             <div>
-                              <p className="font-semibold text-emerald-900" style={{ color: isDarkMode ? colors.textPrimary : '#065F46' }}>
+                              <p className="font-semibold" style={{ color: isDarkMode ? colors.textPrimary : '#065F46' }}>
                                 {strings.generated}
                               </p>
-                              <p className="text-sm text-emerald-700" style={{ color: isDarkMode ? colors.textSecondary : '#047857' }}>
-                                {generationResult.totalGenerated} {strings.lettersGenerated}
+                              <p className="text-sm" style={{ color: isDarkMode ? colors.textSecondary : '#047857' }}>
+                                {language === 'th' ? 'พร้อมสำหรับการตรวจสอบและแก้ไข' : 'Ready for review and editing'}
                               </p>
                             </div>
                           </div>
                           <Button
-                            onClick={() => navigate(createPageUrl("CaseDetails") + `?caseId=${generationResult.caseId}`)}
+                            onClick={() => {
+                              haptic.medium();
+                              navigate(createPageUrl("LetterReview") + `?letterId=${generationResult.letterId}`);
+                            }}
                             style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                             className="w-full"
                           >
-                            {strings.viewLetters}
+                            <FileText className="w-4 h-4 mr-2" />
+                            {language === 'th' ? 'ตรวจสอบจดหมาย' : 'Review Letter'}
                           </Button>
                         </div>
                       ) : (
