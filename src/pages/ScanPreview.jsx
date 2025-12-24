@@ -229,19 +229,13 @@ function ScanPreviewContent() {
 
   const strings = t[language] || t.en;
 
-  const getRiskColor = (score) => {
-    if (score <= 30) return '#10B981';
-    if (score <= 60) return '#F59E0B';
-    if (score <= 80) return '#EF4444';
-    return '#DC2626';
+  const getRiskLevel = (score) => {
+    if (score >= 70) return { level: 'high', label: language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий риск' : 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' };
+    if (score >= 40) return { level: 'medium', label: language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний риск' : 'MEDIUM RISK', color: '#F59E0B', bg: '#FEF3C7' };
+    return { level: 'low', label: language === 'th' ? 'ความเสี่ยงต่ำ' : language === 'ru' ? 'Низкий риск' : 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
   };
 
-  const getRiskLabel = (score) => {
-    if (score <= 30) return strings.lowRisk;
-    if (score <= 60) return strings.moderateRisk;
-    if (score <= 80) return strings.highRisk;
-    return strings.criticalRisk;
-  };
+  const riskLevel = scan ? getRiskLevel(scan.risk_score) : null;
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -454,15 +448,43 @@ function ScanPreviewContent() {
         )}
 
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader className="border-b" style={{ backgroundColor: riskColor }}>
+          <CardHeader className="border-b" style={{ backgroundColor: riskLevel?.color || '#10B981' }}>
             <div className="text-white">
-              <CardTitle className="text-2xl font-bold mb-2">{strings.riskScore}</CardTitle>
-              <div className="flex items-center gap-4">
-                <div className="text-6xl font-bold">{scan.risk_score}%</div>
-                <div className="text-xl">{riskLabel}</div>
+              <CardTitle className="text-2xl font-bold mb-3">{strings.riskScore}</CardTitle>
+              <div className="flex flex-wrap items-center gap-3">
+                <Badge className="text-2xl px-4 py-2 font-bold" style={{
+                  backgroundColor: riskLevel?.bg || '#D1FAE5',
+                  color: riskLevel?.color || '#10B981',
+                  border: `2px solid ${riskLevel?.color || '#10B981'}`
+                }}>
+                  {scan.risk_score}/100
+                </Badge>
+                <Badge className="text-lg px-4 py-2 font-bold flex items-center gap-2" style={{
+                  backgroundColor: '#FFFFFF',
+                  color: riskLevel?.color || '#10B981'
+                }}>
+                  {riskLevel?.level === 'high' && <AlertTriangle className="w-5 h-5" />}
+                  {riskLevel?.label || 'LOW RISK'}
+                </Badge>
               </div>
             </div>
           </CardHeader>
+          {riskLevel?.level === 'high' && (
+            <div className="px-6 pt-4">
+              <div className="p-3 rounded-lg border-l-4" style={{
+                backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                borderLeftColor: '#EF4444'
+              }}>
+                <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
+                  {language === 'th' 
+                    ? 'ความเสี่ยงสูง: สัญญานี้มีข้อกำหนดที่เอื้อประโยชน์ต่อเจ้าของบ้านอย่างมาก ตรวจสอบก่อนเซ็น'
+                    : language === 'ru'
+                      ? 'Высокий риск: этот договор содержит условия, которые сильно благоприятствуют арендодателю. Проверьте перед подписанием.'
+                      : 'High risk: this lease contains clauses that heavily favour the landlord. Review before signing.'}
+                </p>
+              </div>
+            </div>
+          )}
           <CardContent className="p-6">
             <h3 className="font-bold text-lg mb-2" style={{ color: colors.textPrimary }}>{strings.summary}</h3>
             <p style={{ color: colors.textSecondary }}>{scan.summary}</p>
