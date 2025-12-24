@@ -37,8 +37,13 @@ function LeaseLettersContent() {
 
   const { data: letters = [], isLoading } = useQuery({
     queryKey: ['letters', leaseId],
-    queryFn: () => base44.entities.Letter.filter({ lease_id: leaseId }, '-created_date'),
-    enabled: !!leaseId,
+    queryFn: async () => {
+      console.log('[LeaseLetters] Fetching letters for:', { leaseId, userId: user?.id });
+      const result = await base44.entities.Letter.filter({ lease_id: leaseId }, '-created_date');
+      console.log('[LeaseLetters] Query result:', { count: result.length, leaseId });
+      return result;
+    },
+    enabled: !!leaseId && !!user,
     initialData: []
   });
 
@@ -52,6 +57,12 @@ function LeaseLettersContent() {
   });
 
   const createBlankLetter = async () => {
+    if (!user || !leaseId) {
+      console.error('[CreateBlankLetter] Missing required data:', { user: !!user, leaseId });
+      toast.error('Cannot create letter - missing data');
+      return;
+    }
+
     try {
       haptic.medium();
       const blankBody = `Dear Landlord,
@@ -65,22 +76,53 @@ Thank you for your consideration.
 Sincerely,
 ${user.full_name}`;
 
-      const newLetter = await base44.entities.Letter.create({
+      const letterData = {
         user_id: user.id,
         lease_id: leaseId,
         title: `Draft Letter - ${lease?.property_address || 'Property'}`,
         body: blankBody,
         status: 'draft',
         language: language
+      };
+
+      console.log('[CreateBlankLetter] Creating with data:', {
+        user_id: letterData.user_id,
+        lease_id: letterData.lease_id,
+        titleLength: letterData.title.length,
+        bodyLength: letterData.body.length
       });
 
-      if (newLetter?.id) {
-        toast.success(language === 'th' ? 'สร้างจดหมายว่างแล้ว' : 'Blank letter created');
-        navigate(createPageUrl("LetterReview") + `?letterId=${newLetter.id}`);
+      const newLetter = await base44.entities.Letter.create(letterData);
+
+      console.log('[CreateBlankLetter] Create response:', { 
+        hasId: !!newLetter?.id, 
+        letterId: newLetter?.id,
+        fullResponse: newLetter
+      });
+
+      if (!newLetter || !newLetter.id) {
+        throw new Error('No letter ID returned from create');
       }
+
+      // Verify creation
+      const verify = await base44.entities.Letter.filter({ id: newLetter.id });
+      console.log('[CreateBlankLetter] Verification:', { found: verify.length > 0 });
+
+      if (verify.length === 0) {
+        throw new Error('Letter created but not retrievable');
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['letters', leaseId] });
+      toast.success(language === 'th' ? 'สร้างจดหมายว่างแล้ว' : 'Blank letter created');
+      navigate(createPageUrl("LetterReview") + `?letterId=${newLetter.id}&leaseId=${leaseId}`);
     } catch (error) {
-      console.error('Failed to create blank letter:', error);
-      toast.error(language === 'th' ? 'ไม่สามารถสร้างจดหมายได้' : 'Failed to create letter');
+      console.error('[CreateBlankLetter] ERROR:', {
+        message: error.message,
+        stack: error.stack,
+        error
+      });
+      toast.error(`Failed to create letter: ${error.message}`);
+      haptic.error();
     }
   };
 

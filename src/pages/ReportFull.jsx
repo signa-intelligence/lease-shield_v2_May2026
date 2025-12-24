@@ -524,12 +524,21 @@ ${user.full_name || 'Tenant'}`;
         // Don't fail the whole operation if verification fails - letter was created
       }
 
+      // Final verification before showing success
+      const finalVerify = await base44.entities.Letter.filter({ lease_id: lease.id });
+      console.log('[Letter Generation] Final verification - letters for lease:', {
+        leaseId: lease.id,
+        count: finalVerify.length
+      });
+
       setGenerationResult({
         letterId: newLetter.id,
+        leaseId: lease.id,
         totalGenerated: 1
       });
 
       queryClient.invalidateQueries({ queryKey: ['letters'] });
+      queryClient.invalidateQueries({ queryKey: ['letters', lease.id] });
       queryClient.invalidateQueries({ queryKey: ['letter', newLetter.id] });
       
       toast.success(language === 'th' ? 'สร้างจดหมายเรียบร้อย' : 'Letter generated successfully');

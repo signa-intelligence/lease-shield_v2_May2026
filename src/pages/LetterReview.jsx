@@ -20,6 +20,7 @@ function LetterReviewContent() {
   
   const urlParams = new URLSearchParams(window.location.search);
   const letterId = urlParams.get('letterId');
+  const leaseIdFromUrl = urlParams.get('leaseId');
 
   const [editedTitle, setEditedTitle] = useState('');
   const [editedBody, setEditedBody] = useState('');
@@ -192,10 +193,7 @@ function LetterReviewContent() {
   }
 
   if (!letter && !isLoading) {
-    console.error('[LetterReview] Letter not found. Params:', { letterId, error: letterError });
-    
-    // Try to get leaseId from URL or referrer
-    const leaseIdFromUrl = urlParams.get('leaseId');
+    console.error('[LetterReview] Letter not found. Params:', { letterId, leaseIdFromUrl, error: letterError });
     
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
