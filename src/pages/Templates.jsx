@@ -124,7 +124,9 @@ function TemplatesContent() {
       });
 
       if (!response.data?.ok) {
-        toast.error(response.data?.error || 'Download failed');
+        const errorMsg = response.data?.error || 'Download failed';
+        toast.error(errorMsg);
+        haptic.error();
         return;
       }
 
@@ -136,14 +138,14 @@ function TemplatesContent() {
       link.click();
       document.body.removeChild(link);
       
-      // Refresh credits
+      // Refresh credits (deducted only after successful download)
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       
-      toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download started');
+      toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ - หักเครดิตแล้ว' : 'Download started - credit deducted');
       haptic.success();
     } catch (error) {
       console.error('Download error:', error);
-      toast.error(language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed');
+      toast.error(language === 'th' ? 'ดาวน์โหลดล้มเหลว - ไม่มีการหักเครดิต' : 'Download failed - no credit deducted');
       haptic.error();
     } finally {
       setDownloading(null);
