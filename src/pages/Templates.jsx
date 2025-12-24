@@ -12,6 +12,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import EmptyState from "../components/shared/EmptyState";
+import ConfirmDownloadModal from "../components/templates/ConfirmDownloadModal";
 
 function TemplatesContent() {
   const navigate = useNavigate();
@@ -76,6 +77,11 @@ function TemplatesContent() {
     // Hide chat FAB to prevent overlap
     const lisaFab = document.querySelector('.fab-bottom');
     if (lisaFab) lisaFab.style.display = 'none';
+  };
+
+  const handleCancelModal = () => {
+    setConfirmTemplate(null);
+    setPreviewTemplate(null);
   };
 
   React.useEffect(() => {
@@ -320,28 +326,6 @@ function TemplatesContent() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 space-y-4">
-                          {/* Preview Image */}
-                          {template.preview_image_url && (
-                            <div 
-                              className="relative rounded-lg overflow-hidden cursor-pointer group"
-                              onClick={() => setPreviewTemplate(template)}
-                              style={{ height: '120px', backgroundColor: colors.fieldBg }}
-                            >
-                              <img 
-                                src={template.preview_image_url} 
-                                alt="Template preview"
-                                className="w-full h-full object-cover"
-                                style={{ filter: 'blur(8px)' }}
-                              />
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                <span className="text-white text-xs font-semibold px-3 py-1 bg-black/50 rounded-full backdrop-blur-sm">
-                                  {language === 'th' ? 'ดูตัวอย่าง (เบลอ)' : 'Preview (blurred)'}
-                                </span>
-                              </div>
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                            </div>
-                          )}
-
                           <p className="text-sm line-clamp-3" style={{ color: colors.textSecondary }}>
                             {description}
                           </p>
@@ -361,25 +345,11 @@ function TemplatesContent() {
                           )}
 
                           <div className="flex gap-2">
-                            {template.preview_image_url && (
-                              <Button
-                                variant="outline"
-                                onClick={() => setPreviewTemplate(template)}
-                                className="flex-1"
-                                style={{
-                                  borderColor: colors.borderColor,
-                                  color: colors.textPrimary
-                                }}
-                              >
-                                <FileText className="w-4 h-4 mr-2" />
-                                {language === 'th' ? 'ดูตัวอย่าง' : 'Preview'}
-                              </Button>
-                            )}
                             {canDownload ? (
                               <Button
                                 onClick={() => handleDownloadClick(template)}
                                 disabled={isDownloadingThis}
-                                className={template.preview_image_url ? 'flex-1' : 'w-full'}
+                                className="w-full"
                                 style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                               >
                                 {isDownloadingThis ? (
@@ -400,7 +370,7 @@ function TemplatesContent() {
                                   haptic.light();
                                   navigate(createPageUrl("Account"));
                                 }}
-                                className={template.preview_image_url ? 'flex-1' : 'w-full'}
+                                className="w-full"
                                 style={{ backgroundColor: '#C7A338', color: '#FFFFFF' }}
                               >
                                 <ShoppingCart className="w-4 h-4 mr-2" />
@@ -419,289 +389,18 @@ function TemplatesContent() {
         )}
       </div>
 
-      {/* Confirmation Modal */}
-      {confirmTemplate && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" 
-          onClick={() => setConfirmTemplate(null)}
-          style={{ 
-            overflow: 'hidden',
-            padding: '12px'
-          }}
-        >
-          <div 
-            className="rounded-2xl shadow-2xl flex flex-col"
-            style={{ 
-              backgroundColor: colors.cardBg,
-              maxHeight: 'calc(100dvh - 24px)',
-              width: 'min(92vw, 520px)',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Scrollable Content */}
-            <div 
-              className="overflow-y-auto flex-1 space-y-4"
-              style={{ 
-                WebkitOverflowScrolling: 'touch',
-                padding: '24px 20px',
-                paddingBottom: '24px'
-              }}
-            >
-            <div className="text-center mb-4">
-              <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: '#0C3B2E' }}>
-                <Download className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                {strings.confirmDownloadTitle}
-              </h3>
-              <p className="text-lg font-semibold mb-1" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? confirmTemplate.title_th : confirmTemplate.title_en}
-              </p>
-              <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
-                {language === 'th' ? confirmTemplate.description_th : confirmTemplate.description_en}
-              </p>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full" style={{
-                backgroundColor: isDarkMode ? '#374151' : '#FEF3C7',
-                border: `1px solid ${isDarkMode ? '#4B5563' : '#FDE68A'}`
-              }}>
-                <AlertCircle className="w-4 h-4" style={{ color: '#D97706' }} />
-                <span className="text-sm font-bold" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
-                  {strings.creditWillBeDeducted}
-                </span>
-              </div>
-            </div>
-
-            {/* Preview Section - Only show if data exists */}
-            {(confirmTemplate.preview_headings?.length > 0 || 
-              confirmTemplate.preview_bullets?.length > 0 || 
-              confirmTemplate.preview_placeholders?.length > 0) ? (
-              <div className="border rounded-lg p-4 space-y-3" style={{ 
-                borderColor: colors.borderColor,
-                backgroundColor: colors.fieldBg 
-              }}>
-                <h4 className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                  {strings.insideTemplate}
-                </h4>
-                
-                {confirmTemplate.preview_headings && confirmTemplate.preview_headings.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
-                      {strings.mainSections}
-                    </p>
-                    <ul className="space-y-1">
-                      {confirmTemplate.preview_headings.map((heading, i) => (
-                        <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textPrimary }}>
-                          <span className="font-bold" style={{ color: '#0C3B2E' }}>§</span>
-                          <span className="font-medium">{heading}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {confirmTemplate.preview_bullets && confirmTemplate.preview_bullets.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
-                      {strings.includes}
-                    </p>
-                    <ul className="space-y-1">
-                      {confirmTemplate.preview_bullets.map((bullet, i) => (
-                        <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textSecondary }}>
-                          <span className="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#0C3B2E' }} />
-                          <span>{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {confirmTemplate.preview_placeholders && confirmTemplate.preview_placeholders.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium mb-1.5" style={{ color: colors.textSecondary }}>
-                      {strings.fillInFields}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {confirmTemplate.preview_placeholders.map((placeholder, i) => (
-                        <span 
-                          key={i} 
-                          className="text-xs px-2 py-1 rounded font-mono"
-                          style={{ 
-                            backgroundColor: colors.cardBg,
-                            border: `1px solid ${colors.borderColor}`,
-                            color: colors.textSecondary 
-                          }}
-                        >
-                          {placeholder}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="border rounded-lg p-4 text-center" style={{ 
-                borderColor: colors.borderColor,
-                backgroundColor: colors.fieldBg 
-              }}>
-                <p className="text-sm italic" style={{ color: colors.textSecondary }}>
-                  {strings.previewUnavailable}
-                </p>
-              </div>
-            )}
+      {/* Single Reusable Confirmation Modal */}
+      <ConfirmDownloadModal
+        template={confirmTemplate}
+        onConfirm={handleConfirmDownload}
+        onCancel={handleCancelModal}
+        colors={colors}
+        language={language}
+        isDarkMode={isDarkMode}
+        debugMode={debugMode}
+      />
 
 
-
-            {/* Debug Meta Line */}
-            {debugMode && (
-              <div className="text-xs font-mono p-3 rounded-lg space-y-1" style={{ 
-                color: colors.textSecondary, 
-                backgroundColor: isDarkMode ? '#1F2937' : '#F3F4F6',
-                border: `1px solid ${colors.borderColor}`
-              }}>
-                <div><strong>Key:</strong> {confirmTemplate.template_key || 'missing'}</div>
-                <div><strong>ID:</strong> {confirmTemplate.id}</div>
-                <div><strong>File:</strong> {confirmTemplate.file_path || confirmTemplate.docx_url || confirmTemplate.pdf_url || 'missing'}</div>
-                <div><strong>Updated:</strong> {confirmTemplate.updated_date ? new Date(confirmTemplate.updated_date).toLocaleString() : 'N/A'}</div>
-                <div><strong>Status:</strong> {confirmTemplate.status || 'unknown'}</div>
-              </div>
-            )}
-            </div>
-
-            {/* Always-Visible Fixed Footer with CTAs */}
-            <div 
-              style={{
-                flex: '0 0 auto',
-                position: 'sticky',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                zIndex: 100,
-                backgroundColor: colors.cardBg,
-                borderTop: `1px solid ${colors.borderColor}`,
-                padding: '12px 16px',
-                paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '12px',
-                borderBottomLeftRadius: '16px',
-                borderBottomRightRadius: '16px',
-                boxShadow: '0 -2px 8px rgba(0,0,0,0.08)'
-              }}
-            >
-              <button
-                onClick={() => setConfirmTemplate(null)}
-                className="btn-interaction"
-                style={{
-                  backgroundColor: 'transparent',
-                  border: `2px solid ${colors.borderColor}`,
-                  color: colors.textPrimary,
-                  minHeight: '48px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {strings.cancel}
-              </button>
-              <button
-                onClick={handleConfirmDownload}
-                className="btn-interaction"
-                style={{
-                  backgroundColor: '#0C3B2E',
-                  color: '#FFFFFF',
-                  minHeight: '48px',
-                  fontSize: '16px',
-                  fontWeight: '700',
-                  borderRadius: '10px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                <Download className="w-4 h-4" />
-                <span>{strings.confirmDownload}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Preview Modal */}
-      {previewTemplate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setPreviewTemplate(null)}>
-          <div 
-            className="rounded-2xl shadow-2xl max-w-2xl w-full p-6 space-y-4"
-            style={{ backgroundColor: colors.cardBg, maxHeight: '80vh', overflow: 'auto' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? previewTemplate.title_th : previewTemplate.title_en}
-                </h3>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  {language === 'th' ? 'ตัวอย่างเบลอ - ดาวน์โหลดเพื่อดูเนื้อหาเต็ม' : 'Blurred preview - download to see full content'}
-                </p>
-              </div>
-              <button
-                onClick={() => setPreviewTemplate(null)}
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: colors.fieldBg }}
-              >
-                <span className="text-xl" style={{ color: colors.textPrimary }}>×</span>
-              </button>
-            </div>
-
-            {previewTemplate.preview_image_url && (
-              <div className="relative rounded-lg overflow-hidden" style={{ minHeight: '400px', backgroundColor: colors.fieldBg }}>
-                <img 
-                  src={previewTemplate.preview_image_url} 
-                  alt="Template preview"
-                  className="w-full h-auto object-contain"
-                  style={{ filter: 'blur(12px)' }}
-                />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <div className="text-center space-y-3">
-                    <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center" style={{ backgroundColor: '#0C3B2E' }}>
-                      <FileText className="w-8 h-8 text-white" />
-                    </div>
-                    <p className="text-white font-semibold">
-                      {language === 'th' ? 'ดาวน์โหลดเพื่อดูเนื้อหาที่ชัดเจน' : 'Download to see clear content'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <Button
-              onClick={() => {
-                setPreviewTemplate(null);
-                handleDownloadClick(previewTemplate);
-              }}
-              disabled={letterCredits < (previewTemplate.cost_credits || 1)}
-              className="w-full"
-              style={{
-                backgroundColor: letterCredits >= (previewTemplate.cost_credits || 1) ? '#0C3B2E' : '#9CA3AF',
-                color: '#FFFFFF'
-              }}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {letterCredits >= (previewTemplate.cost_credits || 1)
-                ? (language === 'th' ? `ดาวน์โหลด (${previewTemplate.cost_credits || 1} เครดิต)` : `Download (${previewTemplate.cost_credits || 1} credit${(previewTemplate.cost_credits || 1) > 1 ? 's' : ''})`)
-                : (language === 'th' ? 'เครดิตไม่เพียงพอ' : 'Insufficient Credits')}
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
