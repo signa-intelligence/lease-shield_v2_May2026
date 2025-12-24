@@ -33,77 +33,37 @@ function TemplatesContent() {
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['templateAssets'],
     queryFn: async () => {
-      // DIAGNOSTIC: Fetch ALL templates first (no filters)
       const allResults = await base44.entities.TemplateLibrary.list();
-      console.log('🔍 DIAGNOSTIC: Total templates in DB (no filters):', allResults.length);
-      
-      // RELAXED FILTER: Only exclude explicitly inactive templates
-      const results = allResults.filter(t => {
-        return t.status !== 'inactive' && t.status !== false;
-      }).sort((a, b) => {
-        // Sort by updated_date (newest first), then sort_order
-        const dateA = new Date(a.updated_date || a.created_date || 0);
-        const dateB = new Date(b.updated_date || b.created_date || 0);
-        if (dateB - dateA !== 0) return dateB - dateA;
+
+      // Filter: only active templates
+      const activeTemplates = allResults.filter(t => t.status === 'active');
+
+      // Defensive deduplication: unique by template_key first, then by (category, title_en)
+      const seenKeys = new Set();
+      const seenCategoryTitles = new Set();
+      const uniqueTemplates = [];
+
+      for (const t of activeTemplates) {
+        const key = t.template_key;
+        const categoryTitleKey = `${t.category}:${t.title_en}`;
+
+        if (!seenKeys.has(key) && !seenCategoryTitles.has(categoryTitleKey)) {
+          seenKeys.add(key);
+          seenCategoryTitles.add(categoryTitleKey);
+          uniqueTemplates.push(t);
+        }
+      }
+
+      // Sort by category sort_order, then by template sort_order
+      uniqueTemplates.sort((a, b) => {
+        const catOrder = { checklists: 1, pre_signing: 2, initial_resolution: 3, professional: 4, final: 5 };
+        const catA = catOrder[a.category] || 99;
+        const catB = catOrder[b.category] || 99;
+        if (catA !== catB) return catA - catB;
         return (a.sort_order || 100) - (b.sort_order || 100);
       });
-      
-      console.log('📄 Templates after relaxed filter:', results.length);
-      
-      // Generate template_key if missing and track for update
-      const needsKeyGeneration = [];
-      for (const t of results) {
-        if (!t.template_key) {
-          const generatedKey = `${(t.title_en || t.title_th || '').toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${t.category}`;
-          t.template_key = generatedKey;
-          needsKeyGeneration.push({ id: t.id, template_key: generatedKey });
-        }
-      }
-      
-      if (needsKeyGeneration.length > 0) {
-        console.log(`🔧 Generating template_key for ${needsKeyGeneration.length} templates`);
-        Promise.all(
-          needsKeyGeneration.map(({ id, template_key }) => 
-            base44.entities.TemplateLibrary.update(id, { template_key })
-              .catch(err => console.error(`Failed to update template_key for ${id}:`, err))
-          )
-        );
-      }
-      
-      // Deduplicate by template_key - keep newest (first in sorted array)
-      const uniqueTemplates = [];
-      const duplicatesToDeactivate = [];
-      const seenKeys = new Map();
-      
-      for (const t of results) {
-        const key = t.template_key;
-        
-        if (!seenKeys.has(key)) {
-          seenKeys.set(key, t);
-          uniqueTemplates.push(t);
-        } else {
-          // This is a duplicate - mark for deactivation
-          const existing = seenKeys.get(key);
-          console.warn(`⚠️ DUPLICATE: "${t.title_en}" (ID: ${t.id}) - keeping newer version (ID: ${existing.id})`);
-          duplicatesToDeactivate.push(t.id);
-        }
-      }
-      
-      console.log('✅ Unique templates:', uniqueTemplates.length);
-      console.log('⚠️ Duplicates to deactivate:', duplicatesToDeactivate.length);
-      
-      // Permanently deactivate duplicates
-      if (duplicatesToDeactivate.length > 0) {
-        Promise.all(
-          duplicatesToDeactivate.map(id => 
-            base44.entities.TemplateLibrary.update(id, { status: 'inactive' })
-              .catch(err => console.error(`Failed to deactivate duplicate ${id}:`, err))
-          )
-        ).then(() => {
-          console.log(`✅ Deactivated ${duplicatesToDeactivate.length} duplicate templates`);
-        });
-      }
-      
+
+      console.log(`✅ ${uniqueTemplates.length} unique templates loaded`);
       return uniqueTemplates;
     }
   });
