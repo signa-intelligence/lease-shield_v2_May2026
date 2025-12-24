@@ -43,55 +43,9 @@ export default function ConfirmDownloadModal({
 
   const t = strings[language] || strings.en;
 
-  // Get preview text with fallback generation from arrays
-  let previewText = language === 'th' 
+  const previewText = language === 'th' 
     ? (template.preview_th || template.preview_en || '')
     : (template.preview_en || template.preview_th || '');
-
-  // Fallback: generate from legacy arrays if preview text is missing
-  if (!previewText.trim() && (template.preview_headings?.length > 0 || template.preview_bullets?.length > 0)) {
-    let generated = '';
-    
-    if (template.preview_headings?.length > 0) {
-      generated += (language === 'th' ? 'ส่วนหลัก:\n' : 'Main sections:\n');
-      template.preview_headings.forEach(h => {
-        generated += `§ ${h}\n`;
-      });
-      generated += '\n';
-    }
-
-    if (template.preview_bullets?.length > 0) {
-      generated += (language === 'th' ? 'รวมถึง:\n' : 'Includes:\n');
-      template.preview_bullets.forEach(b => {
-        generated += `• ${b}\n`;
-      });
-      generated += '\n';
-    }
-
-    if (template.preview_placeholders?.length > 0) {
-      generated += (language === 'th' ? 'ช่องกรอกข้อมูล:\n' : 'Fill-in fields:\n');
-      generated += template.preview_placeholders.join(', ');
-    }
-
-    previewText = generated.trim();
-    
-    // Auto-save generated preview back to DB
-    if (previewText) {
-      const updateData = {};
-      if (language === 'th') {
-        updateData.preview_th = previewText;
-      } else {
-        updateData.preview_en = previewText;
-      }
-      
-      // Silent background update
-      import('@/api/base44Client').then(({ base44 }) => {
-        base44.entities.TemplateLibrary.update(template.id, updateData).catch(err => {
-          console.warn('Failed to auto-save preview:', err);
-        });
-      });
-    }
-  }
 
   const hasPreviewContent = !!previewText.trim();
 

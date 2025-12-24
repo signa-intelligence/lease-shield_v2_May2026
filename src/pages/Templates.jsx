@@ -22,37 +22,7 @@ function TemplatesContent() {
   const [confirmTemplate, setConfirmTemplate] = useState(null);
   const [previewTemplate, setPreviewTemplate] = useState(null);
   
-  // Debug mode from query param
-  const debugMode = React.useMemo(() => {
-    return new URLSearchParams(window.location.search).get('debug') === '1';
-  }, []);
 
-  const [fileExistsMap, setFileExistsMap] = React.useState({});
-
-  // Check file existence for debug mode
-  React.useEffect(() => {
-    if (!debugMode || !templates || templates.length === 0) return;
-
-    const checkFiles = async () => {
-      const results = {};
-      for (const t of templates) {
-        if (t.file_path) {
-          try {
-            const url = `https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/template-files/${t.file_path}`;
-            const response = await fetch(url, { method: 'HEAD' });
-            results[t.id] = response.ok;
-          } catch {
-            results[t.id] = false;
-          }
-        } else {
-          results[t.id] = false;
-        }
-      }
-      setFileExistsMap(results);
-    };
-
-    checkFiles();
-  }, [debugMode, templates]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -63,29 +33,29 @@ function TemplatesContent() {
     queryKey: ['templateAssets'],
     queryFn: async () => {
       const allResults = await base44.entities.TemplateLibrary.list();
-      
-      console.log(`📦 Fetched ${allResults.length} total templates from DB`);
 
-      // Filter: only active templates
-      const activeTemplates = allResults.filter(t => t.status === 'active');
+      // Filter: only valid active templates
+      const validTemplates = allResults.filter(t => 
+        t.status === 'active' &&
+        t.template_key &&
+        t.title_en &&
+        t.description_en &&
+        t.preview_en &&
+        t.file_path
+      );
 
-      // Defensive deduplication: unique by template_key first, then by (category, title_en)
+      // Deduplicate by template_key
       const seenKeys = new Set();
-      const seenCategoryTitles = new Set();
       const uniqueTemplates = [];
 
-      for (const t of activeTemplates) {
-        const key = t.template_key;
-        const categoryTitleKey = `${t.category}:${t.title_en}`;
-
-        if (!seenKeys.has(key) && !seenCategoryTitles.has(categoryTitleKey)) {
-          seenKeys.add(key);
-          seenCategoryTitles.add(categoryTitleKey);
+      for (const t of validTemplates) {
+        if (!seenKeys.has(t.template_key)) {
+          seenKeys.add(t.template_key);
           uniqueTemplates.push(t);
         }
       }
 
-      // Sort by category sort_order, then by template sort_order
+      // Sort by category and sort_order
       uniqueTemplates.sort((a, b) => {
         const catOrder = { checklists: 1, pre_signing: 2, initial_resolution: 3, professional: 4, final: 5 };
         const catA = catOrder[a.category] || 99;
@@ -93,24 +63,24 @@ function TemplatesContent() {
         if (catA !== catB) return catA - catB;
         return (a.sort_order || 100) - (b.sort_order || 100);
       });
-
-      console.log(`✅ ${uniqueTemplates.length} unique active templates loaded`);
-      console.log('Template keys:', uniqueTemplates.map(t => t.template_key).join(', '));
       
       return uniqueTemplates;
-    },
-    staleTime: 0 // Always fetch fresh data
+    }
   });
 
   const handleDownloadClick = (template) => {
-    console.log('📋 Template Full Record:', JSON.stringify(template, null, 2));
-    console.log('📋 Has preview_en?', !!template.preview_en, 'Length:', template.preview_en?.length || 0);
-    console.log('📋 Has preview_th?', !!template.preview_th, 'Length:', template.preview_th?.length || 0);
-    console.log('📋 Has file_path?', !!template.file_path, 'Path:', template.file_path);
+    // Validate template has required fields
+    const isValid = template.template_key && template.title_en && template.description_en && 
+                    template.preview_en && template.file_path;
+    
+    if (!isValid) {
+      toast.error(language === 'th' ? 'เทมเพลตไม่พร้อมใช้งานชั่วคราว' : 'Template temporarily unavailable');
+      haptic.error();
+      return;
+    }
+    
     setConfirmTemplate(template);
-    // Lock body scroll when modal opens
     document.body.style.overflow = 'hidden';
-    // Hide chat FAB to prevent overlap
     const lisaFab = document.querySelector('.fab-bottom');
     if (lisaFab) lisaFab.style.display = 'none';
   };
@@ -140,30 +110,16 @@ function TemplatesContent() {
     
     try {
       setDownloading(template.id);
-      
-      if (debugMode) {
-        console.log('🔧 [DEBUG] Starting download for:', template.template_key);
-        console.log('🔧 [DEBUG] Template has file_path:', !!template.file_path);
-      }
-      
       const response = await base44.functions.invoke('downloadTemplate', {
-        template_id: template.id,
-        debug: debugMode
+        template_id: template.id
       });
 
-      if (debugMode) {
-        console.log('🔧 [DEBUG] Download response:', response.data);
-      }
-
       if (!response.data?.ok) {
-        const errorMsg = response.data?.error || 'Download failed';
-        const errorDetail = response.data?.details || '';
-        toast.error(`${errorMsg}${errorDetail ? ': ' + errorDetail : ''}`);
+        toast.error(response.data?.error || 'Download failed');
         haptic.error();
         return;
       }
 
-      // Trigger download with signed URL
       const link = document.createElement('a');
       link.href = response.data.download_url;
       link.download = response.data.filename || `${template.template_key}.docx`;
@@ -171,15 +127,11 @@ function TemplatesContent() {
       link.click();
       document.body.removeChild(link);
       
-      // Refresh credits (deducted only after successful download)
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      
-      toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ - หักเครดิตแล้ว' : 'Download started - credit deducted');
+      toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download successful');
       haptic.success();
     } catch (error) {
-      console.error('Download error:', error);
-      const errorMsg = error.response?.data?.error || error.message || 'Download failed';
-      toast.error(`${language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed'}: ${errorMsg}`);
+      toast.error(language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed');
       haptic.error();
     } finally {
       setDownloading(null);
@@ -306,140 +258,7 @@ function TemplatesContent() {
           }
         />
 
-        {/* Debug Panel - Always Visible in Debug Mode */}
-        {debugMode && (
-          <>
-            {/* Debug Bar */}
-            <div className="mb-4 p-3 rounded-lg" style={{ 
-              backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7',
-              border: `2px solid #C7A338`
-            }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-bold" style={{ color: colors.textPrimary }}>
-                  🔧 DEBUG ENABLED
-                </span>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    const debugData = templates.map(t => ({
-                      template_key: t.template_key,
-                      title_en: t.title_en,
-                      preview_en_ok: !!t.preview_en,
-                      preview_th_ok: !!t.preview_th,
-                      file_path_ok: !!t.file_path,
-                      file_exists: fileExistsMap[t.id] || false
-                    }));
-                    navigator.clipboard.writeText(JSON.stringify(debugData, null, 2));
-                    toast.success('Debug JSON copied to clipboard');
-                  }}
-                  style={{ backgroundColor: '#C7A338', color: '#000' }}
-                >
-                  COPY DEBUG JSON
-                </Button>
-              </div>
-              <div className="text-xs space-y-1" style={{ color: colors.textSecondary, fontFamily: 'monospace' }}>
-                <div>URL: {window.location.origin}{window.location.pathname}?debug=1</div>
-                <div>Templates loaded: {templates.length}</div>
-                <div>Missing preview EN: {templates.filter(t => !t.preview_en).length}</div>
-                <div>Missing preview TH: {templates.filter(t => !t.preview_th).length}</div>
-                <div>Missing file_path: {templates.filter(t => !t.file_path).length}</div>
-                <div>Missing file exists: {templates.filter(t => !fileExistsMap[t.id]).length}</div>
-              </div>
-            </div>
 
-            {/* Debug Table */}
-            <Card className="mb-6 border-2" style={{ 
-              backgroundColor: isDarkMode ? '#1F2937' : '#FEF9C3',
-              borderColor: '#C7A338'
-            }}>
-              <CardContent className="p-4">
-                <h3 className="text-sm font-bold mb-3" style={{ color: colors.textPrimary }}>
-                  🔧 Templates Validation Table
-                </h3>
-
-              {/* Summary Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4 text-xs font-mono">
-                <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
-                  <div style={{ color: colors.textSecondary }}>Total</div>
-                  <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{templates.length}</div>
-                </div>
-                <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
-                  <div style={{ color: colors.textSecondary }}>Missing EN</div>
-                  <div className="text-lg font-bold" style={{ color: templates.filter(t => !t.preview_en).length > 0 ? '#DC2626' : '#059669' }}>
-                    {templates.filter(t => !t.preview_en).length}
-                  </div>
-                </div>
-                <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
-                  <div style={{ color: colors.textSecondary }}>Missing TH</div>
-                  <div className="text-lg font-bold" style={{ color: templates.filter(t => !t.preview_th).length > 0 ? '#DC2626' : '#059669' }}>
-                    {templates.filter(t => !t.preview_th).length}
-                  </div>
-                </div>
-                <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
-                  <div style={{ color: colors.textSecondary }}>Missing File</div>
-                  <div className="text-lg font-bold" style={{ color: templates.filter(t => !t.file_path).length > 0 ? '#DC2626' : '#059669' }}>
-                    {templates.filter(t => !t.file_path).length}
-                  </div>
-                </div>
-                <div className="bg-white/50 dark:bg-black/20 p-2 rounded">
-                  <div style={{ color: colors.textSecondary }}>Active</div>
-                  <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                    {templates.filter(t => t.status === 'active').length}
-                  </div>
-                </div>
-              </div>
-
-              {/* Template Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs font-mono" style={{ borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom: `2px solid ${colors.borderColor}` }}>
-                      <th className="text-left p-2" style={{ color: colors.textPrimary }}>Key</th>
-                      <th className="text-left p-2" style={{ color: colors.textPrimary }}>Title EN</th>
-                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>Preview EN</th>
-                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>Preview TH</th>
-                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>File Path</th>
-                      <th className="text-center p-2" style={{ color: colors.textPrimary }}>File Exists</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {templates.map(t => (
-                      <tr key={t.id} style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-                        <td className="p-2" style={{ color: colors.textPrimary, maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {t.template_key}
-                        </td>
-                        <td className="p-2" style={{ color: colors.textSecondary, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {t.title_en}
-                        </td>
-                        <td className="p-2 text-center">
-                          <span style={{ color: t.preview_en ? '#059669' : '#DC2626' }}>
-                            {t.preview_en ? '✓' : '✗'}
-                          </span>
-                        </td>
-                        <td className="p-2 text-center">
-                          <span style={{ color: t.preview_th ? '#059669' : '#DC2626' }}>
-                            {t.preview_th ? '✓' : '✗'}
-                          </span>
-                        </td>
-                        <td className="p-2 text-center">
-                          <span style={{ color: t.file_path ? '#059669' : '#DC2626' }}>
-                            {t.file_path ? '✓' : '✗'}
-                          </span>
-                        </td>
-                        <td className="p-2 text-center">
-                          <span style={{ color: fileExistsMap[t.id] ? '#059669' : '#DC2626' }}>
-                            {fileExistsMap[t.id] ? '✓' : '✗'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              </CardContent>
-              </Card>
-              </>
-              )}
 
         {templates.length === 0 ? (
           <div className="text-center py-12">
@@ -489,19 +308,7 @@ function TemplatesContent() {
                             {description}
                           </p>
 
-                          {/* Debug Meta Line */}
-                          {debugMode && (
-                            <div className="text-xs font-mono mt-2 p-2 rounded" style={{ 
-                              color: colors.textSecondary, 
-                              backgroundColor: isDarkMode ? '#1F2937' : '#F3F4F6',
-                              borderLeft: `2px solid ${colors.borderColor}`
-                            }}>
-                              <div>key: {template.template_key || 'missing'}</div>
-                              <div>id: {template.id.substring(0, 8)}...</div>
-                              <div>file: {template.file_path || template.docx_url || template.pdf_url || 'missing'}</div>
-                              <div>langs: {template.title_en ? '🇬🇧' : ''} {template.title_th ? '🇹🇭' : ''}</div>
-                            </div>
-                          )}
+
 
                           <div className="flex gap-2">
                             {canDownload ? (
