@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -56,10 +55,10 @@ export default function Leases() {
   const t = {
     en: {
       myLeases: "My Leases",
-      uploadAnalyze: "Upload and analyze your rental agreements",
+      uploadAnalyze: "Upload and analyse your rental agreements",
       uploadingLease: "Uploading Lease...",
-      analyzingAgreement: "Analyzing Agreement...",
-      aiReviewing: "Our system is reviewing your lease for potential issues",
+      analyzingAgreement: "Analysing Agreement...",
+      systemReviewing: "Our system is reviewing your lease for potential issues",
       pleaseWait: "Please wait",
       previousLeases: "Previous Leases",
       leaseAgreement: "Lease Agreement",
@@ -69,7 +68,7 @@ export default function Leases() {
       uploaded: "Uploaded",
       viewDetails: "View Details",
       uploadPDFImage: "Please upload a PDF, image, or Word document",
-      failedAnalyze: "Failed to analyze lease. Please try again.",
+      failedAnalyse: "Failed to analyse lease. Please try again.",
       scanNotFound: "Scan results not found for this lease."
     },
     th: {
@@ -175,7 +174,7 @@ export default function Leases() {
       const promptText = isWordDoc
         ? `This is a Word document (.doc or .docx). Please read and extract the text content carefully. If you cannot read the document properly, indicate this clearly in your response.
         
-        Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
+        Analyse this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
         
         Provide:
         1. A risk score from 0-100 (0 = very safe, 100 = very risky)
@@ -184,7 +183,7 @@ export default function Leases() {
         4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)
         
         IMPORTANT: If you cannot read the Word document content, set risk_score to -1 and include this in the summary.`
-        : `Analyze this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
+        : `Analyse this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
         
         Provide:
         1. A risk score from 0-100 (0 = very safe, 100 = very risky)
@@ -263,8 +262,8 @@ export default function Leases() {
         const errorMessage = isWordDoc
           ? (language === 'th'
               ? 'ไม่สามารถวิเคราะห์ไฟล์ Word ได้\n\n💡 ลองวิธีนี้:\n• แปลงเป็น PDF ก่อน\n• ถ่ายภาพหน้าสัญญา\n• เปิดด้วย Google Docs แล้วบันทึกเป็น PDF'
-              : 'Failed to analyze Word document\n\n💡 Try this:\n• Convert to PDF first\n• Take photos of pages\n• Open in Google Docs and save as PDF')
-          : strings.failedAnalyze;
+              : 'Failed to analyse Word document\n\n💡 Try this:\n• Convert to PDF first\n• Take photos of pages\n• Open in Google Docs and save as PDF')
+          : strings.failedAnalyse;
         setError(errorMessage);
       }
     } finally {
@@ -357,7 +356,7 @@ export default function Leases() {
                       {uploading ? strings.uploadingLease : strings.analyzingAgreement}
                     </h3>
                     <p style={{ color: colors.textSecondary }}>
-                      {analyzing ? strings.aiReviewing : strings.pleaseWait}
+                      {analyzing ? strings.systemReviewing : strings.pleaseWait}
                     </p>
                   </div>
                 ) : (

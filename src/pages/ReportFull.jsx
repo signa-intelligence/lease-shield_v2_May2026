@@ -568,6 +568,7 @@ function ReportFullContent() {
             icon={FileText}
             iconColor="#0C3B2E"
             showBack={true}
+            backRoute={createPageUrl("UploadScan")}
             isDarkMode={isDarkMode}
             actions={
               <Button 
