@@ -1,8 +1,9 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 
 /**
  * Download Template - Credit Deduction + Signed URL
- * Atomically deducts credits and generates time-limited download URL
+ * Atomically deducts credits ONLY after verifying file exists
  */
 
 Deno.serve(async (req) => {
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
     const creditCost = template.cost_credits || 1;
     const currentCredits = user.letter_credits || 0;
 
-    // Check sufficient credits
+    // Check sufficient credits FIRST
     if (currentCredits < creditCost) {
       return Response.json({
         error: 'Insufficient credits',
@@ -39,52 +40,90 @@ Deno.serve(async (req) => {
       }, { status: 402 });
     }
 
-    // Validate file exists
-    if (!template.docx_url && !template.pdf_url) {
-      console.error(`❌ Template ${template.template_key} has no file URL`);
+    // Validate file_path exists
+    if (!template.file_path) {
       return Response.json({ 
-        ok: false,
-        error: 'Template file not available. Contact support.' 
+        error: 'Template file not configured',
+        message: 'This template is not ready for download. Please contact support.'
+      }, { status: 400 });
+    }
+
+    // Initialize Supabase client for storage operations
+    const supabaseUrl = Deno.env.get('VITE_SUPABASE_URL');
+    const supabaseKey = Deno.env.get('VITE_SUPABASE_ANON_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase credentials');
+      return Response.json({ error: 'Storage configuration error' }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const bucketName = 'template-files';
+
+    // Extract folder and filename from file_path
+    const lastSlashIndex = template.file_path.lastIndexOf('/');
+    const folder = lastSlashIndex > 0 ? template.file_path.substring(0, lastSlashIndex) : '';
+    const filename = template.file_path.substring(lastSlashIndex + 1);
+
+    // Verify file exists in storage BEFORE deducting credits
+    const { data: fileList, error: checkError } = await supabase
+      .storage
+      .from(bucketName)
+      .list(folder || undefined, {
+        search: filename
+      });
+
+    if (checkError || !fileList || fileList.length === 0) {
+      console.error('File verification failed:', checkError, 'Path:', template.file_path);
+      return Response.json({ 
+        error: 'Template file not found',
+        message: 'The template file is missing from storage. Please contact support.',
+        file_path: template.file_path
       }, { status: 404 });
     }
 
-    // Verify file URL is accessible (basic check)
-    const downloadUrl = template.docx_url || template.pdf_url;
-    if (!downloadUrl || downloadUrl.includes('undefined') || downloadUrl.includes('null')) {
-      console.error(`❌ Invalid file URL for template ${template.template_key}: ${downloadUrl}`);
+    console.log(`✅ File verified: ${template.file_path}`);
+
+    // Generate signed URL (valid for 5 minutes)
+    const { data: signedData, error: signError } = await supabase
+      .storage
+      .from(bucketName)
+      .createSignedUrl(template.file_path, 300);
+
+    if (signError || !signedData) {
+      console.error('Signed URL generation failed:', signError);
       return Response.json({ 
-        ok: false,
-        error: 'Invalid template file URL. Contact support.' 
-      }, { status: 404 });
+        error: 'Failed to generate download link',
+        message: 'Could not create secure download link. Please try again.'
+      }, { status: 500 });
     }
 
-    // CRITICAL: Deduct credits ONLY after verifying file exists
+    console.log(`✅ Signed URL generated for: ${template.file_path}`);
+
+    // NOW deduct credits atomically (only after file verification succeeded)
     try {
-      await base44.entities.CreditsLedger.create({
+      await base44.asServiceRole.entities.CreditsLedger.create({
         user_id: user.id,
         user_email: user.email,
         type: 'letters',
         delta: -creditCost,
         reason: 'purchase',
-        source_ref: `Template: ${template.template_key}`
+        source_ref: `template_download:${template.template_key}`
       });
 
       await base44.auth.updateMe({
         letter_credits: Math.max(0, currentCredits - creditCost)
       });
 
-      console.log(`✅ Credits deducted: ${creditCost} from user ${user.email}`);
+      console.log(`✅ Credits deducted: ${creditCost} from ${user.email}`);
     } catch (creditError) {
-      console.error('❌ Credit deduction failed:', creditError);
-      return Response.json({ 
-        ok: false,
-        error: 'Credit deduction failed' 
-      }, { status: 500 });
+      console.error('Credit deduction failed:', creditError);
+      return Response.json({ error: 'Credit deduction failed' }, { status: 500 });
     }
 
-    // Log download
+    // Log download usage
     try {
-      await base44.entities.LetterUsage.create({
+      await base44.asServiceRole.entities.LetterUsage.create({
         user_email: user.email,
         template_key: template.template_key,
         recipient_type: 'landlord',
@@ -97,26 +136,23 @@ Deno.serve(async (req) => {
       // Non-critical, continue
     }
 
-    // Generate clean filename
-    const fileType = template.docx_url ? 'docx' : 'pdf';
-    const sanitizedKey = template.template_key.replace(/[^a-z0-9_-]/gi, '_');
-    const filename = `${sanitizedKey}.${fileType}`;
+    const fileType = template.file_path.endsWith('.pdf') ? 'pdf' : 'docx';
+    const downloadFilename = `${template.template_key}.${fileType}`;
 
-    console.log(`✅ Download authorized: ${filename} for user ${user.email}`);
-    console.log(`   File URL: ${downloadUrl}`);
+    console.log(`✅ Download authorized: ${downloadFilename} for ${user.email}`);
 
-    return Response.json({
+    // Return signed download URL
+    return Response.json({ 
       ok: true,
-      download_url: downloadUrl,
-      filename,
-      file_type: fileType,
+      download_url: signedData.signedUrl,
+      filename: downloadFilename,
       credits_remaining: currentCredits - creditCost,
-      template_name: template.title_en
+      template_name: template.title_en || template.title_th
     });
 
   } catch (error) {
     console.error('Download template error:', error);
-    return Response.json({
+    return Response.json({ 
       ok: false,
       error: error.message || 'Download failed'
     }, { status: 500 });
