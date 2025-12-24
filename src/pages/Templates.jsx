@@ -20,6 +20,10 @@ function TemplatesContent() {
   const [downloading, setDownloading] = useState(null);
   const [confirmTemplate, setConfirmTemplate] = useState(null);
   const [previewTemplate, setPreviewTemplate] = useState(null);
+  
+  // Debug mode from query param
+  const urlParams = new URLSearchParams(window.location.search);
+  const debugMode = urlParams.get('debug') === '1';
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -105,6 +109,7 @@ function TemplatesContent() {
   });
 
   const handleDownloadClick = (template) => {
+    console.log('📋 Template Full Record:', JSON.stringify(template, null, 2));
     setConfirmTemplate(template);
   };
 
@@ -330,6 +335,20 @@ function TemplatesContent() {
                             {description}
                           </p>
 
+                          {/* Debug Meta Line */}
+                          {debugMode && (
+                            <div className="text-xs font-mono mt-2 p-2 rounded" style={{ 
+                              color: colors.textSecondary, 
+                              backgroundColor: isDarkMode ? '#1F2937' : '#F3F4F6',
+                              borderLeft: `2px solid ${colors.borderColor}`
+                            }}>
+                              <div>key: {template.template_key || 'missing'}</div>
+                              <div>id: {template.id.substring(0, 8)}...</div>
+                              <div>file: {template.file_path || template.docx_url || template.pdf_url || 'missing'}</div>
+                              <div>langs: {template.title_en ? '🇬🇧' : ''} {template.title_th ? '🇹🇭' : ''}</div>
+                            </div>
+                          )}
+
                           <div className="flex gap-2">
                             {template.preview_image_url && (
                               <Button
@@ -523,6 +542,21 @@ function TemplatesContent() {
                 {confirmTemplate.cost_credits || 1} {language === 'th' ? 'เครดิต' : 'credit' + ((confirmTemplate.cost_credits || 1) > 1 ? 's' : '')}
               </Badge>
             </div>
+
+            {/* Debug Meta Line */}
+            {debugMode && (
+              <div className="text-xs font-mono p-3 rounded-lg space-y-1" style={{ 
+                color: colors.textSecondary, 
+                backgroundColor: isDarkMode ? '#1F2937' : '#F3F4F6',
+                border: `1px solid ${colors.borderColor}`
+              }}>
+                <div><strong>Key:</strong> {confirmTemplate.template_key || 'missing'}</div>
+                <div><strong>ID:</strong> {confirmTemplate.id}</div>
+                <div><strong>File:</strong> {confirmTemplate.file_path || confirmTemplate.docx_url || confirmTemplate.pdf_url || 'missing'}</div>
+                <div><strong>Updated:</strong> {confirmTemplate.updated_date ? new Date(confirmTemplate.updated_date).toLocaleString() : 'N/A'}</div>
+                <div><strong>Status:</strong> {confirmTemplate.status || 'unknown'}</div>
+              </div>
+            )}
 
             <div className="pt-2 flex gap-3">
               <Button
