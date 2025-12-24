@@ -41,6 +41,7 @@ import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
 import LetterReview from './pages/LetterReview';
 import LeaseLetters from './pages/LeaseLetters';
+import AdminCredits from './pages/AdminCredits';
 import __Layout from './Layout.jsx';
 
 
@@ -88,6 +89,7 @@ export const PAGES = {
     "cookie-sync": cookieSync,
     "LetterReview": LetterReview,
     "LeaseLetters": LeaseLetters,
+    "AdminCredits": AdminCredits,
 }
 
 export const pagesConfig = {

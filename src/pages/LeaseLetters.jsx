@@ -126,6 +126,23 @@ ${user.full_name}`;
         throw new Error('Letter created but not retrievable');
       }
 
+      // Log credit transaction
+      await base44.entities.CreditLedger.create({
+        user_id: user.id,
+        user_email: user.email,
+        action_type: 'USE',
+        amount: -1,
+        previous_balance: letterCredits,
+        new_balance: letterCredits - 1,
+        reason: 'Blank letter created',
+        related_entity_id: newLetter.id
+      });
+
+      // Decrement user credits
+      await base44.auth.updateMe({
+        letter_credits: Math.max(0, letterCredits - 1)
+      });
+
       queryClient.invalidateQueries({ queryKey: ['letters', leaseId] });
       toast.success(language === 'th' ? 'สร้างจดหมายว่างแล้ว' : 'Blank letter created');
       navigate(createPageUrl("LetterReview") + `?letterId=${newLetter.id}&leaseId=${leaseId}`);
