@@ -87,9 +87,10 @@ function UploadScanPageContent() {
     queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
     initialData: [],
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Poll every 5 seconds if any lease is in pending/queued/processing state
-      const hasPendingScans = data?.some(l => 
+      const data = query.state.data || [];
+      const hasPendingScans = data.some(l => 
         l.status === 'uploaded' || 
         l.status === 'queued' || 
         l.status === 'processing'
