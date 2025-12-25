@@ -111,36 +111,44 @@ function TemplatesContent() {
     try {
       setDownloading(template.id);
       
-      // Get function URL for direct download
       const functionUrl = `${window.location.origin}/.netlify/functions/downloadTemplate`;
       
-      // Create form and submit (triggers browser download)
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = functionUrl;
-      form.style.display = 'none';
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ template_id: template.id })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Download failed');
+      }
+
+      const blob = await response.blob();
+      const fileType = template.file_path?.endsWith('.pdf') ? 'pdf' : 'docx';
+      const filename = `LEASESHIELD_${template.template_key}.${fileType}`;
       
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'template_id';
-      input.value = template.id;
-      form.appendChild(input);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
       
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
-      
-      // Update UI
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download started');
+      toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download successful');
       haptic.success();
       
     } catch (error) {
       console.error('[DOWNLOAD] Error:', error);
-      toast.error(language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed');
+      toast.error(error.message || (language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed'));
       haptic.error();
     } finally {
-      setTimeout(() => setDownloading(null), 1000);
+      setDownloading(null);
     }
   };
 

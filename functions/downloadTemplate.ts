@@ -8,6 +8,10 @@ import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 
 Deno.serve(async (req) => {
   try {
+    if (req.method !== 'POST') {
+      return Response.json({ error: 'Method Not Allowed' }, { status: 405 });
+    }
+
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
