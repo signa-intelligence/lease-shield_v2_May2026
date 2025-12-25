@@ -21,6 +21,26 @@ function TemplatesContent() {
   const [downloading, setDownloading] = useState(null);
   const [confirmTemplate, setConfirmTemplate] = useState(null);
   const [previewTemplate, setPreviewTemplate] = useState(null);
+
+  // Kill service worker cache on mount (one-time)
+  React.useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(reg => {
+          console.log('[SW] Unregistering service worker:', reg.scope);
+          reg.unregister();
+        });
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(names => {
+        names.forEach(name => {
+          console.log('[CACHE] Deleting cache:', name);
+          caches.delete(name);
+        });
+      });
+    }
+  }, []);
   
 
 
@@ -111,11 +131,15 @@ function TemplatesContent() {
     setConfirmTemplate(null);
     setDownloading(template.id);
     
-    // Simple browser navigation - let the function handle auth, credits, and redirect
-    const downloadUrl = `/.netlify/functions/downloadTemplate?template_key=${encodeURIComponent(template.template_key)}`;
+    // CANONICAL DOWNLOAD URL - GET only with cache bust
+    const downloadUrl = `/.netlify/functions/downloadTemplate?template_key=${encodeURIComponent(template.template_key)}&v=${Date.now()}`;
     
-    console.log('[DOWNLOAD] Navigating to:', downloadUrl);
-    window.location.href = downloadUrl;
+    console.log('[DOWNLOAD] Canonical URL:', downloadUrl);
+    console.log('[DOWNLOAD] Template Key:', template.template_key);
+    console.log('[DOWNLOAD] Method: GET (browser navigation)');
+    
+    // Direct browser navigation - triggers GET request
+    window.location.assign(downloadUrl);
     
     // Success message and cleanup after navigation starts
     setTimeout(() => {

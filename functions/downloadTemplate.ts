@@ -2,19 +2,20 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 
 /**
- * Download Template v2025-12-25-01
- * Supports OPTIONS, GET (302 redirect), POST (JSON)
+ * Download Template v2025-12-25-02
+ * Supports OPTIONS, GET (302 redirect) ONLY
+ * POST removed - use GET with query parameters
  */
 
 Deno.serve(async (req) => {
-  const VERSION = 'v2025-12-25-01';
+  const VERSION = 'v2025-12-25-02';
   
   // Universal headers for all responses
   const baseHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Cache-Control': 'no-store',
+    'Cache-Control': 'no-store, no-cache, must-revalidate',
     'X-DownloadTemplate-Version': VERSION
   };
 
@@ -31,49 +32,25 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Only GET and POST allowed
-    if (method !== 'GET' && method !== 'POST') {
+    // Only GET allowed (POST removed)
+    if (method !== 'GET') {
       return new Response(
         JSON.stringify({ 
           ok: false, 
-          error: `Unsupported method: ${method}. Use GET or POST.`,
-          code: 'UNSUPPORTED_METHOD'
+          error: `Method ${method} not allowed. Use GET with ?template_key=<key>`,
+          code: 'METHOD_NOT_ALLOWED',
+          version: VERSION
         }),
         { 
-          status: 200, // Use 200 to avoid framework 405
+          status: 405,
           headers: { ...baseHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
 
-    const isGET = method === 'GET';
-    const isPOST = method === 'POST';
-
     step = 'extract_template_key';
-    let template_key;
-    
-    if (isGET) {
-      const url = new URL(req.url);
-      template_key = url.searchParams.get('template_key');
-    } else {
-      try {
-        const rawBody = await req.text();
-        const body = rawBody ? JSON.parse(rawBody) : {};
-        template_key = body.template_key;
-      } catch (parseError) {
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            error: `Body parse error: ${parseError.message}`, 
-            code: 'PARSE_ERROR' 
-          }),
-          { 
-            status: 400, 
-            headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-          }
-        );
-      }
-    }
+    const url = new URL(req.url);
+    const template_key = url.searchParams.get('template_key');
 
     if (!template_key) {
       return new Response(
@@ -389,36 +366,18 @@ Deno.serve(async (req) => {
       user: user.email, 
       template: template_key, 
       method: req.method,
-      version: VERSION
+      version: VERSION,
+      signedUrl: signedUrl.substring(0, 100) + '...'
     });
 
-    // Determine file type and name
-    const fileType = filePath.endsWith('.pdf') ? 'pdf' : 'docx';
-    const filename = `LeaseShield_${template_key}.${fileType}`;
-    const contentType = fileType === 'pdf' 
-      ? 'application/pdf' 
-      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-
-    // Return based on method
-    if (isGET) {
-      // GET: Return 302 redirect to signed URL
-      return new Response(null, {
-        status: 302,
-        headers: {
-          ...baseHeaders,
-          'Location': signedUrl
-        }
-      });
-    } else {
-      // POST: Return JSON (deprecated, use GET instead)
-      return new Response(
-        JSON.stringify({ ok: true, url: signedUrl, filename }),
-        { 
-          status: 200, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    // GET: Return 302 redirect to signed URL
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...baseHeaders,
+        'Location': signedUrl
+      }
+    });
 
   } catch (error) {
     console.error('[DOWNLOAD] Unexpected error at step:', step, error);
