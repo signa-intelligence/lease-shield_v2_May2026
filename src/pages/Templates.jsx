@@ -110,35 +110,37 @@ function TemplatesContent() {
     
     try {
       setDownloading(template.id);
-      const response = await base44.functions.invoke('downloadTemplate', {
-        template_id: template.id
-      });
-
-      if (!response.data?.ok) {
-        const errorMsg = response.data?.error || 'Download failed';
-        const details = response.data?.details;
-        
-        console.error('[DOWNLOAD] Failed:', { error: errorMsg, details });
-        toast.error(errorMsg);
-        haptic.error();
-        return;
-      }
-
-      console.log('[DOWNLOAD] Success, initiating browser download');
       
-      // Mobile-friendly download: Use window.location.href for best compatibility
-      // This works reliably on Android Chrome, iOS Safari, and PWAs
-      window.location.href = response.data.download_url;
+      // Get function URL for direct download
+      const functionUrl = `${window.location.origin}/.netlify/functions/downloadTemplate`;
       
+      // Create form and submit (triggers browser download)
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = functionUrl;
+      form.style.display = 'none';
+      
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'template_id';
+      input.value = template.id;
+      form.appendChild(input);
+      
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+      
+      // Update UI
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download successful');
+      toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download started');
       haptic.success();
+      
     } catch (error) {
       console.error('[DOWNLOAD] Error:', error);
       toast.error(language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed');
       haptic.error();
     } finally {
-      setDownloading(null);
+      setTimeout(() => setDownloading(null), 1000);
     }
   };
 
