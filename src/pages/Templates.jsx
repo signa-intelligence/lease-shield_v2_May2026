@@ -104,19 +104,18 @@ function TemplatesContent() {
     };
   }, [confirmTemplate, previewTemplate]);
 
-  const handleConfirmDownload = async () => {
+  const handleConfirmDownload = async (e) => {
+    if (e) e.preventDefault();
+    
     const template = confirmTemplate;
     setConfirmTemplate(null);
     
     try {
       setDownloading(template.id);
       
-      // Use direct fetch for full error visibility
-      const functionUrl = `${window.location.origin}/.netlify/functions/downloadTemplate`;
-      
-      const response = await fetch(functionUrl, {
+      const res = await fetch('/.netlify/functions/downloadTemplate', {
         method: 'POST',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json'
         },
         credentials: 'include',
@@ -125,58 +124,34 @@ function TemplatesContent() {
         })
       });
 
-      // ALWAYS read response as text first to see error details
-      const responseText = await response.text();
+      const text = await res.text();
       
+      if (!res.ok) {
+        console.error('[DOWNLOAD] Failed:', { status: res.status, body: text.substring(0, 500) });
+        toast.error(`Download failed ${res.status}: ${text.substring(0, 220)}`);
+        haptic.error();
+        return;
+      }
+
       let data;
       try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('[DOWNLOAD] Response parse error:', responseText.substring(0, 500));
-        toast.error(`Download failed: ${response.status} - Invalid JSON response`);
+        data = JSON.parse(text);
+      } catch {
+        toast.error(`Download failed: Invalid response - ${text.substring(0, 220)}`);
         haptic.error();
         return;
       }
 
-      if (!response.ok || !data.ok) {
-        const errorParts = [
-          data.step ? `[${data.step}]` : null,
-          data.message || 'Unknown error'
-        ].filter(Boolean);
-        const errorText = errorParts.join(' ');
-        
-        console.error('[DOWNLOAD] Failed:', {
-          status: response.status,
-          data,
-          rawResponse: responseText.substring(0, 500)
-        });
-        
-        toast.error(`Download failed: ${response.status} - ${errorText.substring(0, 220)}`);
+      if (!data.ok || !data.url) {
+        const errorMsg = data.message || text.substring(0, 220);
+        const stepInfo = data.step ? `[${data.step}] ` : '';
+        toast.error(`Download failed: ${stepInfo}${errorMsg}`);
         haptic.error();
         return;
       }
 
-      // Success - open URL
-      const downloadUrl = data.url;
-      const filename = data.filename || `LeaseShield_${template.template_key}.docx`;
-
-      // Create download link
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = filename;
-      a.target = '_blank';
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      
-      setTimeout(() => {
-        document.body.removeChild(a);
-      }, 100);
-
-      // Also open in new tab as fallback
-      setTimeout(() => {
-        window.open(downloadUrl, '_blank');
-      }, 200);
+      // Open signed URL
+      window.open(data.url, '_blank');
       
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download successful');
