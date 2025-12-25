@@ -112,60 +112,58 @@ function TemplatesContent() {
       setDownloading(template.id);
       
       const response = await base44.functions.invoke('downloadTemplate', {
-        template_id: template.id,
         template_key: template.template_key
       });
 
-      // Check for error response
-      if (response.status !== 200) {
-        let errorText = 'Unknown error';
-        
-        if (response.data) {
-          if (typeof response.data === 'object') {
-            // JSON error response
-            const parts = [
-              response.data.step ? `[${response.data.step}]` : null,
-              response.data.message || response.data.error
-            ].filter(Boolean);
-            errorText = parts.join(' ');
-          } else if (typeof response.data === 'string') {
-            errorText = response.data;
-          }
-        }
+      // Read response - ALWAYS parse as text first to see errors
+      const isSuccess = response.status === 200;
+      let data;
+      
+      try {
+        data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+      } catch {
+        data = { ok: false, message: 'Invalid response format' };
+      }
+
+      if (!isSuccess || !data.ok) {
+        const errorParts = [
+          data.step ? `[${data.step}]` : null,
+          data.message || 'Unknown error'
+        ].filter(Boolean);
+        const errorText = errorParts.join(' ');
         
         console.error('[DOWNLOAD] Failed:', {
           status: response.status,
-          data: response.data
+          data
         });
         
-        toast.error(`Download failed: ${response.status} - ${errorText.substring(0, 160)}`);
+        toast.error(`Download failed: ${response.status} - ${errorText.substring(0, 220)}`);
         haptic.error();
         return;
       }
 
-      // Success - response.data should be binary blob
-      let blob;
-      if (response.data instanceof Blob) {
-        blob = response.data;
-      } else {
-        throw new Error('Invalid response format - expected binary data');
-      }
+      // Success - open URL in new tab and use download anchor
+      const downloadUrl = data.url;
+      const filename = data.filename || `LeaseShield_${template.template_key}.docx`;
 
-      const fileType = template.file_path?.endsWith('.pdf') ? 'pdf' : 'docx';
-      const filename = `LeaseShield_${template.template_key}.${fileType}`;
-      
-      const url = URL.createObjectURL(blob);
+      // Try multiple download methods for compatibility
+      // Method 1: Create download anchor (works on most mobile browsers)
       const a = document.createElement('a');
-      a.href = url;
+      a.href = downloadUrl;
       a.download = filename;
+      a.target = '_blank';
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
       
       setTimeout(() => {
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
       }, 100);
+
+      // Method 2: Also open in new tab as fallback
+      setTimeout(() => {
+        window.open(downloadUrl, '_blank');
+      }, 200);
       
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download successful');
@@ -173,7 +171,7 @@ function TemplatesContent() {
       
     } catch (error) {
       console.error('[DOWNLOAD] Exception:', error);
-      toast.error(`Download failed: ${error.message?.substring(0, 160) || 'Unknown error'}`);
+      toast.error(`Download failed: ${error.message?.substring(0, 220) || 'Unknown error'}`);
       haptic.error();
     } finally {
       setDownloading(null);

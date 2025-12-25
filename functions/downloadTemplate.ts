@@ -2,15 +2,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 
 /**
- * Download Template - Returns binary DOCX file
- * Comprehensive error handling with step tracking
+ * Download Template - Returns download URL (not binary stream)
+ * Step-tracked error handling with guaranteed JSON responses
  */
 
 Deno.serve(async (req) => {
   let step = 'init';
   const corsHeaders = {
     'Access-Control-Allow-Origin': req.headers.get('origin') || '*',
-    'Access-Control-Allow-Credentials': 'true'
+    'Access-Control-Allow-Credentials': 'true',
+    'Content-Type': 'application/json'
   };
 
   try {
@@ -30,8 +31,8 @@ Deno.serve(async (req) => {
     step = 'method_check';
     if (req.method !== 'POST') {
       return Response.json(
-        { error: true, step, message: 'Method Not Allowed - use POST', allowed: 'POST' },
-        { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { ok: false, step, message: 'Method Not Allowed - use POST' },
+        { status: 405, headers: corsHeaders }
       );
     }
 
@@ -42,18 +43,16 @@ Deno.serve(async (req) => {
       body = JSON.parse(rawBody);
     } catch (parseError) {
       return Response.json(
-        { error: true, step, message: 'Invalid JSON body', details: parseError.message },
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { ok: false, step, message: 'Invalid JSON body', error: parseError.message },
+        { status: 400, headers: corsHeaders }
       );
     }
 
-    const template_id = body.template_id;
-    const template_key = body.template_key;
-
-    if (!template_id && !template_key) {
+    const template_key = body.template_key || body.template_id;
+    if (!template_key) {
       return Response.json(
-        { error: true, step, message: 'Missing template_id or template_key in request body' },
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { ok: false, step, message: 'Missing template_key in request body' },
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -63,30 +62,24 @@ Deno.serve(async (req) => {
 
     if (!user) {
       return Response.json(
-        { error: true, step, message: 'Unauthorized - user not authenticated' },
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { ok: false, step, message: 'Unauthorized - user not authenticated' },
+        { status: 401, headers: corsHeaders }
       );
     }
 
     step = 'fetch_template';
-    const query = template_id ? { id: template_id } : { template_key };
-    const templates = await base44.asServiceRole.entities.TemplateLibrary.filter(query);
+    const templates = await base44.asServiceRole.entities.TemplateLibrary.filter({ 
+      template_key 
+    });
 
     if (!templates || templates.length === 0) {
       return Response.json(
-        { error: true, step, message: 'Template not found', query },
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { ok: false, step, message: `Template not found: ${template_key}` },
+        { status: 404, headers: corsHeaders }
       );
     }
 
     const template = templates[0];
-
-    if (!template.template_key) {
-      return Response.json(
-        { error: true, step, message: 'Template missing template_key field' },
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     step = 'check_credits';
     const creditCost = template.cost_credits || 1;
@@ -94,41 +87,67 @@ Deno.serve(async (req) => {
 
     if (currentCredits < creditCost) {
       return Response.json(
-        { error: true, step, message: `Insufficient credits: need ${creditCost}, have ${currentCredits}` },
-        { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { ok: false, step, message: `Insufficient credits: need ${creditCost}, have ${currentCredits}` },
+        { status: 402, headers: corsHeaders }
       );
     }
 
-    step = 'resolve_file';
+    step = 'storage_config';
     const supabaseUrl = Deno.env.get('VITE_SUPABASE_URL');
     const supabaseKey = Deno.env.get('VITE_SUPABASE_ANON_KEY');
 
     if (!supabaseUrl || !supabaseKey) {
       return Response.json(
-        { error: true, step, message: 'Storage configuration missing' },
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { ok: false, step, message: 'Storage configuration missing' },
+        { status: 500, headers: corsHeaders }
       );
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     const bucketName = 'template-files';
-    let fileData;
+    let filePath = template.file_path;
 
-    if (template.file_path) {
-      step = 'download_file';
-      const { data: downloadData, error: downloadError } = await supabase
-        .storage
-        .from(bucketName)
-        .download(template.file_path);
+    // If no file_path or file doesn't exist, generate it
+    if (!filePath) {
+      step = 'generate_missing_file';
+      try {
+        const genResponse = await base44.asServiceRole.functions.invoke('generateTemplateFile', {
+          template_id: template.id
+        });
 
-      if (downloadData && !downloadError) {
-        fileData = downloadData;
+        if (!genResponse?.data?.ok || !genResponse?.data?.file_path) {
+          return Response.json(
+            { ok: false, step, message: 'File generation failed', details: genResponse?.data },
+            { status: 500, headers: corsHeaders }
+          );
+        }
+
+        filePath = genResponse.data.file_path;
+        
+        // Update template with new file_path
+        await base44.asServiceRole.entities.TemplateLibrary.update(template.id, {
+          file_path: filePath
+        });
+      } catch (genError) {
+        return Response.json(
+          { ok: false, step, message: 'File generation exception', error: genError.message },
+          { status: 500, headers: corsHeaders }
+        );
       }
     }
 
-    // If file not found, generate it
-    if (!fileData) {
-      step = 'generate_docx';
+    step = 'verify_file_exists';
+    const { data: fileList, error: listError } = await supabase
+      .storage
+      .from(bucketName)
+      .list(filePath.split('/').slice(0, -1).join('/'));
+
+    const fileName = filePath.split('/').pop();
+    const fileExists = fileList?.some(f => f.name === fileName);
+
+    if (!fileExists) {
+      // Try to generate it
+      step = 'generate_on_verify';
       try {
         const genResponse = await base44.asServiceRole.functions.invoke('generateTemplateFile', {
           template_id: template.id
@@ -136,38 +155,48 @@ Deno.serve(async (req) => {
 
         if (!genResponse?.data?.ok) {
           return Response.json(
-            { error: true, step, message: 'Template file generation failed', details: genResponse?.data },
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { ok: false, step, message: 'File not found and generation failed' },
+            { status: 500, headers: corsHeaders }
           );
         }
 
-        step = 'read_file';
-        const filePath = genResponse.data.file_path || template.file_path;
-        const { data: retryData, error: retryError } = await supabase
-          .storage
-          .from(bucketName)
-          .download(filePath);
-
-        if (retryError || !retryData) {
-          return Response.json(
-            { error: true, step, message: 'File unavailable after generation', retryError: retryError?.message },
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-
-        fileData = retryData;
-      } catch (genError) {
+        filePath = genResponse.data.file_path;
+      } catch {
         return Response.json(
-          { error: true, step, message: 'Generation exception', details: genError.message },
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { ok: false, step, message: 'File not found in storage and generation failed' },
+          { status: 500, headers: corsHeaders }
         );
       }
     }
 
-    if (!fileData) {
+    step = 'generate_signed_url';
+    const { data: signedData, error: signedError } = await supabase
+      .storage
+      .from(bucketName)
+      .createSignedUrl(filePath, 600); // 10 minutes
+
+    if (signedError || !signedData?.signedUrl) {
       return Response.json(
-        { error: true, step: 'file_check', message: 'No file data available' },
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { ok: false, step, message: 'Failed to create download URL', error: signedError?.message },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    const downloadUrl = signedData.signedUrl;
+
+    step = 'url_access_check';
+    try {
+      const headResponse = await fetch(downloadUrl, { method: 'HEAD' });
+      if (!headResponse.ok) {
+        return Response.json(
+          { ok: false, step, message: `Download URL not accessible: ${headResponse.status}` },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    } catch (checkError) {
+      return Response.json(
+        { ok: false, step, message: 'URL accessibility check failed', error: checkError.message },
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -187,12 +216,13 @@ Deno.serve(async (req) => {
       });
     } catch (creditError) {
       return Response.json(
-        { error: true, step, message: 'Credit deduction failed', details: creditError.message },
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { ok: false, step, message: 'Credit deduction failed', error: creditError.message },
+        { status: 402, headers: corsHeaders }
       );
     }
 
-    // Log usage (non-blocking)
+    // Log usage
+    step = 'log_usage';
     try {
       await base44.asServiceRole.entities.LetterUsage.create({
         user_email: user.email,
@@ -204,39 +234,28 @@ Deno.serve(async (req) => {
       });
     } catch {}
 
-    step = 'return_binary';
-    const fileType = template.file_path?.endsWith('.pdf') ? 'pdf' : 'docx';
+    step = 'success';
+    const fileType = filePath.endsWith('.pdf') ? 'pdf' : 'docx';
     const filename = `LeaseShield_${template.template_key}.${fileType}`;
-    const contentType = fileType === 'pdf'
-      ? 'application/pdf'
-      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-    console.log('[DOWNLOAD] Success:', { filename, user: user.email, template: template.template_key });
+    console.log('[DOWNLOAD] Success:', { user: user.email, template: template.template_key, filename });
 
-    return new Response(fileData, {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'no-store'
-      }
-    });
+    return Response.json(
+      { ok: true, url: downloadUrl, filename },
+      { status: 200, headers: corsHeaders }
+    );
 
   } catch (error) {
     console.error('[DOWNLOAD] Crash at step:', step, error);
     return Response.json(
       {
-        error: true,
+        ok: false,
         step,
         message: error.message || 'Unknown error',
-        name: error.name,
-        stack: (error.stack || '').slice(0, 800)
+        name: error.name || 'Error',
+        stack: (error.stack || '').slice(0, 1200)
       },
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 500, headers: corsHeaders }
     );
   }
 });
