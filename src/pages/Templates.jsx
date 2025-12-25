@@ -1,46 +1,22 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Loader2, ShoppingCart, AlertCircle } from "lucide-react";
+import { FileText, ShoppingCart, Eye } from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import EmptyState from "../components/shared/EmptyState";
-import ConfirmDownloadModal from "../components/templates/ConfirmDownloadModal";
+import TemplateViewer from "../components/templates/TemplateViewer";
 
 function TemplatesContent() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const toast = useToast();
-  const [downloading, setDownloading] = useState(null);
-  const [confirmTemplate, setConfirmTemplate] = useState(null);
-  const [previewTemplate, setPreviewTemplate] = useState(null);
-
-  // Kill service worker cache on mount (one-time)
-  React.useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        registrations.forEach(reg => {
-          console.log('[SW] Unregistering service worker:', reg.scope);
-          reg.unregister();
-        });
-      });
-    }
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        names.forEach(name => {
-          console.log('[CACHE] Deleting cache:', name);
-          caches.delete(name);
-        });
-      });
-    }
-  }, []);
+  const [viewingTemplate, setViewingTemplate] = useState(null);
   
 
 
@@ -54,14 +30,12 @@ function TemplatesContent() {
     queryFn: async () => {
       const allResults = await base44.entities.TemplateLibrary.list();
 
-      // Filter: only valid active templates
+      // Filter: only valid active templates with body content
       const validTemplates = allResults.filter(t => 
-        t.status === 'active' &&
+        t.is_active !== false &&
         t.template_key &&
         t.title_en &&
-        t.description_en &&
-        t.preview_en &&
-        t.file_path
+        (t.body_en || t.preview_en)
       );
 
       // Deduplicate by template_key
@@ -88,105 +62,10 @@ function TemplatesContent() {
     }
   });
 
-  const handleDownloadClick = (template) => {
-    // Validate template has required fields
-    const isValid = template.template_key && template.title_en && template.description_en && 
-                    template.preview_en && template.file_path;
-    
-    if (!isValid) {
-      toast.error(language === 'th' ? 'เทมเพลตไม่พร้อมใช้งานชั่วคราว' : 'Template temporarily unavailable');
-      haptic.error();
-      return;
-    }
-    
-    setConfirmTemplate(template);
-    document.body.style.overflow = 'hidden';
-    const lisaFab = document.querySelector('.fab-bottom');
-    if (lisaFab) lisaFab.style.display = 'none';
-  };
-
-  const handleCancelModal = () => {
-    setConfirmTemplate(null);
-    setPreviewTemplate(null);
-  };
-
-  React.useEffect(() => {
-    // Unlock body scroll and restore chat FAB when modal closes
-    if (!confirmTemplate && !previewTemplate) {
-      document.body.style.overflow = '';
-      const lisaFab = document.querySelector('.fab-bottom');
-      if (lisaFab) lisaFab.style.display = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-      const lisaFab = document.querySelector('.fab-bottom');
-      if (lisaFab) lisaFab.style.display = '';
-    };
-  }, [confirmTemplate, previewTemplate]);
-
-  const handleConfirmDownload = async (e) => {
-    if (e) e.preventDefault();
-    
-    const template = confirmTemplate;
-    setConfirmTemplate(null);
-    setDownloading(template.id);
-    
-    try {
-      console.log('DOWNLOAD: invoking Base44 function', { 
-        template_key: template.template_key, 
-        locale: language 
-      });
-      
-      const response = await base44.functions.invoke('downloadTemplate', {
-        template_key: template.template_key
-      });
-      
-      console.log('DOWNLOAD: invoke result', response);
-      
-      if (!response?.data?.ok || !response?.data?.signedUrl) {
-        const errorData = response?.data || {};
-        const errorMsg = errorData.message || errorData.error || 'Download failed';
-        console.error('[DOWNLOAD] Error:', errorData);
-        toast.error(`${errorData.code || 'ERROR'}: ${errorMsg}`);
-        haptic.error();
-        setDownloading(null);
-        return;
-      }
-      
-      const { signedUrl, filename } = response.data;
-      console.log('DOWNLOAD: signedUrl host', new URL(signedUrl).host);
-      
-      // Try <a> element download first (best for most browsers)
-      const a = document.createElement('a');
-      a.href = signedUrl;
-      if (filename) a.download = filename;
-      a.rel = 'noopener';
-      a.target = '_blank';
-      document.body.appendChild(a);
-      
-      try {
-        a.click();
-        console.log('[DOWNLOAD] Download triggered via <a> click');
-      } catch (clickError) {
-        // Fallback for Android/TWA
-        console.log('[DOWNLOAD] <a> click failed, using window.location.assign');
-        window.location.assign(signedUrl);
-      } finally {
-        setTimeout(() => document.body.removeChild(a), 100);
-      }
-      
-      toast.success(language === 'th' ? 'กำลังดาวน์โหลด...' : 'Download starting...');
-      haptic.success();
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      
-    } catch (error) {
-      console.error('[DOWNLOAD] Exception:', error);
-      const safeError = error?.message || String(error) || 'Unknown error';
-      toast.error(`Download failed: ${safeError}`);
-      haptic.error();
-    } finally {
-      setDownloading(null);
-    }
+  const handleViewTemplate = (template) => {
+    console.log('[TEMPLATE] View action:', { template_key: template.template_key, lang: language });
+    haptic.light();
+    setViewingTemplate(template);
   };
 
   const language = user?.language || 'en';
@@ -212,21 +91,12 @@ function TemplatesContent() {
   const t = {
     en: {
       title: "Document Templates",
-      subtitle: "Download ready-to-use templates. Fill in your details and send to landlord.",
+      subtitle: "View templates for free. Copy text or download PDF (1 credit each).",
       creditsBalance: "Credits:",
-      download: "Download",
+      view: "View Template",
       buyCredits: "Buy Credits",
-      credit: "credit",
       noTemplates: "No templates available",
-      confirmDownloadTitle: "Confirm Download",
-      creditWillBeDeducted: "1 credit will be deducted",
-      cancel: "Cancel",
-      confirmDownload: "Confirm Download",
-      previewUnavailable: "Preview not available",
-      insideTemplate: "Inside this template:",
-      mainSections: "Main sections:",
-      includes: "Includes:",
-      fillInFields: "Fill-in fields:",
+      free: "Free to view",
       categories: {
         checklists: "Checklists",
         pre_signing: "Pre-Signing",
@@ -237,21 +107,12 @@ function TemplatesContent() {
     },
     th: {
       title: "เทมเพลตเอกสาร",
-      subtitle: "ดาวน์โหลดเทมเพลตพร้อมใช้ กรอกข้อมูลและส่งให้เจ้าของบ้าน",
+      subtitle: "ดูเทมเพลตฟรี คัดลอกข้อความหรือดาวน์โหลด PDF (1 เครดิตต่อครั้ง)",
       creditsBalance: "เครดิต:",
-      download: "ดาวน์โหลด",
+      view: "ดูเทมเพลต",
       buyCredits: "ซื้อเครดิต",
-      credit: "เครดิต",
       noTemplates: "ไม่มีเทมเพลต",
-      confirmDownloadTitle: "ยืนยันการดาวน์โหลด",
-      creditWillBeDeducted: "จะหัก 1 เครดิต",
-      cancel: "ยกเลิก",
-      confirmDownload: "ยืนยันดาวน์โหลด",
-      previewUnavailable: "ไม่มีตัวอย่าง",
-      insideTemplate: "ภายในเทมเพลต:",
-      mainSections: "ส่วนหลัก:",
-      includes: "รวมถึง:",
-      fillInFields: "ช่องกรอกข้อมูล:",
+      free: "ดูฟรี",
       categories: {
         checklists: "รายการตรวจสอบ",
         pre_signing: "ก่อนลงนาม",
@@ -334,70 +195,36 @@ function TemplatesContent() {
                 </h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {categoryTemplates.map((template) => {
-                    const title = language === 'th' ? (template.title_th || template.title_en) : (template.title_en || template.title_th || 'Untitled Template');
-                    const description = language === 'th' ? (template.description_th || template.description_en) : (template.description_en || template.description_th || '');
-                    const creditCost = template.cost_credits || 1;
-                    const canDownload = letterCredits >= creditCost;
-                    const isDownloadingThis = downloading === template.id;
+                    const title = language === 'th' ? (template.title_th || template.title_en) : template.title_en;
+                    const preview = language === 'th' 
+                      ? (template.preview_th || template.body_th?.substring(0, 300) || template.preview_en || template.body_en?.substring(0, 300) || '')
+                      : (template.preview_en || template.body_en?.substring(0, 300) || template.preview_th || template.body_th?.substring(0, 300) || '');
 
                     return (
                       <Card
                         key={template.id}
-                        className="border-none shadow-md hover:shadow-lg transition-all card-interactive"
+                        onClick={() => handleViewTemplate(template)}
+                        className="border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
                         style={{ backgroundColor: colors.cardBg }}
                       >
                         <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
                           <CardTitle className="flex items-start justify-between gap-2" style={{ color: colors.textPrimary }}>
                             <span className="text-base line-clamp-2">{title}</span>
-                            <Badge className="flex-shrink-0 text-xs" style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}>
-                              {creditCost} {strings.credit}
+                            <Badge className="flex-shrink-0 text-xs" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
+                              {strings.free}
                             </Badge>
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 space-y-4">
                           <p className="text-sm line-clamp-3" style={{ color: colors.textSecondary }}>
-                            {description}
+                            {preview}
                           </p>
 
-
-
-                          <div className="flex gap-2">
-                            {canDownload ? (
-                              <Button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleDownloadClick(template);
-                                }}
-                                disabled={isDownloadingThis}
-                                className="w-full"
-                                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-                              >
-                                {isDownloadingThis ? (
-                                  <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    {language === 'th' ? 'กำลังดาวน์โหลด...' : 'Downloading...'}
-                                  </>
-                                ) : (
-                                  <>
-                                    <Download className="w-4 h-4 mr-2" />
-                                    {strings.download}
-                                  </>
-                                )}
-                              </Button>
-                            ) : (
-                              <Button
-                                onClick={() => {
-                                  haptic.light();
-                                  navigate(createPageUrl("Account"));
-                                }}
-                                className="w-full"
-                                style={{ backgroundColor: '#C7A338', color: '#FFFFFF' }}
-                              >
-                                <ShoppingCart className="w-4 h-4 mr-2" />
-                                {strings.buyCredits}
-                              </Button>
-                            )}
+                          <div className="flex items-center justify-between pt-2">
+                            <span className="text-xs" style={{ color: colors.textSecondary }}>
+                              {language === 'th' ? 'คลิกเพื่อดูเนื้อหา' : 'Click to view content'}
+                            </span>
+                            <Eye className="w-4 h-4" style={{ color: '#0C3B2E' }} />
                           </div>
                         </CardContent>
                       </Card>
@@ -410,18 +237,17 @@ function TemplatesContent() {
         )}
       </div>
 
-      {/* Single Reusable Confirmation Modal */}
-      <ConfirmDownloadModal
-        template={confirmTemplate}
-        onConfirm={handleConfirmDownload}
-        onCancel={handleCancelModal}
+      {/* Template Viewer Modal */}
+      <TemplateViewer
+        template={viewingTemplate}
+        isOpen={!!viewingTemplate}
+        onClose={() => setViewingTemplate(null)}
         colors={colors}
         language={language}
-        isDarkMode={isDarkMode}
+        user={user}
+        toast={toast}
       />
-
-
-    </div>
+      </div>
   );
 }
 
