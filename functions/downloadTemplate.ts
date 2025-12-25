@@ -2,41 +2,52 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 
 /**
- * Download Template - Supports both GET (302 redirect) and POST (JSON response)
+ * Download Template v2025-12-25-01
+ * Supports OPTIONS, GET (302 redirect), POST (JSON)
  */
 
 Deno.serve(async (req) => {
-  let step = 'init';
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': req.headers.get('origin') || '*',
-    'Access-Control-Allow-Credentials': 'true',
-    'Content-Type': 'application/json'
+  const VERSION = 'v2025-12-25-01';
+  
+  // Universal headers for all responses
+  const baseHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Cache-Control': 'no-store',
+    'X-DownloadTemplate-Version': VERSION
   };
 
+  let step = 'init';
+
   try {
-    step = 'handle_options';
-    if (req.method === 'OPTIONS') {
+    const method = req.method.toUpperCase();
+
+    // OPTIONS (CORS preflight)
+    if (method === 'OPTIONS') {
       return new Response(null, {
         status: 204,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-          'Access-Control-Max-Age': '86400'
-        }
+        headers: baseHeaders
       });
     }
 
-    step = 'method_check';
-    const isGET = req.method === 'GET';
-    const isPOST = req.method === 'POST';
-    
-    if (!isGET && !isPOST) {
+    // Only GET and POST allowed
+    if (method !== 'GET' && method !== 'POST') {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Method Not Allowed - use GET or POST', code: 'METHOD_NOT_ALLOWED' }),
-        { status: 405, headers: corsHeaders }
+        JSON.stringify({ 
+          ok: false, 
+          error: `Unsupported method: ${method}. Use GET or POST.`,
+          code: 'UNSUPPORTED_METHOD'
+        }),
+        { 
+          status: 200, // Use 200 to avoid framework 405
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
+
+    const isGET = method === 'GET';
+    const isPOST = method === 'POST';
 
     step = 'extract_template_key';
     let template_key;
@@ -51,16 +62,30 @@ Deno.serve(async (req) => {
         template_key = body.template_key;
       } catch (parseError) {
         return new Response(
-          JSON.stringify({ ok: false, error: `Body parse error: ${parseError.message}`, code: 'PARSE_ERROR' }),
-          { status: 400, headers: corsHeaders }
+          JSON.stringify({ 
+            ok: false, 
+            error: `Body parse error: ${parseError.message}`, 
+            code: 'PARSE_ERROR' 
+          }),
+          { 
+            status: 400, 
+            headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+          }
         );
       }
     }
 
     if (!template_key) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Missing template_key', code: 'MISSING_TEMPLATE_KEY' }),
-        { status: 400, headers: corsHeaders }
+        JSON.stringify({ 
+          ok: false, 
+          error: 'Missing template_key parameter', 
+          code: 'MISSING_TEMPLATE_KEY' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -71,15 +96,29 @@ Deno.serve(async (req) => {
       user = await base44.auth.me();
     } catch (authError) {
       return new Response(
-        JSON.stringify({ ok: false, error: `Auth error: ${authError.message}`, code: 'AUTH_ERROR' }),
-        { status: 401, headers: corsHeaders }
+        JSON.stringify({ 
+          ok: false, 
+          error: `Auth error: ${authError.message}`, 
+          code: 'AUTH_ERROR' 
+        }),
+        { 
+          status: 401, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
     if (!user || !user.email) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'User not authenticated', code: 'UNAUTHORIZED' }),
-        { status: 401, headers: corsHeaders }
+        JSON.stringify({ 
+          ok: false, 
+          error: 'User not authenticated', 
+          code: 'UNAUTHORIZED' 
+        }),
+        { 
+          status: 401, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -91,15 +130,29 @@ Deno.serve(async (req) => {
       });
     } catch (fetchError) {
       return new Response(
-        JSON.stringify({ ok: false, error: `Template fetch error: ${fetchError.message}`, code: 'FETCH_ERROR' }),
-        { status: 500, headers: corsHeaders }
+        JSON.stringify({ 
+          ok: false, 
+          error: `Template fetch error: ${fetchError.message}`, 
+          code: 'FETCH_ERROR' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
     if (!templates || templates.length === 0) {
       return new Response(
-        JSON.stringify({ ok: false, error: `Template not found: ${template_key}`, code: 'NOT_FOUND' }),
-        { status: 404, headers: corsHeaders }
+        JSON.stringify({ 
+          ok: false, 
+          error: `Template not found: ${template_key}`, 
+          code: 'NOT_FOUND' 
+        }),
+        { 
+          status: 404, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -116,7 +169,10 @@ Deno.serve(async (req) => {
           error: `Insufficient credits: need ${creditCost}, have ${currentCredits}`,
           code: 'INSUFFICIENT_CREDITS'
         }),
-        { status: 402, headers: corsHeaders }
+        { 
+          status: 402, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -126,8 +182,15 @@ Deno.serve(async (req) => {
 
     if (!supabaseUrl || !supabaseKey) {
       return new Response(
-        JSON.stringify({ ok: false, error: 'Storage config missing', code: 'CONFIG_ERROR' }),
-        { status: 500, headers: corsHeaders }
+        JSON.stringify({ 
+          ok: false, 
+          error: 'Storage configuration missing', 
+          code: 'CONFIG_ERROR' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -136,16 +199,22 @@ Deno.serve(async (req) => {
       supabase = createClient(supabaseUrl, supabaseKey);
     } catch (storageError) {
       return new Response(
-        JSON.stringify({ ok: false, error: `Storage init error: ${storageError.message}`, code: 'STORAGE_ERROR' }),
-        { status: 500, headers: corsHeaders }
+        JSON.stringify({ 
+          ok: false, 
+          error: `Storage init error: ${storageError.message}`, 
+          code: 'STORAGE_ERROR' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
     const bucketName = 'template-files';
     let filePath = template.file_path;
 
-    // Check if file exists, generate if not
-    step = 'check_file_exists';
+    step = 'ensure_file_exists';
     if (!filePath) {
       step = 'generate_file';
       try {
@@ -157,11 +226,14 @@ Deno.serve(async (req) => {
           return new Response(
             JSON.stringify({ 
               ok: false, 
-              error: 'File generation returned not ok',
+              error: 'File generation failed',
               code: 'GENERATION_FAILED',
               details: genResponse?.data 
             }),
-            { status: 500, headers: corsHeaders }
+            { 
+              status: 500, 
+              headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+            }
           );
         }
 
@@ -169,12 +241,18 @@ Deno.serve(async (req) => {
         
         if (!filePath) {
           return new Response(
-            JSON.stringify({ ok: false, error: 'Generated file has no path', code: 'NO_FILE_PATH' }),
-            { status: 500, headers: corsHeaders }
+            JSON.stringify({ 
+              ok: false, 
+              error: 'Generated file has no path', 
+              code: 'NO_FILE_PATH' 
+            }),
+            { 
+              status: 500, 
+              headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+            }
           );
         }
 
-        // Update template
         try {
           await base44.asServiceRole.entities.TemplateLibrary.update(template.id, {
             file_path: filePath
@@ -186,11 +264,13 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             ok: false, 
-            error: `Generation failed: ${genError.message}`,
-            code: 'GENERATION_ERROR',
-            stack: (genError.stack || '').slice(0, 600)
+            error: `Generation error: ${genError.message}`,
+            code: 'GENERATION_ERROR'
           }),
-          { status: 500, headers: corsHeaders }
+          { 
+            status: 500, 
+            headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+          }
         );
       }
     }
@@ -201,7 +281,7 @@ Deno.serve(async (req) => {
       const { data: urlData, error: urlError } = await supabase
         .storage
         .from(bucketName)
-        .createSignedUrl(filePath, 600); // 10 min expiry
+        .createSignedUrl(filePath, 600);
 
       if (urlError || !urlData?.signedUrl) {
         return new Response(
@@ -210,7 +290,10 @@ Deno.serve(async (req) => {
             error: `Signed URL creation failed: ${urlError?.message || 'no URL returned'}`,
             code: 'URL_CREATION_FAILED'
           }),
-          { status: 500, headers: corsHeaders }
+          { 
+            status: 500, 
+            headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+          }
         );
       }
 
@@ -220,10 +303,12 @@ Deno.serve(async (req) => {
         JSON.stringify({ 
           ok: false, 
           error: `URL error: ${urlError.message}`,
-          code: 'URL_ERROR',
-          stack: (urlError.stack || '').slice(0, 600)
+          code: 'URL_ERROR'
         }),
-        { status: 500, headers: corsHeaders }
+        { 
+          status: 500, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -234,10 +319,13 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             ok: false, 
-            error: `URL not accessible: ${headCheck.status} ${headCheck.statusText}`,
+            error: `URL not accessible: ${headCheck.status}`,
             code: 'URL_NOT_ACCESSIBLE'
           }),
-          { status: 500, headers: corsHeaders }
+          { 
+            status: 500, 
+            headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+          }
         );
       }
     } catch (checkError) {
@@ -247,7 +335,10 @@ Deno.serve(async (req) => {
           error: `URL check failed: ${checkError.message}`,
           code: 'URL_CHECK_FAILED'
         }),
-        { status: 500, headers: corsHeaders }
+        { 
+          status: 500, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -270,10 +361,12 @@ Deno.serve(async (req) => {
         JSON.stringify({ 
           ok: false, 
           error: `Credit deduction failed: ${creditError.message}`,
-          code: 'CREDIT_DEDUCTION_FAILED',
-          stack: (creditError.stack || '').slice(0, 600)
+          code: 'CREDIT_DEDUCTION_FAILED'
         }),
-        { status: 402, headers: corsHeaders }
+        { 
+          status: 402, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -292,27 +385,34 @@ Deno.serve(async (req) => {
     }
 
     step = 'success';
-    const fileType = filePath.endsWith('.pdf') ? 'pdf' : 'docx';
-    const filename = `LeaseShield_${template_key}.${fileType}`;
-
-    console.log('[DOWNLOAD] Success:', { user: user.email, template: template_key, method: req.method });
+    console.log('[DOWNLOAD] Success:', { 
+      user: user.email, 
+      template: template_key, 
+      method: req.method,
+      version: VERSION
+    });
 
     // Return based on method
     if (isGET) {
-      // GET: Return 302 redirect to signed URL
+      // GET: Return 302 redirect
       return new Response(null, {
         status: 302,
         headers: {
-          'Location': signedUrl,
-          'Cache-Control': 'no-store',
-          'Access-Control-Allow-Origin': '*'
+          ...baseHeaders,
+          'Location': signedUrl
         }
       });
     } else {
-      // POST: Return JSON response
+      // POST: Return JSON
+      const fileType = filePath.endsWith('.pdf') ? 'pdf' : 'docx';
+      const filename = `LeaseShield_${template_key}.${fileType}`;
+      
       return new Response(
         JSON.stringify({ ok: true, url: signedUrl, filename }),
-        { status: 200, headers: corsHeaders }
+        { 
+          status: 200, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -324,10 +424,12 @@ Deno.serve(async (req) => {
         error: error.message || 'Unknown error',
         code: 'INTERNAL_ERROR',
         step,
-        name: error.name || 'Error',
-        stack: (error.stack || '').slice(0, 1200)
+        stack: (error.stack || '').slice(0, 800)
       }),
-      { status: 500, headers: corsHeaders }
+      { 
+        status: 500, 
+        headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+      }
     );
   }
 });
