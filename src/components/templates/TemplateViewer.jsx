@@ -15,7 +15,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   if (!isOpen || !template) return null;
 
   const title = language === 'th' ? (template.title_th || template.title_en) : template.title_en;
-  const body = language === 'th' ? (template.body_th || template.body_en) : template.body_en;
+  const body = language === 'th' ? (template.preview_th || template.preview_en) : (template.preview_en || template.preview_th);
   const letterCredits = user?.letter_credits || 0;
   const canUseCredits = letterCredits >= 1;
   const hasContent = body && body.trim().length > 0;

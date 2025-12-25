@@ -196,8 +196,9 @@ function TemplatesContent() {
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {categoryTemplates.map((template) => {
                     const title = language === 'th' ? (template.title_th || template.title_en) : template.title_en;
-                    const body = language === 'th' ? (template.body_th || template.body_en) : template.body_en;
-                    const preview = body ? body.slice(0, 300) + (body.length > 300 ? '…' : '') : (language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable');
+                    const body = language === 'th' ? (template.preview_th || template.preview_en) : (template.preview_en || template.preview_th);
+                    const hasBody = body && body.trim().length > 0;
+                    const preview = hasBody ? body.slice(0, 300) + (body.length > 300 ? '…' : '') : (language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable');
 
                     return (
                       <Card
