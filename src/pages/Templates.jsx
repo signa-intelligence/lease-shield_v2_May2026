@@ -124,30 +124,52 @@ function TemplatesContent() {
     };
   }, [confirmTemplate, previewTemplate]);
 
-  const handleConfirmDownload = (e) => {
+  const handleConfirmDownload = async (e) => {
     if (e) e.preventDefault();
     
     const template = confirmTemplate;
     setConfirmTemplate(null);
     setDownloading(template.id);
     
-    // CANONICAL DOWNLOAD URL - GET only with cache bust
-    const downloadUrl = `/.netlify/functions/downloadTemplate?template_key=${encodeURIComponent(template.template_key)}&v=${Date.now()}`;
-    
-    console.log('[DOWNLOAD] Canonical URL:', downloadUrl);
-    console.log('[DOWNLOAD] Template Key:', template.template_key);
-    console.log('[DOWNLOAD] Method: GET (browser navigation)');
-    
-    // Direct browser navigation - triggers GET request
-    window.location.assign(downloadUrl);
-    
-    // Success message and cleanup after navigation starts
-    setTimeout(() => {
-      toast.success(language === 'th' ? 'กำลังดาวน์โหลด...' : 'Download starting...');
-      haptic.success();
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    try {
+      console.log('[DOWNLOAD] Template Key:', template.template_key);
+      console.log('[DOWNLOAD] Using Base44 SDK function invoke');
+      
+      // Call Base44 backend function through SDK (platform V3+)
+      const response = await base44.functions.invoke('downloadTemplate', {
+        template_key: template.template_key
+      });
+      
+      console.log('[DOWNLOAD] Response:', response);
+      
+      if (!response?.data?.ok || !response?.data?.url) {
+        const errorMsg = response?.data?.error || 'Download failed';
+        console.error('[DOWNLOAD] Error:', response?.data);
+        toast.error(errorMsg);
+        haptic.error();
+        setDownloading(null);
+        return;
+      }
+      
+      // Navigate to signed URL
+      const signedUrl = response.data.url;
+      console.log('[DOWNLOAD] Navigating to signed URL:', signedUrl.substring(0, 100) + '...');
+      window.location.assign(signedUrl);
+      
+      // Success message
+      setTimeout(() => {
+        toast.success(language === 'th' ? 'กำลังดาวน์โหลด...' : 'Download starting...');
+        haptic.success();
+        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        setDownloading(null);
+      }, 500);
+      
+    } catch (error) {
+      console.error('[DOWNLOAD] Exception:', error);
+      toast.error(`Download failed: ${error.message || 'Unknown error'}`);
+      haptic.error();
       setDownloading(null);
-    }, 500);
+    }
   };
 
   const language = user?.language || 'en';

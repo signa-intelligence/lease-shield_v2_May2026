@@ -2,21 +2,22 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 
 /**
- * Download Template v2025-12-25-02
- * Supports OPTIONS, GET (302 redirect) ONLY
- * POST removed - use GET with query parameters
+ * Download Template v2025-12-25-03
+ * Base44 backend function - called via base44.functions.invoke()
+ * Returns JSON with signed URL for browser download
  */
 
 Deno.serve(async (req) => {
-  const VERSION = 'v2025-12-25-02';
+  const VERSION = 'v2025-12-25-03';
   
   // Universal headers for all responses
   const baseHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Cache-Control': 'no-store, no-cache, must-revalidate',
-    'X-DownloadTemplate-Version': VERSION
+    'Cache-Control': 'no-store',
+    'X-DownloadTemplate-Version': VERSION,
+    'X-Download-Origin': 'base44-function:v2025-12-25-03'
   };
 
   let step = 'init';
@@ -32,12 +33,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Only GET allowed (POST removed)
-    if (method !== 'GET') {
+    // Only POST allowed (Base44 SDK uses POST for function invocation)
+    if (method !== 'POST') {
       return new Response(
         JSON.stringify({ 
           ok: false, 
-          error: `Method ${method} not allowed. Use GET with ?template_key=<key>`,
+          error: `Method ${method} not allowed. This function must be called via base44.functions.invoke()`,
           code: 'METHOD_NOT_ALLOWED',
           version: VERSION
         }),
@@ -49,8 +50,24 @@ Deno.serve(async (req) => {
     }
 
     step = 'extract_template_key';
-    const url = new URL(req.url);
-    const template_key = url.searchParams.get('template_key');
+    let template_key;
+    try {
+      const rawBody = await req.text();
+      const body = rawBody ? JSON.parse(rawBody) : {};
+      template_key = body.template_key;
+    } catch (parseError) {
+      return new Response(
+        JSON.stringify({ 
+          ok: false, 
+          error: `Body parse error: ${parseError.message}`, 
+          code: 'PARSE_ERROR' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
     if (!template_key) {
       return new Response(
@@ -370,14 +387,22 @@ Deno.serve(async (req) => {
       signedUrl: signedUrl.substring(0, 100) + '...'
     });
 
-    // GET: Return 302 redirect to signed URL
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...baseHeaders,
-        'Location': signedUrl
+    // Return JSON with signed URL for client-side navigation
+    const fileType = filePath.endsWith('.pdf') ? 'pdf' : 'docx';
+    const filename = `LeaseShield_${template_key}.${fileType}`;
+    
+    return new Response(
+      JSON.stringify({ 
+        ok: true, 
+        url: signedUrl, 
+        filename,
+        version: VERSION
+      }),
+      { 
+        status: 200, 
+        headers: { ...baseHeaders, 'Content-Type': 'application/json' }
       }
-    });
+    );
 
   } catch (error) {
     console.error('[DOWNLOAD] Unexpected error at step:', step, error);
