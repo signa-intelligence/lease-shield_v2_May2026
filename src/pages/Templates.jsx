@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, ShoppingCart, Eye } from "lucide-react";
+import { FileText, ShoppingCart, Eye, Loader2 } from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import { haptic } from "../components/shared/HapticFeedback";
