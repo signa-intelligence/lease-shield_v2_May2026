@@ -113,7 +113,9 @@ function TemplatesContent() {
     try {
       setDownloading(template.id);
       
-      const res = await fetch('/.netlify/functions/downloadTemplate', {
+      const functionUrl = '/.netlify/functions/downloadTemplate';
+      
+      const res = await fetch(functionUrl, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json'
@@ -125,10 +127,16 @@ function TemplatesContent() {
       });
 
       const text = await res.text();
+      const version = res.headers.get('X-DownloadTemplate-Version') || 'unknown';
       
       if (!res.ok) {
-        console.error('[DOWNLOAD] Failed:', { status: res.status, body: text.substring(0, 500) });
-        toast.error(`Download failed ${res.status}: ${text.substring(0, 220)}`);
+        console.error('[DOWNLOAD] Failed:', { 
+          url: functionUrl,
+          status: res.status, 
+          version,
+          body: text.substring(0, 500) 
+        });
+        toast.error(`Download failed [${version}] ${res.status}: ${text.substring(0, 300)}`);
         haptic.error();
         return;
       }
@@ -137,21 +145,23 @@ function TemplatesContent() {
       try {
         data = JSON.parse(text);
       } catch {
-        toast.error(`Download failed: Invalid response - ${text.substring(0, 220)}`);
+        console.error('[DOWNLOAD] Parse error:', { url: functionUrl, version, text: text.substring(0, 500) });
+        toast.error(`Download failed [${version}]: Invalid JSON - ${text.substring(0, 300)}`);
         haptic.error();
         return;
       }
 
       if (!data.ok || !data.url) {
-        const errorMsg = data.message || text.substring(0, 220);
-        const stepInfo = data.step ? `[${data.step}] ` : '';
-        toast.error(`Download failed: ${stepInfo}${errorMsg}`);
+        const errorMsg = data.error || data.message || text.substring(0, 300);
+        const code = data.code || '';
+        console.error('[DOWNLOAD] Response error:', { url: functionUrl, version, data });
+        toast.error(`Download failed [${version}] ${code}: ${errorMsg.substring(0, 300)}`);
         haptic.error();
         return;
       }
 
-      // Open signed URL
-      window.open(data.url, '_blank');
+      // Success - open signed URL (not the function URL)
+      window.location.assign(data.url);
       
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download successful');
@@ -159,7 +169,7 @@ function TemplatesContent() {
       
     } catch (error) {
       console.error('[DOWNLOAD] Exception:', error);
-      toast.error(`Download failed: ${error.message?.substring(0, 220) || 'Unknown error'}`);
+      toast.error(`Download failed: ${error.message?.substring(0, 300) || 'Unknown error'}`);
       haptic.error();
     } finally {
       setDownloading(null);
@@ -341,7 +351,11 @@ function TemplatesContent() {
                           <div className="flex gap-2">
                             {canDownload ? (
                               <Button
-                                onClick={() => handleDownloadClick(template)}
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleDownloadClick(template);
+                                }}
                                 disabled={isDownloadingThis}
                                 className="w-full"
                                 style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
