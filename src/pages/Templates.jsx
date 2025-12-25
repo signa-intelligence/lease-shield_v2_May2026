@@ -21,6 +21,11 @@ function TemplatesContent() {
   const [downloading, setDownloading] = useState(null);
   const [confirmTemplate, setConfirmTemplate] = useState(null);
   const [previewTemplate, setPreviewTemplate] = useState(null);
+  const [debugLog, setDebugLog] = useState([]);
+  
+  const debugMode = React.useMemo(() => {
+    return new URLSearchParams(window.location.search).get('debug') === '1';
+  }, []);
   
 
 
@@ -108,30 +113,93 @@ function TemplatesContent() {
     const template = confirmTemplate;
     setConfirmTemplate(null);
     
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      template_key: template.template_key,
+      step: 'start',
+      status: 'pending'
+    };
+    
     try {
       setDownloading(template.id);
+      
+      if (debugMode) {
+        console.log('[DOWNLOAD] Starting download:', template.template_key);
+      }
+      
+      logEntry.step = 'api_call';
       const response = await base44.functions.invoke('downloadTemplate', {
         template_id: template.id
       });
 
+      if (debugMode) {
+        console.log('[DOWNLOAD] API response:', response.data);
+        logEntry.api_response = response.data;
+      }
+
       if (!response.data?.ok) {
-        toast.error(response.data?.error || 'Download failed');
+        logEntry.status = 'failed';
+        logEntry.error = response.data?.error || 'Unknown error';
+        logEntry.details = response.data?.details;
+        if (debugMode) setDebugLog(prev => [...prev, logEntry]);
+        
+        toast.error(debugMode 
+          ? `${response.data?.error || 'Download failed'}: ${response.data?.details || ''}`
+          : (response.data?.error || 'Download failed')
+        );
         haptic.error();
         return;
       }
 
-      const link = document.createElement('a');
-      link.href = response.data.download_url;
-      link.download = response.data.filename || `${template.template_key}.docx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      logEntry.step = 'download_start';
+      logEntry.download_url = debugMode ? response.data.download_url.substring(0, 100) + '...' : 'generated';
+      logEntry.filename = response.data.filename;
+
+      // Mobile-friendly download: try direct navigation first, fallback to new tab
+      try {
+        // Primary method for mobile browsers
+        window.location.href = response.data.download_url;
+        
+        logEntry.status = 'success';
+        logEntry.method = 'window.location.href';
+        
+        if (debugMode) {
+          console.log('[DOWNLOAD] Download initiated via window.location.href');
+        }
+      } catch (navError) {
+        if (debugMode) {
+          console.warn('[DOWNLOAD] window.location.href failed, trying window.open:', navError);
+        }
+        
+        // Fallback for strict browsers
+        const opened = window.open(response.data.download_url, '_blank');
+        
+        if (!opened) {
+          throw new Error('Download blocked by browser - please allow pop-ups');
+        }
+        
+        logEntry.status = 'success';
+        logEntry.method = 'window.open';
+      }
+      
+      if (debugMode) setDebugLog(prev => [...prev, logEntry]);
       
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download successful');
       haptic.success();
     } catch (error) {
-      toast.error(language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed');
+      logEntry.status = 'error';
+      logEntry.error = error.message;
+      logEntry.stack = error.stack;
+      if (debugMode) {
+        console.error('[DOWNLOAD] Download error:', error);
+        setDebugLog(prev => [...prev, logEntry]);
+      }
+      
+      toast.error(debugMode 
+        ? `${language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed'}: ${error.message}`
+        : (language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed')
+      );
       haptic.error();
     } finally {
       setDownloading(null);
@@ -234,6 +302,35 @@ function TemplatesContent() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '100px' }}>
       <div className="max-w-6xl mx-auto">
+        {debugMode && debugLog.length > 0 && (
+          <Card className="mb-4 border-2" style={{ 
+            backgroundColor: isDarkMode ? '#1F2937' : '#FEF9C3',
+            borderColor: '#C7A338'
+          }}>
+            <CardContent className="p-4">
+              <h3 className="text-sm font-bold mb-3" style={{ color: colors.textPrimary }}>
+                🔧 Download Debug Log
+              </h3>
+              <div className="space-y-2 text-xs font-mono">
+                {debugLog.map((entry, i) => (
+                  <div key={i} className="p-2 rounded" style={{ 
+                    backgroundColor: isDarkMode ? '#374151' : '#FFFFFF',
+                    border: `1px solid ${colors.borderColor}`
+                  }}>
+                    <div><strong>Template:</strong> {entry.template_key}</div>
+                    <div><strong>Step:</strong> {entry.step}</div>
+                    <div><strong>Status:</strong> <span style={{ color: entry.status === 'success' ? '#059669' : entry.status === 'failed' ? '#DC2626' : '#D97706' }}>{entry.status}</span></div>
+                    {entry.method && <div><strong>Method:</strong> {entry.method}</div>}
+                    {entry.error && <div style={{ color: '#DC2626' }}><strong>Error:</strong> {entry.error}</div>}
+                    {entry.details && <div style={{ color: '#D97706' }}><strong>Details:</strong> {entry.details}</div>}
+                    {entry.filename && <div><strong>Filename:</strong> {entry.filename}</div>}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
         <PageHeader
           title={strings.title}
           subtitle={strings.subtitle}
