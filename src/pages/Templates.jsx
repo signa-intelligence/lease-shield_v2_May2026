@@ -115,22 +115,26 @@ function TemplatesContent() {
       });
 
       if (!response.data?.ok) {
-        toast.error(response.data?.error || 'Download failed');
+        const errorMsg = response.data?.error || 'Download failed';
+        const details = response.data?.details;
+        
+        console.error('[DOWNLOAD] Failed:', { error: errorMsg, details });
+        toast.error(errorMsg);
         haptic.error();
         return;
       }
 
-      const link = document.createElement('a');
-      link.href = response.data.download_url;
-      link.download = response.data.filename || `${template.template_key}.docx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      console.log('[DOWNLOAD] Success, initiating browser download');
+      
+      // Mobile-friendly download: Use window.location.href for best compatibility
+      // This works reliably on Android Chrome, iOS Safari, and PWAs
+      window.location.href = response.data.download_url;
       
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download successful');
       haptic.success();
     } catch (error) {
+      console.error('[DOWNLOAD] Error:', error);
       toast.error(language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed');
       haptic.error();
     } finally {

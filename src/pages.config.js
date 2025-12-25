@@ -36,11 +36,11 @@ import RevenueAnalytics from './pages/RevenueAnalytics';
 import ScanPreview from './pages/ScanPreview';
 import Search from './pages/Search';
 import Support from './pages/Support';
-import Templates from './pages/Templates';
 import Timeline from './pages/Timeline';
 import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
+import Templates from './pages/Templates';
 import __Layout from './Layout.jsx';
 
 
@@ -83,11 +83,11 @@ export const PAGES = {
     "ScanPreview": ScanPreview,
     "Search": Search,
     "Support": Support,
-    "Templates": Templates,
     "Timeline": Timeline,
     "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
+    "Templates": Templates,
 }
 
 export const pagesConfig = {
