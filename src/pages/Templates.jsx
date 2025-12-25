@@ -104,76 +104,26 @@ function TemplatesContent() {
     };
   }, [confirmTemplate, previewTemplate]);
 
-  const handleConfirmDownload = async (e) => {
+  const handleConfirmDownload = (e) => {
     if (e) e.preventDefault();
     
     const template = confirmTemplate;
     setConfirmTemplate(null);
+    setDownloading(template.id);
     
-    try {
-      setDownloading(template.id);
-      
-      const functionUrl = '/.netlify/functions/downloadTemplate';
-      
-      const res = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          template_key: template.template_key 
-        })
-      });
-
-      const text = await res.text();
-      const version = res.headers.get('X-DownloadTemplate-Version') || 'unknown';
-      
-      if (!res.ok) {
-        console.error('[DOWNLOAD] Failed:', { 
-          url: functionUrl,
-          status: res.status, 
-          version,
-          body: text.substring(0, 500) 
-        });
-        toast.error(`Download failed [${version}] ${res.status}: ${text.substring(0, 300)}`);
-        haptic.error();
-        return;
-      }
-
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        console.error('[DOWNLOAD] Parse error:', { url: functionUrl, version, text: text.substring(0, 500) });
-        toast.error(`Download failed [${version}]: Invalid JSON - ${text.substring(0, 300)}`);
-        haptic.error();
-        return;
-      }
-
-      if (!data.ok || !data.url) {
-        const errorMsg = data.error || data.message || text.substring(0, 300);
-        const code = data.code || '';
-        console.error('[DOWNLOAD] Response error:', { url: functionUrl, version, data });
-        toast.error(`Download failed [${version}] ${code}: ${errorMsg.substring(0, 300)}`);
-        haptic.error();
-        return;
-      }
-
-      // Success - open signed URL (not the function URL)
-      window.location.assign(data.url);
-      
-      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      toast.success(language === 'th' ? 'ดาวน์โหลดสำเร็จ' : 'Download successful');
+    // Simple browser navigation - let the function handle auth, credits, and redirect
+    const downloadUrl = `/.netlify/functions/downloadTemplate?template_key=${encodeURIComponent(template.template_key)}`;
+    
+    console.log('[DOWNLOAD] Navigating to:', downloadUrl);
+    window.location.href = downloadUrl;
+    
+    // Success message and cleanup after navigation starts
+    setTimeout(() => {
+      toast.success(language === 'th' ? 'กำลังดาวน์โหลด...' : 'Download starting...');
       haptic.success();
-      
-    } catch (error) {
-      console.error('[DOWNLOAD] Exception:', error);
-      toast.error(`Download failed: ${error.message?.substring(0, 300) || 'Unknown error'}`);
-      haptic.error();
-    } finally {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       setDownloading(null);
-    }
+    }, 500);
   };
 
   const language = user?.language || 'en';

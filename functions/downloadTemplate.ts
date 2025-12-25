@@ -392,9 +392,16 @@ Deno.serve(async (req) => {
       version: VERSION
     });
 
+    // Determine file type and name
+    const fileType = filePath.endsWith('.pdf') ? 'pdf' : 'docx';
+    const filename = `LeaseShield_${template_key}.${fileType}`;
+    const contentType = fileType === 'pdf' 
+      ? 'application/pdf' 
+      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
     // Return based on method
     if (isGET) {
-      // GET: Return 302 redirect
+      // GET: Return 302 redirect to signed URL
       return new Response(null, {
         status: 302,
         headers: {
@@ -403,10 +410,7 @@ Deno.serve(async (req) => {
         }
       });
     } else {
-      // POST: Return JSON
-      const fileType = filePath.endsWith('.pdf') ? 'pdf' : 'docx';
-      const filename = `LeaseShield_${template_key}.${fileType}`;
-      
+      // POST: Return JSON (deprecated, use GET instead)
       return new Response(
         JSON.stringify({ ok: true, url: signedUrl, filename }),
         { 
