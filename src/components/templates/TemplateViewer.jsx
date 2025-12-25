@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { X, Copy, Download, CreditCard, Loader2 } from "lucide-react";
+import { X, Copy, FileText, CreditCard, Loader2 } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
-import { jsPDF } from "jspdf";
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 
 export default function TemplateViewer({ template, isOpen, onClose, colors, language, user, toast }) {
   const queryClient = useQueryClient();
@@ -18,6 +18,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const body = language === 'th' ? (template.body_th || template.body_en) : template.body_en;
   const letterCredits = user?.letter_credits || 0;
   const canUseCredits = letterCredits >= 1;
+  const hasContent = body && body.trim().length > 0;
 
   const handleCopy = async () => {
     if (!canUseCredits) {
@@ -73,7 +74,12 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     }
   };
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadDOCX = async () => {
+    if (!hasContent) {
+      toast.error(language === 'th' ? 'ไม่มีเนื้อหาเทมเพลต' : 'Template content missing');
+      return;
+    }
+
     if (!canUseCredits) {
       setShowCreditModal(true);
       return;
@@ -81,7 +87,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
     setDownloading(true);
     try {
-      console.log('[TEMPLATE] PDF download action:', { template_key: template.template_key, lang: language, credits_before: letterCredits });
+      console.log('[TEMPLATE] DOCX download action:', { template_key: template.template_key, lang: language, credits_before: letterCredits });
 
       // Deduct credit first
       await base44.auth.updateMe({ 
@@ -94,38 +100,61 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         type: 'letters',
         delta: -1,
         reason: 'purchase',
-        source_ref: `template_pdf:${template.template_key}`
+        source_ref: `template_docx:${template.template_key}`
       });
 
-      console.log('[TEMPLATE] Credit deducted, generating PDF, credits_after:', letterCredits - 1);
+      console.log('[TEMPLATE] Credit deducted, generating DOCX, credits_after:', letterCredits - 1);
 
-      // Generate PDF
-      const pdf = new jsPDF();
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 20;
-      const maxWidth = pageWidth - 2 * margin;
+      // Generate DOCX
+      const paragraphs = [];
+      
+      // Title (bold, centered)
+      paragraphs.push(
+        new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [
+            new TextRun({
+              text: title,
+              bold: true,
+              size: 32
+            })
+          ],
+          spacing: { after: 400 }
+        })
+      );
 
-      // Title
-      pdf.setFontSize(16);
-      pdf.setFont(undefined, 'bold');
-      pdf.text(title, margin, margin);
-
-      // Body
-      pdf.setFontSize(11);
-      pdf.setFont(undefined, 'normal');
-      const lines = pdf.splitTextToSize(body, maxWidth);
-      let y = margin + 10;
-
-      lines.forEach((line) => {
-        if (y > pdf.internal.pageSize.getHeight() - margin) {
-          pdf.addPage();
-          y = margin;
-        }
-        pdf.text(line, margin, y);
-        y += 6;
+      // Body paragraphs
+      const bodyLines = body.split('\n');
+      bodyLines.forEach((line) => {
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: line,
+                size: 24
+              })
+            ],
+            spacing: { after: 200 }
+          })
+        );
       });
 
-      pdf.save(`${template.template_key}_${language}.pdf`);
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: paragraphs
+        }]
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title.replace(/[^a-z0-9]/gi, "_")}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
 
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success(language === 'th' 
@@ -133,8 +162,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         : `Downloaded! Credits remaining: ${letterCredits - 1}`);
       haptic.success();
     } catch (error) {
-      console.error('[TEMPLATE] PDF error:', error);
-      toast.error(language === 'th' ? 'ไม่สามารถสร้าง PDF ได้' : 'PDF generation failed');
+      console.error('[TEMPLATE] DOCX error:', error);
+      toast.error(language === 'th' ? 'ไม่สามารถสร้าง DOCX ได้' : 'DOCX generation failed');
       haptic.error();
     } finally {
       setDownloading(false);
@@ -165,9 +194,15 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
           {/* Body - Scrollable */}
           <div className="flex-1 overflow-y-auto p-6" style={{ backgroundColor: colors.fieldBg }}>
-            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
-              {body}
-            </pre>
+            {hasContent ? (
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
+                {body}
+              </pre>
+            ) : (
+              <p className="text-sm text-center" style={{ color: colors.textSecondary }}>
+                {language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable'}
+              </p>
+            )}
           </div>
 
           {/* Footer - Actions */}
@@ -184,7 +219,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
             <div className="grid grid-cols-2 gap-3">
               <Button
                 onClick={handleCopy}
-                disabled={copying || !canUseCredits}
+                disabled={copying || !canUseCredits || !hasContent}
                 className="w-full"
                 style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
               >
@@ -198,18 +233,18 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
               </Button>
 
               <Button
-                onClick={handleDownloadPDF}
-                disabled={downloading || !canUseCredits}
+                onClick={handleDownloadDOCX}
+                disabled={downloading || !canUseCredits || !hasContent}
                 className="w-full"
                 style={{ backgroundColor: '#C7A338', color: '#FFFFFF' }}
               >
                 {downloading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
-                  <Download className="w-4 h-4 mr-2" />
+                  <FileText className="w-4 h-4 mr-2" />
                 )}
-                {language === 'th' ? 'ดาวน์โหลด PDF' : 'Download PDF'}
-                <span className="ml-1 text-xs opacity-75">(1 {language === 'th' ? 'เครดิต' : 'credit'})</span>
+                {language === 'th' ? 'ดาวน์โหลด Word' : 'Download Word'}
+                <span className="ml-1 text-xs opacity-75">(.docx)</span>
               </Button>
             </div>
           </div>

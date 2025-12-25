@@ -91,7 +91,7 @@ function TemplatesContent() {
   const t = {
     en: {
       title: "Document Templates",
-      subtitle: "View templates for free. Copy text or download PDF (1 credit each).",
+      subtitle: "View templates for free. Copy text or download Word (1 credit each).",
       creditsBalance: "Credits:",
       view: "View Template",
       buyCredits: "Buy Credits",
@@ -107,7 +107,7 @@ function TemplatesContent() {
     },
     th: {
       title: "เทมเพลตเอกสาร",
-      subtitle: "ดูเทมเพลตฟรี คัดลอกข้อความหรือดาวน์โหลด PDF (1 เครดิตต่อครั้ง)",
+      subtitle: "ดูเทมเพลตฟรี คัดลอกข้อความหรือดาวน์โหลด Word (1 เครดิตต่อครั้ง)",
       creditsBalance: "เครดิต:",
       view: "ดูเทมเพลต",
       buyCredits: "ซื้อเครดิต",
@@ -196,9 +196,8 @@ function TemplatesContent() {
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {categoryTemplates.map((template) => {
                     const title = language === 'th' ? (template.title_th || template.title_en) : template.title_en;
-                    const preview = language === 'th' 
-                      ? (template.preview_th || template.body_th?.substring(0, 300) || template.preview_en || template.body_en?.substring(0, 300) || '')
-                      : (template.preview_en || template.body_en?.substring(0, 300) || template.preview_th || template.body_th?.substring(0, 300) || '');
+                    const body = language === 'th' ? (template.body_th || template.body_en) : template.body_en;
+                    const preview = body ? body.slice(0, 300) + (body.length > 300 ? '…' : '') : (language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable');
 
                     return (
                       <Card
@@ -216,7 +215,7 @@ function TemplatesContent() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 space-y-4">
-                          <p className="text-sm line-clamp-3" style={{ color: colors.textSecondary }}>
+                          <p className="text-sm line-clamp-3" style={{ color: colors.textSecondary, whiteSpace: 'pre-wrap' }}>
                             {preview}
                           </p>
 
