@@ -2,22 +2,20 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { createClient } from 'npm:@supabase/supabase-js@2.39.0';
 
 /**
- * Download Template v2025-12-25-03
- * Base44 backend function - called via base44.functions.invoke()
- * Returns JSON with signed URL for browser download
+ * Download Template - Base44 Function
+ * Called via: await base44.functions.invoke('downloadTemplate', { template_key })
+ * Returns: { ok: true, signedUrl, filename } OR { ok: false, code, message }
  */
 
 Deno.serve(async (req) => {
   const VERSION = 'v2025-12-25-03';
   
-  // Universal headers for all responses
   const baseHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Cache-Control': 'no-store',
-    'X-DownloadTemplate-Version': VERSION,
-    'X-Download-Origin': 'base44-function:v2025-12-25-03'
+    'Content-Type': 'application/json'
   };
 
   let step = 'init';
@@ -70,17 +68,11 @@ Deno.serve(async (req) => {
     }
 
     if (!template_key) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: 'Missing template_key parameter', 
-          code: 'MISSING_TEMPLATE_KEY' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'MISSING_TEMPLATE_KEY',
+        message: 'Missing template_key parameter'
+      }, { status: 400, headers: baseHeaders });
     }
 
     step = 'auth';
@@ -89,65 +81,39 @@ Deno.serve(async (req) => {
       base44 = createClientFromRequest(req);
       user = await base44.auth.me();
     } catch (authError) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `Auth error: ${authError.message}`, 
-          code: 'AUTH_ERROR' 
-        }),
-        { 
-          status: 401, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'AUTH_ERROR',
+        message: `Auth error: ${authError.message}`
+      }, { status: 401, headers: baseHeaders });
     }
 
     if (!user || !user.email) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: 'User not authenticated', 
-          code: 'UNAUTHORIZED' 
-        }),
-        { 
-          status: 401, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'UNAUTHORIZED',
+        message: 'User not authenticated'
+      }, { status: 401, headers: baseHeaders });
     }
 
     step = 'fetch_template';
     let templates;
     try {
-      templates = await base44.asServiceRole.entities.TemplateLibrary.filter({ 
-        template_key 
-      });
+      templates = await base44.asServiceRole.entities.TemplateLibrary.filter({ template_key });
     } catch (fetchError) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `Template fetch error: ${fetchError.message}`, 
-          code: 'FETCH_ERROR' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'FETCH_ERROR',
+        message: `Template fetch error: ${fetchError.message}`
+      }, { status: 500, headers: baseHeaders });
     }
 
     if (!templates || templates.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `Template not found: ${template_key}`, 
-          code: 'NOT_FOUND' 
-        }),
-        { 
-          status: 404, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'NOT_FOUND',
+        message: `Template not found: ${template_key}`
+      }, { status: 404, headers: baseHeaders });
     }
 
     const template = templates[0];
@@ -157,17 +123,11 @@ Deno.serve(async (req) => {
     const currentCredits = user.letter_credits || 0;
 
     if (currentCredits < creditCost) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `Insufficient credits: need ${creditCost}, have ${currentCredits}`,
-          code: 'INSUFFICIENT_CREDITS'
-        }),
-        { 
-          status: 402, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'INSUFFICIENT_CREDITS',
+        message: `Insufficient credits: need ${creditCost}, have ${currentCredits}`
+      }, { status: 402, headers: baseHeaders });
     }
 
     step = 'storage_init';
@@ -175,34 +135,22 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('VITE_SUPABASE_ANON_KEY');
 
     if (!supabaseUrl || !supabaseKey) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: 'Storage configuration missing', 
-          code: 'CONFIG_ERROR' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'CONFIG_ERROR',
+        message: 'Storage configuration missing'
+      }, { status: 500, headers: baseHeaders });
     }
 
     let supabase;
     try {
       supabase = createClient(supabaseUrl, supabaseKey);
     } catch (storageError) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `Storage init error: ${storageError.message}`, 
-          code: 'STORAGE_ERROR' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'STORAGE_ERROR',
+        message: `Storage init error: ${storageError.message}`
+      }, { status: 500, headers: baseHeaders });
     }
 
     const bucketName = 'template-files';
@@ -217,34 +165,22 @@ Deno.serve(async (req) => {
         });
 
         if (!genResponse?.data?.ok) {
-          return new Response(
-            JSON.stringify({ 
-              ok: false, 
-              error: 'File generation failed',
-              code: 'GENERATION_FAILED',
-              details: genResponse?.data 
-            }),
-            { 
-              status: 500, 
-              headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-            }
-          );
+          return Response.json({ 
+            ok: false, 
+            code: 'GENERATION_FAILED',
+            message: 'File generation failed',
+            details: genResponse?.data 
+          }, { status: 500, headers: baseHeaders });
         }
 
         filePath = genResponse.data.file_path;
         
         if (!filePath) {
-          return new Response(
-            JSON.stringify({ 
-              ok: false, 
-              error: 'Generated file has no path', 
-              code: 'NO_FILE_PATH' 
-            }),
-            { 
-              status: 500, 
-              headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-            }
-          );
+          return Response.json({ 
+            ok: false, 
+            code: 'NO_FILE_PATH',
+            message: 'Generated file has no path'
+          }, { status: 500, headers: baseHeaders });
         }
 
         try {
@@ -255,17 +191,11 @@ Deno.serve(async (req) => {
           console.warn('Failed to update template file_path:', updateError);
         }
       } catch (genError) {
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            error: `Generation error: ${genError.message}`,
-            code: 'GENERATION_ERROR'
-          }),
-          { 
-            status: 500, 
-            headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        return Response.json({ 
+          ok: false, 
+          code: 'GENERATION_ERROR',
+          message: `Generation error: ${genError.message}`
+        }, { status: 500, headers: baseHeaders });
       }
     }
 
@@ -278,62 +208,38 @@ Deno.serve(async (req) => {
         .createSignedUrl(filePath, 600);
 
       if (urlError || !urlData?.signedUrl) {
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            error: `Signed URL creation failed: ${urlError?.message || 'no URL returned'}`,
-            code: 'URL_CREATION_FAILED'
-          }),
-          { 
-            status: 500, 
-            headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        return Response.json({ 
+          ok: false, 
+          code: 'URL_CREATION_FAILED',
+          message: `Signed URL creation failed: ${urlError?.message || 'no URL returned'}`
+        }, { status: 500, headers: baseHeaders });
       }
 
       signedUrl = urlData.signedUrl;
     } catch (urlError) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `URL error: ${urlError.message}`,
-          code: 'URL_ERROR'
-        }),
-        { 
-          status: 500, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'URL_ERROR',
+        message: `URL error: ${urlError.message}`
+      }, { status: 500, headers: baseHeaders });
     }
 
     step = 'url_access_check';
     try {
       const headCheck = await fetch(signedUrl, { method: 'HEAD' });
       if (!headCheck.ok) {
-        return new Response(
-          JSON.stringify({ 
-            ok: false, 
-            error: `URL not accessible: ${headCheck.status}`,
-            code: 'URL_NOT_ACCESSIBLE'
-          }),
-          { 
-            status: 500, 
-            headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-          }
-        );
+        return Response.json({ 
+          ok: false, 
+          code: 'URL_NOT_ACCESSIBLE',
+          message: `URL not accessible: ${headCheck.status}`
+        }, { status: 500, headers: baseHeaders });
       }
     } catch (checkError) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `URL check failed: ${checkError.message}`,
-          code: 'URL_CHECK_FAILED'
-        }),
-        { 
-          status: 500, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'URL_CHECK_FAILED',
+        message: `URL check failed: ${checkError.message}`
+      }, { status: 500, headers: baseHeaders });
     }
 
     step = 'deduct_credit';
@@ -351,17 +257,11 @@ Deno.serve(async (req) => {
         letter_credits: Math.max(0, currentCredits - creditCost)
       });
     } catch (creditError) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `Credit deduction failed: ${creditError.message}`,
-          code: 'CREDIT_DEDUCTION_FAILED'
-        }),
-        { 
-          status: 402, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      return Response.json({ 
+        ok: false, 
+        code: 'CREDIT_DEDUCTION_FAILED',
+        message: `Credit deduction failed: ${creditError.message}`
+      }, { status: 402, headers: baseHeaders });
     }
 
     // Log usage (non-critical)
@@ -379,45 +279,33 @@ Deno.serve(async (req) => {
     }
 
     step = 'success';
-    console.log('[DOWNLOAD] Success:', { 
-      user: user.email, 
-      template: template_key, 
-      method: req.method,
-      version: VERSION,
-      signedUrl: signedUrl.substring(0, 100) + '...'
-    });
-
-    // Return JSON with signed URL for client-side navigation
     const fileType = filePath.endsWith('.pdf') ? 'pdf' : 'docx';
     const filename = `LeaseShield_${template_key}.${fileType}`;
     
-    return new Response(
-      JSON.stringify({ 
-        ok: true, 
-        url: signedUrl, 
-        filename,
-        version: VERSION
-      }),
-      { 
-        status: 200, 
-        headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    console.log('[DOWNLOAD] Success:', { 
+      user: user.email, 
+      template: template_key,
+      filename,
+      signedUrlHost: new URL(signedUrl).host
+    });
+
+    // Return JSON with signed URL for browser download
+    return Response.json({ 
+      ok: true, 
+      signedUrl, 
+      filename
+    }, { status: 200, headers: baseHeaders });
 
   } catch (error) {
     console.error('[DOWNLOAD] Unexpected error at step:', step, error);
-    return new Response(
-      JSON.stringify({
-        ok: false,
-        error: error.message || 'Unknown error',
-        code: 'INTERNAL_ERROR',
-        step,
-        stack: (error.stack || '').slice(0, 800)
-      }),
-      { 
-        status: 500, 
-        headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    return Response.json({
+      ok: false,
+      code: 'INTERNAL_ERROR',
+      message: error.message || 'Unknown error',
+      step
+    }, { 
+      status: 500, 
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 });

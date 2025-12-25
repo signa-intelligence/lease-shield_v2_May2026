@@ -132,42 +132,59 @@ function TemplatesContent() {
     setDownloading(template.id);
     
     try {
-      console.log('[DOWNLOAD] Template Key:', template.template_key);
-      console.log('[DOWNLOAD] Using Base44 SDK function invoke');
+      console.log('DOWNLOAD: invoking Base44 function', { 
+        template_key: template.template_key, 
+        locale: language 
+      });
       
-      // Call Base44 backend function through SDK (platform V3+)
       const response = await base44.functions.invoke('downloadTemplate', {
         template_key: template.template_key
       });
       
-      console.log('[DOWNLOAD] Response:', response);
+      console.log('DOWNLOAD: invoke result', response);
       
-      if (!response?.data?.ok || !response?.data?.url) {
-        const errorMsg = response?.data?.error || 'Download failed';
-        console.error('[DOWNLOAD] Error:', response?.data);
-        toast.error(errorMsg);
+      if (!response?.data?.ok || !response?.data?.signedUrl) {
+        const errorData = response?.data || {};
+        const errorMsg = errorData.message || errorData.error || 'Download failed';
+        console.error('[DOWNLOAD] Error:', errorData);
+        toast.error(`${errorData.code || 'ERROR'}: ${errorMsg}`);
         haptic.error();
         setDownloading(null);
         return;
       }
       
-      // Navigate to signed URL
-      const signedUrl = response.data.url;
-      console.log('[DOWNLOAD] Navigating to signed URL:', signedUrl.substring(0, 100) + '...');
-      window.location.assign(signedUrl);
+      const { signedUrl, filename } = response.data;
+      console.log('DOWNLOAD: signedUrl host', new URL(signedUrl).host);
       
-      // Success message
-      setTimeout(() => {
-        toast.success(language === 'th' ? 'กำลังดาวน์โหลด...' : 'Download starting...');
-        haptic.success();
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-        setDownloading(null);
-      }, 500);
+      // Try <a> element download first (best for most browsers)
+      const a = document.createElement('a');
+      a.href = signedUrl;
+      if (filename) a.download = filename;
+      a.rel = 'noopener';
+      a.target = '_blank';
+      document.body.appendChild(a);
+      
+      try {
+        a.click();
+        console.log('[DOWNLOAD] Download triggered via <a> click');
+      } catch (clickError) {
+        // Fallback for Android/TWA
+        console.log('[DOWNLOAD] <a> click failed, using window.location.assign');
+        window.location.assign(signedUrl);
+      } finally {
+        setTimeout(() => document.body.removeChild(a), 100);
+      }
+      
+      toast.success(language === 'th' ? 'กำลังดาวน์โหลด...' : 'Download starting...');
+      haptic.success();
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       
     } catch (error) {
       console.error('[DOWNLOAD] Exception:', error);
-      toast.error(`Download failed: ${error.message || 'Unknown error'}`);
+      const safeError = error?.message || String(error) || 'Unknown error';
+      toast.error(`Download failed: ${safeError}`);
       haptic.error();
+    } finally {
       setDownloading(null);
     }
   };
