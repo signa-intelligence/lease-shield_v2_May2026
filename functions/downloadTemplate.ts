@@ -52,26 +52,25 @@ Deno.serve(async (req) => {
     let template_key;
     try {
       const rawBody = await req.text();
+      console.log(LOG_PREFIX, 'Raw request body:', rawBody);
       const body = rawBody ? JSON.parse(rawBody) : {};
       template_key = body.template_key;
+      console.log(LOG_PREFIX, 'Parsed template_key:', template_key);
     } catch (parseError) {
-      return new Response(
-        JSON.stringify({ 
-          ok: false, 
-          error: `Body parse error: ${parseError.message}`, 
-          code: 'PARSE_ERROR' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...baseHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      console.error(LOG_PREFIX, 'Body parse error:', parseError);
+      return Response.json({ 
+        error: true,
+        step: 'extract_template_key',
+        message: parseError.message,
+        stack: parseError.stack
+      }, { status: 500, headers: baseHeaders });
     }
 
     if (!template_key) {
+      console.error(LOG_PREFIX, 'Missing template_key');
       return Response.json({ 
-        ok: false, 
-        code: 'MISSING_TEMPLATE_KEY',
+        error: true,
+        step: 'extract_template_key',
         message: 'Missing template_key parameter'
       }, { status: 400, headers: baseHeaders });
     }
