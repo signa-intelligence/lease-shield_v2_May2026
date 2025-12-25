@@ -11,8 +11,7 @@ export default function ConfirmDownloadModal({
   onCancel,
   colors,
   language = 'en',
-  isDarkMode = false,
-  debugMode = false
+  isDarkMode = false
 }) {
   if (!template) return null;
 
@@ -138,20 +137,7 @@ export default function ConfirmDownloadModal({
             </div>
           )}
 
-          {debugMode && (
-            <div className="text-xs font-mono p-3 rounded-lg space-y-1 mt-3" style={{ 
-              color: colors.textSecondary, 
-              backgroundColor: isDarkMode ? '#1F2937' : '#F3F4F6',
-              border: `1px solid ${colors.borderColor}`
-            }}>
-              <div><strong>Key:</strong> {template.template_key || 'missing'}</div>
-              <div><strong>ID:</strong> {template.id}</div>
-              <div><strong>File:</strong> {template.file_path ? '✓' : '✗'}</div>
-              <div><strong>PreviewEN:</strong> {template.preview_en ? '✓' : '✗'}</div>
-              <div><strong>PreviewTH:</strong> {template.preview_th ? '✓' : '✗'}</div>
-              <div><strong>Status:</strong> {template.status || 'unknown'}</div>
-            </div>
-          )}
+
         </div>
 
         {/* Modal Footer - ALWAYS VISIBLE, STICKY */}
