@@ -111,51 +111,44 @@ function TemplatesContent() {
     try {
       setDownloading(template.id);
       
-      // Call backend function via base44 SDK to get proper URL with auth
       const response = await base44.functions.invoke('downloadTemplate', {
         template_id: template.id,
-        template_key: template.template_key,
-        locale: language,
-        user_id: user?.id
+        template_key: template.template_key
       });
 
-      // Check if response indicates an error
-      if (response.status !== 200 || !response.data) {
-        const errorText = response.data?.error || response.data?.message || 'Unknown error';
-        const statusCode = response.status || 500;
+      // Check for error response
+      if (response.status !== 200) {
+        let errorText = 'Unknown error';
+        
+        if (response.data) {
+          if (typeof response.data === 'object') {
+            // JSON error response
+            const parts = [
+              response.data.step ? `[${response.data.step}]` : null,
+              response.data.message || response.data.error
+            ].filter(Boolean);
+            errorText = parts.join(' ');
+          } else if (typeof response.data === 'string') {
+            errorText = response.data;
+          }
+        }
         
         console.error('[DOWNLOAD] Failed:', {
-          status: statusCode,
-          error: errorText,
-          details: response.data
+          status: response.status,
+          data: response.data
         });
         
-        const errorMsg = `Download failed: ${statusCode} - ${errorText.substring(0, 120)}`;
-        toast.error(errorMsg);
+        toast.error(`Download failed: ${response.status} - ${errorText.substring(0, 160)}`);
         haptic.error();
         return;
       }
 
-      // Response.data should be the binary data
-      // But base44.functions.invoke might JSON-parse it, so we need to handle both cases
-      
+      // Success - response.data should be binary blob
       let blob;
       if (response.data instanceof Blob) {
         blob = response.data;
-      } else if (typeof response.data === 'string') {
-        // If it's base64 encoded
-        try {
-          const binaryString = atob(response.data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          blob = new Blob([bytes]);
-        } catch {
-          throw new Error('Invalid file data received');
-        }
       } else {
-        throw new Error('Unexpected response format');
+        throw new Error('Invalid response format - expected binary data');
       }
 
       const fileType = template.file_path?.endsWith('.pdf') ? 'pdf' : 'docx';
@@ -169,7 +162,6 @@ function TemplatesContent() {
       document.body.appendChild(a);
       a.click();
       
-      // Cleanup
       setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
@@ -180,9 +172,8 @@ function TemplatesContent() {
       haptic.success();
       
     } catch (error) {
-      console.error('[DOWNLOAD] Error:', error);
-      const errorMsg = error.message || (language === 'th' ? 'ดาวน์โหลดล้มเหลว' : 'Download failed');
-      toast.error(errorMsg);
+      console.error('[DOWNLOAD] Exception:', error);
+      toast.error(`Download failed: ${error.message?.substring(0, 160) || 'Unknown error'}`);
       haptic.error();
     } finally {
       setDownloading(null);
