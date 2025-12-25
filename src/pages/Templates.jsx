@@ -111,21 +111,34 @@ function TemplatesContent() {
     try {
       setDownloading(template.id);
       
-      const response = await base44.functions.invoke('downloadTemplate', {
-        template_key: template.template_key
+      // Use direct fetch for full error visibility
+      const functionUrl = `${window.location.origin}/.netlify/functions/downloadTemplate`;
+      
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          template_key: template.template_key 
+        })
       });
 
-      // Read response - ALWAYS parse as text first to see errors
-      const isSuccess = response.status === 200;
-      let data;
+      // ALWAYS read response as text first to see error details
+      const responseText = await response.text();
       
+      let data;
       try {
-        data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
-      } catch {
-        data = { ok: false, message: 'Invalid response format' };
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[DOWNLOAD] Response parse error:', responseText.substring(0, 500));
+        toast.error(`Download failed: ${response.status} - Invalid JSON response`);
+        haptic.error();
+        return;
       }
 
-      if (!isSuccess || !data.ok) {
+      if (!response.ok || !data.ok) {
         const errorParts = [
           data.step ? `[${data.step}]` : null,
           data.message || 'Unknown error'
@@ -134,7 +147,8 @@ function TemplatesContent() {
         
         console.error('[DOWNLOAD] Failed:', {
           status: response.status,
-          data
+          data,
+          rawResponse: responseText.substring(0, 500)
         });
         
         toast.error(`Download failed: ${response.status} - ${errorText.substring(0, 220)}`);
@@ -142,12 +156,11 @@ function TemplatesContent() {
         return;
       }
 
-      // Success - open URL in new tab and use download anchor
+      // Success - open URL
       const downloadUrl = data.url;
       const filename = data.filename || `LeaseShield_${template.template_key}.docx`;
 
-      // Try multiple download methods for compatibility
-      // Method 1: Create download anchor (works on most mobile browsers)
+      // Create download link
       const a = document.createElement('a');
       a.href = downloadUrl;
       a.download = filename;
@@ -160,7 +173,7 @@ function TemplatesContent() {
         document.body.removeChild(a);
       }, 100);
 
-      // Method 2: Also open in new tab as fallback
+      // Also open in new tab as fallback
       setTimeout(() => {
         window.open(downloadUrl, '_blank');
       }, 200);
