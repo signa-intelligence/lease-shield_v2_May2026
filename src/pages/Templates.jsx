@@ -363,7 +363,6 @@ function TemplatesContent() {
         colors={colors}
         language={language}
         isDarkMode={isDarkMode}
-        debugMode={debugMode}
       />
 
 
