@@ -2,7 +2,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
 
 /**
- * STRIPE WEBHOOK HANDLER - Clean minimal implementation
+ * STRIPE WEBHOOK HANDLER - Production-hardened implementation
+ * 
+ * Live endpoint: https://app.leaseshield.asia/api/functions/stripeWebhook
  * 
  * Required Secrets:
  * - SK_TEST_secret_key: Stripe API key (contains LIVE sk_live_... key)
@@ -13,41 +15,58 @@ import Stripe from 'npm:stripe@14.10.0';
 const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
 const webhookSecret = Deno.env.get('webhook_stripe');
 
+if (!stripeSecretKey) {
+  console.error('[WEBHOOK_FATAL] SK_TEST_secret_key not set');
+}
+
+if (!webhookSecret) {
+  console.error('[WEBHOOK_FATAL] webhook_stripe not set');
+}
+
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2024-06-20',
 });
 
+// Detect mode from secret key prefix
+const isLiveMode = stripeSecretKey?.startsWith('sk_live_');
+const webhookMode = isLiveMode ? 'LIVE' : 'TEST';
+
 Deno.serve(async (req) => {
-  console.log('\n[WEBHOOK_ENTRY] Stripe webhook received');
-  console.log('[WEBHOOK_ENTRY] Timestamp:', new Date().toISOString());
+  const timestamp = new Date().toISOString();
+  console.log(`\n[WEBHOOK_${webhookMode}] Stripe webhook received at ${timestamp}`);
 
   try {
+    // Only accept POST requests
+    if (req.method !== 'POST') {
+      console.error(`[WEBHOOK_ERROR] Invalid method: ${req.method}`);
+      return Response.json({ error: 'Method not allowed' }, { status: 405 });
+    }
+
     // Read raw body and signature
     const rawBody = await req.text();
     const signature = req.headers.get('stripe-signature');
 
     if (!signature) {
       console.error('[WEBHOOK_ERROR] No stripe-signature header');
-      return Response.json({ error: 'No signature provided' }, { status: 400 });
+      return Response.json({ error: 'Missing signature' }, { status: 400 });
     }
 
     if (!webhookSecret) {
       console.error('[WEBHOOK_ERROR] webhook_stripe secret not configured');
-      return Response.json({ error: 'Webhook secret not configured' }, { status: 500 });
+      return Response.json({ error: 'Webhook not configured' }, { status: 500 });
     }
 
     // Verify webhook signature
     let event;
     try {
       event = await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
-      console.log('[WEBHOOK_ENTRY] ✅ Signature verified');
-      console.log('[WEBHOOK_ENTRY] Event type:', event.type);
-      console.log('[WEBHOOK_ENTRY] Event ID:', event.id);
+      console.log(`[WEBHOOK_${webhookMode}] ✅ Signature verified`);
+      console.log(`[WEBHOOK_${webhookMode}] Event type: ${event.type}`);
+      console.log(`[WEBHOOK_${webhookMode}] Event ID: ${event.id}`);
     } catch (err) {
       console.error('[WEBHOOK_ERROR] Signature verification failed:', err.message);
       return Response.json({ 
-        error: 'Webhook signature verification failed',
-        details: err.message 
+        error: 'Invalid signature'
       }, { status: 400 });
     }
 
@@ -491,13 +510,18 @@ Deno.serve(async (req) => {
       return Response.json({ received: true }, { status: 200 });
     }
 
-    // Other event types - acknowledge
-    console.log('[WEBHOOK] Unhandled event type:', event.type);
-    return Response.json({ received: true }, { status: 200 });
+    // Other event types - acknowledge but don't process
+    console.log(`[WEBHOOK_${webhookMode}] Unhandled event type: ${event.type} - acknowledged`);
+    return Response.json({ received: true, ignored: true }, { status: 200 });
 
   } catch (error) {
-    console.error('[WEBHOOK_ERROR] Fatal error:', error.message);
-    console.error('[WEBHOOK_ERROR] Stack:', error.stack);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error(`[WEBHOOK_${webhookMode}_ERROR] Fatal error:`, error.message);
+    console.error(`[WEBHOOK_${webhookMode}_ERROR] Stack:`, error.stack);
+    
+    // Return 500 for critical processing errors
+    return Response.json({ 
+      error: 'Webhook processing failed',
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
 });
