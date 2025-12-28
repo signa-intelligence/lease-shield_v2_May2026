@@ -482,11 +482,12 @@ function SupportContent() {
                         minHeight: '48px'
                       }}
                     >
+                      <option value="billing">Billing & Subscription</option>
+                      <option value="account">Account & Access</option>
+                      <option value="templates">Templates & Letters</option>
                       <option value="cases">Cases</option>
-                      <option value="billing">Billing & Payments</option>
-                      <option value="account">Account & Subscription</option>
                       <option value="bug">Bug Report</option>
-                      <option value="general">General Question</option>
+                      <option value="other">Other</option>
                     </select>
                   </div>
 
@@ -501,7 +502,7 @@ function SupportContent() {
                         handleChange('description', newValue);
                       }}
                       onBlur={() => handleBlur('description')}
-                      placeholder={language === 'th' ? 'อธิบายปัญหาโดยย่อ ข้อเท็จจริงสำคัญเท่านั้น' : language === 'zh' ? '简要描述问题。仅关键事实。' : language === 'ja' ? '問題を簡潔に説明してください。重要な事実のみ。' : language === 'ko' ? '문제를 간략히 설명하십시오. 주요 사실만 기재하세요.' : language === 'ru' ? 'Кратко опишите проблему. Только ключевые факты.' : 'Briefly describe the issue. Key facts only.'}
+                      placeholder={language === 'th' ? 'สั้นและกระชับ - เหตุการณ์ที่เกิดขึ้น สถานที่ และข้อความแสดงข้อผิดพลาด (ถ้ามี)' : language === 'zh' ? '保持简短。包含关键细节（发生了什么、在哪里以及任何错误消息）。' : language === 'ja' ? '簡潔に。主要な詳細（何が起こったか、どこで、エラーメッセージ）のみを含めてください。' : language === 'ko' ? '간단히 작성하세요. 주요 세부사항만 포함（무슨 일이 일어났는지, 어디서, 오류 메시지）.' : language === 'ru' ? 'Кратко. Укажите основные детали (что произошло, где и сообщение об ошибке).' : 'Keep it brief. Include only the key details (what happened, where, and any error message).'}
                       required
                       error={errors.description}
                       colors={colors}
