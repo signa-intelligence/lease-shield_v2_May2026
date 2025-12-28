@@ -20,6 +20,7 @@ function TemplatesContent() {
   const queryClient = useQueryClient();
   const [viewingTemplate, setViewingTemplate] = useState(null);
   const [contentLang, setContentLang] = useState(null);
+  const [backfillResult, setBackfillResult] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -32,6 +33,41 @@ function TemplatesContent() {
       setContentLang(user.language === 'th' ? 'th' : 'en');
     }
   }, [user, contentLang]);
+
+  // Auto-run backfill once on first admin load
+  React.useEffect(() => {
+    const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
+    const hasRun = localStorage.getItem('templateBackfillRan');
+    
+    if (isAdmin && !hasRun && templates.length > 0) {
+      const hasMissing = templates.some(t => {
+        const nested = t.preview_content || {};
+        const doc = t.document_content || {};
+        const previewEn = nested.en || t.preview_content_en || '';
+        const previewTh = nested.th || t.preview_content_th || '';
+        const docEn = doc.en || t.document_content_en || '';
+        const docTh = doc.th || t.document_content_th || '';
+        return previewEn.trim().length < 50 || previewTh.trim().length < 50 || 
+               docEn.trim().length < 300 || docTh.trim().length < 300;
+      });
+
+      if (hasMissing) {
+        console.log('[AUTO-BACKFILL] Running safe backfill on first admin load...');
+        base44.functions.invoke('backfillTemplateBilingualContent', { force: false })
+          .then(({ data }) => {
+            console.log('[AUTO-BACKFILL] Success:', data);
+            toast.success(`✅ Auto-backfill: ${data.total - data.remaining_missing}/${data.total} templates ready`);
+            queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+            localStorage.setItem('templateBackfillRan', '1');
+          })
+          .catch(err => {
+            console.error('[AUTO-BACKFILL] Failed:', err);
+          });
+      } else {
+        localStorage.setItem('templateBackfillRan', '1');
+      }
+    }
+  }, [user, templates]);
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['templateAssets'],
@@ -221,38 +257,76 @@ function TemplatesContent() {
 
 
         {isAdmin && (
-          <div className="flex flex-wrap gap-3 mb-6">
-            <button
-              onClick={async () => {
-                try {
-                  const { data } = await base44.functions.invoke('backfillTemplateBilingualContent', { force: false });
-                  toast.success(`✅ ${data.summary.ready_count}/${data.summary.total_templates} templates ready (EN+TH)`);
-                  queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
-                } catch (error) {
-                  toast.error('❌ Backfill failed: ' + error.message);
-                }
-              }}
-              className="px-4 py-2 rounded-lg font-semibold"
-              style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}
-            >
-              🌐 Backfill Bilingual Content
-            </button>
-            <button
-              onClick={async () => {
-                if (!confirm('⚠️ Force backfill ALL templates? This will overwrite existing content.')) return;
-                try {
-                  const { data } = await base44.functions.invoke('backfillTemplateBilingualContent', { force: true });
-                  toast.success(`✅ Force backfilled ${data.summary.updated_count} templates`);
-                  queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
-                } catch (error) {
-                  toast.error('❌ Force backfill failed: ' + error.message);
-                }
-              }}
-              className="px-4 py-2 rounded-lg font-semibold border-2"
-              style={{ backgroundColor: 'transparent', color: '#DC2626', borderColor: '#DC2626' }}
-            >
-              🔄 Force Backfill All
-            </button>
+          <div className="space-y-4 mb-6">
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={async () => {
+                  try {
+                    setBackfillResult(null);
+                    const { data } = await base44.functions.invoke('backfillTemplateBilingualContent', { force: false });
+                    console.log('[BACKFILL] Response:', data);
+                    if (data.ok) {
+                      toast.success(`✅ Updated: EN preview ${data.updated_preview_en}, TH preview ${data.updated_preview_th}, EN doc ${data.updated_doc_en}, TH doc ${data.updated_doc_th}`);
+                      setBackfillResult(data);
+                      queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+                    } else {
+                      toast.error(`❌ Backfill failed: ${data.message}`);
+                    }
+                  } catch (error) {
+                    console.error('[BACKFILL] Error:', error);
+                    toast.error(`❌ Backfill error: ${error.message || error.toString()}`);
+                  }
+                }}
+                className="px-4 py-2 rounded-lg font-semibold"
+                style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}
+              >
+                🌐 Backfill Missing EN/TH (Safe)
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirm('⚠️ Force overwrite ALL EN/TH content? This will replace existing templates.')) return;
+                  try {
+                    setBackfillResult(null);
+                    const { data } = await base44.functions.invoke('backfillTemplateBilingualContent', { force: true });
+                    console.log('[BACKFILL] Force response:', data);
+                    if (data.ok) {
+                      toast.success(`✅ Force updated: EN preview ${data.updated_preview_en}, TH preview ${data.updated_preview_th}, EN doc ${data.updated_doc_en}, TH doc ${data.updated_doc_th}`);
+                      setBackfillResult(data);
+                      queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+                    } else {
+                      toast.error(`❌ Force backfill failed: ${data.message}`);
+                    }
+                  } catch (error) {
+                    console.error('[BACKFILL] Force error:', error);
+                    toast.error(`❌ Force error: ${error.message || error.toString()}`);
+                  }
+                }}
+                className="px-4 py-2 rounded-lg font-semibold border-2"
+                style={{ backgroundColor: 'transparent', color: '#DC2626', borderColor: '#DC2626' }}
+              >
+                🔄 Force Overwrite EN/TH (Danger)
+              </button>
+            </div>
+            
+            {backfillResult && (
+              <div className="p-4 rounded-lg border-2" style={{ 
+                backgroundColor: backfillResult.ok ? '#ECFDF5' : '#FEE2E2',
+                borderColor: backfillResult.ok ? '#10B981' : '#EF4444'
+              }}>
+                <div className="text-sm font-mono space-y-1" style={{ color: '#1F2937' }}>
+                  <div><strong>Status:</strong> {backfillResult.ok ? '✅ Success' : '❌ Failed'}</div>
+                  <div><strong>Total Templates:</strong> {backfillResult.total}</div>
+                  <div><strong>Updated Preview EN:</strong> {backfillResult.updated_preview_en}</div>
+                  <div><strong>Updated Preview TH:</strong> {backfillResult.updated_preview_th}</div>
+                  <div><strong>Updated Doc EN:</strong> {backfillResult.updated_doc_en}</div>
+                  <div><strong>Updated Doc TH:</strong> {backfillResult.updated_doc_th}</div>
+                  <div><strong>Remaining Missing:</strong> {backfillResult.remaining_missing}</div>
+                  {backfillResult.keys_missing && backfillResult.keys_missing.length > 0 && (
+                    <div><strong>Missing Keys:</strong> {backfillResult.keys_missing.join(', ')}</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -294,7 +368,9 @@ function TemplatesContent() {
                     
                     const previewContent = displayLang === 'th' ? previewTh : previewEn;
                     const hasPreview = previewContent && previewContent.trim().length >= 50;
-                    const hasDocument = docEn.trim().length >= 300 && docTh.trim().length >= 300;
+                    const hasDocEn = docEn.trim().length >= 300;
+                    const hasDocTh = docTh.trim().length >= 300;
+                    const hasDocument = hasDocEn && hasDocTh;
                     const preview = hasPreview ? previewContent.slice(0, 300) + (previewContent.length > 300 ? '…' : '') : (language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable');
 
                     return (

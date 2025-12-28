@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// Default Thai content for 6 priority templates
 const PRIORITY_TEMPLATES = {
   pre_signing_checklist: {
     preview_en: `PRE-SIGNING CHECKLIST
@@ -636,8 +635,94 @@ Covers:
 • เหตุผลที่สมเหตุสมผล
 • ขอการยืนยันภายในกำหนด
 • ข้อมูลติดต่อ`,
-    document_en: (PRIORITY_TEMPLATES.pre_signing_negotiation || {}).document_en || '',
-    document_th: (PRIORITY_TEMPLATES.pre_signing_negotiation || {}).document_th || ''
+    document_en: `[Tenant Name]
+[Tenant Address]
+[City, Postal Code]
+[Tenant Phone]
+[Tenant Email]
+
+[Date]
+
+[Landlord Name]
+[Landlord Address]
+[Landlord City, Postal Code]
+
+Re: Request to Amend Lease Terms Before Signing
+Property: [Property Address]
+
+Dear [Landlord Name],
+
+Thank you for providing the draft lease agreement dated [Draft Date] for the property at [Property Address], facilitated by [Agent Name]. I am very interested in proceeding with this tenancy and would like to request the following amendments before signing:
+
+REQUESTED AMENDMENTS:
+
+1. Monthly Rent: [Current Rent] THB → Proposed: [Proposed Rent] THB
+2. Security Deposit: [Current Deposit] months → Proposed: [Proposed Deposit] months
+3. Lease Term: [Current Term] months → Proposed: [Proposed Term] months
+4. Early Termination Clause: Add provision for [Notice Period]-day notice with [Penalty Terms]
+5. Maintenance Response Times: [Specify SLA]
+6. Entry Notice: Require [Hours]-hour written notice except emergencies
+7. Utilities: Clarify tenant vs. landlord responsibility
+8. Pet Policy: [Request permission OR confirm prohibition]
+9. Deposit Return Timeline: Within [Days] days of move-out
+
+JUSTIFICATION:
+[Brief explanation of why these amendments are reasonable]
+
+Please confirm acceptance or propose alternatives by [Deadline Date]. I am available to discuss at [Phone] or [Email].
+
+I look forward to a positive landlord-tenant relationship.
+
+Sincerely,
+
+[Tenant Signature]
+[Tenant Name]
+
+This document is a communication template for general use. Review and adjust to fit your situation.`,
+    document_th: `[ชื่อผู้เช่า]
+[ที่อยู่ผู้เช่า]
+[เมือง, รหัสไปรษณีย์]
+[เบอร์โทรศัพท์ผู้เช่า]
+[อีเมลผู้เช่า]
+
+[วันที่]
+
+[ชื่อเจ้าของบ้าน]
+[ที่อยู่เจ้าของบ้าน]
+[เมือง, รหัสไปรษณีย์]
+
+เรื่อง: ขอแก้ไขเงื่อนไขสัญญาเช่าก่อนลงนาม
+ทรัพย์สิน: [ที่อยู่ทรัพย์สิน]
+
+เรียน [ชื่อเจ้าของบ้าน]
+
+ขอขอบคุณสำหรับร่างสัญญาเช่าลงวันที่ [วันที่ร่าง] สำหรับทรัพย์สินที่ [ที่อยู่ทรัพย์สิน] ที่ดำเนินการโดย [ชื่อตัวแทน] ข้าพเจ้ามีความสนใจอย่างยิ่งที่จะดำเนินการเช่าต่อไป และขอความกรุณาพิจารณาการแก้ไขเงื่อนไขดังต่อไปนี้ก่อนลงนาม:
+
+การแก้ไขที่ขอ:
+
+1. ค่าเช่ารายเดือน: [ค่าเช่าปัจจุบัน] บาท → เสนอ: [ค่าเช่าที่เสนอ] บาท
+2. เงินประกัน: [เงินประกันปัจจุบัน] เดือน → เสนอ: [เงินประกันที่เสนอ] เดือน
+3. ระยะเวลาสัญญา: [ระยะเวลาปัจจุบัน] เดือน → เสนอ: [ระยะเวลาที่เสนอ] เดือน
+4. ข้อกำหนดการยกเลิกก่อนกำหนด: เพิ่มข้อกำหนดให้แจ้ง [ระยะเวลา] วันพร้อม [เงื่อนไขค่าปรับ]
+5. เวลาตอบสนองการซ่อมบำรุง: [ระบุ SLA]
+6. การแจ้งก่อนเข้าห้อง: กำหนดให้แจ้งล่วงหน้า [จำนวนชั่วโมง] ชั่วโมงเป็นลายลักษณ์อักษร ยกเว้นฉุกเฉิน
+7. สาธารณูปโภค: ระบุชัดเจนความรับผิดชอบผู้เช่า vs. เจ้าของ
+8. นโยบายสัตว์เลี้ยง: [ขออนุญาต หรือ ยืนยันห้าม]
+9. กำหนดเวลาคืนเงินประกัน: ภายใน [จำนวนวัน] วันหลังย้ายออก
+
+เหตุผล:
+[คำอธิบายสั้นๆ ว่าทำไมการแก้ไขเหล่านี้สมเหตุสมผล]
+
+กรุณายืนยันการยอมรับหรือเสนอทางเลือกภายในวันที่ [วันที่กำหนด] ข้าพเจ้าพร้อมหารือที่ [เบอร์โทร] หรือ [อีเมล]
+
+ข้าพเจ้าหวังเป็นอย่างยิ่งว่าจะได้มีความสัมพันธ์ที่ดีระหว่างเจ้าของบ้านและผู้เช่า
+
+ขอแสดงความนับถือ
+
+[ลายเซ็นผู้เช่า]
+[ชื่อผู้เช่า]
+
+เอกสารนี้เป็นแบบฟอร์มสำหรับการสื่อสารทั่วไป โปรดตรวจสอบและปรับแก้ให้เหมาะกับสถานการณ์ของคุณ`
   },
 
   notice_intent_to_vacate: {
@@ -659,8 +744,100 @@ Includes:
 • ขอการตรวจสอบครั้งสุดท้าย
 • รายละเอียดการคืนเงินประกัน
 • ที่อยู่ใหม่และการติดต่อ`,
-    document_en: (PRIORITY_TEMPLATES.notice_to_vacate || {}).document_en || '',
-    document_th: (PRIORITY_TEMPLATES.notice_to_vacate || {}).document_th || ''
+    document_en: `[Tenant Name]
+[Current Property Address]
+[City, Postal Code]
+[Tenant Phone]
+[Tenant Email]
+
+[Date]
+
+[Landlord Name]
+[Landlord Address]
+[Landlord City, Postal Code]
+
+Re: Notice of Intent to Vacate
+Property: [Property Address]
+Lease Start Date: [Lease Start Date]
+
+Dear [Landlord Name],
+
+This letter serves as my formal [Notice Period]-day notice of intent to vacate the property at [Property Address], as required under our lease agreement dated [Lease Start Date].
+
+MOVE-OUT DETAILS:
+• Intended Move-Out Date: [Move-Out Date]
+• Final Rent Paid Through: [Final Rent Date]
+• Notice Period: [Notice Period] days (as per lease agreement)
+
+REQUEST FOR FINAL INSPECTION:
+I respectfully request a joint final inspection to be scheduled at least [Days] days before move-out. Please confirm available dates and times. I will ensure the property is clean and in good condition per lease terms.
+
+SECURITY DEPOSIT RETURN:
+• Deposit Amount Paid: [Deposit Amount] THB (paid [Deposit Payment Date])
+• Expected Return Date: [Expected Date]
+• Forwarding Address: [New Address], [New City, Postal Code]
+• Bank Account: [Bank Name], Account Number: [Account Number], Account Name: [Account Name]
+
+KEY & ACCESS RETURN:
+All keys, access cards, and parking remotes will be returned during the final inspection or on [Move-Out Date].
+
+Please confirm receipt of this notice in writing and provide the final inspection schedule at your earliest convenience.
+
+Thank you for your cooperation.
+
+Sincerely,
+
+[Tenant Signature]
+[Tenant Name]
+
+This document is a communication template for general use. Review and adjust to fit your situation.`,
+    document_th: `[ชื่อผู้เช่า]
+[ที่อยู่ทรัพย์สินปัจจุบัน]
+[เมือง, รหัสไปรษณีย์]
+[เบอร์โทรศัพท์ผู้เช่า]
+[อีเมลผู้เช่า]
+
+[วันที่]
+
+[ชื่อเจ้าของบ้าน]
+[ที่อยู่เจ้าของบ้าน]
+[เมือง, รหัสไปรษณีย์]
+
+เรื่อง: แจ้งความประสงค์ย้ายออกจากที่เช่า
+ทรัพย์สิน: [ที่อยู่ทรัพย์สิน]
+วันที่เริ่มสัญญาเช่า: [วันที่เริ่มสัญญา]
+
+เรียน [ชื่อเจ้าของบ้าน]
+
+จดหมายฉบับนี้เป็นการแจ้งล่วงหน้า [ระยะเวลาแจ้ง] วัน ถึงความประสงค์ที่จะย้ายออกจากทรัพย์สินที่ [ที่อยู่ทรัพย์สิน] ตามที่กำหนดในสัญญาเช่าลงวันที่ [วันที่เริ่มสัญญา]
+
+รายละเอียดการย้ายออก:
+• วันที่ประสงค์จะย้ายออก: [วันที่ย้ายออก]
+• ค่าเช่าชำระถึง: [วันที่ชำระค่าเช่าสุดท้าย]
+• ระยะเวลาแจ้งล่วงหน้า: [ระยะเวลา] วัน (ตามสัญญาเช่า)
+
+ขอการตรวจสอบครั้งสุดท้าย:
+ข้าพเจ้าขอความกรุณานัดหมายการตรวจสอบร่วมกันอย่างน้อย [จำนวนวัน] วันก่อนวันย้ายออก กรุณายืนยันวันและเวลาที่สะดวก ข้าพเจ้าจะดูแลให้ทรัพย์สินสะอาดและอยู่ในสภาพดีตามเงื่อนไขสัญญา
+
+การคืนเงินประกัน:
+• จำนวนเงินประกันที่ชำระ: [จำนวนเงินประกัน] บาท (ชำระเมื่อ [วันที่ชำระ])
+• วันที่คาดว่าจะได้รับคืน: [วันที่คาดว่า]
+• ที่อยู่สำหรับส่งคืน: [ที่อยู่ใหม่], [เมืองใหม่, รหัสไปรษณีย์]
+• บัญชีธนาคาร: [ชื่อธนาคาร], เลขที่บัญชี: [เลขที่บัญชี], ชื่อบัญชี: [ชื่อบัญชี]
+
+การคืนกุญแจและอุปกรณ์:
+กุญแจทั้งหมด บัตรผ่านเข้าออก และรีโมทที่จอดรถ จะส่งคืนในวันตรวจสอบครั้งสุดท้ายหรือในวันที่ [วันที่ย้ายออก]
+
+กรุณายืนยันการรับจดหมายฉบับนี้เป็นลายลักษณ์อักษร และแจ้งกำหนดการตรวจสอบครั้งสุดท้ายโดยเร็วที่สุด
+
+ขอขอบคุณสำหรับความร่วมมือ
+
+ขอแสดงความนับถือ
+
+[ลายเซ็นผู้เช่า]
+[ชื่อผู้เช่า]
+
+เอกสารนี้เป็นแบบฟอร์มสำหรับการสื่อสารทั่วไป โปรดตรวจสอบและปรับแก้ให้เหมาะกับสถานการณ์ของคุณ`
   },
 
   lease_amendment_request: {
@@ -682,9 +859,7 @@ Covers:
 • เหตุผลสำหรับการเปลี่ยนแปลง
 • วันที่มีผลที่เสนอ
 • ขอข้อตกลงเป็นลายลักษณ์อักษร`,
-    document_en: `LEASE AMENDMENT REQUEST
-
-[Tenant Name]
+    document_en: `[Tenant Name]
 [Current Property Address]
 [City, Postal Code]
 [Tenant Phone]
@@ -712,32 +887,25 @@ CURRENT LEASE DETAILS:
 
 REQUESTED AMENDMENTS:
 
-1. [Amendment 1 - e.g., "Monthly Rent Adjustment"]
+1. [Amendment 1]
    • Current: [Current Terms]
    • Requested: [New Terms]
    • Reason: [Brief justification]
 
-2. [Amendment 2 - e.g., "Lease Extension"]
-   • Current: [Current Terms]
-   • Requested: [New Terms]
-   • Reason: [Brief justification]
-
-3. [Amendment 3 - e.g., "Pet Policy Update"]
+2. [Amendment 2]
    • Current: [Current Terms]
    • Requested: [New Terms]
    • Reason: [Brief justification]
 
 JUSTIFICATION:
-[Provide detailed reasoning for the requested amendments. Keep tone professional and balanced.]
+[Provide detailed reasoning for the requested amendments]
 
 PROPOSED EFFECTIVE DATE:
 I propose these amendments take effect from [Effective Date].
 
-I believe these changes will benefit both parties and maintain our positive landlord-tenant relationship. I am open to discussing these requests and finding mutually agreeable terms.
+Please respond by [Deadline Date] with your decision. If you agree, I request that we prepare a written amendment agreement signed by both parties.
 
-Please respond by [Deadline Date] with your decision. If you agree to the amendments, I request that we prepare a written amendment agreement signed by both parties.
-
-I am available to discuss this matter at [Phone] or [Email].
+I am available to discuss at [Phone] or [Email].
 
 Thank you for your consideration.
 
@@ -747,9 +915,7 @@ Sincerely,
 [Tenant Name]
 
 This document is a communication template for general use. Review and adjust to fit your situation.`,
-    document_th: `คำขอแก้ไขสัญญาเช่า
-
-[ชื่อผู้เช่า]
+    document_th: `[ชื่อผู้เช่า]
 [ที่อยู่ทรัพย์สินปัจจุบัน]
 [เมือง, รหัสไปรษณีย์]
 [เบอร์โทรศัพท์ผู้เช่า]
@@ -777,32 +943,25 @@ This document is a communication template for general use. Review and adjust to 
 
 การแก้ไขที่ขอ:
 
-1. [การแก้ไข 1 - เช่น "การปรับค่าเช่ารายเดือน"]
+1. [การแก้ไข 1]
    • ปัจจุบัน: [เงื่อนไขปัจจุบัน]
    • ที่ขอ: [เงื่อนไขใหม่]
    • เหตุผล: [เหตุผลสั้นๆ]
 
-2. [การแก้ไข 2 - เช่น "การต่อสัญญา"]
-   • ปัจจุบัน: [เงื่อนไขปัจจุบัน]
-   • ที่ขอ: [เงื่อนไขใหม่]
-   • เหตุผล: [เหตุผลสั้นๆ]
-
-3. [การแก้ไข 3 - เช่น "การอัปเดตนโยบายสัตว์เลี้ยง"]
+2. [การแก้ไข 2]
    • ปัจจุบัน: [เงื่อนไขปัจจุบัน]
    • ที่ขอ: [เงื่อนไขใหม่]
    • เหตุผล: [เหตุผลสั้นๆ]
 
 เหตุผล:
-[แจ้งเหตุผลโดยละเอียดสำหรับการแก้ไขที่ขอ น้ำเสียงมืออาชีพและสมดุล]
+[แจ้งเหตุผลโดยละเอียดสำหรับการแก้ไขที่ขอ]
 
 วันที่มีผลที่เสนอ:
 ข้าพเจ้าเสนอให้การแก้ไขเหล่านี้มีผลตั้งแต่ [วันที่มีผล]
 
-ข้าพเจ้าเชื่อว่าการเปลี่ยนแปลงเหล่านี้จะเป็นประโยชน์ต่อทั้งสองฝ่ายและรักษาความสัมพันธ์ที่ดีระหว่างเจ้าของบ้านและผู้เช่า ข้าพเจ้าเปิดกว้างที่จะหารือคำขอเหล่านี้และหาข้อตกลงที่ทั้งสองฝ่ายเห็นด้วย
+กรุณาตอบกลับภายในวันที่ [วันที่กำหนด] พร้อมการตัดสินใจของท่าน หากท่านเห็นด้วย ข้าพเจ้าขอให้เราเตรียมข้อตกลงแก้ไขเป็นลายลักษณ์อักษรที่ทั้งสองฝ่ายลงนาม
 
-กรุณาตอบกลับภายในวันที่ [วันที่กำหนด] พร้อมการตัดสินใจของท่าน หากท่านเห็นด้วยกับการแก้ไข ข้าพเจ้าขอให้เราเตรียมข้อตกลงแก้ไขเป็นลายลักษณ์อักษรที่ทั้งสองฝ่ายลงนาม
-
-ข้าพเจ้าพร้อมหารือเรื่องนี้ที่ [เบอร์โทร] หรือ [อีเมล]
+ข้าพเจ้าพร้อมหารือที่ [เบอร์โทร] หรือ [อีเมล]
 
 ขอขอบคุณสำหรับการพิจารณา
 
@@ -816,140 +975,135 @@ This document is a communication template for general use. Review and adjust to 
 };
 
 Deno.serve(async (req) => {
+  const step = 'init';
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
     if (!user || (user.role !== 'admin' && user.access_level !== 'admin' && user.access_level !== 'super_admin')) {
-      return Response.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
+      return Response.json({ 
+        ok: false, 
+        step: 'auth',
+        message: 'Unauthorized - Admin only' 
+      }, { status: 403 });
     }
 
     const { force = false } = await req.json().catch(() => ({}));
 
-    console.log('[BACKFILL] Starting bilingual content backfill...');
+    console.log('[TEMPLATE_BACKFILL] Starting backfill...', { force, admin: user.email });
     
     const templates = await base44.asServiceRole.entities.TemplateLibrary.list();
     
-    let updated = 0;
-    let skipped = 0;
-    let errors = [];
-    const updatedList = [];
+    let updatedPreviewEn = 0;
+    let updatedPreviewTh = 0;
+    let updatedDocEn = 0;
+    let updatedDocTh = 0;
+    const keysMissing = [];
 
     for (const template of templates) {
       try {
-        // Extract existing legacy content
-        const legacyPreviewEn = template.preview_content_en || template.preview_content || template.preview_en || '';
+        const updateData = {};
+        let needsUpdate = false;
+
+        // Get existing nested or flat content
+        const existingPreview = template.preview_content || {};
+        const existingDoc = template.document_content || {};
+
+        const legacyPreviewEn = template.preview_content_en || template.preview_en || '';
         const legacyPreviewTh = template.preview_content_th || template.preview_th || '';
         const legacyDocEn = template.document_content_en || template.document_content || '';
         const legacyDocTh = template.document_content_th || '';
 
-        // Check current nested content
-        const currentPreview = template.preview_content || {};
-        const currentDoc = template.document_content || {};
-
-        const hasPreviewEn = (currentPreview.en || legacyPreviewEn).trim().length >= 50;
-        const hasPreviewTh = (currentPreview.th || legacyPreviewTh).trim().length >= 50;
-        const hasDocEn = (currentDoc.en || legacyDocEn).trim().length >= 300;
-        const hasDocTh = (currentDoc.th || legacyDocTh).trim().length >= 300;
-
-        const needsUpdate = !hasPreviewEn || !hasPreviewTh || !hasDocEn || !hasDocTh;
-
-        if (!needsUpdate && !force) {
-          skipped++;
-          continue;
-        }
-
-        // Prepare update data
-        const updateData = {
-          preview_content: {
-            en: currentPreview.en || legacyPreviewEn || '',
-            th: currentPreview.th || legacyPreviewTh || ''
-          },
-          document_content: {
-            en: currentDoc.en || legacyDocEn || '',
-            th: currentDoc.th || legacyDocTh || ''
-          }
-        };
+        let previewEn = existingPreview.en || legacyPreviewEn || '';
+        let previewTh = existingPreview.th || legacyPreviewTh || '';
+        let docEn = existingDoc.en || legacyDocEn || '';
+        let docTh = existingDoc.th || legacyDocTh || '';
 
         // Use priority template content if available
         const priorityContent = PRIORITY_TEMPLATES[template.template_key];
-        if (priorityContent) {
-          if (!hasPreviewEn || force) {
-            updateData.preview_content.en = priorityContent.preview_en;
-          }
-          if (!hasPreviewTh || force) {
-            updateData.preview_content.th = priorityContent.preview_th;
-          }
-          if (!hasDocEn || force) {
-            updateData.document_content.en = priorityContent.document_en;
-          }
-          if (!hasDocTh || force) {
-            updateData.document_content.th = priorityContent.document_th;
-          }
+
+        // Update EN content
+        if ((previewEn.trim().length < 50 || force) && priorityContent?.preview_en) {
+          previewEn = priorityContent.preview_en;
+          updatedPreviewEn++;
+          needsUpdate = true;
+        }
+        if ((docEn.trim().length < 300 || force) && priorityContent?.document_en) {
+          docEn = priorityContent.document_en;
+          updatedDocEn++;
+          needsUpdate = true;
         }
 
-        // Calculate status flags
-        const finalHasEn = updateData.preview_content.en.trim().length >= 50 && 
-                           updateData.document_content.en.trim().length >= 300;
-        const finalHasTh = updateData.preview_content.th.trim().length >= 50 && 
-                           updateData.document_content.th.trim().length >= 300;
+        // Update TH content
+        if ((previewTh.trim().length < 50 || force) && priorityContent?.preview_th) {
+          previewTh = priorityContent.preview_th;
+          updatedPreviewTh++;
+          needsUpdate = true;
+        }
+        if ((docTh.trim().length < 300 || force) && priorityContent?.document_th) {
+          docTh = priorityContent.document_th;
+          updatedDocTh++;
+          needsUpdate = true;
+        }
 
-        let contentStatus = 'missing_both';
-        if (finalHasEn && finalHasTh) contentStatus = 'ready';
-        else if (finalHasEn && !finalHasTh) contentStatus = 'missing_th';
-        else if (!finalHasEn && finalHasTh) contentStatus = 'missing_en';
+        if (needsUpdate) {
+          updateData.preview_content = { en: previewEn, th: previewTh };
+          updateData.document_content = { en: docEn, th: docTh };
 
-        updateData.has_english = finalHasEn;
-        updateData.has_thai = finalHasTh;
-        updateData.content_status = contentStatus;
+          const hasEn = previewEn.trim().length >= 50 && docEn.trim().length >= 300;
+          const hasTh = previewTh.trim().length >= 50 && docTh.trim().length >= 300;
 
-        await base44.asServiceRole.entities.TemplateLibrary.update(template.id, updateData);
+          updateData.has_english = hasEn;
+          updateData.has_thai = hasTh;
+
+          if (hasEn && hasTh) updateData.content_status = 'ready';
+          else if (hasEn && !hasTh) updateData.content_status = 'missing_th';
+          else if (!hasEn && hasTh) updateData.content_status = 'missing_en';
+          else updateData.content_status = 'missing_both';
+
+          await base44.asServiceRole.entities.TemplateLibrary.update(template.id, updateData);
+        }
+
+        // Track remaining missing
+        const finalHasEn = previewEn.trim().length >= 50 && docEn.trim().length >= 300;
+        const finalHasTh = previewTh.trim().length >= 50 && docTh.trim().length >= 300;
         
-        updated++;
-        updatedList.push({
-          template_key: template.template_key,
-          status: contentStatus,
-          has_en: finalHasEn,
-          has_th: finalHasTh
-        });
+        if (!finalHasEn || !finalHasTh) {
+          keysMissing.push(template.template_key);
+        }
 
       } catch (error) {
-        errors.push({
-          template_key: template.template_key,
-          error: error.message
-        });
+        console.error('[TEMPLATE_BACKFILL] Error updating template:', template.template_key, error);
       }
     }
 
-    const readyCount = updatedList.filter(t => t.status === 'ready').length;
-
-    console.log('[BACKFILL] Complete:', {
+    console.log('[TEMPLATE_BACKFILL] Complete:', {
       total: templates.length,
-      updated,
-      skipped,
-      ready: readyCount,
-      errors: errors.length
+      updatedPreviewEn,
+      updatedPreviewTh,
+      updatedDocEn,
+      updatedDocTh,
+      remainingMissing: keysMissing.length,
+      force
     });
 
     return Response.json({
-      success: true,
-      summary: {
-        total_templates: templates.length,
-        updated_count: updated,
-        skipped_count: skipped,
-        ready_count: readyCount,
-        errors_count: errors.length
-      },
-      updated_templates: updatedList,
-      errors: errors.length > 0 ? errors : undefined,
-      message: `Backfill complete: ${updated} updated, ${readyCount} ready (both EN+TH), ${skipped} skipped, ${errors.length} errors`
+      ok: true,
+      total: templates.length,
+      updated_preview_en: updatedPreviewEn,
+      updated_preview_th: updatedPreviewTh,
+      updated_doc_en: updatedDocEn,
+      updated_doc_th: updatedDocTh,
+      remaining_missing: keysMissing.length,
+      keys_missing: keysMissing
     });
 
   } catch (error) {
-    console.error('[BACKFILL] Error:', error);
+    console.error('[TEMPLATE_BACKFILL] Fatal error:', error);
     return Response.json({
-      success: false,
-      error: error.message,
+      ok: false,
+      step,
+      message: error.message,
       stack: error.stack
     }, { status: 500 });
   }

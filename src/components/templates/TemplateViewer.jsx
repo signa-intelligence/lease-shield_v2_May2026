@@ -64,6 +64,10 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const hasPreview = previewContent && previewContent.trim().length >= 50;
   const hasDocument = documentContent && documentContent.trim().length >= 300;
 
+  const contentMissing = displayLang === 'th' 
+    ? (previewTh.trim().length < 50 || docTh.trim().length < 300)
+    : (previewEn.trim().length < 50 || docEn.trim().length < 300);
+
   const handleCopy = async () => {
     if (!template || !template.id) {
       toast?.error?.(language === 'th' ? 'ข้อมูลเทมเพลตไม่ถูกต้อง' : 'Invalid template data');
@@ -279,6 +283,15 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
           {/* Body - Scrollable */}
           <div className="flex-1 overflow-y-auto p-6" style={{ backgroundColor: colors.fieldBg }}>
+            {contentMissing && (
+              <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#FEF3C7', borderLeft: '4px solid #F59E0B' }}>
+                <p className="text-sm font-semibold" style={{ color: '#92400E' }}>
+                  {displayLang === 'th' 
+                    ? '⚠️ เนื้อหาภาษาไทยกำลังเตรียมการ - ใช้ภาษาอังกฤษในตอนนี้' 
+                    : '⚠️ Content coming soon in selected language'}
+                </p>
+              </div>
+            )}
             {hasPreview ? (
               <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
                 {previewContent}
