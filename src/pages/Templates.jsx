@@ -176,37 +176,52 @@ function TemplatesContent() {
 
 
         {isAdmin && (
-          <div className="flex gap-3 mb-6">
+          <div className="flex flex-wrap gap-3 mb-6">
             <button
               onClick={async () => {
                 try {
-                  const { data } = await base44.functions.invoke('seedTemplateLibrary', { force: false });
-                  toast.success(`✅ Seeded ${data.summary.updated_count} templates, skipped ${data.summary.skipped_count}`);
+                  const { data } = await base44.functions.invoke('migrateTemplateLanguageContent');
+                  toast.success(`✅ Migrated ${data.updated_templates.length} templates to EN fields`);
                   queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
                 } catch (error) {
-                  toast.error('❌ Seed failed: ' + error.message);
+                  toast.error('❌ Migration failed: ' + error.message);
                 }
               }}
               className="px-4 py-2 rounded-lg font-semibold"
-              style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}
+              style={{ backgroundColor: '#3B82F6', color: '#FFFFFF' }}
             >
-              🌱 Seed Missing Template Content
+              🔄 Migrate to EN Fields
             </button>
             <button
               onClick={async () => {
-                if (!confirm('⚠️ Force reseed ALL templates? This will overwrite existing content.')) return;
                 try {
-                  const { data } = await base44.functions.invoke('seedTemplateLibrary', { force: true });
-                  toast.success(`✅ Force seeded ${data.summary.updated_count} templates`);
+                  const { data } = await base44.functions.invoke('seedTemplateThaiContent', { force: false });
+                  toast.success(`✅ Seeded ${data.summary.updated_count} Thai templates`);
                   queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
                 } catch (error) {
-                  toast.error('❌ Force seed failed: ' + error.message);
+                  toast.error('❌ Thai seed failed: ' + error.message);
+                }
+              }}
+              className="px-4 py-2 rounded-lg font-semibold"
+              style={{ backgroundColor: '#10B981', color: '#FFFFFF' }}
+            >
+              🇹🇭 Seed Thai Content
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm('⚠️ Force reseed Thai content? This will overwrite existing Thai templates.')) return;
+                try {
+                  const { data } = await base44.functions.invoke('seedTemplateThaiContent', { force: true });
+                  toast.success(`✅ Force seeded ${data.summary.updated_count} Thai templates`);
+                  queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+                } catch (error) {
+                  toast.error('❌ Force Thai seed failed: ' + error.message);
                 }
               }}
               className="px-4 py-2 rounded-lg font-semibold border-2"
               style={{ backgroundColor: 'transparent', color: '#DC2626', borderColor: '#DC2626' }}
             >
-              🔄 Force Reseed All
+              🔄 Force Reseed Thai
             </button>
           </div>
         )}
@@ -235,10 +250,13 @@ function TemplatesContent() {
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {categoryTemplates.map((template) => {
                     const title = language === 'th' ? (template.title_th || template.title_en) : template.title_en;
-                    const previewContent = template.preview_content || template.preview_en || template.preview_th || '';
-                    const documentContent = template.document_content || '';
+                    const previewContent = language === 'th'
+                      ? (template.preview_content_th || template.preview_content || template.preview_th || '')
+                      : (template.preview_content_en || template.preview_content || template.preview_en || '');
+                    const documentContentEn = template.document_content_en || template.document_content || '';
+                    const documentContentTh = template.document_content_th || '';
                     const hasPreview = previewContent && previewContent.trim().length > 0;
-                    const hasDocument = documentContent && documentContent.trim().length >= 300;
+                    const hasDocument = documentContentEn.trim().length >= 300 && documentContentTh.trim().length >= 300;
                     const preview = hasPreview ? previewContent.slice(0, 300) + (previewContent.length > 300 ? '…' : '') : (language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable');
 
                     return (

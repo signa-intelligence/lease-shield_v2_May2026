@@ -157,7 +157,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${template.template_key}.docx`;
+      const langSuffix = language === 'th' ? '_th' : '_en';
+      a.download = `${template.template_key}${langSuffix}.docx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
