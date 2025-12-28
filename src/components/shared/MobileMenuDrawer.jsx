@@ -121,8 +121,7 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
     {
       icon: Users,
       label: strings.referralProgram,
-      route: createPageUrl('Account'),
-      scrollTo: 'referral',
+      route: createPageUrl('Account') + '#refer-friends',
       color: '#10B981'
     },
     ...(isAdminOrVA ? [{
@@ -134,7 +133,7 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
     {
       icon: TrendingUp,
       label: strings.upgradePlan,
-      route: getUpgradeRoute(),
+      route: createPageUrl('Account') + '#plans',
       color: '#CFAF6A'
     },
     {
@@ -345,16 +344,6 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
                     onClick={() => {
                       haptic.light();
                       onClose();
-                      
-                      // Handle scroll-to anchoring
-                      if (item.scrollTo) {
-                        setTimeout(() => {
-                          const section = document.getElementById(item.scrollTo);
-                          if (section) {
-                            section.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }
-                        }, 300);
-                      }
                     }}
                     style={{
                       width: '100%',

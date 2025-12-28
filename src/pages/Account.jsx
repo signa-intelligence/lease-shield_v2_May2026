@@ -503,9 +503,9 @@ function AccountContent() {
     
     if (hash === '#notifications') {
       setTimeout(() => {
-        // Automatically expand notification analytics if hash is present
-        setExpandedNotifAnalytics(true); 
-        const notificationSection = document.getElementById('notification-analytics');
+        // Automatically expand notification preferences if hash is present
+        setExpandedNotifPrefs(true); 
+        const notificationSection = document.getElementById('notification-preferences');
         if (notificationSection) {
           notificationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -517,6 +517,20 @@ function AccountContent() {
         const creditsSection = document.getElementById('letter-credits');
         if (creditsSection) {
           creditsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
+    }
+
+    if (hash === '#refer-friends' || hash === '#referral') {
+      setTimeout(() => {
+        const referralSection = document.getElementById('referral-section');
+        if (referralSection) {
+          referralSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Highlight for 1s
+          referralSection.style.boxShadow = '0 0 0 4px rgba(199,163,56,0.3)';
+          setTimeout(() => {
+            referralSection.style.boxShadow = '';
+          }, 1000);
         }
       }, 300);
     }
@@ -3018,11 +3032,11 @@ function AccountContent() {
         </div>
 
         {/* Referral Program */}
-        <div className="mb-6">
+        <div className="mb-6" id="referral-section">
           <ReferralCard user={user} colors={colors} language={language} />
         </div>
 
-        <div className="mb-6">
+        <div className="mb-6" id="notification-preferences">
           <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader 
               className="cursor-pointer"
