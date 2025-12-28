@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileText, ShoppingCart, Eye, Loader2, CheckSquare, Mail, AlertTriangle, Clipboard, ChevronDown, ChevronUp } from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
@@ -12,10 +10,8 @@ import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import EmptyState from "../components/shared/EmptyState";
 import TemplateViewer from "../components/templates/TemplateViewer";
-import { useQueryClient } from "@tanstack/react-query";
 
 function TemplatesContent() {
-  const navigate = useNavigate();
   const toast = useToast();
   const queryClient = useQueryClient();
   const [viewingTemplate, setViewingTemplate] = useState(null);
