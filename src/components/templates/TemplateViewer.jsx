@@ -334,43 +334,61 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 onClick={handleCopy}
                 disabled={copying || !canUseCredits || !documentContent || documentContent.trim().length < 100}
-                className="w-full"
+                className="w-full flex-1"
                 style={{ 
                   backgroundColor: (!documentContent || documentContent.trim().length < 100) ? '#9CA3AF' : '#0C3B2E',
                   color: '#FFFFFF',
-                  cursor: (!documentContent || documentContent.trim().length < 100) ? 'not-allowed' : 'pointer'
+                  cursor: (!documentContent || documentContent.trim().length < 100) ? 'not-allowed' : 'pointer',
+                  minHeight: '48px',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  flexWrap: 'wrap'
                 }}
               >
                 {copying ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Copy className="w-4 h-4 mr-2" />
+                  <Copy className="w-4 h-4 flex-shrink-0" />
                 )}
-                {language === 'th' ? 'คัดลอกข้อความ' : 'Copy Text'}
-                <span className="ml-1 text-xs opacity-75">(1 {language === 'th' ? 'เครดิต' : 'credit'})</span>
+                <span className="truncate">{displayLang === 'th' ? 'คัดลอกข้อความ' : 'Copy Text'}</span>
+                <span className="text-xs opacity-75 whitespace-nowrap">({displayLang === 'th' ? 'ใช้ 1 เครดิต' : '1 credit'})</span>
               </Button>
 
               <Button
                 onClick={handleDownloadDOCX}
                 disabled={downloading || !canUseCredits || !documentContent || documentContent.trim().length < 100}
-                className="w-full"
+                className="w-full flex-1"
                 style={{ 
                   backgroundColor: (!documentContent || documentContent.trim().length < 100) ? '#9CA3AF' : '#C7A338',
                   color: '#FFFFFF',
-                  cursor: (!documentContent || documentContent.trim().length < 100) ? 'not-allowed' : 'pointer'
+                  cursor: (!documentContent || documentContent.trim().length < 100) ? 'not-allowed' : 'pointer',
+                  minHeight: '48px',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  flexWrap: 'wrap'
                 }}
               >
                 {downloading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <FileText className="w-4 h-4 mr-2" />
+                  <FileText className="w-4 h-4 flex-shrink-0" />
                 )}
-                {language === 'th' ? 'ดาวน์โหลด Word' : 'Download Word'}
-                <span className="ml-1 text-xs opacity-75">(.docx)</span>
+                <span className="truncate">{displayLang === 'th' ? 'ดาวน์โหลดไฟล์ Word' : 'Download Word'}</span>
+                <span className="text-xs opacity-75 whitespace-nowrap">({displayLang === 'th' ? 'ใช้ 1 เครดิต' : '1 credit'})</span>
               </Button>
             </div>
           </div>
