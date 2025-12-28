@@ -47,8 +47,8 @@ const DOC_TYPE_CONFIG = {
     label_ko: '임대 계약',
     label_ru: 'Договор аренды',
     icon: FileText,
-    color: 'bg-blue-100 text-blue-800',
-    bgColor: '#3B82F6'
+    color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100',
+    bgColor: '#0C3B2E'
   },
   receipt: {
     label_en: 'Receipt',
@@ -58,8 +58,8 @@ const DOC_TYPE_CONFIG = {
     label_ko: '영수증',
     label_ru: 'Квитанция',
     icon: FileText,
-    color: 'bg-emerald-100 text-emerald-800',
-    bgColor: '#10B981'
+    color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100',
+    bgColor: '#64748B'
   },
   photo: {
     label_en: 'Photo',
@@ -69,8 +69,8 @@ const DOC_TYPE_CONFIG = {
     label_ko: '사진',
     label_ru: 'Фото',
     icon: Camera,
-    color: 'bg-purple-100 text-purple-800',
-    bgColor: '#A855F7'
+    color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100',
+    bgColor: '#64748B'
   },
   video: {
     label_en: 'Video',
@@ -80,8 +80,8 @@ const DOC_TYPE_CONFIG = {
     label_ko: '비디오',
     label_ru: 'Видео',
     icon: FileVideo,
-    color: 'bg-amber-100 text-amber-800',
-    bgColor: '#F59E0B'
+    color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100',
+    bgColor: '#64748B'
   },
   letter: {
     label_en: 'Letter',
@@ -91,8 +91,8 @@ const DOC_TYPE_CONFIG = {
     label_ko: '편지',
     label_ru: 'Письмо',
     icon: Mail,
-    color: 'bg-indigo-100 text-indigo-800',
-    bgColor: '#6366F1'
+    color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100',
+    bgColor: '#0C3B2E'
   },
   other: {
     label_en: 'Other',
@@ -102,7 +102,7 @@ const DOC_TYPE_CONFIG = {
     label_ko: '기타',
     label_ru: 'Прочее',
     icon: HelpCircle,
-    color: 'bg-slate-100 text-slate-800',
+    color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100',
     bgColor: '#64748B'
   }
 };
@@ -1483,10 +1483,10 @@ function EvidenceVaultContent() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: evidenceAccent }} />
-          <p style={{ color: colors.textPrimary }}>{language === 'th' ? 'กำลังโหลด...' : 'Loading...'}</p>
-        </div>
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: '#0C3B2E' }} />
+        <p style={{ color: colors.textPrimary }}>{language === 'th' ? 'กำลังโหลด...' : 'Loading...'}</p>
+      </div>
       </div>
     );
   }
@@ -1516,7 +1516,7 @@ function EvidenceVaultContent() {
               <Button
                 onClick={() => queryClient.invalidateQueries({ queryKey: ['documents'] })}
                 className="flex-1"
-                style={{ backgroundColor: evidenceAccent, color: '#FFFFFF' }}
+                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
               >
                 {language === 'th' ? 'ลองอีกครั้ง' : language === 'zh' ? '重试' : language === 'ja' ? '再試行' : language === 'ko' ? '다시 시도' : language === 'ru' ? 'Повторить' : 'Try Again'}
               </Button>
@@ -1702,8 +1702,8 @@ function EvidenceVaultContent() {
                 <div
                   className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ 
-                    backgroundColor: '#8B5CF6',
-                    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                    backgroundColor: '#0C3B2E',
+                    boxShadow: '0 4px 12px rgba(12, 59, 46, 0.3)'
                   }}
                 >
                   <FileVideo className="w-7 h-7 text-white" />
@@ -1758,12 +1758,12 @@ function EvidenceVaultContent() {
                   <Button
                     className="w-full"
                     style={{
-                      backgroundColor: '#8B5CF6',
+                      backgroundColor: '#0C3B2E',
                       color: '#FFFFFF',
                       minHeight: '48px',
                       fontSize: '15px',
                       fontWeight: '700',
-                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
+                      boxShadow: '0 4px 12px rgba(12, 59, 46, 0.4)'
                     }}
                   >
                     {strings.upgradeToSecure}
@@ -1876,24 +1876,26 @@ function EvidenceVaultContent() {
                 )}
 
                 {compressionStats && compressionStats.compressedCount > 0 && (
-                  <div className="p-3 rounded-lg border-2" style={{
-                    backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                    borderColor: '#3B82F6'
-                  }}>
-                    <div className="flex items-start gap-2">
-                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckCircle2 className="w-3 h-3 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                          {language === 'th'
-                            ? strings.imagesOptimizedDesc.replace('{count}', compressionStats.compressedCount).replace('{saved}', compressionStats.savedMB)
-                            : strings.imagesOptimizedDesc.replace('{count}', compressionStats.compressedCount).replace('{saved}', compressionStats.savedMB)
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                 <div className="p-3 rounded-lg border-2" style={{
+                   backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5',
+                   borderColor: '#10B981'
+                 }}>
+                   <div className="flex items-start gap-2">
+                     <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{
+                       backgroundColor: '#10B981'
+                     }}>
+                       <CheckCircle2 className="w-3 h-3 text-white" />
+                     </div>
+                     <div className="flex-1">
+                       <p className="font-semibold mb-1" style={{ color: isDarkMode ? '#6EE7B7' : '#047857' }}>
+                         {language === 'th'
+                           ? strings.imagesOptimizedDesc.replace('{count}', compressionStats.compressedCount).replace('{saved}', compressionStats.savedMB)
+                           : strings.imagesOptimizedDesc.replace('{count}', compressionStats.compressedCount).replace('{saved}', compressionStats.savedMB)
+                         }
+                       </p>
+                     </div>
+                   </div>
+                 </div>
                 )}
 
                 <div>
@@ -1946,78 +1948,64 @@ function EvidenceVaultContent() {
                   />
 
                   <button
-                    type="button"
-                    onClick={handleVoiceClick}
-                    className="btn-interaction"
-                    style={{
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      border: `2px solid #8B5CF6`,
-                      backgroundColor: isDarkMode ? '#4C1D95' : '#F3E8FF',
-                      color: '#8B5CF6',
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s',
-                      minHeight: '40px'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#8B5CF6';
-                      e.currentTarget.style.color = '#FFFFFF';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = isDarkMode ? '#4C1D95' : '#F3E8FF';
-                      e.currentTarget.style.color = '#8B5CF6';
-                    }}
+                   type="button"
+                   onClick={handleVoiceClick}
+                   className="btn-interaction"
+                   style={{
+                     padding: '8px 14px',
+                     borderRadius: '8px',
+                     border: `2px solid ${colors.borderColor}`,
+                     backgroundColor: colors.uploadBg,
+                     color: colors.textPrimary,
+                     fontSize: '13px',
+                     fontWeight: '600',
+                     cursor: 'pointer',
+                     display: 'flex',
+                     alignItems: 'center',
+                     gap: '6px',
+                     transition: 'all 0.2s',
+                     minHeight: '40px'
+                   }}
+                   onMouseEnter={(e) => {
+                     e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
+                   }}
+                   onMouseLeave={(e) => {
+                     e.currentTarget.style.backgroundColor = colors.uploadBg;
+                   }}
                   >
-                    <Mic className="w-4 h-4" />
-                    {strings.addVoiceNote}
+                   <Mic className="w-4 h-4" />
+                   {strings.addVoiceNote}
                   </button>
 
                   <button
-                    type="button"
-                    onClick={handleVideoClick}
-                    className="btn-interaction"
-                    title={!isSecureTier ? strings.upgradeTitle : ''}
-                    style={{
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      border: `2px solid ${!isSecureTier ? '#8B5CF6' : '#EF4444'}`,
-                      backgroundColor: !isSecureTier ? (isDarkMode ? '#4C1D95' : '#F3E8FF') : (isDarkMode ? '#7F1D1D' : '#FEE2E2'),
-                      color: !isSecureTier ? '#8B5CF6' : '#EF4444',
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s',
-                      minHeight: '40px'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (isSecureTier) {
-                        e.currentTarget.style.backgroundColor = '#EF4444';
-                        e.currentTarget.style.color = '#FFFFFF';
-                      } else {
-                        e.currentTarget.style.backgroundColor = '#8B5CF6';
-                        e.currentTarget.style.color = '#FFFFFF';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (isSecureTier) {
-                        e.currentTarget.style.backgroundColor = isDarkMode ? '#7F1D1D' : '#FEE2E2';
-                        e.currentTarget.style.color = '#EF4444';
-                      } else {
-                        e.currentTarget.style.backgroundColor = isDarkMode ? '#4C1D95' : '#F3E8FF';
-                        e.currentTarget.style.color = '#8B5CF6';
-                      }
-                    }}
+                   type="button"
+                   onClick={handleVideoClick}
+                   className="btn-interaction"
+                   title={!isSecureTier ? strings.upgradeTitle : ''}
+                   style={{
+                     padding: '8px 14px',
+                     borderRadius: '8px',
+                     border: `2px solid ${colors.borderColor}`,
+                     backgroundColor: colors.uploadBg,
+                     color: colors.textPrimary,
+                     fontSize: '13px',
+                     fontWeight: '600',
+                     cursor: 'pointer',
+                     display: 'flex',
+                     alignItems: 'center',
+                     gap: '6px',
+                     transition: 'all 0.2s',
+                     minHeight: '40px'
+                   }}
+                   onMouseEnter={(e) => {
+                     e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
+                   }}
+                   onMouseLeave={(e) => {
+                     e.currentTarget.style.backgroundColor = colors.uploadBg;
+                   }}
                   >
-                    <FileVideo className="w-4 h-4" />
-                    {strings.addVideo}
+                   <FileVideo className="w-4 h-4" />
+                   {strings.addVideo}
                   </button>
                 </div>
 
@@ -2029,18 +2017,18 @@ function EvidenceVaultContent() {
                     </p>
                     <div className="space-y-2">
                       {voiceFiles.map((file, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: colors.inputBg, border: `1px solid ${colors.borderColor}` }}>
-                          <Mic className="w-4 h-4 text-purple-600" />
-                          <span className="text-xs flex-1 truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveVoice(index)}
-                            className="text-red-600"
-                            style={{ minWidth: '24px', minHeight: '24px' }}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
+                       <div key={index} className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: colors.inputBg, border: `1px solid ${colors.borderColor}` }}>
+                         <Mic className="w-4 h-4" style={{ color: colors.textPrimary }} />
+                         <span className="text-xs flex-1 truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
+                         <button
+                           type="button"
+                           onClick={() => handleRemoveVoice(index)}
+                           className="text-red-600"
+                           style={{ minWidth: '24px', minHeight: '24px' }}
+                         >
+                           <X className="w-3 h-3" />
+                         </button>
+                       </div>
                       ))}
                     </div>
                   </div>
@@ -2054,18 +2042,18 @@ function EvidenceVaultContent() {
                     </p>
                     <div className="space-y-2">
                       {videoFiles.map((file, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: colors.inputBg, border: `1px solid ${colors.borderColor}` }}>
-                          <FileVideo className="w-4 h-4 text-red-600" />
-                          <span className="text-xs flex-1 truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveVideo(index)}
-                            className="text-red-600"
-                            style={{ minWidth: '24px', minHeight: '24px' }}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
+                       <div key={index} className="flex items-center gap-2 p-2 rounded-lg" style={{ backgroundColor: colors.inputBg, border: `1px solid ${colors.borderColor}` }}>
+                         <FileVideo className="w-4 h-4" style={{ color: colors.textPrimary }} />
+                         <span className="text-xs flex-1 truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
+                         <button
+                           type="button"
+                           onClick={() => handleRemoveVideo(index)}
+                           className="text-red-600"
+                           style={{ minWidth: '24px', minHeight: '24px' }}
+                         >
+                           <X className="w-3 h-3" />
+                         </button>
+                       </div>
                       ))}
                     </div>
                   </div>
@@ -2197,7 +2185,7 @@ function EvidenceVaultContent() {
             title={strings.title}
             subtitle={strings.subtitle}
             icon={Shield}
-            iconColor={evidenceAccent}
+            iconColor="#0C3B2E"
             showBack={true}
             backLabel={strings.back}
             colors={colors}
@@ -2235,10 +2223,10 @@ function EvidenceVaultContent() {
 
                 {/* Storage Badges */}
                 <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
-                    {strings.storageUsed
-                      .replace('{used}', storageCheck.usedMB)
-                      .replace('{limit}', storageLimits.limitMB)}
+                  <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100 border-gray-300 text-xs">
+                  {strings.storageUsed
+                  .replace('{used}', storageCheck.usedMB)
+                  .replace('{limit}', storageLimits.limitMB)}
                   </Badge>
                   {userTier === 'free' && (
                     <Badge className={documents.length >= storageLimits.fileLimit ? 'bg-red-100 text-red-700 text-xs' : 'bg-slate-100 text-slate-700 text-xs'}>
@@ -2258,7 +2246,7 @@ function EvidenceVaultContent() {
           </div>
 
           {/* Templates Link Card */}
-          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg, borderLeft: `4px solid ${evidenceAccent}` }}>
+          <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg, borderLeft: `4px solid #0C3B2E` }}>
             <CardContent className="p-0">
               <Link to={createPageUrl("Templates")}>
                 <div
@@ -2266,7 +2254,7 @@ function EvidenceVaultContent() {
                   onClick={() => haptic.light()}
                   style={{
                     backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                    borderColor: evidenceAccent
+                    borderColor: '#0C3B2E'
                   }}
                 >
                   <div className="flex items-center gap-3">
@@ -2281,7 +2269,7 @@ function EvidenceVaultContent() {
                         {strings.viewTemplatesDesc}
                       </p>
                     </div>
-                    <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: evidenceAccent }} />
+                    <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: '#0C3B2E' }} />
                   </div>
                 </div>
               </Link>
@@ -2338,7 +2326,7 @@ function EvidenceVaultContent() {
                               }}
                           >
                               {selectedDocs.length === filteredDocuments.length ? (
-                                  <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: evidenceAccent }} />
+                                  <CheckSquare className="w-3 h-3 sm:w-4 sm:h-4" style={{ color: '#0C3B2E' }} />
                               ) : (
                                   <Square className="w-3 h-3 sm:w-4 sm:h-4" />
                               )}
@@ -2417,8 +2405,8 @@ function EvidenceVaultContent() {
                       className={`overflow-hidden border-none shadow-lg hover:shadow-xl transition-all relative ${isSelected ? 'ring-2' : ''} ${isOptimistic ? 'opacity-60' : ''}`}
                       style={{
                         backgroundColor: colors.cardBg,
-                        borderColor: isSelected ? evidenceAccent : colors.borderColor,
-                        borderLeft: isSelected ? `4px solid ${evidenceAccent}` : undefined
+                        borderColor: isSelected ? '#0C3B2E' : colors.borderColor,
+                        borderLeft: isSelected ? `4px solid #0C3B2E` : undefined
                       }}
                       onClick={() => !isOptimistic && handleCardClick(doc)}
                     >
@@ -2434,7 +2422,7 @@ function EvidenceVaultContent() {
                             src={doc.file_url}
                             alt={doc.label || doc.type}
                             className="w-full h-full object-cover"
-                            loadingColor="#C7A338"
+                            loadingColor="#0C3B2E"
                             fallback={
                               <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
                                 <FileText className="w-12 h-12 text-gray-400" />
@@ -2615,32 +2603,32 @@ function EvidenceVaultContent() {
           }}>
           <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
             {language === 'th' 
-              ? 'Lease Shield ให้คำแนะนำทั่วไปและเทมเพลตเอกสารเพื่อความสะดวกของคุณ Lease Shield ไม่ใช่สำนักงานกฎหมาย ไม่ให้บริการตัวแทนทางกฎหมาย และไม่ได้เป็นคู่สัญญาในสัญญาเช่าของคุณ คุณมีหน้าที่รับผิดชอบในการตรวจสอบความถูกต้องของข้อมูลและเอกสารทั้งหมดก่อนส่ง'
+              ? 'Lease Shield ให้คำแนะนำทั่วไปและเทมเพลตเอกสารเพื่อวัตถุประสงค์ในการให้ข้อมูลเท่านั้น เราไม่ใช่สำนักงานกฎหมายและไม่ให้บริการตัวแทนทางกฎหมาย'
               : language === 'zh'
-                ? 'Lease Shield为您提供一般性指导和文档模板以方便使用。Lease Shield不是律师事务所，不提供法律代理，也不是您租约的一方。在发送之前，您有责任检查所有信息和文档的准确性。'
+                ? 'Lease Shield仅提供一般性指导和文档模板用于信息目的。我们不是律师事务所，也不提供法律代理。'
                 : language === 'ja'
-                  ? 'Lease Shieldは、お客様の便宜のために一般的なガイダンスと文書テンプレートを提供します。Lease Shieldは法律事務所ではなく、法的代理を提供せず、お客様のリース契約の当事者でもありません。送信する前に、すべての情報と文書の正確性を確認する責任はお客様にあります。'
+                  ? 'Lease Shieldは情報提供のみを目的とした一般的なガイダンスと文書テンプレートを提供します。当社は法律事務所ではなく、法的代理を提供しません。'
                   : language === 'ko'
-                    ? 'Lease Shield는 귀하의 편의를 위해 일반적인 안내 및 문서 템플릿을 제공합니다。Lease Shield는 법률 회사가 아니며 법적 대리를 제공하지 않으며 귀하의 임대 계약 당사자가 아닙니다。발송하기 전에 모든 정보와 문서의 정확성을 확인할 책임은 귀하에게 있습니다。'
+                    ? 'Lease Shield는 정보 제공 목적으로만 일반적인 안내 및 문서 템플릿을 제공합니다. 당사는 법률 회사가 아니며 법적 대리를 제공하지 않습니다.'
                     : language === 'ru'
-                      ? 'Lease Shield предоставляет общие рекомендации и шаблоны документов для вашего удобства。Lease Shield не является юридической фирмой、не предоставляет юридическое представительство и не является стороной вашего договора аренды。Вы несёте ответственность за проверку точности всей информации и документов перед отправкой。'
-                      : 'Lease Shield provides general guidance and document templates for your convenience. Lease Shield is not a law firm, does not provide legal representation, and is not a party to your lease. You are responsible for checking the accuracy of all information and documents before sending them.'}
+                      ? 'Lease Shield предоставляет общие рекомендации и шаблоны документов только в информационных целях. Мы не являемся юридической фирмой и не предоставляем юридическое представительство.'
+                      : 'Lease Shield provides general guidance and document templates for informational purposes only. We are not a law firm and do not provide legal representation.'}
           </p>
           <p className="text-xs leading-relaxed mt-3 pt-3" style={{ 
             color: colors.textSecondary,
             borderTop: `1px solid ${colors.borderColor}`
           }}>
             {language === 'th'
-              ? 'Lease Shield ให้เทมเพลตเอกสารและคำแนะนำเท่านั้น เอกสารที่สร้างขึ้นสามารถแก้ไขได้ทั้งหมดและส่งตามดุลยพินิจของผู้ใช้ ผู้ใช้มีหน้าที่รับผิดชอบในการตรวจสอบและยืนยันเนื้อหาทั้งหมดก่อนใช้'
+              ? 'เอกสารและหลักฐานทั้งหมดที่อัปโหลดหรือสร้างในแอปยังคงอยู่ภายใต้การควบคุมของผู้ใช้ ผู้ใช้มีหน้าที่รับผิดชอบในการตรวจสอบ ยืนยัน และตัดสินใจว่าจะใช้เอกสาร หลักฐาน หรือการสื่อสารใดๆ ที่สร้างผ่าน Lease Shield อย่างไรและเมื่อใด'
               : language === 'zh'
-                ? 'Lease Shield仅提供文档模板和指导。生成的文档可完全编辑并由用户自行决定发送。用户在使用前有责任审查和验证所有内容。'
+                ? '在应用内上传或生成的所有文档和证据均由用户控制。用户负责审查、验证和决定如何以及何时使用通过Lease Shield创建的任何文档、证据或通信。'
                 : language === 'ja'
-                  ? 'Lease Shieldは文書テンプレートとガイダンスのみを提供します。生成された文書は完全に編集可能で、ユーザーの裁量で送信されます。ユーザーは使用前にすべての内容を確認し検証する責任があります。'
+                  ? 'アプリ内でアップロードまたは生成されたすべての文書と証拠は、ユーザーの管理下にあります。ユーザーは、Lease Shieldを通じて作成された文書、証拠、または通信をいつどのように使用するかを確認、検証、決定する責任があります。'
                   : language === 'ko'
-                    ? 'Lease Shield는 문서 템플릿과 안내만 제공합니다. 생성된 문서는 완전히 편집 가능하며 사용자의 재량에 따라 발송됩니다. 사용자는 사용 전에 모든 내용을 검토하고 확인할 책임이 있습니다。'
+                    ? '앱 내에서 업로드되거나 생성된 모든 문서 및 증거는 사용자의 통제 하에 있습니다. 사용자는 Lease Shield를 통해 생성된 모든 문서, 증거 또는 커뮤니케이션을 검토하고 확인하며 사용 방법과 시기를 결정할 책임이 있습니다.'
                     : language === 'ru'
-                      ? 'Lease Shield предоставляет только шаблоны документов и рекомендации。Созданные документы полностью редактируемы и отправляются по усмотрению пользователя。Пользователь несёт ответственность за проверку и верификацию всего содержимого перед использованием。'
-                      : 'Lease Shield provides document templates and guidance only. Generated documents are fully editable and sent at the user\'s discretion. Users are responsible for reviewing and verifying all content before use.'}
+                      ? 'Все документы и доказательства, загруженные или созданные в приложении, остаются под контролем пользователя. Пользователь несёт ответственность за проверку, верификацию и принятие решений о том, как и когда использовать любые документы, доказательства или сообщения, созданные через Lease Shield.'
+                      : 'All documents and evidence uploaded or generated within the app remain under the user\'s control. Users are responsible for reviewing, verifying, and deciding how and when to use any documents, evidence, or communications created through Lease Shield.'}
           </p>
           </div>
           </div>

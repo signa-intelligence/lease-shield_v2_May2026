@@ -29,16 +29,16 @@ import { RESOLVE_PRICING, hasMemberPricing, getMembershipInfo, getResolvePricing
 import AuthGuard from "../components/shared/AuthGuard";
 
 const STATUS_CONFIG = {
-  awaiting_payment: { label: 'Awaiting Payment', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-  intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Calendar },
-  pending_review: { label: 'Pending Review', color: 'bg-amber-100 text-amber-800', icon: Clock },
-  under_review: { label: 'Under Review', color: 'bg-blue-100 text-blue-800', icon: Scale },
-  ready_drafts: { label: 'Ready Drafts', color: 'bg-purple-100 text-purple-800', icon: FileText },
-  client_review: { label: 'Client Review', color: 'bg-cyan-100 text-cyan-800', icon: Eye },
-  awaiting_landlord: { label: 'Awaiting Landlord', color: 'bg-orange-100 text-orange-800', icon: Clock },
-  in_progress: { label: 'In Progress', color: 'bg-indigo-100 text-indigo-800', icon: Zap },
-  resolved: { label: 'Resolved', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 },
-  closed: { label: 'Closed', color: 'bg-gray-100 text-gray-800', icon: CheckCircle2 }
+  awaiting_payment: { label: 'Awaiting Payment', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100', icon: Clock },
+  intake: { label: 'Intake', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100', icon: Calendar },
+  pending_review: { label: 'Pending Review', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100', icon: Clock },
+  under_review: { label: 'Under Review', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100', icon: Scale },
+  ready_drafts: { label: 'Ready Drafts', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100', icon: FileText },
+  client_review: { label: 'Client Review', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100', icon: Eye },
+  awaiting_landlord: { label: 'Awaiting Landlord', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100', icon: Clock },
+  in_progress: { label: 'In Progress', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100', icon: Zap },
+  resolved: { label: 'Resolved', color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100', icon: CheckCircle2 },
+  closed: { label: 'Closed', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100', icon: CheckCircle2 }
 };
 
 function CasesContent() {
@@ -820,22 +820,27 @@ function CasesContent() {
 
           <Card className="mb-6 mt-6 border-none shadow-lg" style={{
             background: isDarkMode 
-              ? 'linear-gradient(to bottom right, #2A2D30, #353A3D)'
-              : 'linear-gradient(to bottom right, #7C3AED, #3B82F6)',
-            border: isDarkMode ? '1px solid #3A3D40' : 'none'
+              ? 'linear-gradient(135deg, #0C3B2E 0%, #084D38 100%)'
+              : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+            border: isDarkMode ? '1px solid rgba(199,163,56,0.2)' : 'none'
           }}>
             <CardContent className="p-4 md:p-6">
               <div className="flex items-start gap-3">
-                <Crown className="w-6 h-6 text-yellow-300 flex-shrink-0 mt-1" />
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{
+                  backgroundColor: '#C7A338',
+                  boxShadow: '0 2px 8px rgba(199,163,56,0.3)'
+                }}>
+                  <Scale className="w-5 h-5 text-white" />
+                </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-white mb-2">{strings.premiumBenefits}</h3>
-                  <ul className="space-y-1 text-sm text-white/90">
+                  <h3 className="text-lg font-bold mb-2" style={{ color: '#FFFFFF' }}>{strings.premiumBenefits}</h3>
+                  <ul className="space-y-1 text-sm" style={{ color: '#ECEFED' }}>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: '#C7A338' }} />
                       <span>{strings.memberRate}</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: '#C7A338' }} />
                       <span>{strings.priorityHandling}</span>
                     </li>
                   </ul>
@@ -1150,12 +1155,12 @@ function CasesContent() {
                             {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
                           </p>
                           {caseItem.type && (
-                            <Badge className="bg-blue-100 text-blue-800 text-xs">
-                              {caseItem.type === 'deposit' ? (language === 'th' ? 'เงินมัดจำ' : 'Deposit') :
-                               caseItem.type === 'early_termination' ? (language === 'th' ? 'ยกเลิกก่อนกำหนด' : 'Early Termination') :
-                               caseItem.type === 'damages' ? (language === 'th' ? 'ความเสียหาย' : 'Damages') :
-                               (language === 'th' ? 'อื่นๆ' : 'Other')}
-                            </Badge>
+                           <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100 text-xs">
+                             {caseItem.type === 'deposit' ? (language === 'th' ? 'เงินมัดจำ' : 'Deposit') :
+                              caseItem.type === 'early_termination' ? (language === 'th' ? 'ยกเลิกก่อนกำหนด' : 'Early Termination') :
+                              caseItem.type === 'damages' ? (language === 'th' ? 'ความเสียหาย' : 'Damages') :
+                              (language === 'th' ? 'อื่นๆ' : 'Other')}
+                           </Badge>
                           )}
                         </div>
                       </CardHeader>
@@ -1215,24 +1220,31 @@ function CasesContent() {
                               {strings.features}
                             </p>
                             <div className="flex flex-wrap gap-2">
-                              {caseItem.fast_track && (
-                                <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
-                                  <Zap className="w-3 h-3 mr-1" />
-                                  {strings.fastTrack}
-                                </Badge>
-                              )}
-                              {caseItem.letter_pack && (
-                                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
-                                  <FileText className="w-3 h-3 mr-1" />
-                                  {strings.letterPack}
-                                </Badge>
-                              )}
-                              {caseItem.is_member_at_creation && (
-                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
-                                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                                  {strings.memberRateBadge}
-                                </Badge>
-                              )}
+                             {caseItem.fast_track && (
+                               <Badge style={{
+                                 backgroundColor: isDarkMode ? '#0C3B2E' : '#ECEFED',
+                                 color: isDarkMode ? '#C7A338' : '#0C3B2E',
+                                 borderColor: '#C7A338'
+                               }} className="border text-xs">
+                                 <Zap className="w-3 h-3 mr-1" />
+                                 {strings.fastTrack}
+                               </Badge>
+                             )}
+                             {caseItem.letter_pack && (
+                               <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100 border-gray-300 text-xs">
+                                 <FileText className="w-3 h-3 mr-1" />
+                                 {strings.letterPack}
+                               </Badge>
+                             )}
+                             {caseItem.is_member_at_creation && (
+                               <Badge style={{
+                                 backgroundColor: '#C7A338',
+                                 color: '#FFFFFF'
+                               }} className="text-xs">
+                                 <CheckCircle2 className="w-3 h-3 mr-1" />
+                                 {strings.memberRateBadge}
+                               </Badge>
+                             )}
                             </div>
                           </div>
                         )}
