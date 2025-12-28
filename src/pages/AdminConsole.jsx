@@ -41,9 +41,6 @@ function AdminConsoleContent() {
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
   const [permissionsFormData, setPermissionsFormData] = useState({});
   const [showKanban, setShowKanban] = useState(false);
-  const [debugData, setDebugData] = useState(null);
-  const [loadingDebug, setLoadingDebug] = useState(false);
-  const [restoringUsers, setRestoringUsers] = useState(false);
   const [userManagementExpanded, setUserManagementExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
@@ -1107,63 +1104,6 @@ function AdminConsoleContent() {
     }
   };
 
-  const handleDebugUsers = async () => {
-    setLoadingDebug(true);
-    try {
-      const response = await base44.functions.invoke('debugUsers');
-      console.log('🔍 Debug result:', response.data);
-      setDebugData(response.data);
-    } catch (error) {
-      console.error('Debug failed:', error);
-      alert('Debug failed: ' + error.message);
-    } finally {
-      setLoadingDebug(false);
-    }
-  };
-
-  const handleRestoreUsers = async () => {
-    if (!confirm('Restore all soft-deleted and disabled users? This will make them active and visible again.')) {
-      return;
-    }
-
-    setRestoringUsers(true);
-    try {
-      const response = await base44.functions.invoke('restoreUsers');
-      console.log('✅ Restore result:', response.data);
-      
-      if (response.data?.success) {
-        alert(`✅ RESTORED ${response.data.restored_count} users!\n\nCheck the table below.`);
-        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-      } else {
-        alert('❌ Restore failed: ' + response.data?.error);
-      }
-    } catch (error) {
-      console.error('Restore failed:', error);
-      alert('Restore failed: ' + error.message);
-    } finally {
-      setRestoringUsers(false);
-    }
-  };
-
-  const handleExportBackup = async () => {
-    try {
-      const response = await base44.functions.invoke('exportUsersBackup');
-      const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `users_backup_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-      alert('✅ User backup exported successfully!');
-    } catch (error) {
-      console.error('Export failed:', error);
-      alert('Export failed: ' + error.message);
-    }
-  };
-
   const sortedUsers = [...users].sort((a, b) => {
     const aVal = a[sortField];
     const bVal = b[sortField];
@@ -1355,45 +1295,7 @@ function AdminConsoleContent() {
           </CardContent>
         </Card>
 
-        {/* 2. MANAGE LETTER TEMPLATES */}
-        {isSuperAdmin && (
-          <Card className="mb-6 border-none shadow-lg" style={{ 
-            backgroundColor: colors.cardBg,
-            borderLeft: '6px solid #8B5CF6'
-          }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    backgroundColor: '#8B5CF6',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-                      {strings.manageTemplates}
-                    </h3>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
-                      {strings.manageTemplatesDesc}
-                    </p>
-                  </div>
-                </div>
-                <Link to={createPageUrl("AdminTemplates")}>
-                  <Button className="bg-purple-600 hover:bg-purple-700">
-                    <FileText className="w-4 h-4 mr-2" />
-                    {strings.goToTemplates}
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
 
         <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
 
@@ -1485,134 +1387,7 @@ function AdminConsoleContent() {
           </CardContent>
         </Card>
 
-        {/* 3. USER MANAGEMENT */}
-          <Card className="mb-6 border-none shadow-lg" style={{ 
-            backgroundColor: colors.cardBg,
-            borderLeft: '6px solid #EF4444'
-          }}>
-            <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-              <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                User Debug & Recovery Panel
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  Use these tools to investigate and restore missing users.
-                </p>
-                
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    onClick={handleDebugUsers}
-                    disabled={loadingDebug}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {loadingDebug ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <Database className="w-4 h-4 mr-2" />
-                        Debug User Database
-                      </>
-                    )}
-                  </Button>
 
-                  <Button
-                    onClick={handleRestoreUsers}
-                    disabled={restoringUsers}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    {restoringUsers ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Restoring...
-                      </>
-                    ) : (
-                      <>
-                        <UserCheck className="w-4 h-4 mr-2" />
-                        Restore All Users
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    onClick={handleExportBackup}
-                    variant="outline"
-                    style={{ borderColor: colors.borderColor }}
-                  >
-                    <Database className="w-4 h-4 mr-2" />
-                    Export Backup
-                  </Button>
-
-                  <Button
-                    onClick={async () => {
-                      try {
-                        const { data } = await base44.functions.invoke('migrateUserStatus');
-                        alert(`✅ Migration complete!\n\nUpdated: ${data.updated_count}/${data.total_users} users`);
-                        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-                      } catch (error) {
-                        alert('❌ Migration failed: ' + error.message);
-                      }
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Database className="w-4 h-4 mr-2" />
-                    Migrate Status
-                  </Button>
-
-                  <Button
-                    onClick={async () => {
-                      if (!confirm('⚠️ This will DELETE all users except the 2 super admins. Continue?')) return;
-                      try {
-                        const { data } = await base44.functions.invoke('cleanupUsers');
-                        alert(`✅ Cleanup complete!\n\nDeleted: ${data.deleted_count} users\nActive remaining: ${data.active_remaining}`);
-                        queryClient.invalidateQueries({ queryKey: ['allUsers'] });
-                      } catch (error) {
-                        alert('❌ Cleanup failed: ' + error.message);
-                      }
-                    }}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Cleanup Users
-                  </Button>
-
-                  <Button
-                    onClick={handleDeduplicate}
-                    disabled={deduplicating}
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    {deduplicating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {strings.deduplicating}
-                      </>
-                    ) : (
-                      <>
-                        <Users className="w-4 h-4 mr-2" />
-                        {strings.deduplicateUsers}
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {debugData && (
-                  <div className="mt-4 p-4 rounded-lg overflow-auto max-h-96" style={{
-                    backgroundColor: isDarkMode ? '#1A1D1F' : '#F8FAFC',
-                    border: `1px solid ${colors.borderColor}`
-                  }}>
-                    <pre className="text-xs" style={{ color: colors.textPrimary }}>
-                      {JSON.stringify(debugData, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
 
         <Dialog open={permissionsDialog} onOpenChange={setPermissionsDialog}>
           <DialogContent className="max-w-2xl" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
@@ -1789,44 +1564,7 @@ function AdminConsoleContent() {
           </DialogContent>
         </Dialog>
 
-        {isSuperAdmin && (
-          <Card className="mb-6 border-none shadow-lg" style={{ 
-            backgroundColor: colors.cardBg,
-            borderLeft: '6px solid #8B5CF6'
-          }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    backgroundColor: '#8B5CF6',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-                      {strings.manageTemplates}
-                    </h3>
-                    <p className="text-sm" style={{ color: colors.textSecondary }}>
-                      {strings.manageTemplatesDesc}
-                    </p>
-                  </div>
-                </div>
-                <Link to={createPageUrl("AdminTemplates")}>
-                  <Button className="bg-purple-600 hover:bg-purple-700">
-                    <FileText className="w-4 h-4 mr-2" />
-                    {strings.goToTemplates}
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* 3. USER MANAGEMENT - COLLAPSIBLE */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>

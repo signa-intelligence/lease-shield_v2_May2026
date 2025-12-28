@@ -40,6 +40,25 @@ function AdminTemplatesContent() {
     queryFn: () => base44.auth.me(),
   });
 
+  /**
+   * ═══════════════════════════════════════════════════════════════════
+   * SINGLE SOURCE OF TRUTH: TemplateLibrary Entity
+   * ═══════════════════════════════════════════════════════════════════
+   * 
+   * This page directly reads/writes the TemplateLibrary entity.
+   * No hardcoded arrays, no separate template stores.
+   * 
+   * User Templates page (pages/Templates.js) reads from the same entity.
+   * 
+   * Schema fields:
+   * - template_key, category, title_en, title_th
+   * - description_en, description_th
+   * - content_en, content_th (flat fields for full template body)
+   * - document_content (legacy nested object - read fallback, write to flat fields)
+   * - cost_credits, status, sort_order
+   * 
+   * ═══════════════════════════════════════════════════════════════════
+   */
   const { data: templates = [], isLoading: isLoadingTemplates } = useQuery({
     queryKey: ['templateLibrary'],
     queryFn: () => base44.entities.TemplateLibrary.list('sort_order'),
@@ -229,13 +248,31 @@ function AdminTemplatesContent() {
   };
 
   const handleCreateTemplate = async () => {
-    if (!formData.template_key || !formData.title_en || !formData.title_th || !formData.content_en || !formData.content_th) {
+    // Validation: require all fields
+    if (!formData.template_key || !formData.title_en || !formData.title_th) {
       alert(strings.fillAllFields);
       return;
     }
 
+    // Content validation: if active, require non-empty EN + TH content
+    if (formData.status === 'active') {
+      if (!formData.content_en || formData.content_en.trim() === '') {
+        alert(language === 'th' 
+          ? '❌ เทมเพลตที่ใช้งานต้องมีเนื้อหาภาษาอังกฤษ' 
+          : '❌ Active templates must have English content');
+        return;
+      }
+      if (!formData.content_th || formData.content_th.trim() === '') {
+        alert(language === 'th' 
+          ? '❌ เทมเพลตที่ใช้งานต้องมีเนื้อหาภาษาไทย' 
+          : '❌ Active templates must have Thai content');
+        return;
+      }
+    }
+
     setUploadingFile(true);
     try {
+      // ✅ SINGLE SOURCE OF TRUTH: Direct write to TemplateLibrary entity
       await createTemplateMutation.mutateAsync({
         template_key: formData.template_key,
         category: formData.category,
@@ -263,8 +300,25 @@ function AdminTemplatesContent() {
       return;
     }
 
+    // Content validation: if active, require non-empty EN + TH content
+    if (formData.status === 'active') {
+      if (!formData.content_en || formData.content_en.trim() === '') {
+        alert(language === 'th' 
+          ? '❌ เทมเพลตที่ใช้งานต้องมีเนื้อหาภาษาอังกฤษ' 
+          : '❌ Active templates must have English content');
+        return;
+      }
+      if (!formData.content_th || formData.content_th.trim() === '') {
+        alert(language === 'th' 
+          ? '❌ เทมเพลตที่ใช้งานต้องมีเนื้อหาภาษาไทย' 
+          : '❌ Active templates must have Thai content');
+        return;
+      }
+    }
+
     setUploadingFile(true);
     try {
+      // ✅ SINGLE SOURCE OF TRUTH: Direct update to TemplateLibrary entity
       await updateTemplateMutation.mutateAsync({
         id: editingTemplate.id,
         data: {
@@ -291,6 +345,18 @@ function AdminTemplatesContent() {
 
   const handleEdit = (template) => {
     setEditingTemplate(template);
+    
+    // ✅ CONTENT FIELD BINDING: Handle both flat fields and nested document_content object
+    const contentEn = template.content_en || template.document_content?.en || '';
+    const contentTh = template.content_th || template.document_content?.th || '';
+    
+    console.log('📝 [ADMIN_TEMPLATES] Loading template for edit:', {
+      template_key: template.template_key,
+      content_en_length: contentEn.length,
+      content_th_length: contentTh.length,
+      has_document_content: !!template.document_content
+    });
+    
     setFormData({
       template_key: template.template_key || '',
       category: template.category,
@@ -300,8 +366,8 @@ function AdminTemplatesContent() {
       description_th: template.description_th || '',
       cost_credits: template.cost_credits || 1,
       status: template.status || 'active',
-      content_en: template.content_en || '',
-      content_th: template.content_th || '',
+      content_en: contentEn,
+      content_th: contentTh,
       sort_order: template.sort_order || 100
     });
     setShowCreateDialog(true);
@@ -493,6 +559,12 @@ function AdminTemplatesContent() {
                   placeholder="Dear {{landlord_name}},..."
                   style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
                 />
+                {formData.status === 'active' && (!formData.content_en || formData.content_en.trim() === '') && (
+                  <p className="text-xs mt-1 text-red-600 flex items-center gap-1">
+                    <XCircle className="w-3 h-3" />
+                    {language === 'th' ? 'จำเป็นสำหรับเทมเพลตที่ใช้งาน' : 'Required for active templates'}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -505,6 +577,12 @@ function AdminTemplatesContent() {
                   placeholder="เรียน {{landlord_name}},..."
                   style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}
                 />
+                {formData.status === 'active' && (!formData.content_th || formData.content_th.trim() === '') && (
+                  <p className="text-xs mt-1 text-red-600 flex items-center gap-1">
+                    <XCircle className="w-3 h-3" />
+                    {language === 'th' ? 'จำเป็นสำหรับเทมเพลตที่ใช้งาน' : 'Required for active templates'}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -594,8 +672,20 @@ function AdminTemplatesContent() {
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{template.title_en}</p>
-                          <p className="text-xs" style={{ color: colors.textSecondary }}>{template.title_th}</p>
+                         <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{template.title_en}</p>
+                         <p className="text-xs" style={{ color: colors.textSecondary }}>{template.title_th}</p>
+                         <div className="flex gap-2 mt-1">
+                           {(template.content_en || template.document_content?.en) ? (
+                             <Badge className="bg-blue-100 text-blue-700 text-xs">EN ✓</Badge>
+                           ) : (
+                             <Badge className="bg-red-100 text-red-700 text-xs">EN ✗</Badge>
+                           )}
+                           {(template.content_th || template.document_content?.th) ? (
+                             <Badge className="bg-emerald-100 text-emerald-700 text-xs">TH ✓</Badge>
+                           ) : (
+                             <Badge className="bg-red-100 text-red-700 text-xs">TH ✗</Badge>
+                           )}
+                         </div>
                         </td>
                         <td className="px-4 py-3">
                           <Badge className="bg-amber-100 text-amber-800">{template.cost_credits || 1}</Badge>
