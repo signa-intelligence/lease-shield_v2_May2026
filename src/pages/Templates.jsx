@@ -21,6 +21,9 @@ function TemplatesContent() {
   const [viewingTemplate, setViewingTemplate] = useState(null);
   const [contentLang, setContentLang] = useState(null);
   const [backfillResult, setBackfillResult] = useState(null);
+  const [showBackfillConfirm, setShowBackfillConfirm] = useState(false);
+  const [backfillConfirmText, setBackfillConfirmText] = useState('');
+  const [showAudit, setShowAudit] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -255,50 +258,18 @@ function TemplatesContent() {
           <div className="space-y-4 mb-6">
             <div className="flex flex-wrap gap-3">
               <button
-                onClick={async () => {
-                  try {
-                    setBackfillResult(null);
-                    const { data } = await base44.functions.invoke('repairTemplateLibraryContent');
-                    console.log('[REPAIR] Response:', data);
-                    if (data.ok) {
-                      toast.success(`✅ Deleted ${data.deleted_count} broken templates, repaired ${data.repaired_count}`);
-                      setBackfillResult(data);
-                      queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
-                    } else {
-                      toast.error(`❌ Repair failed: ${data.message}`);
-                    }
-                  } catch (error) {
-                    console.error('[REPAIR] Error:', error);
-                    toast.error(`❌ Repair error: ${error.message || error.toString()}`);
-                  }
-                }}
+                onClick={() => setShowBackfillConfirm(true)}
                 className="px-4 py-2 rounded-lg font-semibold"
-                style={{ backgroundColor: '#DC2626', color: '#FFFFFF' }}
+                style={{ backgroundColor: '#10B981', color: '#FFFFFF' }}
               >
-                🔧 Clean Up Broken Templates
+                ✅ Run Safe Template Backfill
               </button>
               <button
-                onClick={async () => {
-                  try {
-                    setBackfillResult(null);
-                    const { data } = await base44.functions.invoke('backfillThaiTemplateContent', { force: false });
-                    console.log('[BACKFILL] Response:', data);
-                    if (data.ok) {
-                      toast.success(`✅ Updated ${data.updated_count} Thai templates`);
-                      setBackfillResult(data);
-                      queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
-                    } else {
-                      toast.error(`❌ Backfill failed: ${data.message}`);
-                    }
-                  } catch (error) {
-                    console.error('[BACKFILL] Error:', error);
-                    toast.error(`❌ Backfill error: ${error.message || error.toString()}`);
-                  }
-                }}
-                className="px-4 py-2 rounded-lg font-semibold"
-                style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}
+                onClick={() => setShowAudit(!showAudit)}
+                className="px-4 py-2 rounded-lg font-semibold border-2"
+                style={{ backgroundColor: 'transparent', color: colors.textPrimary, borderColor: colors.borderColor }}
               >
-                🌐 Backfill Missing Thai Content
+                {showAudit ? '📊 Hide Audit' : '📊 Show Content Audit'}
               </button>
             </div>
             
@@ -310,24 +281,49 @@ function TemplatesContent() {
                 <div className="text-sm font-mono space-y-1" style={{ color: '#1F2937' }}>
                   <div><strong>Status:</strong> {backfillResult.ok ? '✅ Success' : '❌ Failed'}</div>
                   <div><strong>Total Templates:</strong> {backfillResult.total}</div>
-                  {backfillResult.deleted_count !== undefined && (
-                    <div><strong>Deleted (broken):</strong> {backfillResult.deleted_count}</div>
-                  )}
-                  {backfillResult.repaired_count !== undefined && (
-                    <div><strong>Repaired:</strong> {backfillResult.repaired_count}</div>
-                  )}
-                  {backfillResult.updated_count !== undefined && (
-                    <div><strong>Updated Count:</strong> {backfillResult.updated_count}</div>
-                  )}
-                  {backfillResult.remaining_missing !== undefined && (
-                    <div><strong>Remaining Missing:</strong> {backfillResult.remaining_missing}</div>
-                  )}
-                  {backfillResult.deleted_keys && backfillResult.deleted_keys.length > 0 && (
-                    <div><strong>Deleted Keys:</strong> {backfillResult.deleted_keys.join(', ')}</div>
-                  )}
+                  <div><strong>Updated Count:</strong> {backfillResult.updated_count}</div>
+                  <div><strong>Remaining Missing:</strong> {backfillResult.remaining_missing}</div>
                   {backfillResult.keys_missing && backfillResult.keys_missing.length > 0 && (
                     <div><strong>Missing Keys:</strong> {backfillResult.keys_missing.join(', ')}</div>
                   )}
+                  {backfillResult.fill_details && Object.keys(backfillResult.fill_details).length > 0 && (
+                    <div className="mt-2 pt-2 border-t" style={{ borderColor: '#10B981' }}>
+                      <strong>Fields Filled:</strong>
+                      {Object.entries(backfillResult.fill_details).map(([key, fields]) => (
+                        <div key={key} className="ml-2">• {key}: {fields.join(', ')}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {showAudit && (
+              <div className="p-4 rounded-lg border-2" style={{ 
+                backgroundColor: colors.cardBg,
+                borderColor: colors.borderColor
+              }}>
+                <h3 className="text-lg font-bold mb-3" style={{ color: colors.textPrimary }}>Template Content Audit</h3>
+                <div className="space-y-2 text-xs font-mono" style={{ color: colors.textSecondary }}>
+                  {templates.map(t => {
+                    const previewObj = typeof t.preview_content === 'object' ? t.preview_content : {};
+                    const docObj = typeof t.document_content === 'object' ? t.document_content : {};
+                    const pEn = typeof previewObj.en === 'string' ? previewObj.en.length : 0;
+                    const pTh = typeof previewObj.th === 'string' ? previewObj.th.length : 0;
+                    const dEn = typeof docObj.en === 'string' ? docObj.en.length : 0;
+                    const dTh = typeof docObj.th === 'string' ? docObj.th.length : 0;
+                    const needsContent = pEn < 50 || pTh < 50 || dEn < 300 || dTh < 300;
+                    
+                    return (
+                      <div key={t.id} className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: needsContent ? '#FEE2E2' : '#ECFDF5' }}>
+                        <span className="font-semibold">{t.template_key}</span>
+                        <span>
+                          pEN:{pEn} pTH:{pTh} dEN:{dEn} dTH:{dTh} 
+                          {needsContent && <span className="ml-2 text-red-600">⚠️ NEEDS CONTENT</span>}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -424,6 +420,89 @@ function TemplatesContent() {
         )}
       </div>
 
+      {/* Backfill Confirmation Modal */}
+      {showBackfillConfirm && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
+          style={{ zIndex: 10000 }}
+          onClick={() => setShowBackfillConfirm(false)}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl p-6"
+            style={{ backgroundColor: colors.cardBg }}
+          >
+            <h3 className="text-xl font-bold mb-4" style={{ color: colors.textPrimary }}>
+              Confirm Template Backfill
+            </h3>
+            <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+              This will fill ONLY missing content fields. Existing content will NOT be overwritten.
+            </p>
+            <p className="text-sm mb-4 font-semibold" style={{ color: colors.textPrimary }}>
+              Type <span className="font-mono bg-yellow-100 px-2 py-1 rounded">BACKFILL</span> to confirm:
+            </p>
+            <input
+              type="text"
+              value={backfillConfirmText}
+              onChange={(e) => setBackfillConfirmText(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border mb-4"
+              style={{ 
+                backgroundColor: colors.fieldBg, 
+                borderColor: colors.borderColor,
+                color: colors.textPrimary
+              }}
+              placeholder="Type BACKFILL"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowBackfillConfirm(false);
+                  setBackfillConfirmText('');
+                }}
+                className="flex-1 px-4 py-2 rounded-lg font-semibold"
+                style={{ backgroundColor: colors.fieldBg, color: colors.textPrimary }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (backfillConfirmText !== 'BACKFILL') {
+                    toast.error('Please type BACKFILL to confirm');
+                    return;
+                  }
+                  setShowBackfillConfirm(false);
+                  setBackfillConfirmText('');
+                  try {
+                    setBackfillResult(null);
+                    const { data } = await base44.functions.invoke('backfillTemplateLibrarySafeDeterministic');
+                    console.log('[SAFE_BACKFILL] Response:', data);
+                    if (data.ok) {
+                      toast.success(`✅ Backfill complete: ${data.updated_count} templates updated, ${data.remaining_missing} remaining missing`);
+                      setBackfillResult(data);
+                      queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+                    } else {
+                      toast.error(`❌ Backfill failed: ${data.message}`);
+                    }
+                  } catch (error) {
+                    console.error('[SAFE_BACKFILL] Error:', error);
+                    toast.error(`❌ Backfill error: ${error.message || error.toString()}`);
+                  }
+                }}
+                disabled={backfillConfirmText !== 'BACKFILL'}
+                className="flex-1 px-4 py-2 rounded-lg font-semibold"
+                style={{ 
+                  backgroundColor: backfillConfirmText === 'BACKFILL' ? '#10B981' : '#9CA3AF',
+                  color: '#FFFFFF',
+                  cursor: backfillConfirmText === 'BACKFILL' ? 'pointer' : 'not-allowed'
+                }}
+              >
+                Run Backfill
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Template Viewer Modal */}
       <TemplateViewer
         template={viewingTemplate}
@@ -437,15 +516,15 @@ function TemplatesContent() {
         toast={toast}
       />
       </div>
-  );
-}
+      );
+      }
 
-export default function Templates() {
-  return (
-    <AuthGuard>
+      export default function Templates() {
+      return (
+      <AuthGuard>
       <ToastProvider>
         <TemplatesContent />
       </ToastProvider>
-    </AuthGuard>
-  );
-}
+      </AuthGuard>
+      );
+      }

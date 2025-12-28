@@ -74,8 +74,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       return;
     }
 
-    if (!hasDocument) {
-      toast?.error?.(language === 'th' ? 'เทมเพลตนี้ยังไม่พร้อมใช้งาน' : 'This template is not ready for download yet');
+    if (!documentContent || documentContent.trim().length < 100) {
+      toast?.error?.(language === 'th' ? 'เนื้อหาเทมเพลตไม่พร้อมใช้งานชั่วคราว' : 'Template content is temporarily unavailable');
       return;
     }
 
@@ -86,25 +86,9 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
     setCopying(true);
     try {
-      console.log('[TEMPLATE] Copy text action:', { template_key: template?.template_key, lang: language, credits_before: letterCredits });
+      console.log('[TEMPLATE] Copy text action:', { template_key: template?.template_key, lang: displayLang, credits_before: letterCredits });
 
-      // Deduct credit first
-      await base44.auth.updateMe({ 
-        letter_credits: Math.max(0, letterCredits - 1) 
-      });
-
-      await base44.entities.CreditsLedger.create({
-        user_id: user.id,
-        user_email: user.email,
-        type: 'letters',
-        delta: -1,
-        reason: 'purchase',
-        source_ref: `template_copy:${template.template_key}`
-      });
-
-      console.log('[TEMPLATE] Credit deducted, credits_after:', letterCredits - 1);
-
-      // Copy document content to clipboard
+      // Copy document content to clipboard FIRST
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(documentContent);
       } else {
@@ -117,6 +101,22 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         document.execCommand('copy');
         document.body.removeChild(textarea);
       }
+
+      // ONLY deduct credit after successful copy
+      await base44.auth.updateMe({ 
+        letter_credits: Math.max(0, letterCredits - 1) 
+      });
+
+      await base44.entities.CreditsLedger.create({
+        user_id: user.id,
+        user_email: user.email,
+        type: 'letters',
+        delta: -1,
+        reason: 'purchase',
+        source_ref: `template_copy:${template.template_key}:${displayLang}`
+      });
+
+      console.log('[TEMPLATE] Credit deducted, credits_after:', letterCredits - 1);
 
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success(language === 'th' 
@@ -138,8 +138,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       return;
     }
 
-    if (!hasDocument) {
-      toast?.error?.(language === 'th' ? 'เทมเพลตนี้ยังไม่พร้อมใช้งาน' : 'This template is not ready for download yet');
+    if (!documentContent || documentContent.trim().length < 100) {
+      toast?.error?.(language === 'th' ? 'เนื้อหาเทมเพลตไม่พร้อมใช้งานชั่วคราว' : 'Template content is temporarily unavailable');
       return;
     }
 
@@ -151,22 +151,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     setDownloading(true);
     try {
       console.log('[TEMPLATE] DOCX download action:', { template_key: template?.template_key, lang: displayLang, credits_before: letterCredits });
-
-      // Deduct credit first
-      await base44.auth.updateMe({ 
-        letter_credits: Math.max(0, letterCredits - 1) 
-      });
-
-      await base44.entities.CreditsLedger.create({
-        user_id: user.id,
-        user_email: user.email,
-        type: 'letters',
-        delta: -1,
-        reason: 'purchase',
-        source_ref: `template_docx:${template.template_key}:${displayLang}`
-      });
-
-      console.log('[TEMPLATE] Credit deducted, generating DOCX, credits_after:', letterCredits - 1);
 
       // Generate DOCX from selected language document_content
       const paragraphs = [];
@@ -219,6 +203,22 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+
+      // ONLY deduct credit after successful download
+      await base44.auth.updateMe({ 
+        letter_credits: Math.max(0, letterCredits - 1) 
+      });
+
+      await base44.entities.CreditsLedger.create({
+        user_id: user.id,
+        user_email: user.email,
+        type: 'letters',
+        delta: -1,
+        reason: 'purchase',
+        source_ref: `template_docx:${template.template_key}:${displayLang}`
+      });
+
+      console.log('[TEMPLATE] Credit deducted, credits_after:', letterCredits - 1);
 
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       toast.success(language === 'th' 
@@ -332,12 +332,26 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
               </span>
             </div>
             
+            {(!documentContent || documentContent.trim().length < 100) && (
+              <div className="mb-3 p-3 rounded-lg text-center" style={{ backgroundColor: '#FEF3C7' }}>
+                <p className="text-sm font-semibold" style={{ color: '#92400E' }}>
+                  {language === 'th' 
+                    ? 'เนื้อหาเทมเพลตไม่พร้อมใช้งานชั่วคราว' 
+                    : 'Template content is temporarily unavailable'}
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <Button
                 onClick={handleCopy}
-                disabled={copying || !canUseCredits || !hasDocument}
+                disabled={copying || !canUseCredits || !documentContent || documentContent.trim().length < 100}
                 className="w-full"
-                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                style={{ 
+                  backgroundColor: (!documentContent || documentContent.trim().length < 100) ? '#9CA3AF' : '#0C3B2E',
+                  color: '#FFFFFF',
+                  cursor: (!documentContent || documentContent.trim().length < 100) ? 'not-allowed' : 'pointer'
+                }}
               >
                 {copying ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -350,9 +364,13 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
               <Button
                 onClick={handleDownloadDOCX}
-                disabled={downloading || !canUseCredits || !hasDocument}
+                disabled={downloading || !canUseCredits || !documentContent || documentContent.trim().length < 100}
                 className="w-full"
-                style={{ backgroundColor: '#C7A338', color: '#FFFFFF' }}
+                style={{ 
+                  backgroundColor: (!documentContent || documentContent.trim().length < 100) ? '#9CA3AF' : '#C7A338',
+                  color: '#FFFFFF',
+                  cursor: (!documentContent || documentContent.trim().length < 100) ? 'not-allowed' : 'pointer'
+                }}
               >
                 {downloading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
