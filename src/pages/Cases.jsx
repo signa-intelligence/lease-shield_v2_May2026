@@ -234,10 +234,14 @@ function CasesContent() {
       deleteSelected: "ลบที่เลือก",
       selectAll: "เลือกทั้งหมด",
       deselectAll: "ยกเลิกการเลือกทั้งหมด",
-      archive: "เก็บถาวร",
+      moveToRecycleBin: "ย้ายไปถังขยะ",
       deleteTestCase: "ลบ (ทดสอบ)",
       deleteTestCaseConfirmTitle: "ลบข้อมูลทดสอบนี้?",
       deleteTestCaseConfirmMessage: "การกระทำนี้ไม่สามารถยกเลิกได้",
+      moveToRecycleBinConfirmTitle: "ย้ายไปถังขยะ?",
+      moveToRecycleBinConfirmMessage: "คดีนี้จะถูกลบออกจากรายการของคุณ คุณสามารถกู้คืนได้ในภายหลังจากถังขยะ",
+      confirmMoveToRecycleBin: "ย้ายไปถังขยะ",
+      movedToRecycleBin: "ย้ายไปถังขยะแล้ว",
       bulkDeleteConfirmTitle: "ลบคดีที่เลือกหรือไม่?",
       bulkDeleteConfirmMessage: "คดี {count} รายการนี้จะถูกย้ายไปยังถังขยะและสามารถกู้คืนได้ในภายหลัง",
       confirmBulkDelete: "ลบ {count} คดี",
@@ -301,10 +305,14 @@ function CasesContent() {
       allStatuses: "所有状态",
       noResultsFound: "未找到案件",
       tryDifferentSearch: "尝试不同的搜索或筛选",
-      archive: "存档",
+      moveToRecycleBin: "移至回收站",
       deleteTestCase: "删除（测试）",
       deleteTestCaseConfirmTitle: "删除此测试案件？",
       deleteTestCaseConfirmMessage: "此操作无法撤销",
+      moveToRecycleBinConfirmTitle: "移至回收站？",
+      moveToRecycleBinConfirmMessage: "此案件将从您的列表中删除。您可以稍后从回收站恢复它。",
+      confirmMoveToRecycleBin: "移至回收站",
+      movedToRecycleBin: "已移至回收站",
     },
     ja: {
       title: "マイケース",
@@ -356,10 +364,14 @@ function CasesContent() {
       allStatuses: "すべてのステータス",
       noResultsFound: "ケースが見つかりません",
       tryDifferentSearch: "別の検索またはフィルターを試してください",
-      archive: "アーカイブ",
+      moveToRecycleBin: "ゴミ箱に移動",
       deleteTestCase: "削除（テスト）",
       deleteTestCaseConfirmTitle: "このテストケースを削除しますか？",
       deleteTestCaseConfirmMessage: "この操作は取り消せません",
+      moveToRecycleBinConfirmTitle: "ゴミ箱に移動しますか？",
+      moveToRecycleBinConfirmMessage: "このケースはリストから削除されます。後でゴミ箱から復元できます。",
+      confirmMoveToRecycleBin: "ゴミ箱に移動",
+      movedToRecycleBin: "ゴミ箱に移動しました",
     },
     ko: {
       title: "내 사례",
@@ -411,10 +423,14 @@ function CasesContent() {
       allStatuses: "모든 상태",
       noResultsFound: "사례를 찾을 수 없음",
       tryDifferentSearch: "다른 검색 또는 필터를 시도하세요",
-      archive: "보관",
+      moveToRecycleBin: "휴지통으로 이동",
       deleteTestCase: "삭제（테스트）",
       deleteTestCaseConfirmTitle: "이 테스트 사례를 삭제하시겠습니까？",
       deleteTestCaseConfirmMessage: "이 작업은 취소할 수 없습니다",
+      moveToRecycleBinConfirmTitle: "휴지통으로 이동하시겠습니까？",
+      moveToRecycleBinConfirmMessage: "이 사례는 목록에서 제거됩니다. 나중에 휴지통에서 복원할 수 있습니다.",
+      confirmMoveToRecycleBin: "휴지통으로 이동",
+      movedToRecycleBin: "휴지통으로 이동됨",
     },
     ru: {
       title: "Мои дела",
@@ -470,10 +486,14 @@ function CasesContent() {
       needMoreHelp: "Нужна помощь со спором?",
       openResolveDesc: "Откройте дело Resolve для профессиональной поддержки.",
       openResolveCase: "Открыть дело Resolve",
-      archive: "Архивировать",
+      moveToRecycleBin: "В корзину",
       deleteTestCase: "Удалить (тест)",
       deleteTestCaseConfirmTitle: "Удалить тестовое дело?",
-      deleteTestCaseConfirmMessage: "Это действие нельзя отменить"
+      deleteTestCaseConfirmMessage: "Это действие нельзя отменить",
+      moveToRecycleBinConfirmTitle: "Переместить в корзину?",
+      moveToRecycleBinConfirmMessage: "Дело будет удалено из вашего списка. Вы сможете восстановить его позже из корзины.",
+      confirmMoveToRecycleBin: "В корзину",
+      movedToRecycleBin: "Перемещено в корзину",
     },
     en: {
       title: "My Cases",
@@ -529,10 +549,14 @@ function CasesContent() {
       needMoreHelp: "Need more help?",
       openResolveDesc: "Open a Resolve case for professional support at member or public rates.",
       openResolveCase: "Open Resolve Case",
-      archive: "Archive",
+      moveToRecycleBin: "Move to Recycle Bin",
       deleteTestCase: "Delete (Test Case)",
       deleteTestCaseConfirmTitle: "Delete this test case?",
-      deleteTestCaseConfirmMessage: "This action cannot be undone."
+      deleteTestCaseConfirmMessage: "This action cannot be undone.",
+      moveToRecycleBinConfirmTitle: "Move to Recycle Bin?",
+      moveToRecycleBinConfirmMessage: "This will remove the case from your list. You can restore it later from Recycle Bin.",
+      confirmMoveToRecycleBin: "Move to Recycle Bin",
+      movedToRecycleBin: "Moved to Recycle Bin",
     }
   };
 
@@ -576,12 +600,14 @@ function CasesContent() {
         });
       }
     },
-    onSuccess: async () => {
+    onSuccess: async (_, variables) => {
       // Force immediate refetch
       await queryClient.invalidateQueries({ queryKey: ['cases'] });
       await queryClient.invalidateQueries({ queryKey: ['recycleBin'] });
       await refetchCases();
-      toast.success(strings.deleteSuccess);
+      
+      const isTest = isTestCase(variables);
+      toast.success(isTest ? strings.deleteSuccess : strings.movedToRecycleBin);
       haptic.success();
       setConfirmDelete(null);
     },
@@ -1078,7 +1104,7 @@ function CasesContent() {
                                        }}
                                      >
                                        <Archive className="w-4 h-4" />
-                                       {strings.archive}
+                                       {strings.moveToRecycleBin}
                                      </button>
                                      {isTestCase(caseItem) && (
                                        <button
@@ -1353,11 +1379,11 @@ function CasesContent() {
                     <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
                   </div>
                   <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                    {confirmDelete.isTestDelete ? strings.deleteTestCaseConfirmTitle : strings.deleteConfirmTitle}
+                    {confirmDelete.isTestDelete ? strings.deleteTestCaseConfirmTitle : strings.moveToRecycleBinConfirmTitle}
                   </h3>
                 </div>
                 <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
-                  {confirmDelete.isTestDelete ? strings.deleteTestCaseConfirmMessage : strings.deleteConfirmMessage}
+                  {confirmDelete.isTestDelete ? strings.deleteTestCaseConfirmMessage : strings.moveToRecycleBinConfirmMessage}
                 </p>
                 <div className="flex gap-3">
                   <button
@@ -1384,7 +1410,7 @@ function CasesContent() {
                     {softDeleteMutation.isPending ? (
                       <Loader2 className="w-4 h-4 animate-spin mx-auto" />
                     ) : (
-                      strings.confirmDelete
+                      confirmDelete.isTestDelete ? strings.confirmDelete : strings.confirmMoveToRecycleBin
                     )}
                   </button>
                 </div>
