@@ -11,10 +11,40 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const [copying, setCopying] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
+  const [templateReady, setTemplateReady] = useState(false);
 
-  if (!isOpen || !template) return null;
+  React.useEffect(() => {
+    if (template && template.id && template.template_key) {
+      setTemplateReady(true);
+    } else {
+      setTemplateReady(false);
+    }
+  }, [template]);
 
-  const title = language === 'th' ? (template.title_th || template.title_en) : template.title_en;
+  if (!isOpen) return null;
+  
+  if (!template || !templateReady) {
+    return (
+      <div 
+        className="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
+        style={{ zIndex: 9999 }}
+        onClick={onClose}
+      >
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="w-full max-w-2xl rounded-2xl p-8 text-center"
+          style={{ backgroundColor: colors?.cardBg || '#FFFFFF' }}
+        >
+          <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: '#0C3B2E' }} />
+          <p style={{ color: colors?.textSecondary || '#666' }}>
+            {language === 'th' ? 'กำลังโหลด...' : 'Loading template...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const title = language === 'th' ? (template.title_th || template.title_en || 'Template') : (template.title_en || 'Template');
   const previewContent = language === 'th' 
     ? (template.preview_content_th || template.preview_content || template.preview_th || '') 
     : (template.preview_content_en || template.preview_content || template.preview_en || '');
@@ -27,8 +57,13 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const hasDocument = documentContent && documentContent.trim().length >= 300;
 
   const handleCopy = async () => {
+    if (!template || !template.id) {
+      toast?.error?.(language === 'th' ? 'ข้อมูลเทมเพลตไม่ถูกต้อง' : 'Invalid template data');
+      return;
+    }
+
     if (!hasDocument) {
-      toast.error(language === 'th' ? 'เทมเพลตนี้ยังไม่พร้อมใช้งาน' : 'This template is not ready for download yet');
+      toast?.error?.(language === 'th' ? 'เทมเพลตนี้ยังไม่พร้อมใช้งาน' : 'This template is not ready for download yet');
       return;
     }
 
@@ -39,7 +74,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
     setCopying(true);
     try {
-      console.log('[TEMPLATE] Copy text action:', { template_key: template.template_key, lang: language, credits_before: letterCredits });
+      console.log('[TEMPLATE] Copy text action:', { template_key: template?.template_key, lang: language, credits_before: letterCredits });
 
       // Deduct credit first
       await base44.auth.updateMe({ 
@@ -86,8 +121,13 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   };
 
   const handleDownloadDOCX = async () => {
+    if (!template || !template.id) {
+      toast?.error?.(language === 'th' ? 'ข้อมูลเทมเพลตไม่ถูกต้อง' : 'Invalid template data');
+      return;
+    }
+
     if (!hasDocument) {
-      toast.error(language === 'th' ? 'เทมเพลตนี้ยังไม่พร้อมใช้งาน' : 'This template is not ready for download yet');
+      toast?.error?.(language === 'th' ? 'เทมเพลตนี้ยังไม่พร้อมใช้งาน' : 'This template is not ready for download yet');
       return;
     }
 
@@ -98,7 +138,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
     setDownloading(true);
     try {
-      console.log('[TEMPLATE] DOCX download action:', { template_key: template.template_key, lang: language, credits_before: letterCredits });
+      console.log('[TEMPLATE] DOCX download action:', { template_key: template?.template_key, lang: language, credits_before: letterCredits });
 
       // Deduct credit first
       await base44.auth.updateMe({ 

@@ -34,10 +34,11 @@ function TemplatesContent() {
 
       // Filter: only valid active templates with body content
       const validTemplates = allResults.filter(t => 
-        t.is_active !== false &&
+        t && 
+        t.id && 
         t.template_key &&
-        t.title_en &&
-        (t.body_en || t.preview_en)
+        t.is_active !== false &&
+        t.title_en
       );
 
       // Deduplicate by template_key
@@ -65,7 +66,11 @@ function TemplatesContent() {
   });
 
   const handleViewTemplate = (template) => {
-    console.log('[TEMPLATE] View action:', { template_key: template.template_key, lang: language });
+    if (!template || !template.id) {
+      console.error('[TEMPLATE] Invalid template data');
+      return;
+    }
+    console.log('[TEMPLATE] View action:', { template_key: template?.template_key, lang: language });
     haptic.light();
     setViewingTemplate(template);
   };
@@ -249,7 +254,9 @@ function TemplatesContent() {
                 </h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {categoryTemplates.map((template) => {
-                    const title = language === 'th' ? (template.title_th || template.title_en) : template.title_en;
+                    if (!template || !template.id) return null;
+                    
+                    const title = language === 'th' ? (template.title_th || template.title_en || 'Untitled') : (template.title_en || 'Untitled');
                     const previewContent = language === 'th'
                       ? (template.preview_content_th || template.preview_content || template.preview_th || '')
                       : (template.preview_content_en || template.preview_content || template.preview_en || '');
