@@ -344,23 +344,27 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   color: '#FFFFFF',
                   cursor: (!documentContent || documentContent.trim().length < 100) ? 'not-allowed' : 'pointer',
                   minHeight: '48px',
-                  padding: '10px 12px',
                   fontSize: '14px',
                   fontWeight: '600',
+                  padding: '10px 12px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '6px',
-                  flexWrap: 'wrap'
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {copying ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Copy className="w-4 h-4 flex-shrink-0" />
+                  <Copy className="w-4 h-4" />
                 )}
-                <span className="truncate">{displayLang === 'th' ? 'คัดลอกข้อความ' : 'Copy Text'}</span>
-                <span className="text-xs opacity-75 whitespace-nowrap">({displayLang === 'th' ? 'ใช้ 1 เครดิต' : '1 credit'})</span>
+                <span className="truncate">
+                  {displayLang === 'th' ? 'คัดลอกข้อความ' : 'Copy Text'}
+                </span>
+                <span className="text-xs opacity-75 flex-shrink-0">
+                  {displayLang === 'th' ? '(ใช้ 1 เครดิต)' : '(1 credit)'}
+                </span>
               </Button>
 
               <Button
@@ -372,23 +376,27 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   color: '#FFFFFF',
                   cursor: (!documentContent || documentContent.trim().length < 100) ? 'not-allowed' : 'pointer',
                   minHeight: '48px',
-                  padding: '10px 12px',
                   fontSize: '14px',
                   fontWeight: '600',
+                  padding: '10px 12px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '6px',
-                  flexWrap: 'wrap'
+                  whiteSpace: 'nowrap'
                 }}
               >
                 {downloading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <FileText className="w-4 h-4 flex-shrink-0" />
+                  <FileText className="w-4 h-4" />
                 )}
-                <span className="truncate">{displayLang === 'th' ? 'ดาวน์โหลดไฟล์ Word' : 'Download Word'}</span>
-                <span className="text-xs opacity-75 whitespace-nowrap">({displayLang === 'th' ? 'ใช้ 1 เครดิต' : '1 credit'})</span>
+                <span className="truncate">
+                  {displayLang === 'th' ? 'ดาวน์โหลดไฟล์ Word' : 'Download Word'}
+                </span>
+                <span className="text-xs opacity-75 flex-shrink-0">
+                  {displayLang === 'th' ? '(ใช้ 1 เครดิต)' : '(1 credit)'}
+                </span>
               </Button>
             </div>
           </div>
