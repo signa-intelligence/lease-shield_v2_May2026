@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Clock, CheckCircle2, HelpCircle, Upload, ArrowRight, AlertCircle, Send } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import AuthGuard from "../components/shared/AuthGuard";
 import MobileFormInput from "../components/shared/MobileFormInput";
 import { useFormValidation, validators } from "../components/shared/FormValidation";
