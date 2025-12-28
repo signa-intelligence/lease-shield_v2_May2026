@@ -3817,10 +3817,10 @@ function AccountContent() {
                       )}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '16px', fontWeight: '700', color: '#0C3B2E', marginBottom: '2px' }}>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: colors.textPrimary, marginBottom: '2px' }}>
                         {language === 'th' ? 'แชร์แอปกับเพื่อน' : language === 'zh' ? '与朋友分享应用' : language === 'ja' ? '友達とアプリを共有' : language === 'ko' ? '친구와 앱 공유' : language === 'ru' ? 'Поделиться приложением с другом' : 'Share App with Friends'}
                       </div>
-                      <div style={{ fontSize: '13px', fontWeight: '500', color: '#0C3B2E' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '500', color: colors.textSecondary }}>
                         {language === 'th' ? 'ชวนคนอื่นมาป้องกันเงินมัดจำของพวกเขา' : language === 'zh' ? '邀请他人保护他们的押金' : language === 'ja' ? '他の人に敷金保護を勧める' : language === 'ko' ? '다른 사람들이 보증금을 보호하도록 초대' : language === 'ru' ? 'Пригласите других защитить свои депозиты' : 'Invite others to protect their deposits'}
                       </div>
                     </div>
@@ -3828,7 +3828,7 @@ function AccountContent() {
                   {appLinkCopied ? (
                     <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   ) : (
-                    <ArrowRight className="w-5 h-5" style={{ color: '#0C3B2E' }} />
+                    <ArrowRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
                   )}
                 </div>
               </div>
@@ -3849,12 +3849,21 @@ function AccountContent() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 mt-4">
-              <div className="p-4 rounded-lg" style={{
-                backgroundColor: colors.fieldBg,
-                borderLeft: '4px solid #3B82F6'
-              }}>
-                <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>📱 iOS (Safari)</p>
-                <p className="text-sm whitespace-pre-line" style={{ color: colors.textSecondary }}>
+              <div 
+                className="p-4 rounded-lg relative"
+                style={{
+                  backgroundColor: isDarkMode ? '#2A2D30' : '#F9FAFB',
+                  borderLeft: '4px solid #9CA3AF',
+                  opacity: 1
+                }}
+              >
+                <div className="absolute top-3 right-3">
+                  <Badge className="bg-gray-500 text-white text-xs">
+                    {language === 'th' ? 'เร็วๆ นี้' : language === 'zh' ? '即将推出' : language === 'ja' ? '近日公開' : language === 'ko' ? '곧 출시' : language === 'ru' ? 'Скоро' : 'Coming Soon'}
+                  </Badge>
+                </div>
+                <p className="font-semibold mb-2" style={{ color: '#9CA3AF' }}>📱 iOS (Safari)</p>
+                <p className="text-sm whitespace-pre-line" style={{ color: '#9CA3AF' }}>
                   {strings.iosInstructions}
                 </p>
               </div>

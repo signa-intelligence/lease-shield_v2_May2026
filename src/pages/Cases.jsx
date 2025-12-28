@@ -521,26 +521,41 @@ function CasesContent() {
 
   const softDeleteMutation = useMutation({
     mutationFn: async (caseItem) => {
-      // Create RecycleBin entry
-      await base44.entities.RecycleBin.create({
-        user_email: user.email,
-        item_type: 'case',
-        original_id: caseItem.id,
-        item_snapshot: caseItem,
-        item_label: caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`,
-        deleted_date: new Date().toISOString(),
-        size_bytes: JSON.stringify(caseItem).length
-      });
+      // Check if this is a test case
+      const isTestCase = 
+        caseItem.flags?.test_case ||
+        caseItem.case_number?.startsWith('MSS') ||
+        caseItem.landlord_email?.includes('landlordsrus.com') ||
+        user?.role === 'admin';
 
-      // Soft delete the original case
-      await base44.entities.Case.update(caseItem.id, {
-        is_deleted: true,
-        deleted_at: new Date().toISOString()
-      });
+      if (isTestCase) {
+        // Hard delete test cases permanently
+        console.log('🔥 [HARD_DELETE] Deleting test case permanently:', caseItem.case_number);
+        await base44.entities.Case.delete(caseItem.id);
+        console.log('✅ [HARD_DELETE] Test case permanently deleted');
+      } else {
+        // Soft delete regular cases
+        await base44.entities.RecycleBin.create({
+          user_email: user.email,
+          item_type: 'case',
+          original_id: caseItem.id,
+          item_snapshot: caseItem,
+          item_label: caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`,
+          deleted_date: new Date().toISOString(),
+          size_bytes: JSON.stringify(caseItem).length
+        });
+
+        await base44.entities.Case.update(caseItem.id, {
+          is_deleted: true,
+          deleted_at: new Date().toISOString()
+        });
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cases'] });
-      queryClient.invalidateQueries({ queryKey: ['recycleBin'] });
+    onSuccess: async () => {
+      // Force immediate refetch
+      await queryClient.invalidateQueries({ queryKey: ['cases'] });
+      await queryClient.invalidateQueries({ queryKey: ['recycleBin'] });
+      await refetchCases();
       toast.success(strings.deleteSuccess);
       haptic.success();
       setConfirmDelete(null);
