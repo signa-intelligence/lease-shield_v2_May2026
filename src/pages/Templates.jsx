@@ -19,13 +19,19 @@ function TemplatesContent() {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [viewingTemplate, setViewingTemplate] = useState(null);
-  
-
+  const [contentLang, setContentLang] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
+
+  // Initialize content language based on user preference
+  React.useEffect(() => {
+    if (user && contentLang === null) {
+      setContentLang(user.language === 'th' ? 'th' : 'en');
+    }
+  }, [user, contentLang]);
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['templateAssets'],
