@@ -12,11 +12,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { subject, description, category, attachments = [] } = await req.json();
+    const { description, category, attachments = [] } = await req.json();
 
-    if (!subject || !description) {
+    if (!description) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Auto-generate subject from category
+    const subject = `${category} request`;
 
     // Generate ticket number
     const allTickets = await base44.asServiceRole.entities.SupportTicket.list();

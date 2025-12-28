@@ -65,7 +65,7 @@ function SupportContent() {
   } = useFormValidation(
     {
       description: '',
-      category: 'general',
+      category: 'billing',
       attachments: []
     },
     validationSchema
