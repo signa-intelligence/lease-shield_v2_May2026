@@ -1947,7 +1947,7 @@ ja: {
                               haptic.medium();
                               navigate(createPageUrl("Templates"));
                             }}
-                            className="btn-interaction"
+                            className="btn-interaction notify-landlord-btn"
                             style={{
                               padding: '10px 18px',
                               borderRadius: '10px',
@@ -1963,22 +1963,25 @@ ja: {
                               gap: '6px',
                               boxShadow: '0 4px 6px rgba(12,59,46,0.3)'
                             }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#C7A338';
-                              e.target.style.borderColor = '#C7A338';
-                              e.target.style.color = '#1A1D1F';
-                              e.target.style.boxShadow = '0 6px 10px rgba(199,163,56,0.4)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = '#0C3B2E';
-                              e.target.style.borderColor = '#C7A338';
-                              e.target.style.color = '#FFFFFF';
-                              e.target.style.boxShadow = '0 4px 6px rgba(12,59,46,0.3)';
-                            }}
                           >
-                            <Bell className="w-4 h-4" />
-                            {strings.notifyLandlord}
+                            <Bell className="w-4 h-4" style={{ color: '#FFFFFF' }} />
+                            <span style={{ color: '#FFFFFF' }}>{strings.notifyLandlord}</span>
                           </button>
+                          <style>{`
+                            .notify-landlord-btn:hover,
+                            .notify-landlord-btn:focus {
+                              background-color: #084D38 !important;
+                              border-color: #C7A338 !important;
+                              box-shadow: 0 6px 10px rgba(12,59,46,0.5) !important;
+                              transform: translateY(-1px);
+                            }
+                            .notify-landlord-btn:hover span,
+                            .notify-landlord-btn:focus span,
+                            .notify-landlord-btn:hover svg,
+                            .notify-landlord-btn:focus svg {
+                              color: #FFFFFF !important;
+                            }
+                          `}</style>
                         </div>
                       </div>
                     </CardContent>
