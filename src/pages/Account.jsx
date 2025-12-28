@@ -126,7 +126,6 @@ const PLAN_DETAILS = [
     descriptionJa: '個人向けコア予防ツール',
     descriptionKo: '개인을 위한 핵심 예방 도구',
     benefits: [
-      'Everything in Free',
       '6 Lease Scans per annum',
       '5 Risks Reported',
       'Email Notifications',
@@ -136,7 +135,6 @@ const PLAN_DETAILS = [
       'Deposit Tracker'
     ],
     benefitsTh: [
-      'ทุกอย่างในแผน Free',
       '6 การสแกนสัญญาต่อปี',
       'รายงานความเสี่ยง 5 จุด',
       'การแจ้งเตือนทางอีเมล',
@@ -146,7 +144,6 @@ const PLAN_DETAILS = [
       'ติดตามเงินมัดจำ'
     ],
     benefitsRu: [
-      'Все из тарифа Free',
       '6 сканирований договора в год',
       '5 выявленных рисков',
       'Уведомления по электронной почте',
@@ -156,7 +153,6 @@ const PLAN_DETAILS = [
       'Отслеживание депозита'
     ],
     benefitsZh: [
-      '包含免费计划所有内容',
       '每年6次租约扫描',
       '报告5个风险',
       '电子邮件通知',
@@ -166,7 +162,6 @@ const PLAN_DETAILS = [
       '押金追踪器'
     ],
     benefitsJa: [
-      'Freeの全て',
       '年6回のリーススキャン',
       '5つのリスク報告',
       'メール通知',
@@ -176,7 +171,6 @@ const PLAN_DETAILS = [
       '敷金トラッカー'
     ],
     benefitsKo: [
-      'Free 플랜의 모든 내용',
       '연간 6회 임대 계약 스캔',
       '5개 위험 보고',
       '이메일 알림',
@@ -4779,8 +4773,8 @@ function AccountContent() {
               {strings.monthlyBillingAvailable}
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {PLAN_DETAILS.map((plan) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {PLAN_DETAILS.filter(plan => plan.key !== 'free').map((plan) => {
                 const Icon = plan.icon;
                 const isCurrentPlan = planTier === plan.key;
                 const isFreeplanLocal = plan.key === 'free';
