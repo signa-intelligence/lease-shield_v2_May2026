@@ -260,6 +260,25 @@ function TemplatesContent() {
               <button
                 onClick={async () => {
                   try {
+                    const { data } = await base44.functions.invoke('seedSixTemplatesBilingual');
+                    if (data.ok) {
+                      toast.success(`✅ ${data.message}`);
+                      queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+                    } else {
+                      toast.error(`❌ Seed failed: ${data.message}`);
+                    }
+                  } catch (error) {
+                    toast.error(`❌ Seed error: ${error.message}`);
+                  }
+                }}
+                className="px-4 py-2 rounded-lg font-semibold"
+                style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}
+              >
+                🌐 Seed 6 Templates (EN+TH)
+              </button>
+              <button
+                onClick={async () => {
+                  try {
                     const { data } = await base44.functions.invoke('migrateTemplateFieldsToNested');
                     if (data.ok) {
                       toast.success(`✅ Migrated ${data.migrated_count} templates to nested structure`);
