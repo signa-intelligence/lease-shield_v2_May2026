@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   Scale, Plus, Crown, Calendar, Zap, FileText, Loader2,
-  CheckCircle2, Eye, Download, ChevronDown, ChevronUp, ArrowLeft, Clock, AlertCircle, Trash2
+  CheckCircle2, Eye, Download, ChevronDown, ChevronUp, ArrowLeft, Clock, AlertCircle, Trash2, MoreVertical, Archive
 } from "lucide-react";
 import { format } from "date-fns";
 import { useFeatureAccess } from "@/components/shared/FeatureGate";
@@ -56,6 +56,7 @@ function CasesContent() {
   const [showResolveSuccessBanner, setShowResolveSuccessBanner] = useState(false);
   const [highlightCaseId, setHighlightCaseId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -233,6 +234,10 @@ function CasesContent() {
       deleteSelected: "ลบที่เลือก",
       selectAll: "เลือกทั้งหมด",
       deselectAll: "ยกเลิกการเลือกทั้งหมด",
+      archive: "เก็บถาวร",
+      deleteTestCase: "ลบ (ทดสอบ)",
+      deleteTestCaseConfirmTitle: "ลบข้อมูลทดสอบนี้?",
+      deleteTestCaseConfirmMessage: "การกระทำนี้ไม่สามารถยกเลิกได้",
       bulkDeleteConfirmTitle: "ลบคดีที่เลือกหรือไม่?",
       bulkDeleteConfirmMessage: "คดี {count} รายการนี้จะถูกย้ายไปยังถังขยะและสามารถกู้คืนได้ในภายหลัง",
       confirmBulkDelete: "ลบ {count} คดี",
@@ -296,6 +301,10 @@ function CasesContent() {
       allStatuses: "所有状态",
       noResultsFound: "未找到案件",
       tryDifferentSearch: "尝试不同的搜索或筛选",
+      archive: "存档",
+      deleteTestCase: "删除（测试）",
+      deleteTestCaseConfirmTitle: "删除此测试案件？",
+      deleteTestCaseConfirmMessage: "此操作无法撤销",
     },
     ja: {
       title: "マイケース",
@@ -347,6 +356,10 @@ function CasesContent() {
       allStatuses: "すべてのステータス",
       noResultsFound: "ケースが見つかりません",
       tryDifferentSearch: "別の検索またはフィルターを試してください",
+      archive: "アーカイブ",
+      deleteTestCase: "削除（テスト）",
+      deleteTestCaseConfirmTitle: "このテストケースを削除しますか？",
+      deleteTestCaseConfirmMessage: "この操作は取り消せません",
     },
     ko: {
       title: "내 사례",
@@ -398,6 +411,10 @@ function CasesContent() {
       allStatuses: "모든 상태",
       noResultsFound: "사례를 찾을 수 없음",
       tryDifferentSearch: "다른 검색 또는 필터를 시도하세요",
+      archive: "보관",
+      deleteTestCase: "삭제（테스트）",
+      deleteTestCaseConfirmTitle: "이 테스트 사례를 삭제하시겠습니까？",
+      deleteTestCaseConfirmMessage: "이 작업은 취소할 수 없습니다",
     },
     ru: {
       title: "Мои дела",
@@ -452,7 +469,11 @@ function CasesContent() {
       tryDifferentSearch: "Попробуйте другой фильтр",
       needMoreHelp: "Нужна помощь со спором?",
       openResolveDesc: "Откройте дело Resolve для профессиональной поддержки.",
-      openResolveCase: "Открыть дело Resolve"
+      openResolveCase: "Открыть дело Resolve",
+      archive: "Архивировать",
+      deleteTestCase: "Удалить (тест)",
+      deleteTestCaseConfirmTitle: "Удалить тестовое дело?",
+      deleteTestCaseConfirmMessage: "Это действие нельзя отменить"
     },
     en: {
       title: "My Cases",
@@ -507,7 +528,11 @@ function CasesContent() {
       tryDifferentSearch: "Try a different search or filter",
       needMoreHelp: "Need more help?",
       openResolveDesc: "Open a Resolve case for professional support at member or public rates.",
-      openResolveCase: "Open Resolve Case"
+      openResolveCase: "Open Resolve Case",
+      archive: "Archive",
+      deleteTestCase: "Delete (Test Case)",
+      deleteTestCaseConfirmTitle: "Delete this test case?",
+      deleteTestCaseConfirmMessage: "This action cannot be undone."
     }
   };
 
@@ -571,6 +596,15 @@ function CasesContent() {
   const handleDeleteCase = (caseItem) => {
     haptic.medium();
     setConfirmDelete(caseItem);
+  };
+
+  const isTestCase = (caseItem) => {
+    return (
+      caseItem.flags?.test_case === true ||
+      caseItem.environment === 'test' ||
+      caseItem.case_number?.toUpperCase().startsWith('TEST') ||
+      (caseItem.tags && Array.isArray(caseItem.tags) && caseItem.tags.some(tag => tag.toLowerCase() === 'test'))
+    );
   };
 
   // Visible statuses - include awaiting_payment so users can see unpaid cases
@@ -978,18 +1012,105 @@ function CasesContent() {
                       }}
                     >
                       <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <Scale className="w-5 h-5 flex-shrink-0" style={{ color: FEATURE_COLORS.cases.accent }} />
-                            <CardTitle className="text-xl font-bold" style={{ color: theme.headerColor }}>
-                              {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
-                            </CardTitle>
-                          </div>
-                          <Badge className={`${statusConfig.color} border whitespace-nowrap`}>
-                            <StatusIcon className="w-3 h-3 mr-1" />
-                            {statusConfig.label}
-                          </Badge>
-                        </div>
+                       <div className="flex items-start justify-between gap-2">
+                         <div className="flex items-center gap-2 min-w-0 flex-1">
+                           <Scale className="w-5 h-5 flex-shrink-0" style={{ color: FEATURE_COLORS.cases.accent }} />
+                           <CardTitle className="text-xl font-bold" style={{ color: theme.headerColor }}>
+                             {caseItem.case_number || `Case #${caseItem.id.slice(0, 8)}`}
+                           </CardTitle>
+                         </div>
+                         <div className="flex items-center gap-2">
+                           <Badge className={`${statusConfig.color} border whitespace-nowrap`}>
+                             <StatusIcon className="w-3 h-3 mr-1" />
+                             {statusConfig.label}
+                           </Badge>
+                           {/* Desktop Actions Menu */}
+                           <div className="hidden md:block relative">
+                             <button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 haptic.light();
+                                 setOpenMenuId(openMenuId === caseItem.id ? null : caseItem.id);
+                               }}
+                               className="p-2 rounded-lg hover:bg-opacity-80 transition-all"
+                               style={{ 
+                                 backgroundColor: openMenuId === caseItem.id ? (isDarkMode ? '#374151' : '#F3F4F6') : 'transparent',
+                                 color: colors.textPrimary
+                               }}
+                             >
+                               <MoreVertical className="w-5 h-5" />
+                             </button>
+                             {openMenuId === caseItem.id && (
+                               <>
+                                 <div
+                                   className="fixed inset-0 z-40"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     setOpenMenuId(null);
+                                   }}
+                                 />
+                                 <div
+                                   className="absolute right-0 top-12 z-50 min-w-[180px] rounded-lg shadow-xl border"
+                                   style={{
+                                     backgroundColor: colors.cardBg,
+                                     borderColor: colors.borderColor
+                                   }}
+                                   onClick={(e) => e.stopPropagation()}
+                                 >
+                                   <div className="py-1">
+                                     <button
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         haptic.light();
+                                         setOpenMenuId(null);
+                                         handleDeleteCase(caseItem);
+                                       }}
+                                       className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-80 transition-all"
+                                       style={{
+                                         color: colors.textPrimary,
+                                         backgroundColor: 'transparent'
+                                       }}
+                                       onMouseEnter={(e) => {
+                                         e.target.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
+                                       }}
+                                       onMouseLeave={(e) => {
+                                         e.target.style.backgroundColor = 'transparent';
+                                       }}
+                                     >
+                                       <Archive className="w-4 h-4" />
+                                       {strings.archive}
+                                     </button>
+                                     {isTestCase(caseItem) && (
+                                       <button
+                                         onClick={(e) => {
+                                           e.stopPropagation();
+                                           haptic.medium();
+                                           setOpenMenuId(null);
+                                           setConfirmDelete({ ...caseItem, isTestDelete: true });
+                                         }}
+                                         className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-opacity-80 transition-all"
+                                         style={{
+                                           color: '#EF4444',
+                                           backgroundColor: 'transparent'
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           e.target.style.backgroundColor = isDarkMode ? '#3F1F1F' : '#FEE2E2';
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.target.style.backgroundColor = 'transparent';
+                                         }}
+                                       >
+                                         <Trash2 className="w-4 h-4" />
+                                         {strings.deleteTestCase}
+                                       </button>
+                                     )}
+                                   </div>
+                                 </div>
+                               </>
+                             )}
+                           </div>
+                         </div>
+                       </div>
                         <div className="mt-2 space-y-1">
                           <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>
                             {strings.opened} {format(new Date(caseItem.created_date), 'MMM d, yyyy')}
@@ -1232,11 +1353,11 @@ function CasesContent() {
                     <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
                   </div>
                   <h3 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                    {strings.deleteConfirmTitle}
+                    {confirmDelete.isTestDelete ? strings.deleteTestCaseConfirmTitle : strings.deleteConfirmTitle}
                   </h3>
                 </div>
                 <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
-                  {strings.deleteConfirmMessage}
+                  {confirmDelete.isTestDelete ? strings.deleteTestCaseConfirmMessage : strings.deleteConfirmMessage}
                 </p>
                 <div className="flex gap-3">
                   <button
