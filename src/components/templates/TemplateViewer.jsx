@@ -15,12 +15,16 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   if (!isOpen || !template) return null;
 
   const title = language === 'th' ? (template.title_th || template.title_en) : template.title_en;
-  const previewContent = template.preview_content || template.preview_en || template.preview_th || '';
-  const documentContent = template.document_content || '';
+  const previewContent = language === 'th' 
+    ? (template.preview_content_th || template.preview_content || template.preview_th || '') 
+    : (template.preview_content_en || template.preview_content || template.preview_en || '');
+  const documentContent = language === 'th'
+    ? (template.document_content_th || template.document_content || '')
+    : (template.document_content_en || template.document_content || '');
   const letterCredits = user?.letter_credits || 0;
   const canUseCredits = letterCredits >= 1;
   const hasPreview = previewContent && previewContent.trim().length > 0;
-  const hasDocument = documentContent && documentContent.trim().length > 0 && !documentContent.includes('[DRAFT REQUIRED]');
+  const hasDocument = documentContent && documentContent.trim().length >= 300;
 
   const handleCopy = async () => {
     if (!hasDocument) {
