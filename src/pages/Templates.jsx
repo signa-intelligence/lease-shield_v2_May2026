@@ -258,6 +258,25 @@ function TemplatesContent() {
           <div className="space-y-4 mb-6">
             <div className="flex flex-wrap gap-3">
               <button
+                onClick={async () => {
+                  try {
+                    const { data } = await base44.functions.invoke('migrateTemplateFieldsToNested');
+                    if (data.ok) {
+                      toast.success(`✅ Migrated ${data.migrated_count} templates to nested structure`);
+                      queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+                    } else {
+                      toast.error(`❌ Migration failed: ${data.message}`);
+                    }
+                  } catch (error) {
+                    toast.error(`❌ Migration error: ${error.message}`);
+                  }
+                }}
+                className="px-4 py-2 rounded-lg font-semibold"
+                style={{ backgroundColor: '#F59E0B', color: '#FFFFFF' }}
+              >
+                🔄 Migrate to Nested Fields
+              </button>
+              <button
                 onClick={() => setShowBackfillConfirm(true)}
                 className="px-4 py-2 rounded-lg font-semibold"
                 style={{ backgroundColor: '#10B981', color: '#FFFFFF' }}
