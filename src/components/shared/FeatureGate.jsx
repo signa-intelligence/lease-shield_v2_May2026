@@ -111,7 +111,7 @@ export function FeatureGate({ feature, children, fallback }) {
 
 export function PlanBadge({ tier }) {
   const configs = {
-    free: { label: 'Free', color: 'bg-gray-100 text-gray-700', icon: null },
+    free: { label: 'Explorer', color: 'bg-gray-100 text-gray-700', icon: null },
     lite: { label: 'Lite', color: 'bg-blue-100 text-blue-700', icon: Zap },
     protect: { label: 'Protect', color: 'bg-emerald-100 text-emerald-700', icon: Shield },
     secure: { label: 'Secure', color: 'bg-purple-100 text-purple-700', icon: Crown }

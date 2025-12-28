@@ -206,7 +206,7 @@ function CasesContent() {
       noCasesDesc: "เปิดคดีเพื่อรับความช่วยเหลือจากมืออาชีพในการเรียกคืนเงินมัดจำหรือข้อพิพาท",
       noCasesCreatedYet: "ยังไม่มีการสร้างกรณี",
       noCasesCreatedYetDesc: "เมื่อเกิดข้อพิพาท ให้บันทึกกรณีที่นี่เพื่อเก็บข้อความ, หลักฐาน และไทม์ไลน์ทั้งหมดไว้ในที่เดียวที่ปลอดภัย",
-      upgradeForDisputeTools: "อัปเกรดเพื่อเครื่องมือสนับสนุนข้อพิพาท",
+      upgradeForDisputeTools: "อัปเกรดเพื่อเครื่องมือป้องกันข้อพิพาท",
       caseNumber: "คดี",
       opened: "เปิดเมื่อ",
       disputeAmount: "จำนวนเงินพิพาท",
@@ -932,7 +932,7 @@ function CasesContent() {
                     className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
                     style={{ borderColor: "#0C3B2E", color: "#0C3B2E", backgroundColor: "#FFFFFF" }}
                   >
-                    {strings.upgradeForDisputeTools}
+                    {language === 'th' ? 'อัปเกรดเพื่อฟีเจอร์เต็มรูปแบบ' : language === 'zh' ? '升级获取完整功能' : language === 'ja' ? '完全な機能にアップグレード' : language === 'ko' ? '전체 기능을 위한 업그레이드' : language === 'ru' ? 'Обновить для полного функционала' : 'Upgrade for Full Features'}
                   </button>
                 )}
               </div>

@@ -46,22 +46,22 @@ const PRICING = {
 const PLAN_DETAILS = [
   {
     key: 'free',
-    label: 'Free',
+    label: 'Explorer',
     priceMonthly: 0,
     priceAnnual: 0,
     savingsAnnual: 0,
-    tagline: 'Try Before You Commit',
-    taglineTh: 'ทดลองก่อนตัดสินใจ',
-    taglineRu: 'Попробуйте перед тем, как принять решение',
-    taglineZh: '先试用再决定',
-    taglineJa: '試してから決める',
-    taglineKo: '먼저 시도한 후 결정',
-    description: 'Experience our automated lease analysis',
-    descriptionTh: 'สัมผัสการวิเคราะห์สัญญาเช่าอัตโนมัติ',
-    descriptionRu: 'Оцените наш автоматический анализ договора аренды',
-    descriptionZh: '体验我们的自动租约分析',
-    descriptionJa: '自動リース分析を体験',
-    descriptionKo: '자동 임대 계약 분석 체험',
+    tagline: 'Explore Features',
+    taglineTh: 'สำรวจฟีเจอร์',
+    taglineRu: 'Изучите возможности',
+    taglineZh: '探索功能',
+    taglineJa: '機能を探索',
+    taglineKo: '기능 탐색',
+    description: 'Preview core features',
+    descriptionTh: 'ดูฟีเจอร์หลักก่อน',
+    descriptionRu: 'Предварительный просмотр функций',
+    descriptionZh: '预览核心功能',
+    descriptionJa: 'コア機能のプレビュー',
+    descriptionKo: '핵심 기능 미리보기',
     benefits: [
       '1 Lease Scan (lifetime)',
       'Basic Risk Score Preview',
@@ -2910,7 +2910,7 @@ function AccountContent() {
                     )}
                   </div>
                   <p className="text-3xl font-bold" style={{ color: colors.textPrimary }}>
-                    {isFreePlan ? strings.freePlanName : (currentPlan?.priceMonthly ? `฿${currentPlan?.priceMonthly}` : '—')}
+                    {isFreePlan ? (language === 'th' ? 'สำรวจ' : language === 'zh' ? '探索' : language === 'ja' ? '探索' : language === 'ko' ? '탐색' : language === 'ru' ? 'Обзор' : 'Explorer') : (currentPlan?.priceMonthly ? `฿${currentPlan?.priceMonthly}` : '—')}
                   </p>
                   {!isFreePlan && userBillingInterval && (
                     <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
@@ -2928,7 +2928,7 @@ function AccountContent() {
                   <div className="space-y-3">
                     <div style={{ padding: '12px', backgroundColor: colors.fieldBg, borderRadius: '8px', borderLeft: '4px solid #C7A338' }}>
                       <p style={{ fontSize: '14px', color: colors.textPrimary, fontWeight: '600', marginBottom: '8px' }}>
-                        {strings.freeIncludes}
+                        {language === 'th' ? 'บัญชีสำรวจ' : language === 'zh' ? '探索账户' : language === 'ja' ? '探索アカウント' : language === 'ko' ? '탐색 계정' : language === 'ru' ? 'Пробный аккаунт' : 'Explorer Account'}
                       </p>
                       <ul style={{ fontSize: '12px', color: colors.textPrimary, lineHeight: '1.5' }}>
                         <li>• {strings.freeBenefit1}</li>
@@ -4595,17 +4595,22 @@ function AccountContent() {
               border: '2px solid rgba(199,163,56,0.25)',
               boxShadow: '0 4px 6px rgba(199,163,56,0.1)'
             }}
-          >
+            >
             <div className="flex items-start gap-3 mb-3">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center flex-shrink-0">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
-                  {strings.currentPlanFree}
+                  {language === 'th' ? 'กำลังสำรวจอยู่' : language === 'zh' ? '当前探索中' : language === 'ja' ? '探索中' : language === 'ko' ? '탐색 중' : language === 'ru' ? 'Режим обзора' : 'Exploring Features'}
                 </h3>
                 <p style={{ fontSize: '0.9rem', marginBottom: 12, color: colors.textPrimary, lineHeight: 1.5 }}>
-                  {strings.freeUpgradeText}
+                  {language === 'th' ? 'คุณอยู่ในบัญชีสำรวจ อัปเกรดเป็น Lite, Protect หรือ Secure เพื่อการป้องกันเงินมัดจำและการซ่อมบำรุงเต็มรูปแบบ' :
+                   language === 'zh' ? '您正在使用探索账户。升级到 Lite、Protect 或 Secure 以获得完整的押金和维护保护。' :
+                   language === 'ja' ? '探索アカウントを使用中。完全な預金およびメンテナンス保護のために、Lite、Protect、またはSecureにアップグレードしてください。' :
+                   language === 'ko' ? '탐색 계정을 사용 중입니다. 완전한 보증금 및 유지보수 보호를 위해 Lite, Protect 또는 Secure로 업그레이드하세요.' :
+                   language === 'ru' ? 'Вы используете пробный аккаунт. Обновитесь до Lite, Protect или Secure для полной защиты депозита и обслуживания.' :
+                   'You\'re exploring with a preview account. Upgrade to Lite, Protect, or Secure for full deposit and maintenance protection.'}
                 </p>
               </div>
             </div>
@@ -4857,7 +4862,7 @@ function AccountContent() {
                       {isFreeplanLocal ? (
                         <>
                           <div className="text-3xl font-bold mb-1" style={{ color: colors.textPrimary }}>
-                            {strings.freePlanName}
+                            {language === 'th' ? 'สำรวจ' : language === 'zh' ? '探索' : language === 'ja' ? '探索' : language === 'ko' ? '탐색' : language === 'ru' ? 'Обзор' : 'Explorer'}
                           </div>
                           <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
                             {strings.noCreditCard}
@@ -4949,7 +4954,7 @@ function AccountContent() {
                             border: `2px solid ${colors.textSecondary}`
                           }}
                         >
-                          {strings.signupFree}
+                          {language === 'th' ? 'ลงทะเบียนเพื่อสำรวจ' : language === 'zh' ? '注册探索' : language === 'ja' ? '登録して探索' : language === 'ko' ? '등록하여 탐색' : language === 'ru' ? 'Зарегистрироваться' : 'Sign Up to Explore'}
                         </Button>
                       ) : !hasPricing ? (
                         <Button
