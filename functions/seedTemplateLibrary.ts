@@ -1,6 +1,705 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const TEMPLATE_SEEDS = {
+  pre_signing_negotiation: {
+    preview_content: `PRE-SIGNING LEASE NEGOTIATION LETTER
+Professional letter to request amendments to draft lease terms before signing.
+
+Sections:
+• Reference to draft lease and agent
+• Requested changes: rent, deposit, term, early termination clause, maintenance SLA, inventory report, utilities, entry notice, pets/smoking, paint/cleaning, key fees, deduction standards, move-out timeline, dispute resolution
+• Request confirmation or alternatives by deadline
+• Signature block with contact details`,
+
+    document_content: `[Tenant Name]
+[Tenant Address]
+[Tenant City, Postal Code]
+[Tenant Phone]
+[Tenant Email]
+
+[Date]
+
+[Landlord Name]
+[Landlord Address]
+[Landlord City, Postal Code]
+
+Re: Request to Amend Lease Terms Before Signing
+Property: [Property Address]
+
+Dear [Landlord Name],
+
+Thank you for providing the draft lease agreement dated [Draft Lease Date] for the property at [Property Address], facilitated by [Agent Name/Agency Name]. I am very interested in proceeding with this tenancy and would like to request the following amendments before signing:
+
+REQUESTED AMENDMENTS:
+
+1. Monthly Rent: [Current Rent] THB → Proposed: [Proposed Rent] THB
+2. Security Deposit: [Current Deposit] months → Proposed: [Proposed Deposit] months
+3. Lease Term: [Current Term] months → Proposed: [Proposed Term] months
+4. Early Termination Clause: Add provision for [Notice Period]-day notice with [Penalty Terms]
+5. Maintenance Response Times: [Specify SLA - e.g., urgent repairs within 24 hours, non-urgent within 5 days]
+6. Inventory & Condition Report: Request joint inspection and signed condition report with photos before move-in
+7. Utilities Responsibility: Clarify which utilities are tenant vs. landlord responsibility
+8. Access & Entry Notice: Require [Notice Period]-hour written notice for landlord entry except emergencies
+9. Pets / Smoking: [Request permission OR confirm prohibition]
+10. Cleaning & Painting: Clarify standards for move-out (professional cleaning required? Repainting?)
+11. Key Replacement Fees: Set maximum fee of [Amount] THB per key
+12. Deduction Standards: Define "normal wear and tear" vs. tenant damage
+13. Move-Out Inspection: Confirm joint final inspection at least [Days] days before move-out
+14. Return of Deposit Timeline: [Timeline - e.g., within 14 days] of move-out with itemised deductions if any
+15. Dispute Resolution: Agree to [Mediation/Arbitration] channel before legal action
+
+JUSTIFICATION:
+[Brief explanation - e.g., "These amendments reflect standard market practices and align with my [X]-month commitment as a reliable tenant."]
+
+Please confirm acceptance of these amendments or propose alternatives by [Deadline Date]. I am available to discuss at [Phone] or [Email].
+
+I look forward to a positive landlord-tenant relationship.
+
+Sincerely,
+
+[Tenant Signature]
+[Tenant Name]`
+  },
+
+  notice_to_vacate: {
+    preview_content: `NOTICE OF INTENT TO VACATE
+Formal notice to landlord of intention to vacate property.
+
+Key Fields:
+• Current lease reference (start date, notice period)
+• Intended move-out date
+• Request for final inspection scheduling
+• Request deposit return timeline
+• Forwarding address and bank details for refund
+• Request written confirmation
+
+Professional tone, clear dates, signature block.`,
+
+    document_content: `[Tenant Name]
+[Current Property Address]
+[City, Postal Code]
+[Tenant Phone]
+[Tenant Email]
+
+[Date]
+
+[Landlord Name]
+[Landlord Address]
+[Landlord City, Postal Code]
+
+Re: Notice of Intent to Vacate
+Property: [Property Address]
+Lease Start Date: [Lease Start Date]
+
+Dear [Landlord Name],
+
+This letter serves as my formal [Notice Period]-day notice of intent to vacate the property at [Property Address], as required under our lease agreement dated [Lease Start Date].
+
+MOVE-OUT DETAILS:
+• Intended Move-Out Date: [Move-Out Date]
+• Final Rent Paid Through: [Final Rent Date]
+• Notice Period: [Notice Period] days (as per lease agreement)
+
+REQUEST FOR FINAL INSPECTION:
+I respectfully request a joint final inspection to be scheduled at least [Days] days before move-out. Please confirm available dates and times. I will ensure the property is clean and in good condition per lease terms.
+
+SECURITY DEPOSIT RETURN:
+• Deposit Amount Paid: [Deposit Amount] THB (paid [Deposit Payment Date])
+• Expected Return Date: [Expected Date] (within [Timeline] of move-out)
+• Forwarding Address: [New Address], [New City, Postal Code]
+• Bank Account for Deposit: [Bank Name], Account Number: [Account Number], Account Name: [Account Name]
+
+If any deductions are necessary, please provide an itemised breakdown with supporting evidence (photos, invoices, receipts) as required by law.
+
+KEY & ACCESS RETURN:
+All keys, access cards, and parking remotes will be returned during the final inspection or on [Move-Out Date].
+
+Please confirm receipt of this notice in writing and provide the final inspection schedule at your earliest convenience.
+
+Thank you for your cooperation.
+
+Sincerely,
+
+[Tenant Signature]
+[Tenant Name]
+[Contact Phone]
+[Contact Email]`
+  },
+
+  deposit_return_request: {
+    preview_content: `SECURITY DEPOSIT RETURN REQUEST
+Formal demand for return of security deposit after move-out.
+
+Sections:
+• Deposit details (amount, payment date, receipts)
+• Move-out date and handover confirmation
+• Request return by specific deadline
+• Request itemised deductions with evidence if applicable
+• Bank account details for refund
+• Polite escalation note (complaint/mediation if not resolved)
+
+Professional, firm tone with clear deadline.`,
+
+    document_content: `[Tenant Name]
+[New Address]
+[City, Postal Code]
+[Tenant Phone]
+[Tenant Email]
+
+[Date]
+
+[Landlord Name]
+[Landlord Address]
+[Landlord City, Postal Code]
+
+Re: Formal Request for Security Deposit Return
+Property: [Property Address]
+Move-Out Date: [Move-Out Date]
+
+Dear [Landlord Name],
+
+I am writing to formally request the immediate return of my security deposit for the property at [Property Address].
+
+DEPOSIT DETAILS:
+• Amount Paid: [Deposit Amount] THB
+• Payment Date: [Deposit Payment Date]
+• Receipt Number: [Receipt Number]
+• Lease Period: [Lease Start Date] to [Lease End Date]
+
+MOVE-OUT CONFIRMATION:
+• Vacated On: [Move-Out Date]
+• Keys Returned: [Handover Date]
+• Property Condition: Clean and in good condition per lease agreement
+• Final Inspection: [Completed / Requested but not scheduled]
+
+DEPOSIT RETURN REQUEST:
+Under Thai rental law and our lease agreement, I request the full return of [Deposit Amount] THB by [Deadline Date].
+
+If you believe any deductions are warranted, please provide:
+1. Itemised list of deductions with specific reasons
+2. Supporting evidence: photos of alleged damage, invoices, repair quotes, cleaning receipts
+3. Comparison to move-in condition report
+4. Calculation showing [Deposit Amount] THB minus deductions = balance due
+
+REFUND DETAILS:
+• Bank Name: [Bank Name]
+• Account Number: [Account Number]
+• Account Name: [Account Name]
+• Preferred Transfer Date: By [Deadline Date]
+
+LEGAL REFERENCE:
+Please note that unjustified withholding of deposits may be subject to complaint with the Consumer Protection Board or dispute resolution channels. I hope to resolve this amicably and promptly.
+
+I am available to discuss this matter at [Phone] or [Email].
+
+I look forward to receiving my deposit by [Deadline Date].
+
+Sincerely,
+
+[Tenant Signature]
+[Tenant Name]`
+  },
+
+  pre_move_out_inspection_request: {
+    preview_content: `PRE MOVE-OUT INSPECTION REQUEST
+Request for joint inspection before move-out to agree on property condition.
+
+Sections:
+• Propose 3 specific date/time options for inspection
+• Request landlord/agent attendance with checklist
+• Request written confirmation that inspection notes will form basis for any deductions
+• Ask for guidance on handover procedures (keys, meters, utilities)
+• Confirm forwarding address and contact details
+
+Professional, cooperative tone.`,
+
+    document_content: `[Tenant Name]
+[Current Property Address]
+[City, Postal Code]
+[Tenant Phone]
+[Tenant Email]
+
+[Date]
+
+[Landlord Name]
+[Landlord Address]
+[Landlord City, Postal Code]
+
+Re: Request for Pre Move-Out Inspection
+Property: [Property Address]
+Move-Out Date: [Move-Out Date]
+
+Dear [Landlord Name],
+
+As I prepare to vacate the property at [Property Address] on [Move-Out Date], I would like to request a joint pre move-out inspection to ensure we are aligned on the property condition before final handover.
+
+PROPOSED INSPECTION DATES:
+Please confirm your availability for one of the following:
+• Option 1: [Date 1] at [Time 1]
+• Option 2: [Date 2] at [Time 2]
+• Option 3: [Date 3] at [Time 3]
+
+If none of these work, please suggest alternative dates at least [Days] days before move-out.
+
+INSPECTION CHECKLIST:
+I request that we conduct the inspection using a joint checklist covering:
+• All rooms (walls, floors, ceilings, fixtures)
+• Kitchen (appliances, cabinets, sink, counters)
+• Bathrooms (toilet, shower, tiles, plumbing)
+• Windows, doors, locks
+• Electrical and plumbing systems
+• Cleanliness standards
+• Any repairs or maintenance needed
+
+WRITTEN CONFIRMATION:
+Please confirm in writing that:
+1. The inspection notes will form the basis for any security deposit deductions
+2. Items not noted during inspection will not be grounds for deductions
+3. I will have opportunity to address any issues identified before final move-out
+
+HANDOVER PROCEDURES:
+Please also advise on:
+• Key return process (quantity: [Number])
+• Utility meter readings (electric, water, gas)
+• Utility account closure or transfer
+• Final inspection date if different from pre-inspection
+• Deposit return timeline and method
+
+FORWARDING ADDRESS:
+[New Address]
+[New City, Postal Code]
+[Contact Phone]
+[Contact Email]
+
+I look forward to your confirmation and to conducting this inspection together.
+
+Sincerely,
+
+[Tenant Signature]
+[Tenant Name]`
+  },
+
+  deposit_itemised_deductions: {
+    preview_content: `REQUEST FOR ITEMISED DEDUCTIONS
+Request for detailed breakdown when landlord indicates deposit deductions.
+
+Sections:
+• Reference to landlord's notification of deductions
+• Request itemised table: item, reason, evidence, invoice/quote, amount, date
+• Request return of undisputed balance immediately
+• Set deadline for receiving breakdown
+• Signature and contact details
+
+Firm but professional tone.`,
+
+    document_content: `[Tenant Name]
+[New Address]
+[City, Postal Code]
+[Tenant Phone]
+[Tenant Email]
+
+[Date]
+
+[Landlord Name]
+[Landlord Address]
+[Landlord City, Postal Code]
+
+Re: Request for Itemised Security Deposit Deductions
+Property: [Property Address]
+
+Dear [Landlord Name],
+
+Thank you for your communication dated [Communication Date] indicating that deductions will be made from my security deposit of [Deposit Amount] THB. However, I have not yet received a detailed itemised breakdown as required by law.
+
+REQUIRED INFORMATION:
+Please provide a complete itemised breakdown in the following format:
+
+| Item/Area | Reason for Deduction | Evidence | Invoice/Quote | Amount (THB) | Date |
+|-----------|---------------------|----------|---------------|--------------|------|
+| [Example: Kitchen cabinet] | [Example: Broken hinge] | [Example: Photos attached] | [Example: Repair invoice] | [Example: 500] | [Example: Date] |
+
+For each deduction, please include:
+1. Specific item or area of property
+2. Detailed reason for deduction (damage beyond normal wear and tear)
+3. Supporting evidence: photos showing alleged damage
+4. Copy of actual invoice, receipt, or written quote from contractor
+5. Amount charged (must match invoice/quote)
+6. Date work was completed or quote obtained
+
+NORMAL WEAR AND TEAR:
+Please note that the following are NOT deductible:
+• Minor scuffs or marks from regular use
+• Paint fading due to age or sunlight
+• Carpet wear in normal traffic areas
+• Minor scratches on floors from furniture
+• Worn caulking or seals due to age
+
+UNDISPUTED BALANCE:
+If certain deductions are documented but others are not, please immediately return the undisputed portion of the deposit to:
+• Bank Name: [Bank Name]
+• Account Number: [Account Number]
+• Account Name: [Account Name]
+
+DEADLINE:
+Please provide the complete itemised breakdown by [Deadline Date]. If I do not receive this information by the deadline, I will assume no valid deductions exist and will request full deposit return.
+
+I am available to discuss at [Phone] or [Email].
+
+Sincerely,
+
+[Tenant Signature]
+[Tenant Name]`
+  },
+
+  property_condition_dispute: {
+    preview_content: `PROPERTY CONDITION DISPUTE LETTER
+Dispute landlord's allegations of damage or poor condition.
+
+Sections:
+• State disagreement with condition/damage claims
+• Reference move-in evidence (photos, report, witness)
+• List each disputed item with counter-evidence
+• Offer resolution: joint re-inspection, independent assessment, or quote comparison
+• Request pause on deposit withholding until resolved
+• Signature and contact
+
+Assertive but professional tone.`,
+
+    document_content: `[Tenant Name]
+[New Address]
+[City, Postal Code]
+[Tenant Phone]
+[Tenant Email]
+
+[Date]
+
+[Landlord Name]
+[Landlord Address]
+[Landlord City, Postal Code]
+
+Re: Dispute of Property Condition Allegations
+Property: [Property Address]
+
+Dear [Landlord Name],
+
+I am writing in response to your claims dated [Claim Date] regarding the condition of the property at [Property Address]. I respectfully but firmly disagree with your allegations and dispute the proposed deductions.
+
+MOVE-IN CONDITION EVIDENCE:
+At move-in on [Move-In Date], I documented the property's condition with:
+• Signed condition report with [Landlord/Agent Name] dated [Report Date]
+• Comprehensive photos and videos taken [Move-In Date]
+• Witness present: [Witness Name] (if applicable)
+
+This evidence clearly shows that many of the items you claim as "damage" were pre-existing conditions.
+
+DISPUTED ITEMS:
+
+1. [Item/Area 1 - e.g., "Living room wall scuff"]
+   • Your Claim: [Landlord's claim - e.g., "Tenant damage requiring repainting"]
+   • My Position: Pre-existing condition, documented in move-in photos dated [Date]
+   • Evidence: Photo #[Number] from move-in inspection
+
+2. [Item/Area 2 - e.g., "Kitchen cabinet hinge"]
+   • Your Claim: [Landlord's claim]
+   • My Position: Normal wear and tear / pre-existing / not tenant-caused
+   • Evidence: [Description of counter-evidence]
+
+3. [Item/Area 3]
+   • Your Claim: [Landlord's claim]
+   • My Position: [Your position]
+   • Evidence: [Your evidence]
+
+[Add additional disputed items as needed]
+
+PROPOSED RESOLUTION:
+To resolve this dispute fairly, I propose:
+• Option 1: Joint re-inspection with neutral third party present
+• Option 2: Independent property assessment by mutually agreed assessor
+• Option 3: Compare your quotes with competitive quotes I obtain
+• Option 4: Review and compare move-in vs. move-out evidence together
+
+I am willing to pay for legitimate damage I caused, but I will not accept deductions for:
+• Pre-existing conditions documented at move-in
+• Normal wear and tear from reasonable use
+• Damage not caused by me
+• Costs unsupported by evidence or inflated quotes
+
+REQUEST:
+Please pause any withholding of my security deposit until we resolve these disputes through one of the above methods. I am available to meet within [Timeframe] to review evidence together.
+
+Please respond by [Deadline Date] with your preferred resolution method.
+
+I remain open to reasonable discussion but will defend my position if necessary.
+
+Sincerely,
+
+[Tenant Signature]
+[Tenant Name]
+
+Enclosures:
+• Move-in condition report
+• Move-in photos (USB drive / cloud link)
+• Move-out photos for comparison`
+  },
+
+  request_for_evidence: {
+    preview_content: `REQUEST FOR EVIDENCE LETTER
+Formal request for landlord to provide supporting evidence for claims or deductions.
+
+Sections:
+• Specify evidence types requested: signed reports, photos (move-in and move-out), invoices, quotes, receipts (cleaning, repairs, keys), meter readings, written communications
+• Provide deadline for delivery
+• Specify preferred delivery method (email, LINE, mail)
+• Signature and contact details
+
+Clear, organized format listing each evidence type.`,
+
+    document_content: `[Tenant Name]
+[New Address]
+[City, Postal Code]
+[Tenant Phone]
+[Tenant Email]
+
+[Date]
+
+[Landlord Name]
+[Landlord Address]
+[Landlord City, Postal Code]
+
+Re: Formal Request for Evidence
+Property: [Property Address]
+Deposit in Dispute: [Deposit Amount] THB
+
+Dear [Landlord Name],
+
+Further to your claims regarding deductions from my security deposit, I formally request that you provide complete supporting evidence for all allegations and charges.
+
+EVIDENCE REQUESTED:
+
+1. PROPERTY CONDITION DOCUMENTATION:
+   ☐ Signed move-in condition report (jointly completed)
+   ☐ Move-in photos/videos (dated [Move-In Date])
+   ☐ Move-out photos/videos (dated [Move-Out Date])
+   ☐ Photos showing specific damage alleged to be tenant-caused
+   ☐ Move-in inventory list (if applicable)
+   ☐ Move-out inventory comparison
+
+2. REPAIR & MAINTENANCE DOCUMENTATION:
+   ☐ Actual invoices from contractors (not estimates)
+   ☐ Receipts for completed repair work with dates
+   ☐ Written quotes or estimates obtained
+   ☐ Proof of payment to service providers
+   ☐ Before/after photos of repairs
+   ☐ Itemised breakdown of labour and materials
+
+3. CLEANING DOCUMENTATION:
+   ☐ Professional cleaning receipts/invoices
+   ☐ Photos showing alleged uncleanliness
+   ☐ Cleaning standards from lease agreement
+   ☐ Evidence of professional cleaning requirement
+
+4. KEY & ACCESS DOCUMENTATION:
+   ☐ Key replacement receipts/invoices
+   ☐ Proof of key cost and replacement
+   ☐ Record of keys not returned (if claimed)
+
+5. UTILITY & METER DOCUMENTATION:
+   ☐ Move-in meter readings (electric, water, gas) with dates
+   ☐ Move-out meter readings with dates
+   ☐ Outstanding utility bills (if claimed)
+
+6. WRITTEN COMMUNICATIONS:
+   ☐ All email correspondence during tenancy
+   ☐ All LINE/SMS messages during tenancy
+   ☐ Maintenance request records
+   ☐ Previous notices or warnings (if any)
+   ☐ Lease agreement copy
+
+7. FINANCIAL RECORDS:
+   ☐ Deposit payment receipt dated [Deposit Date]
+   ☐ Rent payment history
+   ☐ Any other financial transactions
+
+DELIVERY REQUIREMENTS:
+Please provide ALL requested evidence by [Deadline Date] via:
+• Preferred: Email to [Email]
+• Alternative: LINE to [LINE ID]
+• Alternative: Registered mail to [New Address]
+
+For digital files, please ensure:
+• Photos are high resolution with visible dates
+• Documents are clear and legible (PDF or image format)
+• All pages of multi-page documents are included
+
+DEADLINE & CONSEQUENCES:
+If complete evidence is not provided by [Deadline Date], I will assume:
+• No valid basis exists for the claimed deductions
+• My security deposit should be returned in full
+• I may proceed with formal complaint or dispute resolution
+
+PARTIAL EVIDENCE:
+If you can only provide evidence for some deductions, please immediately return the portion of my deposit for which you have NO supporting evidence.
+
+I am available to discuss this matter at [Phone] or [Email]. I hope we can resolve this by you providing transparent, complete documentation.
+
+Sincerely,
+
+[Tenant Signature]
+[Tenant Name]
+
+CC: [Property Management Company, if applicable]`
+  },
+
+  deposit_withholding_dispute_formal: {
+    preview_content: `FORMAL DEPOSIT WITHHOLDING DISPUTE (FINAL NOTICE)
+Strong final notice before escalation when deposit wrongfully withheld.
+
+Sections:
+• Recap timeline: move-out date, notice dates, prior requests
+• Summary of unfulfilled obligations (no itemisation, no evidence, no response)
+• Set final deadline for return OR full evidence pack
+• State next steps: formal complaint, mediation, independent advice (keep general)
+• Signature with date and contact
+
+Firm, formal tone with clear escalation path.`,
+
+    document_content: `[Tenant Name]
+[New Address]
+[City, Postal Code]
+[Tenant Phone]
+[Tenant Email]
+
+[Date]
+
+SENT VIA: [Registered Mail / Email / Both]
+
+[Landlord Name]
+[Landlord Address]
+[Landlord City, Postal Code]
+
+Re: FINAL NOTICE - Security Deposit Withholding Dispute
+Property: [Property Address]
+Deposit Amount: [Deposit Amount] THB
+
+Dear [Landlord Name],
+
+This is my FINAL NOTICE regarding the unlawful withholding of my security deposit. Despite multiple requests, you have failed to return my deposit or provide adequate justification for withholding it.
+
+TIMELINE OF EVENTS:
+• Lease End Date: [Lease End Date]
+• Move-Out Date: [Move-Out Date]
+• Keys Returned: [Handover Date]
+• First Deposit Return Request: [First Request Date]
+• Second Request: [Second Request Date]
+• Request for Itemised Deductions: [Request Date]
+• Request for Evidence: [Request Date]
+• Days Since Move-Out: [Number] days
+
+YOUR UNFULFILLED OBLIGATIONS:
+Despite legal requirements and my repeated requests, you have failed to:
+☐ Return my security deposit of [Deposit Amount] THB
+☐ Provide itemised breakdown of any claimed deductions
+☐ Provide supporting evidence (photos, invoices, receipts)
+☐ Respond to my written requests in a timely manner
+☐ Demonstrate legitimate basis for withholding funds
+
+LEGAL BASIS FOR RETURN:
+Under Thai Civil and Commercial Code Section 538 and standard tenancy practices:
+• Security deposits must be returned promptly after lease termination
+• Deductions require itemised justification with supporting evidence
+• Landlords cannot withhold deposits for normal wear and tear
+• Unjustified withholding may constitute breach of contract
+
+PROPERTY CONDITION:
+I vacated the property in clean, good condition as evidenced by:
+• Joint final inspection conducted [Date] with [Person Name]
+• Comprehensive move-out photos dated [Date]
+• Professional cleaning receipt dated [Date]
+• All keys and access items returned
+• No damage beyond normal wear and tear
+
+FINAL DEMAND:
+By [Final Deadline Date] (within [Days] days), you must:
+
+OPTION 1 - FULL RETURN:
+Return the complete deposit amount of [Deposit Amount] THB to:
+• Bank Name: [Bank Name]
+• Account Number: [Account Number]
+• Account Name: [Account Name]
+
+OR
+
+OPTION 2 - JUSTIFIED DEDUCTIONS:
+Provide complete evidence pack including:
+1. Itemised table of ALL deductions with amounts
+2. Photos showing damage (with move-in comparison)
+3. Actual invoices/receipts (not estimates) for all charges
+4. Explanation of why each item exceeds normal wear and tear
+5. Immediate return of any undocumented/unjustified portions
+
+ESCALATION - NEXT STEPS:
+If I do not receive either full deposit return OR complete evidence pack by [Final Deadline Date], I will immediately proceed with:
+
+1. FORMAL COMPLAINT:
+   • File complaint with Consumer Protection Board
+   • Submit report to relevant rental dispute authority
+   • Document this matter with housing ombudsman (if applicable)
+
+2. ALTERNATIVE DISPUTE RESOLUTION:
+   • Request mediation through [Mediation Service]
+   • Seek independent assessment of deposit dispute
+   • Engage tenancy advisory services for formal review
+
+3. INDEPENDENT ADVICE:
+   • Consult with consumer protection advisors regarding next steps
+   • Seek guidance on small claims procedures
+   • Explore all available legal remedies for recovery
+
+4. REPORTING:
+   • Report this matter to relevant landlord rating/review platforms
+   • Document for future tenant reference checks
+   • Notify property management associations (if applicable)
+
+SETTLEMENT OFFER - VALID UNTIL [DEADLINE]:
+To avoid escalation, I will accept:
+• Full return of [Deposit Amount] THB by [Deadline Date], OR
+• Documented deductions with evidence + immediate return of remainder
+
+CONSEQUENCES OF NON-COMPLIANCE:
+Continued withholding without justification may result in:
+• Formal investigation by consumer protection authorities
+• Requirement to pay administrative costs of dispute resolution
+• Negative impact on landlord reputation and future rentals
+• Potential liability for tenant costs incurred in recovery process
+
+THIS IS MY FINAL ATTEMPT TO RESOLVE AMICABLY.
+
+I am available for immediate discussion at [Phone] or [Email] until [Deadline Date]. After this deadline, all communication will be through formal dispute channels.
+
+I trust you will act appropriately and promptly to avoid unnecessary escalation.
+
+Sincerely,
+
+[Tenant Signature]
+[Tenant Name]
+Date: [Date]
+
+CC: [Property Management Company]
+CC: [Consumer Protection Board - if applicable]
+
+Enclosures:
+• Timeline of all correspondence
+• Copy of lease agreement
+• Deposit payment receipt
+• Move-in and move-out condition evidence
+• All previous requests for return
+
+PROOF OF DELIVERY:
+• Registered Mail Tracking: [Tracking Number]
+• Email Sent: [Date/Time]
+• Recipient Confirmation: [If applicable]`
+  },
+
   pre_signing_checklist: {
     preview_content: `PRE-SIGNING LEASE CHECKLIST
 Quick checklist to review before signing any rental agreement.

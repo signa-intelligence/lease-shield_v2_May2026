@@ -12,10 +12,12 @@ import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import EmptyState from "../components/shared/EmptyState";
 import TemplateViewer from "../components/templates/TemplateViewer";
+import { useQueryClient } from "@tanstack/react-query";
 
 function TemplatesContent() {
   const navigate = useNavigate();
   const toast = useToast();
+  const queryClient = useQueryClient();
   const [viewingTemplate, setViewingTemplate] = useState(null);
   
 
@@ -173,6 +175,42 @@ function TemplatesContent() {
 
 
 
+        {isAdmin && (
+          <div className="flex gap-3 mb-6">
+            <button
+              onClick={async () => {
+                try {
+                  const { data } = await base44.functions.invoke('seedTemplateLibrary', { force: false });
+                  toast.success(`✅ Seeded ${data.summary.updated_count} templates, skipped ${data.summary.skipped_count}`);
+                  queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+                } catch (error) {
+                  toast.error('❌ Seed failed: ' + error.message);
+                }
+              }}
+              className="px-4 py-2 rounded-lg font-semibold"
+              style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}
+            >
+              🌱 Seed Missing Template Content
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm('⚠️ Force reseed ALL templates? This will overwrite existing content.')) return;
+                try {
+                  const { data } = await base44.functions.invoke('seedTemplateLibrary', { force: true });
+                  toast.success(`✅ Force seeded ${data.summary.updated_count} templates`);
+                  queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+                } catch (error) {
+                  toast.error('❌ Force seed failed: ' + error.message);
+                }
+              }}
+              className="px-4 py-2 rounded-lg font-semibold border-2"
+              style={{ backgroundColor: 'transparent', color: '#DC2626', borderColor: '#DC2626' }}
+            >
+              🔄 Force Reseed All
+            </button>
+          </div>
+        )}
+
         {templates.length === 0 ? (
           <div className="text-center py-12">
             <EmptyState
@@ -200,7 +238,7 @@ function TemplatesContent() {
                     const previewContent = template.preview_content || template.preview_en || template.preview_th || '';
                     const documentContent = template.document_content || '';
                     const hasPreview = previewContent && previewContent.trim().length > 0;
-                    const hasDocument = documentContent && documentContent.trim().length > 0 && !documentContent.includes('[DRAFT REQUIRED]');
+                    const hasDocument = documentContent && documentContent.trim().length >= 300;
                     const preview = hasPreview ? previewContent.slice(0, 300) + (previewContent.length > 300 ? '…' : '') : (language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable');
 
                     return (
