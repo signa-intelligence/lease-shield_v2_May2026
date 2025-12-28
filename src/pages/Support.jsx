@@ -47,10 +47,6 @@ function SupportContent() {
   }, []);
 
   const validationSchema = {
-    subject: [
-      (v) => validators.required(v, 'Subject'),
-      (v) => validators.minLength(v, 5, 'Subject')
-    ],
     description: [
       (v) => validators.required(v, 'Description'),
       (v) => validators.minLength(v, 20, 'Description'),
@@ -68,9 +64,8 @@ function SupportContent() {
     setValues
   } = useFormValidation(
     {
-      subject: '',
       description: '',
-      category: 'technical',
+      category: 'general',
       attachments: []
     },
     validationSchema
@@ -468,20 +463,6 @@ function SupportContent() {
               </CardHeader>
               <CardContent className="pt-6">
                 <form onSubmit={handleSubmit} className="space-y-5">
-                  <MobileFormInput
-                    label={strings.subject}
-                    type="text"
-                    value={formData.subject}
-                    onChange={(e) => {
-                      handleChange('subject', e.target.value);
-                    }}
-                    onBlur={() => handleBlur('subject')}
-                    placeholder={language === 'th' ? 'สรุปปัญหาโดยย่อ' : 'Brief description of your issue'}
-                    required
-                    error={errors.subject}
-                    colors={colors}
-                  />
-
                   <div>
                     <label className="block text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
                       {strings.category}
@@ -501,12 +482,11 @@ function SupportContent() {
                         minHeight: '48px'
                       }}
                     >
-                      <option value="technical">Technical</option>
-                      <option value="billing">Billing</option>
-                      <option value="deposit">Deposit</option>
-                      <option value="scan">Lease Scan</option>
-                      <option value="documents">Document & Template</option>
-                      <option value="other">Other</option>
+                      <option value="cases">Cases</option>
+                      <option value="billing">Billing & Payments</option>
+                      <option value="account">Account & Subscription</option>
+                      <option value="bug">Bug Report</option>
+                      <option value="general">General Question</option>
                     </select>
                   </div>
 
@@ -521,7 +501,7 @@ function SupportContent() {
                         handleChange('description', newValue);
                       }}
                       onBlur={() => handleBlur('description')}
-                      placeholder={language === 'th' ? 'กรุณาระบุรายละเอียดให้มากที่สุด...' : 'Please provide as much detail as possible...'}
+                      placeholder={language === 'th' ? 'อธิบายปัญหาโดยย่อ ข้อเท็จจริงสำคัญเท่านั้น' : language === 'zh' ? '简要描述问题。仅关键事实。' : language === 'ja' ? '問題を簡潔に説明してください。重要な事実のみ。' : language === 'ko' ? '문제를 간략히 설명하십시오. 주요 사실만 기재하세요.' : language === 'ru' ? 'Кратко опишите проблему. Только ключевые факты.' : 'Briefly describe the issue. Key facts only.'}
                       required
                       error={errors.description}
                       colors={colors}
@@ -656,7 +636,7 @@ function SupportContent() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <p className="font-bold text-base break-words" style={{ color: colors.textPrimary }}>
-                                  {ticket.subject}
+                                  {ticket.subject || ticket.category || 'Support Request'}
                                 </p>
                                 {ticket.has_unread_admin_reply && (
                                   <Badge className="bg-emerald-500 text-white text-xs animate-pulse">
@@ -726,7 +706,7 @@ function SupportContent() {
                       {strings.ticketNumber}{selectedTicket.ticket_number}
                     </p>
                     <p className="font-semibold" style={{ color: colors.textPrimary }}>
-                      {selectedTicket.subject}
+                      {selectedTicket.subject || selectedTicket.category || 'Support Request'}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
