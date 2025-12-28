@@ -79,22 +79,17 @@ function TemplatesContent() {
     
     if (isAdmin && !hasRun && templates.length > 0) {
       const hasMissing = templates.some(t => {
-        const nested = t.preview_content || {};
-        const doc = t.document_content || {};
-        const previewEn = nested.en || t.preview_content_en || '';
-        const previewTh = nested.th || t.preview_content_th || '';
-        const docEn = doc.en || t.document_content_en || '';
-        const docTh = doc.th || t.document_content_th || '';
-        return previewEn.trim().length < 50 || previewTh.trim().length < 50 || 
-               docEn.trim().length < 300 || docTh.trim().length < 300;
+        const previewTh = t.preview_content_th || '';
+        const docTh = t.document_content_th || '';
+        return previewTh.trim().length < 50 || docTh.trim().length < 300;
       });
 
       if (hasMissing) {
         console.log('[AUTO-BACKFILL] Running safe backfill on first admin load...');
-        base44.functions.invoke('backfillTemplateBilingualContent', { force: false })
+        base44.functions.invoke('backfillThaiTemplateContent', { force: false })
           .then(({ data }) => {
             console.log('[AUTO-BACKFILL] Success:', data);
-            toast.success(`✅ Auto-backfill: ${data.total - data.remaining_missing}/${data.total} templates ready`);
+            toast.success(`✅ Auto-backfill: ${data.updated_count} Thai templates updated`);
             queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
             localStorage.setItem('templateBackfillRan', '1');
           })
@@ -263,10 +258,10 @@ function TemplatesContent() {
                 onClick={async () => {
                   try {
                     setBackfillResult(null);
-                    const { data } = await base44.functions.invoke('backfillTemplateBilingualContent', { force: false });
+                    const { data } = await base44.functions.invoke('backfillThaiTemplateContent', { force: false });
                     console.log('[BACKFILL] Response:', data);
                     if (data.ok) {
-                      toast.success(`✅ Updated: EN preview ${data.updated_preview_en}, TH preview ${data.updated_preview_th}, EN doc ${data.updated_doc_en}, TH doc ${data.updated_doc_th}`);
+                      toast.success(`✅ Updated ${data.updated_count} Thai templates`);
                       setBackfillResult(data);
                       queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
                     } else {
@@ -280,31 +275,7 @@ function TemplatesContent() {
                 className="px-4 py-2 rounded-lg font-semibold"
                 style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}
               >
-                🌐 Backfill Missing EN/TH (Safe)
-              </button>
-              <button
-                onClick={async () => {
-                  if (!confirm('⚠️ Force overwrite ALL EN/TH content? This will replace existing templates.')) return;
-                  try {
-                    setBackfillResult(null);
-                    const { data } = await base44.functions.invoke('backfillTemplateBilingualContent', { force: true });
-                    console.log('[BACKFILL] Force response:', data);
-                    if (data.ok) {
-                      toast.success(`✅ Force updated: EN preview ${data.updated_preview_en}, TH preview ${data.updated_preview_th}, EN doc ${data.updated_doc_en}, TH doc ${data.updated_doc_th}`);
-                      setBackfillResult(data);
-                      queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
-                    } else {
-                      toast.error(`❌ Force backfill failed: ${data.message}`);
-                    }
-                  } catch (error) {
-                    console.error('[BACKFILL] Force error:', error);
-                    toast.error(`❌ Force error: ${error.message || error.toString()}`);
-                  }
-                }}
-                className="px-4 py-2 rounded-lg font-semibold border-2"
-                style={{ backgroundColor: 'transparent', color: '#DC2626', borderColor: '#DC2626' }}
-              >
-                🔄 Force Overwrite EN/TH (Danger)
+                🌐 Backfill Missing Thai Content
               </button>
             </div>
             
@@ -316,10 +287,7 @@ function TemplatesContent() {
                 <div className="text-sm font-mono space-y-1" style={{ color: '#1F2937' }}>
                   <div><strong>Status:</strong> {backfillResult.ok ? '✅ Success' : '❌ Failed'}</div>
                   <div><strong>Total Templates:</strong> {backfillResult.total}</div>
-                  <div><strong>Updated Preview EN:</strong> {backfillResult.updated_preview_en}</div>
-                  <div><strong>Updated Preview TH:</strong> {backfillResult.updated_preview_th}</div>
-                  <div><strong>Updated Doc EN:</strong> {backfillResult.updated_doc_en}</div>
-                  <div><strong>Updated Doc TH:</strong> {backfillResult.updated_doc_th}</div>
+                  <div><strong>Updated Count:</strong> {backfillResult.updated_count}</div>
                   <div><strong>Remaining Missing:</strong> {backfillResult.remaining_missing}</div>
                   {backfillResult.keys_missing && backfillResult.keys_missing.length > 0 && (
                     <div><strong>Missing Keys:</strong> {backfillResult.keys_missing.join(', ')}</div>
@@ -357,14 +325,11 @@ function TemplatesContent() {
                     
                     const title = displayLang === 'th' ? (template.title_th || template.title_en || 'Untitled') : (template.title_en || 'Untitled');
                     
-                    // Extract from nested or flat structure
-                    const nestedPreview = template.preview_content || {};
-                    const nestedDoc = template.document_content || {};
-                    
-                    const previewEn = nestedPreview.en || template.preview_content_en || template.preview_en || '';
-                    const previewTh = nestedPreview.th || template.preview_content_th || template.preview_th || '';
-                    const docEn = nestedDoc.en || template.document_content_en || template.document_content || '';
-                    const docTh = nestedDoc.th || template.document_content_th || '';
+                    // Use flat columns: preview_content (EN), preview_content_th (TH)
+                    const previewEn = template.preview_content || '';
+                    const previewTh = template.preview_content_th || '';
+                    const docEn = template.document_content || '';
+                    const docTh = template.document_content_th || '';
                     
                     const previewContent = displayLang === 'th' ? previewTh : previewEn;
                     const hasPreview = previewContent && previewContent.trim().length >= 50;

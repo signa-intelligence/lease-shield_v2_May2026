@@ -47,14 +47,11 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const displayLang = contentLang || language;
   const title = displayLang === 'th' ? (template.title_th || template.title_en || 'Template') : (template.title_en || 'Template');
   
-  // Extract from nested or flat structure
-  const nestedPreview = template.preview_content || {};
-  const nestedDoc = template.document_content || {};
-  
-  const previewEn = nestedPreview.en || template.preview_content_en || template.preview_en || '';
-  const previewTh = nestedPreview.th || template.preview_content_th || template.preview_th || '';
-  const docEn = nestedDoc.en || template.document_content_en || template.document_content || '';
-  const docTh = nestedDoc.th || template.document_content_th || '';
+  // Use flat columns: preview_content (EN), preview_content_th (TH), document_content (EN), document_content_th (TH)
+  const previewEn = template.preview_content || '';
+  const previewTh = template.preview_content_th || '';
+  const docEn = template.document_content || '';
+  const docTh = template.document_content_th || '';
   
   const previewContent = displayLang === 'th' ? previewTh : previewEn;
   const documentContent = displayLang === 'th' ? docTh : docEn;
@@ -150,7 +147,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
     setDownloading(true);
     try {
-      console.log('[TEMPLATE] DOCX download action:', { template_key: template?.template_key, lang: language, credits_before: letterCredits });
+      console.log('[TEMPLATE] DOCX download action:', { template_key: template?.template_key, lang: displayLang, credits_before: letterCredits });
 
       // Deduct credit first
       await base44.auth.updateMe({ 
@@ -163,12 +160,12 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         type: 'letters',
         delta: -1,
         reason: 'purchase',
-        source_ref: `template_docx:${template.template_key}`
+        source_ref: `template_docx:${template.template_key}:${displayLang}`
       });
 
       console.log('[TEMPLATE] Credit deducted, generating DOCX, credits_after:', letterCredits - 1);
 
-      // Generate DOCX from document_content
+      // Generate DOCX from selected language document_content
       const paragraphs = [];
       
       // Title (bold, centered)
@@ -186,7 +183,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         })
       );
 
-      // Body paragraphs from document_content
+      // Body paragraphs from selected language document_content
       const bodyLines = documentContent.split('\n');
       bodyLines.forEach((line) => {
         paragraphs.push(
@@ -213,7 +210,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const langSuffix = displayLang === 'th' ? '_th' : '_en';
+      const langSuffix = displayLang === 'th' ? '_TH' : '_EN';
       a.download = `${template.template_key}${langSuffix}.docx`;
       document.body.appendChild(a);
       a.click();
