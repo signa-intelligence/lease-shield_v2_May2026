@@ -214,6 +214,24 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
           {/* Footer - Actions */}
           <div className="p-4 border-t space-y-3" style={{ borderColor: colors.borderColor }}>
+            {user && (user.role === 'admin' || user.access_level === 'admin' || user.access_level === 'super_admin') && (
+              <button
+                onClick={async () => {
+                  try {
+                    const { data } = await base44.functions.invoke('seedTemplateLibrary', { force: false });
+                    toast.success(`Seeded ${data.summary.updated_count} templates!`);
+                    queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+                  } catch (error) {
+                    toast.error('Seed failed: ' + error.message);
+                  }
+                }}
+                className="w-full text-xs py-2 rounded"
+                style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}
+              >
+                🌱 Seed Template Content (Admin)
+              </button>
+            )}
+            
             <div className="flex items-center justify-between text-sm mb-2">
               <span style={{ color: colors.textSecondary }}>
                 {language === 'th' ? 'เครดิตของคุณ:' : 'Your credits:'}
