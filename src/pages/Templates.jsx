@@ -34,41 +34,6 @@ function TemplatesContent() {
     }
   }, [user, contentLang]);
 
-  // Auto-run backfill once on first admin load
-  React.useEffect(() => {
-    const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
-    const hasRun = localStorage.getItem('templateBackfillRan');
-    
-    if (isAdmin && !hasRun && templates.length > 0) {
-      const hasMissing = templates.some(t => {
-        const nested = t.preview_content || {};
-        const doc = t.document_content || {};
-        const previewEn = nested.en || t.preview_content_en || '';
-        const previewTh = nested.th || t.preview_content_th || '';
-        const docEn = doc.en || t.document_content_en || '';
-        const docTh = doc.th || t.document_content_th || '';
-        return previewEn.trim().length < 50 || previewTh.trim().length < 50 || 
-               docEn.trim().length < 300 || docTh.trim().length < 300;
-      });
-
-      if (hasMissing) {
-        console.log('[AUTO-BACKFILL] Running safe backfill on first admin load...');
-        base44.functions.invoke('backfillTemplateBilingualContent', { force: false })
-          .then(({ data }) => {
-            console.log('[AUTO-BACKFILL] Success:', data);
-            toast.success(`✅ Auto-backfill: ${data.total - data.remaining_missing}/${data.total} templates ready`);
-            queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
-            localStorage.setItem('templateBackfillRan', '1');
-          })
-          .catch(err => {
-            console.error('[AUTO-BACKFILL] Failed:', err);
-          });
-      } else {
-        localStorage.setItem('templateBackfillRan', '1');
-      }
-    }
-  }, [user, templates]);
-
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['templateAssets'],
     queryFn: async () => {
@@ -106,6 +71,41 @@ function TemplatesContent() {
       return uniqueTemplates;
     }
   });
+
+  // Auto-run backfill once on first admin load
+  React.useEffect(() => {
+    const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
+    const hasRun = localStorage.getItem('templateBackfillRan');
+    
+    if (isAdmin && !hasRun && templates.length > 0) {
+      const hasMissing = templates.some(t => {
+        const nested = t.preview_content || {};
+        const doc = t.document_content || {};
+        const previewEn = nested.en || t.preview_content_en || '';
+        const previewTh = nested.th || t.preview_content_th || '';
+        const docEn = doc.en || t.document_content_en || '';
+        const docTh = doc.th || t.document_content_th || '';
+        return previewEn.trim().length < 50 || previewTh.trim().length < 50 || 
+               docEn.trim().length < 300 || docTh.trim().length < 300;
+      });
+
+      if (hasMissing) {
+        console.log('[AUTO-BACKFILL] Running safe backfill on first admin load...');
+        base44.functions.invoke('backfillTemplateBilingualContent', { force: false })
+          .then(({ data }) => {
+            console.log('[AUTO-BACKFILL] Success:', data);
+            toast.success(`✅ Auto-backfill: ${data.total - data.remaining_missing}/${data.total} templates ready`);
+            queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+            localStorage.setItem('templateBackfillRan', '1');
+          })
+          .catch(err => {
+            console.error('[AUTO-BACKFILL] Failed:', err);
+          });
+      } else {
+        localStorage.setItem('templateBackfillRan', '1');
+      }
+    }
+  }, [user, templates]);
 
   const handleViewTemplate = (template) => {
     if (!template || !template.id) {
