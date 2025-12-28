@@ -325,11 +325,11 @@ function TemplatesContent() {
                     
                     const title = displayLang === 'th' ? (template.title_th || template.title_en || 'Untitled') : (template.title_en || 'Untitled');
                     
-                    // Use flat columns: preview_content (EN), preview_content_th (TH)
-                    const previewEn = template.preview_content || '';
-                    const previewTh = template.preview_content_th || '';
-                    const docEn = template.document_content || '';
-                    const docTh = template.document_content_th || '';
+                    // Use flat columns: preview_content (EN), preview_content_th (TH) - ensure strings
+                    const previewEn = typeof template.preview_content === 'string' ? template.preview_content : '';
+                    const previewTh = typeof template.preview_content_th === 'string' ? template.preview_content_th : '';
+                    const docEn = typeof template.document_content === 'string' ? template.document_content : '';
+                    const docTh = typeof template.document_content_th === 'string' ? template.document_content_th : '';
                     
                     const previewContent = displayLang === 'th' ? previewTh : previewEn;
                     const hasPreview = previewContent && previewContent.trim().length >= 50;
