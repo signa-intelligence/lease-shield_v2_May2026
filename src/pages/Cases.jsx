@@ -818,7 +818,12 @@ function CasesContent() {
             </p>
           </div>
 
-          <Card className="mb-6 mt-6 border-none shadow-lg bg-gradient-to-br from-purple-600 to-blue-600">
+          <Card className="mb-6 mt-6 border-none shadow-lg" style={{
+            background: isDarkMode 
+              ? 'linear-gradient(to bottom right, #2A2D30, #353A3D)'
+              : 'linear-gradient(to bottom right, #7C3AED, #3B82F6)',
+            border: isDarkMode ? '1px solid #3A3D40' : 'none'
+          }}>
             <CardContent className="p-4 md:p-6">
               <div className="flex items-start gap-3">
                 <Crown className="w-6 h-6 text-yellow-300 flex-shrink-0 mt-1" />
@@ -965,9 +970,12 @@ function CasesContent() {
           {isLoading ? (
             <SkeletonLoader variant="card" count={3} colors={colors} />
           ) : visibleCases.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: "#FCA5A5", backgroundColor: "#FEF2F2" }}>
-              <h3 className="font-semibold text-sm sm:text-base mb-1">{strings.noCasesCreatedYet}</h3>
-              <p className="text-xs sm:text-sm text-gray-700 mb-3">
+            <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ 
+              borderColor: isDarkMode ? '#EF4444' : '#FCA5A5', 
+              backgroundColor: isDarkMode ? '#2A2020' : '#FEF2F2' 
+            }}>
+              <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>{strings.noCasesCreatedYet}</h3>
+              <p className="text-xs sm:text-sm mb-3" style={{ color: colors.textSecondary }}>
                 {strings.noCasesCreatedYetDesc}
               </p>
               <div className="flex flex-wrap items-center gap-2">

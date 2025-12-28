@@ -12,6 +12,8 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
 
   if (!isOpen) return null;
 
+  const isDarkMode = user?.theme === 'dark';
+
   const handleDismiss = async () => {
     if (dontShowAgain && user) {
       try {
@@ -230,9 +232,9 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           width: '360px',
           maxWidth: 'calc(100vw - 32px)',
           maxHeight: '80vh',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
           borderRadius: '16px',
-          boxShadow: '0px 8px 24px rgba(0,0,0,0.12)',
+          boxShadow: isDarkMode ? '0px 8px 24px rgba(0,0,0,0.6)' : '0px 8px 24px rgba(0,0,0,0.12)',
           display: 'flex',
           flexDirection: 'column',
           animation: 'slideIn 0.3s ease-out',
@@ -251,7 +253,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             fontFamily: 'Inter',
             fontWeight: '600',
             fontSize: '16px',
-            color: '#063F2C',
+            color: isDarkMode ? '#ECEFED' : '#063F2C',
             margin: 0
           }}>
             {strings.title}
@@ -260,7 +262,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             fontFamily: 'Inter',
             fontWeight: '500',
             fontSize: '13px',
-            color: '#6B7280'
+            color: isDarkMode ? '#A8ABAD' : '#6B7280'
           }}>
             {currentStep + 1} of {steps.length}
           </div>
@@ -269,7 +271,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             style={{
               background: 'none',
               border: 'none',
-              color: '#6B7280',
+              color: isDarkMode ? '#A8ABAD' : '#6B7280',
               cursor: 'pointer',
               padding: '4px',
               display: 'flex',
@@ -277,8 +279,8 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
               justifyContent: 'center',
               transition: 'color 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#111827'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#6B7280'}
+            onMouseEnter={(e) => e.currentTarget.style.color = isDarkMode ? '#ECEFED' : '#111827'}
+            onMouseLeave={(e) => e.currentTarget.style.color = isDarkMode ? '#A8ABAD' : '#6B7280'}
           >
             <X className="w-5 h-5" />
           </button>
@@ -299,7 +301,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             width: '72px',
             height: '72px',
             borderRadius: '50%',
-            backgroundColor: '#063F2C',
+            backgroundColor: isDarkMode ? '#0C3B2E' : '#063F2C',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -314,7 +316,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             fontFamily: 'Inter',
             fontWeight: '600',
             fontSize: '20px',
-            color: '#063F2C',
+            color: isDarkMode ? '#ECEFED' : '#063F2C',
             marginBottom: '12px',
             lineHeight: '1.3'
           }}>
@@ -326,7 +328,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             fontFamily: 'Inter',
             fontWeight: '400',
             fontSize: '15px',
-            color: '#444444',
+            color: isDarkMode ? '#D1D5DB' : '#444444',
             lineHeight: '1.5',
             maxWidth: '260px',
             margin: '0 auto 24px auto'
@@ -347,7 +349,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  backgroundColor: idx === currentStep ? '#063F2C' : '#D7D7D7',
+                  backgroundColor: idx === currentStep ? (isDarkMode ? '#C7A338' : '#063F2C') : (isDarkMode ? '#4B5563' : '#D7D7D7'),
                   transition: 'background-color 0.2s ease'
                 }}
               />
@@ -376,14 +378,14 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                 width: '16px',
                 height: '16px',
                 cursor: 'pointer',
-                accentColor: '#063F2C'
+                accentColor: isDarkMode ? '#C7A338' : '#063F2C'
               }}
             />
             <span style={{
               fontFamily: 'Inter',
               fontWeight: '400',
               fontSize: '13px',
-              color: '#6B7280'
+              color: isDarkMode ? '#A8ABAD' : '#6B7280'
             }}>
               {strings.dontShowAgain}
             </span>
@@ -402,7 +404,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                   fontFamily: 'Inter',
                   fontWeight: '600',
                   fontSize: '14px',
-                  color: '#063F2C',
+                  color: isDarkMode ? '#ECEFED' : '#063F2C',
                   background: 'transparent',
                   border: 'none',
                   cursor: 'pointer',
@@ -411,7 +413,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                   transition: 'background-color 0.2s',
                   minHeight: '48px'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#F3F4F6'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
               >
                 ← {strings.back}
@@ -425,7 +427,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                 fontWeight: '600',
                 fontSize: '14px',
                 color: '#FFFFFF',
-                backgroundColor: '#063F2C',
+                backgroundColor: isDarkMode ? '#0C3B2E' : '#063F2C',
                 border: 'none',
                 cursor: 'pointer',
                 padding: '12px 24px',
@@ -433,8 +435,8 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                 transition: 'background-color 0.2s',
                 minHeight: '48px'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#084D38'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#063F2C'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isDarkMode ? '#0a2f25' : '#084D38'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isDarkMode ? '#0C3B2E' : '#063F2C'}
             >
               {isLastStep ? strings.finish : `${strings.next} →`}
             </button>
