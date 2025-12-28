@@ -71,6 +71,7 @@ function TemplatesContent() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const letterCredits = user?.letter_credits || 0;
+  const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
 
   const colors = isDarkMode ? {
     bg: '#111827',
@@ -196,9 +197,11 @@ function TemplatesContent() {
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {categoryTemplates.map((template) => {
                     const title = language === 'th' ? (template.title_th || template.title_en) : template.title_en;
-                    const body = language === 'th' ? (template.preview_th || template.preview_en) : (template.preview_en || template.preview_th);
-                    const hasBody = body && body.trim().length > 0;
-                    const preview = hasBody ? body.slice(0, 300) + (body.length > 300 ? '…' : '') : (language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable');
+                    const previewContent = template.preview_content || template.preview_en || template.preview_th || '';
+                    const documentContent = template.document_content || '';
+                    const hasPreview = previewContent && previewContent.trim().length > 0;
+                    const hasDocument = documentContent && documentContent.trim().length > 0 && !documentContent.includes('[DRAFT REQUIRED]');
+                    const preview = hasPreview ? previewContent.slice(0, 300) + (previewContent.length > 300 ? '…' : '') : (language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable');
 
                     return (
                       <Card
@@ -210,9 +213,19 @@ function TemplatesContent() {
                         <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
                           <CardTitle className="flex items-start justify-between gap-2" style={{ color: colors.textPrimary }}>
                             <span className="text-base line-clamp-2">{title}</span>
-                            <Badge className="flex-shrink-0 text-xs" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-                              {strings.free}
-                            </Badge>
+                            <div className="flex gap-2 flex-shrink-0">
+                              <Badge className="text-xs" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
+                                {strings.free}
+                              </Badge>
+                              {isAdmin && (
+                                <Badge className="text-xs" style={{ 
+                                  backgroundColor: hasDocument ? '#D1FAE5' : '#FEE2E2',
+                                  color: hasDocument ? '#065F46' : '#DC2626'
+                                }}>
+                                  {hasDocument ? '✓ Ready' : '⚠ Needs Content'}
+                                </Badge>
+                              )}
+                            </div>
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="p-4 space-y-4">

@@ -15,12 +15,19 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   if (!isOpen || !template) return null;
 
   const title = language === 'th' ? (template.title_th || template.title_en) : template.title_en;
-  const body = language === 'th' ? (template.preview_th || template.preview_en) : (template.preview_en || template.preview_th);
+  const previewContent = template.preview_content || template.preview_en || template.preview_th || '';
+  const documentContent = template.document_content || '';
   const letterCredits = user?.letter_credits || 0;
   const canUseCredits = letterCredits >= 1;
-  const hasContent = body && body.trim().length > 0;
+  const hasPreview = previewContent && previewContent.trim().length > 0;
+  const hasDocument = documentContent && documentContent.trim().length > 0 && !documentContent.includes('[DRAFT REQUIRED]');
 
   const handleCopy = async () => {
+    if (!hasDocument) {
+      toast.error(language === 'th' ? 'เทมเพลตนี้ยังไม่พร้อมใช้งาน' : 'This template is not ready for download yet');
+      return;
+    }
+
     if (!canUseCredits) {
       setShowCreditModal(true);
       return;
@@ -46,12 +53,12 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
       console.log('[TEMPLATE] Credit deducted, credits_after:', letterCredits - 1);
 
-      // Copy to clipboard
+      // Copy document content to clipboard
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(body);
+        await navigator.clipboard.writeText(documentContent);
       } else {
         const textarea = document.createElement('textarea');
-        textarea.value = body;
+        textarea.value = documentContent;
         textarea.style.position = 'fixed';
         textarea.style.opacity = '0';
         document.body.appendChild(textarea);
@@ -75,8 +82,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   };
 
   const handleDownloadDOCX = async () => {
-    if (!hasContent) {
-      toast.error(language === 'th' ? 'ไม่มีเนื้อหาเทมเพลต' : 'Template content missing');
+    if (!hasDocument) {
+      toast.error(language === 'th' ? 'เทมเพลตนี้ยังไม่พร้อมใช้งาน' : 'This template is not ready for download yet');
       return;
     }
 
@@ -105,7 +112,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
       console.log('[TEMPLATE] Credit deducted, generating DOCX, credits_after:', letterCredits - 1);
 
-      // Generate DOCX
+      // Generate DOCX from document_content
       const paragraphs = [];
       
       // Title (bold, centered)
@@ -123,8 +130,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         })
       );
 
-      // Body paragraphs
-      const bodyLines = body.split('\n');
+      // Body paragraphs from document_content
+      const bodyLines = documentContent.split('\n');
       bodyLines.forEach((line) => {
         paragraphs.push(
           new Paragraph({
@@ -150,7 +157,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${title.replace(/[^a-z0-9]/gi, "_")}.docx`;
+      a.download = `${template.template_key}.docx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -194,13 +201,13 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
           {/* Body - Scrollable */}
           <div className="flex-1 overflow-y-auto p-6" style={{ backgroundColor: colors.fieldBg }}>
-            {hasContent ? (
+            {hasPreview ? (
               <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
-                {body}
+                {previewContent}
               </pre>
             ) : (
               <p className="text-sm text-center" style={{ color: colors.textSecondary }}>
-                {language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable'}
+                {language === 'th' ? 'ไม่มีเนื้อหาตัวอย่าง' : 'Preview content unavailable'}
               </p>
             )}
           </div>
@@ -219,7 +226,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
             <div className="grid grid-cols-2 gap-3">
               <Button
                 onClick={handleCopy}
-                disabled={copying || !canUseCredits || !hasContent}
+                disabled={copying || !canUseCredits || !hasDocument}
                 className="w-full"
                 style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
               >
@@ -234,7 +241,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
               <Button
                 onClick={handleDownloadDOCX}
-                disabled={downloading || !canUseCredits || !hasContent}
+                disabled={downloading || !canUseCredits || !hasDocument}
                 className="w-full"
                 style={{ backgroundColor: '#C7A338', color: '#FFFFFF' }}
               >
