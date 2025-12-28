@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, ShoppingCart, Eye, Loader2 } from "lucide-react";
+import { FileText, ShoppingCart, Eye, Loader2, CheckSquare, Mail, AlertTriangle, Clipboard, ChevronDown, ChevronUp } from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import { haptic } from "../components/shared/HapticFeedback";
@@ -20,16 +20,30 @@ function TemplatesContent() {
   const queryClient = useQueryClient();
   const [viewingTemplate, setViewingTemplate] = useState(null);
   const [contentLang, setContentLang] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const [expandedSections, setExpandedSections] = useState({
+    before_signing: true,
+    during_tenancy: true,
+    preparing_moveout: false,
+    after_moveout: false,
+    disputes: false
+  });
+  const [showMoreSections, setShowMoreSections] = useState({});
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
 
-  // Initialize content language based on user preference
+  // Initialize content language from localStorage or user preference
   React.useEffect(() => {
-    if (user && contentLang === null) {
-      setContentLang(user.language === 'th' ? 'th' : 'en');
+    if (contentLang === null) {
+      const saved = localStorage.getItem('templateViewerLang');
+      if (saved) {
+        setContentLang(saved);
+      } else if (user) {
+        setContentLang(user.language === 'th' ? 'th' : 'en');
+      }
     }
   }, [user, contentLang]);
 
@@ -108,45 +122,110 @@ function TemplatesContent() {
       title: "Document Templates",
       subtitle: "View templates for free. Copy text or download Word (1 credit each).",
       creditsBalance: "Credits:",
-      view: "View Template",
-      buyCredits: "Buy Credits",
+      view: "View",
       noTemplates: "No templates available",
-      free: "Free to view",
-      categories: {
-        checklists: "Checklists",
-        pre_signing: "Pre-Signing",
-        initial_resolution: "Initial Resolution",
-        professional: "Professional",
-        final: "Final Notice"
+      showMore: "Show more",
+      all: "All",
+      checklists: "Checklists",
+      letters: "Letters",
+      disputes: "Disputes",
+      inventory: "Inventory",
+      sections: {
+        before_signing: "Before Signing",
+        during_tenancy: "During Tenancy",
+        preparing_moveout: "Preparing to Move-Out",
+        after_moveout: "After Move-Out",
+        disputes: "Disputes & Escalation"
       }
     },
     th: {
       title: "เทมเพลตเอกสาร",
       subtitle: "ดูเทมเพลตฟรี คัดลอกข้อความหรือดาวน์โหลด Word (1 เครดิตต่อครั้ง)",
       creditsBalance: "เครดิต:",
-      view: "ดูเทมเพลต",
-      buyCredits: "ซื้อเครดิต",
+      view: "ดู",
       noTemplates: "ไม่มีเทมเพลต",
-      free: "ดูฟรี",
-      categories: {
-        checklists: "รายการตรวจสอบ",
-        pre_signing: "ก่อนลงนาม",
-        initial_resolution: "แก้ไขเบื้องต้น",
-        professional: "มืออาชีพ",
-        final: "แจ้งเตือนสุดท้าย"
+      showMore: "แสดงเพิ่ม",
+      all: "ทั้งหมด",
+      checklists: "รายการตรวจสอบ",
+      letters: "จดหมาย",
+      disputes: "ข้อพิพาท",
+      inventory: "ทะเบียนทรัพย์สิน",
+      sections: {
+        before_signing: "ก่อนลงนาม",
+        during_tenancy: "ระหว่างการเช่า",
+        preparing_moveout: "เตรียมย้ายออก",
+        after_moveout: "หลังย้ายออก",
+        disputes: "ข้อพิพาท & การยกระดับ"
       }
     }
   };
 
   const strings = t[language] || t.en;
 
-  // Group templates by category
-  const categorizedTemplates = templates.reduce((acc, template) => {
-    const cat = template.category || 'other';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(template);
+  // Template to lifecycle section mapping
+  const templateToSection = {
+    'pre_signing_checklist': 'before_signing',
+    'pre_signing_negotiation': 'before_signing',
+    'lease_amendment_request': 'during_tenancy',
+    'move_in_condition_checklist': 'during_tenancy',
+    'asset_register_checklist': 'during_tenancy',
+    'notice_to_vacate': 'preparing_moveout',
+    'pre_move_out_inspection_request': 'preparing_moveout',
+    'move_out_preparation_checklist': 'preparing_moveout',
+    'request_for_evidence': 'after_moveout',
+    'deposit_itemised_deductions': 'after_moveout',
+    'property_condition_dispute': 'disputes',
+    'deposit_withholding_dispute_formal': 'disputes'
+  };
+
+  // Template to type mapping for filtering
+  const templateToType = {
+    'pre_signing_checklist': 'checklists',
+    'move_in_condition_checklist': 'checklists',
+    'move_out_preparation_checklist': 'checklists',
+    'asset_register_checklist': 'inventory',
+    'pre_signing_negotiation': 'letters',
+    'lease_amendment_request': 'letters',
+    'notice_to_vacate': 'letters',
+    'pre_move_out_inspection_request': 'letters',
+    'request_for_evidence': 'letters',
+    'deposit_itemised_deductions': 'letters',
+    'property_condition_dispute': 'disputes',
+    'deposit_withholding_dispute_formal': 'disputes'
+  };
+
+  // Filter templates
+  const filteredTemplates = templates.filter(t => {
+    if (filter === 'all') return true;
+    return templateToType[t.template_key] === filter;
+  });
+
+  // Group by lifecycle section
+  const sectionedTemplates = filteredTemplates.reduce((acc, template) => {
+    const section = templateToSection[template.template_key] || 'disputes';
+    if (!acc[section]) acc[section] = [];
+    acc[section].push(template);
     return acc;
   }, {});
+
+  // Section order
+  const sectionOrder = ['before_signing', 'during_tenancy', 'preparing_moveout', 'after_moveout', 'disputes'];
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+    haptic.light();
+  };
+
+  const toggleShowMore = (section) => {
+    setShowMoreSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+    haptic.light();
+  };
 
   if (isLoading) {
     return (
@@ -169,60 +248,48 @@ function TemplatesContent() {
           showBack={false}
           isDarkMode={isDarkMode}
           actions={
-            <div className="flex items-center gap-3">
-              {/* Language Toggle */}
-              <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: colors.fieldBg, border: `1px solid ${colors.borderColor}` }}>
-                <button
-                  onClick={() => {
-                    setContentLang('en');
-                    haptic.light();
-                  }}
-                  className="px-3 py-1.5 rounded text-sm font-semibold transition-all"
-                  style={{
-                    backgroundColor: displayLang === 'en' ? '#0C3B2E' : 'transparent',
-                    color: displayLang === 'en' ? '#FFFFFF' : colors.textSecondary
-                  }}
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => {
-                    setContentLang('th');
-                    haptic.light();
-                  }}
-                  className="px-3 py-1.5 rounded text-sm font-semibold transition-all"
-                  style={{
-                    backgroundColor: displayLang === 'th' ? '#0C3B2E' : 'transparent',
-                    color: displayLang === 'th' ? '#FFFFFF' : colors.textSecondary
-                  }}
-                >
-                  TH
-                </button>
-              </div>
-
-              {/* Credits Badge */}
-              <Card className="border-none shadow-md" style={{ backgroundColor: colors.cardBg }}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ShoppingCart className="w-5 h-5" style={{ color: '#0C3B2E' }} />
-                    <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                      {strings.creditsBalance}
-                    </span>
-                  </div>
-                  <Badge className="text-lg font-bold px-4 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-                    {letterCredits}
-                  </Badge>
-                </CardContent>
-              </Card>
-            </div>
+            <Card className="border-none shadow-md" style={{ backgroundColor: colors.cardBg }}>
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5" style={{ color: '#0C3B2E' }} />
+                  <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                    {strings.creditsBalance}
+                  </span>
+                </div>
+                <Badge className="text-lg font-bold px-4 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
+                  {letterCredits}
+                </Badge>
+              </CardContent>
+            </Card>
           }
         />
 
+        {/* Filter Bar */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          {['all', 'checklists', 'letters', 'disputes', 'inventory'].map(filterType => (
+            <button
+              key={filterType}
+              onClick={() => {
+                setFilter(filterType);
+                haptic.light();
+              }}
+              className="px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-all"
+              style={{
+                backgroundColor: filter === filterType ? '#0C3B2E' : colors.fieldBg,
+                color: filter === filterType ? '#FFFFFF' : colors.textPrimary,
+                border: `1px solid ${filter === filterType ? '#0C3B2E' : colors.borderColor}`
+              }}
+            >
+              {strings[filterType]}
+            </button>
+          ))}
+        </div>
 
 
 
 
-        {templates.length === 0 ? (
+
+        {filteredTemplates.length === 0 ? (
           <div className="text-center py-12">
             <EmptyState
               icon={FileText}
@@ -234,80 +301,127 @@ function TemplatesContent() {
             />
           </div>
         ) : (
-          <div className="space-y-8">
-            {Object.entries(categorizedTemplates).map(([category, categoryTemplates]) => (
-              <div key={category}>
-                <h2 className="text-xl font-bold mb-4 pb-2 border-b" style={{ 
-                  color: colors.textPrimary,
-                  borderColor: colors.borderColor
+          <div className="space-y-4">
+            {sectionOrder.map(section => {
+              const sectionTemplates = sectionedTemplates[section] || [];
+              if (sectionTemplates.length === 0) return null;
+
+              const isExpanded = expandedSections[section];
+              const showingMore = showMoreSections[section];
+              const visibleTemplates = showingMore ? sectionTemplates : sectionTemplates.slice(0, 3);
+              const hasMore = sectionTemplates.length > 3;
+
+              return (
+                <div key={section} className="rounded-xl overflow-hidden" style={{ 
+                  backgroundColor: colors.cardBg,
+                  border: `1px solid ${colors.borderColor}`
                 }}>
-                  {strings.categories[category] || category}
-                </h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {categoryTemplates.map((template) => {
-                    if (!template || !template.id) return null;
-                    
-                    const title = displayLang === 'th' ? (template.title_th || template.title_en || 'Untitled') : (template.title_en || 'Untitled');
-                    
-                    // Extract from nested JSON fields (authoritative source)
-                    const previewContentObj = typeof template.preview_content === 'object' ? template.preview_content : {};
-                    const documentContentObj = typeof template.document_content === 'object' ? template.document_content : {};
-                    
-                    const previewEn = typeof previewContentObj.en === 'string' ? previewContentObj.en : '';
-                    const previewTh = typeof previewContentObj.th === 'string' ? previewContentObj.th : '';
-                    const docEn = typeof documentContentObj.en === 'string' ? documentContentObj.en : '';
-                    const docTh = typeof documentContentObj.th === 'string' ? documentContentObj.th : '';
-                    
-                    const previewContent = displayLang === 'th' ? previewTh : previewEn;
-                    const hasPreview = previewContent && previewContent.trim().length >= 50;
-                    const hasDocEn = docEn.trim().length >= 300;
-                    const hasDocTh = docTh.trim().length >= 300;
-                    const hasDocument = hasDocEn && hasDocTh;
-                    const preview = hasPreview ? previewContent.slice(0, 300) + (previewContent.length > 300 ? '…' : '') : (language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable');
+                  {/* Section Header */}
+                  <button
+                    onClick={() => toggleSection(section)}
+                    className="w-full flex items-center justify-between p-4 hover:bg-black/5 transition-all"
+                  >
+                    <h2 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                      {strings.sections[section]}
+                    </h2>
+                    {isExpanded ? (
+                      <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                    ) : (
+                      <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                    )}
+                  </button>
 
-                    return (
-                      <Card
-                        key={template.id}
-                        onClick={() => handleViewTemplate(template)}
-                        className="border-none shadow-md hover:shadow-lg transition-all cursor-pointer"
-                        style={{ backgroundColor: colors.cardBg }}
-                      >
-                        <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-                          <CardTitle className="flex items-start justify-between gap-2" style={{ color: colors.textPrimary }}>
-                            <span className="text-base line-clamp-2">{title}</span>
-                            <div className="flex gap-2 flex-shrink-0">
-                              <Badge className="text-xs" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-                                {strings.free}
-                              </Badge>
-                              {isAdmin && (
-                                <Badge className="text-xs" style={{ 
-                                  backgroundColor: hasDocument ? '#D1FAE5' : '#FEE2E2',
-                                  color: hasDocument ? '#065F46' : '#DC2626'
-                                }}>
-                                  {hasDocument ? '✓ Ready' : '⚠ Needs Content'}
-                                </Badge>
-                              )}
-                            </div>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 space-y-4">
-                          <p className="text-sm line-clamp-3" style={{ color: colors.textSecondary, whiteSpace: 'pre-wrap' }}>
-                            {preview}
-                          </p>
+                  {/* Section Content */}
+                  {isExpanded && (
+                    <div className="p-4 space-y-3">
+                      {visibleTemplates.map((template) => {
+                        if (!template || !template.id) return null;
+                        
+                        const title = language === 'th' ? (template.title_th || template.title_en || 'Untitled') : (template.title_en || 'Untitled');
+                        const description = language === 'th' ? (template.description_th || template.description_en || '') : (template.description_en || '');
+                        
+                        // Determine icon
+                        let TemplateIcon = FileText;
+                        if (template.template_key === 'asset_register_checklist') {
+                          TemplateIcon = Clipboard;
+                        } else if (templateToType[template.template_key] === 'checklists') {
+                          TemplateIcon = CheckSquare;
+                        } else if (templateToType[template.template_key] === 'letters') {
+                          TemplateIcon = Mail;
+                        } else if (templateToType[template.template_key] === 'disputes') {
+                          TemplateIcon = AlertTriangle;
+                        }
 
-                          <div className="flex items-center justify-between pt-2">
-                            <span className="text-xs" style={{ color: colors.textSecondary }}>
-                              {language === 'th' ? 'คลิกเพื่อดูเนื้อหา' : 'Click to view content'}
-                            </span>
-                            <Eye className="w-4 h-4" style={{ color: '#0C3B2E' }} />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                        return (
+                          <Card
+                            key={template.id}
+                            className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer"
+                            style={{ 
+                              backgroundColor: colors.fieldBg,
+                              minHeight: '120px',
+                              maxHeight: '120px'
+                            }}
+                          >
+                            <CardContent className="p-4 h-full flex items-center gap-4">
+                              {/* Icon */}
+                              <div className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center" style={{ 
+                                backgroundColor: colors.cardBg,
+                                border: `1px solid ${colors.borderColor}`
+                              }}>
+                                <TemplateIcon className="w-6 h-6" style={{ color: '#0C3B2E' }} />
+                              </div>
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-sm line-clamp-1 mb-1" style={{ color: colors.textPrimary }}>
+                                  {title}
+                                  {template.template_key === 'asset_register_checklist' && (
+                                    <span className="block text-xs font-normal opacity-75 mt-0.5">
+                                      {language === 'th' ? 'รายการตรวจสอบ · ต้องลงนามทั้งสองฝ่าย' : 'Checklist · Requires tenant & landlord signatures'}
+                                    </span>
+                                  )}
+                                </h3>
+                                <p className="text-xs line-clamp-2" style={{ color: colors.textSecondary }}>
+                                  {description || (language === 'th' ? 'ดูรายละเอียดเพิ่มเติม' : 'View details')}
+                                </p>
+                              </div>
+
+                              {/* Actions */}
+                              <div className="flex-shrink-0 flex items-center gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewTemplate(template);
+                                  }}
+                                  className="p-2 rounded-lg hover:bg-black/5 transition-all"
+                                  style={{ border: `1px solid ${colors.borderColor}` }}
+                                >
+                                  <Eye className="w-4 h-4" style={{ color: '#0C3B2E' }} />
+                                </button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+
+                      {/* Show More Button */}
+                      {hasMore && !showingMore && (
+                        <button
+                          onClick={() => toggleShowMore(section)}
+                          className="w-full py-3 rounded-lg font-semibold text-sm transition-all hover:bg-black/5"
+                          style={{ 
+                            color: colors.textPrimary,
+                            border: `1px dashed ${colors.borderColor}`
+                          }}
+                        >
+                          {strings.showMore} ({sectionTemplates.length - 3})
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

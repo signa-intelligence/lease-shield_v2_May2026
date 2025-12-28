@@ -250,13 +250,18 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: colors.borderColor }}>
-            <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>{title}</h2>
-            <div className="flex items-center gap-2">
-              {/* Language Toggle */}
-              <div className="flex items-center gap-1 p-1 rounded-lg mr-2" style={{ backgroundColor: colors.fieldBg, border: `1px solid ${colors.borderColor}` }}>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>{title}</h2>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Language Toggle - now inside modal */}
+              <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: colors.fieldBg, border: `1px solid ${colors.borderColor}` }}>
                 <button
-                  onClick={() => onContentLangChange?.('en')}
-                  className="px-2 py-1 rounded text-xs font-semibold transition-all"
+                  onClick={() => {
+                    onContentLangChange?.('en');
+                    localStorage.setItem('templateViewerLang', 'en');
+                  }}
+                  className="px-3 py-1.5 rounded text-xs font-semibold transition-all"
                   style={{
                     backgroundColor: displayLang === 'en' ? '#0C3B2E' : 'transparent',
                     color: displayLang === 'en' ? '#FFFFFF' : colors.textSecondary
@@ -265,8 +270,11 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   EN
                 </button>
                 <button
-                  onClick={() => onContentLangChange?.('th')}
-                  className="px-2 py-1 rounded text-xs font-semibold transition-all"
+                  onClick={() => {
+                    onContentLangChange?.('th');
+                    localStorage.setItem('templateViewerLang', 'th');
+                  }}
+                  className="px-3 py-1.5 rounded text-xs font-semibold transition-all"
                   style={{
                     backgroundColor: displayLang === 'th' ? '#0C3B2E' : 'transparent',
                     color: displayLang === 'th' ? '#FFFFFF' : colors.textSecondary
