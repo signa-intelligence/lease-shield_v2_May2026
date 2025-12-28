@@ -6,7 +6,7 @@ import { X, Copy, FileText, CreditCard, Loader2 } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 
-export default function TemplateViewer({ template, isOpen, onClose, colors, language, user, toast }) {
+export default function TemplateViewer({ template, isOpen, onClose, colors, language, contentLang, onContentLangChange, user, toast }) {
   const queryClient = useQueryClient();
   const [copying, setCopying] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -44,16 +44,24 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     );
   }
 
-  const title = language === 'th' ? (template.title_th || template.title_en || 'Template') : (template.title_en || 'Template');
-  const previewContent = language === 'th' 
-    ? (template.preview_content_th || template.preview_content || template.preview_th || '') 
-    : (template.preview_content_en || template.preview_content || template.preview_en || '');
-  const documentContent = language === 'th'
-    ? (template.document_content_th || template.document_content || '')
-    : (template.document_content_en || template.document_content || '');
+  const displayLang = contentLang || language;
+  const title = displayLang === 'th' ? (template.title_th || template.title_en || 'Template') : (template.title_en || 'Template');
+  
+  // Extract from nested or flat structure
+  const nestedPreview = template.preview_content || {};
+  const nestedDoc = template.document_content || {};
+  
+  const previewEn = nestedPreview.en || template.preview_content_en || template.preview_en || '';
+  const previewTh = nestedPreview.th || template.preview_content_th || template.preview_th || '';
+  const docEn = nestedDoc.en || template.document_content_en || template.document_content || '';
+  const docTh = nestedDoc.th || template.document_content_th || '';
+  
+  const previewContent = displayLang === 'th' ? previewTh : previewEn;
+  const documentContent = displayLang === 'th' ? docTh : docEn;
+  
   const letterCredits = user?.letter_credits || 0;
   const canUseCredits = letterCredits >= 1;
-  const hasPreview = previewContent && previewContent.trim().length > 0;
+  const hasPreview = previewContent && previewContent.trim().length >= 50;
   const hasDocument = documentContent && documentContent.trim().length >= 300;
 
   const handleCopy = async () => {
@@ -201,7 +209,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const langSuffix = language === 'th' ? '_th' : '_en';
+      const langSuffix = displayLang === 'th' ? '_th' : '_en';
       a.download = `${template.template_key}${langSuffix}.docx`;
       document.body.appendChild(a);
       a.click();
@@ -239,9 +247,34 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: colors.borderColor }}>
             <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>{title}</h2>
-            <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/5">
-              <X className="w-5 h-5" style={{ color: colors.textSecondary }} />
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Language Toggle */}
+              <div className="flex items-center gap-1 p-1 rounded-lg mr-2" style={{ backgroundColor: colors.fieldBg, border: `1px solid ${colors.borderColor}` }}>
+                <button
+                  onClick={() => onContentLangChange?.('en')}
+                  className="px-2 py-1 rounded text-xs font-semibold transition-all"
+                  style={{
+                    backgroundColor: displayLang === 'en' ? '#0C3B2E' : 'transparent',
+                    color: displayLang === 'en' ? '#FFFFFF' : colors.textSecondary
+                  }}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => onContentLangChange?.('th')}
+                  className="px-2 py-1 rounded text-xs font-semibold transition-all"
+                  style={{
+                    backgroundColor: displayLang === 'th' ? '#0C3B2E' : 'transparent',
+                    color: displayLang === 'th' ? '#FFFFFF' : colors.textSecondary
+                  }}
+                >
+                  TH
+                </button>
+              </div>
+              <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/5">
+                <X className="w-5 h-5" style={{ color: colors.textSecondary }} />
+              </button>
+            </div>
           </div>
 
           {/* Body - Scrollable */}

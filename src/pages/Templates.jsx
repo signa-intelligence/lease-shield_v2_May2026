@@ -76,6 +76,7 @@ function TemplatesContent() {
   };
 
   const language = user?.language || 'en';
+  const displayLang = contentLang || language;
   const isDarkMode = user?.theme === 'dark';
   const letterCredits = user?.letter_credits || 0;
   const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
@@ -162,19 +163,52 @@ function TemplatesContent() {
           showBack={false}
           isDarkMode={isDarkMode}
           actions={
-            <Card className="border-none shadow-md" style={{ backgroundColor: colors.cardBg }}>
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShoppingCart className="w-5 h-5" style={{ color: '#0C3B2E' }} />
-                  <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                    {strings.creditsBalance}
-                  </span>
-                </div>
-                <Badge className="text-lg font-bold px-4 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-                  {letterCredits}
-                </Badge>
-              </CardContent>
-            </Card>
+            <div className="flex items-center gap-3">
+              {/* Language Toggle */}
+              <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: colors.fieldBg, border: `1px solid ${colors.borderColor}` }}>
+                <button
+                  onClick={() => {
+                    setContentLang('en');
+                    haptic.light();
+                  }}
+                  className="px-3 py-1.5 rounded text-sm font-semibold transition-all"
+                  style={{
+                    backgroundColor: displayLang === 'en' ? '#0C3B2E' : 'transparent',
+                    color: displayLang === 'en' ? '#FFFFFF' : colors.textSecondary
+                  }}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => {
+                    setContentLang('th');
+                    haptic.light();
+                  }}
+                  className="px-3 py-1.5 rounded text-sm font-semibold transition-all"
+                  style={{
+                    backgroundColor: displayLang === 'th' ? '#0C3B2E' : 'transparent',
+                    color: displayLang === 'th' ? '#FFFFFF' : colors.textSecondary
+                  }}
+                >
+                  TH
+                </button>
+              </div>
+
+              {/* Credits Badge */}
+              <Card className="border-none shadow-md" style={{ backgroundColor: colors.cardBg }}>
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="w-5 h-5" style={{ color: '#0C3B2E' }} />
+                    <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                      {strings.creditsBalance}
+                    </span>
+                  </div>
+                  <Badge className="text-lg font-bold px-4 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
+                    {letterCredits}
+                  </Badge>
+                </CardContent>
+              </Card>
+            </div>
           }
         />
 
@@ -185,48 +219,33 @@ function TemplatesContent() {
             <button
               onClick={async () => {
                 try {
-                  const { data } = await base44.functions.invoke('migrateTemplateLanguageContent');
-                  toast.success(`✅ Migrated ${data.updated_templates.length} templates to EN fields`);
+                  const { data } = await base44.functions.invoke('backfillTemplateBilingualContent', { force: false });
+                  toast.success(`✅ ${data.summary.ready_count}/${data.summary.total_templates} templates ready (EN+TH)`);
                   queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
                 } catch (error) {
-                  toast.error('❌ Migration failed: ' + error.message);
+                  toast.error('❌ Backfill failed: ' + error.message);
                 }
               }}
               className="px-4 py-2 rounded-lg font-semibold"
-              style={{ backgroundColor: '#3B82F6', color: '#FFFFFF' }}
+              style={{ backgroundColor: '#7C3AED', color: '#FFFFFF' }}
             >
-              🔄 Migrate to EN Fields
+              🌐 Backfill Bilingual Content
             </button>
             <button
               onClick={async () => {
+                if (!confirm('⚠️ Force backfill ALL templates? This will overwrite existing content.')) return;
                 try {
-                  const { data } = await base44.functions.invoke('seedTemplateThaiContent', { force: false });
-                  toast.success(`✅ Seeded ${data.summary.updated_count} Thai templates`);
+                  const { data } = await base44.functions.invoke('backfillTemplateBilingualContent', { force: true });
+                  toast.success(`✅ Force backfilled ${data.summary.updated_count} templates`);
                   queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
                 } catch (error) {
-                  toast.error('❌ Thai seed failed: ' + error.message);
-                }
-              }}
-              className="px-4 py-2 rounded-lg font-semibold"
-              style={{ backgroundColor: '#10B981', color: '#FFFFFF' }}
-            >
-              🇹🇭 Seed Thai Content
-            </button>
-            <button
-              onClick={async () => {
-                if (!confirm('⚠️ Force reseed Thai content? This will overwrite existing Thai templates.')) return;
-                try {
-                  const { data } = await base44.functions.invoke('seedTemplateThaiContent', { force: true });
-                  toast.success(`✅ Force seeded ${data.summary.updated_count} Thai templates`);
-                  queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
-                } catch (error) {
-                  toast.error('❌ Force Thai seed failed: ' + error.message);
+                  toast.error('❌ Force backfill failed: ' + error.message);
                 }
               }}
               className="px-4 py-2 rounded-lg font-semibold border-2"
               style={{ backgroundColor: 'transparent', color: '#DC2626', borderColor: '#DC2626' }}
             >
-              🔄 Force Reseed Thai
+              🔄 Force Backfill All
             </button>
           </div>
         )}
@@ -256,14 +275,20 @@ function TemplatesContent() {
                   {categoryTemplates.map((template) => {
                     if (!template || !template.id) return null;
                     
-                    const title = language === 'th' ? (template.title_th || template.title_en || 'Untitled') : (template.title_en || 'Untitled');
-                    const previewContent = language === 'th'
-                      ? (template.preview_content_th || template.preview_content || template.preview_th || '')
-                      : (template.preview_content_en || template.preview_content || template.preview_en || '');
-                    const documentContentEn = template.document_content_en || template.document_content || '';
-                    const documentContentTh = template.document_content_th || '';
-                    const hasPreview = previewContent && previewContent.trim().length > 0;
-                    const hasDocument = documentContentEn.trim().length >= 300 && documentContentTh.trim().length >= 300;
+                    const title = displayLang === 'th' ? (template.title_th || template.title_en || 'Untitled') : (template.title_en || 'Untitled');
+                    
+                    // Extract from nested or flat structure
+                    const nestedPreview = template.preview_content || {};
+                    const nestedDoc = template.document_content || {};
+                    
+                    const previewEn = nestedPreview.en || template.preview_content_en || template.preview_en || '';
+                    const previewTh = nestedPreview.th || template.preview_content_th || template.preview_th || '';
+                    const docEn = nestedDoc.en || template.document_content_en || template.document_content || '';
+                    const docTh = nestedDoc.th || template.document_content_th || '';
+                    
+                    const previewContent = displayLang === 'th' ? previewTh : previewEn;
+                    const hasPreview = previewContent && previewContent.trim().length >= 50;
+                    const hasDocument = docEn.trim().length >= 300 && docTh.trim().length >= 300;
                     const preview = hasPreview ? previewContent.slice(0, 300) + (previewContent.length > 300 ? '…' : '') : (language === 'th' ? 'ไม่มีเนื้อหา' : 'Content unavailable');
 
                     return (
@@ -320,6 +345,8 @@ function TemplatesContent() {
         onClose={() => setViewingTemplate(null)}
         colors={colors}
         language={language}
+        contentLang={displayLang}
+        onContentLangChange={setContentLang}
         user={user}
         toast={toast}
       />
