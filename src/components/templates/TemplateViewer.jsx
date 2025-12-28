@@ -47,11 +47,14 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const displayLang = contentLang || language;
   const title = displayLang === 'th' ? (template.title_th || template.title_en || 'Template') : (template.title_en || 'Template');
   
-  // Use flat columns: preview_content (EN), preview_content_th (TH), document_content (EN), document_content_th (TH) - ensure strings
-  const previewEn = typeof template.preview_content === 'string' ? template.preview_content : '';
-  const previewTh = typeof template.preview_content_th === 'string' ? template.preview_content_th : '';
-  const docEn = typeof template.document_content === 'string' ? template.document_content : '';
-  const docTh = typeof template.document_content_th === 'string' ? template.document_content_th : '';
+  // Extract from nested JSON fields (authoritative source)
+  const previewContentObj = typeof template.preview_content === 'object' ? template.preview_content : {};
+  const documentContentObj = typeof template.document_content === 'object' ? template.document_content : {};
+  
+  const previewEn = typeof previewContentObj.en === 'string' ? previewContentObj.en : '';
+  const previewTh = typeof previewContentObj.th === 'string' ? previewContentObj.th : '';
+  const docEn = typeof documentContentObj.en === 'string' ? documentContentObj.en : '';
+  const docTh = typeof documentContentObj.th === 'string' ? documentContentObj.th : '';
   
   const previewContent = displayLang === 'th' ? previewTh : previewEn;
   const documentContent = displayLang === 'th' ? docTh : docEn;

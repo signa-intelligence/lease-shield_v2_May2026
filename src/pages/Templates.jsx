@@ -39,13 +39,13 @@ function TemplatesContent() {
     queryFn: async () => {
       const allResults = await base44.entities.TemplateLibrary.list();
 
-      // Filter: only valid active templates with body content
+      // Filter: only valid ACTIVE templates
       const validTemplates = allResults.filter(t => 
         t && 
         t.id && 
         t.template_key &&
-        t.is_active !== false &&
-        t.title_en
+        t.title_en &&
+        (t.status === 'active' || (t.is_active !== false && !t.status))
       );
 
       // Deduplicate by template_key
@@ -258,6 +258,29 @@ function TemplatesContent() {
                 onClick={async () => {
                   try {
                     setBackfillResult(null);
+                    const { data } = await base44.functions.invoke('repairTemplateLibraryContent');
+                    console.log('[REPAIR] Response:', data);
+                    if (data.ok) {
+                      toast.success(`✅ Deleted ${data.deleted_count} broken templates, repaired ${data.repaired_count}`);
+                      setBackfillResult(data);
+                      queryClient.invalidateQueries({ queryKey: ['templateAssets'] });
+                    } else {
+                      toast.error(`❌ Repair failed: ${data.message}`);
+                    }
+                  } catch (error) {
+                    console.error('[REPAIR] Error:', error);
+                    toast.error(`❌ Repair error: ${error.message || error.toString()}`);
+                  }
+                }}
+                className="px-4 py-2 rounded-lg font-semibold"
+                style={{ backgroundColor: '#DC2626', color: '#FFFFFF' }}
+              >
+                🔧 Clean Up Broken Templates
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    setBackfillResult(null);
                     const { data } = await base44.functions.invoke('backfillThaiTemplateContent', { force: false });
                     console.log('[BACKFILL] Response:', data);
                     if (data.ok) {
@@ -287,8 +310,21 @@ function TemplatesContent() {
                 <div className="text-sm font-mono space-y-1" style={{ color: '#1F2937' }}>
                   <div><strong>Status:</strong> {backfillResult.ok ? '✅ Success' : '❌ Failed'}</div>
                   <div><strong>Total Templates:</strong> {backfillResult.total}</div>
-                  <div><strong>Updated Count:</strong> {backfillResult.updated_count}</div>
-                  <div><strong>Remaining Missing:</strong> {backfillResult.remaining_missing}</div>
+                  {backfillResult.deleted_count !== undefined && (
+                    <div><strong>Deleted (broken):</strong> {backfillResult.deleted_count}</div>
+                  )}
+                  {backfillResult.repaired_count !== undefined && (
+                    <div><strong>Repaired:</strong> {backfillResult.repaired_count}</div>
+                  )}
+                  {backfillResult.updated_count !== undefined && (
+                    <div><strong>Updated Count:</strong> {backfillResult.updated_count}</div>
+                  )}
+                  {backfillResult.remaining_missing !== undefined && (
+                    <div><strong>Remaining Missing:</strong> {backfillResult.remaining_missing}</div>
+                  )}
+                  {backfillResult.deleted_keys && backfillResult.deleted_keys.length > 0 && (
+                    <div><strong>Deleted Keys:</strong> {backfillResult.deleted_keys.join(', ')}</div>
+                  )}
                   {backfillResult.keys_missing && backfillResult.keys_missing.length > 0 && (
                     <div><strong>Missing Keys:</strong> {backfillResult.keys_missing.join(', ')}</div>
                   )}
@@ -325,11 +361,14 @@ function TemplatesContent() {
                     
                     const title = displayLang === 'th' ? (template.title_th || template.title_en || 'Untitled') : (template.title_en || 'Untitled');
                     
-                    // Use flat columns: preview_content (EN), preview_content_th (TH) - ensure strings
-                    const previewEn = typeof template.preview_content === 'string' ? template.preview_content : '';
-                    const previewTh = typeof template.preview_content_th === 'string' ? template.preview_content_th : '';
-                    const docEn = typeof template.document_content === 'string' ? template.document_content : '';
-                    const docTh = typeof template.document_content_th === 'string' ? template.document_content_th : '';
+                    // Extract from nested JSON fields (authoritative source)
+                    const previewContentObj = typeof template.preview_content === 'object' ? template.preview_content : {};
+                    const documentContentObj = typeof template.document_content === 'object' ? template.document_content : {};
+                    
+                    const previewEn = typeof previewContentObj.en === 'string' ? previewContentObj.en : '';
+                    const previewTh = typeof previewContentObj.th === 'string' ? previewContentObj.th : '';
+                    const docEn = typeof documentContentObj.en === 'string' ? documentContentObj.en : '';
+                    const docTh = typeof documentContentObj.th === 'string' ? documentContentObj.th : '';
                     
                     const previewContent = displayLang === 'th' ? previewTh : previewEn;
                     const hasPreview = previewContent && previewContent.trim().length >= 50;

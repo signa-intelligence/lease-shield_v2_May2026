@@ -520,32 +520,43 @@ Deno.serve(async (req) => {
 
     for (const template of templates) {
       try {
-        const previewTh = template.preview_content_th || '';
-        const docTh = template.document_content_th || '';
+        // Extract nested JSON content
+        const previewContentObj = typeof template.preview_content === 'object' ? template.preview_content : {};
+        const documentContentObj = typeof template.document_content === 'object' ? template.document_content : {};
+        
+        const previewTh = typeof previewContentObj.th === 'string' ? previewContentObj.th : '';
+        const docTh = typeof documentContentObj.th === 'string' ? documentContentObj.th : '';
         
         const needsPreview = previewTh.trim().length < 50;
         const needsDoc = docTh.trim().length < 300;
 
         if ((needsPreview || needsDoc) || force) {
-          const updateData = {};
           const priorityContent = PRIORITY_TEMPLATES[template.template_key];
 
-          if ((needsPreview || force) && priorityContent?.preview_th) {
-            updateData.preview_content_th = priorityContent.preview_th;
-          }
-          if ((needsDoc || force) && priorityContent?.document_th) {
-            updateData.document_content_th = priorityContent.document_th;
-          }
+          if (priorityContent?.preview_th || priorityContent?.document_th) {
+            const updatedPreview = { ...previewContentObj };
+            const updatedDocument = { ...documentContentObj };
 
-          if (Object.keys(updateData).length > 0) {
-            await base44.asServiceRole.entities.TemplateLibrary.update(template.id, updateData);
+            if ((needsPreview || force) && priorityContent?.preview_th) {
+              updatedPreview.th = priorityContent.preview_th;
+            }
+            if ((needsDoc || force) && priorityContent?.document_th) {
+              updatedDocument.th = priorityContent.document_th;
+            }
+
+            await base44.asServiceRole.entities.TemplateLibrary.update(template.id, {
+              preview_content: updatedPreview,
+              document_content: updatedDocument
+            });
             updatedCount++;
           }
         }
 
-        // Track remaining missing
-        const finalPreviewTh = updateData?.preview_content_th || previewTh;
-        const finalDocTh = updateData?.document_content_th || docTh;
+        // Track remaining missing (after potential update)
+        const finalPreviewObj = typeof template.preview_content === 'object' ? template.preview_content : {};
+        const finalDocObj = typeof template.document_content === 'object' ? template.document_content : {};
+        const finalPreviewTh = typeof finalPreviewObj.th === 'string' ? finalPreviewObj.th : '';
+        const finalDocTh = typeof finalDocObj.th === 'string' ? finalDocObj.th : '';
         
         if (finalPreviewTh.trim().length < 50 || finalDocTh.trim().length < 300) {
           keysMissing.push(template.template_key);
