@@ -6,7 +6,7 @@ import { X, Copy, FileText, CreditCard, Loader2 } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 
-export default function TemplateViewer({ template, isOpen, onClose, colors, language, contentLang, onContentLangChange, user, toast }) {
+export default function TemplateViewer({ template, isOpen, onClose, colors, language, user, toast }) {
   const queryClient = useQueryClient();
   const [copying, setCopying] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -44,7 +44,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     );
   }
 
-  const displayLang = contentLang || language;
+  // Use app language directly for preview (no separate toggle)
+  const displayLang = language;
   const title = displayLang === 'th' ? (template.title_th || template.title_en || 'Template') : (template.title_en || 'Template');
   
   // Extract from nested JSON fields (authoritative source)
@@ -56,8 +57,13 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const docEn = typeof documentContentObj.en === 'string' ? documentContentObj.en : '';
   const docTh = typeof documentContentObj.th === 'string' ? documentContentObj.th : '';
   
+  // Preview selection: EN for EN, TH for TH, EN (to be translated) for other languages
+  const isNonEnTh = !['en', 'th'].includes(displayLang);
   const previewContent = displayLang === 'th' ? previewTh : previewEn;
-  const documentContent = displayLang === 'th' ? docTh : docEn;
+  
+  // Document content for Copy/Download: ONLY EN or TH (prefer EN unless app is TH)
+  const documentLangForExport = displayLang === 'th' ? 'th' : 'en';
+  const documentContent = documentLangForExport === 'th' ? docTh : docEn;
   
   const letterCredits = user?.letter_credits || 0;
   const canUseCredits = letterCredits >= 1;
@@ -113,7 +119,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         type: 'letters',
         delta: -1,
         reason: 'purchase',
-        source_ref: `template_copy:${template.template_key}:${displayLang}`
+        source_ref: `template_copy:${template.template_key}:${documentLangForExport}`
       });
 
       console.log('[TEMPLATE] Credit deducted, credits_after:', letterCredits - 1);
@@ -197,7 +203,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const langSuffix = displayLang === 'th' ? '_TH' : '_EN';
+      const langSuffix = documentLangForExport === 'th' ? '_TH' : '_EN';
       a.download = `${template.template_key}${langSuffix}.docx`;
       document.body.appendChild(a);
       a.click();
@@ -215,7 +221,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         type: 'letters',
         delta: -1,
         reason: 'purchase',
-        source_ref: `template_docx:${template.template_key}:${displayLang}`
+        source_ref: `template_docx:${template.template_key}:${documentLangForExport}`
       });
 
       console.log('[TEMPLATE] Credit deducted, credits_after:', letterCredits - 1);
@@ -254,35 +260,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
               <h2 className="text-xl font-bold" style={{ color: colors.textPrimary }}>{title}</h2>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Language Toggle - now inside modal */}
-              <div className="flex items-center gap-1 p-1 rounded-lg" style={{ backgroundColor: colors.fieldBg, border: `1px solid ${colors.borderColor}` }}>
-                <button
-                  onClick={() => {
-                    onContentLangChange?.('en');
-                    localStorage.setItem('templateViewerLang', 'en');
-                  }}
-                  className="px-3 py-1.5 rounded text-xs font-semibold transition-all"
-                  style={{
-                    backgroundColor: displayLang === 'en' ? '#0C3B2E' : 'transparent',
-                    color: displayLang === 'en' ? '#FFFFFF' : colors.textSecondary
-                  }}
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => {
-                    onContentLangChange?.('th');
-                    localStorage.setItem('templateViewerLang', 'th');
-                  }}
-                  className="px-3 py-1.5 rounded text-xs font-semibold transition-all"
-                  style={{
-                    backgroundColor: displayLang === 'th' ? '#0C3B2E' : 'transparent',
-                    color: displayLang === 'th' ? '#FFFFFF' : colors.textSecondary
-                  }}
-                >
-                  TH
-                </button>
-              </div>
               <button onClick={onClose} className="p-2 rounded-lg hover:bg-black/5">
                 <X className="w-5 h-5" style={{ color: colors.textSecondary }} />
               </button>
@@ -291,6 +268,17 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
           {/* Body - Scrollable */}
           <div className="flex-1 overflow-y-auto p-6" style={{ backgroundColor: colors.fieldBg }}>
+            {isNonEnTh && (
+              <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#EFF6FF', borderLeft: '4px solid #3B82F6' }}>
+                <p className="text-xs font-medium" style={{ color: '#1E3A8A' }}>
+                  {language === 'zh' ? '此预览仅供参考，已自动翻译。最终文件提供英文版本。' 
+                    : language === 'ja' ? 'このプレビューは参考用に自動翻訳されています。最終文書は英語で提供されます。'
+                    : language === 'ko' ? '이 미리보기는 참고용으로 자동 번역되었습니다. 최종 문서는 영어로 제공됩니다.'
+                    : language === 'ru' ? 'Предварительный просмотр переведен автоматически. Финальный документ предоставляется на английском.'
+                    : 'Preview is auto-translated for convenience. Final document is provided in English.'}
+                </p>
+              </div>
+            )}
             {contentMissing && (
               <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#FEF3C7', borderLeft: '4px solid #F59E0B' }}>
                 <p className="text-sm font-semibold" style={{ color: '#92400E' }}>
@@ -360,7 +348,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   <Copy className="w-4 h-4" />
                 )}
                 <span className="truncate">
-                  {displayLang === 'th' ? 'คัดลอกข้อความ' : 'Copy Text'}
+                  {language === 'th' ? 'คัดลอกข้อความ' : 'Copy Text'}
                 </span>
                 <span className="text-xs opacity-75 flex-shrink-0">
                   {displayLang === 'th' ? '(ใช้ 1 เครดิต)' : '(1 credit)'}
@@ -392,7 +380,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   <FileText className="w-4 h-4" />
                 )}
                 <span className="truncate">
-                  {displayLang === 'th' ? 'ดาวน์โหลดไฟล์ Word' : 'Download Word'}
+                  {language === 'th' ? 'ดาวน์โหลดไฟล์ Word' : 'Download Word'}
                 </span>
                 <span className="text-xs opacity-75 flex-shrink-0">
                   {displayLang === 'th' ? '(ใช้ 1 เครดิต)' : '(1 credit)'}
