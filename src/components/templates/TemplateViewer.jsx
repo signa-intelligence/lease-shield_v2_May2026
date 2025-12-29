@@ -351,7 +351,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   {language === 'th' ? 'คัดลอกข้อความ' : 'Copy Text'}
                 </span>
                 <span className="text-xs opacity-75 flex-shrink-0">
-                  {displayLang === 'th' ? '(ใช้ 1 เครดิต)' : '(1 credit)'}
+                  {language === 'th' ? '(ใช้ 1 เครดิต)' : '(1 credit)'}
                 </span>
               </Button>
 
@@ -383,7 +383,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   {language === 'th' ? 'ดาวน์โหลดไฟล์ Word' : 'Download Word'}
                 </span>
                 <span className="text-xs opacity-75 flex-shrink-0">
-                  {displayLang === 'th' ? '(ใช้ 1 เครดิต)' : '(1 credit)'}
+                  {language === 'th' ? '(ใช้ 1 เครดิต)' : '(1 credit)'}
                 </span>
               </Button>
             </div>
