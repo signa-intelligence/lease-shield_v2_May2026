@@ -1949,7 +1949,8 @@ ja: {
                             }}
                             className="btn-interaction notify-landlord-btn"
                             style={{
-                              padding: '10px 18px',
+                              padding: '12px 20px',
+                              minHeight: '44px',
                               borderRadius: '10px',
                               backgroundColor: '#0C3B2E',
                               color: '#FFFFFF',
@@ -2086,21 +2087,25 @@ ja: {
                     </div>
                   </div>
                   <Link to={createPageUrl("Account") + '?showPlans=true'}>
-                    <button
-                      onClick={() => haptic.medium()}
-                      className="btn-interaction w-full sm:w-auto"
-                      style={{
-                        padding: '12px 28px',
-                        borderRadius: '12px',
-                        backgroundColor: '#0C3B2E',
-                        color: '#FFFFFF',
-                        border: '2px solid #C7A338',
-                        fontWeight: '700',
-                        fontSize: '15px',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(12,59,46,0.3)',
-                        whiteSpace: 'nowrap'
-                      }}
+                  <button
+                    onClick={() => haptic.medium()}
+                    className="btn-interaction w-full sm:w-auto"
+                    style={{
+                      padding: '12px 28px',
+                      minHeight: '48px',
+                      borderRadius: '12px',
+                      backgroundColor: '#0C3B2E',
+                      color: '#FFFFFF',
+                      border: '2px solid #C7A338',
+                      fontWeight: '700',
+                      fontSize: '15px',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(12,59,46,0.3)',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
                       onMouseEnter={(e) => {
                         e.target.style.backgroundColor = '#C7A338';
                         e.target.style.borderColor = '#C7A338';
@@ -2173,6 +2178,7 @@ ja: {
                       className="btn-interaction w-full sm:w-auto"
                       style={{
                         padding: '12px 28px',
+                        minHeight: '48px',
                         borderRadius: '12px',
                         backgroundColor: '#10B981',
                         color: '#FFFFFF',
@@ -2181,7 +2187,10 @@ ja: {
                         fontSize: '15px',
                         cursor: 'pointer',
                         boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
                       onMouseEnter={(e) => {
                         e.target.style.backgroundColor = '#059669';
@@ -2251,6 +2260,7 @@ ja: {
                       className="btn-interaction w-full sm:w-auto"
                       style={{
                         padding: '12px 28px',
+                        minHeight: '48px',
                         borderRadius: '12px',
                         backgroundColor: '#8B5CF6',
                         color: '#FFFFFF',
@@ -2259,7 +2269,10 @@ ja: {
                         fontSize: '15px',
                         cursor: 'pointer',
                         boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
-                        whiteSpace: 'nowrap'
+                        whiteSpace: 'nowrap',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}
                       onMouseEnter={(e) => {
                         e.target.style.backgroundColor = '#7C3AED';
@@ -2373,7 +2386,8 @@ ja: {
                     onClick={handleStartResolve}
                     className="btn-interaction flex-shrink-0 w-full sm:w-auto"
                     style={{
-                      padding: '8px 16px',
+                      padding: '12px 20px',
+                      minHeight: '44px',
                       borderRadius: '8px',
                       backgroundColor: 'rgba(239, 68, 68, 0.5)',
                       color: '#FFFFFF',
@@ -2383,7 +2397,10 @@ ja: {
                       cursor: 'pointer',
                       transition: 'all 0.2s',
                       boxShadow: '0 2px 6px rgba(239,68,68,0.3)',
-                      whiteSpace: 'nowrap'
+                      whiteSpace: 'nowrap',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
                     onMouseEnter={(e) => {
                       e.target.style.backgroundColor = '#DC2626';
@@ -2614,7 +2631,8 @@ ja: {
                     className="cursor-pointer p-5 flex items-center justify-between transition-colors hover:bg-opacity-50"
                     onClick={() => toggleSection('recentLeases')}
                     style={{
-                      borderBottom: expandedSections.recentLeases ? `1px solid ${colors.borderColor}` : 'none'
+                      borderBottom: expandedSections.recentLeases ? `1px solid ${colors.borderColor}` : 'none',
+                      minHeight: '60px'
                     }}
                   >
                     <div className="flex items-center gap-4">
@@ -2640,13 +2658,14 @@ ja: {
                       </div>
                     </div>
                     <div style={{
-                      width: '32px',
-                      height: '32px',
+                      minWidth: '44px',
+                      minHeight: '44px',
                       borderRadius: '8px',
                       backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      padding: '10px'
                     }}>
                       {expandedSections.recentLeases ? (
                         <ChevronUp className="w-5 h-5" style={{ color: colors.textPrimary }} />
@@ -2674,7 +2693,8 @@ ja: {
                     className="cursor-pointer p-5 flex items-center justify-between transition-colors hover:bg-opacity-50"
                     onClick={() => toggleSection('notifications')}
                     style={{
-                      borderBottom: expandedSections.notifications ? `1px solid ${colors.borderColor}` : 'none'
+                      borderBottom: expandedSections.notifications ? `1px solid ${colors.borderColor}` : 'none',
+                      minHeight: '60px'
                     }}
                   >
                     <div className="flex items-center gap-4">
@@ -2700,13 +2720,14 @@ ja: {
                       </div>
                     </div>
                     <div style={{
-                      width: '32px',
-                      height: '32px',
+                      minWidth: '44px',
+                      minHeight: '44px',
                       borderRadius: '8px',
                       backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      padding: '10px'
                     }}>
                       {expandedSections.notifications ? (
                         <ChevronUp className="w-5 h-5" style={{ color: colors.textPrimary }} />
@@ -2734,7 +2755,8 @@ ja: {
                     className="cursor-pointer p-5 flex items-center justify-between transition-colors hover:bg-opacity-50"
                     onClick={() => toggleSection('depositAlerts')}
                     style={{
-                      borderBottom: expandedSections.depositAlerts ? `1px solid ${colors.borderColor}` : 'none'
+                      borderBottom: expandedSections.depositAlerts ? `1px solid ${colors.borderColor}` : 'none',
+                      minHeight: '60px'
                     }}
                   >
                     <div className="flex items-center gap-4">
@@ -2763,13 +2785,14 @@ ja: {
                       </div>
                     </div>
                     <div style={{
-                      width: '32px',
-                      height: '32px',
+                      minWidth: '44px',
+                      minHeight: '44px',
                       borderRadius: '8px',
                       backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      padding: '10px'
                     }}>
                       {expandedSections.depositAlerts ? (
                         <ChevronUp className="w-5 h-5" style={{ color: colors.textPrimary }} />
