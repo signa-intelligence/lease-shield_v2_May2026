@@ -15,7 +15,6 @@ function TemplatesContent() {
   const toast = useToast();
   const queryClient = useQueryClient();
   const [viewingTemplate, setViewingTemplate] = useState(null);
-  const [contentLang, setContentLang] = useState(null);
   const [filter, setFilter] = useState('all');
   const [expandedSections, setExpandedSections] = useState({
     before_signing: true,
@@ -31,17 +30,7 @@ function TemplatesContent() {
     queryFn: () => base44.auth.me()
   });
 
-  // Initialize content language from localStorage or user preference
-  React.useEffect(() => {
-    if (contentLang === null) {
-      const saved = localStorage.getItem('templateViewerLang');
-      if (saved) {
-        setContentLang(saved);
-      } else if (user) {
-        setContentLang(user.language === 'th' ? 'th' : 'en');
-      }
-    }
-  }, [user, contentLang]);
+
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['templateAssets'],
@@ -92,7 +81,6 @@ function TemplatesContent() {
   };
 
   const language = user?.language || 'en';
-  const displayLang = contentLang || language;
   const isDarkMode = user?.theme === 'dark';
   const letterCredits = user?.letter_credits || 0;
   const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
@@ -429,8 +417,6 @@ function TemplatesContent() {
         onClose={() => setViewingTemplate(null)}
         colors={colors}
         language={language}
-        contentLang={displayLang}
-        onContentLangChange={setContentLang}
         user={user}
         toast={toast}
       />
