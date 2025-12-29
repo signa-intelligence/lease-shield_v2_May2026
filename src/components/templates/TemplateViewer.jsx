@@ -15,6 +15,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const [templateReady, setTemplateReady] = useState(false);
   const [translatedPreview, setTranslatedPreview] = useState(null);
   const [translatingPreview, setTranslatingPreview] = useState(false);
+  const [translatedTitle, setTranslatedTitle] = useState(null);
 
   React.useEffect(() => {
     if (template && template.id && template.template_key) {
@@ -24,34 +25,40 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     }
   }, [template]);
 
-  // Translate preview content for non-EN/TH languages
+  // Translate preview content and title for non-EN/TH languages
   React.useEffect(() => {
     if (!template || !language || !isOpen) return;
     
     const isNonEnTh = !['en', 'th'].includes(language);
     if (!isNonEnTh) {
       setTranslatedPreview(null);
+      setTranslatedTitle(null);
       return;
     }
 
     const previewContentObj = typeof template.preview_content === 'object' ? template.preview_content : {};
     const previewEn = typeof previewContentObj.en === 'string' ? previewContentObj.en : '';
     
-    if (!previewEn || previewEn.trim().length < 50) {
-      setTranslatedPreview(null);
-      return;
-    }
-
-    // Translate preview content
+    // Translate both title and preview in parallel
     setTranslatingPreview(true);
-    translateTemplateContent(template.template_key, previewEn, language, 'preview')
-      .then(translated => {
-        setTranslatedPreview(translated);
+    
+    const titleEn = template.title_en || '';
+    
+    Promise.all([
+      translateTemplateContent(template.template_key, titleEn, language, 'title'),
+      previewEn && previewEn.trim().length >= 50 
+        ? translateTemplateContent(template.template_key, previewEn, language, 'preview')
+        : Promise.resolve(null)
+    ])
+      .then(([translatedTitleText, translatedPreviewText]) => {
+        setTranslatedTitle(translatedTitleText);
+        setTranslatedPreview(translatedPreviewText);
         setTranslatingPreview(false);
       })
       .catch(error => {
-        console.error('[TRANSLATE] Preview translation failed:', error);
-        setTranslatedPreview(previewEn); // Fallback to EN
+        console.error('[TRANSLATE] Translation failed:', error);
+        setTranslatedTitle(titleEn);
+        setTranslatedPreview(previewEn);
         setTranslatingPreview(false);
       });
   }, [template, language, isOpen]);
@@ -86,7 +93,10 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
   // Use app language directly for preview (no separate toggle)
   const displayLang = language;
-  const title = displayLang === 'th' ? (template.title_th || template.title_en || 'Template') : (template.title_en || 'Template');
+  const isNonEnTh = !['en', 'th'].includes(displayLang);
+  const title = isNonEnTh && translatedTitle 
+    ? translatedTitle 
+    : (displayLang === 'th' ? (template.title_th || template.title_en || 'Template') : (template.title_en || 'Template'));
   
   // Extract from nested JSON fields (authoritative source)
   const previewContentObj = typeof template.preview_content === 'object' ? template.preview_content : {};
@@ -98,7 +108,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const docTh = typeof documentContentObj.th === 'string' ? documentContentObj.th : '';
   
   // Preview selection: EN for EN, TH for TH, translated content for other languages
-  const isNonEnTh = !['en', 'th'].includes(displayLang);
   const previewContent = isNonEnTh && translatedPreview 
     ? translatedPreview 
     : (displayLang === 'th' ? previewTh : previewEn);
@@ -449,9 +458,9 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   <FileText className="w-4 h-4" />
                 )}
                 <span className="truncate">
-                  {language === 'th' ? 'ดาวน์โหลดไฟล์ Word' 
-                    : language === 'zh' ? '下载Word'
-                    : language === 'ja' ? 'Wordをダウンロード'
+                  {language === 'th' ? 'ดาวน์โหลด Word' 
+                    : language === 'zh' ? '下载 Word'
+                    : language === 'ja' ? 'Word をダウンロード'
                     : language === 'ko' ? 'Word 다운로드'
                     : language === 'ru' ? 'Скачать Word'
                     : 'Download Word'}
