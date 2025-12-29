@@ -113,11 +113,6 @@ function TemplatesContent() {
     setViewingTemplate(template);
   };
 
-  const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
-  const letterCredits = user?.letter_credits || 0;
-  const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
-
   const colors = isDarkMode ? {
     bg: '#111827',
     cardBg: '#1F2937',
