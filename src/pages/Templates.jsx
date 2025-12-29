@@ -10,6 +10,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import EmptyState from "../components/shared/EmptyState";
 import TemplateViewer from "../components/templates/TemplateViewer";
+import { translateTemplateMetadata } from "../components/templates/translateTemplate";
 
 function TemplatesContent() {
   const toast = useToast();
@@ -24,6 +25,7 @@ function TemplatesContent() {
     disputes: false
   });
   const [showMoreSections, setShowMoreSections] = useState({});
+  const [translatedMetadata, setTranslatedMetadata] = useState({});
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -69,6 +71,37 @@ function TemplatesContent() {
       return uniqueTemplates;
     }
   });
+
+  // Translate template metadata for non-EN/TH languages
+  React.useEffect(() => {
+    if (!templates || templates.length === 0 || !language) return;
+    if (['en', 'th'].includes(language)) return;
+
+    const translateAll = async () => {
+      const translations = {};
+      
+      // Translate only visible templates (first 10) to avoid overwhelming the API
+      const visibleTemplates = templates.slice(0, 10);
+      
+      for (const template of visibleTemplates) {
+        try {
+          const metadata = await translateTemplateMetadata(template, language);
+          translations[template.template_key] = metadata;
+        } catch (error) {
+          console.error(`[TRANSLATE] Failed for ${template.template_key}:`, error);
+          // Fallback to EN
+          translations[template.template_key] = {
+            title: template.title_en,
+            description: template.description_en
+          };
+        }
+      }
+      
+      setTranslatedMetadata(translations);
+    };
+
+    translateAll();
+  }, [templates, language]);
 
   const handleViewTemplate = (template) => {
     if (!template || !template.id) {
@@ -140,6 +173,86 @@ function TemplatesContent() {
         preparing_moveout: "เตรียมย้ายออก",
         after_moveout: "หลังย้ายออก",
         disputes: "ข้อพิพาท & การยกระดับ"
+      }
+    },
+    zh: {
+      title: "文档模板",
+      subtitle: "免费查看模板。复制文本或下载Word（每次1积分）。",
+      creditsBalance: "积分：",
+      view: "查看",
+      noTemplates: "没有可用的模板",
+      showMore: "显示更多",
+      all: "全部",
+      checklists: "清单",
+      letters: "信函",
+      disputes: "争议",
+      inventory: "清单",
+      sections: {
+        before_signing: "签署前",
+        during_tenancy: "租赁期间",
+        preparing_moveout: "准备搬出",
+        after_moveout: "搬出后",
+        disputes: "争议与升级"
+      }
+    },
+    ja: {
+      title: "文書テンプレート",
+      subtitle: "無料でテンプレートを表示。テキストをコピーまたはWordをダウンロード（各1クレジット）。",
+      creditsBalance: "クレジット：",
+      view: "表示",
+      noTemplates: "利用可能なテンプレートがありません",
+      showMore: "もっと見る",
+      all: "すべて",
+      checklists: "チェックリスト",
+      letters: "手紙",
+      disputes: "紛争",
+      inventory: "目録",
+      sections: {
+        before_signing: "署名前",
+        during_tenancy: "賃貸期間中",
+        preparing_moveout: "退去準備",
+        after_moveout: "退去後",
+        disputes: "紛争とエスカレーション"
+      }
+    },
+    ko: {
+      title: "문서 템플릿",
+      subtitle: "무료로 템플릿 보기. 텍스트 복사 또는 Word 다운로드（각 1크레딧）.",
+      creditsBalance: "크레딧：",
+      view: "보기",
+      noTemplates: "사용 가능한 템플릿이 없습니다",
+      showMore: "더 보기",
+      all: "전체",
+      checklists: "체크리스트",
+      letters: "레터",
+      disputes: "분쟁",
+      inventory: "목록",
+      sections: {
+        before_signing: "서명 전",
+        during_tenancy: "임대 기간",
+        preparing_moveout: "이사 준비",
+        after_moveout: "이사 후",
+        disputes: "분쟁 및 에스컬레이션"
+      }
+    },
+    ru: {
+      title: "Шаблоны документов",
+      subtitle: "Просмотр шаблонов бесплатно. Копирование текста или загрузка Word（по 1 кредиту）.",
+      creditsBalance: "Кредиты：",
+      view: "Просмотр",
+      noTemplates: "Нет доступных шаблонов",
+      showMore: "Показать еще",
+      all: "Все",
+      checklists: "Чек-листы",
+      letters: "Письма",
+      disputes: "Споры",
+      inventory: "Опись",
+      sections: {
+        before_signing: "До подписания",
+        during_tenancy: "Во время аренды",
+        preparing_moveout: "Подготовка к выезду",
+        after_moveout: "После выезда",
+        disputes: "Споры и эскалация"
       }
     }
   };
@@ -319,10 +432,16 @@ function TemplatesContent() {
                   {isExpanded && (
                     <div className="p-4 space-y-3">
                       {visibleTemplates.map((template) => {
-                        if (!template || !template.id) return null;
-                        
-                        const title = language === 'th' ? (template.title_th || template.title_en || 'Untitled') : (template.title_en || 'Untitled');
-                        const description = language === 'th' ? (template.description_th || template.description_en || '') : (template.description_en || '');
+                       if (!template || !template.id) return null;
+
+                       // Get translated metadata from state or use original
+                       const metadata = translatedMetadata[template.template_key] || {
+                         title: language === 'th' ? (template.title_th || template.title_en || 'Untitled') : (template.title_en || 'Untitled'),
+                         description: language === 'th' ? (template.description_th || template.description_en || '') : (template.description_en || '')
+                       };
+
+                       const title = metadata.title;
+                       const description = metadata.description;
                         
                         // Determine icon
                         let TemplateIcon = FileText;

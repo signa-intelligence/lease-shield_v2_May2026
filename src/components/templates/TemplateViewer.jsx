@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { X, Copy, FileText, CreditCard, Loader2 } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
+import { translateTemplateContent } from "./translateTemplate";
 
 export default function TemplateViewer({ template, isOpen, onClose, colors, language, user, toast }) {
   const queryClient = useQueryClient();
@@ -12,6 +13,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const [downloading, setDownloading] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [templateReady, setTemplateReady] = useState(false);
+  const [translatedPreview, setTranslatedPreview] = useState(null);
+  const [translatingPreview, setTranslatingPreview] = useState(false);
 
   React.useEffect(() => {
     if (template && template.id && template.template_key) {
@@ -20,6 +23,38 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       setTemplateReady(false);
     }
   }, [template]);
+
+  // Translate preview content for non-EN/TH languages
+  React.useEffect(() => {
+    if (!template || !language || !isOpen) return;
+    
+    const isNonEnTh = !['en', 'th'].includes(language);
+    if (!isNonEnTh) {
+      setTranslatedPreview(null);
+      return;
+    }
+
+    const previewContentObj = typeof template.preview_content === 'object' ? template.preview_content : {};
+    const previewEn = typeof previewContentObj.en === 'string' ? previewContentObj.en : '';
+    
+    if (!previewEn || previewEn.trim().length < 50) {
+      setTranslatedPreview(null);
+      return;
+    }
+
+    // Translate preview content
+    setTranslatingPreview(true);
+    translateTemplateContent(template.template_key, previewEn, language, 'preview')
+      .then(translated => {
+        setTranslatedPreview(translated);
+        setTranslatingPreview(false);
+      })
+      .catch(error => {
+        console.error('[TRANSLATE] Preview translation failed:', error);
+        setTranslatedPreview(previewEn); // Fallback to EN
+        setTranslatingPreview(false);
+      });
+  }, [template, language, isOpen]);
 
   if (!isOpen) return null;
   
@@ -37,7 +72,12 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         >
           <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin" style={{ color: '#0C3B2E' }} />
           <p style={{ color: colors?.textSecondary || '#666' }}>
-            {language === 'th' ? 'กำลังโหลด...' : 'Loading template...'}
+            {language === 'th' ? 'กำลังโหลด...' 
+              : language === 'zh' ? '加载中...'
+              : language === 'ja' ? '読み込み中...'
+              : language === 'ko' ? '로딩 중...'
+              : language === 'ru' ? 'Загрузка...'
+              : 'Loading template...'}
           </p>
         </div>
       </div>
@@ -57,9 +97,11 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const docEn = typeof documentContentObj.en === 'string' ? documentContentObj.en : '';
   const docTh = typeof documentContentObj.th === 'string' ? documentContentObj.th : '';
   
-  // Preview selection: EN for EN, TH for TH, EN (to be translated) for other languages
+  // Preview selection: EN for EN, TH for TH, translated content for other languages
   const isNonEnTh = !['en', 'th'].includes(displayLang);
-  const previewContent = displayLang === 'th' ? previewTh : previewEn;
+  const previewContent = isNonEnTh && translatedPreview 
+    ? translatedPreview 
+    : (displayLang === 'th' ? previewTh : previewEn);
   
   // Document content for Copy/Download: ONLY EN or TH (prefer EN unless app is TH)
   const documentLangForExport = displayLang === 'th' ? 'th' : 'en';
@@ -282,19 +324,28 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
             {contentMissing && (
               <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: '#FEF3C7', borderLeft: '4px solid #F59E0B' }}>
                 <p className="text-sm font-semibold" style={{ color: '#92400E' }}>
-                  {displayLang === 'th' 
+                  {language === 'th' 
                     ? '⚠️ เนื้อหาภาษาไทยกำลังเตรียมการ - ใช้ภาษาอังกฤษในตอนนี้' 
                     : '⚠️ Content coming soon in selected language'}
                 </p>
               </div>
             )}
-            {hasPreview ? (
+            {translatingPreview ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#0C3B2E' }} />
+              </div>
+            ) : hasPreview ? (
               <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
                 {previewContent}
               </pre>
             ) : (
               <p className="text-sm text-center" style={{ color: colors.textSecondary }}>
-                {language === 'th' ? 'ไม่มีเนื้อหาตัวอย่าง' : 'Preview content unavailable'}
+                {language === 'th' ? 'ไม่มีเนื้อหาตัวอย่าง' 
+                  : language === 'zh' ? '没有预览内容'
+                  : language === 'ja' ? 'プレビューコンテンツがありません'
+                  : language === 'ko' ? '미리보기 콘텐츠 없음'
+                  : language === 'ru' ? 'Нет предварительного просмотра'
+                  : 'Preview content unavailable'}
               </p>
             )}
           </div>
@@ -305,7 +356,12 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
             
             <div className="flex items-center justify-between text-sm mb-2">
               <span style={{ color: colors.textSecondary }}>
-                {language === 'th' ? 'เครดิตของคุณ:' : 'Your credits:'}
+                {language === 'th' ? 'เครดิตของคุณ:' 
+                  : language === 'zh' ? '您的积分：'
+                  : language === 'ja' ? 'あなたのクレジット：'
+                  : language === 'ko' ? '크레딧：'
+                  : language === 'ru' ? 'Ваши кредиты：'
+                  : 'Your credits:'}
               </span>
               <span className="font-bold" style={{ color: letterCredits > 0 ? '#10B981' : '#EF4444' }}>
                 {letterCredits}
@@ -315,8 +371,11 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
             {(!documentContent || documentContent.trim().length < 100) && (
               <div className="mb-3 p-3 rounded-lg text-center" style={{ backgroundColor: '#FEF3C7' }}>
                 <p className="text-sm font-semibold" style={{ color: '#92400E' }}>
-                  {language === 'th' 
-                    ? 'เนื้อหาเทมเพลตไม่พร้อมใช้งานชั่วคราว' 
+                  {language === 'th' ? 'เนื้อหาเทมเพลตไม่พร้อมใช้งานชั่วคราว' 
+                    : language === 'zh' ? '模板内容暂时不可用'
+                    : language === 'ja' ? 'テンプレートコンテンツは一時的に利用できません'
+                    : language === 'ko' ? '템플릿 콘텐츠를 일시적으로 사용할 수 없습니다'
+                    : language === 'ru' ? 'Контент шаблона временно недоступен'
                     : 'Template content is temporarily unavailable'}
                 </p>
               </div>
@@ -348,10 +407,20 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   <Copy className="w-4 h-4" />
                 )}
                 <span className="truncate">
-                  {language === 'th' ? 'คัดลอกข้อความ' : 'Copy Text'}
+                  {language === 'th' ? 'คัดลอกข้อความ' 
+                    : language === 'zh' ? '复制文本'
+                    : language === 'ja' ? 'テキストをコピー'
+                    : language === 'ko' ? '텍스트 복사'
+                    : language === 'ru' ? 'Копировать текст'
+                    : 'Copy Text'}
                 </span>
                 <span className="text-xs opacity-75 flex-shrink-0">
-                  {language === 'th' ? '(ใช้ 1 เครดิต)' : '(1 credit)'}
+                  {language === 'th' ? '(ใช้ 1 เครดิต)' 
+                    : language === 'zh' ? '(1积分)'
+                    : language === 'ja' ? '(1クレジット)'
+                    : language === 'ko' ? '(1크레딧)'
+                    : language === 'ru' ? '(1 кредит)'
+                    : '(1 credit)'}
                 </span>
               </Button>
 
@@ -380,10 +449,20 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   <FileText className="w-4 h-4" />
                 )}
                 <span className="truncate">
-                  {language === 'th' ? 'ดาวน์โหลดไฟล์ Word' : 'Download Word'}
+                  {language === 'th' ? 'ดาวน์โหลดไฟล์ Word' 
+                    : language === 'zh' ? '下载Word'
+                    : language === 'ja' ? 'Wordをダウンロード'
+                    : language === 'ko' ? 'Word 다운로드'
+                    : language === 'ru' ? 'Скачать Word'
+                    : 'Download Word'}
                 </span>
                 <span className="text-xs opacity-75 flex-shrink-0">
-                  {language === 'th' ? '(ใช้ 1 เครดิต)' : '(1 credit)'}
+                  {language === 'th' ? '(ใช้ 1 เครดิต)' 
+                    : language === 'zh' ? '(1积分)'
+                    : language === 'ja' ? '(1クレジット)'
+                    : language === 'ko' ? '(1크레딧)'
+                    : language === 'ru' ? '(1 кредит)'
+                    : '(1 credit)'}
                 </span>
               </Button>
             </div>
@@ -407,11 +486,19 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
               <CreditCard className="w-8 h-8" style={{ color: '#DC2626' }} />
             </div>
             <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {language === 'th' ? 'ไม่มีเครดิต' : 'No Credits'}
+              {language === 'th' ? 'ไม่มีเครดิต' 
+                : language === 'zh' ? '没有积分'
+                : language === 'ja' ? 'クレジットがありません'
+                : language === 'ko' ? '크레딧 없음'
+                : language === 'ru' ? 'Нет кредитов'
+                : 'No Credits'}
             </h3>
             <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
-              {language === 'th' 
-                ? 'คุณมี 0 เครดิต กรุณาอัปเกรดหรือซื้อเครดิตเพื่อดำเนินการต่อ' 
+              {language === 'th' ? 'คุณมี 0 เครดิต กรุณาอัปเกรดหรือซื้อเครดิตเพื่อดำเนินการต่อ' 
+                : language === 'zh' ? '您有0个信函积分。升级或购买积分以继续。'
+                : language === 'ja' ? 'レタークレジットが0です。続行するにはアップグレードまたはクレジットを購入してください。'
+                : language === 'ko' ? '레터 크레딧이 0개입니다. 계속하려면 업그레이드하거나 크레딧을 구매하세요.'
+                : language === 'ru' ? 'У вас 0 кредитов писем. Обновите план или купите кредиты для продолжения.'
                 : 'You have 0 letter credits. Upgrade or buy credits to proceed.'}
             </p>
             <Button
@@ -419,7 +506,12 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
               className="w-full"
               style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
             >
-              {language === 'th' ? 'ปิด' : 'Close'}
+              {language === 'th' ? 'ปิด' 
+                : language === 'zh' ? '关闭'
+                : language === 'ja' ? '閉じる'
+                : language === 'ko' ? '닫기'
+                : language === 'ru' ? 'Закрыть'
+                : 'Close'}
             </Button>
           </div>
         </div>
