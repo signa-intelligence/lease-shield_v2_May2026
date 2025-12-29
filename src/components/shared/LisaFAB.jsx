@@ -51,10 +51,9 @@ export default function LisaFAB({ onClick, isDarkMode = false }) {
       onMouseLeave={() => setIsHovered(false)}
       style={{
         position: "fixed",
-        top: "20px",
-        right: "70px",
-        minWidth: "56px",
-        width: "56px",
+        bottom: cookieBannerVisible ? "calc(160px + env(safe-area-inset-bottom, 0px))" : "calc(80px + env(safe-area-inset-bottom, 0px))",
+        right: "20px",
+        minWidth: isMobile ? "56px" : (isHovered ? "180px" : "56px"),
         height: "56px",
         borderRadius: "28px",
         backgroundColor: "#063F2C",
@@ -64,10 +63,10 @@ export default function LisaFAB({ onClick, isDarkMode = false }) {
         alignItems: "center",
         justifyContent: "center",
         gap: "8px",
-        padding: "0",
-        boxShadow: "0 4px 12px rgba(12, 59, 46, 0.2)",
+        padding: "0 16px",
+        boxShadow: "0 8px 24px rgba(6,63,44,0.4)",
         cursor: "pointer",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1), all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         zIndex: 50,
         fontWeight: "700",
         fontSize: "14px",
@@ -75,7 +74,15 @@ export default function LisaFAB({ onClick, isDarkMode = false }) {
         whiteSpace: "nowrap"
       }}
     >
-      <MessageCircle className="w-5 h-5 flex-shrink-0" />
+      <MessageCircle className="w-6 h-6 flex-shrink-0" />
+      {(!isMobile && isHovered) && (
+        <span style={{
+          opacity: 1,
+          animation: "fadeIn 0.2s ease-in"
+        }}>
+          {label}
+        </span>
+      )}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
