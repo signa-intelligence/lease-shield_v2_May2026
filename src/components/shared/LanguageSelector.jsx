@@ -15,18 +15,17 @@ const LANGUAGES = [
 ];
 
 export default function LanguageSelector({ isOpen, onClose, colors, currentLanguage = 'en' }) {
-  const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
   const [saving, setSaving] = useState(false);
   const queryClient = useQueryClient();
 
   if (!isOpen) return null;
 
-  const handleSave = async () => {
+  const handleLanguageSelect = async (langCode) => {
+    if (saving) return;
     setSaving(true);
     try {
-      await base44.auth.updateMe({ language: selectedLanguage });
+      await base44.auth.updateMe({ language: langCode });
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      onClose();
       window.location.reload();
     } catch (error) {
       console.error('Failed to update language:', error);
@@ -79,72 +78,36 @@ export default function LanguageSelector({ isOpen, onClose, colors, currentLangu
           </button>
         </div>
 
-        <div className="space-y-2 mb-6">
+        <div className="space-y-2">
           {LANGUAGES.map((lang) => (
             <button
               key={lang.code}
-              onClick={() => setSelectedLanguage(lang.code)}
+              onClick={() => handleLanguageSelect(lang.code)}
+              disabled={saving}
               style={{
                 width: '100%',
                 padding: '12px',
                 borderRadius: '8px',
-                backgroundColor: selectedLanguage === lang.code ? '#063F2C' : 'transparent',
-                border: `2px solid ${selectedLanguage === lang.code ? '#063F2C' : colors.borderColor}`,
-                cursor: 'pointer',
+                backgroundColor: currentLanguage === lang.code ? '#063F2C' : 'transparent',
+                border: `2px solid ${currentLanguage === lang.code ? '#063F2C' : colors.borderColor}`,
+                cursor: saving ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 transition: 'all 0.2s',
-                color: selectedLanguage === lang.code ? '#FFFFFF' : colors.textPrimary
+                color: currentLanguage === lang.code ? '#FFFFFF' : colors.textPrimary,
+                opacity: saving ? 0.6 : 1
               }}
             >
               <div className="flex items-center gap-3">
                 <span className="text-2xl">{lang.flag}</span>
                 <span className="font-semibold">{lang.name}</span>
               </div>
-              {selectedLanguage === lang.code && (
+              {currentLanguage === lang.code && (
                 <Check className="w-5 h-5" />
               )}
             </button>
           ))}
-        </div>
-
-        <div className="space-y-3">
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full"
-            style={{
-              backgroundColor: '#063F2C',
-              color: '#FFFFFF',
-              padding: '14px',
-              fontWeight: '700',
-              fontSize: '15px',
-              borderRadius: '12px'
-            }}
-          >
-            {saving ? (
-              currentLanguage === 'th' ? 'กำลังบันทึก...' : currentLanguage === 'zh' ? '保存中...' : currentLanguage === 'ja' ? '保存中...' : currentLanguage === 'ko' ? '저장 중...' : currentLanguage === 'ru' ? 'Сохранение...' : 'Saving...'
-            ) : (
-              currentLanguage === 'th' ? 'บันทึก' : currentLanguage === 'zh' ? '保存' : currentLanguage === 'ja' ? '保存' : currentLanguage === 'ko' ? '저장' : currentLanguage === 'ru' ? 'Сохранить' : 'Save'
-            )}
-          </Button>
-          <button
-            onClick={onClose}
-            disabled={saving}
-            style={{
-              width: '100%',
-              padding: '8px',
-              background: 'none',
-              border: 'none',
-              color: colors.textSecondary,
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
-            {currentLanguage === 'th' ? 'ยกเลิก' : currentLanguage === 'zh' ? '取消' : currentLanguage === 'ja' ? 'キャンセル' : currentLanguage === 'ko' ? '취소' : currentLanguage === 'ru' ? 'Отмена' : 'Cancel'}
-          </button>
         </div>
       </Card>
     </div>
