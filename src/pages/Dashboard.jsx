@@ -2087,39 +2087,9 @@ ja: {
                     </div>
                   </div>
                   <Link to={createPageUrl("Account") + '?showPlans=true'}>
-                  <button
-                    onClick={() => haptic.medium()}
-                    className="btn-interaction w-full sm:w-auto"
-                    style={{
-                      padding: '12px 28px',
-                      minHeight: '48px',
-                      borderRadius: '12px',
-                      backgroundColor: '#0C3B2E',
-                      color: '#FFFFFF',
-                      border: '2px solid #C7A338',
-                      fontWeight: '700',
-                      fontSize: '15px',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(12,59,46,0.3)',
-                      whiteSpace: 'nowrap',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#C7A338';
-                        e.target.style.borderColor = '#C7A338';
-                        e.target.style.color = '#1A1D1F';
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 6px 16px rgba(199,163,56,0.4)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#0C3B2E';
-                        e.target.style.borderColor = '#C7A338';
-                        e.target.style.color = '#FFFFFF';
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(12,59,46,0.3)';
-                      }}
+                    <button
+                      onClick={() => haptic.medium()}
+                      className="btn-secondary"
                     >
                       {strings.viewPlans}
                     </button>
@@ -2175,33 +2145,7 @@ ja: {
                   <Link to={createPageUrl("Account") + '?showPlans=true'}>
                     <button
                       onClick={() => haptic.medium()}
-                      className="btn-interaction w-full sm:w-auto"
-                      style={{
-                        padding: '12px 28px',
-                        minHeight: '48px',
-                        borderRadius: '12px',
-                        backgroundColor: '#10B981',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        fontWeight: '700',
-                        fontSize: '15px',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                        whiteSpace: 'nowrap',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#059669';
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 6px 16px rgba(16,185,129,0.4)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#10B981';
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)';
-                      }}
+                      className="btn-primary"
                     >
                       {language === 'th' ? 'อัปเกรดเลย' : language === 'zh' ? '立即升级' : language === 'ja' ? '今すぐアップグレード' : language === 'ko' ? '지금 업그레이드' : language === 'ru' ? 'Обновить сейчас' : 'Upgrade Now'}
                     </button>
@@ -2257,33 +2201,7 @@ ja: {
                   <Link to={createPageUrl("Account") + '?showPlans=true'}>
                     <button
                       onClick={() => haptic.medium()}
-                      className="btn-interaction w-full sm:w-auto"
-                      style={{
-                        padding: '12px 28px',
-                        minHeight: '48px',
-                        borderRadius: '12px',
-                        backgroundColor: '#8B5CF6',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        fontWeight: '700',
-                        fontSize: '15px',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
-                        whiteSpace: 'nowrap',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#7C3AED';
-                        e.target.style.transform = 'translateY(-2px)';
-                        e.target.style.boxShadow = '0 6px 16px rgba(139,92,246,0.4)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#8B5CF6';
-                        e.target.style.transform = 'translateY(0)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(139,92,246,0.3)';
-                      }}
+                      className="btn-primary"
                     >
                       {language === 'th' ? 'อัปเกรดเลย' : language === 'zh' ? '立即升级' : language === 'ja' ? '今すぐアップグレード' : language === 'ko' ? '지금 업그레이드' : language === 'ru' ? 'Обновить сейчас' : 'Upgrade Now'}
                     </button>
@@ -2384,31 +2302,11 @@ ja: {
                   </div>
                   <button
                     onClick={handleStartResolve}
-                    className="btn-interaction flex-shrink-0 w-full sm:w-auto"
+                    className="btn-accent flex-shrink-0"
                     style={{
-                      padding: '12px 20px',
-                      minHeight: '44px',
-                      borderRadius: '8px',
-                      backgroundColor: 'rgba(239, 68, 68, 0.5)',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      fontWeight: '600',
                       fontSize: '14px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      boxShadow: '0 2px 6px rgba(239,68,68,0.3)',
-                      whiteSpace: 'nowrap',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#DC2626';
-                      e.target.style.boxShadow = '0 4px 8px rgba(239,68,68,0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = '#EF4444';
-                      e.target.style.boxShadow = '0 2px 6px rgba(239,68,68,0.3)';
+                      padding: '12px 20px',
+                      minHeight: '44px'
                     }}
                   >
                     {awaitingCase ? strings.continueCase : strings.startResolve}
