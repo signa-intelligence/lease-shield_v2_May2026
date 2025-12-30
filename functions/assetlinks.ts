@@ -6,11 +6,11 @@
 Deno.serve(async (req) => {
   // CORS headers for cross-origin requests
   const headers = {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Cache-Control': 'public, max-age=3600'
+    'Cache-Control': 'no-store'
   };
 
   // Handle OPTIONS preflight
