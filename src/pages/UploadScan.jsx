@@ -2547,21 +2547,26 @@ function UploadScanPageContent() {
                     </h4>
                     <div className="space-y-2">
                       {selectedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{
+                        <div key={index} className="flex items-center gap-3 p-3 rounded-lg" style={{
                           backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6'
                         }}>
-                          <div className="flex items-center gap-3">
-                            <FileText className="w-5 h-5" style={{ color: colors.textSecondary }} />
-                            <div>
-                              <p className="font-medium" style={{ color: colors.textPrimary }}>{file.name}</p>
-                              <p className="text-sm" style={{ color: colors.textSecondary }}>
-                                {(file.size / 1024 / 1024).toFixed(2)} MB
-                              </p>
-                            </div>
+                          <FileText className="w-5 h-5 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p className="font-medium" style={{ 
+                              color: colors.textPrimary,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {file.name}
+                            </p>
+                            <p className="text-sm" style={{ color: colors.textSecondary }}>
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
                           </div>
                           <button
                             onClick={() => handleRemoveFile(index)}
-                            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+                            className="p-2 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0"
                           >
                             <X className="w-5 h-5 text-red-600" />
                           </button>
