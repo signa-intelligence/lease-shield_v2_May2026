@@ -176,7 +176,7 @@ function UploadScanPageContent() {
       uploadArea: "Drop your lease files here or click to browse",
       supportedFormats: "PDF, PNG, or JPG only. Max 10MB per file.",
       selectFiles: "Select Files",
-      uploadAll: "Upload & Analyse",
+      uploadAll: "Analyse Files",
       uploading: "Uploading files...",
       analyzingTitle: "Analysing Your Lease",
       analyzingDesc: "Reviewing your lease agreement. This may take up to 30 seconds...",
@@ -234,8 +234,7 @@ function UploadScanPageContent() {
       upgradeForMore: "Upgrade for More Scans",
       scansRemaining: "{remaining} scan(s) remaining {periodText}",
       unlimitedScans: "Unlimited Scans",
-      browseDocuments: "Browse Documents",
-      takePhotos: "Take Photos",
+      browseDocuments: "Upload Documents",
       batchUpload: "Batch Upload",
       singleUpload: "Single Upload",
       filesWillBeSeparate: "Each file will be uploaded as a separate lease",
@@ -270,7 +269,7 @@ function UploadScanPageContent() {
       uploadArea: "วางไฟล์สัญญาเช่าที่นี่ หรือคลิกเพื่อเลือกไฟล์",
       supportedFormats: "รองรับเฉพาะ PDF, PNG หรือ JPG ไฟล์ละไม่เกิน 10MB",
       selectFiles: "เลือกไฟล์",
-      uploadAll: "อัปโหลดและวิเคราะห์",
+      uploadAll: "วิเคราะห์ไฟล์",
       uploading: "กำลังอัปโหลดไฟล์...",
       analyzingTitle: "กำลังวิเคราะห์สัญญาเช่า",
       analyzingDesc: "กำลังตรวจสอบสัญญาเช่าของคุณ อาจใช้เวลาประมาณ 30 วินาที...",
@@ -328,8 +327,7 @@ function UploadScanPageContent() {
       upgradeForMore: "อัปเกรดเพื่อเพิ่มการสแกน",
       scansRemaining: "เหลืออีก {remaining} การสแกน{periodText}",
       unlimitedScans: "สแกนได้ไม่จำกัด",
-      browseDocuments: "เลือกเอกสาร",
-      takePhotos: "ถ่ายรูป",
+      browseDocuments: "อัปโหลดเอกสาร",
       batchUpload: "อัปโหลดแบบกลุ่ม",
       singleUpload: "อัปโหลดแบบเดี่ยว",
       filesWillBeSeparate: "แต่ละไฟล์จะถูกอัปโหลดเป็นสัญญาเช่าแยกกัน",
@@ -364,7 +362,7 @@ function UploadScanPageContent() {
       uploadArea: "将租约文件拖放到此处或点击浏览",
       supportedFormats: "仅支持 PDF、PNG 或 JPG，每个文件最大 10MB",
       selectFiles: "选择文件",
-      uploadAll: "上传并分析",
+      uploadAll: "分析文件",
       uploading: "正在上传文件...",
       analyzingTitle: "正在分析您的租约",
       analyzingDesc: "正在审查您的租赁协议。这可能需要30秒...",
@@ -422,8 +420,7 @@ function UploadScanPageContent() {
       upgradeForMore: "升级以获得更多扫描",
       scansRemaining: "剩余 {remaining} 次扫描{periodText}",
       unlimitedScans: "无限制扫描",
-      browseDocuments: "浏览文档",
-      takePhotos: "拍照",
+      browseDocuments: "上传文档",
       batchUpload: "批量上传",
       singleUpload: "单次上传",
       filesWillBeSeparate: "每个文件将作为单独的租约上传",
@@ -458,7 +455,7 @@ function UploadScanPageContent() {
       uploadArea: "ここに賃貸契約ファイルをドロップまたはクリックして参照",
       supportedFormats: "PDF、PNG、JPG のみ。各ファイル最大10MB",
       selectFiles: "ファイルを選択",
-      uploadAll: "アップロードして分析",
+      uploadAll: "ファイルを分析",
       uploading: "ファイルをアップロード中...",
       analyzingTitle: "賃貸契約を分析中",
       analyzingDesc: "賃貸契約を確認しています。最大30秒かかる場合があります...",
@@ -516,8 +513,7 @@ function UploadScanPageContent() {
       upgradeForMore: "アップグレードしてさらにスキャン",
       scansRemaining: "残り{remaining}回のスキャン{periodText}",
       unlimitedScans: "無制限スキャン",
-      browseDocuments: "ドキュメントを参照",
-      takePhotos: "写真を撮る",
+      browseDocuments: "ドキュメントをアップロード",
       batchUpload: "一括アップロード",
       singleUpload: "単一アップロード",
       filesWillBeSeparate: "各ファイルは個別の賃貸契約としてアップロードされます",
@@ -552,7 +548,7 @@ function UploadScanPageContent() {
       uploadArea: "여기에 임대 계약 파일을 드롭하거나 클릭하여 찾아보기",
       supportedFormats: "PDF, PNG, JPG만 지원. 파일당 최대 10MB",
       selectFiles: "파일 선택",
-      uploadAll: "업로드 및 분석",
+      uploadAll: "파일 분석",
       uploading: "파일 업로드 중...",
       analyzingTitle: "임대 계약 분석 중",
       analyzingDesc: "임대 계약을 검토하고 있습니다. 최대 30초 소요될 수 있습니다...",
@@ -610,8 +606,7 @@ function UploadScanPageContent() {
       upgradeForMore: "더 많은 스캔을 위해 업그레이드",
       scansRemaining: "{remaining}회 스캔 남음{periodText}",
       unlimitedScans: "무제한 스캔",
-      browseDocuments: "문서 찾아보기",
-      takePhotos: "사진 촬영",
+      browseDocuments: "문서 업로드",
       batchUpload: "일괄 업로드",
       singleUpload: "단일 업로드",
       filesWillBeSeparate: "각 파일은 별도의 임대 계약으로 업로드됩니다",
@@ -646,7 +641,7 @@ function UploadScanPageContent() {
       uploadArea: "Перетащите файлы договора сюда или нажмите, чтобы выбрать",
       supportedFormats: "Только PDF, PNG или JPG. Максимум 10 МБ на файл",
       selectFiles: "Выбрать файлы",
-      uploadAll: "Загрузить и проанализировать",
+      uploadAll: "Анализировать файлы",
       uploading: "Загрузка файлов...",
       analyzingTitle: "Анализ вашего договора",
       analyzingDesc: "Проверка договора аренды. Это может занять до 30 секунд...",
@@ -704,8 +699,7 @@ function UploadScanPageContent() {
       upgradeForMore: "Обновитесь для большего количества сканирований",
       scansRemaining: "Осталось {remaining} сканирований{periodText}",
       unlimitedScans: "Неограниченные сканирования",
-      browseDocuments: "Выбрать файлы",
-      takePhotos: "Сделать фото",
+      browseDocuments: "Загрузить файлы",
       batchUpload: "Пакетная загрузка",
       singleUpload: "Одиночная загрузка",
       filesWillBeSeparate: "Каждый файл будет загружен как отдельный договор",
@@ -2522,12 +2516,12 @@ function UploadScanPageContent() {
                         : '⚠️ If selecting from Google Drive on Android fails, download to device first'}
                   </p>
 
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                  <div className="flex justify-center">
                     <label className="inline-block">
                       <input
                         type="file"
                         multiple
-                        accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                        accept=".pdf,.png,.jpg,.jpeg,image/*,application/pdf,image/png,image/jpeg"
                         onChange={handleFileSelect}
                         className="hidden"
                         disabled={!scanStatus.allowed}
@@ -2541,29 +2535,6 @@ function UploadScanPageContent() {
                       >
                         <FileText className="w-5 h-5" />
                         {strings.browseDocuments}
-                      </span>
-                    </label>
-
-                    <label className="inline-block">
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/png,image/jpeg,.png,.jpg,.jpeg"
-                        capture="environment"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        disabled={!scanStatus.allowed}
-                      />
-                      <span
-                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg border-2 ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                        style={{
-                          backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF',
-                          color: '#0C3B2E',
-                          borderColor: '#0C3B2E'
-                        }}
-                      >
-                        <Camera className="w-5 h-5" />
-                        {strings.takePhotos}
                       </span>
                     </label>
                   </div>
@@ -2603,14 +2574,27 @@ function UploadScanPageContent() {
                         handleUploadAll();
                       }}
                       disabled={uploading || !scanStatus.allowed}
-                      className={`w-full mt-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`w-full mt-4 py-4 rounded-lg font-bold ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
                       style={{
                         backgroundColor: '#0C3B2E',
-                        color: '#FFFFFF'
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '10px',
+                        minHeight: '56px',
+                        fontSize: '16px',
+                        padding: '12px 24px'
                       }}
                     >
-                      <Upload className="w-5 h-5" />
-                      {strings.uploadAll}
+                      <Upload className="w-5 h-5 flex-shrink-0" />
+                      <span style={{ 
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {strings.uploadAll}
+                      </span>
                     </button>
                   </div>
                 )}
