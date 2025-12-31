@@ -2,17 +2,29 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { jsPDF } from 'npm:jspdf@2.5.2';
 
 Deno.serve(async (req) => {
+  const correlationId = `pdf-gen-${Date.now()}`;
+  
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
     if (!user) {
+      console.error(`[${correlationId}] Unauthorized access attempt`);
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { scanData, language = 'en' } = await req.json();
+    const { scanData, language = 'en', correlationId: clientCorrelationId } = await req.json();
+    const trackingId = clientCorrelationId || correlationId;
+    
+    console.log(`[${trackingId}] PDF generation started`, {
+      userId: user.id,
+      userEmail: user.email,
+      language,
+      hasScanData: !!scanData
+    });
 
     if (!scanData) {
+      console.error(`[${trackingId}] Missing scan data in request`);
       return Response.json({ error: 'Missing scan data' }, { status: 400 });
     }
 
@@ -213,24 +225,42 @@ Deno.serve(async (req) => {
     }
 
     // Generate and upload PDF
+    console.log(`[${trackingId}] Generating PDF binary`);
     const pdfBytes = doc.output('arraybuffer');
     const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
     
+    console.log(`[${trackingId}] PDF binary generated`, {
+      sizeBytes: pdfBytes.byteLength,
+      sizeMB: (pdfBytes.byteLength / 1024 / 1024).toFixed(2)
+    });
+    
     // Upload to storage
-    const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ 
+    console.log(`[${trackingId}] Uploading PDF to storage`);
+    const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ 
       file: pdfBlob 
+    });
+    
+    console.log(`[${trackingId}] PDF uploaded successfully`, {
+      fileUrl: uploadResult.file_url
     });
 
     return Response.json({ 
       success: true, 
-      pdf_url: file_url 
+      pdf_url: uploadResult.file_url,
+      correlationId: trackingId
     });
 
   } catch (error) {
-    console.error('PDF generation error:', error);
+    console.error(`[${correlationId}] PDF generation error:`, {
+      error: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
     return Response.json({ 
       success: false, 
-      error: error.message 
+      error: error.message,
+      correlationId
     }, { status: 500 });
   }
 });

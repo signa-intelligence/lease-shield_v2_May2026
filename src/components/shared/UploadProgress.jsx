@@ -27,11 +27,11 @@ export default function UploadProgress({
       uploading: 'Uploading files...',
       uploadingFiles: 'Uploading files...',
       processing: 'Processing...',
-      analyzing: 'Analyzing...',
-      finalizing: 'Finalizing...',
+      analyzing: 'Analysing...',
+      finalizing: 'Finalising...',
       savingDocuments: 'Saving documents...',
       creating: 'Creating lease record...',
-      scanning: 'AI analyzing document...',
+      scanning: 'Analysing document...',
       extracting: 'Extracting lease details...',
       complete: 'Complete!'
     },
@@ -44,7 +44,7 @@ export default function UploadProgress({
       finalizing: 'กำลังสรุป...',
       savingDocuments: 'กำลังบันทึกเอกสาร...',
       creating: 'กำลังสร้างบันทึกสัญญาเช่า...',
-      scanning: 'AI กำลังวิเคราะห์เอกสาร...',
+      scanning: 'กำลังวิเคราะห์เอกสาร...',
       extracting: 'กำลังดึงข้อมูลสัญญาเช่า...',
       complete: 'เสร็จสมบูรณ์!'
     },
@@ -57,7 +57,7 @@ export default function UploadProgress({
       finalizing: '完成中...',
       savingDocuments: '保存文档中...',
       creating: '创建租约记录中...',
-      scanning: 'AI分析文档中...',
+      scanning: '分析文档中...',
       extracting: '提取租约详情中...',
       complete: '完成！'
     },
@@ -70,7 +70,7 @@ export default function UploadProgress({
       finalizing: '最終処理中...',
       savingDocuments: 'ドキュメントを保存中...',
       creating: '賃貸契約記録を作成中...',
-      scanning: 'AIがドキュメントを分析中...',
+      scanning: 'ドキュメントを分析中...',
       extracting: '賃貸契約の詳細を抽出中...',
       complete: '完了！'
     },
@@ -83,9 +83,22 @@ export default function UploadProgress({
       finalizing: '완료 중...',
       savingDocuments: '문서 저장 중...',
       creating: '임대 계약 기록 생성 중...',
-      scanning: 'AI가 문서를 분석 중...',
+      scanning: '문서를 분석 중...',
       extracting: '임대 계약 세부 정보 추출 중...',
       complete: '완료！'
+    },
+    ru: {
+      compressing: 'Сжатие изображений...',
+      uploading: 'Загрузка файлов...',
+      uploadingFiles: 'Загрузка файлов...',
+      processing: 'Обработка...',
+      analyzing: 'Анализ...',
+      finalizing: 'Завершение...',
+      savingDocuments: 'Сохранение документов...',
+      creating: 'Создание записи договора...',
+      scanning: 'Анализ документа...',
+      extracting: 'Извлечение деталей...',
+      complete: 'Завершено!'
     }
   };
 

@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle } from "lucide-react";
+import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { FeatureGate } from "../components/shared/FeatureGate";
 import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
@@ -273,6 +273,15 @@ function ReportFullContent() {
     setDownloadingPDF(true);
     haptic.medium();
 
+    const correlationId = `pdf-export-${Date.now()}-${user.id.substring(0, 8)}`;
+    console.log(`[${correlationId}] PDF export initiated`, {
+      userId: user.id,
+      userEmail: user.email,
+      scanId: scan.id,
+      leaseId: lease.id,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       // Generate comprehensive PDF report content
       const pdfData = {
@@ -289,10 +298,23 @@ function ReportFullContent() {
         generated_date: new Date().toISOString()
       };
 
+      console.log(`[${correlationId}] Calling PDF generation function`, {
+        dataStructure: Object.keys(pdfData),
+        flagsCount: pdfData.flags.length,
+        language
+      });
+
       // Call PDF generation function
       const response = await base44.functions.invoke('generateLeaseReportPDF', {
         scanData: pdfData,
-        language: language
+        language: language,
+        correlationId
+      });
+
+      console.log(`[${correlationId}] PDF generation response`, {
+        success: response.data?.success,
+        hasPdfUrl: !!response.data?.pdf_url,
+        status: response.status
       });
 
       if (response.data?.pdf_url) {
@@ -305,14 +327,35 @@ function ReportFullContent() {
         link.click();
         document.body.removeChild(link);
         
+        console.log(`[${correlationId}] PDF download triggered successfully`);
         toast.success(language === 'th' ? 'กำลังดาวน์โหลด PDF' : 'Downloading PDF');
         haptic.success();
       } else {
-        throw new Error('PDF generation failed');
+        console.error(`[${correlationId}] PDF URL missing in response`, response.data);
+        throw new Error('PDF generation failed - no URL returned');
       }
     } catch (error) {
-      console.error('PDF download failed:', error);
-      toast.error(language === 'th' ? 'ไม่สามารถสร้าง PDF ได้ กรุณาลองอีกครั้ง' : 'Failed to generate PDF. Please try again.');
+      console.error(`[${correlationId}] PDF export error:`, {
+        error: error.message,
+        stack: error.stack,
+        userId: user.id,
+        scanId: scan.id,
+        leaseId: lease.id
+      });
+      
+      const errorMsg = language === 'th' 
+        ? 'การสร้าง PDF ล้มเหลว - กรุณาลองอีกครั้ง' 
+        : language === 'zh'
+          ? 'PDF导出失败 - 请重试'
+          : language === 'ja'
+            ? 'PDFエクスポート失敗 - 再試行してください'
+            : language === 'ko'
+              ? 'PDF 내보내기 실패 - 다시 시도하세요'
+              : language === 'ru'
+                ? 'Экспорт PDF не удался - попробуйте снова'
+                : 'PDF export failed - please try again';
+      
+      toast.error(errorMsg);
       haptic.error();
     } finally {
       setDownloadingPDF(false);
