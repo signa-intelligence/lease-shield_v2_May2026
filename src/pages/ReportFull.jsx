@@ -273,8 +273,8 @@ function ReportFullContent() {
     setDownloadingPDF(true);
     haptic.medium();
 
-    const correlationId = `pdf-export-${Date.now()}-${user.id.substring(0, 8)}`;
-    console.log(`[${correlationId}] PDF export initiated`, {
+    const correlationId = `pdf-dl-${Date.now()}-${user.id.substring(0, 8)}`;
+    console.log(`[${correlationId}] PDF download initiated`, {
       userId: user.id,
       userEmail: user.email,
       scanId: scan.id,
@@ -283,84 +283,48 @@ function ReportFullContent() {
     });
 
     try {
-      // Generate comprehensive PDF report content
-      const pdfData = {
-        lease_address: lease.property_address || 'Lease Agreement',
-        risk_score: scan.risk_score,
-        summary: scan.summary,
-        flags: scan.scan_full?.flags || [],
-        missing_items: scan.scan_full?.missing_items || [],
-        key_terms: scan.scan_full?.key_terms || {},
-        lease_start: lease.start_date,
-        lease_end: lease.end_date,
-        rent_amount: lease.rent_amount,
-        deposit_amount: lease.deposit_amount,
-        generated_date: new Date().toISOString()
-      };
+      // Construct direct PDF endpoint URL
+      const baseUrl = window.location.origin;
+      const pdfUrl = `${baseUrl}/api/getLeaseReportPDF?leaseId=${lease.id}&language=${language}`;
+      
+      console.log(`[${correlationId}] PDF endpoint URL constructed`, { pdfUrl });
 
-      console.log(`[${correlationId}] Calling PDF generation function`, {
-        dataStructure: Object.keys(pdfData),
-        flagsCount: pdfData.flags.length,
-        language
-      });
-
-      // Call PDF generation function
-      const response = await base44.functions.invoke('generateLeaseReportPDF', {
-        scanData: pdfData,
-        language: language,
-        correlationId
-      });
-
-      console.log(`[${correlationId}] PDF generation response`, {
-        success: response.data?.success,
-        hasPdfUrl: !!response.data?.pdf_url,
-        responseData: response.data,
-        status: response.status
-      });
-
-      if (response.data?.success && response.data?.pdf_url) {
-        console.log(`[${correlationId}] PDF URL obtained, initiating download...`);
-        
-        // MOBILE-OPTIMIZED DOWNLOAD FLOW
-        // Direct navigation works best on Android Chrome/PWA
-        window.open(response.data.pdf_url, '_blank');
-        
-        console.log(`[${correlationId}] PDF download initiated via window.open`);
+      // MOBILE-SAFE DOWNLOAD: Direct same-tab navigation (no popup blocker)
+      // This works reliably in Android Chrome, PWA, and TWA contexts
+      window.location.href = pdfUrl;
+      
+      console.log(`[${correlationId}] PDF download triggered via window.location.href`);
+      
+      // Show success message immediately (download will start in background)
+      setTimeout(() => {
         toast.success(language === 'th' ? 'กำลังดาวน์โหลด PDF' : 'Downloading PDF');
         haptic.success();
-      } else {
-        console.error(`[${correlationId}] PDF generation failed`, {
-          success: response.data?.success,
-          error: response.data?.error,
-          fullResponse: response.data
-        });
-        throw new Error(response.data?.error || 'PDF generation failed - no URL returned');
-      }
+        setDownloadingPDF(false);
+      }, 500);
+
     } catch (error) {
-      console.error(`[${correlationId}] PDF export error:`, {
+      console.error(`[${correlationId}] PDF download error:`, {
         message: error.message,
         stack: error.stack,
-        response: error.response?.data,
         userId: user.id,
         scanId: scan?.id,
         leaseId: lease?.id
       });
       
       const errorMsg = language === 'th' 
-        ? 'การสร้าง PDF ล้มเหลว - กรุณาลองอีกครั้ง' 
+        ? 'การดาวน์โหลด PDF ล้มเหลว - กรุณาลองอีกครั้ง' 
         : language === 'zh'
-          ? 'PDF导出失败 - 请重试'
+          ? 'PDF下载失败 - 请重试'
           : language === 'ja'
-            ? 'PDFエクスポート失敗 - 再試行してください'
+            ? 'PDFダウンロード失敗 - 再試行してください'
             : language === 'ko'
-              ? 'PDF 내보내기 실패 - 다시 시도하세요'
+              ? 'PDF 다운로드 실패 - 다시 시도하세요'
               : language === 'ru'
-                ? 'Экспорт PDF не удался - попробуйте снова'
-                : 'PDF export failed - please try again';
+                ? 'Загрузка PDF не удалась - попробуйте снова'
+                : 'PDF download failed - please try again';
       
       toast.error(errorMsg);
       haptic.error();
-    } finally {
       setDownloadingPDF(false);
     }
   };
