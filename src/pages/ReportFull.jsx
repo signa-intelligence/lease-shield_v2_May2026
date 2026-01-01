@@ -21,31 +21,132 @@ function ReportFullContent() {
   const toast = useToast();
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
+  const leaseId = urlParams.get('leaseId');
   
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [expandedClauses, setExpandedClauses] = useState({});
+  const [loadError, setLoadError] = useState(null);
+
+  // Log telemetry for route access
+  React.useEffect(() => {
+    console.log('[ReportFull] Route accessed', {
+      scanId,
+      leaseId,
+      url: window.location.href,
+      timestamp: new Date().toISOString()
+    });
+  }, [scanId, leaseId]);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me(),
+    queryFn: async () => {
+      try {
+        const userData = await base44.auth.me();
+        console.log('[ReportFull] User loaded', { userId: userData?.id, email: userData?.email });
+        return userData;
+      } catch (error) {
+        console.error('[ReportFull] Auth error', { error: error.message, stack: error.stack });
+        // Log telemetry
+        console.error('[TELEMETRY] ReportFullLoadFailed', {
+          step: 'AUTH',
+          scanId,
+          leaseId,
+          errorMessage: error.message,
+          stackTrace: error.stack?.substring(0, 200)
+        });
+        throw error;
+      }
+    }
   });
 
-  const { data: scan, isLoading: scanLoading } = useQuery({
+  const { data: scan, isLoading: scanLoading, error: scanError } = useQuery({
     queryKey: ['scan', scanId],
     queryFn: async () => {
-      const scans = await base44.entities.LeaseScan.list();
-      return scans.find(s => s.id === scanId);
+      try {
+        console.log('[ReportFull] Fetching scan', { scanId });
+        const scans = await base44.entities.LeaseScan.list();
+        const foundScan = scans.find(s => s.id === scanId);
+        
+        if (!foundScan) {
+          console.warn('[ReportFull] Scan not found', { scanId, totalScans: scans.length });
+          console.error('[TELEMETRY] ReportFullLoadFailed', {
+            step: 'FETCH',
+            scanId,
+            leaseId,
+            errorMessage: 'Scan not found',
+            httpStatus: 404
+          });
+        } else {
+          console.log('[ReportFull] Scan loaded', { 
+            scanId: foundScan.id, 
+            riskScore: foundScan.risk_score,
+            hasFlags: !!foundScan.scan_full?.flags,
+            flagsCount: foundScan.scan_full?.flags?.length || 0
+          });
+        }
+        
+        return foundScan;
+      } catch (error) {
+        console.error('[ReportFull] Scan fetch error', { 
+          scanId, 
+          error: error.message, 
+          status: error.response?.status,
+          stack: error.stack 
+        });
+        console.error('[TELEMETRY] ReportFullLoadFailed', {
+          step: 'FETCH',
+          scanId,
+          leaseId,
+          httpStatus: error.response?.status,
+          errorMessage: error.message,
+          stackTrace: error.stack?.substring(0, 200)
+        });
+        throw error;
+      }
     },
-    enabled: !!scanId,
+    enabled: !!scanId && !!user,
+    retry: 1
   });
 
-  const { data: lease, isLoading: leaseLoading } = useQuery({
-    queryKey: ['lease', scan?.lease_id],
+  const { data: lease, isLoading: leaseLoading, error: leaseError } = useQuery({
+    queryKey: ['lease', scan?.lease_id || leaseId],
     queryFn: async () => {
-      const leases = await base44.entities.Lease.list();
-      return leases.find(l => l.id === scan.lease_id);
+      try {
+        const targetLeaseId = scan?.lease_id || leaseId;
+        console.log('[ReportFull] Fetching lease', { leaseId: targetLeaseId });
+        const leases = await base44.entities.Lease.list();
+        const foundLease = leases.find(l => l.id === targetLeaseId);
+        
+        if (!foundLease) {
+          console.warn('[ReportFull] Lease not found', { leaseId: targetLeaseId, totalLeases: leases.length });
+        } else {
+          console.log('[ReportFull] Lease loaded', { 
+            leaseId: foundLease.id, 
+            address: foundLease.property_address 
+          });
+        }
+        
+        return foundLease;
+      } catch (error) {
+        console.error('[ReportFull] Lease fetch error', { 
+          leaseId: scan?.lease_id || leaseId,
+          error: error.message,
+          status: error.response?.status,
+          stack: error.stack
+        });
+        console.error('[TELEMETRY] ReportFullLoadFailed', {
+          step: 'FETCH',
+          scanId,
+          leaseId: scan?.lease_id || leaseId,
+          httpStatus: error.response?.status,
+          errorMessage: error.message,
+          stackTrace: error.stack?.substring(0, 200)
+        });
+        throw error;
+      }
     },
-    enabled: !!scan?.lease_id,
+    enabled: !!(scan?.lease_id || leaseId) && !!user,
+    retry: 1
   });
 
   const isLoading = scanLoading || leaseLoading;
@@ -428,6 +529,131 @@ function ReportFullContent() {
 
 
 
+  // VALIDATION: Check for required params
+  if (!scanId) {
+    console.error('[ReportFull] Missing scanId parameter');
+    return (
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-4xl mx-auto">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+              <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'ลิงก์รายงานไม่ถูกต้อง' : 'Invalid Report Link'}
+              </h2>
+              <p className="mb-4" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
+                  ? 'ไม่พบข้อมูลการสแกน กรุณาสแกนสัญญาใหม่'
+                  : 'Scan data not found. Please scan your lease again.'}
+              </p>
+              <Button onClick={() => navigate(createPageUrl("UploadScan"))}>
+                {strings.uploadALease}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // AUTH ERROR HANDLING
+  if (user === undefined && !isLoading) {
+    console.error('[ReportFull] User not authenticated');
+    console.error('[TELEMETRY] ReportFullLoadFailed', {
+      step: 'AUTH',
+      scanId,
+      leaseId,
+      errorMessage: 'User not authenticated',
+      httpStatus: 401
+    });
+    
+    return (
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-4xl mx-auto">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-8 text-center">
+              <Shield className="w-16 h-16 mx-auto mb-4 text-amber-500" />
+              <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'กรุณาเข้าสู่ระบบ' : 'Sign In Required'}
+              </h2>
+              <p className="mb-4" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
+                  ? 'กรุณาเข้าสู่ระบบเพื่อดูรายงานนี้'
+                  : 'Please sign in to view this report'}
+              </p>
+              <Button onClick={() => base44.auth.redirectToLogin(window.location.pathname + window.location.search)}>
+                {language === 'th' ? 'เข้าสู่ระบบ' : 'Sign In'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // FETCH ERROR HANDLING
+  if (scanError || leaseError) {
+    const error = scanError || leaseError;
+    const status = error?.response?.status;
+    
+    console.error('[ReportFull] Data fetch error', { 
+      scanError: scanError?.message, 
+      leaseError: leaseError?.message,
+      status 
+    });
+    
+    if (status === 401 || status === 403) {
+      return (
+        <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+          <div className="max-w-4xl mx-auto">
+            <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+              <CardContent className="p-8 text-center">
+                <Shield className="w-16 h-16 mx-auto mb-4 text-amber-500" />
+                <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                  {language === 'th' ? 'ไม่มีสิทธิ์เข้าถึง' : 'Access Denied'}
+                </h2>
+                <p className="mb-4" style={{ color: colors.textSecondary }}>
+                  {language === 'th' 
+                    ? 'คุณไม่มีสิทธิ์ดูรายงานนี้ หรือเซสชันหมดอายุ'
+                    : 'You do not have permission to view this report, or your session expired'}
+                </p>
+                <Button onClick={() => base44.auth.redirectToLogin(window.location.pathname + window.location.search)}>
+                  {language === 'th' ? 'เข้าสู่ระบบอีกครั้ง' : 'Sign In Again'}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-4xl mx-auto">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+              <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'โหลดรายงานล้มเหลว' : 'Failed to Load Report'}
+              </h2>
+              <p className="mb-4" style={{ color: colors.textSecondary }}>
+                {error?.message || (language === 'th' ? 'เกิดข้อผิดพลาดในการโหลดข้อมูล' : 'An error occurred while loading data')}
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button onClick={() => window.location.reload()}>
+                  {language === 'th' ? 'ลองใหม่' : 'Retry'}
+                </Button>
+                <Button variant="outline" onClick={() => navigate(createPageUrl("UploadScan"))}>
+                  {language === 'th' ? 'กลับ' : 'Go Back'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
@@ -482,10 +708,22 @@ function ReportFullContent() {
 
   const riskLevel = scan ? getRiskLevel(scan.risk_score) : null;
 
+  // DEFENSIVE: Handle missing or malformed scan data
+  const scanFullData = scan.scan_full || {};
+  const allFlags = Array.isArray(scanFullData.flags) ? scanFullData.flags : [];
+  const missingItems = Array.isArray(scanFullData.missing_items) ? scanFullData.missing_items : [];
+  const keyTerms = scanFullData.key_terms && typeof scanFullData.key_terms === 'object' ? scanFullData.key_terms : {};
+
+  console.log('[ReportFull] Scan data structure', {
+    hasScanFull: !!scan.scan_full,
+    flagsCount: allFlags.length,
+    flagsType: typeof allFlags,
+    missingItemsCount: missingItems.length,
+    keyTermsKeys: Object.keys(keyTerms)
+  });
+
   // LIMIT FLAGS BASED ON TIER (consistent with ScanPreview)
   const getFullDisplayFlags = () => {
-    const allFlags = scan.scan_full?.flags || [];
-    
     // Lite tier: Show max 5 flags
     if (userTier === 'lite') {
       return allFlags.slice(0, 5);
@@ -501,16 +739,25 @@ function ReportFullContent() {
   };
 
   const fullFlags = getFullDisplayFlags();
-  const totalFlags = scan.scan_full?.flags?.length || 0;
+  const totalFlags = allFlags.length;
   const hiddenFlagsCount = totalFlags - fullFlags.length;
-  const missingItems = scan.scan_full?.missing_items || [];
-  const keyTerms = scan.scan_full?.key_terms || {};
 
-  // Group flags by category
+  // DEFENSIVE: Group flags by category with fallback
   const groupedFlags = fullFlags.reduce((groups, flag) => {
-    const category = flag.category || 'Other Risks';
-    if (!groups[category]) groups[category] = [];
-    groups[category].push(flag);
+    try {
+      const category = flag?.category || 'Other Risks';
+      if (!groups[category]) groups[category] = [];
+      groups[category].push(flag);
+    } catch (error) {
+      console.error('[ReportFull] Error grouping flag', { flag, error: error.message });
+      console.error('[TELEMETRY] ReportFullLoadFailed', {
+        step: 'RENDER',
+        scanId,
+        leaseId,
+        errorMessage: 'Flag grouping error: ' + error.message,
+        stackTrace: error.stack?.substring(0, 200)
+      });
+    }
     return groups;
   }, {});
 
@@ -762,12 +1009,28 @@ function ReportFullContent() {
                         
                         <div className="space-y-4">
                           {categoryFlags.map((flag, index) => {
-                            const SeverityIcon = getSeverityIcon(flag.severity);
-                            const flagKey = `${category}-${index}`;
-                            const showOriginal = expandedClauses[flagKey] || false;
-                            
-                            return (
-                              <div key={index} className="rounded-xl border-2 overflow-hidden" style={{
+                            try {
+                              // DEFENSIVE: Validate flag structure
+                              if (!flag || typeof flag !== 'object') {
+                                console.warn('[ReportFull] Invalid flag', { flag, index });
+                                return (
+                                  <div key={index} className="p-4 rounded-lg border" style={{
+                                    backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                                    borderColor: '#EF4444'
+                                  }}>
+                                    <p className="text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
+                                      {language === 'th' ? 'ข้อมูลปัญหาไม่สมบูรณ์' : 'Issue data unavailable'}
+                                    </p>
+                                  </div>
+                                );
+                              }
+
+                              const SeverityIcon = getSeverityIcon(flag.severity);
+                              const flagKey = `${category}-${index}`;
+                              const showOriginal = expandedClauses[flagKey] || false;
+                              
+                              return (
+                                <div key={index} className="rounded-xl border-2 overflow-hidden" style={{
                                 backgroundColor: colors.cardBg,
                                 borderColor: flag.severity === 'critical' ? '#EF4444' : 
                                              flag.severity === 'high' ? '#F59E0B' :
@@ -789,7 +1052,7 @@ function ReportFullContent() {
                                     <div className="flex-1">
                                       <div className="flex items-start justify-between gap-3 mb-2">
                                         <h4 className="font-bold text-base sm:text-lg leading-tight" style={{ color: colors.textPrimary }}>
-                                          {flag.title}
+                                          {flag.title || (language === 'th' ? 'ปัญหาที่ตรวจพบ' : 'Detected Issue')}
                                         </h4>
                                         <Badge className="text-xs font-bold uppercase px-2 py-1 flex-shrink-0" style={{
                                           backgroundColor: flag.severity === 'critical' ? '#DC2626' :
@@ -797,7 +1060,7 @@ function ReportFullContent() {
                                                            flag.severity === 'medium' ? '#D97706' : '#059669',
                                           color: '#FFFFFF'
                                         }}>
-                                          {flag.severity}
+                                          {flag.severity || 'medium'}
                                         </Badge>
                                       </div>
                                       {flag.clause_id && (
@@ -835,38 +1098,41 @@ function ReportFullContent() {
                                       {strings.whyThisMatters}
                                     </p>
                                     <p className="text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
-                                      {flag.explanation || flag.description}
+                                      {flag.explanation || flag.description || (language === 'th' ? 'รายละเอียดไม่พร้อมใช้งาน' : 'Details unavailable')}
                                     </p>
                                   </div>
 
                                   {/* Recommended Action - BOXED AND PROMINENT */}
-                                  <div className="rounded-xl p-4 border-2" style={{
-                                    backgroundColor: isDarkMode ? '#1E3A2E' : '#F0FDF4',
-                                    borderColor: '#0C3B2E',
-                                    boxShadow: '0 2px 8px rgba(12,59,46,0.1)'
-                                  }}>
-                                    <p className="text-xs font-bold uppercase tracking-wide mb-3 flex items-center gap-2" style={{ color: '#0C3B2E' }}>
-                                      <CheckCircle2 className="w-4 h-4" />
-                                      {strings.recommendation}
-                                    </p>
-                                    <div className="text-sm leading-relaxed space-y-2" style={{ color: colors.textPrimary }}>
-                                      {flag.recommendation.split('\n').map((line, i) => {
-                                        const trimmed = line.trim();
-                                        if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
-                                          return (
-                                            <div key={i} className="flex items-start gap-2">
-                                              <span className="text-emerald-600 font-bold flex-shrink-0">•</span>
-                                              <span className="flex-1">{trimmed.replace(/^[•-]\s*/, '')}</span>
-                                            </div>
-                                          );
-                                        }
-                                        return <p key={i} className="font-medium">{trimmed}</p>;
-                                      })}
+                                  {flag.recommendation && (
+                                    <div className="rounded-xl p-4 border-2" style={{
+                                      backgroundColor: isDarkMode ? '#1E3A2E' : '#F0FDF4',
+                                      borderColor: '#0C3B2E',
+                                      boxShadow: '0 2px 8px rgba(12,59,46,0.1)'
+                                    }}>
+                                      <p className="text-xs font-bold uppercase tracking-wide mb-3 flex items-center gap-2" style={{ color: '#0C3B2E' }}>
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        {strings.recommendation}
+                                      </p>
+                                      <div className="text-sm leading-relaxed space-y-2" style={{ color: colors.textPrimary }}>
+                                        {(flag.recommendation || '').split('\n').map((line, i) => {
+                                          const trimmed = line.trim();
+                                          if (!trimmed) return null;
+                                          if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+                                            return (
+                                              <div key={i} className="flex items-start gap-2">
+                                                <span className="text-emerald-600 font-bold flex-shrink-0">•</span>
+                                                <span className="flex-1">{trimmed.replace(/^[•-]\s*/, '')}</span>
+                                              </div>
+                                            );
+                                          }
+                                          return <p key={i} className="font-medium">{trimmed}</p>;
+                                        })}
+                                      </div>
                                     </div>
-                                  </div>
+                                  )}
 
                                   {/* Penalty Details */}
-                                  {flag.penalties && flag.penalties.length > 0 && (
+                                  {flag.penalties && Array.isArray(flag.penalties) && flag.penalties.length > 0 && (
                                     <div className="p-3 rounded-lg border-l-4" style={{
                                       backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2',
                                       borderLeftColor: '#DC2626'
@@ -875,9 +1141,9 @@ function ReportFullContent() {
                                         {strings.penaltyDetails}
                                       </p>
                                       <p className="text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
-                                        {flag.penalties[0].type.toUpperCase()} penalty: ฿{flag.penalties[0].amount?.toLocaleString() || 'N/A'}
-                                        {flag.penalties[0].multiplier && ` (${flag.penalties[0].multiplier}× multiplier)`}
-                                        {flag.penalties[0].note && ` — ${flag.penalties[0].note}`}
+                                        {(flag.penalties[0]?.type || 'unknown').toUpperCase()} penalty: ฿{flag.penalties[0]?.amount?.toLocaleString() || 'N/A'}
+                                        {flag.penalties[0]?.multiplier && ` (${flag.penalties[0].multiplier}× multiplier)`}
+                                        {flag.penalties[0]?.note && ` — ${flag.penalties[0].note}`}
                                       </p>
                                     </div>
                                   )}
@@ -912,7 +1178,7 @@ function ReportFullContent() {
                                   )}
 
                                   {/* Compound Risk Info */}
-                                  {flag.contributing_clauses && (
+                                  {flag.contributing_clauses && Array.isArray(flag.contributing_clauses) && (
                                     <div className="text-xs p-2 rounded" style={{
                                       backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2',
                                       color: colors.textSecondary
@@ -921,14 +1187,35 @@ function ReportFullContent() {
                                       {flag.contributing_clauses.join(', ')}
                                     </div>
                                   )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
+                                  </div>
+                                  </div>
+                                  );
+                                  } catch (error) {
+                                  console.error('[ReportFull] Error rendering flag', { flag, error: error.message, stack: error.stack });
+                                  console.error('[TELEMETRY] ReportFullLoadFailed', {
+                                  step: 'RENDER',
+                                  scanId,
+                                  leaseId,
+                                  errorMessage: 'Flag render error: ' + error.message,
+                                  stackTrace: error.stack?.substring(0, 200)
+                                  });
+
+                                  return (
+                                  <div key={index} className="p-4 rounded-lg border" style={{
+                                  backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                                  borderColor: '#EF4444'
+                                  }}>
+                                  <p className="text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
+                                   {language === 'th' ? 'ข้อมูลปัญหาไม่สมบูรณ์' : 'Issue data unavailable'}
+                                  </p>
+                                  </div>
+                                  );
+                                  }
+                                  })}
+                                  </div>
+                                  </div>
+                                  );
+                                  })}
                   
                   {/* SHOW UPGRADE CTA IF FLAGS ARE HIDDEN */}
                   {hiddenFlagsCount > 0 && (
