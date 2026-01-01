@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
-  Edit2, Save, X, Wrench, CheckCircle2,
+  Edit2, Save, X, Wrench, CheckCircle2, AlertTriangle,
   DollarSign, ArrowLeft, Camera, Image as ImageIcon, Loader2, Trash2, Archive, Hash, Mic, Video, MoreVertical
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
