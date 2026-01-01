@@ -914,29 +914,31 @@ function UploadScanPageContent() {
         setUploadProgress(100);
         setCurrentStep(2);
 
-        // Auto-populate trackers and timeline
+        // Prepare data for review (multi-page mode)
         try {
-          console.log('[AUTO_POPULATE] Starting auto-population...');
+          console.log('[AUTO_POPULATE] Preparing data for review...');
           const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
             scanResult,
             leaseId: createdLeaseId,
             scanId: createdLeaseId
           });
           
-          if (populateResponse?.success) {
-            console.log('[AUTO_POPULATE] Success:', populateResponse);
-            // Invalidate relevant queries
-            queryClient.invalidateQueries({ queryKey: ['deposits'] });
-            queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+          if (populateResponse?.success && populateResponse.review_mode) {
+            console.log('[AUTO_POPULATE] Review data prepared:', populateResponse);
+            setReviewData(populateResponse);
+            setShowReviewScreen(true);
+            setCompletedLeaseId(createdLeaseId);
+          } else {
+            // Fallback: show completion modal
+            setCompletedLeaseId(createdLeaseId);
+            setShowCompletionModal(true);
           }
         } catch (populateErr) {
           console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
-          // Don't block user flow if auto-population fails
+          // Show completion modal on error
+          setCompletedLeaseId(createdLeaseId);
+          setShowCompletionModal(true);
         }
-
-        // Show completion modal
-        setCompletedLeaseId(createdLeaseId);
-        setShowCompletionModal(true);
         
         if (scanResult.end_date) {
           setLeaseDetails({
