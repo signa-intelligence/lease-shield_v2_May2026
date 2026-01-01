@@ -52,14 +52,15 @@ Deno.serve(async (req) => {
       expected_return_date: false
     };
 
-    // ===== DEPOSIT TRACKER POPULATION =====
-    let depositTracker = null;
+    // ===== PREPARE DATA FOR REVIEW (DO NOT AUTO-SAVE) =====
+    let depositTrackerData = null;
     
     try {
       // Check if deposit tracker already exists for this user
       const existingDeposits = await base44.entities.DepositTracker.filter({ 
         created_by: user.email 
       });
+      const existingDeposit = existingDeposits.length > 0 ? existingDeposits[0] : null;
       
       // Compute deposit due date (default: lease start)
       const deposit_due_date = extractedData.start_date || new Date().toISOString().split('T')[0];
@@ -85,7 +86,35 @@ Deno.serve(async (req) => {
         }
       }
       
-      const depositData = {
+      // Prepare field metadata for provenance tracking
+      const fieldMetadata = {
+        deposit_amount: {
+          source: 'scan',
+          confidence: extractedData.deposit_amount > 0 ? 0.9 : 0.5,
+          last_updated_at: new Date().toISOString(),
+          last_updated_by: user.email
+        },
+        property_address: {
+          source: 'scan',
+          confidence: extractedData.property_address ? 0.9 : 0.5,
+          last_updated_at: new Date().toISOString(),
+          last_updated_by: user.email
+        },
+        rent_amount: {
+          source: 'scan',
+          confidence: extractedData.rent_amount > 0 ? 0.9 : 0.5,
+          last_updated_at: new Date().toISOString(),
+          last_updated_by: user.email
+        },
+        rent_due_day: {
+          source: extractedData.rent_due_day ? 'scan' : 'user',
+          confidence: extractedData.rent_due_day ? 0.7 : 0.3,
+          last_updated_at: new Date().toISOString(),
+          last_updated_by: user.email
+        }
+      };
+
+      depositTrackerData = {
         deposit_amount: extractedData.deposit_amount,
         deposit_paid_date: deposit_due_date,
         expected_return_date: expected_return_date || deposit_due_date,
@@ -100,27 +129,19 @@ Deno.serve(async (req) => {
         rent_due_day_needs_review: needsReview.rent_due_day,
         source_scan_id: scanId,
         auto_populated: true,
-        status: 'tracking'
+        user_reviewed: false,
+        field_metadata: fieldMetadata,
+        status: 'tracking',
+        existingDepositId: existingDeposit?.id
       };
       
-      if (existingDeposits.length > 0) {
-        // Update existing record
-        depositTracker = await base44.entities.DepositTracker.update(
-          existingDeposits[0].id,
-          depositData
-        );
-        console.log(`[${correlationId}] Updated existing deposit tracker`);
-      } else {
-        // Create new record
-        depositTracker = await base44.entities.DepositTracker.create(depositData);
-        console.log(`[${correlationId}] Created new deposit tracker`);
-      }
+      console.log(`[${correlationId}] Prepared deposit data for review (not saved yet)`);
     } catch (error) {
-      console.error(`[${correlationId}] Deposit tracker population failed:`, error.message);
+      console.error(`[${correlationId}] Deposit tracker data preparation failed:`, error.message);
     }
 
-    // ===== TIMELINE EVENTS POPULATION =====
-    const timelineEvents = [];
+    // ===== TIMELINE EVENTS PREPARATION (NOT CREATED YET) =====
+    const timelineEventsData = [];
     
     try {
       // Check existing timeline events for this scan to avoid duplicates
@@ -134,7 +155,7 @@ Deno.serve(async (req) => {
       
       // 1. Lease scanned event
       if (!eventExists('lease_scanned')) {
-        timelineEvents.push({
+        timelineEventsData.push({
           event_type: 'lease_scanned',
           event_date: new Date().toISOString(),
           title: 'Lease scanned',
@@ -150,7 +171,7 @@ Deno.serve(async (req) => {
       
       // 2. Lease start event
       if (extractedData.start_date && !eventExists('lease_start')) {
-        timelineEvents.push({
+        timelineEventsData.push({
           event_type: 'lease_start',
           event_date: new Date(extractedData.start_date).toISOString(),
           title: 'Lease starts',
@@ -166,7 +187,7 @@ Deno.serve(async (req) => {
       
       // 3. Lease end event
       if (extractedData.end_date && !eventExists('lease_end')) {
-        timelineEvents.push({
+        timelineEventsData.push({
           event_type: 'lease_end',
           event_date: new Date(extractedData.end_date).toISOString(),
           title: 'Lease ends',
@@ -181,34 +202,34 @@ Deno.serve(async (req) => {
       }
       
       // 4. Deposit due event
-      if (depositTracker?.deposit_due_date && !eventExists('deposit_due')) {
-        timelineEvents.push({
+      if (depositTrackerData?.deposit_due_date && !eventExists('deposit_due')) {
+        timelineEventsData.push({
           event_type: 'deposit_due',
-          event_date: new Date(depositTracker.deposit_due_date).toISOString(),
+          event_date: new Date(depositTrackerData.deposit_due_date).toISOString(),
           title: 'Deposit due',
           description: `฿${extractedData.deposit_amount.toLocaleString()}`,
           property_address: extractedData.property_address,
           lease_id: leaseId,
           source: 'lease_scan',
           source_scan_id: scanId,
-          is_estimated: depositTracker.deposit_due_date_is_estimated || false,
-          needs_review: depositTracker.deposit_due_date_is_estimated || false
+          is_estimated: depositTrackerData.deposit_due_date_is_estimated || false,
+          needs_review: depositTrackerData.deposit_due_date_is_estimated || false
         });
       }
       
       // 5. Deposit return event
-      if (depositTracker?.expected_return_date && !eventExists('deposit_return')) {
-        timelineEvents.push({
+      if (depositTrackerData?.expected_return_date && !eventExists('deposit_return')) {
+        timelineEventsData.push({
           event_type: 'deposit_return',
-          event_date: new Date(depositTracker.expected_return_date).toISOString(),
+          event_date: new Date(depositTrackerData.expected_return_date).toISOString(),
           title: 'Deposit return expected',
           description: `฿${extractedData.deposit_amount.toLocaleString()}`,
           property_address: extractedData.property_address,
           lease_id: leaseId,
           source: 'lease_scan',
           source_scan_id: scanId,
-          is_estimated: depositTracker.expected_return_date_is_estimated || false,
-          needs_review: depositTracker.expected_return_date_is_estimated || false
+          is_estimated: depositTrackerData.expected_return_date_is_estimated || false,
+          needs_review: depositTrackerData.expected_return_date_is_estimated || false
         });
       }
       
@@ -218,7 +239,7 @@ Deno.serve(async (req) => {
         const noticeDate = new Date(endDate);
         noticeDate.setDate(noticeDate.getDate() - extractedData.notice_period_days);
         
-        timelineEvents.push({
+        timelineEventsData.push({
           event_type: 'notice_deadline',
           event_date: noticeDate.toISOString(),
           title: 'Notice deadline',
@@ -232,23 +253,19 @@ Deno.serve(async (req) => {
         });
       }
       
-      // Create all timeline events
-      if (timelineEvents.length > 0) {
-        await Promise.all(
-          timelineEvents.map(event => base44.entities.TimelineEvent.create(event))
-        );
-        console.log(`[${correlationId}] Created ${timelineEvents.length} timeline events`);
-      }
+      // Timeline events prepared but not created yet (will be created on user confirmation)
+      console.log(`[${correlationId}] Prepared ${timelineEventsData.length} timeline events for review`);
     } catch (error) {
       console.error(`[${correlationId}] Timeline events population failed:`, error.message);
     }
 
-    // ===== RESPONSE WITH REVIEW DATA =====
+    // ===== RESPONSE WITH REVIEW DATA (NOT SAVED YET) =====
     return Response.json({
       success: true,
-      populated: {
-        deposit_tracker: !!depositTracker,
-        timeline_events: timelineEvents.length
+      review_mode: true,
+      data_prepared: {
+        deposit_tracker: depositTrackerData,
+        timeline_events: timelineEventsData
       },
       review_required: {
         fields: Object.keys(needsReview).filter(key => needsReview[key]),

@@ -41,6 +41,7 @@ import { formatErrorForUser, createDebugLog } from "../components/shared/ErrorCa
 import { getDeviceContext } from "../components/shared/DeviceContext";
 import { uploadFileWithSession, uploadMultipleFiles, getUploadTimeout } from "../components/shared/MobileUploader";
 import RetryAnalysis from "../components/shared/RetryAnalysis";
+import ScanReviewConfirmation from "../components/scan/ScanReviewConfirmation";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
@@ -86,6 +87,11 @@ function UploadScanPageContent() {
   // NEW: State for add pages flow
   const [addingPagesToLease, setAddingPagesToLease] = useState(null);
   const [additionalFiles, setAdditionalFiles] = useState([]);
+
+  // NEW: State for review confirmation
+  const [showReviewScreen, setShowReviewScreen] = useState(false);
+  const [reviewData, setReviewData] = useState(null);
+  const [savingConfirmedData, setSavingConfirmedData] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -1349,6 +1355,63 @@ function UploadScanPageContent() {
     }
   };
 
+  const handleConfirmReviewedData = async (editedData) => {
+    setSavingConfirmedData(true);
+    haptic.medium();
+
+    try {
+      console.log('[CONFIRM_SCAN_DATA] Saving confirmed data...');
+      
+      // Reconstruct deposit data from edited form
+      const depositData = {
+        deposit_amount: editedData.deposit_amount || reviewData.data_prepared.deposit_tracker.deposit_amount,
+        property_address: editedData.property_address || reviewData.data_prepared.deposit_tracker.property_address,
+        rent_amount: editedData.monthly_rent || reviewData.data_prepared.deposit_tracker.rent_amount,
+        rent_due_day: editedData.rent_due_day || reviewData.data_prepared.deposit_tracker.rent_due_day,
+        deposit_paid_date: editedData.deposit_due_date || reviewData.data_prepared.deposit_tracker.deposit_paid_date,
+        expected_return_date: editedData.expected_return_date || reviewData.data_prepared.deposit_tracker.expected_return_date,
+        deposit_due_date: editedData.deposit_due_date || reviewData.data_prepared.deposit_tracker.deposit_due_date,
+        lease_start_date: editedData.lease_start || reviewData.data_prepared.deposit_tracker.lease_start_date,
+        lease_end_date: editedData.lease_end || reviewData.data_prepared.deposit_tracker.lease_end_date,
+        ...reviewData.data_prepared.deposit_tracker,
+        existingDepositId: reviewData.data_prepared.deposit_tracker.existingDepositId
+      };
+
+      const { data: confirmResponse } = await base44.functions.invoke('confirmScanData', {
+        depositData,
+        timelineEvents: reviewData.data_prepared.timeline_events,
+        scanId: completedLeaseId,
+        leaseId: completedLeaseId
+      });
+
+      if (confirmResponse?.success) {
+        console.log('[CONFIRM_SCAN_DATA] Data saved successfully');
+        
+        // Invalidate queries
+        queryClient.invalidateQueries({ queryKey: ['deposits'] });
+        queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+        
+        setShowReviewScreen(false);
+        setShowCompletionModal(true);
+        haptic.success();
+      } else {
+        throw new Error('Failed to save confirmed data');
+      }
+    } catch (error) {
+      console.error('[CONFIRM_SCAN_DATA] Error:', error);
+      alert(language === 'th' ? 'ไม่สามารถบันทึกข้อมูลได้' : 'Failed to save data');
+      haptic.error();
+    } finally {
+      setSavingConfirmedData(false);
+    }
+  };
+
+  const handleCancelReview = () => {
+    haptic.light();
+    setShowReviewScreen(false);
+    setShowCompletionModal(true);
+  };
+
   const handleSkipConfirmation = () => {
     haptic.light();
     setShowConfirmation(false);
@@ -1683,6 +1746,22 @@ function UploadScanPageContent() {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
+        
+        {/* Review Screen (full page, not modal) */}
+        {showReviewScreen && reviewData && (
+          <ScanReviewConfirmation
+            reviewData={reviewData.review_required}
+            onConfirm={handleConfirmReviewedData}
+            onCancel={handleCancelReview}
+            colors={colors}
+            language={language}
+            isDarkMode={isDarkMode}
+          />
+        )}
+
+        {/* Main upload UI (hidden when review screen is active) */}
+        {!showReviewScreen && (
+          <>
         {/* NEW: Progress Breadcrumb */}
         {(uploading || analyzing || selectedFiles.length > 0) && (
           <div className="mb-6">
@@ -2763,6 +2842,8 @@ function UploadScanPageContent() {
                       : 'Lease Shield provides general guidance and document templates for your convenience. Lease Shield is not a law firm, does not provide legal representation, and is not a party to your lease. You are responsible for checking the accuracy of all information and documents before sending them.'}
           </p>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
