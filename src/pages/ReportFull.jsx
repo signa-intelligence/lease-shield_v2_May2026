@@ -267,6 +267,23 @@ function ReportFullContent() {
 
   const strings = t[language] || t.en;
 
+  // Currency sanitizer - removes all non-numeric characters except digits, decimal, minus
+  const sanitizeCurrency = (value) => {
+    if (value === null || value === undefined) return 0;
+    
+    // Debug log to see raw value
+    console.log('[ReportFull] Raw currency value:', value, typeof value);
+    
+    // Convert to string and remove everything except digits, decimal point, and minus
+    const cleanedString = String(value).replace(/[^0-9.-]/g, '');
+    const numericValue = parseFloat(cleanedString);
+    
+    // Debug log cleaned value
+    console.log('[ReportFull] Sanitized to:', numericValue);
+    
+    return isNaN(numericValue) ? 0 : numericValue;
+  };
+
   const handleDownloadPDF = async () => {
     if (!scan || !lease) return;
 
@@ -559,13 +576,13 @@ function ReportFullContent() {
                   {keyTerms.rent_amount && (
                     <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
                       <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.monthlyRent}</p>
-                      <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>฿{keyTerms.rent_amount.toLocaleString('en-US')}</p>
+                      <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>฿{sanitizeCurrency(keyTerms.rent_amount).toLocaleString('en-US')}</p>
                     </div>
                   )}
                   {keyTerms.deposit_amount && (
                     <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
                       <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.securityDeposit}</p>
-                      <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>฿{keyTerms.deposit_amount.toLocaleString('en-US')}</p>
+                      <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>฿{sanitizeCurrency(keyTerms.deposit_amount).toLocaleString('en-US')}</p>
                     </div>
                   )}
                   {keyTerms.start_date && (
