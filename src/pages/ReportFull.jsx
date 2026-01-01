@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2, DollarSign, Home } from "lucide-react";
 import { FeatureGate } from "../components/shared/FeatureGate";
 import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
@@ -110,8 +110,12 @@ function ReportFullContent() {
       rightsLegalRisks: "Rights & Legal Risks",
       privacyAccess: "Privacy & Access",
       fairnessBalance: "Fairness & Balance",
+      rightsUsage: "Rights & Usage",
+      legalRights: "Legal Rights",
       otherRisks: "Other Risks",
-      leaseLanguageBanner: "This lease is written in {leaseLanguage}. Analysis provided in {uiLanguage}."
+      leaseLanguageBanner: "This lease is written in {leaseLanguage}. Analysis provided in {uiLanguage}.",
+      compoundRisk: "Multi-Clause Pattern",
+      penaltyDetails: "Penalty Details"
     },
     th: {
       negotiateBeforeSigning: "แนะนำ: ดูเทมเพลตเอกสาร",
@@ -154,8 +158,12 @@ function ReportFullContent() {
       rightsLegalRisks: "ความเสี่ยงด้านสิทธิและกฎหมาย",
       privacyAccess: "ความเป็นส่วนตัวและการเข้าถึง",
       fairnessBalance: "ความเป็นธรรมและความสมดุล",
+      rightsUsage: "สิทธิและการใช้งาน",
+      legalRights: "สิทธิและกฎหมาย",
       otherRisks: "ความเสี่ยงอื่นๆ",
-      leaseLanguageBanner: "สัญญานี้เขียนเป็นภาษา{leaseLanguage} การวิเคราะห์แสดงเป็นภาษา{uiLanguage}"
+      leaseLanguageBanner: "สัญญานี้เขียนเป็นภาษา{leaseLanguage} การวิเคราะห์แสดงเป็นภาษา{uiLanguage}",
+      compoundRisk: "รูปแบบหลายข้อ",
+      penaltyDetails: "รายละเอียดค่าปรับ"
     },
     zh: {
       autoGenerateLetters: "自动生成信件",
@@ -516,13 +524,13 @@ function ReportFullContent() {
 
   // Category display order
   const categoryOrder = [
+    'Legal Rights',
     'Procedural Fairness',
     'Financial Risk',
     'Rights & Legal',
     'Privacy & Access',
-    'Fairness & Balance',
     'Rights & Usage',
-    'Legal Rights'
+    'Fairness & Balance'
   ];
 
   const getCategoryTitle = (category) => {
@@ -536,6 +544,19 @@ function ReportFullContent() {
       'Rights & Usage': language === 'th' ? 'สิทธิและการใช้งาน' : 'Rights & Usage'
     };
     return map[category] || category;
+  };
+
+  const getCategoryIcon = (category) => {
+    const icons = {
+      'Legal Rights': Shield,
+      'Procedural Fairness': AlertTriangle,
+      'Financial Risk': DollarSign,
+      'Rights & Legal': Shield,
+      'Privacy & Access': Home,
+      'Rights & Usage': Home,
+      'Fairness & Balance': AlertCircle
+    };
+    return icons[category] || AlertCircle;
   };
 
   // Check if lease language differs from UI language
@@ -716,14 +737,28 @@ function ReportFullContent() {
                     const categoryFlags = groupedFlags[category];
                     if (!categoryFlags || categoryFlags.length === 0) return null;
 
+                    const CategoryIcon = getCategoryIcon(category);
+                    
                     return (
                       <div key={category}>
-                        <h3 className="text-lg font-bold mb-4 pb-2 border-b" style={{ 
-                          color: colors.textPrimary,
+                        <div className="flex items-center gap-3 mb-4 pb-3 border-b" style={{ 
                           borderColor: colors.borderColor
                         }}>
-                          {getCategoryTitle(category)} ({categoryFlags.length})
-                        </h3>
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{
+                            backgroundColor: isDarkMode ? '#374151' : '#F3F4F6'
+                          }}>
+                            <CategoryIcon className="w-5 h-5" style={{ color: '#0C3B2E' }} />
+                          </div>
+                          <h3 className="text-lg font-bold flex-1" style={{ color: colors.textPrimary }}>
+                            {getCategoryTitle(category)}
+                          </h3>
+                          <Badge className="text-xs font-bold" style={{
+                            backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+                            color: colors.textPrimary
+                          }}>
+                            {categoryFlags.length}
+                          </Badge>
+                        </div>
                         
                         <div className="space-y-4">
                           {categoryFlags.map((flag, index) => {
@@ -783,66 +818,107 @@ function ReportFullContent() {
 
                                 {/* Body */}
                                 <div className="p-5 space-y-4">
+                                  {/* Compound Risk Badge */}
+                                  {flag.compound && (
+                                    <Badge className="mb-2" style={{
+                                      backgroundColor: isDarkMode ? '#7F1D1D' : '#FEE2E2',
+                                      color: '#DC2626',
+                                      border: '1px solid #DC2626'
+                                    }}>
+                                      {strings.compoundRisk}
+                                    </Badge>
+                                  )}
+
                                   {/* Why This Matters */}
                                   <div>
                                     <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: colors.textSecondary }}>
                                       {strings.whyThisMatters}
                                     </p>
                                     <p className="text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
-                                      {flag.description || flag.explanation}
+                                      {flag.explanation || flag.description}
                                     </p>
                                   </div>
 
-                                  {/* Recommended Action - BOXED */}
-                                  <div className="rounded-lg p-4 border-2" style={{
-                                    backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC',
-                                    borderColor: '#0C3B2E'
+                                  {/* Recommended Action - BOXED AND PROMINENT */}
+                                  <div className="rounded-xl p-4 border-2" style={{
+                                    backgroundColor: isDarkMode ? '#1E3A2E' : '#F0FDF4',
+                                    borderColor: '#0C3B2E',
+                                    boxShadow: '0 2px 8px rgba(12,59,46,0.1)'
                                   }}>
-                                    <p className="text-xs font-bold uppercase tracking-wide mb-2 flex items-center gap-2" style={{ color: '#0C3B2E' }}>
+                                    <p className="text-xs font-bold uppercase tracking-wide mb-3 flex items-center gap-2" style={{ color: '#0C3B2E' }}>
                                       <CheckCircle2 className="w-4 h-4" />
                                       {strings.recommendation}
                                     </p>
-                                    <div className="text-sm leading-relaxed space-y-1" style={{ color: colors.textPrimary }}>
-                                      {flag.recommendation.split('\n').map((line, i) => (
-                                        <p key={i} className={line.trim().startsWith('-') || line.trim().startsWith('•') ? 'ml-3' : ''}>
-                                          {line}
-                                        </p>
-                                      ))}
+                                    <div className="text-sm leading-relaxed space-y-2" style={{ color: colors.textPrimary }}>
+                                      {flag.recommendation.split('\n').map((line, i) => {
+                                        const trimmed = line.trim();
+                                        if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+                                          return (
+                                            <div key={i} className="flex items-start gap-2">
+                                              <span className="text-emerald-600 font-bold flex-shrink-0">•</span>
+                                              <span className="flex-1">{trimmed.replace(/^[•-]\s*/, '')}</span>
+                                            </div>
+                                          );
+                                        }
+                                        return <p key={i} className="font-medium">{trimmed}</p>;
+                                      })}
                                     </div>
                                   </div>
 
+                                  {/* Penalty Details */}
+                                  {flag.penalties && flag.penalties.length > 0 && (
+                                    <div className="p-3 rounded-lg border-l-4" style={{
+                                      backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2',
+                                      borderLeftColor: '#DC2626'
+                                    }}>
+                                      <p className="text-xs font-bold mb-1" style={{ color: '#DC2626' }}>
+                                        {strings.penaltyDetails}
+                                      </p>
+                                      <p className="text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
+                                        {flag.penalties[0].type.toUpperCase()} penalty: ฿{flag.penalties[0].amount?.toLocaleString() || 'N/A'}
+                                        {flag.penalties[0].multiplier && ` (${flag.penalties[0].multiplier}× multiplier)`}
+                                        {flag.penalties[0].note && ` — ${flag.penalties[0].note}`}
+                                      </p>
+                                    </div>
+                                  )}
+
                                   {/* Original Clause Snippet - Collapsible */}
-                                  {flag.evidence && (
+                                  {flag.evidence && !flag.missing_safeguard && (
                                     <div>
                                       <button
                                         onClick={() => setExpandedClauses(prev => ({ ...prev, [flagKey]: !showOriginal }))}
-                                        className="text-xs font-semibold flex items-center gap-2 transition-colors"
+                                        className="text-xs font-semibold flex items-center gap-2 transition-colors hover:underline"
                                         style={{ color: '#0C3B2E' }}
                                       >
-                                        {showOriginal ? '▼' : '▶'} {strings.originalClause}
+                                        <span>{showOriginal ? '▼' : '▶'}</span>
+                                        <span>{strings.originalClause}</span>
                                       </button>
                                       {showOriginal && (
                                         <div className="mt-2 p-3 rounded-lg border-l-4" style={{
                                           backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC',
                                           borderLeftColor: '#64748B'
                                         }}>
-                                          <p className="text-xs italic leading-relaxed" style={{ color: colors.textSecondary }}>
+                                          <p className="text-xs italic leading-relaxed mb-2" style={{ color: colors.textSecondary }}>
                                             "{flag.evidence}"
                                           </p>
+                                          {flag.original_language && (
+                                            <p className="text-xs opacity-60" style={{ color: colors.textSecondary }}>
+                                              Language: {flag.original_language.toUpperCase()}
+                                            </p>
+                                          )}
                                         </div>
                                       )}
                                     </div>
                                   )}
 
-                                  {/* Penalty Details */}
-                                  {flag.penalties && flag.penalties.length > 0 && (
+                                  {/* Compound Risk Info */}
+                                  {flag.contributing_clauses && (
                                     <div className="text-xs p-2 rounded" style={{
-                                      backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                                      color: '#DC2626'
+                                      backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2',
+                                      color: colors.textSecondary
                                     }}>
-                                      <span className="font-bold">Penalty: </span>
-                                      {flag.penalties[0].type} - ฿{flag.penalties[0].amount?.toLocaleString() || 'N/A'}
-                                      {flag.penalties[0].note && ` (${flag.penalties[0].note})`}
+                                      <span className="font-semibold">Contributing clauses: </span>
+                                      {flag.contributing_clauses.join(', ')}
                                     </div>
                                   )}
                                 </div>
