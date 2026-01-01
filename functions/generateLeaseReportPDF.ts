@@ -122,11 +122,11 @@ Deno.serve(async (req) => {
         y += 6;
       }
       if (terms.rent_amount) {
-        doc.text(`Monthly Rent: ฿${terms.rent_amount.toLocaleString()}`, 25, y);
+        doc.text(`Monthly Rent: ${String.fromCharCode(3647)}${terms.rent_amount.toLocaleString('en-US')}`, 25, y);
         y += 6;
       }
       if (terms.deposit_amount) {
-        doc.text(`Security Deposit: ฿${terms.deposit_amount.toLocaleString()}`, 25, y);
+        doc.text(`Security Deposit: ${String.fromCharCode(3647)}${terms.deposit_amount.toLocaleString('en-US')}`, 25, y);
         y += 6;
       }
       if (terms.start_date && terms.end_date) {

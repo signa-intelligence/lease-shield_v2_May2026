@@ -421,8 +421,8 @@ function LeaseDetailsContent() {
                   <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
                     {strings.monthlyRent}
                   </p>
-                  <p className="font-medium" style={{ color: colors.textPrimary }}>
-                    ฿{lease.rent_amount.toLocaleString()}
+                  <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>
+                    ฿{lease.rent_amount.toLocaleString('en-US')}
                   </p>
                 </div>
               )}
@@ -432,8 +432,8 @@ function LeaseDetailsContent() {
                   <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
                     {strings.securityDeposit}
                   </p>
-                  <p className="font-medium" style={{ color: colors.textPrimary }}>
-                    ฿{lease.deposit_amount.toLocaleString()}
+                  <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>
+                    ฿{lease.deposit_amount.toLocaleString('en-US')}
                   </p>
                 </div>
               )}

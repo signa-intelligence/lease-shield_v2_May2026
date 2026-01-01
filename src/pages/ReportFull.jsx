@@ -314,33 +314,36 @@ function ReportFullContent() {
       console.log(`[${correlationId}] PDF generation response`, {
         success: response.data?.success,
         hasPdfUrl: !!response.data?.pdf_url,
+        responseData: response.data,
         status: response.status
       });
 
-      if (response.data?.pdf_url) {
-        // Download via new tab (works on Android Chrome)
-        const link = document.createElement('a');
-        link.href = response.data.pdf_url;
-        link.download = `LeaseShield-Report-${lease.id.substring(0, 8)}.pdf`;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+      if (response.data?.success && response.data?.pdf_url) {
+        console.log(`[${correlationId}] PDF URL obtained, initiating download...`);
         
-        console.log(`[${correlationId}] PDF download triggered successfully`);
+        // MOBILE-OPTIMIZED DOWNLOAD FLOW
+        // Direct navigation works best on Android Chrome/PWA
+        window.open(response.data.pdf_url, '_blank');
+        
+        console.log(`[${correlationId}] PDF download initiated via window.open`);
         toast.success(language === 'th' ? 'กำลังดาวน์โหลด PDF' : 'Downloading PDF');
         haptic.success();
       } else {
-        console.error(`[${correlationId}] PDF URL missing in response`, response.data);
-        throw new Error('PDF generation failed - no URL returned');
+        console.error(`[${correlationId}] PDF generation failed`, {
+          success: response.data?.success,
+          error: response.data?.error,
+          fullResponse: response.data
+        });
+        throw new Error(response.data?.error || 'PDF generation failed - no URL returned');
       }
     } catch (error) {
       console.error(`[${correlationId}] PDF export error:`, {
-        error: error.message,
+        message: error.message,
         stack: error.stack,
+        response: error.response?.data,
         userId: user.id,
-        scanId: scan.id,
-        leaseId: lease.id
+        scanId: scan?.id,
+        leaseId: lease?.id
       });
       
       const errorMsg = language === 'th' 
@@ -543,13 +546,13 @@ function ReportFullContent() {
                   {keyTerms.rent_amount && (
                     <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
                       <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.monthlyRent}</p>
-                      <p className="font-medium" style={{ color: colors.textPrimary }}>฿{keyTerms.rent_amount.toLocaleString()}</p>
+                      <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>฿{keyTerms.rent_amount.toLocaleString('en-US')}</p>
                     </div>
                   )}
                   {keyTerms.deposit_amount && (
                     <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
                       <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.securityDeposit}</p>
-                      <p className="font-medium" style={{ color: colors.textPrimary }}>฿{keyTerms.deposit_amount.toLocaleString()}</p>
+                      <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>฿{keyTerms.deposit_amount.toLocaleString('en-US')}</p>
                     </div>
                   )}
                   {keyTerms.start_date && (
