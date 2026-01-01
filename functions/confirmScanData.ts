@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
       // Add review confirmation metadata
       const depositToSave = {
         ...depositData,
+        lease_id: leaseId,
         user_reviewed: true,
         reviewed_at: new Date().toISOString(),
         audit_log: [{

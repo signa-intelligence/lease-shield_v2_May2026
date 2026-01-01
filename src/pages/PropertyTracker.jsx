@@ -267,19 +267,28 @@ function MaintenanceRequestCard({
                 <CheckCircle2 className="w-3 h-3 mr-1" />
                 {strings.close}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteMaintenance(request);
-                }}
-                className="text-red-600 border-red-600 hover:bg-red-50"
-                style={{ minHeight: '36px' }}
-              >
-                <Trash2 className="w-3 h-3 mr-1" />
-                {strings.delete}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ minHeight: '36px' }}
+                  >
+                    <MoreVertical className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMaintenanceAction(request, 'archive'); }}>
+                    <Archive className="w-4 h-4 mr-2" />
+                    {language === 'th' ? 'เก็บไว้' : 'Archive'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMaintenanceAction(request, 'delete'); }} className="text-red-600">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {language === 'th' ? 'ลบอย่างถาวร' : 'Delete'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         )}
@@ -341,13 +350,19 @@ function PropertyTrackerContent() {
 
   const { data: deposits = [] } = useQuery({
     queryKey: ['deposits'],
-    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: async () => {
+      const allDeposits = await base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date');
+      return allDeposits.filter(d => !d.is_archived);
+    },
     enabled: !!user,
   });
 
   const { data: maintenanceRequests = [] } = useQuery({
     queryKey: ['maintenance'],
-    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: async () => {
+      const allRequests = await base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date');
+      return allRequests.filter(r => !r.is_archived);
+    },
     enabled: !!user,
   });
 
@@ -2182,6 +2197,59 @@ function PropertyTrackerContent() {
                           {deposit.expected_return_date ? format(new Date(deposit.expected_return_date), 'MMM d, yyyy') : 'N/A'}
                         </p>
                       </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        onClick={() => {
+                          haptic.light();
+                          setDepositForm({
+                            deposit_amount: deposit.deposit_amount?.toString() || '',
+                            deposit_paid_date: deposit.deposit_paid_date || '',
+                            expected_return_date: deposit.expected_return_date || '',
+                            property_address: deposit.property_address || '',
+                            notes: deposit.notes || ''
+                          });
+                          setEditingDeposit(true);
+                        }}
+                        className="flex-1 btn-interaction"
+                        style={{
+                          backgroundColor: '#0C3B2E',
+                          color: '#FFFFFF',
+                          minHeight: '48px'
+                        }}
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        {strings.edit}
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="btn-interaction"
+                            style={{ minHeight: '48px' }}
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleDepositAction('returned')}>
+                            <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
+                            {language === 'th' ? 'ทำเครื่องหมายว่าคืนแล้ว' : 'Mark Returned'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDepositAction('disputed')}>
+                            <AlertTriangle className="w-4 h-4 mr-2 text-red-600" />
+                            {language === 'th' ? 'ทำเครื่องหมายว่ามีข้อพิพาท' : 'Mark Disputed'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDepositAction('archive')}>
+                            <Archive className="w-4 h-4 mr-2" />
+                            {language === 'th' ? 'เก็บไว้' : 'Archive'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDepositAction('delete')} className="text-red-600">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            {language === 'th' ? 'ลบอย่างถาวร' : 'Delete'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 )}
