@@ -772,6 +772,94 @@ function LeaseDetailsContent() {
           </Card>
         )}
 
+        {/* DEBUG BUTTON - TEMPORARY */}
+        <Card className="mb-4 md:mb-6 border-2 border-red-500" style={{ backgroundColor: '#FEE2E2' }}>
+          <CardContent className="p-4">
+            <Button
+              onClick={() => {
+                console.log('=== CURRENCY DEBUG INSPECTION ===');
+                
+                // Find rent value element
+                const rentLabels = Array.from(document.querySelectorAll('p')).filter(el => 
+                  el.textContent.includes('Monthly Rent') || el.textContent.includes('ค่าเช่ารายเดือน')
+                );
+                
+                if (rentLabels.length > 0) {
+                  const rentContainer = rentLabels[0].parentElement;
+                  const rentValueEl = rentContainer.querySelector('p.font-medium');
+                  
+                  console.log('--- RENT VALUE INSPECTION ---');
+                  console.log('Tag:', rentValueEl?.tagName);
+                  console.log('ClassName:', rentValueEl?.className);
+                  console.log('textContent:', rentValueEl?.textContent);
+                  console.log('innerText:', rentValueEl?.innerText);
+                  console.log('innerHTML:', rentValueEl?.innerHTML);
+                  console.log('outerHTML:', rentValueEl?.outerHTML);
+                  
+                  // Check all child nodes
+                  console.log('Child nodes count:', rentValueEl?.childNodes.length);
+                  rentValueEl?.childNodes.forEach((node, idx) => {
+                    console.log(`  Child ${idx}:`, {
+                      nodeType: node.nodeType,
+                      nodeName: node.nodeName,
+                      nodeValue: node.nodeValue,
+                      textContent: node.textContent,
+                      outerHTML: node.outerHTML || 'N/A (text node)'
+                    });
+                  });
+                  
+                  console.log('Parent outerHTML:', rentContainer?.outerHTML);
+                  console.log('Computed ::before:', window.getComputedStyle(rentValueEl, '::before').content);
+                  console.log('Computed ::after:', window.getComputedStyle(rentValueEl, '::after').content);
+                }
+                
+                // Find deposit value element
+                const depositLabels = Array.from(document.querySelectorAll('p')).filter(el => 
+                  el.textContent.includes('Security Deposit') || el.textContent.includes('เงินมัดจำ')
+                );
+                
+                if (depositLabels.length > 0) {
+                  const depositContainer = depositLabels[0].parentElement;
+                  const depositValueEl = depositContainer.querySelector('p.font-medium');
+                  
+                  console.log('--- DEPOSIT VALUE INSPECTION ---');
+                  console.log('Tag:', depositValueEl?.tagName);
+                  console.log('ClassName:', depositValueEl?.className);
+                  console.log('textContent:', depositValueEl?.textContent);
+                  console.log('innerText:', depositValueEl?.innerText);
+                  console.log('innerHTML:', depositValueEl?.innerHTML);
+                  console.log('outerHTML:', depositValueEl?.outerHTML);
+                  
+                  // Check all child nodes
+                  console.log('Child nodes count:', depositValueEl?.childNodes.length);
+                  depositValueEl?.childNodes.forEach((node, idx) => {
+                    console.log(`  Child ${idx}:`, {
+                      nodeType: node.nodeType,
+                      nodeName: node.nodeName,
+                      nodeValue: node.nodeValue,
+                      textContent: node.textContent,
+                      outerHTML: node.outerHTML || 'N/A (text node)'
+                    });
+                  });
+                  
+                  console.log('Parent outerHTML:', depositContainer?.outerHTML);
+                  console.log('Computed ::before:', window.getComputedStyle(depositValueEl, '::before').content);
+                  console.log('Computed ::after:', window.getComputedStyle(depositValueEl, '::after').content);
+                }
+                
+                console.log('=== END DEBUG ===');
+                alert('Debug info logged to console. Check browser console (F12).');
+              }}
+              className="w-full bg-red-600 text-white font-bold"
+            >
+              🔍 DEBUG CURRENCY (Check Console)
+            </Button>
+            <p className="text-xs text-red-800 mt-2 font-mono">
+              Build: 2026-01-01-16:30 | Tap button and check console for $ source
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Actions */}
         <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
@@ -827,6 +915,13 @@ function LeaseDetailsContent() {
                   </div>
                   </CardContent>
                   </Card>
+
+                  {/* Build marker for verification */}
+                  <div className="mt-6 text-center">
+                  <p className="text-xs opacity-50 font-mono" style={{ color: colors.textSecondary }}>
+                  Build: 2026-01-01 16:30 UTC | LeaseDetails v2.0
+                  </p>
+                  </div>
                   </div>
                   </div>
                   );
