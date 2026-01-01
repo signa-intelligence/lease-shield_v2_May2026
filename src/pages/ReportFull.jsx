@@ -90,7 +90,7 @@ function ReportFullContent() {
       detailedIssues: "Detailed Issues & Recommendations",
       evidence: "Evidence",
       explanation: "Explanation",
-      recommendation: "Recommendation",
+      recommendation: "Recommended Action",
       impact: "Impact",
       likelihood: "Likelihood",
       missingProtections: "Missing Protections",
@@ -99,7 +99,18 @@ function ReportFullContent() {
       trackYourSecurityDeposit: "Track your security deposit",
       moreDetailedIssues: "More Detailed Issue(s)",
       upgradeToUnlock: "Upgrade to Unlock",
-      backToSummary: "Back to Summary"
+      backToSummary: "Back to Summary",
+      originalClause: "Original Clause",
+      clauseReference: "Clause",
+      pageReference: "Page",
+      whyThisMatters: "Why This Matters",
+      proceduralRisks: "Procedural Risks",
+      financialRisks: "Financial Risks",
+      rightsLegalRisks: "Rights & Legal Risks",
+      privacyAccess: "Privacy & Access",
+      fairnessBalance: "Fairness & Balance",
+      otherRisks: "Other Risks",
+      leaseLanguageBanner: "This lease is written in {leaseLanguage}. Analysis provided in {uiLanguage}."
     },
     th: {
       negotiateBeforeSigning: "แนะนำ: ดูเทมเพลตเอกสาร",
@@ -123,7 +134,7 @@ function ReportFullContent() {
       detailedIssues: "ปัญหาและข้อแนะนำโดยละเอียด",
       evidence: "หลักฐาน",
       explanation: "คำอธิบาย",
-      recommendation: "ข้อแนะนำ",
+      recommendation: "การดำเนินการที่แนะนำ",
       impact: "ผลกระทบ",
       likelihood: "โอกาส",
       missingProtections: "การป้องกันที่ขาดหายไป",
@@ -132,7 +143,18 @@ function ReportFullContent() {
       trackYourSecurityDeposit: "ติดตามเงินมัดจำของคุณ",
       moreDetailedIssues: "เหลืออีก {count} ปัญหาโดยละเอียด",
       upgradeToUnlock: "อัปเกรดเพื่อปลดล็อค",
-      backToSummary: "กลับไปที่สรุป"
+      backToSummary: "กลับไปที่สรุป",
+      originalClause: "ข้อความในสัญญาเดิม",
+      clauseReference: "ข้อ",
+      pageReference: "หน้า",
+      whyThisMatters: "ทำไมสำคัญ",
+      proceduralRisks: "ความเสี่ยงด้านขั้นตอน",
+      financialRisks: "ความเสี่ยงทางการเงิน",
+      rightsLegalRisks: "ความเสี่ยงด้านสิทธิและกฎหมาย",
+      privacyAccess: "ความเป็นส่วนตัวและการเข้าถึง",
+      fairnessBalance: "ความเป็นธรรมและความสมดุล",
+      otherRisks: "ความเสี่ยงอื่นๆ",
+      leaseLanguageBanner: "สัญญานี้เขียนเป็นภาษา{leaseLanguage} การวิเคราะห์แสดงเป็นภาษา{uiLanguage}"
     },
     zh: {
       autoGenerateLetters: "自动生成信件",
@@ -475,6 +497,56 @@ function ReportFullContent() {
   const missingItems = scan.scan_full?.missing_items || [];
   const keyTerms = scan.scan_full?.key_terms || {};
 
+  // Group flags by category
+  const groupedFlags = fullFlags.reduce((groups, flag) => {
+    const category = flag.category || 'Other Risks';
+    if (!groups[category]) groups[category] = [];
+    groups[category].push(flag);
+    return groups;
+  }, {});
+
+  // Sort within groups by severity
+  const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+  Object.keys(groupedFlags).forEach(category => {
+    groupedFlags[category].sort((a, b) => 
+      (severityOrder[a.severity] || 99) - (severityOrder[b.severity] || 99)
+    );
+  });
+
+  // Category display order
+  const categoryOrder = [
+    'Procedural Fairness',
+    'Financial Risk',
+    'Rights & Legal',
+    'Privacy & Access',
+    'Fairness & Balance',
+    'Rights & Usage',
+    'Legal Rights'
+  ];
+
+  const getCategoryTitle = (category) => {
+    const map = {
+      'Procedural Fairness': language === 'th' ? 'ความเสี่ยงด้านขั้นตอน' : 'Procedural Risks',
+      'Financial Risk': language === 'th' ? 'ความเสี่ยงทางการเงิน' : 'Financial Risks',
+      'Rights & Legal': language === 'th' ? 'ความเสี่ยงด้านสิทธิและกฎหมาย' : 'Rights & Legal Risks',
+      'Legal Rights': language === 'th' ? 'ความเสี่ยงด้านสิทธิและกฎหมาย' : 'Rights & Legal Risks',
+      'Privacy & Access': language === 'th' ? 'ความเป็นส่วนตัวและการเข้าถึง' : 'Privacy & Access',
+      'Fairness & Balance': language === 'th' ? 'ความเป็นธรรมและความสมดุล' : 'Fairness & Balance',
+      'Rights & Usage': language === 'th' ? 'สิทธิและการใช้งาน' : 'Rights & Usage'
+    };
+    return map[category] || category;
+  };
+
+  // Check if lease language differs from UI language
+  const leaseLanguage = scan.scan_full?.language_detected || lease.language_detected || 'en';
+  const uiLanguage = language;
+  const showLanguageBanner = leaseLanguage !== uiLanguage;
+
+  const getLanguageLabel = (code) => {
+    const labels = { en: 'English', th: 'Thai', zh: 'Chinese', ja: 'Japanese', ko: 'Korean', ru: 'Russian', mixed: 'Mixed' };
+    return labels[code] || code.toUpperCase();
+  };
+
   return (
     <FeatureGate feature="full_report">
       <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
@@ -508,6 +580,23 @@ function ReportFullContent() {
               </Button>
             }
           />
+
+          {/* Language Banner */}
+          {showLanguageBanner && (
+            <div className="mb-4 p-4 rounded-lg border-2" style={{
+              backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+              borderColor: '#3B82F6'
+            }}>
+              <div className="flex items-center gap-3">
+                <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                <p className="text-sm font-medium" style={{ color: isDarkMode ? '#93C5FD' : '#1E40AF' }}>
+                  {strings.leaseLanguageBanner
+                    .replace('{leaseLanguage}', getLanguageLabel(leaseLanguage))
+                    .replace('{uiLanguage}', getLanguageLabel(uiLanguage))}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Risk Score Summary */}
           <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
@@ -610,7 +699,7 @@ function ReportFullContent() {
             </Card>
           )}
 
-          {/* Detailed Flags */}
+          {/* Detailed Flags - GROUPED BY CATEGORY */}
           {fullFlags.length > 0 && (
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
@@ -620,56 +709,144 @@ function ReportFullContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="space-y-4">
-                  {fullFlags.map((flag, index) => {
-                    const SeverityIcon = getSeverityIcon(flag.severity);
+                <div className="space-y-8">
+                  {/* Render by category */}
+                  {categoryOrder.map(category => {
+                    const categoryFlags = groupedFlags[category];
+                    if (!categoryFlags || categoryFlags.length === 0) return null;
+
                     return (
-                      <div key={index} className={`p-5 rounded-xl border-2 ${getSeverityColor(flag.severity)}`} style={isDarkMode ? { backgroundColor: colors.cardBg, borderColor: colors.borderColor } : {}}>
-                        <div className="flex items-start gap-3 mb-3">
-                          <SeverityIcon className="w-6 h-6 mt-0.5 flex-shrink-0" />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-bold text-lg" style={{ color: colors.textPrimary }}>{flag.title}</h4>
-                              <Badge variant="outline" className="text-xs font-bold uppercase">
-                                {flag.severity}
-                              </Badge>
-                            </div>
-                            <Badge variant="outline" className="mb-3 text-xs">
-                              {flag.category}
-                            </Badge>
-                          </div>
-                        </div>
+                      <div key={category}>
+                        <h3 className="text-lg font-bold mb-4 pb-2 border-b" style={{ 
+                          color: colors.textPrimary,
+                          borderColor: colors.borderColor
+                        }}>
+                          {getCategoryTitle(category)} ({categoryFlags.length})
+                        </h3>
                         
-                        <div className="space-y-3 ml-9">
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-70" style={{ color: colors.textSecondary }}>{strings.evidence}</p>
-                            <p className="text-sm italic border-l-2 border-current pl-3 py-1" style={{ color: colors.textPrimary }}>"{flag.evidence}"</p>
-                          </div>
-                          
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-70" style={{ color: colors.textSecondary }}>{strings.explanation}</p>
-                            <p className="text-sm leading-relaxed" style={{ color: colors.textPrimary }}>{flag.explanation}</p>
-                          </div>
-                          
-                          <div className="rounded-lg p-3 border border-current/20" style={{ backgroundColor: isDarkMode ? colors.bg : 'white' }}>
-                            <p className="text-xs font-bold uppercase tracking-wide mb-1 opacity-70" style={{ color: colors.textSecondary }}>{strings.recommendation}</p>
-                            <p className="text-sm font-medium leading-relaxed" style={{ color: colors.textPrimary }}>{flag.recommendation}</p>
-                          </div>
-                          
-                          {(flag.impact_0_10 || flag.likelihood_0_10) && (
-                            <div className="flex gap-4 text-xs" style={{ color: colors.textSecondary }}>
-                              {flag.impact_0_10 && (
-                                <div>
-                                  <span className="font-semibold">{strings.impact}:</span> {flag.impact_0_10}/10
+                        <div className="space-y-4">
+                          {categoryFlags.map((flag, index) => {
+                            const SeverityIcon = getSeverityIcon(flag.severity);
+                            const [showOriginal, setShowOriginal] = React.useState(false);
+                            
+                            return (
+                              <div key={index} className="rounded-xl border-2 overflow-hidden" style={{
+                                backgroundColor: colors.cardBg,
+                                borderColor: flag.severity === 'critical' ? '#EF4444' : 
+                                             flag.severity === 'high' ? '#F59E0B' :
+                                             flag.severity === 'medium' ? '#EAB308' : '#10B981'
+                              }}>
+                                {/* Header */}
+                                <div className="p-4" style={{
+                                  backgroundColor: flag.severity === 'critical' ? (isDarkMode ? '#3A2626' : '#FEE2E2') :
+                                                   flag.severity === 'high' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
+                                                   flag.severity === 'medium' ? (isDarkMode ? '#3A3420' : '#FEF9C3') :
+                                                   (isDarkMode ? '#1E4435' : '#ECFDF5')
+                                }}>
+                                  <div className="flex items-start gap-3">
+                                    <SeverityIcon className="w-6 h-6 mt-0.5 flex-shrink-0" style={{
+                                      color: flag.severity === 'critical' ? '#EF4444' :
+                                             flag.severity === 'high' ? '#F59E0B' :
+                                             flag.severity === 'medium' ? '#EAB308' : '#10B981'
+                                    }} />
+                                    <div className="flex-1">
+                                      <div className="flex items-start justify-between gap-3 mb-2">
+                                        <h4 className="font-bold text-base sm:text-lg leading-tight" style={{ color: colors.textPrimary }}>
+                                          {flag.title}
+                                        </h4>
+                                        <Badge className="text-xs font-bold uppercase px-2 py-1 flex-shrink-0" style={{
+                                          backgroundColor: flag.severity === 'critical' ? '#DC2626' :
+                                                           flag.severity === 'high' ? '#EA580C' :
+                                                           flag.severity === 'medium' ? '#D97706' : '#059669',
+                                          color: '#FFFFFF'
+                                        }}>
+                                          {flag.severity}
+                                        </Badge>
+                                      </div>
+                                      {flag.clause_id && (
+                                        <div className="flex items-center gap-2 text-xs" style={{ color: colors.textSecondary }}>
+                                          <Badge variant="outline" className="font-mono text-xs">
+                                            {strings.clauseReference} {flag.clause_id}
+                                          </Badge>
+                                          {flag.page_number && (
+                                            <Badge variant="outline" className="text-xs">
+                                              {strings.pageReference} {flag.page_number}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                              )}
-                              {flag.likelihood_0_10 && (
-                                <div>
-                                  <span className="font-semibold">{strings.likelihood}:</span> {flag.likelihood_0_10}/10
+
+                                {/* Body */}
+                                <div className="p-5 space-y-4">
+                                  {/* Why This Matters */}
+                                  <div>
+                                    <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: colors.textSecondary }}>
+                                      {strings.whyThisMatters}
+                                    </p>
+                                    <p className="text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
+                                      {flag.description || flag.explanation}
+                                    </p>
+                                  </div>
+
+                                  {/* Recommended Action - BOXED */}
+                                  <div className="rounded-lg p-4 border-2" style={{
+                                    backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC',
+                                    borderColor: '#0C3B2E'
+                                  }}>
+                                    <p className="text-xs font-bold uppercase tracking-wide mb-2 flex items-center gap-2" style={{ color: '#0C3B2E' }}>
+                                      <CheckCircle2 className="w-4 h-4" />
+                                      {strings.recommendation}
+                                    </p>
+                                    <div className="text-sm leading-relaxed space-y-1" style={{ color: colors.textPrimary }}>
+                                      {flag.recommendation.split('\n').map((line, i) => (
+                                        <p key={i} className={line.trim().startsWith('-') || line.trim().startsWith('•') ? 'ml-3' : ''}>
+                                          {line}
+                                        </p>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Original Clause Snippet - Collapsible */}
+                                  {flag.evidence && (
+                                    <div>
+                                      <button
+                                        onClick={() => setShowOriginal(!showOriginal)}
+                                        className="text-xs font-semibold flex items-center gap-2 transition-colors"
+                                        style={{ color: '#0C3B2E' }}
+                                      >
+                                        {showOriginal ? '▼' : '▶'} {strings.originalClause}
+                                      </button>
+                                      {showOriginal && (
+                                        <div className="mt-2 p-3 rounded-lg border-l-4" style={{
+                                          backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC',
+                                          borderLeftColor: '#64748B'
+                                        }}>
+                                          <p className="text-xs italic leading-relaxed" style={{ color: colors.textSecondary }}>
+                                            "{flag.evidence}"
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Penalty Details */}
+                                  {flag.penalties && flag.penalties.length > 0 && (
+                                    <div className="text-xs p-2 rounded" style={{
+                                      backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+                                      color: '#DC2626'
+                                    }}>
+                                      <span className="font-bold">Penalty: </span>
+                                      {flag.penalties[0].type} - ฿{flag.penalties[0].amount?.toLocaleString() || 'N/A'}
+                                      {flag.penalties[0].note && ` (${flag.penalties[0].note})`}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -677,7 +854,7 @@ function ReportFullContent() {
                   
                   {/* SHOW UPGRADE CTA IF FLAGS ARE HIDDEN */}
                   {hiddenFlagsCount > 0 && (
-                    <div className="p-6 rounded-xl border-2 border-dashed" style={{
+                    <div className="mt-6 p-6 rounded-xl border-2 border-dashed" style={{
                       backgroundColor: isDarkMode ? '#2A2D30' : '#FEF9C3',
                       borderColor: isDarkMode ? '#C7A338' : '#EAB308'
                     }}>
