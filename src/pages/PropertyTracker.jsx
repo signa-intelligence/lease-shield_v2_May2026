@@ -320,9 +320,9 @@ function PropertyTrackerContent() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [expandedSections, setExpandedSections] = useState({
-    deposit: true,
-    rent: true,
-    maintenance: true
+    deposit: false,
+    rent: false,
+    maintenance: false
   });
   const [editingDeposit, setEditingDeposit] = useState(false);
   const [editingRent, setEditingRent] = useState(false);
@@ -1215,6 +1215,7 @@ function PropertyTrackerContent() {
 
     const sectionMap = {
       '#rent': { ref: rentRef, key: 'rent' },
+      '#rent-schedule': { ref: rentRef, key: 'rent' },
       '#maintenance': { ref: maintenanceRef, key: 'maintenance' },
       '#deposit': { ref: depositRef, key: 'deposit' },
       '#deposits': { ref: depositRef, key: 'deposit' }
@@ -2146,15 +2147,32 @@ function PropertyTrackerContent() {
                       </Button>
                       <Button
                         onClick={handleDepositSubmit}
-                        className="bg-ls-forest hover:bg-ls-forest/90"
-                        style={{ minHeight: '44px' }}
+                        className="btn-interaction text-white"
+                        style={{ 
+                          minHeight: '44px',
+                          backgroundColor: '#0C3B2E',
+                          border: '2px solid #C7A338',
+                          borderRadius: '10px',
+                          fontWeight: '700',
+                          boxShadow: '0 4px 12px rgba(12,59,46,0.25)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#084D38';
+                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(12,59,46,0.35)';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#0C3B2E';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(12,59,46,0.25)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }}
                       >
                         <Save className="w-4 h-4 mr-2" />
                         {strings.save}
                       </Button>
                     </div>
                   </div>
-                ) : (
+                ) : deposit && deposit.deposit_amount > 0 ? (
                   <div className="space-y-4">
                     {deposit.auto_populated && deposit.user_reviewed && (
                       <div className="p-3 rounded-lg border-l-4" style={{
@@ -2258,6 +2276,25 @@ function PropertyTrackerContent() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Wallet className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noDeposit}</p>
+                    <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addDepositDesc}</p>
+                    <Button
+                      onClick={() => {
+                        haptic.light();
+                        setEditingDeposit(true);
+                      }}
+                      className="text-white"
+                      style={{ minHeight: '44px', backgroundColor: colors.depositAccent }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {strings.addDeposit}
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -2407,10 +2444,25 @@ function PropertyTrackerContent() {
                       </Button>
                       <Button
                         onClick={handleRentSubmit}
-                        className="text-white"
-                        style={{ minHeight: '44px', backgroundColor: colors.rentAccent }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                        className="btn-interaction text-white"
+                        style={{ 
+                          minHeight: '44px', 
+                          backgroundColor: '#0C3B2E',
+                          border: '2px solid #C7A338',
+                          borderRadius: '10px',
+                          fontWeight: '700',
+                          boxShadow: '0 4px 12px rgba(12,59,46,0.25)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#084D38';
+                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(12,59,46,0.35)';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#0C3B2E';
+                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(12,59,46,0.25)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }}
                       >
                         <Save className="w-4 h-4 mr-2" />
                         {strings.save}

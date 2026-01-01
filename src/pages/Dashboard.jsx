@@ -2541,9 +2541,13 @@ ja: {
                         miniStats: [
                           { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
                         ],
-                        route: createPageUrl("PropertyTracker") + "#deposits",
+                        route: createPageUrl("PropertyTracker") + "#deposit",
                         label: strings.trackDeposit,
-                        compactTitle: language === 'ru'
+                        compactTitle: language === 'ru',
+                        onClick: () => {
+                          haptic.light();
+                          navigate(createPageUrl("PropertyTracker") + "#deposit");
+                        }
                       },
                       {
                         title: strings.activeCases,
@@ -2569,9 +2573,13 @@ ja: {
                         miniStats: [
                           { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'Уведомления' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
                         ],
-                        route: createPageUrl("PropertyTracker") + "#rent",
+                        route: createPageUrl("PropertyTracker") + "#rent-schedule",
                         label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'ru' ? 'Управление' : 'จัดการ') : strings.setupRent,
-                        compactTitle: language === 'ru'
+                        compactTitle: language === 'ru',
+                        onClick: () => {
+                          haptic.light();
+                          navigate(createPageUrl("PropertyTracker") + "#rent-schedule");
+                        }
                       },
                       {
                         title: strings.notifications,
