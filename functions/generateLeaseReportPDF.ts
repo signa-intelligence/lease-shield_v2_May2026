@@ -227,17 +227,24 @@ Deno.serve(async (req) => {
     // Generate and upload PDF
     console.log(`[${trackingId}] Generating PDF binary`);
     const pdfBytes = doc.output('arraybuffer');
-    const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
     
     console.log(`[${trackingId}] PDF binary generated`, {
       sizeBytes: pdfBytes.byteLength,
       sizeMB: (pdfBytes.byteLength / 1024 / 1024).toFixed(2)
     });
     
-    // Upload to storage
-    console.log(`[${trackingId}] Uploading PDF to storage`);
+    // Convert ArrayBuffer to File for upload
+    const pdfFile = new File([pdfBytes], `LeaseShield-Report-${Date.now()}.pdf`, { 
+      type: 'application/pdf' 
+    });
+    
+    console.log(`[${trackingId}] Uploading PDF to storage`, {
+      fileName: pdfFile.name,
+      fileSize: pdfFile.size
+    });
+    
     const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ 
-      file: pdfBlob 
+      file: pdfFile 
     });
     
     console.log(`[${trackingId}] PDF uploaded successfully`, {
