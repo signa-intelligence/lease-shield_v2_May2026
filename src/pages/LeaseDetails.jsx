@@ -286,6 +286,23 @@ function LeaseDetailsContent() {
 
   const strings = t[language] || t.en;
 
+  // Currency sanitizer - removes all non-numeric characters except digits, decimal, minus
+  const sanitizeCurrency = (value) => {
+    if (value === null || value === undefined) return 0;
+    
+    // Debug log to see raw value
+    console.log('[LeaseDetails] Raw currency value:', value, typeof value);
+    
+    // Convert to string and remove everything except digits, decimal point, and minus
+    const cleanedString = String(value).replace(/[^0-9.-]/g, '');
+    const numericValue = parseFloat(cleanedString);
+    
+    // Debug log cleaned value
+    console.log('[LeaseDetails] Sanitized to:', numericValue);
+    
+    return isNaN(numericValue) ? 0 : numericValue;
+  };
+
   const handleToggleAlerts = async (enabled) => {
     haptic.light();
     try {
@@ -422,7 +439,7 @@ function LeaseDetailsContent() {
                     {strings.monthlyRent}
                   </p>
                   <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>
-                    ฿{String(lease.rent_amount).replace(/[$,]/g, '').trim()}
+                    ฿{sanitizeCurrency(lease.rent_amount).toLocaleString('en-US')}
                   </p>
                 </div>
               )}
@@ -433,7 +450,7 @@ function LeaseDetailsContent() {
                     {strings.securityDeposit}
                   </p>
                   <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>
-                    ฿{String(lease.deposit_amount).replace(/[$,]/g, '').trim()}
+                    ฿{sanitizeCurrency(lease.deposit_amount).toLocaleString('en-US')}
                   </p>
                 </div>
               )}
