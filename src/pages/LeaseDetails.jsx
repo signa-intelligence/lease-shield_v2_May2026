@@ -12,7 +12,6 @@ import {
   FileText, 
   Calendar, 
   Home, 
-  DollarSign, 
   Bell, 
   Edit2, 
   Save, 
@@ -286,22 +285,79 @@ function LeaseDetailsContent() {
 
   const strings = t[language] || t.en;
 
-  // Currency sanitizer - removes all non-numeric characters except digits, decimal, minus
+  // Hard currency sanitizer - REMOVES ALL $ USD SYMBOLS AT FINAL RENDER
   const sanitizeCurrency = (value) => {
     if (value === null || value === undefined) return 0;
     
-    // Debug log to see raw value
-    console.log('[LeaseDetails] Raw currency value:', value, typeof value);
+    // Debug log raw value
+    console.log('[CURRENCY DEBUG] Raw value:', value, 'Type:', typeof value);
     
-    // Convert to string and remove everything except digits, decimal point, and minus
-    const cleanedString = String(value).replace(/[^0-9.-]/g, '');
+    // Convert to string and strip ALL non-numeric except digits, decimal, minus
+    let cleanedString = String(value).replace(/[^0-9.-]/g, '');
     const numericValue = parseFloat(cleanedString);
     
-    // Debug log cleaned value
-    console.log('[LeaseDetails] Sanitized to:', numericValue);
+    console.log('[CURRENCY DEBUG] Cleaned numeric:', numericValue);
     
     return isNaN(numericValue) ? 0 : numericValue;
   };
+
+  // Format currency - HARD STRIP $ USD at final stage
+  const formatCurrency = (value) => {
+    const sanitized = sanitizeCurrency(value);
+    let formatted = sanitized.toLocaleString('en-US');
+    
+    // HARD STRIP any injected currency symbols
+    formatted = formatted.replaceAll('$', '').replaceAll('USD', '').replaceAll('US$', '').trim();
+    
+    console.log('[CURRENCY DEBUG] Final formatted:', formatted);
+    return formatted;
+  };
+
+  // DEBUG INSTRUMENTATION - Log rendered DOM content
+  React.useEffect(() => {
+    if (!lease) return;
+    
+    setTimeout(() => {
+      console.log('=== DOM INSPECTION START ===');
+      
+      // Find Monthly Rent element
+      const rentElements = Array.from(document.querySelectorAll('p')).filter(el => 
+        el.textContent.includes('Monthly Rent') || el.textContent.includes('ค่าเช่ารายเดือน')
+      );
+      if (rentElements.length > 0) {
+        const rentParent = rentElements[0].parentElement;
+        const rentValueEl = rentParent?.querySelector('p.font-medium');
+        if (rentValueEl) {
+          console.log('[RENT] innerText:', rentValueEl.innerText);
+          console.log('[RENT] innerHTML:', rentValueEl.innerHTML);
+          console.log('[RENT] textContent:', rentValueEl.textContent);
+          const styles = window.getComputedStyle(rentValueEl);
+          console.log('[RENT] ::before content:', window.getComputedStyle(rentValueEl, '::before').content);
+          console.log('[RENT] ::after content:', window.getComputedStyle(rentValueEl, '::after').content);
+          console.log('[RENT] Parent HTML:', rentParent.innerHTML);
+        }
+      }
+      
+      // Find Security Deposit element
+      const depositElements = Array.from(document.querySelectorAll('p')).filter(el => 
+        el.textContent.includes('Security Deposit') || el.textContent.includes('เงินมัดจำ')
+      );
+      if (depositElements.length > 0) {
+        const depositParent = depositElements[0].parentElement;
+        const depositValueEl = depositParent?.querySelector('p.font-medium');
+        if (depositValueEl) {
+          console.log('[DEPOSIT] innerText:', depositValueEl.innerText);
+          console.log('[DEPOSIT] innerHTML:', depositValueEl.innerHTML);
+          console.log('[DEPOSIT] textContent:', depositValueEl.textContent);
+          console.log('[DEPOSIT] ::before content:', window.getComputedStyle(depositValueEl, '::before').content);
+          console.log('[DEPOSIT] ::after content:', window.getComputedStyle(depositValueEl, '::after').content);
+          console.log('[DEPOSIT] Parent HTML:', depositParent.innerHTML);
+        }
+      }
+      
+      console.log('=== DOM INSPECTION END ===');
+    }, 100);
+  }, [lease]);
 
   const handleToggleAlerts = async (enabled) => {
     haptic.light();
@@ -399,6 +455,23 @@ function LeaseDetailsContent() {
 
   return (
     <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+      {/* CSS KILL-SWITCH: Remove any injected $ from pseudo-elements or icons */}
+      <style>{`
+        .currency-value-no-symbol::before,
+        .currency-value-no-symbol::after {
+          content: '' !important;
+          display: none !important;
+        }
+        
+        .currency-value-no-symbol svg {
+          display: none !important;
+        }
+        
+        /* Kill any $ DollarSign icon that might be rendered */
+        .currency-value-no-symbol [data-lucide="dollar-sign"] {
+          display: none !important;
+        }
+      `}</style>
       <div className="max-w-5xl mx-auto">
         <PageHeader
           title={strings.leaseDetails}
@@ -438,8 +511,8 @@ function LeaseDetailsContent() {
                   <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
                     {strings.monthlyRent}
                   </p>
-                  <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>
-                    ฿{sanitizeCurrency(lease.rent_amount).toLocaleString('en-US')}
+                  <p className="font-medium text-lg currency-value-no-symbol" style={{ color: colors.textPrimary }}>
+                    ฿{formatCurrency(lease.rent_amount)}
                   </p>
                 </div>
               )}
@@ -449,8 +522,8 @@ function LeaseDetailsContent() {
                   <p className="text-sm font-semibold mb-1" style={{ color: colors.textSecondary }}>
                     {strings.securityDeposit}
                   </p>
-                  <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>
-                    ฿{sanitizeCurrency(lease.deposit_amount).toLocaleString('en-US')}
+                  <p className="font-medium text-lg currency-value-no-symbol" style={{ color: colors.textPrimary }}>
+                    ฿{formatCurrency(lease.deposit_amount)}
                   </p>
                 </div>
               )}
