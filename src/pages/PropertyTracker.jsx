@@ -23,7 +23,7 @@ import {
 import {
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
   Edit2, Save, X, Wrench, CheckCircle2,
-  DollarSign, ArrowLeft, Camera, Image as ImageIcon, Loader2, Trash2, Archive, Hash, Mic, Video
+  DollarSign, ArrowLeft, Camera, Image as ImageIcon, Loader2, Trash2, Archive, Hash, Mic, Video, MoreVertical
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { useNavigate, useLocation, Link } from "react-router-dom";
