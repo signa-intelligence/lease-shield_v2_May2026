@@ -41,22 +41,28 @@ export default function StatsCard({
     buttonText: '#FFFFFF',
   };
 
+  const handleCardClick = (e) => {
+    haptic?.light();
+    const iconElement = document.querySelector(`#stat-icon-${title.replace(/\s/g, '-')}`);
+    if (iconElement) {
+      iconElement.classList.add('icon-shimmer');
+      setTimeout(() => {
+        iconElement.classList.remove('icon-shimmer');
+      }, 200);
+    }
+
+    if (onClick) {
+      e.preventDefault();
+      e.stopPropagation();
+      onClick();
+    } else if (route) {
+      window.location.href = route;
+    }
+  };
+
   const content = (
     <div
-      onClick={(e) => {
-        if (onClick) {
-          e.preventDefault();
-          onClick();
-        }
-        haptic?.light();
-        const iconElement = document.querySelector(`#stat-icon-${title.replace(/\s/g, '-')}`);
-        if (iconElement) {
-          iconElement.classList.add('icon-shimmer');
-          setTimeout(() => {
-            iconElement.classList.remove('icon-shimmer');
-          }, 200);
-        }
-      }}
+      onClick={handleCardClick}
       className={`rounded-xl p-4 flex flex-col justify-between shadow-md transition-all duration-200 ${className || ''}`}
       style={{
         backgroundColor: cardStyles.backgroundColor,
@@ -123,10 +129,7 @@ export default function StatsCard({
         {label && (
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              haptic?.light();
-            }}
+            onClick={handleCardClick}
             className="btn-interaction"
             style={{
               backgroundColor: cardStyles.buttonBg,
@@ -152,6 +155,5 @@ export default function StatsCard({
       </div>
   );
 
-  // BUG FIX: Always wrap in Link if route exists, let onClick work inside
-  return route ? <Link to={route} onClick={(e) => onClick && e.preventDefault()}>{content}</Link> : content;
+  return content;
 }
