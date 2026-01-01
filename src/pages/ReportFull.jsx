@@ -23,6 +23,7 @@ function ReportFullContent() {
   const scanId = urlParams.get('scanId');
   
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [expandedClauses, setExpandedClauses] = useState({});
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -727,7 +728,8 @@ function ReportFullContent() {
                         <div className="space-y-4">
                           {categoryFlags.map((flag, index) => {
                             const SeverityIcon = getSeverityIcon(flag.severity);
-                            const [showOriginal, setShowOriginal] = React.useState(false);
+                            const flagKey = `${category}-${index}`;
+                            const showOriginal = expandedClauses[flagKey] || false;
                             
                             return (
                               <div key={index} className="rounded-xl border-2 overflow-hidden" style={{
@@ -813,7 +815,7 @@ function ReportFullContent() {
                                   {flag.evidence && (
                                     <div>
                                       <button
-                                        onClick={() => setShowOriginal(!showOriginal)}
+                                        onClick={() => setExpandedClauses(prev => ({ ...prev, [flagKey]: !showOriginal }))}
                                         className="text-xs font-semibold flex items-center gap-2 transition-colors"
                                         style={{ color: '#0C3B2E' }}
                                       >
