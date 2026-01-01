@@ -422,7 +422,7 @@ function LeaseDetailsContent() {
                     {strings.monthlyRent}
                   </p>
                   <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>
-                    ฿{lease.rent_amount.toLocaleString('en-US')}
+                    ฿{String(lease.rent_amount).replace(/[$,]/g, '').trim()}
                   </p>
                 </div>
               )}
@@ -433,7 +433,7 @@ function LeaseDetailsContent() {
                     {strings.securityDeposit}
                   </p>
                   <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>
-                    ฿{lease.deposit_amount.toLocaleString('en-US')}
+                    ฿{String(lease.deposit_amount).replace(/[$,]/g, '').trim()}
                   </p>
                 </div>
               )}
