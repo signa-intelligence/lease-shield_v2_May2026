@@ -9,6 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Home, ChevronDown, ChevronUp, Wallet, Calendar, Bell, Plus,
   Edit2, Save, X, Wrench, CheckCircle2,
   DollarSign, ArrowLeft, Camera, Image as ImageIcon, Loader2, Trash2, Archive, Hash, Mic, Video
@@ -296,12 +308,7 @@ function MaintenanceRequestCard({
     </SwipeToDelete>
   );
 }
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
 import {
   CTA_COLOR,
   FEATURE_COLORS
