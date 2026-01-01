@@ -42,6 +42,9 @@ export default function StatsCard({
   };
 
   const handleCardClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     haptic?.light();
     const iconElement = document.querySelector(`#stat-icon-${title.replace(/\s/g, '-')}`);
     if (iconElement) {
@@ -51,11 +54,11 @@ export default function StatsCard({
       }, 200);
     }
 
+    // CRITICAL: Use onClick if provided (takes precedence over route)
     if (onClick) {
-      e.preventDefault();
-      e.stopPropagation();
       onClick();
     } else if (route) {
+      // Safe navigation - use window.location for hash-based routes
       window.location.href = route;
     }
   };

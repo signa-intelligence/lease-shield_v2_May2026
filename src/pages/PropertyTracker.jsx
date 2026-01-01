@@ -1211,7 +1211,12 @@ function PropertyTrackerContent() {
 
   // Handle hash-based section navigation with robust polling
   useEffect(() => {
-    if (!location.hash) return;
+    // CRITICAL: Only expand and scroll if hash is present
+    // Otherwise, keep all sections collapsed on initial load
+    if (!location.hash) {
+      // No hash = keep everything collapsed (default state)
+      return;
+    }
 
     const sectionMap = {
       '#rent': { ref: rentRef, key: 'rent' },
@@ -1224,9 +1229,11 @@ function PropertyTrackerContent() {
     const target = sectionMap[location.hash];
     if (!target) return;
 
-    // Expand section immediately
+    // Expand ONLY the targeted section immediately
     setExpandedSections(prev => ({
-      ...prev,
+      deposit: false,
+      rent: false,
+      maintenance: false,
       [target.key]: true
     }));
 
@@ -1773,7 +1780,6 @@ function PropertyTrackerContent() {
         data: { status: 'returned' }
       });
       haptic.success();
-      toast.success(language === 'th' ? 'ทำเครื่องหมายว่าคืนแล้ว' : 'Marked as returned');
     } else if (action === 'disputed') {
       if (!confirm(language === 'th' ? 'ทำเครื่องหมายเงินมัดจำว่ามีข้อพิพาทหรือไม่?' : 'Mark deposit as disputed?')) return;
       await updateDepositMutation.mutateAsync({
@@ -1781,7 +1787,6 @@ function PropertyTrackerContent() {
         data: { status: 'disputed' }
       });
       haptic.success();
-      toast.success(language === 'th' ? 'ทำเครื่องหมายว่ามีข้อพิพาท' : 'Marked as disputed');
     } else if (action === 'archive') {
       if (!confirm(language === 'th' ? 'เก็บเงินมัดจำนี้ไว้หรือไม่?' : 'Archive this deposit?')) return;
       await updateDepositMutation.mutateAsync({
@@ -1792,48 +1797,12 @@ function PropertyTrackerContent() {
           archived_at: new Date().toISOString()
         }
       });
-      queryClient.invalidateQueries({ queryKey: ['deposits'] });
       haptic.success();
-      toast.success(language === 'th' ? 'เก็บไว้แล้ว' : 'Archived successfully');
     } else if (action === 'delete') {
-      if (!confirm(language === 'th' ? 'ลบเงินมัดจำนี้อย่างถาวรหรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้' : 'Permanently delete this deposit? This cannot be undone.')) return;
+      if (!confirm(language === 'th' ? 'ลบเงินมัดจำนี้อย่างถาวรหรือไม่?' : 'Permanently delete this deposit?')) return;
       await base44.entities.DepositTracker.delete(deposit.id);
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
       haptic.success();
-      toast.success(language === 'th' ? 'ลบแล้ว' : 'Deleted successfully');
-    }
-  };
-
-  const handleRentAction = async (action) => {
-    if (!deposit) return;
-
-    if (action === 'archive') {
-      if (!confirm(language === 'th' ? 'เก็บกำหนดค่าเช่านี้ไว้หรือไม่?' : 'Archive this rent schedule?')) return;
-      await updateDepositMutation.mutateAsync({
-        id: deposit.id,
-        data: { 
-          rent_amount: null,
-          rent_due_day: null,
-          rent_alerts_enabled: false
-        }
-      });
-      queryClient.invalidateQueries({ queryKey: ['deposits'] });
-      haptic.success();
-      toast.success(language === 'th' ? 'ลบกำหนดค่าเช่าแล้ว' : 'Rent schedule cleared');
-    } else if (action === 'delete') {
-      if (!confirm(language === 'th' ? 'ลบกำหนดค่าเช่านี้อย่างถาวรหรือไม่?' : 'Permanently delete rent schedule?')) return;
-      await updateDepositMutation.mutateAsync({
-        id: deposit.id,
-        data: { 
-          rent_amount: null,
-          rent_due_day: null,
-          rent_alerts_enabled: false,
-          rent_alert_days_before: null
-        }
-      });
-      queryClient.invalidateQueries({ queryKey: ['deposits'] });
-      haptic.success();
-      toast.success(language === 'th' ? 'ลบแล้ว' : 'Deleted successfully');
     }
   };
 
@@ -2339,14 +2308,14 @@ function PropertyTrackerContent() {
             )}
           </Card>
 
-          <Card id="rent-schedule-section" ref={rentRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.rentAccent}` }}>
+          <Card id="rent-schedule-section" ref={rentRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: '6px solid #0C3B2E' }}>
             <CardHeader
               className="cursor-pointer"
               onClick={() => toggleSection('rent')}
               style={{
                 background: isDarkMode
-                  ? `linear-gradient(to right, ${colors.cardBg}, rgba(245,158,11,0.15))`
-                  : `linear-gradient(to right, ${colors.cardBg}, #FFF3E0)`,
+                  ? `linear-gradient(to right, ${colors.cardBg}, rgba(12,59,46,0.15))`
+                  : `linear-gradient(to right, ${colors.cardBg}, #ECFDF5)`,
                 borderBottom: expandedSections.rent ? `1px solid ${colors.borderColor}` : 'none'
               }}
             >
@@ -2356,7 +2325,7 @@ function PropertyTrackerContent() {
                     width: '48px',
                     height: '48px',
                     borderRadius: '12px',
-                    backgroundColor: colors.rentAccent,
+                    backgroundColor: '#0C3B2E',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -2366,11 +2335,11 @@ function PropertyTrackerContent() {
                   <div>
                     <div className="text-lg font-bold">{strings.rentSection}</div>
                     {deposit?.rent_amount && deposit?.rent_due_day && (
-                      <div className="text-sm font-normal mt-1">
-                        <Badge style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF', border: '1px solid #C7A338' }}>
-                          {strings.day} {deposit.rent_due_day} - ฿{deposit.rent_amount.toLocaleString()}
-                        </Badge>
-                      </div>
+                     <div className="text-sm font-normal mt-1">
+                       <Badge style={{ backgroundColor: isDarkMode ? 'rgba(16,185,129,0.2)' : '#ECFDF5', color: '#0C3B2E', border: '1px solid #0C3B2E', fontWeight: '600' }}>
+                         {strings.day} {deposit.rent_due_day} - ฿{deposit.rent_amount.toLocaleString()}
+                       </Badge>
+                     </div>
                     )}
                   </div>
                 </CardTitle>
@@ -2401,7 +2370,26 @@ function PropertyTrackerContent() {
 
             {expandedSections.rent && (
               <CardContent className="p-6">
-                {editingRent ? (
+                {(!deposit?.rent_amount || !deposit?.rent_due_day) && !editingRent ? (
+                  <div className="text-center py-8">
+                    <Calendar className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
+                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noRent}</p>
+                    <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addRentDesc}</p>
+                    <Button
+                      onClick={() => {
+                        haptic.light();
+                        setEditingRent(true);
+                      }}
+                      className="text-white"
+                      style={{ minHeight: '44px', backgroundColor: colors.rentAccent }}
+                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {strings.addRent}
+                    </Button>
+                  </div>
+                ) : editingRent ? (
                   <div className="space-y-4">
                     <div className="grid md:grid-cols-3 gap-4">
                       <MobileFormInput
@@ -2488,12 +2476,12 @@ function PropertyTrackerContent() {
                       </Button>
                     </div>
                   </div>
-                ) : deposit?.rent_amount && deposit?.rent_due_day ? (
+                ) : (
                   <div className="space-y-4">
                     <div className="grid md:grid-cols-3 gap-4">
                       <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                         <div className="flex items-center gap-2 mb-2">
-                          <DollarSign className="w-4 h-4" style={{ color: colors.rentAccent }} />
+                          <DollarSign className="w-4 h-4 text-ls-forest" />
                           <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentAmount}</p>
                         </div>
                         <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
@@ -2502,7 +2490,7 @@ function PropertyTrackerContent() {
                       </div>
                       <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                         <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="w-4 h-4" style={{ color: colors.rentAccent }} />
+                          <Calendar className="w-4 h-4 text-ls-forest" />
                           <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.rentDueDay}</p>
                         </div>
                         <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
@@ -2511,7 +2499,7 @@ function PropertyTrackerContent() {
                       </div>
                       <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
                         <div className="flex items-center gap-2 mb-2">
-                          <Bell className="w-4 h-4" style={{ color: colors.rentAccent }} />
+                          <Bell className="w-4 h-4 text-ls-forest" />
                           <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.alertDaysBefore}</p>
                         </div>
                         <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
@@ -2525,7 +2513,7 @@ function PropertyTrackerContent() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4">
+                    <div className="flex gap-2">
                       <Button
                         onClick={() => {
                           haptic.light();
@@ -2558,36 +2546,17 @@ function PropertyTrackerContent() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleRentAction('archive')}>
+                          <DropdownMenuItem onClick={() => handleDepositAction('archive')}>
                             <Archive className="w-4 h-4 mr-2" />
                             {language === 'th' ? 'เก็บไว้' : 'Archive'}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleRentAction('delete')} className="text-red-600">
+                          <DropdownMenuItem onClick={() => handleDepositAction('delete')} className="text-red-600">
                             <Trash2 className="w-4 h-4 mr-2" />
                             {language === 'th' ? 'ลบอย่างถาวร' : 'Delete'}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Calendar className="w-12 h-12 mx-auto mb-3" style={{ color: colors.textSecondary, opacity: 0.3 }} />
-                    <p className="font-semibold mb-2" style={{ color: colors.textPrimary }}>{strings.noRent}</p>
-                    <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>{strings.addRentDesc}</p>
-                    <Button
-                      onClick={() => {
-                        haptic.light();
-                        setEditingRent(true);
-                      }}
-                      className="text-white"
-                      style={{ minHeight: '44px', backgroundColor: '#0C3B2E' }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {strings.addRent}
-                    </Button>
                   </div>
                 )}
               </CardContent>
