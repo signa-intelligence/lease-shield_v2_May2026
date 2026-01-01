@@ -16,7 +16,6 @@ import {
   X,
   Trash2,
   Home,
-  DollarSign,
   Bell,
   Edit2,
   Save,
@@ -1956,16 +1955,16 @@ function UploadScanPageContent() {
                     {selectedLease.rent_amount > 0 && (
                       <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                         <p className="font-semibold mb-1 text-xs" style={{ color: colors.textSecondary }}>{strings.monthlyRent}</p>
-                        <p className="flex items-center text-sm" style={{ color: colors.textPrimary }}>
-                          <DollarSign className="w-4 h-4 mr-1"/>฿{selectedLease.rent_amount.toLocaleString()}
+                        <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                          ฿{selectedLease.rent_amount.toLocaleString('en-US')}
                         </p>
                       </div>
                     )}
                     {selectedLease.deposit_amount > 0 && (
                       <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
                         <p className="font-semibold mb-1 text-xs" style={{ color: colors.textSecondary }}>{strings.securityDeposit}</p>
-                        <p className="flex items-center text-sm" style={{ color: colors.textPrimary }}>
-                          <DollarSign className="w-4 h-4 mr-1"/>฿{selectedLease.deposit_amount.toLocaleString()}
+                        <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                          ฿{selectedLease.deposit_amount.toLocaleString('en-US')}
                         </p>
                       </div>
                     )}
