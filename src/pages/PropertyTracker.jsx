@@ -2751,31 +2751,31 @@ function PropertyTrackerContent() {
                           disabled={isFreeTier}
                           className="btn-interaction"
                           style={{
-                            padding: '8px 14px',
-                            borderRadius: '8px',
-                            border: `2px solid ${isFreeTier ? colors.borderColor : '#8B5CF6'}`,
-                            backgroundColor: isFreeTier ? colors.fieldBg : (isDarkMode ? '#4C1D95' : '#F3E8FF'),
-                            color: isFreeTier ? colors.textSecondary : '#8B5CF6',
-                            fontSize: '13px',
-                            fontWeight: '600',
+                            padding: '10px 16px',
+                            borderRadius: '10px',
+                            border: isFreeTier ? `2px solid ${colors.borderColor}` : '2px solid #0C3B2E',
+                            backgroundColor: isFreeTier ? colors.fieldBg : 'transparent',
+                            color: isFreeTier ? colors.textSecondary : '#0C3B2E',
+                            fontSize: '0.875rem',
+                            fontWeight: '700',
                             cursor: isFreeTier ? 'not-allowed' : 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
                             opacity: isFreeTier ? 0.6 : 1,
                             transition: 'all 0.2s',
-                            minHeight: '40px'
+                            minHeight: '44px'
                           }}
                           onMouseEnter={(e) => {
                             if (!isFreeTier) {
-                              e.currentTarget.style.backgroundColor = '#8B5CF6';
+                              e.currentTarget.style.backgroundColor = '#0C3B2E';
                               e.currentTarget.style.color = '#FFFFFF';
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (!isFreeTier) {
-                              e.currentTarget.style.backgroundColor = isDarkMode ? '#4C1D95' : '#F3E8FF';
-                              e.currentTarget.style.color = '#8B5CF6';
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.color = '#0C3B2E';
                             }
                           }}
                         >
@@ -2794,31 +2794,31 @@ function PropertyTrackerContent() {
                           disabled={isFreeTier || isProtectOrLite}
                           className="btn-interaction"
                           style={{
-                            padding: '8px 14px',
-                            borderRadius: '8px',
-                            border: `2px solid ${(isFreeTier || isProtectOrLite) ? colors.borderColor : '#EF4444'}`,
-                            backgroundColor: (isFreeTier || isProtectOrLite) ? colors.fieldBg : (isDarkMode ? '#7F1D1D' : '#FEE2E2'),
-                            color: (isFreeTier || isProtectOrLite) ? colors.textSecondary : '#EF4444',
-                            fontSize: '13px',
-                            fontWeight: '600',
+                            padding: '10px 16px',
+                            borderRadius: '10px',
+                            border: (isFreeTier || isProtectOrLite) ? `2px solid ${colors.borderColor}` : '2px solid #0C3B2E',
+                            backgroundColor: (isFreeTier || isProtectOrLite) ? colors.fieldBg : 'transparent',
+                            color: (isFreeTier || isProtectOrLite) ? colors.textSecondary : '#0C3B2E',
+                            fontSize: '0.875rem',
+                            fontWeight: '700',
                             cursor: (isFreeTier || isProtectOrLite) ? 'not-allowed' : 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
                             opacity: (isFreeTier || isProtectOrLite) ? 0.6 : 1,
                             transition: 'all 0.2s',
-                            minHeight: '40px'
+                            minHeight: '44px'
                           }}
                           onMouseEnter={(e) => {
                             if (!isFreeTier && !isProtectOrLite) {
-                              e.currentTarget.style.backgroundColor = '#EF4444';
+                              e.currentTarget.style.backgroundColor = '#0C3B2E';
                               e.currentTarget.style.color = '#FFFFFF';
                             }
                           }}
                           onMouseLeave={(e) => {
                             if (!isFreeTier && !isProtectOrLite) {
-                              e.currentTarget.style.backgroundColor = isDarkMode ? '#7F1D1D' : '#FEE2E2';
-                              e.currentTarget.style.color = '#EF4444';
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                              e.currentTarget.style.color = '#0C3B2E';
                             }
                           }}
                         >
@@ -2897,13 +2897,21 @@ function PropertyTrackerContent() {
                               />
                               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all active:scale-95"
                                 style={{
-                                  backgroundColor: colors.inputBg,
-                                  borderColor: colors.borderColor,
-                                  color: colors.textPrimary,
-                                  minHeight: '44px'
+                                  backgroundColor: 'transparent',
+                                  borderColor: '#0C3B2E',
+                                  color: '#0C3B2E',
+                                  minHeight: '44px',
+                                  fontWeight: '700',
+                                  fontSize: '0.875rem'
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
-                                onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#0C3B2E';
+                                  e.currentTarget.style.color = '#FFFFFF';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                  e.currentTarget.style.color = '#0C3B2E';
+                                }}
                               >
                                 <Camera className="w-4 h-4" />
                                 <span className="text-sm font-semibold">{strings.takePhoto}</span>
@@ -2920,13 +2928,21 @@ function PropertyTrackerContent() {
                               />
                               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all active:scale-95"
                                 style={{
-                                  backgroundColor: colors.inputBg,
-                                  borderColor: colors.borderColor,
-                                  color: colors.textPrimary,
-                                  minHeight: '44px'
+                                  backgroundColor: 'transparent',
+                                  borderColor: '#0C3B2E',
+                                  color: '#0C3B2E',
+                                  minHeight: '44px',
+                                  fontWeight: '700',
+                                  fontSize: '0.875rem'
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#C7A338'}
-                                onMouseLeave={(e) => e.currentTarget.style.borderColor = colors.borderColor}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#0C3B2E';
+                                  e.currentTarget.style.color = '#FFFFFF';
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                  e.currentTarget.style.color = '#0C3B2E';
+                                }}
                               >
                                 <ImageIcon className="w-4 h-4" />
                                 <span className="text-sm font-semibold">{strings.chooseFiles}</span>
