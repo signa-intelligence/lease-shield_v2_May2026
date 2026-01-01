@@ -301,24 +301,35 @@ function LeaseDetailsContent() {
     return isNaN(numericValue) ? 0 : numericValue;
   };
 
-  // Format currency - HARD STRIP $ USD at final stage
+  // NUCLEAR format - strip $ from EVERYTHING
   const formatCurrency = (value) => {
-    const sanitized = sanitizeCurrency(value);
+    // First, check if raw value has $ in it
+    const rawStr = String(value);
+    console.log('[FORMAT] Raw input:', rawStr);
+    
+    // Strip ALL $ symbols from raw value first
+    const stripped = rawStr.replace(/\$/g, '').replace(/USD/g, '').replace(/US\$/g, '');
+    
+    const sanitized = sanitizeCurrency(stripped);
     let formatted = sanitized.toLocaleString('en-US');
     
-    // HARD STRIP any injected currency symbols
-    formatted = formatted.replaceAll('$', '').replaceAll('USD', '').replaceAll('US$', '').trim();
+    // TRIPLE-CHECK: strip again after formatting
+    formatted = formatted.replace(/\$/g, '').replace(/USD/g, '').replace(/US\$/g, '').trim();
     
-    console.log('[CURRENCY DEBUG] Final formatted:', formatted);
+    console.log('[FORMAT] Final output:', formatted);
     return formatted;
   };
 
-  // DEBUG INSTRUMENTATION - Log rendered DOM content
+  // AUTOMATIC DEBUG - Runs on every render
   React.useEffect(() => {
     if (!lease) return;
     
+    console.log('🔍 [LEASE DETAILS DEBUG] Build: 2026-01-01-16:45');
+    console.log('🔍 Raw lease.rent_amount from DB:', lease.rent_amount, typeof lease.rent_amount);
+    console.log('🔍 Raw lease.deposit_amount from DB:', lease.deposit_amount, typeof lease.deposit_amount);
+    
     setTimeout(() => {
-      console.log('=== DOM INSPECTION START ===');
+      console.log('=== DOM INSPECTION (AUTO) ===');
       
       // Find Monthly Rent element
       const rentElements = Array.from(document.querySelectorAll('p')).filter(el => 
@@ -328,13 +339,16 @@ function LeaseDetailsContent() {
         const rentParent = rentElements[0].parentElement;
         const rentValueEl = rentParent?.querySelector('p.font-medium');
         if (rentValueEl) {
-          console.log('[RENT] innerText:', rentValueEl.innerText);
-          console.log('[RENT] innerHTML:', rentValueEl.innerHTML);
-          console.log('[RENT] textContent:', rentValueEl.textContent);
-          const styles = window.getComputedStyle(rentValueEl);
-          console.log('[RENT] ::before content:', window.getComputedStyle(rentValueEl, '::before').content);
-          console.log('[RENT] ::after content:', window.getComputedStyle(rentValueEl, '::after').content);
-          console.log('[RENT] Parent HTML:', rentParent.innerHTML);
+          console.log('--- RENT DOM ---');
+          console.log('innerText:', rentValueEl.innerText);
+          console.log('innerHTML:', rentValueEl.innerHTML);
+          console.log('textContent:', rentValueEl.textContent);
+          console.log('Child nodes:', rentValueEl.childNodes.length);
+          rentValueEl.childNodes.forEach((node, i) => {
+            console.log(`  Node ${i}:`, node.nodeType, node.nodeName, node.nodeValue || node.textContent);
+          });
+          console.log('::before:', window.getComputedStyle(rentValueEl, '::before').content);
+          console.log('::after:', window.getComputedStyle(rentValueEl, '::after').content);
         }
       }
       
@@ -346,17 +360,21 @@ function LeaseDetailsContent() {
         const depositParent = depositElements[0].parentElement;
         const depositValueEl = depositParent?.querySelector('p.font-medium');
         if (depositValueEl) {
-          console.log('[DEPOSIT] innerText:', depositValueEl.innerText);
-          console.log('[DEPOSIT] innerHTML:', depositValueEl.innerHTML);
-          console.log('[DEPOSIT] textContent:', depositValueEl.textContent);
-          console.log('[DEPOSIT] ::before content:', window.getComputedStyle(depositValueEl, '::before').content);
-          console.log('[DEPOSIT] ::after content:', window.getComputedStyle(depositValueEl, '::after').content);
-          console.log('[DEPOSIT] Parent HTML:', depositParent.innerHTML);
+          console.log('--- DEPOSIT DOM ---');
+          console.log('innerText:', depositValueEl.innerText);
+          console.log('innerHTML:', depositValueEl.innerHTML);
+          console.log('textContent:', depositValueEl.textContent);
+          console.log('Child nodes:', depositValueEl.childNodes.length);
+          depositValueEl.childNodes.forEach((node, i) => {
+            console.log(`  Node ${i}:`, node.nodeType, node.nodeName, node.nodeValue || node.textContent);
+          });
+          console.log('::before:', window.getComputedStyle(depositValueEl, '::before').content);
+          console.log('::after:', window.getComputedStyle(depositValueEl, '::after').content);
         }
       }
       
-      console.log('=== DOM INSPECTION END ===');
-    }, 100);
+      console.log('=== END AUTO DEBUG ===');
+    }, 500);
   }, [lease]);
 
   const handleToggleAlerts = async (enabled) => {
@@ -917,10 +935,13 @@ function LeaseDetailsContent() {
                   </Card>
 
                   {/* Build marker for verification */}
-                  <div className="mt-6 text-center">
-                  <p className="text-xs opacity-50 font-mono" style={{ color: colors.textSecondary }}>
-                  Build: 2026-01-01 16:30 UTC | LeaseDetails v2.0
-                  </p>
+                  <div className="mt-6 text-center p-4 bg-yellow-100 border-2 border-yellow-500 rounded">
+                    <p className="text-sm font-bold text-yellow-900 font-mono">
+                      ⚡ BUILD: 2026-01-01 16:45 UTC | Auto-Debug Active
+                    </p>
+                    <p className="text-xs text-yellow-800 mt-1">
+                      Check browser console (F12) for automatic $ source detection
+                    </p>
                   </div>
                   </div>
                   </div>
