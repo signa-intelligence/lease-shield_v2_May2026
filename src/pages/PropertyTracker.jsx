@@ -1740,6 +1740,62 @@ function PropertyTrackerContent() {
     }
   };
 
+  const handleDepositAction = async (action) => {
+    if (!deposit) return;
+
+    if (action === 'returned') {
+      if (!confirm(language === 'th' ? 'ทำเครื่องหมายเงินมัดจำว่าคืนแล้วหรือไม่?' : 'Mark deposit as returned?')) return;
+      await updateDepositMutation.mutateAsync({
+        id: deposit.id,
+        data: { status: 'returned' }
+      });
+      haptic.success();
+    } else if (action === 'disputed') {
+      if (!confirm(language === 'th' ? 'ทำเครื่องหมายเงินมัดจำว่ามีข้อพิพาทหรือไม่?' : 'Mark deposit as disputed?')) return;
+      await updateDepositMutation.mutateAsync({
+        id: deposit.id,
+        data: { status: 'disputed' }
+      });
+      haptic.success();
+    } else if (action === 'archive') {
+      if (!confirm(language === 'th' ? 'เก็บเงินมัดจำนี้ไว้หรือไม่?' : 'Archive this deposit?')) return;
+      await updateDepositMutation.mutateAsync({
+        id: deposit.id,
+        data: { 
+          status: 'archived',
+          is_archived: true,
+          archived_at: new Date().toISOString()
+        }
+      });
+      haptic.success();
+    } else if (action === 'delete') {
+      if (!confirm(language === 'th' ? 'ลบเงินมัดจำนี้อย่างถาวรหรือไม่?' : 'Permanently delete this deposit?')) return;
+      await base44.entities.DepositTracker.delete(deposit.id);
+      queryClient.invalidateQueries({ queryKey: ['deposits'] });
+      haptic.success();
+    }
+  };
+
+  const handleMaintenanceAction = async (request, action) => {
+    if (action === 'archive') {
+      if (!confirm(language === 'th' ? 'เก็บคำขอนี้ไว้หรือไม่?' : 'Archive this request?')) return;
+      await updateMaintenanceMutation.mutateAsync({
+        id: request.id,
+        data: {
+          status: 'archived',
+          is_archived: true,
+          archived_at: new Date().toISOString()
+        }
+      });
+      haptic.success();
+    } else if (action === 'delete') {
+      if (!confirm(language === 'th' ? 'ลบคำขอนี้อย่างถาวรหรือไม่?' : 'Permanently delete this request?')) return;
+      await base44.entities.MaintenanceRequest.delete(request.id);
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      haptic.success();
+    }
+  };
+
   const handleDeleteMaintenance = (request) => {
     setDeletingMaintenance(request);
   };
