@@ -283,48 +283,97 @@ function ReportFullContent() {
     });
 
     try {
-      // Construct direct PDF endpoint URL
-      const baseUrl = window.location.origin;
-      const pdfUrl = `${baseUrl}/api/getLeaseReportPDF?leaseId=${lease.id}&language=${language}`;
-      
-      console.log(`[${correlationId}] PDF endpoint URL constructed`, { pdfUrl });
+      // Generate comprehensive PDF report data
+      const pdfData = {
+        lease_address: lease.property_address || 'Lease Agreement',
+        risk_score: scan.risk_score,
+        summary: scan.summary,
+        flags: scan.scan_full?.flags || [],
+        missing_items: scan.scan_full?.missing_items || [],
+        key_terms: scan.scan_full?.key_terms || {},
+        lease_start: lease.start_date,
+        lease_end: lease.end_date,
+        rent_amount: lease.rent_amount,
+        deposit_amount: lease.deposit_amount,
+        generated_date: new Date().toISOString()
+      };
 
-      // MOBILE-SAFE DOWNLOAD: Direct same-tab navigation (no popup blocker)
-      // This works reliably in Android Chrome, PWA, and TWA contexts
-      window.location.href = pdfUrl;
-      
-      console.log(`[${correlationId}] PDF download triggered via window.location.href`);
-      
-      // Show success message immediately (download will start in background)
-      setTimeout(() => {
+      console.log(`[${correlationId}] Calling PDF generation function`, {
+        dataSize: JSON.stringify(pdfData).length,
+        flagsCount: pdfData.flags.length,
+        language
+      });
+
+      // Call PDF generation function (returns uploaded PDF URL)
+      const response = await base44.functions.invoke('generateLeaseReportPDF', {
+        scanData: pdfData,
+        language: language,
+        correlationId
+      });
+
+      console.log(`[${correlationId}] PDF generation response`, {
+        success: response.data?.success,
+        hasPdfUrl: !!response.data?.pdf_url,
+        status: response.status
+      });
+
+      if (response.data?.success && response.data?.pdf_url) {
+        const pdfUrl = response.data.pdf_url;
+        console.log(`[${correlationId}] PDF URL obtained, starting download`, { pdfUrl });
+        
+        // MOBILE-SAFE DOWNLOAD: Direct navigation to PDF URL
+        // Works in Android Chrome, PWA, and TWA - no popup blocker
+        window.location.href = pdfUrl;
+        
+        console.log(`[${correlationId}] Download triggered successfully`);
         toast.success(language === 'th' ? 'กำลังดาวน์โหลด PDF' : 'Downloading PDF');
         haptic.success();
-        setDownloadingPDF(false);
-      }, 500);
-
+      } else {
+        console.error(`[${correlationId}] PDF generation failed`, {
+          success: response.data?.success,
+          error: response.data?.error,
+          correlationId: response.data?.correlationId
+        });
+        throw new Error(response.data?.error || 'PDF generation failed');
+      }
     } catch (error) {
       console.error(`[${correlationId}] PDF download error:`, {
         message: error.message,
         stack: error.stack,
+        response: error.response?.data,
+        status: error.response?.status,
         userId: user.id,
         scanId: scan?.id,
         leaseId: lease?.id
       });
       
-      const errorMsg = language === 'th' 
-        ? 'การดาวน์โหลด PDF ล้มเหลว - กรุณาลองอีกครั้ง' 
-        : language === 'zh'
-          ? 'PDF下载失败 - 请重试'
-          : language === 'ja'
-            ? 'PDFダウンロード失敗 - 再試行してください'
-            : language === 'ko'
-              ? 'PDF 다운로드 실패 - 다시 시도하세요'
-              : language === 'ru'
-                ? 'Загрузка PDF не удалась - попробуйте снова'
-                : 'PDF download failed - please try again';
+      // User-friendly error messages based on status
+      let errorMsg;
+      const status = error.response?.status;
+      
+      if (status === 401 || status === 403) {
+        errorMsg = language === 'th' 
+          ? 'กรุณาเข้าสู่ระบบอีกครั้งและลองใหม่'
+          : 'Please sign in again and retry';
+      } else if (status >= 500) {
+        errorMsg = language === 'th'
+          ? 'การสร้าง PDF ล้มเหลวบนเซิร์ฟเวอร์ กรุณาลองใหม่'
+          : 'PDF generation failed on server. Please retry';
+      } else {
+        errorMsg = language === 'th' 
+          ? 'การดาวน์โหลด PDF ล้มเหลว กรุณาลองใหม่'
+          : language === 'zh'
+            ? 'PDF下载失败 请重试'
+            : language === 'ja'
+              ? 'PDFダウンロード失敗 再試行してください'
+              : language === 'ko'
+                ? 'PDF 다운로드 실패 다시 시도하세요'
+                : 'PDF download failed. Please retry';
+      }
       
       toast.error(errorMsg);
       haptic.error();
+    } finally {
       setDownloadingPDF(false);
     }
   };
