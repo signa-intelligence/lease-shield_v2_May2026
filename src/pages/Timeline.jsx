@@ -117,6 +117,7 @@ function TimelineContent() {
       depositEvents: "Deposit Returns",
       caseEvents: "Cases",
       maintenanceEvents: "Maintenance",
+      followups: "Follow-ups",
       noEvents: "No events found",
       noEventsDesc: "Try selecting different filters or date range",
       upcomingDeadlines: "Upcoming Deadlines",
@@ -150,6 +151,7 @@ function TimelineContent() {
       depositEvents: "การคืนเงินมัดจำ",
       caseEvents: "คดี",
       maintenanceEvents: "การซ่อมบำรุง",
+      followups: "การติดตาม",
       noEvents: "ไม่พบเหตุการณ์",
       noEventsDesc: "ลองเลือกตัวกรองหรือช่วงวันที่อื่น",
       upcomingDeadlines: "กำหนดเวลาที่กำลังจะถึง",
@@ -183,6 +185,7 @@ function TimelineContent() {
       depositEvents: "押金退还",
       caseEvents: "案件",
       maintenanceEvents: "维护",
+      followups: "跟进",
       noEvents: "未找到事件",
       noEventsDesc: "尝试选择不同的筛选或日期范围",
       upcomingDeadlines: "即将到来的截止日期",
@@ -216,6 +219,7 @@ function TimelineContent() {
       depositEvents: "敷金返還",
       caseEvents: "ケース",
       maintenanceEvents: "メンテナンス",
+      followups: "フォローアップ",
       noEvents: "イベントが見つかりません",
       noEventsDesc: "別のフィルターまたは日付範囲を選択してみてください",
       upcomingDeadlines: "今後の期限",
@@ -249,6 +253,7 @@ function TimelineContent() {
       depositEvents: "보증금 반환",
       caseEvents: "사례",
       maintenanceEvents: "유지보수",
+      followups: "후속 조치",
       noEvents: "이벤트를 찾을 수 없음",
       noEventsDesc: "다른 필터 또는 날짜 범위를 선택해보세요",
       upcomingDeadlines: "다가오는 마감일",
@@ -281,6 +286,7 @@ function TimelineContent() {
       depositEvents: "Возврат депозита",
       caseEvents: "Спорные дела",
       maintenanceEvents: "Обслуживание",
+      followups: "Напоминания",
       noEvents: "События не найдены",
       noEventsDesc: "Попробуйте изменить фильтры или диапазон дат",
       upcomingDeadlines: "Ближайшие сроки",
@@ -311,12 +317,14 @@ function TimelineContent() {
     // Add timeline events from TimelineEvent entity
     timelineEvents.forEach(event => {
       const eventDate = parseISO(event.event_date);
+      const isFollowup = event.event_type.includes('followup');
+      
       const eventIcon = 
         event.event_type === 'lease_start' || event.event_type === 'lease_end' || event.event_type === 'lease_scanned' || event.event_type === 'notice_deadline' ? FileText :
         event.event_type === 'deposit_due' || event.event_type === 'deposit_return' ? Wallet :
         event.event_type === 'rent_due' ? CalendarIcon :
-        event.event_type === 'case_created' ? Scale :
-        event.event_type === 'maintenance_reported' ? Wrench :
+        event.event_type === 'case_created' || event.event_type === 'case_closed' || event.event_type === 'case_followup_due' ? Scale :
+        event.event_type === 'maintenance_reported' || event.event_type === 'maintenance_closed' || event.event_type === 'maintenance_followup_due' ? Wrench :
         FileText;
       
       const eventColor = 
@@ -326,21 +334,41 @@ function TimelineContent() {
         event.event_type === 'deposit_due' || event.event_type === 'deposit_return' ? '#C7A338' :
         event.event_type === 'rent_due' ? '#F59E0B' :
         event.event_type === 'lease_scanned' ? '#10B981' :
+        event.event_type === 'case_created' || event.event_type === 'case_followup_due' ? '#8B5CF6' :
+        event.event_type === 'case_closed' ? '#10B981' :
+        event.event_type === 'maintenance_reported' || event.event_type === 'maintenance_followup_due' ? '#F59E0B' :
+        event.event_type === 'maintenance_closed' ? '#10B981' :
         '#6B7280';
+
+      const typeMapping = 
+        event.event_type.includes('lease') ? 'lease' :
+        event.event_type.includes('deposit') ? 'deposit' :
+        event.event_type.includes('rent') ? 'rent' :
+        event.event_type.includes('case') ? 'case' :
+        event.event_type.includes('maintenance') ? 'maintenance' :
+        isFollowup ? 'followup' :
+        'other';
 
       events.push({
         id: event.id,
-        type: event.event_type.includes('lease') ? 'lease' : event.event_type.includes('deposit') ? 'deposit' : event.event_type.includes('rent') ? 'rent' : 'other',
+        type: typeMapping,
         subtype: event.event_type,
         title: event.title,
         description: event.description || event.property_address || '',
         date: eventDate,
         icon: eventIcon,
         color: eventColor,
-        route: event.lease_id ? createPageUrl("UploadScan") + `?leaseId=${event.lease_id}` : createPageUrl("PropertyTracker"),
+        route: event.source === 'case' && event.source_id 
+          ? createPageUrl("CaseDetails") + `?caseId=${event.source_id}`
+          : event.source === 'maintenance' && event.source_id
+            ? createPageUrl("PropertyTracker") + '#maintenance'
+            : event.lease_id 
+              ? createPageUrl("UploadScan") + `?leaseId=${event.lease_id}` 
+              : createPageUrl("PropertyTracker"),
         isPast: isBefore(eventDate, now),
         needsReview: event.needs_review,
-        isEstimated: event.is_estimated
+        isEstimated: event.is_estimated,
+        isFollowup: isFollowup
       });
     });
 
@@ -507,6 +535,7 @@ function TimelineContent() {
     const daysUntil = differenceInDays(event.date, now);
     const isOverdue = daysUntil < 0 && !event.isPast;
     const isUrgent = daysUntil <= 7 && daysUntil >= 0;
+    const isFollowup = event.isFollowup || event.type === 'followup';
 
     return (
       <div
@@ -533,6 +562,16 @@ function TimelineContent() {
             <div className="flex items-start justify-between gap-2 mb-1">
               <h4 className="font-bold text-sm" style={{ color: colors.textPrimary }}>
                 {event.title}
+                {isFollowup && (
+                  <Badge className="ml-2 bg-purple-100 text-purple-800 text-xs">
+                    {language === 'th' ? 'ติดตาม' : language === 'ru' ? 'Напоминание' : 'Follow-up'}
+                  </Badge>
+                )}
+                {event.needsReview && (
+                  <Badge className="ml-2 bg-blue-100 text-blue-800 text-xs">
+                    {language === 'th' ? 'ต้องตรวจสอบ' : language === 'ru' ? 'Проверить' : 'Review'}
+                  </Badge>
+                )}
               </h4>
               {(isOverdue || isUrgent) && (
                 <Badge className={isOverdue ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}>
@@ -645,7 +684,8 @@ function TimelineContent() {
                   { key: 'lease', label: strings.leaseEvents, color: FEATURE_COLORS.leases.accent },
                   { key: 'deposit', label: strings.depositEvents, color: FEATURE_COLORS.deposits.accent },
                   { key: 'case', label: strings.caseEvents, color: FEATURE_COLORS.cases.accent },
-                  { key: 'maintenance', label: strings.maintenanceEvents, color: FEATURE_COLORS.maintenance.accent }
+                  { key: 'maintenance', label: strings.maintenanceEvents, color: FEATURE_COLORS.maintenance.accent },
+                  { key: 'followup', label: strings.followups, color: '#8B5CF6' }
                 ].map(({ key, label, color }) => (
                   <button
                     key={key}

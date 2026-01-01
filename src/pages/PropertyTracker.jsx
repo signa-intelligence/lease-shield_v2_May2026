@@ -462,6 +462,22 @@ function PropertyTrackerContent() {
         console.error('❌ Failed to send notifications:', notifError);
       });
 
+      // Create timeline events
+      console.log('📅 Creating timeline events...');
+      base44.functions.invoke('createTimelineEvents', {
+        entityType: 'maintenance',
+        entityId: data.id,
+        entityData: data,
+        followupDays: undefined // Use priority-based default
+      }).then(timelineResponse => {
+        if (timelineResponse.data?.success && timelineResponse.data?.created) {
+          console.log('✅ Timeline events created');
+          queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+        }
+      }).catch(timelineError => {
+        console.error('❌ Failed to create timeline events:', timelineError);
+      });
+
       // Mark first property created (via maintenance)
       if (!user.first_property_created) {
         await base44.auth.updateMe({ first_property_created: true });
@@ -1705,6 +1721,18 @@ function PropertyTrackerContent() {
           resolved_date: new Date().toISOString().split('T')[0],
           communication_log: updatedCommunicationLog
         }
+      });
+
+      // Dismiss timeline follow-up reminder
+      base44.functions.invoke('dismissTimelineReminder', {
+        entityType: 'maintenance',
+        entityId: request.id,
+        createClosureEvent: true
+      }).then(() => {
+        console.log('✅ Timeline reminder dismissed');
+        queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+      }).catch(err => {
+        console.error('❌ Failed to dismiss timeline reminder:', err);
       });
     } catch (error) {
       console.error('❌ Failed to close maintenance request:', error);
