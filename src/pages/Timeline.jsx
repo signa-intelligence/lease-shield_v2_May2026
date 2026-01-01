@@ -81,6 +81,12 @@ function TimelineContent() {
     enabled: !!user,
   });
 
+  const { data: timelineEvents = [] } = useQuery({
+    queryKey: ['timelineEvents'],
+    queryFn: () => base44.entities.TimelineEvent.filter({ created_by: user?.email }, '-created_date'),
+    enabled: !!user,
+  });
+
   const isLoading = leasesLoading || depositsLoading || casesLoading || maintenanceLoading;
 
   const language = user?.language || 'en';
@@ -302,6 +308,42 @@ function TimelineContent() {
     const events = [];
     const now = new Date();
 
+    // Add timeline events from TimelineEvent entity
+    timelineEvents.forEach(event => {
+      const eventDate = parseISO(event.event_date);
+      const eventIcon = 
+        event.event_type === 'lease_start' || event.event_type === 'lease_end' || event.event_type === 'lease_scanned' || event.event_type === 'notice_deadline' ? FileText :
+        event.event_type === 'deposit_due' || event.event_type === 'deposit_return' ? Wallet :
+        event.event_type === 'rent_due' ? CalendarIcon :
+        event.event_type === 'case_created' ? Scale :
+        event.event_type === 'maintenance_reported' ? Wrench :
+        FileText;
+      
+      const eventColor = 
+        event.event_type === 'lease_start' ? '#3B82F6' :
+        event.event_type === 'lease_end' ? '#EF4444' :
+        event.event_type === 'notice_deadline' ? '#F59E0B' :
+        event.event_type === 'deposit_due' || event.event_type === 'deposit_return' ? '#C7A338' :
+        event.event_type === 'rent_due' ? '#F59E0B' :
+        event.event_type === 'lease_scanned' ? '#10B981' :
+        '#6B7280';
+
+      events.push({
+        id: event.id,
+        type: event.event_type.includes('lease') ? 'lease' : event.event_type.includes('deposit') ? 'deposit' : event.event_type.includes('rent') ? 'rent' : 'other',
+        subtype: event.event_type,
+        title: event.title,
+        description: event.description || event.property_address || '',
+        date: eventDate,
+        icon: eventIcon,
+        color: eventColor,
+        route: event.lease_id ? createPageUrl("UploadScan") + `?leaseId=${event.lease_id}` : createPageUrl("PropertyTracker"),
+        isPast: isBefore(eventDate, now),
+        needsReview: event.needs_review,
+        isEstimated: event.is_estimated
+      });
+    });
+
     leases.forEach(lease => {
       if (lease.start_date) {
         events.push({
@@ -398,7 +440,7 @@ function TimelineContent() {
     });
 
     return events.sort((a, b) => a.date - b.date);
-  }, [leases, deposits, cases, maintenance, strings]);
+  }, [leases, deposits, cases, maintenance, timelineEvents, strings]);
 
   const filteredEvents = useMemo(() => {
     if (selectedTypes.length === 0) return allEvents;

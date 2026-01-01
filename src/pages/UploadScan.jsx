@@ -908,6 +908,26 @@ function UploadScanPageContent() {
         setUploadProgress(100);
         setCurrentStep(2);
 
+        // Auto-populate trackers and timeline
+        try {
+          console.log('[AUTO_POPULATE] Starting auto-population...');
+          const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
+            scanResult,
+            leaseId: createdLeaseId,
+            scanId: createdLeaseId
+          });
+          
+          if (populateResponse?.success) {
+            console.log('[AUTO_POPULATE] Success:', populateResponse);
+            // Invalidate relevant queries
+            queryClient.invalidateQueries({ queryKey: ['deposits'] });
+            queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+          }
+        } catch (populateErr) {
+          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
+          // Don't block user flow if auto-population fails
+        }
+
         // Show completion modal
         setCompletedLeaseId(createdLeaseId);
         setShowCompletionModal(true);
@@ -1167,6 +1187,26 @@ function UploadScanPageContent() {
         });
         setUploadProgress(100);
         setCurrentStep(2); // Move to results step
+
+        // Auto-populate trackers and timeline
+        try {
+          console.log('[AUTO_POPULATE] Starting auto-population...');
+          const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
+            scanResult,
+            leaseId: createdLeaseId,
+            scanId: createdLeaseId
+          });
+          
+          if (populateResponse?.success) {
+            console.log('[AUTO_POPULATE] Success:', populateResponse);
+            // Invalidate relevant queries
+            queryClient.invalidateQueries({ queryKey: ['deposits'] });
+            queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+          }
+        } catch (populateErr) {
+          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
+          // Don't block user flow if auto-population fails
+        }
 
         // Show completion modal
         setCompletedLeaseId(createdLeaseId);

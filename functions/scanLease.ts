@@ -169,6 +169,9 @@ INSTRUCTIONS:
    - deposit_amount (number, 0 if not found)
    - notice_period_days (integer, 0 if not found)
    - language_detected (en, th, or mixed)
+   - rent_due_day (integer 1-31, 0 if not found - look for text like "rent due on the 5th")
+   - deposit_due_date (YYYY-MM-DD format, if explicitly stated)
+   - deposit_return_days (integer, days after lease end for deposit return, 0 if not found)
 
 6. Write a summary paragraph`,
       file_urls: fileUrls,
@@ -211,7 +214,10 @@ INSTRUCTIONS:
             type: "string",
             enum: ["en", "th", "mixed"]
           },
-          notice_period_days: { type: "integer" }
+          notice_period_days: { type: "integer" },
+          rent_due_day: { type: "integer" },
+          deposit_due_date: { type: "string" },
+          deposit_return_days: { type: "integer" }
         },
         required: ["risk_score", "summary", "flags"]
       }
