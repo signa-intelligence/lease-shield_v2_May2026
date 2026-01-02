@@ -969,7 +969,9 @@ Be thorough.`,
       coverage: { clauses_total, clauses_risk, clauses_no_risk },
       diagnostic: { scanId, requestId }
     });
-    logStage('RISK_ANALYSIS_START', { engines: 6 });
+
+    // Legacy analysis removed (replaced by Clause Ledger architecture)
+    // ================= END =================
     
     const detectedIssues = [];
     const invalidIssues = [];
