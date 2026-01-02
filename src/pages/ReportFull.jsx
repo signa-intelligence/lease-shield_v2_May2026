@@ -888,6 +888,23 @@ function ReportFullContent() {
     );
   }
 
+  // Gate on taxonomy_report presence without redirecting
+  if (!taxonomyReport) {
+    return (
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-4xl mx-auto">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-8 text-center">
+              <Loader2 className="w-6 h-6 mx-auto mb-3 animate-spin" />
+              <h2 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Scan processing, please wait</h2>
+              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>Preparing clause-first coverage...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   const getSeverityIcon = (severity) => {
     const icons = { critical: AlertTriangle, high: AlertTriangle, medium: Info, low: CheckCircle2 };
     return icons[severity] || Info;
@@ -1175,7 +1192,7 @@ function ReportFullContent() {
                 </div>
               ) : (
                 <div className="mt-4 p-3 rounded-lg border" style={{ borderColor: colors.borderColor }}>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>Re-scan required for full coverage (taxonomy)</p>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>Scan processing, please wait</p>
                 </div>
               )}
             </CardContent>
@@ -1295,8 +1312,7 @@ function ReportFullContent() {
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardContent className="p-6">
                 <div className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>Re-scan required for full coverage (taxonomy report missing).</p>
-                  <div className="mt-2"><Button onClick={() => navigate(createPageUrl('UploadScan'))}>Re-scan</Button></div>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>Scan processing, please wait</p>
                 </div>
               </CardContent>
             </Card>
