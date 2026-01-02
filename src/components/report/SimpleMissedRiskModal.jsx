@@ -5,22 +5,26 @@ import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/shared/Toast';
 
-const CATEGORIES = [
-  'Deposit / Money',
-  'Entry & Privacy',
-  'Penalties / Fees',
-  'Notice / Termination',
-  'Utilities',
-  'Other',
-];
-
 export default function SimpleMissedRiskModal({ open, onClose, leaseId, scanId, appLanguage, leaseLanguage }){
-  const [category, setCategory] = React.useState('');
-  const [clauseText, setClauseText] = React.useState('');
+  const [taxonomyCode, setTaxonomyCode] = React.useState('');
+  const [clauseNo, setClauseNo] = React.useState('');
+  const [clauses, setClauses] = React.useState([]);
   const [note, setNote] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState('');
   const toast = useToast();
+
+  React.useEffect(()=>{
+    if (!open) return;
+    (async () => {
+      try {
+        const scans = await base44.entities.LeaseScan.list();
+        const found = scans.find(s=> s.id === scanId);
+        const cls = Array.isArray(found?.scan_full?.clauses) ? found.scan_full.clauses : [];
+        setClauses(cls);
+      } catch(_) {}
+    })();
+  }, [open, scanId]);
 
   React.useEffect(()=>{
     if (!open) return;
@@ -33,14 +37,14 @@ export default function SimpleMissedRiskModal({ open, onClose, leaseId, scanId, 
 
   const handleSubmit = async () => {
     setError('');
-    if (!category) return;
+    if (!clauseNo || !taxonomyCode) { setError('Please select clause and taxonomy code'); return; }
     try {
       setSubmitting(true);
       const { data, status } = await base44.functions.invoke('submitRiskFeedback', {
         leaseId, scanId,
         payload: {
-          category,
-          clause_text: clauseText,
+          taxonomy_code: taxonomyCode,
+          clause_no: clauseNo,
           note,
           app_language: appLanguage,
           lease_language_detected: leaseLanguage,
@@ -49,7 +53,7 @@ export default function SimpleMissedRiskModal({ open, onClose, leaseId, scanId, 
       if (status === 200 && data?.success){
         toast.success('Thanks — submitted.');
         onClose?.();
-        setCategory(''); setClauseText(''); setNote('');
+        setTaxonomyCode(''); setClauseNo(''); setNote('');
       } else {
         setError(data?.error || 'Submit failed. Please try again.');
       }
@@ -72,27 +76,19 @@ export default function SimpleMissedRiskModal({ open, onClose, leaseId, scanId, 
           <button onClick={onClose} className="text-slate-600 text-sm">Close</button>
         </div>
 
-        <p className="text-sm text-slate-600 mb-3">Paste the clause or describe it. We’ll use this to improve future scans.</p>
-
         <div className="mb-3">
-          <label className="text-sm font-medium mb-2 block">What did we miss? <span className="text-red-500">*</span></label>
-          <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((c)=> (
-              <button
-                key={c}
-                type="button"
-                onClick={()=>setCategory(c)}
-                className={`px-3 py-1.5 rounded-full text-sm border ${category===c ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white text-slate-800 border-slate-300'}`}
-              >
-                {c}
-              </button>
+          <label className="text-sm font-medium">Clause number <span className="text-red-500">*</span></label>
+          <select className="w-full border rounded-md px-3 py-2 text-sm mt-1" value={clauseNo} onChange={(e)=>setClauseNo(e.target.value)}>
+            <option value="" disabled>Select clause</option>
+            {clauses.map((c)=> (
+              <option key={c.clause_id} value={c.clause_id}>Clause {c.clause_id} {c.title ? `— ${c.title}` : ''}</option>
             ))}
-          </div>
+          </select>
         </div>
 
         <div className="mb-3">
-          <label className="text-sm font-medium">Paste clause text (optional)</label>
-          <Textarea className="mt-1" rows={4} value={clauseText} onChange={(e)=>setClauseText(e.target.value)} />
+          <label className="text-sm font-medium">Taxonomy code <span className="text-red-500">*</span></label>
+          <input className="w-full border rounded-md px-3 py-2 text-sm mt-1" placeholder="e.g., PROC_IMMEDIATE_TERMINATION" value={taxonomyCode} onChange={(e)=>setTaxonomyCode(e.target.value)} />
         </div>
 
         <div className="mb-3">
@@ -106,7 +102,7 @@ export default function SimpleMissedRiskModal({ open, onClose, leaseId, scanId, 
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!category || submitting} className="flex items-center gap-2" style={{background:'#0C3B2E', color:'#fff'}}>
+          <Button onClick={handleSubmit} disabled={!clauseNo || !taxonomyCode || submitting} className="flex items-center gap-2" style={{background:'#0C3B2E', color:'#fff'}}>
             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
             Submit
           </Button>

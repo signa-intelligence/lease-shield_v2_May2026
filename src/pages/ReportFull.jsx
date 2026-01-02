@@ -33,6 +33,8 @@ function ReportFullContent() {
   const [expandedClauses, setExpandedClauses] = useState({});
   const [schemaInvalidCount, setSchemaInvalidCount] = useState(0);
   const [repairAttempted, setRepairAttempted] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [showClauseReview, setShowClauseReview] = useState(false);
 
   // Parse URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -194,129 +196,41 @@ function ReportFullContent() {
     retry: 1
   });
 
-  // SCHEMA VALIDATION - Memoized to run only when scan data changes
+  // SCHEMA VALIDATION - Prefer backend issues_validated
   const { validatedFlags, invalidCount, invalidCodes, invalidFlags, invalidDetails, dedupeCount, quarantined } = React.useMemo(() => {
-    if (!scan) return { validatedFlags: [], invalidCount: 0, invalidCodes: [], invalidFlags: [], invalidDetails: [] };
+    const scanFullData = scan?.scan_full || {};
 
-    console.log('[REPORTFULL_LOAD]', { 
-      step: 'GENERATE_REPORT_START',
-      hasScan: !!scan,
-      hasLease: !!lease
-    });
+    // If backend provided strict schema lists, use them
+    if (Array.isArray(scanFullData.issues_validated)) {
+      const backendValidated = scanFullData.issues_validated.map(iv => ({
+        // Map IssueSchema -> UI flag shape
+        title: iv.title,
+        severity: (iv.severity || 'MEDIUM').toLowerCase(),
+        summary: iv.why_it_matters,
+        recommendations: Array.isArray(iv.recommendations) ? iv.recommendations : [],
+        category: iv.taxonomy_code,
+        clause_id: (iv.clause_ids && iv.clause_ids.length ? String(iv.clause_ids[0]) : iv.clause_ref) || 'GLOBAL',
+        page_number: Array.isArray(iv.page_refs) && iv.page_refs.length ? iv.page_refs[0] : undefined,
+        evidence: iv.source_snippet,
+        rule_id: iv.taxonomy_code,
+      }));
+      const backendInvalid = Array.isArray(scanFullData.issues_invalid) ? scanFullData.issues_invalid : [];
+      const codes = backendInvalid.map(x => x.reason || 'invalid');
+      return {
+        validatedFlags: backendValidated,
+        invalidCount: backendInvalid.length,
+        invalidCodes: codes,
+        invalidFlags: [],
+        invalidDetails: backendInvalid,
+        dedupeCount: 0,
+        quarantined: backendInvalid.length
+      };
+    }
 
-    const scanFullData = scan.scan_full || {};
+    // Fallback to legacy flags pipeline if strict arrays not present
     const allFlags = Array.isArray(scanFullData.flags) ? scanFullData.flags : [];
-
-    console.log('[REPORTFULL_LOAD]', {
-      step: 'DATA_STRUCTURE_VALIDATED',
-      hasScanFull: !!scan.scan_full,
-      flagsCount: allFlags.length,
-      flagsType: typeof allFlags
-    });
-
-    const validated = [];
-    let invalid = 0;
-    const invalidCodes = [];
-    const invalidFlags = [];
-    const invalidDetails = [];
-
-    // helper: normalize recs to array
-    const normalizeRecs = (flag) => {
-      if (Array.isArray(flag.recommendations)) return flag.recommendations;
-      return String(flag.recommendation||'')
-        .split('\n')
-        .map(s=>s.replace(/^\s*[•\-–—!*→]+\s*/g,'').trim())
-        .filter(Boolean);
-    };
-
-    // dedupe by rule_id + evidence snippet hash
-    const hashText = (s='') => { const t = String(s).toLowerCase().replace(/\s+/g,' ').trim(); let h=0; for(let i=0;i<t.length;i++){ h=((h<<5)-h)+t.charCodeAt(i); h|=0;} return String(h); };
-    const seen = new Map();
-
-    allFlags.forEach((flag, idx) => {
-      try {
-        const hasRequiredFields = 
-          flag &&
-          typeof flag === 'object' &&
-          flag.title &&
-          flag.severity &&
-          (flag.description || flag.explanation) &&
-          flag.recommendation;
-        
-        if (!hasRequiredFields) {
-          const ruleId = flag?.rule_id || flag?.pattern_id || 'unknown';
-          const missingFields = {
-            title: !flag?.title,
-            severity: !flag?.severity,
-            description: !flag?.description && !flag?.explanation,
-            recommendation: !flag?.recommendation
-          };
-          console.error('[ISSUE_SCHEMA_INVALID]', {
-            index: idx,
-            ruleId,
-            missingFields,
-            payload: JSON.stringify(flag).substring(0, 300)
-          });
-          invalid++;
-          invalidCodes.push(`ISSUE_SCHEMA_INVALID:${ruleId}`);
-          invalidFlags.push(flag);
-          invalidDetails.push({ index: idx, ruleId, missingFields });
-        } else {
-          const recs = normalizeRecs(flag);
-          const summary = flag.summary || flag.explanation || flag.description || '';
-          if (!summary || recs.length === 0) {
-            invalid++;
-            invalidCodes.push(`ISSUE_SCHEMA_INVALID:${flag?.rule_id || 'unknown'}`);
-            invalidFlags.push(flag);
-            invalidDetails.push({ index: idx, ruleId: flag?.rule_id || 'unknown', missingFields: { summary: !summary, recommendations: recs.length === 0 } });
-          } else {
-            const key = `${flag.rule_id || 'UNKNOWN'}:${hashText(flag.evidence || flag.evidence_snippet || flag.description || flag.title)}`;
-            const prev = seen.get(key);
-            if (!prev) {
-              const cleaned = { ...flag, recommendations: recs, summary };
-              seen.set(key, cleaned);
-            } else {
-              // merge duplicates: keep highest severity and unique recs
-              const rank = { critical:3, high:2, medium:1, low:0 };
-              if (rank[flag.severity] > rank[prev.severity]) prev.severity = flag.severity;
-              const rset = new Set(prev.recommendations);
-              recs.forEach(r=>rset.add(r));
-              prev.recommendations = Array.from(rset).slice(0,5);
-              if ((flag.summary||'').length > (prev.summary||'').length) prev.summary = flag.summary;
-            }
-          }
-        }
-      } catch (error) {
-        console.error('[ISSUE_SCHEMA_INVALID]', {
-          index: idx,
-          error: error.message,
-          payload: JSON.stringify(flag).substring(0, 300)
-        });
-        invalid++;
-      }
-    });
-
-    const deduped = Array.from(seen.values());
-
-    console.log('[REPORTFULL_LOAD]', {
-      step: 'SCHEMA_VALIDATION_COMPLETE',
-      validFlags: deduped.length,
-      invalidFlags: invalid
-    });
-
-    console.log('[REPORTFULL_DEBUG]', {
-      source: 'persisted_scan',
-      leaseId: lease?.id || leaseId,
-      scanId: scan?.id || scanId,
-      flags_total: allFlags.length,
-      validated_total: deduped.length,
-      invalid_total: invalid,
-      invalid_rule_ids: invalidCodes,
-      invalid_missing_fields: invalidDetails
-    });
-
-    return { validatedFlags: deduped, invalidCount: invalid, invalidCodes, invalidFlags, invalidDetails, dedupeCount: allFlags.length - deduped.length, quarantined: invalidFlags.length };
-  }, [scan, lease]);
+    return { validatedFlags: allFlags, invalidCount: 0, invalidCodes: [], invalidFlags: [], invalidDetails: [], dedupeCount: 0, quarantined: 0 };
+  }, [scan]);
 
   // Update invalid count state
   React.useEffect(() => {
@@ -693,7 +607,7 @@ function ReportFullContent() {
     });
 
     try {
-      // Generate comprehensive PDF report data - use validated flags only and sanitize
+      // Generate comprehensive PDF report data - use backend validated issues
       const sanitizedFlags = validatedFlags.map(f => ({
         title: f.title,
         severity: f.severity,
@@ -706,6 +620,8 @@ function ReportFullContent() {
         risk_score: scan.risk_score,
         summary: scan.summary,
         flags: sanitizedFlags,
+        validated_count: sanitizedFlags.length,
+        clause_reviews: Array.isArray(scan.scan_full?.clause_reviews) ? scan.scan_full.clause_reviews : [],
         missing_items: scan.scan_full?.missing_items || [],
         key_terms: scan.scan_full?.key_terms || {},
         lease_start: lease.start_date,
@@ -1177,6 +1093,29 @@ function ReportFullContent() {
             }
           />
 
+          {isAdmin && (
+            <div className="mb-4 flex items-center gap-2">
+              <Button variant="outline" onClick={()=> setShowDiagnostics(v=>!v)}>
+                {showDiagnostics ? 'Hide Diagnostics' : 'Show Diagnostics'}
+              </Button>
+              <Button variant="outline" onClick={()=> setShowClauseReview(v=>!v)}>
+                {showClauseReview ? 'Hide Clause Review' : 'Show Clause Review'}
+              </Button>
+            </div>
+          )}
+
+          {isAdmin && showDiagnostics && (
+            <div className="mb-4 p-4 rounded-lg border" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC', borderColor: colors.borderColor }}>
+              <div className="text-sm font-semibold" style={{ color: colors.textPrimary }}>Diagnostics</div>
+              <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                Invalid issues: {invalidCount}
+                {Array.isArray(invalidCodes) && invalidCodes.length > 0 && (
+                  <span> — Top reasons: {invalidCodes.slice(0,3).join(', ')}{invalidCodes.length>3?` +${invalidCodes.length-3} more`:''}</span>
+                )}
+              </div>
+            </div>
+          )}
+
 
           {/* Language Banner */}
           {showLanguageBanner && (
@@ -1629,6 +1568,39 @@ function ReportFullContent() {
                     <div key={index} className="flex items-start gap-2 p-3 rounded-lg border border-amber-200" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFFBEB' }}>
                       <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                       <p className="text-sm text-amber-900 leading-relaxed" style={{ color: isDarkMode ? colors.textPrimary : '#B45309' }}>{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Clause Review (Accordion-like) */}
+          {showClauseReview && Array.isArray(scan?.scan_full?.clause_reviews) && (
+            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+              <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
+                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Info className="w-5 h-5 text-slate-500" /> Clause Review
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-2">
+                  {scan.scan_full.clause_reviews.map((c, idx) => (
+                    <div key={idx} className="p-3 rounded-lg border" style={{ borderColor: colors.borderColor }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                          Clause {c.clause_no} {c.page ? `(Page ${c.page})` : ''}
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full ${c.status==='RISK' ? 'bg-red-100 text-red-700' : c.status==='INFO' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>{c.status}</span>
+                      </div>
+                      {Array.isArray(c.taxonomy_hits) && c.taxonomy_hits.length>0 && (
+                        <div className="mt-2 text-xs" style={{ color: colors.textSecondary }}>
+                          Codes: {c.taxonomy_hits.map(h=>h.taxonomy_code).join(', ')}
+                          {c.taxonomy_hits[0]?.rationale && (
+                            <div className="mt-1">{c.taxonomy_hits[0].rationale}</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
