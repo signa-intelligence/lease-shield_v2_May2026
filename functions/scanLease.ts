@@ -5,41 +5,84 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 // Complete coverage with schema validation and compound detection
 // ============================================================================
 
-// RISK ISSUE SCHEMA - Enforced at output
-const RISK_ISSUE_SCHEMA = {
-  id: 'string',
-  severity: ['critical', 'high', 'medium', 'low'],
-  title: 'string',
-  description: 'string',
-  explanation: 'string',
-  recommendation: 'string',
-  category: 'string',
-  rule_id: 'string'
-};
-
-// Validate risk issue
-function validateRiskIssue(issue, ruleId) {
+// RISK ISSUE SCHEMA - Enforced at output (strict)
+// Required fields:
+// id, rule_id, category, severity, title, summary, why_it_matters,
+// recommendations[] (len>=1), clause_refs[] (each has clause_id, page, snippet)
+function validateRiskIssue(issue, ruleId, meta) {
   const errors = [];
-  
-  if (!issue.id || typeof issue.id !== 'string') errors.push('missing id');
-  if (!issue.severity || !['critical', 'high', 'medium', 'low'].includes(issue.severity)) errors.push('invalid severity');
-  if (!issue.title || typeof issue.title !== 'string') errors.push('missing title');
-  if (!issue.description || typeof issue.description !== 'string') errors.push('missing description');
-  if (!issue.explanation || typeof issue.explanation !== 'string') errors.push('missing explanation');
-  if (!issue.recommendation || typeof issue.recommendation !== 'string') errors.push('missing recommendation');
-  if (!issue.category || typeof issue.category !== 'string') errors.push('missing category');
-  if (!issue.rule_id || typeof issue.rule_id !== 'string') errors.push('missing rule_id');
-  
+
+  const reqStr = (v) => typeof v === 'string' && v.trim().length > 0;
+  const reqArr = (v) => Array.isArray(v) && v.length > 0;
+
+  if (!reqStr(issue.id)) errors.push('missing id');
+  if (!reqStr(issue.rule_id)) errors.push('missing rule_id');
+  if (!reqStr(issue.category)) errors.push('missing category');
+  if (!['critical', 'high', 'medium', 'low'].includes(issue.severity)) errors.push('invalid severity');
+  if (!reqStr(issue.title)) errors.push('missing title');
+  if (!reqStr(issue.summary)) errors.push('missing summary');
+  if (!reqStr(issue.why_it_matters)) errors.push('missing why_it_matters');
+  if (!reqArr(issue.recommendations)) errors.push('missing recommendations');
+  if (!reqArr(issue.clause_refs)) errors.push('missing clause_refs');
+  else {
+    issue.clause_refs.forEach((c, idx) => {
+      if (!reqStr(c.clause_id) || typeof c.page !== 'number' || !reqStr(c.snippet)) {
+        errors.push(`invalid clause_ref[${idx}]`);
+      }
+    });
+  }
+
   if (errors.length > 0) {
-    console.error('[SCHEMA_VALIDATION_FAILED]', {
+    console.error('[IssueEmitRejected]', {
+      event: 'IssueEmitRejected',
       rule_id: ruleId,
-      errors,
-      issue: JSON.stringify(issue).substring(0, 500)
+      leaseId: meta?.leaseId,
+      scanId: meta?.scanId,
+      missing_fields: errors,
+      payload_preview: JSON.stringify(issue).substring(0, 400)
     });
     return false;
   }
-  
   return true;
+}
+
+// Safety emit wrapper: maps legacy fields -> strict schema and applies defaults
+function emitIssue(draft, meta) {
+  const safe = (v, fallback = '') => (typeof v === 'string' ? v.trim() : '') || fallback;
+  const recs = Array.isArray(draft.recommendations)
+    ? draft.recommendations.filter((r) => typeof r === 'string' && r.trim().length > 0)
+    : (safe(draft.recommendation, '').split('\n').map(s => s.replace(/^•\s*/, '').trim()).filter(Boolean));
+
+  const clauseRef = draft.clause_refs && Array.isArray(draft.clause_refs) && draft.clause_refs.length > 0
+    ? draft.clause_refs
+    : [{
+        clause_id: safe(draft.clause_id, 'UNKNOWN'),
+        page: typeof draft.page_number === 'number' ? draft.page_number : (Number(draft.page_number) || 1),
+        snippet: safe(draft.evidence, safe(draft.evidence_snippet, 'Evidence not available'))
+      }];
+
+  const issue = {
+    id: draft.id || crypto.randomUUID(),
+    rule_id: safe(draft.rule_id, 'UNKNOWN_RULE'),
+    category: safe(draft.category, 'Other Risks'),
+    severity: ['critical','high','medium','low'].includes(draft.severity) ? draft.severity : 'medium',
+    title: safe(draft.title, 'Issue Detected'),
+    summary: safe(draft.summary, safe(draft.description, 'Summary not provided')),
+    why_it_matters: safe(draft.why_it_matters, safe(draft.explanation, 'Impact not provided')),
+    recommendations: recs.length > 0 ? recs : ['Request clarification and amend this clause.'],
+    clause_refs: clauseRef,
+    // Legacy fields preserved for UI/PDF compatibility
+    description: safe(draft.description, safe(draft.summary, '')),
+    explanation: safe(draft.explanation, safe(draft.why_it_matters, '')),
+    recommendation: recs.join('\n'),
+    evidence: clauseRef[0]?.snippet,
+    clause_id: clauseRef[0]?.clause_id,
+    page_number: clauseRef[0]?.page,
+    original_language: draft.original_language || draft.language || 'en',
+    penalties: draft.penalties
+  };
+
+  return validateRiskIssue(issue, issue.rule_id, meta) ? issue : null;
 }
 
 // PENALTY PARSER
