@@ -1547,12 +1547,24 @@ OUTPUT FORMAT:
       llmContribution: llmValidIssues.length
     });
 
+    // VALIDATION COUNT CHECK - detect report-PDF mismatches
+    if (finalIssues.length !== (finalCriticalCount + finalHighCount + finalMediumCount)) {
+      console.error('[ReportCountMismatch]', {
+        event: 'ReportCountMismatch',
+        scanId,
+        leaseId,
+        total: finalIssues.length,
+        counted: finalCriticalCount + finalHighCount + finalMediumCount
+      });
+    }
+
     return Response.json({
       success: true,
       result: {
         risk_score: finalRiskScore,
         summary,
-        flags: finalIssues,
+        issues_validated: finalIssues,
+        issues_invalid: invalidIssues,
         property_address: keyTerms.property_address,
         start_date: keyTerms.start_date,
         end_date: keyTerms.end_date,
@@ -1562,7 +1574,10 @@ OUTPUT FORMAT:
         notice_period_days: keyTerms.notice_period_days,
         rent_due_day: keyTerms.rent_due_day,
         deposit_due_date: keyTerms.deposit_due_date,
-        deposit_return_days: keyTerms.deposit_return_days
+        deposit_return_days: keyTerms.deposit_return_days,
+        
+        // Legacy field for backward compatibility
+        flags: finalIssues
       },
       validation: {
         valid_issues: finalIssues.length,
@@ -1586,10 +1601,17 @@ OUTPUT FORMAT:
         },
         risk_score_deterministic: rawScore,
         risk_score_final: finalRiskScore,
-        engines_run: ['LEGALITY', 'PROCEDURAL', 'FINANCIAL', 'POWER_IMBALANCE', 'RIGHTS_SUPPRESSION', 'MISSING_SAFEGUARDS', 'COMPOUND', 'PREDATORY_LANGUAGE', 'LLM_LAWYER']
+        engines_run: ['LEGALITY', 'PROCEDURAL', 'FINANCIAL', 'POWER_IMBALANCE', 'RIGHTS_SUPPRESSION', 'MISSING_SAFEGUARDS', 'COMPOUND', 'PREDATORY_LANGUAGE', 'LLM_LAWYER'],
+        deduplication_stats: {
+          pre_first_pass: detectedIssues.length,
+          post_first_pass: uniqueIssues.length,
+          pre_llm_merge: combinedIssues.length,
+          post_final_dedupe: finalIssues.length,
+          total_dropped: detectedIssues.length - finalIssues.length
+        }
       },
       diagnostic: {
-        buildTag: "multi-engine-v2.1-validated",
+        buildTag: "deterministic-v3.0-schema-safe",
         scanId,
         requestId,
         filesProcessed: fileUrls.length,
