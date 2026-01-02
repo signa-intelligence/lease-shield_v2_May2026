@@ -117,13 +117,14 @@ Deno.serve(async (req) => {
     doc.text(`Generated: ${new Date(scanData.generated_date).toLocaleDateString()}`, 20, y);
     y += 15;
 
-    // Risk Score
-    doc.setFillColor(59, 130, 246);
+    // Risk Score with theme-based coloring
+    const riskTheme = getRiskTheme(scanData.risk_score);
+    doc.setFillColor(...riskTheme.color);
     doc.roundedRect(20, y, pageWidth - 40, 30, 5, 5, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Risk Assessment', 25, y + 10);
+    doc.text(`Risk Assessment - ${riskTheme.level} RISK`, 25, y + 10);
     doc.setFontSize(20);
     doc.text(`Score: ${scanData.risk_score}/100`, 25, y + 22);
     y += 40;
