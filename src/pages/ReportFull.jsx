@@ -1295,58 +1295,7 @@ function ReportFullContent() {
               </CardContent>
             </Card>
           )}
-                  {clauseLedger.filter(c=>c.risk_level!== 'NO_RISK').map((c, idx) => {
-                  
-                            const sev = String(c.risk_level).toUpperCase();
-                            const color = sev === 'CRITICAL' ? '#EF4444' : sev === 'HIGH' ? '#F59E0B' : sev === 'MEDIUM' ? '#EAB308' : '#10B981';
-                            return (
-                              <div key={`risk-${idx}`} className="rounded-xl border-2 overflow-hidden" style={{ backgroundColor: colors.cardBg, borderColor: color }}>
-                                <div className="p-4" style={{ backgroundColor: sev === 'CRITICAL' ? (isDarkMode ? '#3A2626' : '#FEE2E2') : sev === 'HIGH' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') : sev === 'MEDIUM' ? (isDarkMode ? '#3A3420' : '#FEF9C3') : (isDarkMode ? '#1E4435' : '#ECFDF5') }}>
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                      <div className="font-bold" style={{ color: colors.textPrimary }}>Clause {c.clause_number}{c.clause_title ? ` — ${c.clause_title}` : ''}</div>
-                                      <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{c.rationale}</div>
-                                    </div>
-                                    <Badge className="text-xs font-bold" style={{ backgroundColor: color, color: '#fff' }}>{sev}</Badge>
-                                  </div>
-                                </div>
-                                <div className="p-4">
-                                  {Array.isArray(c.recommended_actions) && c.recommended_actions.length > 0 && (
-                                    <div className="text-sm" style={{ color: colors.textPrimary }}>
-                                      {c.recommended_actions.map((r,i)=> (
-                                        <div key={i} className="flex gap-2"><span>•</span><span>{r}</span></div>
-                                      ))}
-                                    </div>
-                                  )}
-                                  <div className="mt-2 text-xs" style={{ color: colors.textSecondary }}>Confidence: {c.confidence}</div>
-                                </div>
-                              </div>
-                            );
-                                  console.error('[ReportFull] Error rendering flag', { flag, error: error.message, stack: error.stack });
-                                  console.error('[TELEMETRY] ReportFullLoadFailed', {
-                                  step: 'RENDER',
-                                  scanId,
-                                  leaseId,
-                                  errorMessage: 'Flag render error: ' + error.message,
-                                  stackTrace: error.stack?.substring(0, 200)
-                                  });
 
-                                  return (
-                                  <div key={index} className="p-4 rounded-lg border" style={{
-                                  backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                                  borderColor: '#EF4444'
-                                  }}>
-                                  <p className="text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
-                                   {language === 'th' ? 'ข้อมูลปัญหาไม่สมบูรณ์' : 'Issue data unavailable'}
-                                  </p>
-                                  </div>
-                                  );
-                                  }
-                                  })}
-                                  </div>
-                                  </div>
-                                  );
-                                  })}
                   
                   {/* SHOW UPGRADE CTA IF FLAGS ARE HIDDEN */}
                   {hiddenFlagsCount > 0 && (
