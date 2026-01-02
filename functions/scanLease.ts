@@ -910,18 +910,37 @@ Be thorough.`,
       if (emitted) detectedIssues.push(emitted);
     }
 
-    // Deduplication
-    const uniqueIssues = [];
-    const seen = new Set();
+    // Deterministic de-duplication by canonical key
+    const severityRank = { critical: 3, high: 2, medium: 1, low: 0 };
+    const mergedMap = new Map();
+
     detectedIssues.forEach(issue => {
-      const key = `${issue.rule_id}-${issue.clause_id || 'global'}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        uniqueIssues.push(issue);
+      const clauseIds = Array.isArray(issue.clause_refs) ? issue.clause_refs.map(c => c.clause_id) : [issue.clause_id || 'GLOBAL'];
+      const primary = clauseIds.length > 1 ? clauseIds.sort().join(',') : clauseIds[0];
+      const key = `${issue.rule_id}:${primary}`;
+
+      if (!mergedMap.has(key)) {
+        mergedMap.set(key, { ...issue, clause_refs: [...(issue.clause_refs || [])] });
+      } else {
+        const existing = mergedMap.get(key);
+        // keep highest severity
+        if (severityRank[issue.severity] > severityRank[existing.severity]) {
+          existing.severity = issue.severity;
+        }
+        // merge unique clause refs
+        const seenRef = new Set(existing.clause_refs.map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
+        (issue.clause_refs || []).forEach(c => {
+          const sig = `${c.clause_id}|${c.page}|${c.snippet}`;
+          if (!seenRef.has(sig)) {
+            existing.clause_refs.push(c);
+            seenRef.add(sig);
+          }
+        });
       }
     });
 
-    logStage('DEDUPLICATION', { before: detectedIssues.length, after: uniqueIssues.length, invalid: invalidIssues.length });
+    const uniqueIssues = Array.from(mergedMap.values());
+    logStage('DedupApplied', { before: detectedIssues.length, after: uniqueIssues.length, invalid: invalidIssues.length });
 
     // Risk score
     const severityWeights = { critical: 25, high: 15, medium: 8, low: 3 };
