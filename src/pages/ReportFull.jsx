@@ -227,9 +227,10 @@ function ReportFullContent() {
           flag.recommendation;
         
         if (!hasRequiredFields) {
+          const ruleId = flag?.rule_id || flag?.pattern_id || 'unknown';
           console.error('[ISSUE_SCHEMA_INVALID]', {
             index: idx,
-            ruleId: flag?.rule_id || flag?.pattern_id || 'unknown',
+            ruleId,
             missingFields: {
               title: !flag?.title,
               severity: !flag?.severity,
@@ -239,6 +240,7 @@ function ReportFullContent() {
             payload: JSON.stringify(flag).substring(0, 300)
           });
           invalid++;
+          invalidCodes.push(`ISSUE_SCHEMA_INVALID:${ruleId}`);
         } else {
           validated.push(flag);
         }
