@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { riskTheme, LEGAL_DISCLAIMER } from "../components/shared/riskTheme";
-import { riskTheme, LEGAL_DISCLAIMER } from "../utils/riskTheme";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2, DollarSign, Home, ThumbsDown, Plus } from "lucide-react";
