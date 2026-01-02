@@ -1248,49 +1248,92 @@ function ReportFullContent() {
 
                 {/* Risk clauses */}
                 <div className="space-y-3">
-                  {/* SHOW UPGRADE CTA IF FLAGS ARE HIDDEN */}
-                  {hiddenFlagsCount > 0 && (
-                    <div className="mt-6 p-6 rounded-xl border-2 border-dashed" style={{
-                      backgroundColor: isDarkMode ? '#2A2D30' : '#FEF9C3',
-                      borderColor: isDarkMode ? '#C7A338' : '#EAB308'
-                    }}>
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <AlertTriangle className="w-5 h-5 text-white" />
+                  {clauseLedger.filter(c=>c.risk_level!== 'NO_RISK').map((c, idx) => {
+                    const sev = String(c.risk_level).toUpperCase();
+                    const color = sev === 'CRITICAL' ? '#EF4444' : sev === 'HIGH' ? '#F59E0B' : sev === 'MEDIUM' ? '#EAB308' : '#10B981';
+                    return (
+                      <div key={`risk-${idx}`} className="rounded-xl border-2 overflow-hidden" style={{ backgroundColor: colors.cardBg, borderColor: color }}>
+                        <div className="p-4" style={{ backgroundColor: sev === 'CRITICAL' ? (isDarkMode ? '#3A2626' : '#FEE2E2') : sev === 'HIGH' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') : sev === 'MEDIUM' ? (isDarkMode ? '#3A3420' : '#FEF9C3') : (isDarkMode ? '#1E4435' : '#ECFDF5') }}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-bold" style={{ color: colors.textPrimary }}>Clause {c.clause_number}{c.clause_title ? ` — ${c.clause_title}` : ''}</div>
+                              <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{c.rationale}</div>
+                            </div>
+                            <Badge className="text-xs font-bold" style={{ backgroundColor: color, color: '#fff' }}>{sev}</Badge>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
-                            {language === 'th' 
-                              ? strings.moreDetailedIssues.replace('{count}', hiddenFlagsCount)
-                              : `${hiddenFlagsCount} ${strings.moreDetailedIssues.replace('{count}', hiddenFlagsCount)}`}
-                          </h4>
-                          <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
-                            {language === 'th' 
-                              ? 'อัปเกรดเป็น Protect หรือ Secure เพื่อดูการวิเคราะห์ทั้งหมดพร้อมคำแนะนำโดยละเอียด'
-                              : 'Upgrade to Protect or Secure to view complete analysis with detailed recommendations'}
-                          </p>
-                          <Button
-                            onClick={() => navigate(createPageUrl("Account") + '?highlight=plans')}
-                            className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800"
-                          >
-                            {strings.upgradeToUnlock}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => navigate(createPageUrl("ScanPreview") + `?scanId=${scanId}`)}
-                            className="w-full mt-2"
-                            style={isDarkMode ? { borderColor: colors.borderColor, color: colors.textPrimary } : {}}
-                          >
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            {strings.backToSummary}
-                          </Button>
+                        <div className="p-4">
+                          {Array.isArray(c.recommended_actions) && c.recommended_actions.length > 0 && (
+                            <div className="text-sm" style={{ color: colors.textPrimary }}>
+                              {c.recommended_actions.map((r,i)=> (
+                                <div key={i} className="flex gap-2"><span>•</span><span>{r}</span></div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="mt-2 text-xs" style={{ color: colors.textSecondary }}>Confidence: {c.confidence}</div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
+
+                {/* No risk collapsible */}
+                <details className="mt-6">
+                  <summary className="cursor-pointer text-sm font-semibold" style={{ color: '#0C3B2E' }}>Show {clausesNoRisk} “No risk detected” clauses</summary>
+                  <div className="mt-3 space-y-2">
+                    {clauseLedger.filter(c=>c.risk_level=== 'NO_RISK').map((c, idx) => (
+                      <div key={`norisk-${idx}`} className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm" style={{ color: colors.textPrimary }}>Clause {c.clause_number}{c.clause_title ? ` — ${c.clause_title}` : ''}</div>
+                          <div className="text-xs" style={{ color: colors.textSecondary }}>Confidence: {c.confidence}</div>
+                        </div>
+                        <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{c.rationale}</div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
               </CardContent>
             </Card>
+          )}
+
+          {hiddenFlagsCount > 0 && (
+            <div className="mt-6 p-6 rounded-xl border-2 border-dashed" style={{
+              backgroundColor: isDarkMode ? '#2A2D30' : '#FEF9C3',
+              borderColor: isDarkMode ? '#C7A338' : '#EAB308'
+            }}>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
+                    {language === 'th' 
+                      ? strings.moreDetailedIssues.replace('{count}', hiddenFlagsCount)
+                      : `${hiddenFlagsCount} ${strings.moreDetailedIssues.replace('{count}', hiddenFlagsCount)}`}
+                  </h4>
+                  <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? 'อัปเกรดเป็น Protect หรือ Secure เพื่อดูการวิเคราะห์ทั้งหมดพร้อมคำแนะนำโดยละเอียด'
+                      : 'Upgrade to Protect or Secure to view complete analysis with detailed recommendations'}
+                  </p>
+                  <Button
+                    onClick={() => navigate(createPageUrl("Account") + '?highlight=plans')}
+                    className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800"
+                  >
+                    {strings.upgradeToUnlock}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(createPageUrl("ScanPreview") + `?scanId=${scanId}`)}
+                    className="w-full mt-2"
+                    style={isDarkMode ? { borderColor: colors.borderColor, color: colors.textPrimary } : {}}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    {strings.backToSummary}
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Additional Observations (LOW confidence) */}
