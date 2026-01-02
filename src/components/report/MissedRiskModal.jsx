@@ -138,7 +138,7 @@ export default function MissedRiskModal({ open, onClose, onSubmit, taxonomy, cla
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button onClick={() => onSubmit({ category_id: category, clause_id: clauseId, note })} disabled={!category || !clauseId}>Submit</Button>
+            <Button onClick={() => onSubmit({ category_id: category, clause_id: clauseId || 'UNKNOWN', note })} disabled={!category || ((effectiveClauses||[]).length>0 && !clauseId)}>Submit</Button>
           </div>
         </div>
       </div>
