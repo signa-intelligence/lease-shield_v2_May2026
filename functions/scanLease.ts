@@ -975,29 +975,42 @@ Be thorough.`,
       if (emitted) detectedIssues.push(emitted);
     }
 
-    // Deterministic de-duplication by canonical key
+    // Deterministic de-duplication by canonical key (rule_id + clause_hash)
     const severityRank = { critical: 3, high: 2, medium: 1, low: 0 };
     const mergedMap = new Map();
 
+    // Helper: simple clause hash from first clause_ref snippet
+    const hashText = (s='') => {
+      const t = s.toLowerCase().replace(/\s+/g,' ').trim();
+      let h = 0; for (let i=0;i<t.length;i++){ h = ((h<<5)-h) + t.charCodeAt(i); h |= 0; }
+      return String(h);
+    };
+
     detectedIssues.forEach(issue => {
-      const clauseIds = Array.isArray(issue.clause_refs) ? issue.clause_refs.map(c => c.clause_id) : [issue.clause_id || 'GLOBAL'];
-      const primary = clauseIds.length > 1 ? clauseIds.sort().join(',') : clauseIds[0];
-      const key = `${issue.rule_id}:${primary}`;
+      const firstRef = Array.isArray(issue.clause_refs) && issue.clause_refs[0] ? issue.clause_refs[0] : { clause_id: issue.clause_id || 'GLOBAL', snippet: issue.evidence || '' };
+      const clauseHash = hashText(firstRef.snippet || '');
+      const key = `${issue.rule_id}:${clauseHash}`;
 
       if (!mergedMap.has(key)) {
-        mergedMap.set(key, { ...issue, clause_refs: [...(issue.clause_refs || [])] });
+        mergedMap.set(key, { ...issue, clause_refs: [...(issue.clause_refs || [])], _clause_hash: clauseHash });
       } else {
         const existing = mergedMap.get(key);
         // keep highest severity
         if (severityRank[issue.severity] > severityRank[existing.severity]) {
           existing.severity = issue.severity;
         }
+        // merge unique recommendations
+        const recSet = new Set((existing.recommendations||[]).map(r=>r.trim()));
+        (issue.recommendations||[]).forEach(r=>{ const t = String(r||'').trim(); if (t && !recSet.has(t)) recSet.add(t); });
+        existing.recommendations = Array.from(recSet).slice(0,5);
+        // keep longest summary
+        if ((issue.summary||'').length > (existing.summary||'').length) existing.summary = issue.summary;
         // merge unique clause refs
-        const seenRef = new Set(existing.clause_refs.map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
+        const seenRef = new Set((existing.clause_refs||[]).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
         (issue.clause_refs || []).forEach(c => {
           const sig = `${c.clause_id}|${c.page}|${c.snippet}`;
           if (!seenRef.has(sig)) {
-            existing.clause_refs.push(c);
+            existing.clause_refs = [...(existing.clause_refs||[]), c];
             seenRef.add(sig);
           }
         });
