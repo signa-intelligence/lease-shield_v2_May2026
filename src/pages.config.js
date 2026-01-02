@@ -42,6 +42,7 @@ import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
 import RiskFeedbackAdmin from './pages/RiskFeedbackAdmin';
+import reportfull from './pages/reportfull';
 import __Layout from './Layout.jsx';
 
 
@@ -90,6 +91,7 @@ export const PAGES = {
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
     "RiskFeedbackAdmin": RiskFeedbackAdmin,
+    "reportfull": reportfull,
 }
 
 export const pagesConfig = {
