@@ -798,6 +798,20 @@ Be thorough.`,
     const userLang = user.language || 'en';
     const monthlyRent = keyTerms.rent_amount;
 
+    // Helper to push issues with validation + invalid capture
+    const pushIssue = (draft) => {
+      const converted = emitIssue(draft, { leaseId, scanId });
+      if (converted) {
+        detectedIssues.push(converted);
+      } else {
+        const diag = diagnoseIssueSchema(draft);
+        invalidIssues.push({
+          issue_preview: { title: draft?.title, rule_id: draft?.rule_id, category_id: draft?.category, severity: draft?.severity },
+          ...diag
+        });
+      }
+    };
+
     // Run all engines
     const allRules = [
       ...LEGALITY_RULES,
