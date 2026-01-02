@@ -940,7 +940,11 @@ function ReportFullContent() {
   const fullFlags = getFullDisplayFlags(mainFlags);
   const totalFlags = mainFlags.length;
   const hiddenFlagsCount = mainFlags.length - fullFlags.length;
-  // moved above with mainFlags/lowConfidence
+
+  // Clause coverage values from ledger
+  const clausesTotal = clauseLedger?.length || 0;
+  const clausesRisk = clauseLedger?.filter(c => c.risk_level && c.risk_level !== 'NO_RISK').length || 0;
+  const clausesNoRisk = clausesTotal - clausesRisk;
 
   // DEFENSIVE: Group flags by category with fallback
   const groupedFlags = fullFlags.reduce((groups, flag) => {
