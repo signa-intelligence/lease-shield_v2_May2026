@@ -755,69 +755,75 @@ function ReportFullContent() {
 
   const riskLevel = scan ? getRiskLevel(scan.risk_score) : null;
 
-  // STEP 2: Log data processing start
-  console.log('[REPORTFULL_LOAD]', { 
-    step: 'GENERATE_REPORT_START',
-    hasScan: !!scan,
-    hasLease: !!lease
-  });
+  // SCHEMA VALIDATION - Memoized to run only when scan data changes
+  const { validatedFlags, invalidCount } = React.useMemo(() => {
+    if (!scan) return { validatedFlags: [], invalidCount: 0 };
 
-  // DEFENSIVE: Handle missing or malformed scan data
-  const scanFullData = scan.scan_full || {};
-  const allFlags = Array.isArray(scanFullData.flags) ? scanFullData.flags : [];
-  const missingItems = Array.isArray(scanFullData.missing_items) ? scanFullData.missing_items : [];
-  const keyTerms = scanFullData.key_terms && typeof scanFullData.key_terms === 'object' ? scanFullData.key_terms : {};
+    console.log('[REPORTFULL_LOAD]', { 
+      step: 'GENERATE_REPORT_START',
+      hasScan: !!scan,
+      hasLease: !!lease
+    });
 
-  console.log('[REPORTFULL_LOAD]', {
-    step: 'DATA_STRUCTURE_VALIDATED',
-    hasScanFull: !!scan.scan_full,
-    flagsCount: allFlags.length,
-    flagsType: typeof allFlags,
-    missingItemsCount: missingItems.length,
-    keyTermsKeys: Object.keys(keyTerms)
-  });
+    const scanFullData = scan.scan_full || {};
+    const allFlags = Array.isArray(scanFullData.flags) ? scanFullData.flags : [];
 
-  // SCHEMA VALIDATION FOR FLAGS
-  const validatedFlags = [];
-  let invalidCount = 0;
+    console.log('[REPORTFULL_LOAD]', {
+      step: 'DATA_STRUCTURE_VALIDATED',
+      hasScanFull: !!scan.scan_full,
+      flagsCount: allFlags.length,
+      flagsType: typeof allFlags
+    });
 
-  allFlags.forEach((flag, idx) => {
-    try {
-      // Check required fields
-      const hasRequiredFields = 
-        flag &&
-        typeof flag === 'object' &&
-        flag.title &&
-        flag.severity &&
-        (flag.description || flag.explanation) &&
-        flag.recommendation;
-      
-      if (!hasRequiredFields) {
+    const validated = [];
+    let invalid = 0;
+
+    allFlags.forEach((flag, idx) => {
+      try {
+        const hasRequiredFields = 
+          flag &&
+          typeof flag === 'object' &&
+          flag.title &&
+          flag.severity &&
+          (flag.description || flag.explanation) &&
+          flag.recommendation;
+        
+        if (!hasRequiredFields) {
+          console.error('[ISSUE_SCHEMA_INVALID]', {
+            index: idx,
+            ruleId: flag?.rule_id || flag?.pattern_id || 'unknown',
+            missingFields: {
+              title: !flag?.title,
+              severity: !flag?.severity,
+              description: !flag?.description && !flag?.explanation,
+              recommendation: !flag?.recommendation
+            },
+            payload: JSON.stringify(flag).substring(0, 300)
+          });
+          invalid++;
+        } else {
+          validated.push(flag);
+        }
+      } catch (error) {
         console.error('[ISSUE_SCHEMA_INVALID]', {
           index: idx,
-          ruleId: flag?.rule_id || flag?.pattern_id || 'unknown',
-          missingFields: {
-            title: !flag?.title,
-            severity: !flag?.severity,
-            description: !flag?.description && !flag?.explanation,
-            recommendation: !flag?.recommendation
-          },
+          error: error.message,
           payload: JSON.stringify(flag).substring(0, 300)
         });
-        invalidCount++;
-      } else {
-        validatedFlags.push(flag);
+        invalid++;
       }
-    } catch (error) {
-      console.error('[ISSUE_SCHEMA_INVALID]', {
-        index: idx,
-        error: error.message,
-        payload: JSON.stringify(flag).substring(0, 300)
-      });
-      invalidCount++;
-    }
-  });
+    });
 
+    console.log('[REPORTFULL_LOAD]', {
+      step: 'SCHEMA_VALIDATION_COMPLETE',
+      validFlags: validated.length,
+      invalidFlags: invalid
+    });
+
+    return { validatedFlags: validated, invalidCount: invalid };
+  }, [scan, lease]);
+
+  // Update state when invalid count changes
   React.useEffect(() => {
     if (invalidCount > 0) {
       setSchemaInvalidCount(invalidCount);
@@ -829,13 +835,11 @@ function ReportFullContent() {
         httpStatus: 'N/A'
       });
     }
-  }, [invalidCount]);
+  }, [invalidCount, scanId, leaseId]);
 
-  console.log('[REPORTFULL_LOAD]', {
-    step: 'SCHEMA_VALIDATION_COMPLETE',
-    validFlags: validatedFlags.length,
-    invalidFlags: invalidCount
-  });
+  // Extract other scan data
+  const missingItems = scan?.scan_full?.missing_items || [];
+  const keyTerms = scan?.scan_full?.key_terms || {};
 
   // LIMIT FLAGS BASED ON TIER (consistent with ScanPreview)
   const getFullDisplayFlags = () => {
