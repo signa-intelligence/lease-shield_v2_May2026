@@ -33,8 +33,6 @@ function ReportFullContent() {
   const [expandedClauses, setExpandedClauses] = useState({});
   const [schemaInvalidCount, setSchemaInvalidCount] = useState(0);
   const [repairAttempted, setRepairAttempted] = useState(false);
-  const [showDiagnostics, setShowDiagnostics] = useState(false);
-  const [showClauseReview, setShowClauseReview] = useState(false);
 
   // Parse URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -196,41 +194,71 @@ function ReportFullContent() {
     retry: 1
   });
 
-  // SCHEMA VALIDATION - Prefer backend issues_validated
-  const { validatedFlags, invalidCount, invalidCodes, invalidFlags, invalidDetails, dedupeCount, quarantined } = React.useMemo(() => {
-    const scanFullData = scan?.scan_full || {};
+  // SINGLE SOURCE OF TRUTH: Use scan's issues_validated (or fallback to flags with validation)
+  const { validatedFlags, invalidCount, invalidCodes, invalidDetails } = React.useMemo(() => {
+    if (!scan) return { validatedFlags: [], invalidCount: 0, invalidCodes: [], invalidDetails: [] };
 
-    // If backend provided strict schema lists, use them
-    if (Array.isArray(scanFullData.issues_validated)) {
-      const backendValidated = scanFullData.issues_validated.map(iv => ({
-        // Map IssueSchema -> UI flag shape
-        title: iv.title,
-        severity: (iv.severity || 'MEDIUM').toLowerCase(),
-        summary: iv.why_it_matters,
-        recommendations: Array.isArray(iv.recommendations) ? iv.recommendations : [],
-        category: iv.taxonomy_code,
-        clause_id: (iv.clause_ids && iv.clause_ids.length ? String(iv.clause_ids[0]) : iv.clause_ref) || 'GLOBAL',
-        page_number: Array.isArray(iv.page_refs) && iv.page_refs.length ? iv.page_refs[0] : undefined,
-        evidence: iv.source_snippet,
-        rule_id: iv.taxonomy_code,
-      }));
-      const backendInvalid = Array.isArray(scanFullData.issues_invalid) ? scanFullData.issues_invalid : [];
-      const codes = backendInvalid.map(x => x.reason || 'invalid');
-      return {
-        validatedFlags: backendValidated,
-        invalidCount: backendInvalid.length,
-        invalidCodes: codes,
-        invalidFlags: [],
-        invalidDetails: backendInvalid,
-        dedupeCount: 0,
-        quarantined: backendInvalid.length
-      };
+    console.log('[REPORTFULL_LOAD]', { 
+      step: 'LOAD_VALIDATED_ISSUES',
+      hasScan: !!scan,
+      hasLease: !!lease,
+      hasIssuesValidated: !!scan.scan_full?.issues_validated,
+      hasFlags: !!scan.scan_full?.flags
+    });
+
+    // Primary: use issues_validated if available
+    let validatedIssues = [];
+    if (Array.isArray(scan.scan_full?.issues_validated)) {
+      validatedIssues = scan.scan_full.issues_validated;
+      console.log('[REPORTFULL_LOAD]', {
+        step: 'USING_VALIDATED_ISSUES',
+        count: validatedIssues.length
+      });
+    } else {
+      // Fallback: validate flags array (legacy scans)
+      const allFlags = Array.isArray(scan.scan_full?.flags) ? scan.scan_full.flags : [];
+
+      validatedIssues = allFlags.filter(f => {
+        const hasTitle = f?.title && String(f.title).trim().length > 0;
+        const hasWhyMatters = (f?.why_it_matters || f?.summary || f?.explanation || '').trim().length > 0;
+        const hasRecs = Array.isArray(f?.recommendations) 
+          ? f.recommendations.filter(r => r && r.trim().length > 0).length > 0
+          : (f?.recommendation || '').trim().length > 0;
+
+        return hasTitle && hasWhyMatters && hasRecs;
+      });
+
+      console.log('[REPORTFULL_LOAD]', {
+        step: 'LEGACY_VALIDATION_APPLIED',
+        total: allFlags.length,
+        validated: validatedIssues.length,
+        dropped: allFlags.length - validatedIssues.length
+      });
     }
 
-    // Fallback to legacy flags pipeline if strict arrays not present
-    const allFlags = Array.isArray(scanFullData.flags) ? scanFullData.flags : [];
-    return { validatedFlags: allFlags, invalidCount: 0, invalidCodes: [], invalidFlags: [], invalidDetails: [], dedupeCount: 0, quarantined: 0 };
-  }, [scan]);
+    // Track invalid issues from scan metadata
+    const invalidIssues = scan.scan_full?.issues_invalid || [];
+    const invalidCount = invalidIssues.length;
+    const invalidCodes = invalidIssues.map(inv => `${inv.rule_id || 'UNKNOWN'}:${(inv.missing_fields || []).join(',')}`);
+    const invalidDetails = invalidIssues.map((inv, idx) => ({
+      index: idx,
+      ruleId: inv.rule_id,
+      missingFields: inv.missing_fields || []
+    }));
+
+    console.log('[REPORTFULL_LOAD]', {
+      step: 'VALIDATION_COMPLETE',
+      validatedCount: validatedIssues.length,
+      invalidCount
+    });
+
+    return { 
+      validatedFlags: validatedIssues, 
+      invalidCount, 
+      invalidCodes, 
+      invalidDetails 
+    };
+  }, [scan, lease]);
 
   // Update invalid count state
   React.useEffect(() => {
@@ -607,7 +635,7 @@ function ReportFullContent() {
     });
 
     try {
-      // Generate comprehensive PDF report data - use backend validated issues
+      // Generate comprehensive PDF report data - use validated flags only and sanitize
       const sanitizedFlags = validatedFlags.map(f => ({
         title: f.title,
         severity: f.severity,
@@ -620,8 +648,6 @@ function ReportFullContent() {
         risk_score: scan.risk_score,
         summary: scan.summary,
         flags: sanitizedFlags,
-        validated_count: sanitizedFlags.length,
-        clause_reviews: Array.isArray(scan.scan_full?.clause_reviews) ? scan.scan_full.clause_reviews : [],
         missing_items: scan.scan_full?.missing_items || [],
         key_terms: scan.scan_full?.key_terms || {},
         lease_start: lease.start_date,
@@ -1093,29 +1119,6 @@ function ReportFullContent() {
             }
           />
 
-          {isAdmin && (
-            <div className="mb-4 flex items-center gap-2">
-              <Button variant="outline" onClick={()=> setShowDiagnostics(v=>!v)}>
-                {showDiagnostics ? 'Hide Diagnostics' : 'Show Diagnostics'}
-              </Button>
-              <Button variant="outline" onClick={()=> setShowClauseReview(v=>!v)}>
-                {showClauseReview ? 'Hide Clause Review' : 'Show Clause Review'}
-              </Button>
-            </div>
-          )}
-
-          {isAdmin && showDiagnostics && (
-            <div className="mb-4 p-4 rounded-lg border" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC', borderColor: colors.borderColor }}>
-              <div className="text-sm font-semibold" style={{ color: colors.textPrimary }}>Diagnostics</div>
-              <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                Invalid issues: {invalidCount}
-                {Array.isArray(invalidCodes) && invalidCodes.length > 0 && (
-                  <span> — Top reasons: {invalidCodes.slice(0,3).join(', ')}{invalidCodes.length>3?` +${invalidCodes.length-3} more`:''}</span>
-                )}
-              </div>
-            </div>
-          )}
-
 
           {/* Language Banner */}
           {showLanguageBanner && (
@@ -1568,39 +1571,6 @@ function ReportFullContent() {
                     <div key={index} className="flex items-start gap-2 p-3 rounded-lg border border-amber-200" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFFBEB' }}>
                       <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                       <p className="text-sm text-amber-900 leading-relaxed" style={{ color: isDarkMode ? colors.textPrimary : '#B45309' }}>{item}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Clause Review (Accordion-like) */}
-          {showClauseReview && Array.isArray(scan?.scan_full?.clause_reviews) && (
-            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-              <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
-                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <Info className="w-5 h-5 text-slate-500" /> Clause Review
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-2">
-                  {scan.scan_full.clause_reviews.map((c, idx) => (
-                    <div key={idx} className="p-3 rounded-lg border" style={{ borderColor: colors.borderColor }}>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                          Clause {c.clause_no} {c.page ? `(Page ${c.page})` : ''}
-                        </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${c.status==='RISK' ? 'bg-red-100 text-red-700' : c.status==='INFO' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>{c.status}</span>
-                      </div>
-                      {Array.isArray(c.taxonomy_hits) && c.taxonomy_hits.length>0 && (
-                        <div className="mt-2 text-xs" style={{ color: colors.textSecondary }}>
-                          Codes: {c.taxonomy_hits.map(h=>h.taxonomy_code).join(', ')}
-                          {c.taxonomy_hits[0]?.rationale && (
-                            <div className="mt-1">{c.taxonomy_hits[0].rationale}</div>
-                          )}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
