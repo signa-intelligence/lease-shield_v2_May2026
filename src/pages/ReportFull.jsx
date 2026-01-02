@@ -1252,193 +1252,31 @@ function ReportFullContent() {
                 <div className="space-y-3">
                   {clauseLedger.filter(c=>c.risk_level!== 'NO_RISK').map((c, idx) => {
                   
-                            try {
-                              // DEFENSIVE: Validate flag structure
-                              if (!flag || typeof flag !== 'object') {
-                                console.warn('[ReportFull] Invalid flag', { flag, index });
-                                return (
-                                  <div key={index} className="p-4 rounded-lg border" style={{
-                                    backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                                    borderColor: '#EF4444'
-                                  }}>
-                                    <p className="text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
-                                      {language === 'th' ? 'ข้อมูลปัญหาไม่สมบูรณ์' : 'Issue data unavailable'}
-                                    </p>
-                                  </div>
-                                );
-                              }
-
-                              const SeverityIcon = getSeverityIcon(flag.severity);
-                              const flagKey = `${category}-${index}`;
-                              const showOriginal = expandedClauses[flagKey] || false;
-                              
-                              return (
-                                <div key={index} className="rounded-xl border-2 overflow-hidden" style={{
-                                backgroundColor: colors.cardBg,
-                                borderColor: flag.severity === 'critical' ? '#EF4444' : 
-                                             flag.severity === 'high' ? '#F59E0B' :
-                                             flag.severity === 'medium' ? '#EAB308' : '#10B981'
-                              }}>
-                                {/* Header */}
-                                <div className="p-4" style={{
-                                  backgroundColor: flag.severity === 'critical' ? (isDarkMode ? '#3A2626' : '#FEE2E2') :
-                                                   flag.severity === 'high' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') :
-                                                   flag.severity === 'medium' ? (isDarkMode ? '#3A3420' : '#FEF9C3') :
-                                                   (isDarkMode ? '#1E4435' : '#ECFDF5')
-                                }}>
-                                  <div className="flex items-start gap-3">
-                                    <SeverityIcon className="w-6 h-6 mt-0.5 flex-shrink-0" style={{
-                                      color: flag.severity === 'critical' ? '#EF4444' :
-                                             flag.severity === 'high' ? '#F59E0B' :
-                                             flag.severity === 'medium' ? '#EAB308' : '#10B981'
-                                    }} />
-                                    <div className="flex-1">
-                                      <div className="flex items-start justify-between gap-3 mb-2">
-                                        <h4 className="font-bold text-base sm:text-lg leading-tight" style={{ color: colors.textPrimary }}>
-                                          {flag.title || (language === 'th' ? 'ปัญหาที่ตรวจพบ' : 'Detected Issue')}
-                                        </h4>
-                                        <div className="flex items-center gap-2">
-                                          <Badge className="text-xs font-bold uppercase px-2 py-1 flex-shrink-0" style={{
-                                          backgroundColor: flag.severity === 'critical' ? '#DC2626' :
-                                                           flag.severity === 'high' ? '#EA580C' :
-                                                           flag.severity === 'medium' ? '#D97706' : '#059669',
-                                          color: '#FFFFFF'
-                                        }}>
-                                          {flag.severity || 'medium'}
-                                          </Badge>
-                                          </div>
-                                      </div>
-                                      {flag.clause_id && (
-                                        <div className="flex items-center gap-2 text-xs" style={{ color: colors.textSecondary }}>
-                                          <Badge variant="outline" className="font-mono text-xs">
-                                            {strings.clauseReference} {flag.clause_id}
-                                          </Badge>
-                                          {flag.page_number && (
-                                            <Badge variant="outline" className="text-xs">
-                                              {strings.pageReference} {flag.page_number}
-                                            </Badge>
-                                          )}
-                                        </div>
-                                      )}
+                            const sev = String(c.risk_level).toUpperCase();
+                            const color = sev === 'CRITICAL' ? '#EF4444' : sev === 'HIGH' ? '#F59E0B' : sev === 'MEDIUM' ? '#EAB308' : '#10B981';
+                            return (
+                              <div key={`risk-${idx}`} className="rounded-xl border-2 overflow-hidden" style={{ backgroundColor: colors.cardBg, borderColor: color }}>
+                                <div className="p-4" style={{ backgroundColor: sev === 'CRITICAL' ? (isDarkMode ? '#3A2626' : '#FEE2E2') : sev === 'HIGH' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') : sev === 'MEDIUM' ? (isDarkMode ? '#3A3420' : '#FEF9C3') : (isDarkMode ? '#1E4435' : '#ECFDF5') }}>
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                      <div className="font-bold" style={{ color: colors.textPrimary }}>Clause {c.clause_number}{c.clause_title ? ` — ${c.clause_title}` : ''}</div>
+                                      <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{c.rationale}</div>
                                     </div>
+                                    <Badge className="text-xs font-bold" style={{ backgroundColor: color, color: '#fff' }}>{sev}</Badge>
                                   </div>
                                 </div>
-
-                                {/* Body */}
-                                <div className="p-5 space-y-4">
-                                  {/* Compound Risk Badge */}
-                                  {flag.compound && (
-                                    <Badge className="mb-2" style={{
-                                      backgroundColor: isDarkMode ? '#7F1D1D' : '#FEE2E2',
-                                      color: '#DC2626',
-                                      border: '1px solid #DC2626'
-                                    }}>
-                                      {strings.compoundRisk}
-                                    </Badge>
-                                  )}
-
-                                  {/* Why This Matters */}
-                                  <div>
-                                    <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: colors.textSecondary }}>
-                                      {strings.whyThisMatters}
-                                    </p>
-                                    <p className="text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
-                                      {flag.explanation || flag.description || (language === 'th' ? 'รายละเอียดไม่พร้อมใช้งาน' : 'Details unavailable')}
-                                    </p>
-                                  </div>
-
-                                  {/* Recommended Action - BOXED AND PROMINENT */}
-                                  {(flag.recommendations || flag.recommendation) && (
-                                    <div className="rounded-xl p-4 border-2" style={{
-                                      backgroundColor: isDarkMode ? '#1E3A2E' : '#F0FDF4',
-                                      borderColor: '#0C3B2E',
-                                      boxShadow: '0 2px 8px rgba(12,59,46,0.1)'
-                                    }}>
-                                      <p className="text-xs font-bold uppercase tracking-wide mb-3 flex items-center gap-2" style={{ color: '#0C3B2E' }}>
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        {strings.recommendation}
-                                      </p>
-                                      <div className="text-sm leading-relaxed space-y-2" style={{ color: colors.textPrimary }}>
-                                        {(() => {
-                                          // Normalize to array and strip ALL bullet prefixes
-                                          const recs = Array.isArray(flag.recommendations)
-                                            ? flag.recommendations.map(r => String(r || '').replace(/^[\s•\-–—!*→'"]+/, '').trim()).filter(Boolean)
-                                            : String(flag.recommendation || '')
-                                                .split('\n')
-                                                .map(s => s.replace(/^[\s•\-–—!*→'"]+/, '').trim())
-                                                .filter(Boolean);
-
-                                          return recs.map((rec, i) => (
-                                            <div key={i} className="flex items-start gap-2">
-                                              <span className="text-emerald-600 font-bold flex-shrink-0">•</span>
-                                              <span className="flex-1">{rec}</span>
-                                            </div>
-                                          ));
-                                        })()}
-                                      </div>
+                                <div className="p-4">
+                                  {Array.isArray(c.recommended_actions) && c.recommended_actions.length > 0 && (
+                                    <div className="text-sm" style={{ color: colors.textPrimary }}>
+                                      {c.recommended_actions.map((r,i)=> (
+                                        <div key={i} className="flex gap-2"><span>•</span><span>{r}</span></div>
+                                      ))}
                                     </div>
                                   )}
-
-                                  {/* Penalty Details */}
-                                  {flag.penalties && Array.isArray(flag.penalties) && flag.penalties.length > 0 && (
-                                    <div className="p-3 rounded-lg border-l-4" style={{
-                                      backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2',
-                                      borderLeftColor: '#DC2626'
-                                    }}>
-                                      <p className="text-xs font-bold mb-1" style={{ color: '#DC2626' }}>
-                                        {strings.penaltyDetails}
-                                      </p>
-                                      <p className="text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
-                                        {(flag.penalties[0]?.type || 'unknown').toUpperCase()} penalty: ฿{flag.penalties[0]?.amount?.toLocaleString() || 'N/A'}
-                                        {flag.penalties[0]?.multiplier && ` (${flag.penalties[0].multiplier}× multiplier)`}
-                                        {flag.penalties[0]?.note && ` — ${flag.penalties[0].note}`}
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {/* Original Clause Snippet - Collapsible */}
-                                  {flag.evidence && !flag.missing_safeguard && (
-                                    <div>
-                                      <button
-                                        onClick={() => setExpandedClauses(prev => ({ ...prev, [flagKey]: !showOriginal }))}
-                                        className="text-xs font-semibold flex items-center gap-2 transition-colors hover:underline"
-                                        style={{ color: '#0C3B2E' }}
-                                      >
-                                        <span>{showOriginal ? '▼' : '▶'}</span>
-                                        <span>{strings.originalClause}</span>
-                                      </button>
-                                      {showOriginal && (
-                                        <div className="mt-2 p-3 rounded-lg border-l-4" style={{
-                                          backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC',
-                                          borderLeftColor: '#64748B'
-                                        }}>
-                                          <p className="text-xs italic leading-relaxed mb-2" style={{ color: colors.textSecondary }}>
-                                            "{flag.evidence}"
-                                          </p>
-                                          {flag.original_language && (
-                                            <p className="text-xs opacity-60" style={{ color: colors.textSecondary }}>
-                                              Language: {flag.original_language.toUpperCase()}
-                                            </p>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Compound Risk Info */}
-                                  {flag.contributing_clauses && Array.isArray(flag.contributing_clauses) && (
-                                    <div className="text-xs p-2 rounded" style={{
-                                      backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2',
-                                      color: colors.textSecondary
-                                    }}>
-                                      <span className="font-semibold">Contributing clauses: </span>
-                                      {flag.contributing_clauses.join(', ')}
-                                    </div>
-                                  )}
-                                  </div>
-                                  </div>
-                                  );
-                                  } catch (error) {
+                                  <div className="mt-2 text-xs" style={{ color: colors.textSecondary }}>Confidence: {c.confidence}</div>
+                                </div>
+                              </div>
+                            );
                                   console.error('[ReportFull] Error rendering flag', { flag, error: error.message, stack: error.stack });
                                   console.error('[TELEMETRY] ReportFullLoadFailed', {
                                   step: 'RENDER',
