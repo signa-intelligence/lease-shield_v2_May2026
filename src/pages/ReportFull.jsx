@@ -656,12 +656,19 @@ function ReportFullContent() {
     });
 
     try {
-      // Generate comprehensive PDF report data
+      // Generate comprehensive PDF report data - use validated flags only and sanitize
+      const sanitizedFlags = validatedFlags.map(f => ({
+        title: f.title,
+        severity: f.severity,
+        summary: f.summary || f.explanation || f.description,
+        recommendations: Array.isArray(f.recommendations) ? f.recommendations : String(f.recommendation||'').split('\n').map(s=>s.replace(/^\s*[•\-–—!*→]+\s*/g,'').trim()).filter(Boolean),
+      })).filter(x => x.title && x.summary && (x.recommendations||[]).length>0);
+
       const pdfData = {
         lease_address: lease.property_address || 'Lease Agreement',
         risk_score: scan.risk_score,
         summary: scan.summary,
-        flags: validatedFlags,
+        flags: sanitizedFlags,
         missing_items: scan.scan_full?.missing_items || [],
         key_terms: scan.scan_full?.key_terms || {},
         lease_start: lease.start_date,
