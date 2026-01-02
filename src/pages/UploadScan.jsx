@@ -905,10 +905,15 @@ function UploadScanPageContent() {
         await base44.entities.LeaseScan.create({
           lease_id: lease.id,
           risk_score: scanResult.risk_score,
-          flags: scanResult.flags || [],
+          flags: scanResult.issues_validated || scanResult.flags || [],
           summary: scanResult.summary,
-          scan_full: scanResult,
-          version: '1.0'
+          scan_full: {
+            ...scanResult,
+            issues_validated: scanResult.issues_validated || scanResult.flags || [],
+            issues_invalid: scanResult.issues_invalid || [],
+            flags: scanResult.issues_validated || scanResult.flags || []
+          },
+          version: '3.0'
         });
         setUploadProgress(100);
         setCurrentStep(2);
