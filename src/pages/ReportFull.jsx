@@ -1251,7 +1251,7 @@ function ReportFullContent() {
                 {/* Risk clauses */}
                 <div className="space-y-3">
                   {clauseLedger.filter(c=>c.risk_level!== 'NO_RISK').map((c, idx) => {
-                          {categoryFlags.map((flag, index) => {
+                  
                             try {
                               // DEFENSIVE: Validate flag structure
                               if (!flag || typeof flag !== 'object') {
