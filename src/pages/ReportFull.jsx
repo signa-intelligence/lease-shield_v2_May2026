@@ -182,69 +182,19 @@ function ReportFullContent() {
   });
 
   // SINGLE SOURCE OF TRUTH: Use scan's issues_validated (or fallback to flags with validation)
-  const { validatedFlags, invalidCount, invalidCodes, invalidDetails } = React.useMemo(() => {
-    if (!scan) return { validatedFlags: [], invalidCount: 0, invalidCodes: [], invalidDetails: [] };
+  const { validatedFlags, invalidCount, invalidCodes, invalidDetails, clauseLedger, clausesExtracted } = React.useMemo(() => {
+    if (!scan) return { validatedFlags: [], invalidCount: 0, invalidCodes: [], invalidDetails: [], clauseLedger: [], clausesExtracted: [] };
 
-    console.log('[REPORTFULL_LOAD]', { 
-      step: 'LOAD_VALIDATED_ISSUES',
-      hasScan: !!scan,
-      hasLease: !!lease,
-      hasIssuesValidated: !!scan.scan_full?.issues_validated,
-      hasFlags: !!scan.scan_full?.flags
-    });
+    const clauseLedger = Array.isArray(scan.scan_full?.clause_ledger) ? scan.scan_full.clause_ledger : [];
+    const clausesExtracted = Array.isArray(scan.scan_full?.clauses_extracted) ? scan.scan_full.clauses_extracted : [];
+    let validatedIssues = Array.isArray(scan.scan_full?.issues_validated) ? scan.scan_full.issues_validated : [];
 
-    // Primary: use issues_validated if available
-    let validatedIssues = [];
-    if (Array.isArray(scan.scan_full?.issues_validated)) {
-      validatedIssues = scan.scan_full.issues_validated;
-      console.log('[REPORTFULL_LOAD]', {
-        step: 'USING_VALIDATED_ISSUES',
-        count: validatedIssues.length
-      });
-    } else {
-      // Fallback: validate flags array (legacy scans)
-      const allFlags = Array.isArray(scan.scan_full?.flags) ? scan.scan_full.flags : [];
-
-      validatedIssues = allFlags.filter(f => {
-        const hasTitle = f?.title && String(f.title).trim().length > 0;
-        const hasWhyMatters = (f?.why_it_matters || f?.summary || f?.explanation || '').trim().length > 0;
-        const hasRecs = Array.isArray(f?.recommendations) 
-          ? f.recommendations.filter(r => r && r.trim().length > 0).length > 0
-          : (f?.recommendation || '').trim().length > 0;
-
-        return hasTitle && hasWhyMatters && hasRecs;
-      });
-
-      console.log('[REPORTFULL_LOAD]', {
-        step: 'LEGACY_VALIDATION_APPLIED',
-        total: allFlags.length,
-        validated: validatedIssues.length,
-        dropped: allFlags.length - validatedIssues.length
-      });
-    }
-
-    // Track invalid issues from scan metadata
     const invalidIssues = scan.scan_full?.issues_invalid || [];
     const invalidCount = invalidIssues.length;
     const invalidCodes = invalidIssues.map(inv => `${inv.rule_id || 'UNKNOWN'}:${(inv.missing_fields || []).join(',')}`);
-    const invalidDetails = invalidIssues.map((inv, idx) => ({
-      index: idx,
-      ruleId: inv.rule_id,
-      missingFields: inv.missing_fields || []
-    }));
+    const invalidDetails = invalidIssues.map((inv, idx) => ({ index: idx, ruleId: inv.rule_id, missingFields: inv.missing_fields || [] }));
 
-    console.log('[REPORTFULL_LOAD]', {
-      step: 'VALIDATION_COMPLETE',
-      validatedCount: validatedIssues.length,
-      invalidCount
-    });
-
-    return { 
-      validatedFlags: validatedIssues, 
-      invalidCount, 
-      invalidCodes, 
-      invalidDetails 
-    };
+    return { validatedFlags: validatedIssues, invalidCount, invalidCodes, invalidDetails, clauseLedger, clausesExtracted };
   }, [scan, lease]);
 
   // Update invalid count state
