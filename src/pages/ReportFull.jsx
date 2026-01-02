@@ -1411,6 +1411,38 @@ function ReportFullContent() {
               </CardContent>
             </Card>
           )}
+          {/* Clause Review (Accordion-like) */}
+          {showClauseReview && Array.isArray(scan?.scan_full?.clause_reviews) && (
+            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+              <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
+                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Info className="w-5 h-5 text-slate-500" /> Clause Review
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="space-y-2">
+                  {scan.scan_full.clause_reviews.map((c, idx) => (
+                    <div key={idx} className="p-3 rounded-lg border" style={{ borderColor: colors.borderColor }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                          Clause {c.clause_no} {c.page ? `(Page ${c.page})` : ''}
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full ${c.status==='RISK' ? 'bg-red-100 text-red-700' : c.status==='INFO' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>{c.status}</span>
+                      </div>
+                      {Array.isArray(c.taxonomy_hits) && c.taxonomy_hits.length>0 && (
+                        <div className="mt-2 text-xs" style={{ color: colors.textSecondary }}>
+                          Codes: {c.taxonomy_hits.map(h=>h.taxonomy_code).join(', ')}
+                          {c.taxonomy_hits[0]?.rationale && (
+                            <div className="mt-1">{c.taxonomy_hits[0].rationale}</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Missing Protections */}
           {missingItems.length > 0 && (
