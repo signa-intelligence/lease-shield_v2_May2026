@@ -1041,7 +1041,7 @@ Be thorough.`,
     }
 
     // Risk score
-    const severityWeights = { critical: 25, high: 15, medium: 8, low: 3 };
+    const severityWeights = { critical: 30, high: 20, medium: 10, low: 5 };
     let rawScore = uniqueIssues.reduce((sum, issue) => sum + (severityWeights[issue.severity] || 5), 0);
     const riskScore = Math.min(100, Math.max(0, rawScore));
 
@@ -1441,10 +1441,63 @@ OUTPUT FORMAT:
       llmContribution: llmValidIssues.length
     });
 
+    // Build clause-by-clause results (one per clause, never skipped)
+    const sevRank = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+    const strToNumConf = (c) => c === 'high' ? 0.9 : c === 'medium' ? 0.75 : c === 'low' ? 0.5 : 0.9;
+
+    const issuesByClause = new Map();
+    finalIssues.forEach(issue => {
+      const refs = Array.isArray(issue.clause_refs) ? issue.clause_refs : [];
+      refs.forEach(ref => {
+        const cid = String(ref.clause_id || 'GLOBAL');
+        if (!issuesByClause.has(cid)) issuesByClause.set(cid, []);
+        issuesByClause.get(cid).push(issue);
+      });
+    });
+
+    const clauseReviews = (Array.isArray(clauses) ? clauses : []).map((c) => {
+      const cid = String(c.clause_id || 'CLAUSE-UNKNOWN');
+      const title = String(c.title || '').trim();
+      const linked = issuesByClause.get(cid) || [];
+      if (linked.length === 0) {
+        return {
+          clause_number: cid,
+          clause_title: title,
+          risk_level: 'NO_RISK',
+          risk_code: null,
+          legal_basis_thailand: null,
+          confidence: 1.0,
+          review_status: 'NO_AUTOMATED_RISK'
+        };
+      }
+      // Pick highest-severity issue
+      const order = { critical: 4, high: 3, medium: 2, low: 1 };
+      let best = linked.reduce((a, b) => (order[b.severity] || 0) > (order[a.severity] || 0) ? b : a, linked[0]);
+      const riskLevel = String(best.severity || 'low').toUpperCase();
+      const recs = Array.isArray(best.recommendations) ? best.recommendations.filter(Boolean) : [];
+      const whyBase = best.why_it_matters || best.explanation || best.summary || best.description || 'Potential tenant risk identified in this clause.';
+      const recBase = (recs[0] || 'Request amendment to clarify and balance obligations.');
+      // numeric confidence
+      const conf = typeof best.confidence === 'number' ? best.confidence : strToNumConf(String(best.confidence || '').toLowerCase());
+      const why = conf < 0.6 ? (whyBase + ' Low confidence – manual review recommended.') : whyBase;
+      return {
+        clause_number: cid,
+        clause_title: title,
+        risk_level: riskLevel === 'CRITICAL' ? 'CRITICAL' : riskLevel === 'HIGH' ? 'HIGH' : riskLevel === 'MEDIUM' ? 'MEDIUM' : 'LOW',
+        risk_code: String(best.rule_id || 'THR_UNSPECIFIED'),
+        why_this_matters: why,
+        recommended_action: recBase,
+        legal_basis_thailand: null,
+        confidence: Math.max(0, Math.min(1, Number(conf) || 0.9)),
+        review_status: 'RISK_DETECTED'
+      };
+    });
+
     return Response.json({
       success: true,
       result: {
         risk_score: finalRiskScore,
+        clause_reviews: clauseReviews,
         summary,
         flags: finalIssues,
         property_address: keyTerms.property_address,
