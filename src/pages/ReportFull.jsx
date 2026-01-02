@@ -182,19 +182,69 @@ function ReportFullContent() {
   });
 
   // SINGLE SOURCE OF TRUTH: Use scan's issues_validated (or fallback to flags with validation)
-  const { validatedFlags, invalidCount, invalidCodes, invalidDetails, clauseLedger, clausesExtracted } = React.useMemo(() => {
-    if (!scan) return { validatedFlags: [], invalidCount: 0, invalidCodes: [], invalidDetails: [], clauseLedger: [], clausesExtracted: [] };
+  const { validatedFlags, invalidCount, invalidCodes, invalidDetails } = React.useMemo(() => {
+    if (!scan) return { validatedFlags: [], invalidCount: 0, invalidCodes: [], invalidDetails: [] };
 
-    const clauseLedger = Array.isArray(scan.scan_full?.clause_ledger) ? scan.scan_full.clause_ledger : [];
-    const clausesExtracted = Array.isArray(scan.scan_full?.clauses_extracted) ? scan.scan_full.clauses_extracted : [];
-    let validatedIssues = Array.isArray(scan.scan_full?.issues_validated) ? scan.scan_full.issues_validated : [];
+    console.log('[REPORTFULL_LOAD]', { 
+      step: 'LOAD_VALIDATED_ISSUES',
+      hasScan: !!scan,
+      hasLease: !!lease,
+      hasIssuesValidated: !!scan.scan_full?.issues_validated,
+      hasFlags: !!scan.scan_full?.flags
+    });
 
+    // Primary: use issues_validated if available
+    let validatedIssues = [];
+    if (Array.isArray(scan.scan_full?.issues_validated)) {
+      validatedIssues = scan.scan_full.issues_validated;
+      console.log('[REPORTFULL_LOAD]', {
+        step: 'USING_VALIDATED_ISSUES',
+        count: validatedIssues.length
+      });
+    } else {
+      // Fallback: validate flags array (legacy scans)
+      const allFlags = Array.isArray(scan.scan_full?.flags) ? scan.scan_full.flags : [];
+
+      validatedIssues = allFlags.filter(f => {
+        const hasTitle = f?.title && String(f.title).trim().length > 0;
+        const hasWhyMatters = (f?.why_it_matters || f?.summary || f?.explanation || '').trim().length > 0;
+        const hasRecs = Array.isArray(f?.recommendations) 
+          ? f.recommendations.filter(r => r && r.trim().length > 0).length > 0
+          : (f?.recommendation || '').trim().length > 0;
+
+        return hasTitle && hasWhyMatters && hasRecs;
+      });
+
+      console.log('[REPORTFULL_LOAD]', {
+        step: 'LEGACY_VALIDATION_APPLIED',
+        total: allFlags.length,
+        validated: validatedIssues.length,
+        dropped: allFlags.length - validatedIssues.length
+      });
+    }
+
+    // Track invalid issues from scan metadata
     const invalidIssues = scan.scan_full?.issues_invalid || [];
     const invalidCount = invalidIssues.length;
     const invalidCodes = invalidIssues.map(inv => `${inv.rule_id || 'UNKNOWN'}:${(inv.missing_fields || []).join(',')}`);
-    const invalidDetails = invalidIssues.map((inv, idx) => ({ index: idx, ruleId: inv.rule_id, missingFields: inv.missing_fields || [] }));
+    const invalidDetails = invalidIssues.map((inv, idx) => ({
+      index: idx,
+      ruleId: inv.rule_id,
+      missingFields: inv.missing_fields || []
+    }));
 
-    return { validatedFlags: validatedIssues, invalidCount, invalidCodes, invalidDetails, clauseLedger, clausesExtracted };
+    console.log('[REPORTFULL_LOAD]', {
+      step: 'VALIDATION_COMPLETE',
+      validatedCount: validatedIssues.length,
+      invalidCount
+    });
+
+    return { 
+      validatedFlags: validatedIssues, 
+      invalidCount, 
+      invalidCodes, 
+      invalidDetails 
+    };
   }, [scan, lease]);
 
   // Update invalid count state
@@ -940,11 +990,7 @@ function ReportFullContent() {
   const fullFlags = getFullDisplayFlags(mainFlags);
   const totalFlags = mainFlags.length;
   const hiddenFlagsCount = mainFlags.length - fullFlags.length;
-
-  // Clause coverage values from ledger
-  const clausesTotal = clauseLedger?.length || 0;
-  const clausesRisk = clauseLedger?.filter(c => c.risk_level && c.risk_level !== 'NO_RISK').length || 0;
-  const clausesNoRisk = clausesTotal - clausesRisk;
+  // moved above with mainFlags/lowConfidence
 
   // DEFENSIVE: Group flags by category with fallback
   const groupedFlags = fullFlags.reduce((groups, flag) => {
@@ -1227,29 +1273,17 @@ function ReportFullContent() {
             </Card>
           )}
 
-          {/* Clause Review (Coverage 100%) */}
-          {clauseLedger && clauseLedger.length > 0 && (
+          {/* Detailed Flags - GROUPED BY CATEGORY */}
+          {fullFlags.length > 0 && (
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
                 <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  Clause Review (Coverage 100%) — {clausesTotal} clauses
+                  {strings.detailedIssues} ({fullFlags.length}{hiddenFlagsCount > 0 ? ` / ${totalFlags}` : ''})
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="grid md:grid-cols-2 gap-3 mb-4">
-                  <div className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
-                    <div className="text-xs" style={{ color: colors.textSecondary }}>Clauses with risks</div>
-                    <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{clausesRisk}</div>
-                  </div>
-                  <div className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
-                    <div className="text-xs" style={{ color: colors.textSecondary }}>No automated risk indicators</div>
-                    <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{clausesNoRisk}</div>
-                  </div>
-                </div>
-
-                {/* Risk clauses */}
-                <div className="space-y-3">
+                <div className="space-y-8">
                   {/* Render by category */}
                   {categoryOrder.map(category => {
                     const categoryFlags = groupedFlags[category];

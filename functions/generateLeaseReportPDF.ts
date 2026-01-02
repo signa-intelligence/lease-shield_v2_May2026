@@ -178,17 +178,15 @@ Deno.serve(async (req) => {
       y += 10;
     }
 
-    // Coverage summary from clause_ledger
-    const totalClauses = Array.isArray(scanData.clause_ledger) ? scanData.clause_ledger.length : 0;
-    const clausesWithRisk = Array.isArray(scanData.clause_ledger) ? scanData.clause_ledger.filter(c=>c.risk_level && c.risk_level !== 'NO_RISK').length : 0;
-    const clausesNoRisk = totalClauses - clausesWithRisk;
+    // Clause coverage summary (if provided)
+    const totalClauses = Array.isArray(scanData.clause_reviews) ? scanData.clause_reviews.length : 0;
+    const clausesWithRisk = Array.isArray(scanData.clause_reviews) ? scanData.clause_reviews.filter(c=>c.review_status==='RISK_DETECTED').length : 0;
     if (totalClauses > 0) {
-      if (y > pageHeight - 50) { doc.addPage(); y = 20; }
-      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('Coverage Summary', 20, y); y += 8;
+      if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('Clause Coverage', 20, y); y += 8;
       doc.setFontSize(10); doc.setFont('helvetica','normal');
-      doc.text(`Clauses reviewed: ${totalClauses} (100% coverage)`, 25, y); y += 6;
-      doc.text(`Clauses with risks: ${clausesWithRisk}`, 25, y); y += 6;
-      doc.text(`Clauses with no automated risk indicators: ${clausesNoRisk}`, 25, y); y += 10;
+      doc.text(`Total clauses reviewed: ${totalClauses}`, 25, y); y += 6;
+      doc.text(`Clauses with detected risks: ${clausesWithRisk}`, 25, y); y += 10;
     }
 
     // Clause Reviews (one per clause)
@@ -241,20 +239,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Appendix: Full Clause Ledger (compact)
-    if (Array.isArray(scanData.clause_ledger) && scanData.clause_ledger.length > 0) {
-      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
-      doc.setFontSize(12); doc.setFont('helvetica','bold');
-      doc.text('Appendix: Clause Ledger (All Clauses)', 20, y); y += 8;
-      doc.setFontSize(9); doc.setFont('helvetica','normal');
-      scanData.clause_ledger.forEach((c, idx) => {
-        if (y > pageHeight - 15) { doc.addPage(); y = 20; }
-        const title = c.clause_title ? ` — ${c.clause_title}` : '';
-        const conf = c.confidence ? ` [${String(c.confidence).toUpperCase()}]` : '';
-        doc.text(`${idx + 1}. Clause ${c.clause_number}${title} — ${c.risk_level}${conf}`, 25, y);
+    // Clause Review Appendix (risk-detected only)
+    if (Array.isArray(scanData.clause_reviews)) {
+      const riskClauses = scanData.clause_reviews.filter(c=>c.review_status==='RISK_DETECTED');
+      if (riskClauses.length > 0) {
+        if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+        doc.setFontSize(12); doc.setFont('helvetica','bold');
+        doc.text(`Clause Review Appendix (Risks)`, 20, y); y += 8;
+        doc.setFontSize(9); doc.setFont('helvetica','normal');
+        riskClauses.forEach((c, idx) => {
+          if (y > pageHeight - 15) { doc.addPage(); y = 20; }
+          const codes = (c.taxonomy_hits || []).join(', ');
+          const rationale = String(c.rationale || '').split('\n')[0];
+          doc.text(`${idx + 1}. Clause ${c.clause_id} — ${codes} — ${rationale}`, 25, y);
+          y += 6;
+        });
         y += 6;
-      });
-      y += 6;
+      }
     }
 
     // Missing Protections
