@@ -214,6 +214,7 @@ function ReportFullContent() {
 
     const validated = [];
     let invalid = 0;
+    const invalidCodes = [];
 
     allFlags.forEach((flag, idx) => {
       try {
