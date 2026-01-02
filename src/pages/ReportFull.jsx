@@ -195,7 +195,7 @@ function ReportFullContent() {
 
   // SCHEMA VALIDATION - Memoized to run only when scan data changes
   const { validatedFlags, invalidCount, invalidCodes, invalidFlags, invalidDetails } = React.useMemo(() => {
-    if (!scan) return { validatedFlags: [], invalidCount: 0 };
+    if (!scan) return { validatedFlags: [], invalidCount: 0, invalidCodes: [], invalidFlags: [], invalidDetails: [] };
 
     console.log('[REPORTFULL_LOAD]', { 
       step: 'GENERATE_REPORT_START',
@@ -1088,6 +1088,11 @@ function ReportFullContent() {
                       ? 'ข้อมูลบางอย่างไม่สมบูรณ์ กรุณาติดต่อฝ่ายสนับสนุนหากต้องการความช่วยเหลือ'
                       : 'Some data was incomplete. Contact support if you need assistance.'}
                   </p>
+                  {Array.isArray(invalidCodes) && invalidCodes.length > 0 && (
+                    <p className="text-[10px] opacity-75 mt-1" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
+                      Codes: {invalidCodes.slice(0,3).join(', ')}{invalidCodes.length>3?` +${invalidCodes.length-3} more`:''}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
