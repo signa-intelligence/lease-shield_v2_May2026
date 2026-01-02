@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { riskTheme, LEGAL_DISCLAIMER } from "../utils/riskTheme";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2, DollarSign, Home, ThumbsDown, Plus } from "lucide-react";
@@ -974,7 +975,8 @@ function ReportFullContent() {
     return { level: 'low', label: language === 'th' ? 'ความเสี่ยงต่ำ' : language === 'ru' ? 'Низкий риск' : 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
   };
 
-  const riskLevel = scan ? getRiskLevel(scan.risk_score) : null;
+  const theme = riskTheme(scan?.risk_score || 0, scan?.overall_risk);
+  const riskLevel = theme ? { level: theme.key, label: theme.key === 'high' ? (language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий риск' : 'HIGH RISK') : theme.key === 'medium' ? (language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний риск' : 'MEDIUM RISK') : (language === 'th' ? 'ความเสี่ยงต่ำ' : language === 'ru' ? 'Низкий риск' : 'LOW RISK'), color: theme.color, bg: theme.bg } : null;
   
   // Extract other scan data
   const missingItems = scan?.scan_full?.missing_items || [];
