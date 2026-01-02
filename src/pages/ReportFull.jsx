@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { riskTheme, LEGAL_DISCLAIMER } from "../components/shared/riskTheme";
 import { riskTheme, LEGAL_DISCLAIMER } from "../utils/riskTheme";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1216,10 +1217,27 @@ function ReportFullContent() {
             )}
             <CardContent className="p-6">
               <p className="leading-relaxed" style={{ color: colors.textPrimary }}>{scan.summary}</p>
+              {/* Clause Coverage Summary */}
+              {Array.isArray(scan?.scan_full?.clause_reviews) && (
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5', border: `1px solid ${colors.borderColor}` }}>
+                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Total clauses reviewed</p>
+                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{scan.scan_full.clause_reviews.length}</p>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#3A2D1C' : '#FFF7ED', border: `1px solid ${colors.borderColor}` }}>
+                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Clauses with detected risks</p>
+                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{scan.scan_full.clause_reviews.filter(c=>c.review_status==='RISK_DETECTED').length}</p>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC', border: `1px solid ${colors.borderColor}` }}>
+                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>No-risk indicator clauses</p>
+                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{scan.scan_full.clause_reviews.filter(c=>c.review_status==='NO_AUTOMATED_RISK').length}</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
-          </Card>
+            </Card>
 
-          {/* Key Terms */}
+            {/* Key Terms */}
           {Object.keys(keyTerms).length > 0 && (
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
@@ -1681,6 +1699,9 @@ function ReportFullContent() {
                     </div>
                   </div>
                 </Button>
+              </div>
+              <div className="mt-6 text-xs italic" style={{ color: colors.textSecondary }}>
+                {LEGAL_DISCLAIMER}
               </div>
             </CardContent>
           </Card>

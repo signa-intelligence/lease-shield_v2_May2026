@@ -178,6 +178,17 @@ Deno.serve(async (req) => {
       y += 10;
     }
 
+    // Clause coverage summary (if provided)
+    const totalClauses = Array.isArray(scanData.clause_reviews) ? scanData.clause_reviews.length : 0;
+    const clausesWithRisk = Array.isArray(scanData.clause_reviews) ? scanData.clause_reviews.filter(c=>c.review_status==='RISK_DETECTED').length : 0;
+    if (totalClauses > 0) {
+      if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('Clause Coverage', 20, y); y += 8;
+      doc.setFontSize(10); doc.setFont('helvetica','normal');
+      doc.text(`Total clauses reviewed: ${totalClauses}`, 25, y); y += 6;
+      doc.text(`Clauses with detected risks: ${clausesWithRisk}`, 25, y); y += 10;
+    }
+
     // Detailed Issues - ONLY from validated issues
     const validatedIssues = Array.isArray(scanData.flags) ? scanData.flags.filter(f => {
       // Final validation pass: reject if missing required content
@@ -284,6 +295,25 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Clause Review Appendix (risk-detected only)
+    if (Array.isArray(scanData.clause_reviews)) {
+      const riskClauses = scanData.clause_reviews.filter(c=>c.review_status==='RISK_DETECTED');
+      if (riskClauses.length > 0) {
+        if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+        doc.setFontSize(12); doc.setFont('helvetica','bold');
+        doc.text(`Clause Review Appendix (Risks)`, 20, y); y += 8;
+        doc.setFontSize(9); doc.setFont('helvetica','normal');
+        riskClauses.forEach((c, idx) => {
+          if (y > pageHeight - 15) { doc.addPage(); y = 20; }
+          const codes = (c.taxonomy_hits || []).join(', ');
+          const rationale = String(c.rationale || '').split('\n')[0];
+          doc.text(`${idx + 1}. Clause ${c.clause_id} — ${codes} — ${rationale}`, 25, y);
+          y += 6;
+        });
+        y += 6;
+      }
+    }
+
     // Missing Protections
     if (scanData.missing_items && scanData.missing_items.length > 0) {
       if (y > pageHeight - 40) {
@@ -308,13 +338,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Footer
+    // Footer with legal disclaimer on every page
+    const disclaimer = "This report is an automated risk screening tool, not legal advice. Some risks may not be detected. Users remain responsible for independent review.";
     const totalPages = doc.internal.pages.length - 1;
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
+      doc.setTextColor(140, 140, 140);
+      doc.text(disclaimer, pageWidth / 2, pageHeight - 14, { align: 'center', maxWidth: pageWidth - 40 });
       doc.setTextColor(150, 150, 150);
-      doc.text(`Lease Shield - Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      doc.text(`Lease Shield - Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
     }
 
     // Generate and upload PDF
