@@ -195,7 +195,7 @@ function ReportFullContent() {
   });
 
   // SCHEMA VALIDATION - Memoized to run only when scan data changes
-  const { validatedFlags, invalidCount, invalidCodes, invalidFlags, invalidDetails } = React.useMemo(() => {
+  const { validatedFlags, invalidCount, invalidCodes, invalidFlags, invalidDetails, dedupeCount, quarantined } = React.useMemo(() => {
     if (!scan) return { validatedFlags: [], invalidCount: 0, invalidCodes: [], invalidFlags: [], invalidDetails: [] };
 
     console.log('[REPORTFULL_LOAD]', { 
