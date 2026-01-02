@@ -885,11 +885,14 @@ Be thorough.`,
     logStage('COMPOUND_DETECTION_START', {});
     const compoundRisks = detectCompoundRisks(clauses, keyTerms, userLang);
     compoundRisks.forEach(risk => {
-      if (validateRiskIssue(risk, risk.rule_id)) {
-        detectedIssues.push(risk);
-      } else {
-        invalidIssues.push({ rule_id: risk.rule_id, reason: 'schema_validation_failed' });
-      }
+      const emitted = emitIssue({
+        ...risk,
+        summary: risk.description,
+        why_it_matters: risk.explanation,
+        recommendations: (risk.recommendation || '').split('\n').filter(Boolean),
+        clause_refs: risk.clause_refs || [{ clause_id: 'GLOBAL', page: 1, snippet: risk.evidence || 'Pattern across clauses' }]
+      }, { leaseId, scanId });
+      if (emitted) detectedIssues.push(emitted);
     });
 
     // Predatory language
