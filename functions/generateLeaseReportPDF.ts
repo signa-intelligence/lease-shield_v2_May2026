@@ -1,6 +1,32 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { jsPDF } from 'npm:jspdf@2.5.2';
 
+// Risk theme mapping - consistent UI and PDF colors
+function getRiskTheme(riskScore) {
+  if (riskScore >= 70) {
+    return {
+      level: 'HIGH',
+      color: [239, 68, 68], // Red RGB
+      bgColor: [254, 226, 226],
+      textColor: [127, 29, 29]
+    };
+  }
+  if (riskScore >= 40) {
+    return {
+      level: 'MEDIUM',
+      color: [245, 158, 11], // Amber RGB
+      bgColor: [254, 243, 199],
+      textColor: [146, 64, 14]
+    };
+  }
+  return {
+    level: 'LOW',
+    color: [16, 185, 129], // Green RGB
+    bgColor: [209, 250, 229],
+    textColor: [6, 78, 59]
+  };
+}
+
 Deno.serve(async (req) => {
   const correlationId = `pdf-gen-${Date.now()}`;
   
@@ -91,14 +117,8 @@ Deno.serve(async (req) => {
     doc.text(`Generated: ${new Date(scanData.generated_date).toLocaleDateString()}`, 20, y);
     y += 15;
 
-    // Risk Score with theme mapping (red if high risk)
-    const riskTheme = (score) => {
-      if (Number(score) >= 70) return { fill: [239, 68, 68] }; // red
-      if (Number(score) >= 40) return { fill: [245, 158, 11] }; // amber
-      return { fill: [16, 185, 129] }; // green
-    };
-    const theme = riskTheme(scanData.risk_score);
-    doc.setFillColor(...theme.fill);
+    // Risk Score
+    doc.setFillColor(59, 130, 246);
     doc.roundedRect(20, y, pageWidth - 40, 30, 5, 5, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
@@ -157,14 +177,7 @@ Deno.serve(async (req) => {
       y += 10;
     }
 
-    // Guard: count mismatch logging (if provided)
-    try {
-      if (typeof scanData.validated_count === 'number' && Array.isArray(scanData.flags) && scanData.flags.length !== scanData.validated_count) {
-        await base44.functions.invoke('logAuditEvent', { event: 'ReportCountMismatch', meta: { validated_count: scanData.validated_count, flags: scanData.flags.length } });
-      }
-    } catch (_) {}
-
-    // Detailed Issues (validated only)
+    // Detailed Issues
     if (scanData.flags && scanData.flags.length > 0) {
       if (y > pageHeight - 60) {
         doc.addPage();
@@ -180,20 +193,6 @@ Deno.serve(async (req) => {
         if (y > pageHeight - 60) {
           doc.addPage();
           y = 20;
-        }
-
-        // Skip placeholders / invalids
-        const badTitle = /^detected\s*risk$/i.test(String(flag.title||'').trim());
-        const why = String(flag.summary || flag.explanation || flag.description || '').trim();
-        const recArr = Array.isArray(flag.recommendations)
-          ? flag.recommendations
-          : String(flag.recommendation || '')
-              .split('\n')
-              .map(s => s.replace(/^\s*[•\-–—!*→]+\s*/, '').trim())
-              .filter(Boolean);
-        if (badTitle || !why || recArr.length === 0) {
-          try { await base44.functions.invoke('logAuditEvent', { event: 'IssueDiscardedInvalid', meta: { title: flag.title } }); } catch(_) {}
-          return; // continue
         }
 
         // Issue title
@@ -263,28 +262,6 @@ Deno.serve(async (req) => {
         y = addText(`• ${item}`, 25, 9);
         y += 2;
       });
-    }
-
-    // Clause Review Appendix (INFO/RISK only)
-    if (Array.isArray(scanData.clause_reviews)) {
-      const relevant = scanData.clause_reviews.filter(c => c.status === 'INFO' || c.status === 'RISK');
-      if (relevant.length) {
-        if (y > pageHeight - 60) { doc.addPage(); y = 20; }
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Clause Review Appendix', 20, y);
-        y += 10;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        relevant.slice(0, 100).forEach(c => {
-          if (y > pageHeight - 20) { doc.addPage(); y = 20; }
-          const codes = Array.isArray(c.taxonomy_hits) ? c.taxonomy_hits.map(h => h.taxonomy_code).join(', ') : '';
-          const rationale = (Array.isArray(c.taxonomy_hits) && c.taxonomy_hits[0]?.rationale) ? c.taxonomy_hits[0].rationale.slice(0, 100) : '';
-          y = addText(`Clause ${c.clause_no} (Page ${c.page || '?'}) — ${c.status} — ${codes}${rationale ? ' — ' + rationale : ''}`, 20, 9);
-          y += 2;
-        });
-        y += 6;
-      }
     }
 
     // Footer
