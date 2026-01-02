@@ -1440,32 +1440,68 @@ OUTPUT FORMAT:
       console.error('[LLM_REVIEW_ERROR]', e?.message);
     }
 
-    // Final deterministic de-duplication (rule_id + clause_hash across sources)
+    // SECOND DEDUPLICATION PASS (after LLM merge) - use same logic
     const finalMap = new Map();
-    const rank = { critical: 3, high: 2, medium: 1, low: 0 };
-    const hashText2 = (s='') => {
-      const t = s.toLowerCase().replace(/\s+/g,' ').trim();
-      let h = 0; for (let i=0;i<t.length;i++){ h = ((h<<5)-h) + t.charCodeAt(i); h |= 0; } return String(h);
-    };
     combinedIssues.forEach(issue => {
-      const firstRef = Array.isArray(issue.clause_refs) && issue.clause_refs[0] ? issue.clause_refs[0] : { clause_id: issue.clause_id || 'GLOBAL', snippet: issue.evidence || '' };
-      const clauseHash = hashText2(firstRef.snippet || '');
-      const k = `${issue.rule_id}:${clauseHash}`;
-      if (!finalMap.has(k)) finalMap.set(k, { ...issue, _clause_hash: clauseHash });
-      else {
-        const existing = finalMap.get(k);
-        if (rank[issue.severity] > rank[existing.severity]) existing.severity = issue.severity;
-        // merge recommendations unique
-        const recSet = new Set((existing.recommendations||[]).map(r=>String(r||'').trim()).filter(Boolean));
-        (issue.recommendations||[]).forEach(r=>{ const t = String(r||'').trim(); if (t) recSet.add(t); });
-        existing.recommendations = Array.from(recSet).slice(0,5);
-        // keep best summary
-        if ((issue.summary||'').length > (existing.summary||'').length) existing.summary = issue.summary;
-        // merge refs
-        const seenRef = new Set((existing.clause_refs||[]).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
-        (issue.clause_refs || []).forEach(c => { const sig = `${c.clause_id}|${c.page}|${c.snippet}`; if (!seenRef.has(sig)) existing.clause_refs = [...(existing.clause_refs||[]), c]; });
+      const key = issue.issue_id;
+      
+      if (!finalMap.has(key)) {
+        finalMap.set(key, { ...issue });
+      } else {
+        const existing = finalMap.get(key);
+        
+        // Keep highest severity
+        const issueSevRank = severityRank[issue.severity] || 0;
+        const existingSevRank = severityRank[existing.severity] || 0;
+        if (issueSevRank > existingSevRank) {
+          existing.severity = issue.severity;
+        }
+        
+        // Merge unique recommendations
+        const recSet = new Set((existing.recommendations || []).map(r => String(r || '').trim()).filter(Boolean));
+        (issue.recommendations || []).forEach(r => {
+          const cleaned = String(r || '').trim();
+          if (cleaned) recSet.add(cleaned);
+        });
+        existing.recommendations = Array.from(recSet).slice(0, 5);
+        
+        // Merge best why_it_matters
+        const issueWhy = String(issue.why_it_matters || '').trim();
+        const existingWhy = String(existing.why_it_matters || '').trim();
+        if (issueWhy.length > existingWhy.length) {
+          existing.why_it_matters = issueWhy;
+        }
+        
+        // Union clause_ids, page_refs, clause_refs
+        if (Array.isArray(issue.clause_ids)) {
+          const clauseSet = new Set(existing.clause_ids || []);
+          issue.clause_ids.forEach(c => clauseSet.add(c));
+          existing.clause_ids = Array.from(clauseSet);
+        }
+        if (Array.isArray(issue.page_refs)) {
+          const pageSet = new Set(existing.page_refs || []);
+          issue.page_refs.forEach(p => pageSet.add(p));
+          existing.page_refs = Array.from(pageSet);
+        }
+        if (Array.isArray(issue.clause_refs)) {
+          const seenRef = new Set((existing.clause_refs || []).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
+          issue.clause_refs.forEach(c => {
+            const sig = `${c.clause_id}|${c.page}|${c.snippet}`;
+            if (!seenRef.has(sig)) {
+              existing.clause_refs = [...(existing.clause_refs || []), c];
+            }
+          });
+        }
+        
+        console.log('[IssueDedupMerged]', {
+          event: 'IssueDedupMerged',
+          issue_id: key,
+          leaseId: meta?.leaseId,
+          scanId: meta?.scanId
+        });
       }
     });
+    
     const finalIssues = Array.from(finalMap.values());
 
     logStage('LLM_MERGE_COMPLETE', {
