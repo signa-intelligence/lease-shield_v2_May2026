@@ -910,7 +910,7 @@ Be thorough.`,
         clauses.forEach(clause => {
           const matched = rule.patterns.some(pattern => pattern.test(clause.raw_text));
           if (matched) {
-            const emitted = emitIssue({
+            pushIssue({
               rule_id: rule.rule_id,
               severity: rule.severity,
               category: rule.category,
@@ -925,8 +925,7 @@ Be thorough.`,
                 snippet: clause.raw_text.substring(0, 300)
               }],
               original_language: clause.language
-            }, { leaseId, scanId });
-            if (emitted) detectedIssues.push(emitted);
+            });
           }
         });
       }
