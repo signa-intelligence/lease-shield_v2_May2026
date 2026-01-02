@@ -33,6 +33,7 @@ import RefundPolicy from './pages/RefundPolicy';
 import ReportFull from './pages/ReportFull';
 import ResolveCase from './pages/ResolveCase';
 import RevenueAnalytics from './pages/RevenueAnalytics';
+import RiskFeedbackAdmin from './pages/RiskFeedbackAdmin';
 import ScanPreview from './pages/ScanPreview';
 import Search from './pages/Search';
 import Support from './pages/Support';
@@ -41,7 +42,6 @@ import Timeline from './pages/Timeline';
 import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
-import RiskFeedbackAdmin from './pages/RiskFeedbackAdmin';
 import reportfull from './pages/reportfull';
 import __Layout from './Layout.jsx';
 
@@ -82,6 +82,7 @@ export const PAGES = {
     "ReportFull": ReportFull,
     "ResolveCase": ResolveCase,
     "RevenueAnalytics": RevenueAnalytics,
+    "RiskFeedbackAdmin": RiskFeedbackAdmin,
     "ScanPreview": ScanPreview,
     "Search": Search,
     "Support": Support,
@@ -90,7 +91,6 @@ export const PAGES = {
     "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
-    "RiskFeedbackAdmin": RiskFeedbackAdmin,
     "reportfull": reportfull,
 }
 

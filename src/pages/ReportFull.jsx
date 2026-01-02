@@ -31,6 +31,7 @@ function ReportFullContent() {
   const [taxonomy, setTaxonomy] = useState(null);
   const [expandedClauses, setExpandedClauses] = useState({});
   const [schemaInvalidCount, setSchemaInvalidCount] = useState(0);
+  const [repairAttempted, setRepairAttempted] = useState(false);
 
   // Parse URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -193,7 +194,7 @@ function ReportFullContent() {
   });
 
   // SCHEMA VALIDATION - Memoized to run only when scan data changes
-  const { validatedFlags, invalidCount, invalidCodes } = React.useMemo(() => {
+  const { validatedFlags, invalidCount, invalidCodes, invalidFlags, invalidDetails } = React.useMemo(() => {
     if (!scan) return { validatedFlags: [], invalidCount: 0 };
 
     console.log('[REPORTFULL_LOAD]', { 
@@ -215,6 +216,8 @@ function ReportFullContent() {
     const validated = [];
     let invalid = 0;
     const invalidCodes = [];
+    const invalidFlags = [];
+    const invalidDetails = [];
 
     allFlags.forEach((flag, idx) => {
       try {
@@ -228,19 +231,22 @@ function ReportFullContent() {
         
         if (!hasRequiredFields) {
           const ruleId = flag?.rule_id || flag?.pattern_id || 'unknown';
+          const missingFields = {
+            title: !flag?.title,
+            severity: !flag?.severity,
+            description: !flag?.description && !flag?.explanation,
+            recommendation: !flag?.recommendation
+          };
           console.error('[ISSUE_SCHEMA_INVALID]', {
             index: idx,
             ruleId,
-            missingFields: {
-              title: !flag?.title,
-              severity: !flag?.severity,
-              description: !flag?.description && !flag?.explanation,
-              recommendation: !flag?.recommendation
-            },
+            missingFields,
             payload: JSON.stringify(flag).substring(0, 300)
           });
           invalid++;
           invalidCodes.push(`ISSUE_SCHEMA_INVALID:${ruleId}`);
+          invalidFlags.push(flag);
+          invalidDetails.push({ index: idx, ruleId, missingFields });
         } else {
           validated.push(flag);
         }
@@ -260,7 +266,18 @@ function ReportFullContent() {
       invalidFlags: invalid
     });
 
-    return { validatedFlags: validated, invalidCount: invalid, invalidCodes };
+    console.log('[REPORTFULL_DEBUG]', {
+      source: 'persisted_scan',
+      leaseId: lease?.id || leaseId,
+      scanId: scan?.id || scanId,
+      flags_total: allFlags.length,
+      validated_total: validated.length,
+      invalid_total: invalid,
+      invalid_rule_ids: invalidCodes,
+      invalid_missing_fields: invalidDetails
+    });
+
+    return { validatedFlags: validated, invalidCount: invalid, invalidCodes, invalidFlags, invalidDetails };
   }, [scan, lease]);
 
   // Update invalid count state
@@ -277,6 +294,64 @@ function ReportFullContent() {
     }
   }, [invalidCount, scanId, leaseId]);
 
+  // Background repair for legacy invalid issues: attempt safe defaults then persist
+  React.useEffect(() => {
+    if (!scan || repairAttempted || invalidCount <= 0) return;
+
+    const originalFlags = Array.isArray(scan?.scan_full?.flags) ? scan.scan_full.flags : [];
+
+    const repairOne = (f) => {
+      const safe = (v, fb='') => (typeof v === 'string' && v.trim()) || fb;
+      const recs = Array.isArray(f.recommendations) && f.recommendations.length > 0
+        ? f.recommendations
+        : (safe(f.recommendation,'').split('\n').map(s=>s.replace(/^•\s*/, '').trim()).filter(Boolean));
+      const title = safe(f.title, safe(f.name, 'Detected risk'));
+      const severity = ['critical','high','medium','low'].includes(f.severity) ? f.severity : 'medium';
+      const description = safe(f.description, 'This clause may pose a tenant risk. Review recommended.');
+      const explanation = safe(f.explanation, 'Impact not provided');
+      const recommendation = recs.length > 0 ? recs.join('\n') : 'Request clarification and amend this clause.';
+      const clause_id = safe(f.clause_id, 'UNKNOWN');
+      const page_number = typeof f.page_number === 'number' ? f.page_number : (Number(f.page_number) || 1);
+      const evidence = safe(f.evidence, safe(f.evidence_snippet, 'Evidence unavailable'));
+      const rule_id = safe(f.rule_id, 'LEGACY_UNKNOWN_RULE');
+      const category = safe(f.category, 'Other Risks');
+
+      const repaired = {
+        ...f,
+        rule_id,
+        category,
+        title,
+        severity,
+        description,
+        explanation,
+        recommendation,
+        evidence,
+        clause_id,
+        page_number
+      };
+
+      const ok = repaired.title && repaired.severity && (repaired.description || repaired.explanation) && repaired.recommendation;
+      return ok ? repaired : null;
+    };
+
+    const repaired = invalidFlags.map(repairOne).filter(Boolean);
+    const merged = [...validatedFlags, ...repaired];
+
+    if (merged.length > validatedFlags.length) {
+      setRepairAttempted(true);
+      base44.entities.LeaseScan.update(scan.id, { scan_full: { ...(scan.scan_full||{}), flags: merged } })
+        .then(() => {
+          console.log('[REPORTFULL_REPAIR]', { scanId: scan.id, repaired_count: repaired.length, dropped_count: invalidCount - repaired.length });
+          queryClient.invalidateQueries({ queryKey: ['scan', scanId] });
+        })
+        .catch(err => {
+          console.error('[REPORTFULL_REPAIR_ERROR]', err?.message);
+        });
+    } else {
+      setRepairAttempted(true);
+    }
+  }, [scan, invalidCount, validatedFlags, invalidFlags, queryClient, repairAttempted, scanId]);
+
   // ============================================================================
   // DERIVED STATE - AFTER ALL HOOKS
   // ============================================================================
@@ -284,6 +359,11 @@ function ReportFullContent() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
+
+  const userRole = user?.role?.toLowerCase();
+  const accessLevel = user?.access_level?.toLowerCase();
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'va' || accessLevel === 'admin' || accessLevel === 'super_admin' || accessLevel === 'va';
+  const showInvalidBanner = isAdmin && schemaInvalidCount > 0;
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -580,7 +660,7 @@ function ReportFullContent() {
         lease_address: lease.property_address || 'Lease Agreement',
         risk_score: scan.risk_score,
         summary: scan.summary,
-        flags: scan.scan_full?.flags || [],
+        flags: validatedFlags,
         missing_items: scan.scan_full?.missing_items || [],
         key_terms: scan.scan_full?.key_terms || {},
         lease_start: lease.start_date,
@@ -990,7 +1070,7 @@ function ReportFullContent() {
         <div className="max-w-4xl mx-auto">
           
           {/* SCHEMA INVALID BANNER */}
-          {schemaInvalidCount > 0 && (
+          {showInvalidBanner && (
             <div className="mb-4 p-4 rounded-lg border-2" style={{
               backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
               borderColor: '#DC2626'
