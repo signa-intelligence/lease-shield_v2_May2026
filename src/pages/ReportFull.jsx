@@ -6,12 +6,14 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2, DollarSign, Home } from "lucide-react";
+import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2, DollarSign, Home, ThumbsDown, Plus } from "lucide-react";
 import { FeatureGate } from "../components/shared/FeatureGate";
 import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
+import IssueFeedbackModal from "../components/report/IssueFeedbackModal";
+import MissedRiskModal from "../components/report/MissedRiskModal";
 import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 
@@ -24,6 +26,9 @@ function ReportFullContent() {
   const toast = useToast();
   
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [feedbackIssue, setFeedbackIssue] = useState(null);
+  const [showMissedRisk, setShowMissedRisk] = useState(false);
+  const [taxonomy, setTaxonomy] = useState(null);
   const [expandedClauses, setExpandedClauses] = useState({});
   const [schemaInvalidCount, setSchemaInvalidCount] = useState(0);
 
@@ -42,6 +47,15 @@ function ReportFullContent() {
       timestamp: new Date().toISOString()
     });
   }, [scanId, leaseId]);
+
+  // Fetch taxonomy
+  const { data: taxonomyData } = useQuery({
+    queryKey: ['taxonomy'],
+    queryFn: async () => {
+      const { data } = await base44.functions.invoke('getTaxonomy', {});
+      return data.taxonomy;
+    }
+  });
 
   // Fetch user
   const { data: user } = useQuery({
@@ -522,6 +536,7 @@ function ReportFullContent() {
   };
 
   const strings = t[language] || t.en;
+  React.useEffect(()=>{ if (taxonomyData) setTaxonomy(taxonomyData); }, [taxonomyData]);
 
   // Currency sanitizer - removes all non-numeric characters except digits, decimal, minus
   const sanitizeCurrency = (value) => {
@@ -878,9 +893,13 @@ function ReportFullContent() {
     return validatedFlags;
   };
 
-  const fullFlags = getFullDisplayFlags();
-  const totalFlags = validatedFlags.length;
-  const hiddenFlagsCount = totalFlags - fullFlags.length;
+  const allFlags = validatedFlags;
+  const mainFlags = allFlags.filter(f => (f.confidence || 'HIGH') !== 'LOW');
+  const lowConfidence = allFlags.filter(f => (f.confidence || 'HIGH') === 'LOW');
+  const fullFlags = getFullDisplayFlags(mainFlags);
+  const totalFlags = mainFlags.length;
+  const hiddenFlagsCount = mainFlags.length - fullFlags.length;
+  // moved above with mainFlags/lowConfidence
 
   // DEFENSIVE: Group flags by category with fallback
   const groupedFlags = fullFlags.reduce((groups, flag) => {
@@ -992,6 +1011,38 @@ function ReportFullContent() {
           )}
           <PageHeader
             title={strings.fullLeaseReport}
+            subtitle={lease.property_address || 'Lease Agreement'}
+            icon={FileText}
+            iconColor="#0C3B2E"
+            showBack={true}
+            backRoute={createPageUrl("UploadScan")}
+            isDarkMode={isDarkMode}
+            actions={
+              <div className="flex gap-2">
+                <Button 
+                  className="btn-interaction"
+                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                  onClick={handleDownloadPDF}
+                  disabled={downloadingPDF}
+                >
+                  {downloadingPDF ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {language === 'th' ? 'กำลังสร้าง...' : 'Generating...'}
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 mr-2" />
+                      {strings.downloadPDF}
+                    </>
+                  )}
+                </Button>
+                <Button variant="outline" onClick={()=> setShowMissedRisk(true)}>
+                  <Plus className="w-4 h-4 mr-2"/> Report missed risk
+                </Button>
+              </div>
+            }
+          />
             subtitle={lease.property_address || 'Lease Agreement'}
             icon={FileText}
             iconColor="#0C3B2E"
@@ -1224,14 +1275,19 @@ function ReportFullContent() {
                                         <h4 className="font-bold text-base sm:text-lg leading-tight" style={{ color: colors.textPrimary }}>
                                           {flag.title || (language === 'th' ? 'ปัญหาที่ตรวจพบ' : 'Detected Issue')}
                                         </h4>
-                                        <Badge className="text-xs font-bold uppercase px-2 py-1 flex-shrink-0" style={{
+                                        <div className="flex items-center gap-2">
+                                          <Badge className="text-xs font-bold uppercase px-2 py-1 flex-shrink-0" style={{
                                           backgroundColor: flag.severity === 'critical' ? '#DC2626' :
                                                            flag.severity === 'high' ? '#EA580C' :
                                                            flag.severity === 'medium' ? '#D97706' : '#059669',
                                           color: '#FFFFFF'
                                         }}>
                                           {flag.severity || 'medium'}
-                                        </Badge>
+                                          </Badge>
+                                          <button className="text-xs underline text-slate-600" onClick={()=> setFeedbackIssue(flag)}>
+                                          <ThumbsDown className="inline w-3 h-3 mr-1"/> Not accurate
+                                          </button>
+                                          </div>
                                       </div>
                                       {flag.clause_id && (
                                         <div className="flex items-center gap-2 text-xs" style={{ color: colors.textSecondary }}>
@@ -1432,6 +1488,25 @@ function ReportFullContent() {
             </Card>
           )}
 
+          {/* Additional Observations (LOW confidence) */}
+          {lowConfidence.length > 0 && (
+            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+              <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
+                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <Info className="w-5 h-5 text-slate-500" /> Additional Observations (verify)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-3">
+                {lowConfidence.map((f,i)=> (
+                  <div key={i} className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
+                    <div className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{f.title}</div>
+                    <div className="text-xs" style={{ color: colors.textSecondary }}>{f.summary}</div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Missing Protections */}
           {missingItems.length > 0 && (
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
@@ -1524,8 +1599,52 @@ function ReportFullContent() {
           </Card>
         </div>
       </div>
-    </FeatureGate>
-  );
+
+      <IssueFeedbackModal
+        open={!!feedbackIssue}
+        onClose={()=> setFeedbackIssue(null)}
+        issue={feedbackIssue}
+        taxonomy={taxonomy}
+        onSubmit={async (payload)=>{
+          const clause = (feedbackIssue?.clause_refs||[])[0] || {};
+          await base44.entities.RiskFeedback.create({
+            lease_id: lease.id,
+            scan_id: scan.id,
+            user_id: user.id,
+            feedback_type: payload.feedback_type,
+            category_id: feedbackIssue.category_id || feedbackIssue.category || 'UNSPECIFIED',
+            clause_ref: { clause_id: clause.clause_id || 'UNKNOWN', page: clause.page, snippet: clause.snippet },
+            suggested_severity: payload.suggested_severity || null,
+            note: payload.note || null,
+            related_issue_id: feedbackIssue.id || null,
+          });
+          setFeedbackIssue(null);
+          toast.success('Feedback submitted, thank you!');
+        }}
+      />
+
+      <MissedRiskModal
+        open={showMissedRisk}
+        onClose={()=> setShowMissedRisk(false)}
+        taxonomy={taxonomy}
+        clauses={(scan?.scan_full?.clauses)||[]}
+        onSubmit={async ({ category_id, clause_id, note })=>{
+          const clause = (scan?.scan_full?.clauses||[]).find(c=>c.clause_id===clause_id) || {};
+          await base44.entities.RiskFeedback.create({
+            lease_id: lease.id,
+            scan_id: scan.id,
+            user_id: user.id,
+            feedback_type: 'MISSED_RISK',
+            category_id,
+            clause_ref: { clause_id: clause_id, page: clause.page_number, snippet: clause.raw_text?.substring(0,240) || '' },
+            note: note || null
+          });
+          setShowMissedRisk(false);
+          toast.success('Thanks! We will review and improve.');
+        }}
+      />
+      </FeatureGate>
+      );
 }
 
 export default function ReportFull() {

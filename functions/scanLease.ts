@@ -1279,12 +1279,30 @@ OUTPUT FORMAT:
     // Merge LLM issues with rule-based issues
     const combinedIssues = [...uniqueIssues, ...llmValidIssues];
 
-    // Final deterministic de-duplication (rule_id + canonical clause id set)
+    // LLM second-pass reviewer (evidence-gated)
+    try {
+      const taxonomyRes = await base44.asServiceRole.functions.invoke('getTaxonomy', {});
+      const taxonomy = taxonomyRes.data?.taxonomy;
+      const llmPayload = {
+        clauses,
+        ruleIssues: combinedIssues.map(ci => ({ ...ci, source: 'RULES' })),
+        taxonomy,
+        monthly_rent: monthlyRent || null
+      };
+      const llmRes = await base44.asServiceRole.functions.invoke('llmReview', llmPayload);
+      const llmIssues = llmRes.data?.issues || [];
+      llmIssues.forEach(i => { try { if (emitIssue(i, { leaseId, scanId })) detectedIssues.push(i); } catch (_) {} });
+      combinedIssues = combinedIssues.concat(llmIssues);
+    } catch (e) {
+      console.error('[LLM_REVIEW_ERROR]', e?.message);
+    }
+
+    // Final deterministic de-duplication (source + rule_id + canonical clause id set)
     const finalMap = new Map();
     combinedIssues.forEach(issue => {
       const clauseIds = Array.isArray(issue.clause_refs) ? issue.clause_refs.map(c => c.clause_id) : [issue.clause_id || 'GLOBAL'];
       const primary = clauseIds.length > 1 ? clauseIds.sort().join(',') : clauseIds[0];
-      const k = `${issue.rule_id}:${primary}`;
+      const k = `${issue.source || 'RULES'}:${issue.rule_id}:${primary}`;
       if (!finalMap.has(k)) finalMap.set(k, issue);
       else {
         const existing = finalMap.get(k);
