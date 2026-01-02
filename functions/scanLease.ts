@@ -41,13 +41,42 @@ function validateRiskIssue(issue, ruleId, meta) {
       missing_fields: errors,
       payload_preview: JSON.stringify(issue).substring(0, 400)
     });
-    return false;
+    return { ok: false, missing_fields: errors };
   }
-  return true;
+  return { ok: true };
+}
+
+// Provide detailed diagnosis for invalid issues
+function diagnoseIssueSchema(issue) {
+  const missing_fields = [];
+  const type_errors = [];
+  const reqStr = (v) => typeof v === 'string' && v.trim().length > 0;
+  const reqArr = (v) => Array.isArray(v) && v.length > 0;
+
+  if (!reqStr(issue?.title)) missing_fields.push('title');
+  if (!reqStr(issue?.rule_id)) missing_fields.push('rule_id');
+  if (!reqStr(issue?.category)) missing_fields.push('category');
+  if (!['critical','high','medium','low'].includes(issue?.severity)) type_errors.push('severity');
+  if (!reqStr(issue?.summary)) missing_fields.push('summary');
+  if (!reqStr(issue?.why_it_matters)) missing_fields.push('why_it_matters');
+
+  let clause_refs_length = Array.isArray(issue?.clause_refs) ? issue.clause_refs.length : 0;
+  let recommendations_length = Array.isArray(issue?.recommendations) ? issue.recommendations.length : 0;
+  if (!reqArr(issue?.clause_refs)) missing_fields.push('clause_refs');
+  else {
+    issue.clause_refs.forEach((c, i) => {
+      if (!reqStr(c?.clause_id)) type_errors.push(`clause_refs[${i}].clause_id`);
+      if (typeof c?.page !== 'number') type_errors.push(`clause_refs[${i}].page`);
+      if (!reqStr(c?.snippet)) type_errors.push(`clause_refs[${i}].snippet`);
+    });
+  }
+  if (!reqArr(issue?.recommendations)) missing_fields.push('recommendations');
+
+  return { missing_fields, type_errors, clause_refs_length, recommendations_length };
 }
 
 // Safety emit wrapper: maps legacy fields -> strict schema and applies defaults
-function emitIssue(draft, meta) {
+function emitIssue(draft, meta) { 
   const safe = (v, fallback = '') => (typeof v === 'string' ? v.trim() : '') || fallback;
   const recs = Array.isArray(draft.recommendations)
     ? draft.recommendations.filter((r) => typeof r === 'string' && r.trim().length > 0)
@@ -83,51 +112,7 @@ function emitIssue(draft, meta) {
   };
 
   return validateRiskIssue(issue, issue.rule_id, meta) ? issue : null;
-  }
-
-  // Detailed validator helper used for structured invalid logging
-  function collectInvalid(draft, ruleId) {
-    const preview = {
-      title: typeof draft.title === 'string' ? draft.title : (typeof draft.summary === 'string' ? draft.summary.slice(0, 80) : 'Untitled'),
-      rule_id: draft.rule_id || ruleId || 'UNKNOWN_RULE',
-      category_id: draft.category_id || draft.category || 'UNSPECIFIED',
-      severity: draft.severity || 'medium'
-    };
-
-    const missing = [];
-    const types = [];
-
-    if (!draft.title) missing.push('title');
-    if (!draft.summary && !draft.description) missing.push('summary');
-    if (!draft.why_it_matters && !draft.explanation) missing.push('why_it_matters');
-
-    const recsLen = Array.isArray(draft.recommendations)
-      ? draft.recommendations.length
-      : (typeof draft.recommendation === 'string' && draft.recommendation.trim() ? draft.recommendation.split('\n').filter(Boolean).length : 0);
-    if (recsLen < 1) missing.push('recommendations');
-
-    const clauseLen = Array.isArray(draft.clause_refs) ? draft.clause_refs.length : (draft.clause_id ? 1 : 0);
-    if (clauseLen < 1) missing.push('clause_refs');
-
-    if (Array.isArray(draft.clause_refs)) {
-      draft.clause_refs.forEach((c, i) => {
-        if (!c || typeof c !== 'object') types.push(`clause_refs[${i}] not object`);
-        else {
-          if (typeof c.clause_id !== 'string') types.push(`clause_refs[${i}].clause_id type`);
-          if (typeof c.page !== 'number' && typeof c.page !== 'undefined') types.push(`clause_refs[${i}].page type`);
-          if (typeof c.snippet !== 'string') types.push(`clause_refs[${i}].snippet type`);
-        }
-      });
-    }
-
-    return {
-      issue_preview: preview,
-      missing_fields: missing,
-      type_errors: types,
-      clause_refs_length: clauseLen,
-      recommendations_length: recsLen
-    };
-  }
+}
 
 // PENALTY PARSER
 function parsePenalties(text, monthlyRent = 0) {
@@ -809,7 +794,6 @@ Be thorough.`,
     
     const detectedIssues = [];
     const invalidIssues = [];
-    const invalidDetails = [];
     const userLang = user.language || 'en';
     const monthlyRent = keyTerms.rent_amount;
 
