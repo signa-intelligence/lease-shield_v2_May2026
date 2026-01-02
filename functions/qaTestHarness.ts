@@ -124,6 +124,50 @@ All disputes shall be resolved by landlord determination, which is final.`,
     expected_severity_min: 'high'
   },
 
+  // Additional regression seeds for broader coverage
+  penalty_daily: {
+    name: 'Daily Penalty Only',
+    language: 'en',
+    text: 'Late rent will incur a fee of ฿1,000 per day until paid. Guests overnight incur ฿500 per night.',
+    expected_rules: ['COMPOUND_PENALTY_STACK'],
+    expected_severity_min: 'high'
+  },
+  holdover_multiplier: {
+    name: 'Holdover Multiplier',
+    language: 'en',
+    text: 'If tenant remains after expiration, rent becomes double (2x) per day. Unauthorized pets incur ฿500 per day.',
+    expected_rules: ['FIN_HOLDOVER_MULTIPLIER','COMPOUND_PENALTY_STACK'],
+    expected_severity_min: 'critical'
+  },
+  utilities_change: {
+    name: 'Utilities Pricing Change',
+    language: 'en',
+    text: 'Utility rates may change without notice at landlord discretion.',
+    expected_rules: ['FIN_UTILITY_RATE_CHANGE_NO_NOTICE','FIN_UTILITY_UNREGULATED'],
+    expected_severity_min: 'high'
+  },
+  sublease_ban_termination: {
+    name: 'Sublease Ban with Immediate Termination',
+    language: 'en',
+    text: 'Sublease or assignment is strictly prohibited. Any breach may be terminated immediately without cure.',
+    expected_rules: ['RIGHTS_USE_RESTRICTIONS','PROC_IMMEDIATE_TERMINATION'],
+    expected_severity_min: 'high'
+  },
+  short_term_ban: {
+    name: 'Short-term Letting Ban',
+    language: 'en',
+    text: 'Short-term or daily rental is not allowed. Any violation results in a fine of ฿20,000 per incident.',
+    expected_rules: ['RIGHTS_USE_RESTRICTIONS'],
+    expected_severity_min: 'high'
+  },
+  abandonment_disposal: {
+    name: 'Abandonment Disposal Short Window',
+    language: 'en',
+    text: 'Property left unattended for 24 hours is deemed abandoned and may be disposed.',
+    expected_rules: ['MISSING_ABANDONED_PROPERTY_SHORT'],
+    expected_severity_min: 'high'
+  },
+
   extreme_risk_full: {
     name: "Extreme Risk Full Lease (Acceptance Test)",
     language: "mixed",
