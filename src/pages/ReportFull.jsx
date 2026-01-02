@@ -1172,7 +1172,7 @@ function ReportFullContent() {
             </Card>
 
             {/* Key Terms */}
-          {Object.keys(keyTerms).length > 0 && (
+            {Object.keys(keyTerms).length > 0 && (
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
                 <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
