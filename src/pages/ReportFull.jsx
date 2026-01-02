@@ -631,17 +631,50 @@ function ReportFullContent() {
       userId: user.id,
       userEmail: user.email,
       scanId: scan.id,
-      leaseId: lease.id
+      leaseId: lease.id,
+      validatedCount: validatedFlags.length
     });
 
     try {
-      // Generate comprehensive PDF report data - use validated flags only and sanitize
+      // Use ONLY validated flags - strict final sanitization
       const sanitizedFlags = validatedFlags.map(f => ({
         title: f.title,
         severity: f.severity,
-        summary: f.summary || f.explanation || f.description,
-        recommendations: Array.isArray(f.recommendations) ? f.recommendations : String(f.recommendation||'').split('\n').map(s=>s.replace(/^\s*[•\-–—!*→]+\s*/g,'').trim()).filter(Boolean),
-      })).filter(x => x.title && x.summary && (x.recommendations||[]).length>0);
+        why_it_matters: f.why_it_matters || f.summary || f.explanation || f.description || '',
+        summary: f.summary || f.why_it_matters || f.explanation || f.description || '',
+        recommendations: Array.isArray(f.recommendations) 
+          ? f.recommendations.map(r => String(r || '').replace(/^[\s•\-–—!*→'"]+/, '').trim()).filter(Boolean)
+          : String(f.recommendation || '')
+              .split('\n')
+              .map(s => s.replace(/^[\s•\-–—!*→'"]+/, '').trim())
+              .filter(Boolean)
+      })).filter(x => {
+        // Final guard: reject if missing core content
+        const valid = x.title && x.title.trim().length > 0 &&
+                     x.why_it_matters && x.why_it_matters.trim().length > 0 &&
+                     Array.isArray(x.recommendations) && x.recommendations.length > 0;
+
+        if (!valid) {
+          console.error('[PDFSanitizationDropped]', {
+            title: x.title,
+            hasWhyMatters: !!x.why_it_matters,
+            recCount: x.recommendations?.length || 0
+          });
+        }
+
+        return valid;
+      });
+
+      // COUNT VALIDATION
+      if (sanitizedFlags.length !== validatedFlags.length) {
+        console.error('[ReportCountMismatch]', {
+          event: 'ReportCountMismatch',
+          context: 'PDF_EXPORT_PREP',
+          validated: validatedFlags.length,
+          sanitized: sanitizedFlags.length,
+          dropped: validatedFlags.length - sanitizedFlags.length
+        });
+      }
 
       const pdfData = {
         lease_address: lease.property_address || 'Lease Agreement',
