@@ -1486,12 +1486,11 @@ function ReportFullContent() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
+          </div>
+          </div>
 
-
-      </FeatureGate>
-      );
+          </FeatureGate>
+          );
 }
 
 export default function ReportFull() {
