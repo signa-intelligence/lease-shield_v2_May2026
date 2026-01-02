@@ -189,109 +189,53 @@ Deno.serve(async (req) => {
       doc.text(`Clauses with detected risks: ${clausesWithRisk}`, 25, y); y += 10;
     }
 
-    // Detailed Issues - ONLY from validated issues
-    const validatedIssues = Array.isArray(scanData.flags) ? scanData.flags.filter(f => {
-      // Final validation pass: reject if missing required content
-      const hasTitle = f.title && f.title.trim().length > 0;
-      const hasSummary = (f.summary || f.why_it_matters || f.explanation || '').trim().length > 0;
-      const hasRecs = Array.isArray(f.recommendations) 
-        ? f.recommendations.filter(r => r && r.trim().length > 0).length > 0
-        : (f.recommendation || '').trim().length > 0;
-      
-      const isValid = hasTitle && hasSummary && hasRecs;
-      
-      if (!isValid) {
-        console.error('[PDFIssueDropped]', {
-          event: 'PDFIssueDropped',
-          reason: 'incomplete_data',
-          title: f.title,
-          hasSummary,
-          hasRecs
-        });
-      }
-      
-      return isValid;
-    }) : [];
-    
-    // COUNT VALIDATION
-    const countInPDF = validatedIssues.length;
-    const countClaimed = scanData.flags?.length || 0;
-    if (countInPDF !== countClaimed) {
-      console.error('[ReportCountMismatch]', {
-        event: 'ReportCountMismatch',
-        context: 'PDF_GENERATION',
-        claimed: countClaimed,
-        rendered: countInPDF,
-        dropped: countClaimed - countInPDF
-      });
-    }
-
-    if (validatedIssues.length > 0) {
-      if (y > pageHeight - 60) {
-        doc.addPage();
-        y = 20;
-      }
-
+    // Clause Reviews (one per clause)
+    const clauses = Array.isArray(scanData.clause_reviews) ? scanData.clause_reviews : [];
+    if (clauses.length > 0) {
+      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Detailed Issues (${validatedIssues.length})`, 20, y);
+      doc.text(`Clause Reviews (${clauses.length})`, 20, y);
       y += 10;
+      doc.setFont('helvetica', 'normal');
 
-      validatedIssues.forEach((flag, index) => {
-        if (y > pageHeight - 60) {
-          doc.addPage();
-          y = 20;
+      clauses.forEach((c, idx) => {
+        if (y > pageHeight - 50) { doc.addPage(); y = 20; }
+        // Header line: Clause number and title
+        doc.setFontSize(11); doc.setFont('helvetica','bold');
+        const title = c.clause_title ? ` — ${c.clause_title}` : '';
+        y = addText(`${idx + 1}. Clause ${c.clause_number}${title}`, 20, 11, 'bold');
+
+        // Risk level
+        doc.setFontSize(9); doc.setFont('helvetica','normal');
+        y = addText(`Risk: ${c.risk_level}`, 25, 9);
+
+        if (c.risk_level === 'NO_RISK') {
+          y = addText('No risk detected.', 25, 9);
+          y += 4;
+          return;
         }
 
-        // Issue title
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        y = addText(`${index + 1}. ${flag.title}`, 20, 11, 'bold');
-        
-        // Severity badge
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        const severityColors = {
-          critical: [239, 68, 68],
-          CRITICAL: [239, 68, 68],
-          high: [245, 158, 11],
-          HIGH: [245, 158, 11],
-          medium: [234, 179, 8],
-          MEDIUM: [234, 179, 8],
-          low: [16, 185, 129],
-          LOW: [16, 185, 129]
-        };
-        const color = severityColors[flag.severity] || [100, 100, 100];
-        doc.setFillColor(...color);
-        doc.roundedRect(25, y, 25, 5, 1, 1, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.text(String(flag.severity).toUpperCase(), 27, y + 3.5);
-        y += 8;
-        doc.setTextColor(0, 0, 0);
+        // Why this matters
+        if (c.why_this_matters) {
+          doc.setFont('helvetica','bold'); doc.text('Why this matters:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          y = addText(c.why_this_matters, 25, 9);
+        }
 
-        // Why it matters
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        const whyMatters = flag.why_it_matters || flag.summary || flag.explanation || flag.description || '';
-        y = addText(whyMatters, 25, 9);
-        y += 3;
+        // Recommended action
+        if (c.recommended_action) {
+          doc.setFont('helvetica','bold'); doc.text('Recommended action:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          y = addText(c.recommended_action, 25, 9);
+        }
 
-        // Recommendations - CLEANED list items
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(0, 0, 0);
-        doc.text('Recommendations:', 25, y);
-        y += 5;
-        
-        // Normalize to clean string array
-        const recs = Array.isArray(flag.recommendations)
-          ? flag.recommendations.map(r => String(r || '').replace(/^[\s•\-–—!*→'"]+/, '').trim()).filter(Boolean)
-          : String(flag.recommendation || '')
-              .split('\n')
-              .map(s => s.replace(/^[\s•\-–—!*→'"]+/, '').trim())
-              .filter(Boolean);
-        
-        addList(recs, 25, 9, 5);
-        y += 5;
+        // Low confidence note
+        if (typeof c.confidence === 'number' && c.confidence < 0.6) {
+          y = addText('Note: Low confidence – manual review recommended.', 25, 9);
+        }
+
+        y += 6;
       });
     }
 
@@ -339,7 +283,7 @@ Deno.serve(async (req) => {
     }
 
     // Footer with legal disclaimer on every page
-    const disclaimer = "This report is an automated risk screening tool, not legal advice. Some risks may not be detected. Users remain responsible for independent review.";
+    const disclaimer = "This report is an automated risk review, not legal advice. It highlights potential issues based on Thai law and common practice but does not guarantee the absence of risk.";
     const totalPages = doc.internal.pages.length - 1;
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);

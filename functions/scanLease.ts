@@ -1484,7 +1484,7 @@ OUTPUT FORMAT:
         clause_number: cid,
         clause_title: title,
         risk_level: riskLevel === 'CRITICAL' ? 'CRITICAL' : riskLevel === 'HIGH' ? 'HIGH' : riskLevel === 'MEDIUM' ? 'MEDIUM' : 'LOW',
-        risk_code: String(best.rule_id || 'THR_UNSPECIFIED'),
+        risk_code: `THR_${String(best.rule_id || 'UNSPECIFIED')}`,
         why_this_matters: why,
         recommended_action: recBase,
         legal_basis_thailand: null,
@@ -1493,10 +1493,19 @@ OUTPUT FORMAT:
       };
     });
 
+    // Clause-based risk score per new rule
+    const clauseRiskScore = Math.min(100, Math.max(0, clauseReviews.reduce((sum, r) => {
+      if (r.risk_level === 'CRITICAL') return sum + 30;
+      if (r.risk_level === 'HIGH') return sum + 20;
+      if (r.risk_level === 'MEDIUM') return sum + 10;
+      if (r.risk_level === 'LOW') return sum + 5;
+      return sum;
+    }, 0)));
+
     return Response.json({
       success: true,
       result: {
-        risk_score: finalRiskScore,
+        risk_score: clauseRiskScore,
         clause_reviews: clauseReviews,
         summary,
         flags: finalIssues,
