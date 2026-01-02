@@ -178,8 +178,44 @@ Deno.serve(async (req) => {
       y += 10;
     }
 
-    // Detailed Issues
-    if (scanData.flags && scanData.flags.length > 0) {
+    // Detailed Issues - ONLY from validated issues
+    const validatedIssues = Array.isArray(scanData.flags) ? scanData.flags.filter(f => {
+      // Final validation pass: reject if missing required content
+      const hasTitle = f.title && f.title.trim().length > 0;
+      const hasSummary = (f.summary || f.why_it_matters || f.explanation || '').trim().length > 0;
+      const hasRecs = Array.isArray(f.recommendations) 
+        ? f.recommendations.filter(r => r && r.trim().length > 0).length > 0
+        : (f.recommendation || '').trim().length > 0;
+      
+      const isValid = hasTitle && hasSummary && hasRecs;
+      
+      if (!isValid) {
+        console.error('[PDFIssueDropped]', {
+          event: 'PDFIssueDropped',
+          reason: 'incomplete_data',
+          title: f.title,
+          hasSummary,
+          hasRecs
+        });
+      }
+      
+      return isValid;
+    }) : [];
+    
+    // COUNT VALIDATION
+    const countInPDF = validatedIssues.length;
+    const countClaimed = scanData.flags?.length || 0;
+    if (countInPDF !== countClaimed) {
+      console.error('[ReportCountMismatch]', {
+        event: 'ReportCountMismatch',
+        context: 'PDF_GENERATION',
+        claimed: countClaimed,
+        rendered: countInPDF,
+        dropped: countClaimed - countInPDF
+      });
+    }
+
+    if (validatedIssues.length > 0) {
       if (y > pageHeight - 60) {
         doc.addPage();
         y = 20;
@@ -187,10 +223,10 @@ Deno.serve(async (req) => {
 
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Detailed Issues (${scanData.flags.length})`, 20, y);
+      doc.text(`Detailed Issues (${validatedIssues.length})`, 20, y);
       y += 10;
 
-      scanData.flags.forEach((flag, index) => {
+      validatedIssues.forEach((flag, index) => {
         if (y > pageHeight - 60) {
           doc.addPage();
           y = 20;
@@ -206,36 +242,43 @@ Deno.serve(async (req) => {
         doc.setFont('helvetica', 'normal');
         const severityColors = {
           critical: [239, 68, 68],
+          CRITICAL: [239, 68, 68],
           high: [245, 158, 11],
+          HIGH: [245, 158, 11],
           medium: [234, 179, 8],
-          low: [16, 185, 129]
+          MEDIUM: [234, 179, 8],
+          low: [16, 185, 129],
+          LOW: [16, 185, 129]
         };
         const color = severityColors[flag.severity] || [100, 100, 100];
         doc.setFillColor(...color);
         doc.roundedRect(25, y, 25, 5, 1, 1, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.text(flag.severity.toUpperCase(), 27, y + 3.5);
+        doc.text(String(flag.severity).toUpperCase(), 27, y + 3.5);
         y += 8;
         doc.setTextColor(0, 0, 0);
 
-        // Summary / Why it matters
+        // Why it matters
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        const summary = flag.summary || flag.explanation || flag.description || '';
-        y = addText(summary, 25, 9);
+        const whyMatters = flag.why_it_matters || flag.summary || flag.explanation || flag.description || '';
+        y = addText(whyMatters, 25, 9);
         y += 3;
 
-        // Recommendations list (no markdown artifacts)
+        // Recommendations - CLEANED list items
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
         doc.text('Recommendations:', 25, y);
         y += 5;
+        
+        // Normalize to clean string array
         const recs = Array.isArray(flag.recommendations)
-          ? flag.recommendations
+          ? flag.recommendations.map(r => String(r || '').replace(/^[\s•\-–—!*→'"]+/, '').trim()).filter(Boolean)
           : String(flag.recommendation || '')
               .split('\n')
-              .map(s => s.replace(/^\s*[•\-–—!*→]+\s*/g, '').trim())
+              .map(s => s.replace(/^[\s•\-–—!*→'"]+/, '').trim())
               .filter(Boolean);
+        
         addList(recs, 25, 9, 5);
         y += 5;
       });
