@@ -508,16 +508,20 @@ function detectCompoundRisks(clauses, keyTerms, userLang) {
       severity: 'critical',
       category: 'Procedural Fairness',
       title: userLang === 'th' 
-        ? '🚨 รูปแบบกับดักผู้เช่า: การต่ออายุอัตโนมัติ + กับดักการแจ้ง'
-        : '🚨 Tenant Entrapment Pattern: Auto-Renewal + Notice Trap',
-      description: userLang === 'th'
-        ? 'การรวมกันของการต่ออายุอัตโนมัติและข้อกำหนดการแจ้งที่ซับซ้อนสร้างกับดักขั้นตอนที่ล็อคผู้เช่าให้ต่อสัญญาที่ไม่ต้องการ'
-        : 'Combination of automatic renewal + complex notice requirements creates procedural trap locking tenants into unwanted renewals',
-      explanation: userLang === 'th'
-        ? 'การออกแบบนี้มีจุดมุ่งหมายโดยเฉพาะเพื่อทำให้ผู้เช่าหลุดพ้นเป็นไปไม่ได้ แม้ว่าพวกเขาจะพยายามแจ้งอย่างจริงใจก็ตาม ความล้มเหลวทางเทคนิคใดๆ (ช่องทางเดียวล้มเหลว การยืนยันล่าช้า) = ต่อสัญญาโดยอัตโนมัติ'
-        : 'This design specifically aims to make tenant exit impossible even with good-faith notice attempts. Any technical failure (one channel fails, confirmation delayed) = automatic renewal',
-      recommendation: userLang === 'th'
-        ? '• สำคัญมาก: ลบการต่ออายุอัตโนมัติทั้งหมด — ต้องมีการยืนยันร่วมกันเป็นลายลักษณ์อักษร\n• หรือทำให้การแจ้งเป็นอีเมลเดียวกับช่วง 60+ วัน\n• การแจ้งมีผลเมื่อส่ง ไม่ใช่เมื่อได้รับยืนยัน\n• เพิ่มข้อกำหนดการตกลงร่วมกันสำหรับการต่อสัญญา',
+        ? 'รูปแบบกับดักผู้เช่า: ต่ออายุอัตโนมัติ + กับดักการแจ้ง'
+        : 'Tenant Entrapment: Auto-Renewal + Notice Trap',
+      summary: userLang === 'th'
+        ? 'ต่ออายุอัตโนมัติรวมกับเงื่อนไขการแจ้งหลายช่องทาง/ยืนยันการรับ'
+        : 'Auto-renewal combined with dual-channel or confirmed-delivery notice',
+      why_it_matters: userLang === 'th'
+        ? 'ทำให้ผู้เช่าถูกล็อคต่อสัญญา แม้แจ้งอย่างสุจริต หากช่องทางใดล้มเหลวหรือการยืนยันล่าช้า'
+        : 'Locks tenants into unwanted renewals if any channel fails or landlord delays confirmation',
+      recommendations: [
+        userLang === 'th' ? 'ลบต่ออายุอัตโนมัติหรือเปลี่ยนเป็นต้องยืนยันร่วมกัน' : 'Remove auto-renewal or require mutual opt-in',
+        userLang === 'th' ? 'ให้แจ้งช่องทางเดียว (อีเมลหรือไปรษณีย์)' : 'Allow single-channel notice (email or mail)',
+        userLang === 'th' ? 'การแจ้งมีผลเมื่อส่ง' : 'Notice effective upon sending'
+      ],
+      clause_refs: [{ clause_id: 'GLOBAL', page: 1, snippet: 'Auto-renewal + dual channel/confirmed delivery detected' }],
       compound: true,
       evidence: 'Multi-clause pattern detected'
     });
