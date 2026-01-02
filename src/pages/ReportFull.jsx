@@ -16,21 +16,26 @@ import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 
 function ReportFullContent() {
+  // ============================================================================
+  // ALL HOOKS FIRST - UNCONDITIONAL, TOP-LEVEL, STABLE ORDER
+  // ============================================================================
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
-  const urlParams = new URLSearchParams(window.location.search);
-  const scanId = urlParams.get('scanId');
-  const leaseId = urlParams.get('leaseId');
   
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [expandedClauses, setExpandedClauses] = useState({});
   const [schemaInvalidCount, setSchemaInvalidCount] = useState(0);
 
-  // STEP 1: Log route access with all params
+  // Parse URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const scanId = urlParams.get('scanId');
+  const leaseId = urlParams.get('leaseId');
+
+  // Log route access
   React.useEffect(() => {
     console.log('[REPORTFULL_LOAD]', {
-      step: 'ROUTE_ACCESS',
+      step: 'RENDER_START',
       scanId,
       leaseId,
       url: window.location.href,
@@ -38,6 +43,7 @@ function ReportFullContent() {
     });
   }, [scanId, leaseId]);
 
+  // Fetch user
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: async () => {
@@ -68,6 +74,7 @@ function ReportFullContent() {
     }
   });
 
+  // Fetch scan
   const { data: scan, isLoading: scanLoading, error: scanError } = useQuery({
     queryKey: ['scan', scanId],
     queryFn: async () => {
@@ -123,6 +130,7 @@ function ReportFullContent() {
     retry: 1
   });
 
+  // Fetch lease
   const { data: lease, isLoading: leaseLoading, error: leaseError } = useQuery({
     queryKey: ['lease', scan?.lease_id || leaseId],
     queryFn: async () => {
@@ -170,8 +178,92 @@ function ReportFullContent() {
     retry: 1
   });
 
-  const isLoading = scanLoading || leaseLoading;
+  // SCHEMA VALIDATION - Memoized to run only when scan data changes
+  const { validatedFlags, invalidCount } = React.useMemo(() => {
+    if (!scan) return { validatedFlags: [], invalidCount: 0 };
 
+    console.log('[REPORTFULL_LOAD]', { 
+      step: 'GENERATE_REPORT_START',
+      hasScan: !!scan,
+      hasLease: !!lease
+    });
+
+    const scanFullData = scan.scan_full || {};
+    const allFlags = Array.isArray(scanFullData.flags) ? scanFullData.flags : [];
+
+    console.log('[REPORTFULL_LOAD]', {
+      step: 'DATA_STRUCTURE_VALIDATED',
+      hasScanFull: !!scan.scan_full,
+      flagsCount: allFlags.length,
+      flagsType: typeof allFlags
+    });
+
+    const validated = [];
+    let invalid = 0;
+
+    allFlags.forEach((flag, idx) => {
+      try {
+        const hasRequiredFields = 
+          flag &&
+          typeof flag === 'object' &&
+          flag.title &&
+          flag.severity &&
+          (flag.description || flag.explanation) &&
+          flag.recommendation;
+        
+        if (!hasRequiredFields) {
+          console.error('[ISSUE_SCHEMA_INVALID]', {
+            index: idx,
+            ruleId: flag?.rule_id || flag?.pattern_id || 'unknown',
+            missingFields: {
+              title: !flag?.title,
+              severity: !flag?.severity,
+              description: !flag?.description && !flag?.explanation,
+              recommendation: !flag?.recommendation
+            },
+            payload: JSON.stringify(flag).substring(0, 300)
+          });
+          invalid++;
+        } else {
+          validated.push(flag);
+        }
+      } catch (error) {
+        console.error('[ISSUE_SCHEMA_INVALID]', {
+          index: idx,
+          error: error.message,
+          payload: JSON.stringify(flag).substring(0, 300)
+        });
+        invalid++;
+      }
+    });
+
+    console.log('[REPORTFULL_LOAD]', {
+      step: 'SCHEMA_VALIDATION_COMPLETE',
+      validFlags: validated.length,
+      invalidFlags: invalid
+    });
+
+    return { validatedFlags: validated, invalidCount: invalid };
+  }, [scan, lease]);
+
+  // Update invalid count state
+  React.useEffect(() => {
+    if (invalidCount > 0) {
+      setSchemaInvalidCount(invalidCount);
+      console.error('[TELEMETRY] ReportFullLoadFailed', {
+        step: 'RENDER',
+        scanId,
+        leaseId,
+        errorMessage: `${invalidCount} issues failed schema validation`,
+        httpStatus: 'N/A'
+      });
+    }
+  }, [invalidCount, scanId, leaseId]);
+
+  // ============================================================================
+  // DERIVED STATE - AFTER ALL HOOKS
+  // ============================================================================
+  const isLoading = scanLoading || leaseLoading;
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'free';
@@ -189,6 +281,17 @@ function ReportFullContent() {
     textSecondary: '#64748b',
     borderColor: '#E5E7EB'
   };
+
+  console.log('[REPORTFULL_LOAD]', {
+    step: 'REPORT_STATUS',
+    scanId,
+    leaseId,
+    isLoading,
+    hasScan: !!scan,
+    hasLease: !!lease,
+    scanKeys: scan ? Object.keys(scan) : [],
+    reportShape: scan?.scan_full ? Object.keys(scan.scan_full) : []
+  });
 
   const t = {
     en: {
