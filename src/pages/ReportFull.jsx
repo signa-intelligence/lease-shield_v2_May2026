@@ -262,7 +262,29 @@ function ReportFullContent() {
           invalidFlags.push(flag);
           invalidDetails.push({ index: idx, ruleId, missingFields });
         } else {
-          validated.push(flag);
+          const recs = normalizeRecs(flag);
+          const summary = flag.summary || flag.explanation || flag.description || '';
+          if (!summary || recs.length === 0) {
+            invalid++;
+            invalidCodes.push(`ISSUE_SCHEMA_INVALID:${flag?.rule_id || 'unknown'}`);
+            invalidFlags.push(flag);
+            invalidDetails.push({ index: idx, ruleId: flag?.rule_id || 'unknown', missingFields: { summary: !summary, recommendations: recs.length === 0 } });
+          } else {
+            const key = `${flag.rule_id || 'UNKNOWN'}:${hashText(flag.evidence || flag.evidence_snippet || flag.description || flag.title)}`;
+            const prev = seen.get(key);
+            if (!prev) {
+              const cleaned = { ...flag, recommendations: recs, summary };
+              seen.set(key, cleaned);
+            } else {
+              // merge duplicates: keep highest severity and unique recs
+              const rank = { critical:3, high:2, medium:1, low:0 };
+              if (rank[flag.severity] > rank[prev.severity]) prev.severity = flag.severity;
+              const rset = new Set(prev.recommendations);
+              recs.forEach(r=>rset.add(r));
+              prev.recommendations = Array.from(rset).slice(0,5);
+              if ((flag.summary||'').length > (prev.summary||'').length) prev.summary = flag.summary;
+            }
+          }
         }
       } catch (error) {
         console.error('[ISSUE_SCHEMA_INVALID]', {
