@@ -32,8 +32,12 @@ Deno.serve(async (req) => {
     const who = user?.email || 'anon';
     const today = new Date();
     const from = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
-    const existing = await base44.entities.RiskFeedback.filter({ scan_id: scanId, user_id: user?.id || undefined, created_date: { $gte: from } });
-    if (Array.isArray(existing) && existing.length >= 5) {
+    // Fetch recent feedback for this scan and check locally
+    const recent = await base44.entities.RiskFeedback.filter({ scan_id: scanId }, '-created_date', 50);
+    const recentToday = (Array.isArray(recent) ? recent : []).filter(r => {
+      try { return new Date(r.created_date).toISOString() >= from && (user?.id ? r.user_id === user.id : true); } catch { return false; }
+    });
+    if (recentToday.length >= 5) {
       return Response.json({ success:false, error: 'Rate limit exceeded. Please try tomorrow.' }, { status: 429 });
     }
 
