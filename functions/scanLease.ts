@@ -111,7 +111,8 @@ function emitIssue(draft, meta) {
     penalties: draft.penalties
   };
 
-  return validateRiskIssue(issue, issue.rule_id, meta) ? issue : null;
+  const v = validateRiskIssue(issue, issue.rule_id, meta);
+  return v.ok ? issue : null;
 }
 
 // PENALTY PARSER
