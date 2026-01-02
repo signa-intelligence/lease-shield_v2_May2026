@@ -193,7 +193,7 @@ function ReportFullContent() {
   });
 
   // SCHEMA VALIDATION - Memoized to run only when scan data changes
-  const { validatedFlags, invalidCount, invalidDetails } = React.useMemo(() => {
+  const { validatedFlags, invalidCount, invalidCodes } = React.useMemo(() => {
     if (!scan) return { validatedFlags: [], invalidCount: 0 };
 
     console.log('[REPORTFULL_LOAD]', { 
@@ -214,7 +214,6 @@ function ReportFullContent() {
 
     const validated = [];
     let invalid = 0;
-    const invalidDetailsArr = [];
 
     allFlags.forEach((flag, idx) => {
       try {
@@ -227,41 +226,17 @@ function ReportFullContent() {
           flag.recommendation;
         
         if (!hasRequiredFields) {
-          const preview = {
-            title: flag?.title || flag?.summary || flag?.description || 'Untitled',
-            rule_id: flag?.rule_id || flag?.pattern_id || 'UNKNOWN',
-            category_id: flag?.category_id || flag?.category || 'UNSPECIFIED',
-            severity: flag?.severity || 'medium'
-          };
-          const missingFields = {
-            title: !flag?.title,
-            severity: !flag?.severity,
-            summary: !flag?.summary && !flag?.description,
-            why_it_matters: !flag?.explanation && !flag?.why_it_matters,
-            recommendation: !flag?.recommendation && !(Array.isArray(flag?.recommendations) && flag.recommendations.length>0),
-          };
-          const typeErrors = [];
-          if (flag?.clause_refs && Array.isArray(flag.clause_refs)) {
-            flag.clause_refs.forEach((c,i)=>{
-              if (!c || typeof c!== 'object') typeErrors.push(`clause_refs[${i}] not object`);
-              else {
-                if (typeof c.clause_id !== 'string') typeErrors.push(`clause_refs[${i}].clause_id type`);
-                if (typeof c.snippet !== 'string') typeErrors.push(`clause_refs[${i}].snippet type`);
-              }
-            });
-          }
-          const clauseRefsLen = Array.isArray(flag?.clause_refs) ? flag.clause_refs.length : (flag?.clause_id ? 1 : 0);
-          const recLen = Array.isArray(flag?.recommendations) ? flag.recommendations.length : ((flag?.recommendation||'').split('\n').filter(Boolean).length);
-
-          const detail = {
-            issue_preview: preview,
-            missing_fields: Object.keys(missingFields).filter(k=>missingFields[k]),
-            type_errors: typeErrors,
-            clause_refs_length: clauseRefsLen,
-            recommendations_length: recLen
-          };
-          console.error('IssueSchemaInvalidDetected', { leaseId: leaseId || scan?.lease_id, scanId, invalidCount: 1, invalidIssues: [detail] });
-          invalidDetailsArr.push(detail);
+          console.error('[ISSUE_SCHEMA_INVALID]', {
+            index: idx,
+            ruleId: flag?.rule_id || flag?.pattern_id || 'unknown',
+            missingFields: {
+              title: !flag?.title,
+              severity: !flag?.severity,
+              description: !flag?.description && !flag?.explanation,
+              recommendation: !flag?.recommendation
+            },
+            payload: JSON.stringify(flag).substring(0, 300)
+          });
           invalid++;
         } else {
           validated.push(flag);
@@ -282,17 +257,22 @@ function ReportFullContent() {
       invalidFlags: invalid
     });
 
-    return { validatedFlags: validated, invalidCount: invalid, invalidDetails: invalidDetailsArr };
+    return { validatedFlags: validated, invalidCount: invalid };
   }, [scan, lease]);
 
   // Update invalid count state
   React.useEffect(() => {
     if (invalidCount > 0) {
       setSchemaInvalidCount(invalidCount);
-      const payload = { leaseId: leaseId || scan?.lease_id, scanId, invalidCount, invalidIssues: invalidDetails };
-      console.error('IssueSchemaInvalidDetected', payload);
+      console.error('[TELEMETRY] ReportFullLoadFailed', {
+        step: 'RENDER',
+        scanId,
+        leaseId,
+        errorMessage: `${invalidCount} issues failed schema validation`,
+        httpStatus: 'N/A'
+      });
     }
-  }, [invalidCount, invalidDetails, scanId, leaseId, scan]);
+  }, [invalidCount, scanId, leaseId]);
 
   // ============================================================================
   // DERIVED STATE - AFTER ALL HOOKS
@@ -597,7 +577,7 @@ function ReportFullContent() {
         lease_address: lease.property_address || 'Lease Agreement',
         risk_score: scan.risk_score,
         summary: scan.summary,
-        flags: validatedFlags,
+        flags: scan.scan_full?.flags || [],
         missing_items: scan.scan_full?.missing_items || [],
         key_terms: scan.scan_full?.key_terms || {},
         lease_start: lease.start_date,
@@ -913,11 +893,10 @@ function ReportFullContent() {
     return validatedFlags;
   };
 
-  const allFlags = validatedFlags;  // use only validated issues for all downstream rendering
+  const allFlags = validatedFlags;
   const mainFlags = allFlags.filter(f => (f.confidence || 'HIGH') !== 'LOW');
   const lowConfidence = allFlags.filter(f => (f.confidence || 'HIGH') === 'LOW');
   const fullFlags = getFullDisplayFlags(mainFlags);
-  const firstInvalidRuleId = (invalidDetails && invalidDetails[0]?.issue_preview?.rule_id) || null;
   const totalFlags = mainFlags.length;
   const hiddenFlagsCount = mainFlags.length - fullFlags.length;
   // moved above with mainFlags/lowConfidence
@@ -1019,7 +998,7 @@ function ReportFullContent() {
                   <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
                     {language === 'th' 
                       ? `${schemaInvalidCount} ปัญหาไม่สามารถแสดงได้ (รหัสข้อผิดพลาด: ISSUE_SCHEMA_INVALID)`
-                      : `${schemaInvalidCount} issue(s) could not be displayed (Error Code: ISSUE_SCHEMA_INVALID${firstInvalidRuleId ? ':'+firstInvalidRuleId : ''})` }
+                      : `${schemaInvalidCount} issue(s) could not be displayed (Error Code: ISSUE_SCHEMA_INVALID)`}
                   </p>
                   <p className="text-xs mt-1" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
                     {language === 'th'
