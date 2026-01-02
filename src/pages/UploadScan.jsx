@@ -1495,10 +1495,15 @@ function UploadScanPageContent() {
       if (existingScans.length > 0) {
         await base44.entities.LeaseScan.update(existingScans[0].id, {
           risk_score: scanResult.risk_score,
-          flags: scanResult.flags || [],
+          flags: scanResult.issues_validated || scanResult.flags || [],
           summary: scanResult.summary,
-          scan_full: scanResult,
-          version: '1.0'
+          scan_full: {
+            ...scanResult,
+            issues_validated: scanResult.issues_validated || scanResult.flags || [],
+            issues_invalid: scanResult.issues_invalid || [],
+            flags: scanResult.issues_validated || scanResult.flags || []
+          },
+          version: '3.0'
         });
       }
 
