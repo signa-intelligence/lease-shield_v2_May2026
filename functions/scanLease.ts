@@ -492,6 +492,7 @@ const MISSING_SAFEGUARDS_RULES = [
 
 // COMPOUND PATTERN DETECTION
 function detectCompoundRisks(clauses, keyTerms, userLang) {
+  const meta = { }
   const compounds = [];
   const fullText = clauses.map(c => c.raw_text).join(' ');
   
