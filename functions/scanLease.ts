@@ -929,6 +929,97 @@ Be thorough.`,
     const clauses_risk = issues_validated.length;
     const clauses_no_risk = clauses_total - clauses_risk;
 
+    // Build mandatory 30-category taxonomy_report from extracted clauses and clause_ledger
+    const FIXED_TAXONOMY = [
+      'Parties & Property Description','Lease Term & Commencement','Rent Amount & Payment Method','Rent Escalation / Increases','Security Deposit','Deposit Deductions & Return','Utilities & Services','Maintenance & Repairs (Tenant)','Maintenance & Repairs (Landlord)','Alterations & Fit-Out','Furnishings & Inventory','Use of Property','Subletting / Assignment','Guests & Occupancy Limits','Entry & Inspection Rights','Early Termination (Tenant)','Early Termination (Landlord)','Penalties / Liquidated Damages','Late Payment Consequences','Damage, Wear & Tear','Insurance','Force Majeure','Default & Remedies','Governing Law','Dispute Resolution','Notices & Communication','Renewal / Auto-Renewal','Handover / Move-Out Conditions','Special Conditions / Addenda','Miscellaneous / Boilerplate'
+    ];
+
+    const CATEGORY_PATTERNS = {
+      1: [/party|landlord|tenant|lessor|lessee|premises|property|address|description/i],
+      2: [/term|commence|start\s*date|commencement/i],
+      3: [/rent|payment|bank\s*transfer|due\s*date|payable/i],
+      4: [/increase|escalat|adjust|raise/i],
+      5: [/security\s*deposit|deposit\b/i],
+      6: [/deduct|deduction|return|refund|wear\s*&?\s*tear/i],
+      7: [/utility|electric|water|internet|gas|meter/i],
+      8: [/tenant.*(maintain|repair)|repair.*tenant/i],
+      9: [/landlord.*(maintain|repair)|repair.*landlord|juristic/i],
+      10: [/alteration|fit-?out|improvement|modify|modification/i],
+      11: [/inventory|furnish|furniture|appliance|fixtures/i],
+      12: [/use\s*of\s*property|residential\s*use|purpose|usage/i],
+      13: [/sublet|sublease|assign|assignment/i],
+      14: [/guest|visitor|occupancy|overnight/i],
+      15: [/entry|inspect|access|notice\s*to\s*enter/i],
+      16: [/early\s*termination|tenant.*terminate|break\s*clause/i],
+      17: [/early\s*termination|landlord.*terminate/i],
+      18: [/penalt|liquidated\s*damages|fine/i],
+      19: [/late\s*payment|late\s*fee|interest|per\s*day/i],
+      20: [/damage|wear\s*&?\s*tear|deterioration/i],
+      21: [/insurance|insurer|liability\s*cover|policy/i],
+      22: [/force\s*majeure|act\s*of\s*god/i],
+      23: [/default|remed(y|ies)|breach/i],
+      24: [/governing\s*law|law\s*of|jurisdiction/i],
+      25: [/dispute|mediation|arbitration|court/i],
+      26: [/notice|communication|registered\s*mail|email/i],
+      27: [/renewal|extend|auto-?renew/i],
+      28: [/handover|move-?out|vacate|return\s*condition|cleaning/i],
+      29: [/special\s*conditions|addendum|appendix|schedule/i],
+      30: [/miscellaneous|boilerplate|entire\s*agreement|severability|counterparts/i]
+    };
+
+    const ledgerByClause = new Map();
+    (clause_ledger || []).forEach(l => { const id = String(l.clause_id||''); if (!ledgerByClause.has(id)) ledgerByClause.set(id, []); ledgerByClause.get(id).push(l); });
+
+    function highestRiskLevel(items) {
+      const order = { 'CRITICAL':4, 'HIGH':3, 'MEDIUM':2, 'LOW':1, 'NO_RISK':0 };
+      let max = 'NO_RISK';
+      items.forEach(it => { const rl = String(it.risk_level||'NO_RISK').toUpperCase(); if (order[rl] > order[max]) max = rl; });
+      return max;
+    }
+
+    function highestConfidence(items){
+      const rank = { 'HIGH':3,'MEDIUM':2,'LOW':1 };
+      let best = 'MEDIUM';
+      items.forEach(it => { const c = String(it.confidence||'MEDIUM').toUpperCase(); if (rank[c] > rank[best]) best = c; });
+      return best;
+    }
+
+    const taxonomy_report = FIXED_TAXONOMY.map((name, idx) => {
+      const id = idx + 1;
+      const pats = CATEGORY_PATTERNS[id] || [];
+      const matches = (clauses_extracted||[]).filter(c => pats.some(p => p.test(c.clause_title||'') || p.test(c.text||'')));
+      const refs = matches.map(m => String(m.clause_id));
+      let status = refs.length > 0 ? 'PRESENT' : 'MISSING';
+      const excerpt = refs.length > 0 ? String(matches[0].text||'').substring(0, 300) : 'NOT FOUND';
+      const relatedLedger = refs.flatMap(r => ledgerByClause.get(r)||[]);
+      const risk_level = highestRiskLevel(relatedLedger);
+      const confidence = relatedLedger.length ? highestConfidence(relatedLedger) : 'MEDIUM';
+      const explanation = risk_level === 'NO_RISK' ? 'Standard / no material issue identified' : (relatedLedger[0]?.rationale || relatedLedger[0]?.title || 'Risk present in related clauses');
+      return {
+        taxonomy_id: id,
+        category_name: name,
+        status,
+        detected_text_excerpt: excerpt || 'NOT FOUND',
+        detected_clause_refs: refs,
+        risk_level,
+        explanation,
+        confidence
+      };
+    });
+
+    // Ensure exactly 30 categories; if not, fail the scan
+    if (!Array.isArray(taxonomy_report) || taxonomy_report.length !== 30) {
+      console.error('[CoverageFailure_TaxonomyIncomplete]', { length: taxonomy_report?.length });
+      throw new Error('CoverageFailure_TaxonomyIncomplete');
+    }
+
+    const coverage_summary = {
+      total_categories: 30,
+      present: taxonomy_report.filter(t => t.status === 'PRESENT').length,
+      missing: taxonomy_report.filter(t => t.status === 'MISSING').length,
+      unclear: taxonomy_report.filter(t => t.status === 'UNCLEAR').length
+    };
+
     let summary;
     if (clauses_risk >= 8) summary = `Multiple high-risk indicators across clauses. ${clauses_risk} risk clauses detected.`;
     else if (clauses_risk >= 3) summary = `${clauses_risk} clauses flagged with risks; review recommended before signing.`;
@@ -945,7 +1036,9 @@ Be thorough.`,
           issues_validated,
           key_terms: keyTerms,
           language_detected: keyTerms.language_detected,
-          version: 'clause-ledger-v1'
+          taxonomy_report,
+          coverage_summary,
+          version: 'clause-ledger-v2-taxonomy'
         },
         summary
       });
@@ -959,6 +1052,8 @@ Be thorough.`,
         clauses_extracted,
         clause_ledger,
         issues_validated,
+        taxonomy_report,
+        coverage_summary,
         property_address: keyTerms.property_address,
         start_date: keyTerms.start_date,
         end_date: keyTerms.end_date,
@@ -966,7 +1061,6 @@ Be thorough.`,
         deposit_amount: keyTerms.deposit_amount,
         language_detected: keyTerms.language_detected
       },
-      coverage: { clauses_total, clauses_risk, clauses_no_risk },
       diagnostic: { scanId, requestId }
     });
 

@@ -178,15 +178,41 @@ Deno.serve(async (req) => {
       y += 10;
     }
 
-    // Clause coverage summary (if provided)
-    const totalClauses = Array.isArray(scanData.clause_reviews) ? scanData.clause_reviews.length : 0;
-    const clausesWithRisk = Array.isArray(scanData.clause_reviews) ? scanData.clause_reviews.filter(c=>c.review_status==='RISK_DETECTED').length : 0;
-    if (totalClauses > 0) {
-      if (y > pageHeight - 40) { doc.addPage(); y = 20; }
-      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('Clause Coverage', 20, y); y += 8;
+    // Coverage Summary (Taxonomy 30 categories)
+    const cov = scanData.coverage_summary;
+    if (cov && typeof cov.total_categories === 'number') {
+      if (y > pageHeight - 50) { doc.addPage(); y = 20; }
+      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('Coverage Summary (30 Categories)', 20, y); y += 8;
       doc.setFontSize(10); doc.setFont('helvetica','normal');
-      doc.text(`Total clauses reviewed: ${totalClauses}`, 25, y); y += 6;
-      doc.text(`Clauses with detected risks: ${clausesWithRisk}`, 25, y); y += 10;
+      doc.text(`Total categories: ${cov.total_categories}`, 25, y); y += 6;
+      doc.text(`Present: ${cov.present}`, 25, y); y += 6;
+      doc.text(`Missing: ${cov.missing}`, 25, y); y += 6;
+      doc.text(`Unclear: ${cov.unclear}`, 25, y); y += 10;
+    } else {
+      if (y > pageHeight - 30) { doc.addPage(); y = 20; }
+      doc.setFontSize(10); doc.setFont('helvetica','normal');
+      doc.text('Re-scan required for full coverage (taxonomy missing).', 20, y); y += 10;
+    }
+
+    // Risk Categories (from taxonomy) - main body
+    const taxonomy = Array.isArray(scanData.taxonomy_report) ? scanData.taxonomy_report : [];
+    const riskyCats = taxonomy.filter(t => t.risk_level && t.risk_level !== 'NO_RISK' && t.status === 'PRESENT');
+    if (riskyCats.length > 0) {
+      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text(`Risk Categories (${riskyCats.length})`, 20, y); y += 10;
+      doc.setFont('helvetica','normal');
+      riskyCats.forEach((t, idx) => {
+        if (y > pageHeight - 45) { doc.addPage(); y = 20; }
+        doc.setFontSize(11); doc.setFont('helvetica','bold');
+        y = addText(`${idx + 1}. ${t.category_name}`, 20, 11, 'bold');
+        doc.setFontSize(9); doc.setFont('helvetica','normal');
+        y = addText(`Status: ${t.status}  •  Risk: ${t.risk_level}  •  Confidence: ${t.confidence}`, 25, 9);
+        if (t.explanation) { y = addText(`Why: ${t.explanation}`, 25, 9); }
+        if (t.detected_text_excerpt && t.detected_text_excerpt !== 'NOT FOUND') {
+          y = addText(`Excerpt: ${t.detected_text_excerpt}`, 25, 9);
+        }
+        y += 6;
+      });
     }
 
     // Clause Reviews (one per clause)
@@ -239,23 +265,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Clause Review Appendix (risk-detected only)
-    if (Array.isArray(scanData.clause_reviews)) {
-      const riskClauses = scanData.clause_reviews.filter(c=>c.review_status==='RISK_DETECTED');
-      if (riskClauses.length > 0) {
-        if (y > pageHeight - 60) { doc.addPage(); y = 20; }
-        doc.setFontSize(12); doc.setFont('helvetica','bold');
-        doc.text(`Clause Review Appendix (Risks)`, 20, y); y += 8;
-        doc.setFontSize(9); doc.setFont('helvetica','normal');
-        riskClauses.forEach((c, idx) => {
-          if (y > pageHeight - 15) { doc.addPage(); y = 20; }
-          const codes = (c.taxonomy_hits || []).join(', ');
-          const rationale = String(c.rationale || '').split('\n')[0];
-          doc.text(`${idx + 1}. Clause ${c.clause_id} — ${codes} — ${rationale}`, 25, y);
-          y += 6;
-        });
+    // Taxonomy Appendix: all 30 categories
+    if (Array.isArray(scanData.taxonomy_report) && scanData.taxonomy_report.length === 30) {
+      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+      doc.setFontSize(12); doc.setFont('helvetica','bold');
+      doc.text(`Taxonomy Appendix (All 30 Categories)`, 20, y); y += 8;
+      doc.setFontSize(9); doc.setFont('helvetica','normal');
+      scanData.taxonomy_report.forEach((t, idx) => {
+        if (y > pageHeight - 12) { doc.addPage(); y = 20; }
+        doc.text(`${idx + 1}. ${t.category_name} — Risk: ${t.risk_level} — Conf: ${t.confidence} — Status: ${t.status}`, 25, y);
         y += 6;
-      }
+      });
+      y += 6;
     }
 
     // Missing Protections

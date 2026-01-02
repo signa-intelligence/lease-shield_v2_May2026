@@ -915,6 +915,8 @@ function ReportFullContent() {
   // Extract other scan data
   const missingItems = scan?.scan_full?.missing_items || [];
   const keyTerms = scan?.scan_full?.key_terms || {};
+  const taxonomyReport = Array.isArray(scan?.scan_full?.taxonomy_report) ? scan.scan_full.taxonomy_report : null;
+  const coverageSummary = scan?.scan_full?.coverage_summary || null;
 
   // LIMIT FLAGS BASED ON TIER (consistent with ScanPreview)
   const getFullDisplayFlags = () => {
@@ -1151,21 +1153,29 @@ function ReportFullContent() {
             )}
             <CardContent className="p-6">
               <p className="leading-relaxed" style={{ color: colors.textPrimary }}>{scan.summary}</p>
-              {/* Clause Coverage Summary */}
-              {Array.isArray(scan?.scan_full?.clause_reviews) && (
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Coverage Summary (Taxonomy 30 categories) */}
+              {coverageSummary ? (
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5', border: `1px solid ${colors.borderColor}` }}>
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Total clauses reviewed</p>
-                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{scan.scan_full.clause_reviews.length}</p>
+                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Total categories</p>
+                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{coverageSummary.total_categories}</p>
                   </div>
-                  <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#3A2D1C' : '#FFF7ED', border: `1px solid ${colors.borderColor}` }}>
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Clauses with detected risks</p>
-                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{scan.scan_full.clause_reviews.filter(c=>c.review_status==='RISK_DETECTED').length}</p>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1E4435' : '#E8FFF5', border: `1px solid ${colors.borderColor}` }}>
+                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Present</p>
+                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{coverageSummary.present}</p>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2', border: `1px solid ${colors.borderColor}` }}>
+                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Missing</p>
+                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{coverageSummary.missing}</p>
                   </div>
                   <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC', border: `1px solid ${colors.borderColor}` }}>
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>No-risk indicator clauses</p>
-                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{scan.scan_full.clause_reviews.filter(c=>c.review_status==='NO_AUTOMATED_RISK').length}</p>
+                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Unclear</p>
+                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{coverageSummary.unclear}</p>
                   </div>
+                </div>
+              ) : (
+                <div className="mt-4 p-3 rounded-lg border" style={{ borderColor: colors.borderColor }}>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>Re-scan required for full coverage (taxonomy)</p>
                 </div>
               )}
             </CardContent>
@@ -1220,6 +1230,73 @@ function ReportFullContent() {
                       <p className="font-medium uppercase" style={{ color: colors.textPrimary }}>{keyTerms.language_detected}</p>
                     </div>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Clause Coverage (30 Categories) */}
+          {taxonomyReport ? (
+            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+              <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
+                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  Clause Coverage (30 Categories)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                {/* Risky first */}
+                <div className="space-y-2">
+                  {taxonomyReport.filter(t => t.risk_level !== 'NO_RISK' && t.status === 'PRESENT').map((t, idx) => {
+                    const sev = String(t.risk_level).toUpperCase();
+                    const color = sev === 'CRITICAL' ? '#EF4444' : sev === 'HIGH' ? '#F59E0B' : sev === 'MEDIUM' ? '#EAB308' : '#10B981';
+                    return (
+                      <div key={`tax-risk-${idx}`} className="rounded-lg border-2 p-3" style={{ borderColor: color }}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-semibold" style={{ color: colors.textPrimary }}>{t.category_name}</div>
+                            <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{t.detected_text_excerpt}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className="text-xs" style={{ backgroundColor: color, color: '#fff' }}>{sev}</Badge>
+                            <Badge variant="outline" className="text-xs">{t.status}</Badge>
+                            <Badge variant="outline" className="text-xs">{t.confidence}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Collapsible for others */}
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-sm font-semibold" style={{ color: '#0C3B2E' }}>Show remaining categories</summary>
+                  <div className="mt-3 space-y-2">
+                    {taxonomyReport.filter(t => !(t.risk_level !== 'NO_RISK' && t.status === 'PRESENT')).map((t, idx) => (
+                      <div key={`tax-all-${idx}`} className="rounded-lg border p-3" style={{ borderColor: colors.borderColor }}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-medium" style={{ color: colors.textPrimary }}>{t.category_name}</div>
+                            <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{t.detected_text_excerpt}</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className="text-xs" variant="outline">{t.risk_level}</Badge>
+                            <Badge className="text-xs" variant="outline">{t.status}</Badge>
+                            <Badge className="text-xs" variant="outline">{t.confidence}</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+              <CardContent className="p-6">
+                <div className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>Re-scan required for full coverage (taxonomy report missing).</p>
+                  <div className="mt-2"><Button onClick={() => navigate(createPageUrl('UploadScan'))}>Re-scan</Button></div>
                 </div>
               </CardContent>
             </Card>
