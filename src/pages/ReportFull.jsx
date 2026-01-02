@@ -220,6 +220,19 @@ function ReportFullContent() {
     const invalidFlags = [];
     const invalidDetails = [];
 
+    // helper: normalize recs to array
+    const normalizeRecs = (flag) => {
+      if (Array.isArray(flag.recommendations)) return flag.recommendations;
+      return String(flag.recommendation||'')
+        .split('\n')
+        .map(s=>s.replace(/^\s*[•\-–—!*→]+\s*/g,'').trim())
+        .filter(Boolean);
+    };
+
+    // dedupe by rule_id + evidence snippet hash
+    const hashText = (s='') => { const t = String(s).toLowerCase().replace(/\s+/g,' ').trim(); let h=0; for(let i=0;i<t.length;i++){ h=((h<<5)-h)+t.charCodeAt(i); h|=0;} return String(h); };
+    const seen = new Map();
+
     allFlags.forEach((flag, idx) => {
       try {
         const hasRequiredFields = 
