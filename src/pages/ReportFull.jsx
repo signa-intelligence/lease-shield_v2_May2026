@@ -1411,7 +1411,7 @@ function ReportFullContent() {
                                   </div>
 
                                   {/* Recommended Action - BOXED AND PROMINENT */}
-                                  {flag.recommendation && (
+                                  {(flag.recommendations || flag.recommendation) && (
                                     <div className="rounded-xl p-4 border-2" style={{
                                       backgroundColor: isDarkMode ? '#1E3A2E' : '#F0FDF4',
                                       borderColor: '#0C3B2E',
@@ -1422,19 +1422,22 @@ function ReportFullContent() {
                                         {strings.recommendation}
                                       </p>
                                       <div className="text-sm leading-relaxed space-y-2" style={{ color: colors.textPrimary }}>
-                                        {(flag.recommendation || '').split('\n').map((line, i) => {
-                                          const trimmed = line.trim();
-                                          if (!trimmed) return null;
-                                          if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
-                                            return (
-                                              <div key={i} className="flex items-start gap-2">
-                                                <span className="text-emerald-600 font-bold flex-shrink-0">•</span>
-                                                <span className="flex-1">{trimmed.replace(/^[•-]\s*/, '')}</span>
-                                              </div>
-                                            );
-                                          }
-                                          return <p key={i} className="font-medium">{trimmed}</p>;
-                                        })}
+                                        {(() => {
+                                          // Normalize to array and strip ALL bullet prefixes
+                                          const recs = Array.isArray(flag.recommendations)
+                                            ? flag.recommendations.map(r => String(r || '').replace(/^[\s•\-–—!*→'"]+/, '').trim()).filter(Boolean)
+                                            : String(flag.recommendation || '')
+                                                .split('\n')
+                                                .map(s => s.replace(/^[\s•\-–—!*→'"]+/, '').trim())
+                                                .filter(Boolean);
+
+                                          return recs.map((rec, i) => (
+                                            <div key={i} className="flex items-start gap-2">
+                                              <span className="text-emerald-600 font-bold flex-shrink-0">•</span>
+                                              <span className="flex-1">{rec}</span>
+                                            </div>
+                                          ));
+                                        })()}
                                       </div>
                                     </div>
                                   )}
