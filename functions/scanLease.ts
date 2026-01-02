@@ -820,6 +820,33 @@ Be thorough.`,
       });
     });
 
+    // Emit explicit penalty issues (guest/pet/smoking/daily/holdover)
+    clauses.forEach(clause => {
+      const pList = parsePenalties(clause.raw_text, monthlyRent);
+      pList.forEach(p => {
+        let ruleId = null, title = null, category = 'Financial Risk';
+        if (p.type === 'daily') { ruleId = 'PENALTY_DAILY_LATE_FEE'; title = userLang === 'th' ? 'ค่าปรับรายวันสำหรับการชำระล่าช้า' : 'Daily Late Fee Penalty'; }
+        if (p.type === 'multiplier') { ruleId = 'FIN_HOLDOVER_MULTIPLIER'; title = userLang === 'th' ? 'ค่าปรับพักอาศัยเกินกำหนดแบบทวีคูณ' : 'Holdover Rent Multiplier'; }
+        if (p.type === 'smoking') { ruleId = 'PENALTY_SMOKING_FINE'; title = userLang === 'th' ? 'ค่าปรับการสูบบุหรี่' : 'Smoking Fine'; }
+        if (p.type === 'guest') { ruleId = 'PENALTY_GUEST_FINE'; title = userLang === 'th' ? 'ค่าปรับแขกค้างคืน' : 'Guest Overnight Fine'; }
+        if (p.type === 'pet') { ruleId = 'PENALTY_PET_FINE'; title = userLang === 'th' ? 'ค่าปรับสัตว์เลี้ยง' : 'Unauthorized Pet Fine'; }
+        if (!ruleId) return;
+        const emitted = emitIssue({
+          rule_id: ruleId,
+          severity: p.severity || 'high',
+          category,
+          title,
+          summary: (p.type === 'multiplier')
+            ? (userLang === 'th' ? 'ค่าปรับพักอาศัยเกินกำหนดคูณ ' : 'Holdover multiplier ' ) + (p.multiplier ? `${p.multiplier}x` : '')
+            : (userLang === 'th' ? 'มีค่าปรับที่ระบุไว้ในสัญญา' : 'Penalty clause present in lease'),
+          why_it_matters: userLang === 'th' ? 'ภาระทางการเงินอาจไม่สมส่วนกับความเสียหายจริง' : 'Financial burden may be disproportionate to actual damages',
+          recommendations: [ userLang === 'th' ? 'จำกัดเพดานค่าปรับและเพิ่มระยะผ่อนผัน' : 'Cap penalties and add grace period' ],
+          clause_refs: [{ clause_id: clause.clause_id, page: clause.page_number || 1, snippet: clause.raw_text.substring(0, 200) }]
+        }, { leaseId, scanId });
+        if (emitted) detectedIssues.push(emitted);
+      });
+    });
+
     // Missing safeguards
     MISSING_SAFEGUARDS_RULES.forEach(rule => {
       if (rule.check && rule.check(keyTerms)) {
