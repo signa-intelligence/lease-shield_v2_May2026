@@ -1244,16 +1244,22 @@ OUTPUT FORMAT:
     // Merge LLM issues with rule-based issues
     const combinedIssues = [...uniqueIssues, ...llmValidIssues];
 
-    // Final deduplication by rule_id + clause_id
-    const finalIssues = [];
-    const finalSeen = new Set();
+    // Final deterministic de-duplication (rule_id + canonical clause id set)
+    const finalMap = new Map();
     combinedIssues.forEach(issue => {
-      const key = `${issue.rule_id}-${issue.clause_id || 'global'}`;
-      if (!finalSeen.has(key)) {
-        finalSeen.add(key);
-        finalIssues.push(issue);
+      const clauseIds = Array.isArray(issue.clause_refs) ? issue.clause_refs.map(c => c.clause_id) : [issue.clause_id || 'GLOBAL'];
+      const primary = clauseIds.length > 1 ? clauseIds.sort().join(',') : clauseIds[0];
+      const k = `${issue.rule_id}:${primary}`;
+      if (!finalMap.has(k)) finalMap.set(k, issue);
+      else {
+        const existing = finalMap.get(k);
+        const rank = { critical: 3, high: 2, medium: 1, low: 0 };
+        if (rank[issue.severity] > rank[existing.severity]) existing.severity = issue.severity;
+        const seenRef = new Set((existing.clause_refs || []).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
+        (issue.clause_refs || []).forEach(c => { const sig = `${c.clause_id}|${c.page}|${c.snippet}`; if (!seenRef.has(sig)) existing.clause_refs = [...(existing.clause_refs||[]), c]; });
       }
     });
+    const finalIssues = Array.from(finalMap.values());
 
     logStage('LLM_MERGE_COMPLETE', {
       ruleBasedIssues: uniqueIssues.length,
