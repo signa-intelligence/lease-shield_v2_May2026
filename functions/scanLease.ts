@@ -840,24 +840,19 @@ Be thorough.`,
     // Missing safeguards
     MISSING_SAFEGUARDS_RULES.forEach(rule => {
       if (rule.check && rule.check(keyTerms)) {
-        const issue = {
-          id: crypto.randomUUID(),
+        const emitted = emitIssue({
           rule_id: rule.rule_id,
           severity: rule.severity,
           category: rule.category,
           title: userLang === 'th' ? rule.title_th : rule.title_en,
-          description: userLang === 'th' ? rule.description_th : rule.description_en,
-          explanation: userLang === 'th' ? rule.explanation_th : rule.explanation_en,
-          recommendation: userLang === 'th' ? rule.recommendation_th : rule.recommendation_en,
-          evidence: 'Not explicitly stated in lease',
+          summary: userLang === 'th' ? rule.description_th : rule.description_en,
+          why_it_matters: userLang === 'th' ? rule.explanation_th : rule.explanation_en,
+          recommendations: (userLang === 'th' ? rule.recommendation_th : rule.recommendation_en)
+            .split('\n').map(s => s.replace(/^•\s*/, '')).filter(Boolean),
+          clause_refs: [{ clause_id: 'GLOBAL', page: 1, snippet: 'Not explicitly stated in lease' }],
           missing_safeguard: true
-        };
-        
-        if (validateRiskIssue(issue, rule.rule_id)) {
-          detectedIssues.push(issue);
-        } else {
-          invalidIssues.push({ rule_id: rule.rule_id, reason: 'schema_validation_failed' });
-        }
+        }, { leaseId, scanId });
+        if (emitted) detectedIssues.push(emitted);
       }
       
       if (rule.patterns) {
