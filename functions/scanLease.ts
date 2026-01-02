@@ -809,6 +809,7 @@ Be thorough.`,
     
     const detectedIssues = [];
     const invalidIssues = [];
+    const invalidDetails = [];
     const userLang = user.language || 'en';
     const monthlyRent = keyTerms.rent_amount;
 
