@@ -260,7 +260,7 @@ function ReportFullContent() {
       invalidFlags: invalid
     });
 
-    return { validatedFlags: validated, invalidCount: invalid };
+    return { validatedFlags: validated, invalidCount: invalid, invalidCodes };
   }, [scan, lease]);
 
   // Update invalid count state
