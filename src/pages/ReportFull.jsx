@@ -25,11 +25,12 @@ function ReportFullContent() {
   
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [expandedClauses, setExpandedClauses] = useState({});
-  const [loadError, setLoadError] = useState(null);
+  const [schemaInvalidCount, setSchemaInvalidCount] = useState(0);
 
-  // Log telemetry for route access
+  // STEP 1: Log route access with all params
   React.useEffect(() => {
-    console.log('[ReportFull] Route accessed', {
+    console.log('[REPORTFULL_LOAD]', {
+      step: 'ROUTE_ACCESS',
       scanId,
       leaseId,
       url: window.location.href,
@@ -41,12 +42,20 @@ function ReportFullContent() {
     queryKey: ['currentUser'],
     queryFn: async () => {
       try {
+        console.log('[REPORTFULL_LOAD]', { step: 'FETCH_USER_START' });
         const userData = await base44.auth.me();
-        console.log('[ReportFull] User loaded', { userId: userData?.id, email: userData?.email });
+        console.log('[REPORTFULL_LOAD]', { 
+          step: 'FETCH_USER_SUCCESS', 
+          userId: userData?.id, 
+          email: userData?.email 
+        });
         return userData;
       } catch (error) {
-        console.error('[ReportFull] Auth error', { error: error.message, stack: error.stack });
-        // Log telemetry
+        console.error('[REPORTFULL_LOAD]', { 
+          step: 'FETCH_USER_ERROR', 
+          error: error.message, 
+          stack: error.stack 
+        });
         console.error('[TELEMETRY] ReportFullLoadFailed', {
           step: 'AUTH',
           scanId,
@@ -63,12 +72,16 @@ function ReportFullContent() {
     queryKey: ['scan', scanId],
     queryFn: async () => {
       try {
-        console.log('[ReportFull] Fetching scan', { scanId });
+        console.log('[REPORTFULL_LOAD]', { step: 'FETCH_SCAN_START', scanId });
         const scans = await base44.entities.LeaseScan.list();
         const foundScan = scans.find(s => s.id === scanId);
         
         if (!foundScan) {
-          console.warn('[ReportFull] Scan not found', { scanId, totalScans: scans.length });
+          console.error('[REPORTFULL_LOAD]', { 
+            step: 'FETCH_SCAN_NOT_FOUND', 
+            scanId, 
+            totalScans: scans.length 
+          });
           console.error('[TELEMETRY] ReportFullLoadFailed', {
             step: 'FETCH',
             scanId,
@@ -77,7 +90,8 @@ function ReportFullContent() {
             httpStatus: 404
           });
         } else {
-          console.log('[ReportFull] Scan loaded', { 
+          console.log('[REPORTFULL_LOAD]', { 
+            step: 'FETCH_SCAN_SUCCESS',
             scanId: foundScan.id, 
             riskScore: foundScan.risk_score,
             hasFlags: !!foundScan.scan_full?.flags,
@@ -87,7 +101,8 @@ function ReportFullContent() {
         
         return foundScan;
       } catch (error) {
-        console.error('[ReportFull] Scan fetch error', { 
+        console.error('[REPORTFULL_LOAD]', { 
+          step: 'FETCH_SCAN_ERROR',
           scanId, 
           error: error.message, 
           status: error.response?.status,
@@ -113,14 +128,19 @@ function ReportFullContent() {
     queryFn: async () => {
       try {
         const targetLeaseId = scan?.lease_id || leaseId;
-        console.log('[ReportFull] Fetching lease', { leaseId: targetLeaseId });
+        console.log('[REPORTFULL_LOAD]', { step: 'FETCH_LEASE_START', leaseId: targetLeaseId });
         const leases = await base44.entities.Lease.list();
         const foundLease = leases.find(l => l.id === targetLeaseId);
         
         if (!foundLease) {
-          console.warn('[ReportFull] Lease not found', { leaseId: targetLeaseId, totalLeases: leases.length });
+          console.error('[REPORTFULL_LOAD]', { 
+            step: 'FETCH_LEASE_NOT_FOUND', 
+            leaseId: targetLeaseId, 
+            totalLeases: leases.length 
+          });
         } else {
-          console.log('[ReportFull] Lease loaded', { 
+          console.log('[REPORTFULL_LOAD]', { 
+            step: 'FETCH_LEASE_SUCCESS',
             leaseId: foundLease.id, 
             address: foundLease.property_address 
           });
@@ -128,7 +148,8 @@ function ReportFullContent() {
         
         return foundLease;
       } catch (error) {
-        console.error('[ReportFull] Lease fetch error', { 
+        console.error('[REPORTFULL_LOAD]', { 
+          step: 'FETCH_LEASE_ERROR',
           leaseId: scan?.lease_id || leaseId,
           error: error.message,
           status: error.response?.status,
@@ -423,12 +444,13 @@ function ReportFullContent() {
     haptic.medium();
 
     const correlationId = `pdf-dl-${Date.now()}-${user.id.substring(0, 8)}`;
-    console.log(`[${correlationId}] PDF download initiated`, {
+    console.log('[REPORTFULL_LOAD]', { 
+      step: 'EXPORT_PDF_START',
+      correlationId,
       userId: user.id,
       userEmail: user.email,
       scanId: scan.id,
-      leaseId: lease.id,
-      timestamp: new Date().toISOString()
+      leaseId: lease.id
     });
 
     try {
@@ -447,7 +469,9 @@ function ReportFullContent() {
         generated_date: new Date().toISOString()
       };
 
-      console.log(`[${correlationId}] Calling PDF generation function`, {
+      console.log('[REPORTFULL_LOAD]', { 
+        step: 'EXPORT_PDF_FUNCTION_CALL',
+        correlationId,
         dataSize: JSON.stringify(pdfData).length,
         flagsCount: pdfData.flags.length,
         language
@@ -460,7 +484,9 @@ function ReportFullContent() {
         correlationId
       });
 
-      console.log(`[${correlationId}] PDF generation response`, {
+      console.log('[REPORTFULL_LOAD]', { 
+        step: 'EXPORT_PDF_FUNCTION_RESPONSE',
+        correlationId,
         success: response.data?.success,
         hasPdfUrl: !!response.data?.pdf_url,
         status: response.status
@@ -468,25 +494,37 @@ function ReportFullContent() {
 
       if (response.data?.success && response.data?.pdf_url) {
         const pdfUrl = response.data.pdf_url;
-        console.log(`[${correlationId}] PDF URL obtained, starting download`, { pdfUrl });
+        console.log('[REPORTFULL_LOAD]', { 
+          step: 'EXPORT_PDF_SUCCESS',
+          correlationId,
+          pdfUrl 
+        });
         
         // MOBILE-SAFE DOWNLOAD: Direct navigation to PDF URL
-        // Works in Android Chrome, PWA, and TWA - no popup blocker
         window.location.href = pdfUrl;
         
-        console.log(`[${correlationId}] Download triggered successfully`);
         toast.success(language === 'th' ? 'กำลังดาวน์โหลด PDF' : 'Downloading PDF');
         haptic.success();
       } else {
-        console.error(`[${correlationId}] PDF generation failed`, {
+        console.error('[REPORTFULL_LOAD]', { 
+          step: 'EXPORT_PDF_FAILED',
+          correlationId,
           success: response.data?.success,
-          error: response.data?.error,
-          correlationId: response.data?.correlationId
+          error: response.data?.error
+        });
+        console.error('[TELEMETRY] ReportFullLoadFailed', {
+          step: 'EXPORT_PDF',
+          scanId,
+          leaseId: lease?.id,
+          errorMessage: response.data?.error || 'PDF generation failed',
+          httpStatus: response.status
         });
         throw new Error(response.data?.error || 'PDF generation failed');
       }
     } catch (error) {
-      console.error(`[${correlationId}] PDF download error:`, {
+      console.error('[REPORTFULL_LOAD]', {
+        step: 'EXPORT_PDF_ERROR',
+        correlationId,
         message: error.message,
         stack: error.stack,
         response: error.response?.data,
@@ -494,6 +532,15 @@ function ReportFullContent() {
         userId: user.id,
         scanId: scan?.id,
         leaseId: lease?.id
+      });
+      
+      console.error('[TELEMETRY] ReportFullLoadFailed', {
+        step: 'EXPORT_PDF',
+        scanId: scan?.id,
+        leaseId: lease?.id,
+        errorMessage: error.message,
+        httpStatus: error.response?.status,
+        stackTrace: error.stack?.substring(0, 200)
       });
       
       // User-friendly error messages based on status
@@ -708,13 +755,21 @@ function ReportFullContent() {
 
   const riskLevel = scan ? getRiskLevel(scan.risk_score) : null;
 
+  // STEP 2: Log data processing start
+  console.log('[REPORTFULL_LOAD]', { 
+    step: 'GENERATE_REPORT_START',
+    hasScan: !!scan,
+    hasLease: !!lease
+  });
+
   // DEFENSIVE: Handle missing or malformed scan data
   const scanFullData = scan.scan_full || {};
   const allFlags = Array.isArray(scanFullData.flags) ? scanFullData.flags : [];
   const missingItems = Array.isArray(scanFullData.missing_items) ? scanFullData.missing_items : [];
   const keyTerms = scanFullData.key_terms && typeof scanFullData.key_terms === 'object' ? scanFullData.key_terms : {};
 
-  console.log('[ReportFull] Scan data structure', {
+  console.log('[REPORTFULL_LOAD]', {
+    step: 'DATA_STRUCTURE_VALIDATED',
     hasScanFull: !!scan.scan_full,
     flagsCount: allFlags.length,
     flagsType: typeof allFlags,
@@ -722,24 +777,84 @@ function ReportFullContent() {
     keyTermsKeys: Object.keys(keyTerms)
   });
 
+  // SCHEMA VALIDATION FOR FLAGS
+  const validatedFlags = [];
+  let invalidCount = 0;
+
+  allFlags.forEach((flag, idx) => {
+    try {
+      // Check required fields
+      const hasRequiredFields = 
+        flag &&
+        typeof flag === 'object' &&
+        flag.title &&
+        flag.severity &&
+        (flag.description || flag.explanation) &&
+        flag.recommendation;
+      
+      if (!hasRequiredFields) {
+        console.error('[ISSUE_SCHEMA_INVALID]', {
+          index: idx,
+          ruleId: flag?.rule_id || flag?.pattern_id || 'unknown',
+          missingFields: {
+            title: !flag?.title,
+            severity: !flag?.severity,
+            description: !flag?.description && !flag?.explanation,
+            recommendation: !flag?.recommendation
+          },
+          payload: JSON.stringify(flag).substring(0, 300)
+        });
+        invalidCount++;
+      } else {
+        validatedFlags.push(flag);
+      }
+    } catch (error) {
+      console.error('[ISSUE_SCHEMA_INVALID]', {
+        index: idx,
+        error: error.message,
+        payload: JSON.stringify(flag).substring(0, 300)
+      });
+      invalidCount++;
+    }
+  });
+
+  React.useEffect(() => {
+    if (invalidCount > 0) {
+      setSchemaInvalidCount(invalidCount);
+      console.error('[TELEMETRY] ReportFullLoadFailed', {
+        step: 'RENDER',
+        scanId,
+        leaseId,
+        errorMessage: `${invalidCount} issues failed schema validation`,
+        httpStatus: 'N/A'
+      });
+    }
+  }, [invalidCount]);
+
+  console.log('[REPORTFULL_LOAD]', {
+    step: 'SCHEMA_VALIDATION_COMPLETE',
+    validFlags: validatedFlags.length,
+    invalidFlags: invalidCount
+  });
+
   // LIMIT FLAGS BASED ON TIER (consistent with ScanPreview)
   const getFullDisplayFlags = () => {
     // Lite tier: Show max 5 flags
     if (userTier === 'lite') {
-      return allFlags.slice(0, 5);
+      return validatedFlags.slice(0, 5);
     }
     
     // Free tier shouldn't access this page, but if they do, show 4
     if (userTier === 'free') {
-      return allFlags.slice(0, 4);
+      return validatedFlags.slice(0, 4);
     }
     
     // Protect and Secure: Show all flags
-    return allFlags;
+    return validatedFlags;
   };
 
   const fullFlags = getFullDisplayFlags();
-  const totalFlags = allFlags.length;
+  const totalFlags = validatedFlags.length;
   const hiddenFlagsCount = totalFlags - fullFlags.length;
 
   // DEFENSIVE: Group flags by category with fallback
@@ -816,10 +931,40 @@ function ReportFullContent() {
     return labels[code] || code.toUpperCase();
   };
 
+  // STEP 3: Log render start
+  console.log('[REPORTFULL_LOAD]', { 
+    step: 'RENDER_REPORT_START',
+    flagsToRender: fullFlags.length
+  });
+
   return (
     <FeatureGate feature="full_report">
       <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
+          
+          {/* SCHEMA INVALID BANNER */}
+          {schemaInvalidCount > 0 && (
+            <div className="mb-4 p-4 rounded-lg border-2" style={{
+              backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
+              borderColor: '#DC2626'
+            }}>
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
+                    {language === 'th' 
+                      ? `${schemaInvalidCount} ปัญหาไม่สามารถแสดงได้ (รหัสข้อผิดพลาด: ISSUE_SCHEMA_INVALID)`
+                      : `${schemaInvalidCount} issue(s) could not be displayed (Error Code: ISSUE_SCHEMA_INVALID)`}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
+                    {language === 'th'
+                      ? 'ข้อมูลบางอย่างไม่สมบูรณ์ กรุณาติดต่อฝ่ายสนับสนุนหากต้องการความช่วยเหลือ'
+                      : 'Some data was incomplete. Contact support if you need assistance.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           <PageHeader
             title={strings.fullLeaseReport}
             subtitle={lease.property_address || 'Lease Agreement'}
