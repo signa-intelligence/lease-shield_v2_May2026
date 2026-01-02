@@ -1007,6 +1007,17 @@ Be thorough.`,
     const uniqueIssues = Array.from(mergedMap.values());
     logStage('DedupApplied', { before: detectedIssues.length, after: uniqueIssues.length, invalid: invalidIssues.length });
 
+    // Emit structured event for invalid issues
+    if (invalidIssues.length > 0) {
+      console.error('[IssueSchemaInvalidDetected]', {
+        event: 'IssueSchemaInvalidDetected',
+        leaseId,
+        scanId,
+        invalidCount: invalidIssues.length,
+        invalidIssues
+      });
+    }
+
     // Risk score
     const severityWeights = { critical: 25, high: 15, medium: 8, low: 3 };
     let rawScore = uniqueIssues.reduce((sum, issue) => sum + (severityWeights[issue.severity] || 5), 0);
