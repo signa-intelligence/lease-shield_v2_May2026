@@ -1227,7 +1227,7 @@ function ReportFullContent() {
             </Card>
           )}
 
-          {/* Detailed Flags - GROUPED BY CATEGORY */}
+          {/* Clause Review (Coverage 100%) */}
           {fullFlags.length > 0 && (
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
