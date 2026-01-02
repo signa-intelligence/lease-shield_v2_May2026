@@ -7,15 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { riskTheme, LEGAL_DISCLAIMER } from "../components/shared/riskTheme";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2, DollarSign, Home, ThumbsDown, Plus } from "lucide-react";
+import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2, DollarSign, Home } from "lucide-react";
 import { FeatureGate } from "../components/shared/FeatureGate";
 import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
-import IssueFeedbackModal from "../components/report/IssueFeedbackModal";
-import MissedRiskModalBoundary from "../components/report/MissedRiskModalBoundary";
-import SimpleMissedRiskModal from "../components/report/SimpleMissedRiskModal";
 import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 
@@ -28,9 +25,6 @@ function ReportFullContent() {
   const toast = useToast();
   
   const [downloadingPDF, setDownloadingPDF] = useState(false);
-  const [feedbackIssue, setFeedbackIssue] = useState(null);
-  const [showMissedRisk, setShowMissedRisk] = useState(false);
-  const [taxonomy, setTaxonomy] = useState(null);
   const [expandedClauses, setExpandedClauses] = useState({});
   const [schemaInvalidCount, setSchemaInvalidCount] = useState(0);
   const [repairAttempted, setRepairAttempted] = useState(false);
@@ -51,14 +45,6 @@ function ReportFullContent() {
     });
   }, [scanId, leaseId]);
 
-  // Fetch taxonomy
-  const { data: taxonomyData } = useQuery({
-    queryKey: ['taxonomy'],
-    queryFn: async () => {
-      const { data } = await base44.functions.invoke('getTaxonomy', {});
-      return data.taxonomy;
-    }
-  });
 
   // Fetch user
   const { data: user } = useQuery({
@@ -601,7 +587,6 @@ function ReportFullContent() {
   };
 
   const strings = t[language] || t.en;
-  React.useEffect(()=>{ if (taxonomyData) setTaxonomy(taxonomyData); }, [taxonomyData]);
 
   // Currency sanitizer - removes all non-numeric characters except digits, decimal, minus
   const sanitizeCurrency = (value) => {
@@ -1386,9 +1371,6 @@ function ReportFullContent() {
                                         }}>
                                           {flag.severity || 'medium'}
                                           </Badge>
-                                          <button className="text-xs underline text-slate-600" onClick={()=> setFeedbackIssue(flag)}>
-                                          <ThumbsDown className="inline w-3 h-3 mr-1"/> Not accurate
-                                          </button>
                                           </div>
                                       </div>
                                       {flag.clause_id && (
@@ -1708,39 +1690,7 @@ function ReportFullContent() {
         </div>
       </div>
 
-      <IssueFeedbackModal
-        open={!!feedbackIssue}
-        onClose={()=> setFeedbackIssue(null)}
-        issue={feedbackIssue}
-        taxonomy={taxonomy}
-        onSubmit={async (payload)=>{
-          const clause = (feedbackIssue?.clause_refs||[])[0] || {};
-          await base44.entities.RiskFeedback.create({
-            lease_id: lease.id,
-            scan_id: scan.id,
-            user_id: user.id,
-            feedback_type: payload.feedback_type,
-            category_id: feedbackIssue.category_id || feedbackIssue.category || 'UNSPECIFIED',
-            clause_ref: { clause_id: clause.clause_id || 'UNKNOWN', page: clause.page, snippet: clause.snippet },
-            suggested_severity: payload.suggested_severity || null,
-            note: payload.note || null,
-            related_issue_id: feedbackIssue.id || null,
-          });
-          setFeedbackIssue(null);
-          toast.success('Feedback submitted, thank you!');
-        }}
-      />
 
-      <MissedRiskModalBoundary leaseId={lease.id} scanId={scan.id} onClose={()=> setShowMissedRisk(false)}>
-        <SimpleMissedRiskModal
-          open={showMissedRisk}
-          onClose={()=> setShowMissedRisk(false)}
-          leaseId={lease.id}
-          scanId={scan.id}
-          appLanguage={language}
-          leaseLanguage={leaseLanguage}
-        />
-      </MissedRiskModalBoundary>
       </FeatureGate>
       );
 }
