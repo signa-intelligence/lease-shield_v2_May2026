@@ -892,7 +892,7 @@ Be thorough.`,
     // Missing safeguards
     MISSING_SAFEGUARDS_RULES.forEach(rule => {
       if (rule.check && rule.check(keyTerms)) {
-        const emitted = emitIssue({
+        pushIssue({
           rule_id: rule.rule_id,
           severity: rule.severity,
           category: rule.category,
@@ -903,8 +903,7 @@ Be thorough.`,
             .split('\n').map(s => s.replace(/^•\s*/, '')).filter(Boolean),
           clause_refs: [{ clause_id: 'GLOBAL', page: 1, snippet: 'Not explicitly stated in lease' }],
           missing_safeguard: true
-        }, { leaseId, scanId });
-        if (emitted) detectedIssues.push(emitted);
+        });
       }
       
       if (rule.patterns) {
