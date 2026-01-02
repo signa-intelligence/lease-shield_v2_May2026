@@ -88,40 +88,81 @@ function diagnoseIssueSchema(issue) {
   return { missing_fields, type_errors, clause_refs_length, recommendations_length };
 }
 
-// Safety emit wrapper: maps legacy fields -> strict schema and applies defaults
-function emitIssue(draft, meta) { 
+// Convert draft to strict IssueSchema v3.0 (async for issue_id generation)
+async function emitIssue(draft, meta) {
   const safe = (v, fallback = '') => (typeof v === 'string' ? v.trim() : '') || fallback;
-  const recs = Array.isArray(draft.recommendations)
-    ? draft.recommendations.filter((r) => typeof r === 'string' && r.trim().length > 0)
-    : (safe(draft.recommendation, '').split('\n').map(s => s.replace(/^•\s*/, '').trim()).filter(Boolean));
-
-  const clauseRef = draft.clause_refs && Array.isArray(draft.clause_refs) && draft.clause_refs.length > 0
+  
+  // Normalize recommendations - strip ALL bullet prefixes
+  const normalizeRecs = (r) => {
+    if (Array.isArray(r)) return r.map(s => safe(s).replace(/^[\s•\-–—!*→]+/, '').trim()).filter(Boolean);
+    return safe(r).split('\n').map(s => s.replace(/^[\s•\-–—!*→]+/, '').trim()).filter(Boolean);
+  };
+  
+  const recs = normalizeRecs(draft.recommendations || draft.recommendation || []);
+  
+  // Extract clause IDs from clause_refs
+  const clauseRefs = draft.clause_refs && Array.isArray(draft.clause_refs) && draft.clause_refs.length > 0
     ? draft.clause_refs
     : [{
         clause_id: safe(draft.clause_id, 'UNKNOWN'),
-        page: typeof draft.page_number === 'number' ? draft.page_number : (Number(draft.page_number) || 1),
-        snippet: safe(draft.evidence, safe(draft.evidence_snippet, 'Evidence not available'))
+        page: typeof draft.page_number === 'number' ? draft.page_number : 1,
+        snippet: safe(draft.evidence || draft.evidence_snippet, 'Evidence not available')
       }];
-
+  
+  const clauseIds = clauseRefs.map(c => c.clause_id).filter(Boolean);
+  const pageRefs = clauseRefs.map(c => c.page).filter(p => typeof p === 'number');
+  const sourceSnippet = clauseRefs[0]?.snippet || draft.evidence || draft.evidence_snippet || '';
+  
+  // Taxonomy code: use rule_id or category as fallback
+  const taxonomyCode = draft.taxonomy_code || draft.rule_id || draft.category || 'UNCATEGORIZED';
+  
+  // Title validation - reject generic placeholders
+  const title = safe(draft.title, '');
+  const genericTitles = ['issue detected', 'detected risk', 'detected issue', 'risk detected'];
+  if (!title || genericTitles.includes(title.toLowerCase())) {
+    console.error('[IssueDiscardedInvalid]', {
+      event: 'IssueDiscardedInvalid',
+      reason: 'generic_title',
+      title,
+      leaseId: meta?.leaseId,
+      scanId: meta?.scanId
+    });
+    return null;
+  }
+  
+  // Generate deterministic issue_id
+  const issueId = await generateIssueId(taxonomyCode, clauseIds, title);
+  
   const issue = {
-    id: draft.id || crypto.randomUUID(),
-    rule_id: safe(draft.rule_id, 'UNKNOWN_RULE'),
-    category: safe(draft.category, 'Other Risks'),
-    severity: ['critical','high','medium','low'].includes(draft.severity) ? draft.severity : 'medium',
-    title: safe(draft.title, 'Issue Detected'),
-    summary: safe(draft.summary, safe(draft.description, 'Summary not provided')),
-    why_it_matters: safe(draft.why_it_matters, safe(draft.explanation, 'Impact not provided')),
+    issue_id: issueId,
+    taxonomy_code: taxonomyCode,
+    severity: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(draft.severity?.toUpperCase()) 
+      ? draft.severity.toUpperCase() 
+      : 'MEDIUM',
+    title,
+    why_it_matters: safe(draft.why_it_matters || draft.explanation || draft.description, ''),
     recommendations: recs.length > 0 ? recs : ['Request clarification and amend this clause.'],
-    clause_refs: clauseRef,
-    // Legacy fields preserved for UI/PDF compatibility
-    description: safe(draft.description, safe(draft.summary, '')),
-    explanation: safe(draft.explanation, safe(draft.why_it_matters, '')),
+    clause_ids: clauseIds.length > 0 ? clauseIds : undefined,
+    clause_ref: clauseIds.length === 0 ? 'GLOBAL' : undefined,
+    page_refs: pageRefs.length > 0 ? pageRefs : undefined,
+    source_snippet: sourceSnippet.substring(0, 500),
+    created_by: draft.llm_detected ? 'LLM' : (draft.user_feedback ? 'USER_FEEDBACK' : 'RULES'),
+    
+    // Legacy compatibility fields (for UI migration)
+    id: issueId,
+    rule_id: safe(draft.rule_id, taxonomyCode),
+    category: safe(draft.category, 'Other Risks'),
+    summary: safe(draft.summary || draft.description, ''),
+    explanation: safe(draft.why_it_matters || draft.explanation, ''),
     recommendation: recs.join('\n'),
-    evidence: clauseRef[0]?.snippet,
-    clause_id: clauseRef[0]?.clause_id,
-    page_number: clauseRef[0]?.page,
+    evidence: sourceSnippet.substring(0, 300),
+    clause_id: clauseIds[0],
+    page_number: pageRefs[0],
+    clause_refs: clauseRefs,
     original_language: draft.original_language || draft.language || 'en',
-    penalties: draft.penalties
+    penalties: draft.penalties,
+    confidence: draft.confidence || 'HIGH',
+    compound: draft.compound
   };
 
   const v = validateRiskIssue(issue, issue.rule_id, meta);
