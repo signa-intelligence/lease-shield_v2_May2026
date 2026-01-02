@@ -914,7 +914,7 @@ Be thorough.`,
       }
     }
 
-    logStage('ANALYSIS_COMPLETE', {
+    logStage('DETERMINISTIC_ANALYSIS_COMPLETE', {
       totalIssues: uniqueIssues.length,
       critical: criticalCount,
       high: highCount,
@@ -923,12 +923,340 @@ Be thorough.`,
       invalidIssues: invalidIssues.length
     });
 
+    // ========================================================================
+    // PHASE 7: LLM "THAI LEASE LAWYER" AUGMENTATION LAYER
+    // ========================================================================
+    logStage('LLM_LAWYER_START', {});
+    
+    const detectedRuleIds = uniqueIssues.map(i => i.rule_id);
+    const clausesText = clauses.map((c, idx) => 
+      `[${c.clause_id}] (Page ${c.page_number || '?'})\n${c.raw_text}\n`
+    ).join('\n---\n');
+
+    const llmPrompt = `You are a Thai lease lawyer expert analyzing a residential lease for tenant risks.
+
+CONTEXT:
+- Jurisdiction: Thailand
+- Property Type: Residential
+- Lease Language: ${keyTerms.language_detected}
+- UI Language: ${userLang}
+
+KEY TERMS EXTRACTED:
+- Monthly Rent: ${keyTerms.rent_amount ? '฿' + keyTerms.rent_amount.toLocaleString() : 'Unknown'}
+- Deposit: ${keyTerms.deposit_amount ? '฿' + keyTerms.deposit_amount.toLocaleString() : 'Unknown'}
+- Lease Period: ${keyTerms.start_date || '?'} to ${keyTerms.end_date || '?'}
+- Notice Period: ${keyTerms.notice_period_days || 0} days
+- Deposit Return: ${keyTerms.deposit_return_days || 0} days
+
+ALREADY FLAGGED BY RULES:
+${detectedRuleIds.join(', ')}
+
+YOUR TASK:
+1) Review ALL clauses below for additional risks NOT caught by the rules engine
+2) Validate rule-flagged issues - can you upgrade/downgrade severity based on context?
+3) Check for missing safeguards that should be present
+
+COVERAGE CHECKLIST (check all):
+- Notice traps (multi-channel, confirmed delivery, strict windows)
+- Auto-renewal entrapment
+- Utility disconnection threats
+- Penalty disproportionality (daily, multiplier, fixed)
+- Deposit discretion/forfeiture/vague breach
+- Landlord access/privacy violations
+- Abandonment/disposal clauses (<7 days)
+- Short-term letting/sublease/commercial bans
+- Missing safeguards (deposit deadline, inventory, dispute mechanism)
+- Enforcement asymmetry
+
+CRITICAL RULES:
+- Output ONLY issues with direct evidence from the lease text
+- Every issue MUST include evidence_snippet (1-3 lines of exact lease text)
+- If you cannot cite evidence_snippet, DO NOT propose the issue
+- Output in ${userLang === 'th' ? 'Thai' : 'English'}
+- If legality is uncertain, say "potentially unenforceable" not "illegal"
+
+LEASE CLAUSES:
+${clausesText}
+
+OUTPUT FORMAT:
+{
+  "additional_issues": [
+    {
+      "rule_id": "LLM_UNIQUE_IDENTIFIER",
+      "severity": "critical|high|medium|low",
+      "confidence": "high|medium|low",
+      "category": "Procedural Fairness|Financial Risk|Rights & Legal|Privacy & Access|Rights & Usage|Fairness & Balance",
+      "title": "Issue title",
+      "description": "What this clause does",
+      "explanation": "Why this matters to tenant",
+      "recommendation": "• Bullet 1\\n• Bullet 2\\n• Bullet 3",
+      "evidence_snippet": "Exact lease text (1-3 lines)",
+      "clause_id": "clause reference",
+      "page_number": page number,
+      "is_new": true
+    }
+  ],
+  "severity_adjustments": [
+    {
+      "rule_id": "EXISTING_RULE_ID",
+      "new_severity": "critical|high|medium|low",
+      "justification": "Why severity should change",
+      "confidence": "high|medium|low"
+    }
+  ],
+  "missing_safeguards": [
+    {
+      "rule_id": "LLM_MISSING_SAFEGUARD_ID",
+      "severity": "high|medium|low",
+      "confidence": "high|medium",
+      "category": "Financial Risk",
+      "title": "Missing protection title",
+      "description": "What is missing",
+      "explanation": "Why absence creates risk",
+      "recommendation": "• What to add\\n• How to add it",
+      "evidence_snippet": "Context showing absence (optional, can be 'Not stated in lease')",
+      "missing_safeguard": true
+    }
+  ]
+}`;
+
+    let llmResult;
+    try {
+      llmResult = await base44.integrations.Core.InvokeLLM({
+        prompt: llmPrompt,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            additional_issues: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  rule_id: { type: "string" },
+                  severity: { type: "string", enum: ["critical", "high", "medium", "low"] },
+                  confidence: { type: "string", enum: ["high", "medium", "low"] },
+                  category: { type: "string" },
+                  title: { type: "string" },
+                  description: { type: "string" },
+                  explanation: { type: "string" },
+                  recommendation: { type: "string" },
+                  evidence_snippet: { type: "string" },
+                  clause_id: { type: "string" },
+                  page_number: { type: "integer" },
+                  is_new: { type: "boolean" }
+                },
+                required: ["rule_id", "severity", "title", "description", "explanation", "recommendation", "evidence_snippet"]
+              }
+            },
+            severity_adjustments: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  rule_id: { type: "string" },
+                  new_severity: { type: "string", enum: ["critical", "high", "medium", "low"] },
+                  justification: { type: "string" },
+                  confidence: { type: "string", enum: ["high", "medium", "low"] }
+                },
+                required: ["rule_id", "new_severity", "justification"]
+              }
+            },
+            missing_safeguards: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  rule_id: { type: "string" },
+                  severity: { type: "string", enum: ["high", "medium", "low"] },
+                  confidence: { type: "string", enum: ["high", "medium"] },
+                  category: { type: "string" },
+                  title: { type: "string" },
+                  description: { type: "string" },
+                  explanation: { type: "string" },
+                  recommendation: { type: "string" },
+                  evidence_snippet: { type: "string" },
+                  missing_safeguard: { type: "boolean" }
+                },
+                required: ["rule_id", "severity", "title", "description", "explanation", "recommendation"]
+              }
+            }
+          },
+          required: ["additional_issues", "severity_adjustments", "missing_safeguards"]
+        }
+      });
+    } catch (error) {
+      logStage('LLM_LAWYER_ERROR', { error: error.message });
+      llmResult = { additional_issues: [], severity_adjustments: [], missing_safeguards: [] };
+    }
+
+    const llmIssues = llmResult.additional_issues || [];
+    const llmAdjustments = llmResult.severity_adjustments || [];
+    const llmMissing = llmResult.missing_safeguards || [];
+
+    logStage('LLM_LAWYER_COMPLETE', {
+      newIssues: llmIssues.length,
+      adjustments: llmAdjustments.length,
+      missingSafeguards: llmMissing.length
+    });
+
+    // Apply severity adjustments (only HIGH/MEDIUM confidence)
+    llmAdjustments.forEach(adj => {
+      if (adj.confidence !== 'high' && adj.confidence !== 'medium') return;
+      
+      const issue = uniqueIssues.find(i => i.rule_id === adj.rule_id);
+      if (issue) {
+        logStage('SEVERITY_ADJUSTED', {
+          rule_id: adj.rule_id,
+          from: issue.severity,
+          to: adj.new_severity,
+          reason: adj.justification
+        });
+        issue.severity = adj.new_severity;
+        issue.severity_adjusted = true;
+        issue.adjustment_reason = adj.justification;
+      }
+    });
+
+    // Add LLM-detected issues (HIGH/MEDIUM confidence only)
+    const llmValidIssues = [];
+    llmIssues.forEach(llmIssue => {
+      // Filter by confidence
+      if (llmIssue.confidence === 'low') {
+        logStage('LLM_ISSUE_LOW_CONFIDENCE', { rule_id: llmIssue.rule_id });
+        return;
+      }
+
+      // Require evidence_snippet
+      if (!llmIssue.evidence_snippet || llmIssue.evidence_snippet.trim().length < 10) {
+        logStage('LLM_ISSUE_NO_EVIDENCE', { rule_id: llmIssue.rule_id });
+        invalidIssues.push({ 
+          rule_id: llmIssue.rule_id, 
+          reason: 'missing_evidence_snippet' 
+        });
+        return;
+      }
+
+      // Convert to standard format
+      const standardIssue = {
+        id: crypto.randomUUID(),
+        rule_id: llmIssue.rule_id,
+        severity: llmIssue.severity,
+        category: llmIssue.category,
+        title: llmIssue.title,
+        description: llmIssue.description,
+        explanation: llmIssue.explanation,
+        recommendation: llmIssue.recommendation,
+        evidence: llmIssue.evidence_snippet,
+        clause_id: llmIssue.clause_id,
+        page_number: llmIssue.page_number,
+        original_language: keyTerms.language_detected,
+        llm_detected: true,
+        confidence: llmIssue.confidence
+      };
+
+      // Validate schema
+      if (validateRiskIssue(standardIssue, llmIssue.rule_id)) {
+        llmValidIssues.push(standardIssue);
+      } else {
+        invalidIssues.push({ 
+          rule_id: llmIssue.rule_id, 
+          reason: 'schema_validation_failed' 
+        });
+      }
+    });
+
+    // Add missing safeguards from LLM
+    llmMissing.forEach(missing => {
+      if (missing.confidence === 'low') return;
+
+      const standardIssue = {
+        id: crypto.randomUUID(),
+        rule_id: missing.rule_id,
+        severity: missing.severity,
+        category: missing.category || 'Financial Risk',
+        title: missing.title,
+        description: missing.description,
+        explanation: missing.explanation,
+        recommendation: missing.recommendation,
+        evidence: missing.evidence_snippet || 'Not explicitly stated in lease',
+        missing_safeguard: true,
+        llm_detected: true,
+        confidence: missing.confidence
+      };
+
+      if (validateRiskIssue(standardIssue, missing.rule_id)) {
+        llmValidIssues.push(standardIssue);
+      } else {
+        invalidIssues.push({ 
+          rule_id: missing.rule_id, 
+          reason: 'schema_validation_failed' 
+        });
+      }
+    });
+
+    // Merge LLM issues with rule-based issues
+    const combinedIssues = [...uniqueIssues, ...llmValidIssues];
+
+    // Final deduplication by rule_id + clause_id
+    const finalIssues = [];
+    const finalSeen = new Set();
+    combinedIssues.forEach(issue => {
+      const key = `${issue.rule_id}-${issue.clause_id || 'global'}`;
+      if (!finalSeen.has(key)) {
+        finalSeen.add(key);
+        finalIssues.push(issue);
+      }
+    });
+
+    logStage('LLM_MERGE_COMPLETE', {
+      ruleBasedIssues: uniqueIssues.length,
+      llmNewIssues: llmValidIssues.length,
+      finalTotal: finalIssues.length
+    });
+
+    // Recalculate risk score with merged issues
+    const finalRawScore = finalIssues.reduce((sum, issue) => sum + (severityWeights[issue.severity] || 5), 0);
+    const finalRiskScore = Math.min(100, Math.max(0, finalRawScore));
+
+    const finalCriticalCount = finalIssues.filter(i => i.severity === 'critical').length;
+    const finalHighCount = finalIssues.filter(i => i.severity === 'high').length;
+    const finalMediumCount = finalIssues.filter(i => i.severity === 'medium').length;
+
+    // Update summary with final counts
+    if (userLang === 'th') {
+      if (finalCriticalCount >= 3) {
+        summary = `พบปัญหาร้ายแรง ${finalCriticalCount} รายการ, สูง ${finalHighCount} รายการ และปานกลาง ${finalMediumCount} รายการ สัญญานี้มีความเสี่ยงสูงมากต่อผู้เช่า`;
+      } else if (finalHighCount >= 5) {
+        summary = `พบปัญหาสูง ${finalHighCount} รายการและปานกลาง ${finalMediumCount} รายการ สัญญามีข้อกำหนดหลายข้อที่เอื้อประโยชน์ต่อเจ้าของบ้าน`;
+      } else {
+        summary = `พบปัญหา ${finalIssues.length} รายการที่ควรทบทวน`;
+      }
+    } else {
+      if (finalCriticalCount >= 3) {
+        summary = `Found ${finalCriticalCount} critical, ${finalHighCount} high-risk, and ${finalMediumCount} medium-risk issues. This lease poses significant risk to tenant.`;
+      } else if (finalHighCount >= 5) {
+        summary = `Found ${finalHighCount} high-risk and ${finalMediumCount} medium-risk issues. Lease contains multiple landlord-favoring terms.`;
+      } else {
+        summary = `Found ${finalIssues.length} issues worth reviewing.`;
+      }
+    }
+
+    logStage('FINAL_ANALYSIS_COMPLETE', {
+      totalIssues: finalIssues.length,
+      critical: finalCriticalCount,
+      high: finalHighCount,
+      medium: finalMediumCount,
+      riskScore: finalRiskScore,
+      invalidIssues: invalidIssues.length,
+      llmContribution: llmValidIssues.length
+    });
+
     return Response.json({
       success: true,
       result: {
-        risk_score: riskScore,
+        risk_score: finalRiskScore,
         summary,
-        flags: uniqueIssues,
+        flags: finalIssues,
         property_address: keyTerms.property_address,
         start_date: keyTerms.start_date,
         end_date: keyTerms.end_date,
@@ -941,16 +1269,28 @@ Be thorough.`,
         deposit_return_days: keyTerms.deposit_return_days
       },
       validation: {
-        valid_issues: uniqueIssues.length,
+        valid_issues: finalIssues.length,
         invalid_issues: invalidIssues.length,
         invalid_details: invalidIssues
       },
+      llm_layer: {
+        new_issues_proposed: llmIssues.length,
+        new_issues_validated: llmValidIssues.length,
+        severity_adjustments: llmAdjustments.length,
+        missing_safeguards: llmMissing.length
+      },
       debug: {
         clauses_extracted: clauses.length,
-        severity_distribution: { critical: criticalCount, high: highCount, medium: mediumCount },
-        risk_score_raw: rawScore,
-        risk_score_final: riskScore,
-        engines_run: ['LEGALITY', 'PROCEDURAL', 'FINANCIAL', 'POWER_IMBALANCE', 'RIGHTS_SUPPRESSION', 'MISSING_SAFEGUARDS', 'COMPOUND', 'PREDATORY_LANGUAGE']
+        rule_based_issues: uniqueIssues.length,
+        llm_issues: llmValidIssues.length,
+        severity_distribution: { 
+          critical: finalCriticalCount, 
+          high: finalHighCount, 
+          medium: finalMediumCount 
+        },
+        risk_score_deterministic: rawScore,
+        risk_score_final: finalRiskScore,
+        engines_run: ['LEGALITY', 'PROCEDURAL', 'FINANCIAL', 'POWER_IMBALANCE', 'RIGHTS_SUPPRESSION', 'MISSING_SAFEGUARDS', 'COMPOUND', 'PREDATORY_LANGUAGE', 'LLM_LAWYER']
       },
       diagnostic: {
         buildTag: "multi-engine-v2.1-validated",
