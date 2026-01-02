@@ -1228,16 +1228,28 @@ function ReportFullContent() {
           )}
 
           {/* Clause Review (Coverage 100%) */}
-          {fullFlags.length > 0 && (
+          {clauseLedger && clauseLedger.length > 0 && (
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
                 <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  {strings.detailedIssues} ({fullFlags.length}{hiddenFlagsCount > 0 ? ` / ${totalFlags}` : ''})
+                  Clause Review (Coverage 100%) — {clausesTotal} clauses
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="space-y-8">
+                <div className="grid md:grid-cols-2 gap-3 mb-4">
+                  <div className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
+                    <div className="text-xs" style={{ color: colors.textSecondary }}>Clauses with risks</div>
+                    <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{clausesRisk}</div>
+                  </div>
+                  <div className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
+                    <div className="text-xs" style={{ color: colors.textSecondary }}>No automated risk indicators</div>
+                    <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{clausesNoRisk}</div>
+                  </div>
+                </div>
+
+                {/* Risk clauses */}
+                <div className="space-y-3">
                   {/* Render by category */}
                   {categoryOrder.map(category => {
                     const categoryFlags = groupedFlags[category];
