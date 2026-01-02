@@ -278,6 +278,7 @@ function ReportFullContent() {
   // Background repair for legacy invalid issues: attempt safe defaults then persist
   React.useEffect(() => {
     if (!scan || repairAttempted || invalidCount <= 0) return;
+    const invalidList = Array.isArray(scan?.scan_full?.issues_invalid) ? scan.scan_full.issues_invalid : [];
 
     const originalFlags = Array.isArray(scan?.scan_full?.flags) ? scan.scan_full.flags : [];
 
@@ -315,7 +316,7 @@ function ReportFullContent() {
       return ok ? repaired : null;
     };
 
-    const repaired = invalidFlags.map(repairOne).filter(Boolean);
+    const repaired = invalidList.map(repairOne).filter(Boolean);
     const merged = [...validatedFlags, ...repaired];
 
     if (merged.length > validatedFlags.length) {
@@ -331,7 +332,7 @@ function ReportFullContent() {
     } else {
       setRepairAttempted(true);
     }
-  }, [scan, invalidCount, validatedFlags, invalidFlags, queryClient, repairAttempted, scanId]);
+  }, [scan, invalidCount, validatedFlags, queryClient, repairAttempted, scanId]);
 
   // ============================================================================
   // DERIVED STATE - AFTER ALL HOOKS
