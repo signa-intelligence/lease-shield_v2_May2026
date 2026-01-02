@@ -617,13 +617,11 @@ function ReportFullContent() {
         lease_address: lease.property_address || 'Lease Agreement',
         risk_score: scan.risk_score,
         summary: scan.summary,
-        flags: sanitizedFlags,
+        issues_validated: sanitizedFlags,
+        clause_ledger: scan.scan_full?.clause_ledger || [],
+        clause_reviews: scan.scan_full?.clause_reviews || [],
         missing_items: scan.scan_full?.missing_items || [],
         key_terms: scan.scan_full?.key_terms || {},
-        lease_start: lease.start_date,
-        lease_end: lease.end_date,
-        rent_amount: lease.rent_amount,
-        deposit_amount: lease.deposit_amount,
         generated_date: new Date().toISOString()
       };
 
@@ -631,7 +629,7 @@ function ReportFullContent() {
         step: 'EXPORT_PDF_FUNCTION_CALL',
         correlationId,
         dataSize: JSON.stringify(pdfData).length,
-        flagsCount: pdfData.flags.length,
+        issuesCount: (pdfData.issues_validated || []).length,
         language
       });
 
@@ -1250,6 +1248,53 @@ function ReportFullContent() {
 
                 {/* Risk clauses */}
                 <div className="space-y-3">
+                  {clauseLedger.filter(c=>c.risk_level!== 'NO_RISK').map((c, idx) => {
+                    const sev = String(c.risk_level).toUpperCase();
+                    const color = sev === 'CRITICAL' ? '#EF4444' : sev === 'HIGH' ? '#F59E0B' : sev === 'MEDIUM' ? '#EAB308' : '#10B981';
+                    return (
+                      <div key={`risk-${idx}`} className="rounded-xl border-2 overflow-hidden" style={{ backgroundColor: colors.cardBg, borderColor: color }}>
+                        <div className="p-4" style={{ backgroundColor: sev === 'CRITICAL' ? (isDarkMode ? '#3A2626' : '#FEE2E2') : sev === 'HIGH' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') : sev === 'MEDIUM' ? (isDarkMode ? '#3A3420' : '#FEF9C3') : (isDarkMode ? '#1E4435' : '#ECFDF5') }}>
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-bold" style={{ color: colors.textPrimary }}>Clause {c.clause_number}{c.clause_title ? ` — ${c.clause_title}` : ''}</div>
+                              <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{c.rationale}</div>
+                            </div>
+                            <Badge className="text-xs font-bold" style={{ backgroundColor: color, color: '#fff' }}>{sev}</Badge>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          {Array.isArray(c.recommended_actions) && c.recommended_actions.length > 0 && (
+                            <div className="text-sm" style={{ color: colors.textPrimary }}>
+                              {c.recommended_actions.map((r,i)=> (
+                                <div key={i} className="flex gap-2"><span>•</span><span>{r}</span></div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="mt-2 text-xs" style={{ color: colors.textSecondary }}>Confidence: {c.confidence}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* No risk collapsible */}
+                <details className="mt-6">
+                  <summary className="cursor-pointer text-sm font-semibold" style={{ color: '#0C3B2E' }}>Show {clausesNoRisk} “No risk detected” clauses</summary>
+                  <div className="mt-3 space-y-2">
+                    {clauseLedger.filter(c=>c.risk_level=== 'NO_RISK').map((c, idx) => (
+                      <div key={`norisk-${idx}`} className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm" style={{ color: colors.textPrimary }}>Clause {c.clause_number}{c.clause_title ? ` — ${c.clause_title}` : ''}</div>
+                          <div className="text-xs" style={{ color: colors.textSecondary }}>Confidence: {c.confidence}</div>
+                        </div>
+                        <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{c.rationale}</div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </CardContent>
+            </Card>
+          )}
                   {clauseLedger.filter(c=>c.risk_level!== 'NO_RISK').map((c, idx) => {
                   
                             const sev = String(c.risk_level).toUpperCase();
