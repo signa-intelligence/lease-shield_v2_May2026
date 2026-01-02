@@ -541,16 +541,19 @@ function detectCompoundRisks(clauses, keyTerms, userLang) {
       severity: hasMultiplier ? 'critical' : 'high',
       category: 'Financial Risk',
       title: userLang === 'th'
-        ? '⚠️ การซ้อนค่าปรับ: หลายค่าปรับที่ซ้อนกัน'
-        : '⚠️ Penalty Stack: Multiple Compounding Fines',
-      description: userLang === 'th'
-        ? `พบข้อกำหนดค่าปรับ ${penaltyClauses.length} ข้อที่สามารถซ้อนกันเป็นภาระทางการเงินสูง`
-        : `Found ${penaltyClauses.length} penalty clauses that can compound into severe financial burden`,
-      explanation: userLang === 'th'
-        ? 'การละเมิดครั้งเดียวอาจทริกเกอร์ค่าปรับหลายรายการพร้อมกัน (รายวัน + ถาวร + ริบ) ความสะสมนี้สามารถเกินความเสียหายจริงอย่างรวดเร็ว'
-        : 'Single violation can trigger multiple penalties simultaneously (daily + fixed + forfeiture). This accumulation can quickly exceed actual damages',
-      recommendation: userLang === 'th'
-        ? '• จำกัดค่าปรับรวมสูงสุด\n• ป้องกันการซ้อนค่าปรับสำหรับการละเมิดครั้งเดียว\n• กำหนดให้เลือกค่าปรับที่มากที่สุดแทนการรวม\n• เพิ่มเพดานค่าปรับรวมที่ % ของค่าเช่า',
+        ? 'การซ้อนค่าปรับ: หลายค่าปรับ'
+        : 'Penalty Stack: Multiple Penalties',
+      summary: userLang === 'th'
+        ? `พบข้อกำหนดค่าปรับ ${penaltyClauses.length} ข้อ`
+        : `${penaltyClauses.length} penalty clauses detected`,
+      why_it_matters: userLang === 'th'
+        ? 'ค่าปรับหลายประเภทสามารถสะสมเกินความเสียหายจริง'
+        : 'Multiple penalties can quickly exceed actual damages',
+      recommendations: [
+        userLang === 'th' ? 'จำกัดค่าปรับรวม' : 'Cap total penalties',
+        userLang === 'th' ? 'ห้ามซ้อนค่าปรับสำหรับการละเมิดเดียว' : 'Prevent stacking for single violation'
+      ],
+      clause_refs: [{ clause_id: 'GLOBAL', page: 1, snippet: `${penaltyClauses.length} penalty clauses detected` }],
       compound: true,
       evidence: `${penaltyClauses.length} penalty clauses detected`
     });
