@@ -1,14 +1,25 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 // ============================================================================
-// LEASE SHIELD MULTI-ENGINE RISK DETECTION SYSTEM v2.1
-// Complete coverage with schema validation and compound detection
+// LEASE SHIELD DETERMINISTIC RISK DETECTION v3.0
+// Schema-safe, deduplicated, clause-by-clause coverage
 // ============================================================================
 
-// RISK ISSUE SCHEMA - Enforced at output (strict)
-// Required fields:
-// id, rule_id, category, severity, title, summary, why_it_matters,
-// recommendations[] (len>=1), clause_refs[] (each has clause_id, page, snippet)
+// Generate deterministic issue_id from taxonomy + clauses + title
+async function generateIssueId(taxonomyCode, clauseIds, title) {
+  const sortedClauses = Array.isArray(clauseIds) ? clauseIds.sort().join(',') : 'GLOBAL';
+  const normalizedTitle = (title || '').toLowerCase().trim().replace(/\s+/g, ' ');
+  const input = `${taxonomyCode}|${sortedClauses}|${normalizedTitle}`;
+  
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex.substring(0, 16); // 64-bit ID
+}
+
+// STRICT ISSUE SCHEMA v3.0
 function validateRiskIssue(issue, ruleId, meta) {
   const errors = [];
 
