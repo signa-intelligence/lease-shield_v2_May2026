@@ -296,9 +296,11 @@ function ReportFullContent() {
       }
     });
 
+    const deduped = Array.from(seen.values());
+
     console.log('[REPORTFULL_LOAD]', {
       step: 'SCHEMA_VALIDATION_COMPLETE',
-      validFlags: validated.length,
+      validFlags: deduped.length,
       invalidFlags: invalid
     });
 
@@ -307,13 +309,13 @@ function ReportFullContent() {
       leaseId: lease?.id || leaseId,
       scanId: scan?.id || scanId,
       flags_total: allFlags.length,
-      validated_total: validated.length,
+      validated_total: deduped.length,
       invalid_total: invalid,
       invalid_rule_ids: invalidCodes,
       invalid_missing_fields: invalidDetails
     });
 
-    return { validatedFlags: validated, invalidCount: invalid, invalidCodes, invalidFlags, invalidDetails };
+    return { validatedFlags: deduped, invalidCount: invalid, invalidCodes, invalidFlags, invalidDetails, dedupeCount: allFlags.length - deduped.length, quarantined: invalidFlags.length };
   }, [scan, lease]);
 
   // Update invalid count state
