@@ -52,6 +52,21 @@ Deno.serve(async (req) => {
       return y;
     };
 
+    // Helper: render bullet list from array safely (strip leading symbols)
+    const addList = (items, x = 25, fontSize = 9, max = 5) => {
+      const arr = Array.isArray(items) ? items.slice(0, max) : [];
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(fontSize);
+      arr.forEach((raw) => {
+        const line = String(raw || '').replace(/^\s*[•\-–—!*→]+\s*/g, '').trim();
+        if (!line) return;
+        if (y > pageHeight - 15) { doc.addPage(); y = 20; }
+        doc.text(`• ${line}`, x, y);
+        y += fontSize * 0.6;
+      });
+      return y;
+    };
+
     // Header
     doc.setFillColor(12, 59, 46);
     doc.rect(0, 0, pageWidth, 40, 'F');
@@ -176,18 +191,26 @@ Deno.serve(async (req) => {
         y += 8;
         doc.setTextColor(0, 0, 0);
 
-        // Explanation
+        // Summary / Why it matters
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        y = addText(flag.explanation, 25, 9);
+        const summary = flag.summary || flag.explanation || flag.description || '';
+        y = addText(summary, 25, 9);
         y += 3;
 
-        // Recommendation
-        doc.setFont('helvetica', 'italic');
-        doc.setTextColor(34, 139, 34);
-        y = addText(`→ ${flag.recommendation}`, 25, 9);
+        // Recommendations list (no markdown artifacts)
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
-        y += 8;
+        doc.text('Recommendations:', 25, y);
+        y += 5;
+        const recs = Array.isArray(flag.recommendations)
+          ? flag.recommendations
+          : String(flag.recommendation || '')
+              .split('\n')
+              .map(s => s.replace(/^\s*[•\-–—!*→]+\s*/g, '').trim())
+              .filter(Boolean);
+        addList(recs, 25, 9, 5);
+        y += 5;
       });
     }
 
