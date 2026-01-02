@@ -13,8 +13,8 @@ import { haptic } from "../components/shared/HapticFeedback";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import IssueFeedbackModal from "../components/report/IssueFeedbackModal";
-import MissedRiskModal from "../components/report/MissedRiskModal";
 import MissedRiskModalBoundary from "../components/report/MissedRiskModalBoundary";
+import SimpleMissedRiskModal from "../components/report/SimpleMissedRiskModal";
 import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 
@@ -1687,27 +1687,13 @@ function ReportFullContent() {
       />
 
       <MissedRiskModalBoundary leaseId={lease.id} scanId={scan.id} onClose={()=> setShowMissedRisk(false)}>
-        <MissedRiskModal
+        <SimpleMissedRiskModal
           open={showMissedRisk}
           onClose={()=> setShowMissedRisk(false)}
-          taxonomy={taxonomy}
-          clauses={(scan?.scan_full?.clauses)||[]}
           leaseId={lease.id}
           scanId={scan.id}
-          onSubmit={async ({ category_id, clause_id, note })=>{
-            const clause = (scan?.scan_full?.clauses||[]).find(c=>c.clause_id===clause_id) || {};
-            await base44.entities.RiskFeedback.create({
-              lease_id: lease.id,
-              scan_id: scan.id,
-              user_id: user.id,
-              feedback_type: 'MISSED_RISK',
-              category_id,
-              clause_ref: { clause_id: clause_id, page: clause.page_number, snippet: clause.raw_text?.substring(0,240) || '' },
-              note: note || null
-            });
-            setShowMissedRisk(false);
-            toast.success('Thanks! We will review and improve.');
-          }}
+          appLanguage={language}
+          leaseLanguage={leaseLanguage}
         />
       </MissedRiskModalBoundary>
       </FeatureGate>
