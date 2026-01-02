@@ -1361,18 +1361,29 @@ OUTPUT FORMAT:
       console.error('[LLM_REVIEW_ERROR]', e?.message);
     }
 
-    // Final deterministic de-duplication (source + rule_id + canonical clause id set)
+    // Final deterministic de-duplication (rule_id + clause_hash across sources)
     const finalMap = new Map();
+    const rank = { critical: 3, high: 2, medium: 1, low: 0 };
+    const hashText2 = (s='') => {
+      const t = s.toLowerCase().replace(/\s+/g,' ').trim();
+      let h = 0; for (let i=0;i<t.length;i++){ h = ((h<<5)-h) + t.charCodeAt(i); h |= 0; } return String(h);
+    };
     combinedIssues.forEach(issue => {
-      const clauseIds = Array.isArray(issue.clause_refs) ? issue.clause_refs.map(c => c.clause_id) : [issue.clause_id || 'GLOBAL'];
-      const primary = clauseIds.length > 1 ? clauseIds.sort().join(',') : clauseIds[0];
-      const k = `${issue.source || 'RULES'}:${issue.rule_id}:${primary}`;
-      if (!finalMap.has(k)) finalMap.set(k, issue);
+      const firstRef = Array.isArray(issue.clause_refs) && issue.clause_refs[0] ? issue.clause_refs[0] : { clause_id: issue.clause_id || 'GLOBAL', snippet: issue.evidence || '' };
+      const clauseHash = hashText2(firstRef.snippet || '');
+      const k = `${issue.rule_id}:${clauseHash}`;
+      if (!finalMap.has(k)) finalMap.set(k, { ...issue, _clause_hash: clauseHash });
       else {
         const existing = finalMap.get(k);
-        const rank = { critical: 3, high: 2, medium: 1, low: 0 };
         if (rank[issue.severity] > rank[existing.severity]) existing.severity = issue.severity;
-        const seenRef = new Set((existing.clause_refs || []).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
+        // merge recommendations unique
+        const recSet = new Set((existing.recommendations||[]).map(r=>String(r||'').trim()).filter(Boolean));
+        (issue.recommendations||[]).forEach(r=>{ const t = String(r||'').trim(); if (t) recSet.add(t); });
+        existing.recommendations = Array.from(recSet).slice(0,5);
+        // keep best summary
+        if ((issue.summary||'').length > (existing.summary||'').length) existing.summary = issue.summary;
+        // merge refs
+        const seenRef = new Set((existing.clause_refs||[]).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
         (issue.clause_refs || []).forEach(c => { const sig = `${c.clause_id}|${c.page}|${c.snippet}`; if (!seenRef.has(sig)) existing.clause_refs = [...(existing.clause_refs||[]), c]; });
       }
     });
