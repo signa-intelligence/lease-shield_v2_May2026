@@ -26,26 +26,28 @@ function validateRiskIssue(issue, ruleId, meta) {
   const reqStr = (v) => typeof v === 'string' && v.trim().length > 0;
   const reqArr = (v) => Array.isArray(v) && v.length > 0;
 
-  if (!reqStr(issue.id)) errors.push('missing id');
-  if (!reqStr(issue.rule_id)) errors.push('missing rule_id');
-  if (!reqStr(issue.category)) errors.push('missing category');
-  if (!['critical', 'high', 'medium', 'low'].includes(issue.severity)) errors.push('invalid severity');
+  if (!reqStr(issue.issue_id)) errors.push('missing issue_id');
+  if (!reqStr(issue.taxonomy_code)) errors.push('missing taxonomy_code');
+  if (!['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(issue.severity)) errors.push('invalid severity');
   if (!reqStr(issue.title)) errors.push('missing title');
-  if (!reqStr(issue.summary)) errors.push('missing summary');
   if (!reqStr(issue.why_it_matters)) errors.push('missing why_it_matters');
   if (!reqArr(issue.recommendations)) errors.push('missing recommendations');
-  if (!reqArr(issue.clause_refs)) errors.push('missing clause_refs');
   else {
-    issue.clause_refs.forEach((c, idx) => {
-      if (!reqStr(c.clause_id) || typeof c.page !== 'number' || !reqStr(c.snippet)) {
-        errors.push(`invalid clause_ref[${idx}]`);
-      }
-    });
+    const emptyRecs = issue.recommendations.filter(r => !reqStr(r));
+    if (emptyRecs.length > 0) errors.push('empty recommendation strings');
   }
+  
+  // Must have clause_ids OR clause_ref
+  const hasClauseIds = reqArr(issue.clause_ids);
+  const hasClauseRef = reqStr(issue.clause_ref);
+  if (!hasClauseIds && !hasClauseRef) errors.push('missing clause_ids and clause_ref');
+  
+  if (!reqStr(issue.source_snippet)) errors.push('missing source_snippet');
+  if (!['RULES', 'LLM', 'USER_FEEDBACK'].includes(issue.created_by)) errors.push('invalid created_by');
 
   if (errors.length > 0) {
-    console.error('[IssueEmitRejected]', {
-      event: 'IssueEmitRejected',
+    console.error('[IssueDiscardedInvalid]', {
+      event: 'IssueDiscardedInvalid',
       rule_id: ruleId,
       leaseId: meta?.leaseId,
       scanId: meta?.scanId,
