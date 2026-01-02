@@ -1,53 +1,49 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-// ============================================================================
-// LEASE SHIELD DETERMINISTIC RISK DETECTION v3.0
-// Schema-safe, deduplicated, clause-by-clause coverage
-// ============================================================================
-
-// Generate deterministic issue_id from taxonomy + clauses + title
-async function generateIssueId(taxonomyCode, clauseIds, title) {
-  const sortedClauses = Array.isArray(clauseIds) ? clauseIds.sort().join(',') : 'GLOBAL';
-  const normalizedTitle = (title || '').toLowerCase().trim().replace(/\s+/g, ' ');
-  const input = `${taxonomyCode}|${sortedClauses}|${normalizedTitle}`;
-  
-  const encoder = new TextEncoder();
-  const data = encoder.encode(input);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex.substring(0, 16); // 64-bit ID
+// Deterministic SHA-256 helper (hex)
+async function sha256Hex(input) {
+  const enc = new TextEncoder();
+  const data = enc.encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  const bytes = Array.from(new Uint8Array(hash));
+  return bytes.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// STRICT ISSUE SCHEMA v3.0
+// ============================================================================
+// LEASE SHIELD MULTI-ENGINE RISK DETECTION SYSTEM v2.1
+// Complete coverage with schema validation and compound detection
+// ============================================================================
+
+// RISK ISSUE SCHEMA - Enforced at output (strict)
+// Required fields:
+// id, rule_id, category, severity, title, summary, why_it_matters,
+// recommendations[] (len>=1), clause_refs[] (each has clause_id, page, snippet)
 function validateRiskIssue(issue, ruleId, meta) {
   const errors = [];
 
   const reqStr = (v) => typeof v === 'string' && v.trim().length > 0;
   const reqArr = (v) => Array.isArray(v) && v.length > 0;
 
-  if (!reqStr(issue.issue_id)) errors.push('missing issue_id');
-  if (!reqStr(issue.taxonomy_code)) errors.push('missing taxonomy_code');
-  if (!['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(issue.severity)) errors.push('invalid severity');
+  if (!reqStr(issue.id)) errors.push('missing id');
+  if (!reqStr(issue.rule_id)) errors.push('missing rule_id');
+  if (!reqStr(issue.category)) errors.push('missing category');
+  if (!['critical', 'high', 'medium', 'low'].includes(issue.severity)) errors.push('invalid severity');
   if (!reqStr(issue.title)) errors.push('missing title');
+  if (!reqStr(issue.summary)) errors.push('missing summary');
   if (!reqStr(issue.why_it_matters)) errors.push('missing why_it_matters');
   if (!reqArr(issue.recommendations)) errors.push('missing recommendations');
+  if (!reqArr(issue.clause_refs)) errors.push('missing clause_refs');
   else {
-    const emptyRecs = issue.recommendations.filter(r => !reqStr(r));
-    if (emptyRecs.length > 0) errors.push('empty recommendation strings');
+    issue.clause_refs.forEach((c, idx) => {
+      if (!reqStr(c.clause_id) || typeof c.page !== 'number' || !reqStr(c.snippet)) {
+        errors.push(`invalid clause_ref[${idx}]`);
+      }
+    });
   }
-  
-  // Must have clause_ids OR clause_ref
-  const hasClauseIds = reqArr(issue.clause_ids);
-  const hasClauseRef = reqStr(issue.clause_ref);
-  if (!hasClauseIds && !hasClauseRef) errors.push('missing clause_ids and clause_ref');
-  
-  if (!reqStr(issue.source_snippet)) errors.push('missing source_snippet');
-  if (!['RULES', 'LLM', 'USER_FEEDBACK'].includes(issue.created_by)) errors.push('invalid created_by');
 
   if (errors.length > 0) {
-    console.error('[IssueDiscardedInvalid]', {
-      event: 'IssueDiscardedInvalid',
+    console.error('[IssueEmitRejected]', {
+      event: 'IssueEmitRejected',
       rule_id: ruleId,
       leaseId: meta?.leaseId,
       scanId: meta?.scanId,
@@ -88,81 +84,40 @@ function diagnoseIssueSchema(issue) {
   return { missing_fields, type_errors, clause_refs_length, recommendations_length };
 }
 
-// Convert draft to strict IssueSchema v3.0 (async for issue_id generation)
-async function emitIssue(draft, meta) {
+// Safety emit wrapper: maps legacy fields -> strict schema and applies defaults
+function emitIssue(draft, meta) { 
   const safe = (v, fallback = '') => (typeof v === 'string' ? v.trim() : '') || fallback;
-  
-  // Normalize recommendations - strip ALL bullet prefixes
-  const normalizeRecs = (r) => {
-    if (Array.isArray(r)) return r.map(s => safe(s).replace(/^[\s•\-–—!*→]+/, '').trim()).filter(Boolean);
-    return safe(r).split('\n').map(s => s.replace(/^[\s•\-–—!*→]+/, '').trim()).filter(Boolean);
-  };
-  
-  const recs = normalizeRecs(draft.recommendations || draft.recommendation || []);
-  
-  // Extract clause IDs from clause_refs
-  const clauseRefs = draft.clause_refs && Array.isArray(draft.clause_refs) && draft.clause_refs.length > 0
+  const recs = Array.isArray(draft.recommendations)
+    ? draft.recommendations.filter((r) => typeof r === 'string' && r.trim().length > 0)
+    : (safe(draft.recommendation, '').split('\n').map(s => s.replace(/^•\s*/, '').trim()).filter(Boolean));
+
+  const clauseRef = draft.clause_refs && Array.isArray(draft.clause_refs) && draft.clause_refs.length > 0
     ? draft.clause_refs
     : [{
         clause_id: safe(draft.clause_id, 'UNKNOWN'),
-        page: typeof draft.page_number === 'number' ? draft.page_number : 1,
-        snippet: safe(draft.evidence || draft.evidence_snippet, 'Evidence not available')
+        page: typeof draft.page_number === 'number' ? draft.page_number : (Number(draft.page_number) || 1),
+        snippet: safe(draft.evidence, safe(draft.evidence_snippet, 'Evidence not available'))
       }];
-  
-  const clauseIds = clauseRefs.map(c => c.clause_id).filter(Boolean);
-  const pageRefs = clauseRefs.map(c => c.page).filter(p => typeof p === 'number');
-  const sourceSnippet = clauseRefs[0]?.snippet || draft.evidence || draft.evidence_snippet || '';
-  
-  // Taxonomy code: use rule_id or category as fallback
-  const taxonomyCode = draft.taxonomy_code || draft.rule_id || draft.category || 'UNCATEGORIZED';
-  
-  // Title validation - reject generic placeholders
-  const title = safe(draft.title, '');
-  const genericTitles = ['issue detected', 'detected risk', 'detected issue', 'risk detected'];
-  if (!title || genericTitles.includes(title.toLowerCase())) {
-    console.error('[IssueDiscardedInvalid]', {
-      event: 'IssueDiscardedInvalid',
-      reason: 'generic_title',
-      title,
-      leaseId: meta?.leaseId,
-      scanId: meta?.scanId
-    });
-    return null;
-  }
-  
-  // Generate deterministic issue_id
-  const issueId = await generateIssueId(taxonomyCode, clauseIds, title);
-  
+
   const issue = {
-    issue_id: issueId,
-    taxonomy_code: taxonomyCode,
-    severity: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].includes(draft.severity?.toUpperCase()) 
-      ? draft.severity.toUpperCase() 
-      : 'MEDIUM',
-    title,
-    why_it_matters: safe(draft.why_it_matters || draft.explanation || draft.description, ''),
-    recommendations: recs.length > 0 ? recs : ['Request clarification and amend this clause.'],
-    clause_ids: clauseIds.length > 0 ? clauseIds : undefined,
-    clause_ref: clauseIds.length === 0 ? 'GLOBAL' : undefined,
-    page_refs: pageRefs.length > 0 ? pageRefs : undefined,
-    source_snippet: sourceSnippet.substring(0, 500),
-    created_by: draft.llm_detected ? 'LLM' : (draft.user_feedback ? 'USER_FEEDBACK' : 'RULES'),
-    
-    // Legacy compatibility fields (for UI migration)
-    id: issueId,
-    rule_id: safe(draft.rule_id, taxonomyCode),
+    id: draft.id || crypto.randomUUID(),
+    rule_id: safe(draft.rule_id, 'UNKNOWN_RULE'),
     category: safe(draft.category, 'Other Risks'),
-    summary: safe(draft.summary || draft.description, ''),
-    explanation: safe(draft.why_it_matters || draft.explanation, ''),
+    severity: ['critical','high','medium','low'].includes(draft.severity) ? draft.severity : 'medium',
+    title: safe(draft.title, 'Issue Detected'),
+    summary: safe(draft.summary, safe(draft.description, 'Summary not provided')),
+    why_it_matters: safe(draft.why_it_matters, safe(draft.explanation, 'Impact not provided')),
+    recommendations: recs.length > 0 ? recs : ['Request clarification and amend this clause.'],
+    clause_refs: clauseRef,
+    // Legacy fields preserved for UI/PDF compatibility
+    description: safe(draft.description, safe(draft.summary, '')),
+    explanation: safe(draft.explanation, safe(draft.why_it_matters, '')),
     recommendation: recs.join('\n'),
-    evidence: sourceSnippet.substring(0, 300),
-    clause_id: clauseIds[0],
-    page_number: pageRefs[0],
-    clause_refs: clauseRefs,
+    evidence: clauseRef[0]?.snippet,
+    clause_id: clauseRef[0]?.clause_id,
+    page_number: clauseRef[0]?.page,
     original_language: draft.original_language || draft.language || 'en',
-    penalties: draft.penalties,
-    confidence: draft.confidence || 'HIGH',
-    compound: draft.compound
+    penalties: draft.penalties
   };
 
   const v = validateRiskIssue(issue, issue.rule_id, meta);
@@ -1029,75 +984,50 @@ Be thorough.`,
       if (emitted) detectedIssues.push(emitted);
     }
 
-    // DETERMINISTIC DEDUPLICATION by issue_id (already unique from generateIssueId)
-    // Merge duplicates: keep highest severity, union recs/refs, best why_it_matters
-    const severityRank = { CRITICAL: 3, HIGH: 2, MEDIUM: 1, LOW: 0, critical: 3, high: 2, medium: 1, low: 0 };
-    const dedupeMap = new Map();
+    // Deterministic de-duplication by canonical key (rule_id + clause_hash)
+    const severityRank = { critical: 3, high: 2, medium: 1, low: 0 };
+    const mergedMap = new Map();
+
+    // Helper: simple clause hash from first clause_ref snippet
+    const hashText = (s='') => {
+      const t = s.toLowerCase().replace(/\s+/g,' ').trim();
+      let h = 0; for (let i=0;i<t.length;i++){ h = ((h<<5)-h) + t.charCodeAt(i); h |= 0; }
+      return String(h);
+    };
 
     detectedIssues.forEach(issue => {
-      const key = issue.issue_id;
-      
-      if (!dedupeMap.has(key)) {
-        dedupeMap.set(key, { ...issue });
+      const firstRef = Array.isArray(issue.clause_refs) && issue.clause_refs[0] ? issue.clause_refs[0] : { clause_id: issue.clause_id || 'GLOBAL', snippet: issue.evidence || '' };
+      const clauseHash = hashText(firstRef.snippet || '');
+      const key = `${issue.rule_id}:${clauseHash}`;
+
+      if (!mergedMap.has(key)) {
+        mergedMap.set(key, { ...issue, clause_refs: [...(issue.clause_refs || [])], _clause_hash: clauseHash });
       } else {
-        const existing = dedupeMap.get(key);
-        
-        // Merge: highest severity
-        const issueSevRank = severityRank[issue.severity] || 0;
-        const existingSevRank = severityRank[existing.severity] || 0;
-        if (issueSevRank > existingSevRank) {
+        const existing = mergedMap.get(key);
+        // keep highest severity
+        if (severityRank[issue.severity] > severityRank[existing.severity]) {
           existing.severity = issue.severity;
         }
-        
-        // Merge: unique recommendations
-        const recSet = new Set((existing.recommendations || []).map(r => String(r || '').trim()).filter(Boolean));
-        (issue.recommendations || []).forEach(r => {
-          const cleaned = String(r || '').trim();
-          if (cleaned) recSet.add(cleaned);
-        });
-        existing.recommendations = Array.from(recSet).slice(0, 5);
-        
-        // Merge: best why_it_matters (prefer longer non-empty)
-        const issueWhy = String(issue.why_it_matters || '').trim();
-        const existingWhy = String(existing.why_it_matters || '').trim();
-        if (issueWhy.length > existingWhy.length) {
-          existing.why_it_matters = issueWhy;
-        }
-        
-        // Merge: union clause_ids and page_refs
-        if (Array.isArray(issue.clause_ids)) {
-          const clauseSet = new Set(existing.clause_ids || []);
-          issue.clause_ids.forEach(c => clauseSet.add(c));
-          existing.clause_ids = Array.from(clauseSet);
-        }
-        if (Array.isArray(issue.page_refs)) {
-          const pageSet = new Set(existing.page_refs || []);
-          issue.page_refs.forEach(p => pageSet.add(p));
-          existing.page_refs = Array.from(pageSet);
-        }
-        
-        // Legacy: merge clause_refs
-        if (Array.isArray(issue.clause_refs)) {
-          const seenRef = new Set((existing.clause_refs || []).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
-          issue.clause_refs.forEach(c => {
-            const sig = `${c.clause_id}|${c.page}|${c.snippet}`;
-            if (!seenRef.has(sig)) {
-              existing.clause_refs = [...(existing.clause_refs || []), c];
-            }
-          });
-        }
-        
-        console.log('[IssueDedupMerged]', {
-          event: 'IssueDedupMerged',
-          issue_id: key,
-          leaseId: meta?.leaseId,
-          scanId: meta?.scanId
+        // merge unique recommendations
+        const recSet = new Set((existing.recommendations||[]).map(r=>r.trim()));
+        (issue.recommendations||[]).forEach(r=>{ const t = String(r||'').trim(); if (t && !recSet.has(t)) recSet.add(t); });
+        existing.recommendations = Array.from(recSet).slice(0,5);
+        // keep longest summary
+        if ((issue.summary||'').length > (existing.summary||'').length) existing.summary = issue.summary;
+        // merge unique clause refs
+        const seenRef = new Set((existing.clause_refs||[]).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
+        (issue.clause_refs || []).forEach(c => {
+          const sig = `${c.clause_id}|${c.page}|${c.snippet}`;
+          if (!seenRef.has(sig)) {
+            existing.clause_refs = [...(existing.clause_refs||[]), c];
+            seenRef.add(sig);
+          }
         });
       }
     });
 
-    const uniqueIssues = Array.from(dedupeMap.values());
-    logStage('DedupApplied', { before: detectedIssues.length, after: uniqueIssues.length, dropped: detectedIssues.length - uniqueIssues.length, invalid: invalidIssues.length });
+    const uniqueIssues = Array.from(mergedMap.values());
+    logStage('DedupApplied', { before: detectedIssues.length, after: uniqueIssues.length, invalid: invalidIssues.length });
 
     // Emit structured event for invalid issues
     if (invalidIssues.length > 0) {
@@ -1440,68 +1370,32 @@ OUTPUT FORMAT:
       console.error('[LLM_REVIEW_ERROR]', e?.message);
     }
 
-    // SECOND DEDUPLICATION PASS (after LLM merge) - use same logic
+    // Final deterministic de-duplication (rule_id + clause_hash across sources)
     const finalMap = new Map();
+    const rank = { critical: 3, high: 2, medium: 1, low: 0 };
+    const hashText2 = (s='') => {
+      const t = s.toLowerCase().replace(/\s+/g,' ').trim();
+      let h = 0; for (let i=0;i<t.length;i++){ h = ((h<<5)-h) + t.charCodeAt(i); h |= 0; } return String(h);
+    };
     combinedIssues.forEach(issue => {
-      const key = issue.issue_id;
-      
-      if (!finalMap.has(key)) {
-        finalMap.set(key, { ...issue });
-      } else {
-        const existing = finalMap.get(key);
-        
-        // Keep highest severity
-        const issueSevRank = severityRank[issue.severity] || 0;
-        const existingSevRank = severityRank[existing.severity] || 0;
-        if (issueSevRank > existingSevRank) {
-          existing.severity = issue.severity;
-        }
-        
-        // Merge unique recommendations
-        const recSet = new Set((existing.recommendations || []).map(r => String(r || '').trim()).filter(Boolean));
-        (issue.recommendations || []).forEach(r => {
-          const cleaned = String(r || '').trim();
-          if (cleaned) recSet.add(cleaned);
-        });
-        existing.recommendations = Array.from(recSet).slice(0, 5);
-        
-        // Merge best why_it_matters
-        const issueWhy = String(issue.why_it_matters || '').trim();
-        const existingWhy = String(existing.why_it_matters || '').trim();
-        if (issueWhy.length > existingWhy.length) {
-          existing.why_it_matters = issueWhy;
-        }
-        
-        // Union clause_ids, page_refs, clause_refs
-        if (Array.isArray(issue.clause_ids)) {
-          const clauseSet = new Set(existing.clause_ids || []);
-          issue.clause_ids.forEach(c => clauseSet.add(c));
-          existing.clause_ids = Array.from(clauseSet);
-        }
-        if (Array.isArray(issue.page_refs)) {
-          const pageSet = new Set(existing.page_refs || []);
-          issue.page_refs.forEach(p => pageSet.add(p));
-          existing.page_refs = Array.from(pageSet);
-        }
-        if (Array.isArray(issue.clause_refs)) {
-          const seenRef = new Set((existing.clause_refs || []).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
-          issue.clause_refs.forEach(c => {
-            const sig = `${c.clause_id}|${c.page}|${c.snippet}`;
-            if (!seenRef.has(sig)) {
-              existing.clause_refs = [...(existing.clause_refs || []), c];
-            }
-          });
-        }
-        
-        console.log('[IssueDedupMerged]', {
-          event: 'IssueDedupMerged',
-          issue_id: key,
-          leaseId: meta?.leaseId,
-          scanId: meta?.scanId
-        });
+      const firstRef = Array.isArray(issue.clause_refs) && issue.clause_refs[0] ? issue.clause_refs[0] : { clause_id: issue.clause_id || 'GLOBAL', snippet: issue.evidence || '' };
+      const clauseHash = hashText2(firstRef.snippet || '');
+      const k = `${issue.rule_id}:${clauseHash}`;
+      if (!finalMap.has(k)) finalMap.set(k, { ...issue, _clause_hash: clauseHash });
+      else {
+        const existing = finalMap.get(k);
+        if (rank[issue.severity] > rank[existing.severity]) existing.severity = issue.severity;
+        // merge recommendations unique
+        const recSet = new Set((existing.recommendations||[]).map(r=>String(r||'').trim()).filter(Boolean));
+        (issue.recommendations||[]).forEach(r=>{ const t = String(r||'').trim(); if (t) recSet.add(t); });
+        existing.recommendations = Array.from(recSet).slice(0,5);
+        // keep best summary
+        if ((issue.summary||'').length > (existing.summary||'').length) existing.summary = issue.summary;
+        // merge refs
+        const seenRef = new Set((existing.clause_refs||[]).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
+        (issue.clause_refs || []).forEach(c => { const sig = `${c.clause_id}|${c.page}|${c.snippet}`; if (!seenRef.has(sig)) existing.clause_refs = [...(existing.clause_refs||[]), c]; });
       }
     });
-    
     const finalIssues = Array.from(finalMap.values());
 
     logStage('LLM_MERGE_COMPLETE', {
@@ -1547,24 +1441,12 @@ OUTPUT FORMAT:
       llmContribution: llmValidIssues.length
     });
 
-    // VALIDATION COUNT CHECK - detect report-PDF mismatches
-    if (finalIssues.length !== (finalCriticalCount + finalHighCount + finalMediumCount)) {
-      console.error('[ReportCountMismatch]', {
-        event: 'ReportCountMismatch',
-        scanId,
-        leaseId,
-        total: finalIssues.length,
-        counted: finalCriticalCount + finalHighCount + finalMediumCount
-      });
-    }
-
     return Response.json({
       success: true,
       result: {
         risk_score: finalRiskScore,
         summary,
-        issues_validated: finalIssues,
-        issues_invalid: invalidIssues,
+        flags: finalIssues,
         property_address: keyTerms.property_address,
         start_date: keyTerms.start_date,
         end_date: keyTerms.end_date,
@@ -1574,10 +1456,7 @@ OUTPUT FORMAT:
         notice_period_days: keyTerms.notice_period_days,
         rent_due_day: keyTerms.rent_due_day,
         deposit_due_date: keyTerms.deposit_due_date,
-        deposit_return_days: keyTerms.deposit_return_days,
-        
-        // Legacy field for backward compatibility
-        flags: finalIssues
+        deposit_return_days: keyTerms.deposit_return_days
       },
       validation: {
         valid_issues: finalIssues.length,
@@ -1601,17 +1480,10 @@ OUTPUT FORMAT:
         },
         risk_score_deterministic: rawScore,
         risk_score_final: finalRiskScore,
-        engines_run: ['LEGALITY', 'PROCEDURAL', 'FINANCIAL', 'POWER_IMBALANCE', 'RIGHTS_SUPPRESSION', 'MISSING_SAFEGUARDS', 'COMPOUND', 'PREDATORY_LANGUAGE', 'LLM_LAWYER'],
-        deduplication_stats: {
-          pre_first_pass: detectedIssues.length,
-          post_first_pass: uniqueIssues.length,
-          pre_llm_merge: combinedIssues.length,
-          post_final_dedupe: finalIssues.length,
-          total_dropped: detectedIssues.length - finalIssues.length
-        }
+        engines_run: ['LEGALITY', 'PROCEDURAL', 'FINANCIAL', 'POWER_IMBALANCE', 'RIGHTS_SUPPRESSION', 'MISSING_SAFEGUARDS', 'COMPOUND', 'PREDATORY_LANGUAGE', 'LLM_LAWYER']
       },
       diagnostic: {
-        buildTag: "deterministic-v3.0-schema-safe",
+        buildTag: "multi-engine-v2.1-validated",
         scanId,
         requestId,
         filesProcessed: fileUrls.length,
