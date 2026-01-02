@@ -900,11 +900,14 @@ Be thorough.`,
     const fullText = clauses.map(c => c.raw_text).join(' ');
     const predatoryRisk = analyzePredatoryLanguage(fullText, userLang);
     if (predatoryRisk) {
-      if (validateRiskIssue(predatoryRisk, predatoryRisk.rule_id)) {
-        detectedIssues.push(predatoryRisk);
-      } else {
-        invalidIssues.push({ rule_id: predatoryRisk.rule_id, reason: 'schema_validation_failed' });
-      }
+      const emitted = emitIssue({
+        ...predatoryRisk,
+        summary: predatoryRisk.description,
+        why_it_matters: predatoryRisk.explanation,
+        recommendations: (predatoryRisk.recommendation || '').split('\n').filter(Boolean),
+        clause_refs: [{ clause_id: 'GLOBAL', page: 1, snippet: predatoryRisk.evidence || 'Widespread language pattern' }]
+      }, { leaseId, scanId });
+      if (emitted) detectedIssues.push(emitted);
     }
 
     // Deduplication
