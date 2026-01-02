@@ -1043,33 +1043,7 @@ function ReportFullContent() {
               </div>
             }
           />
-            subtitle={lease.property_address || 'Lease Agreement'}
-            icon={FileText}
-            iconColor="#0C3B2E"
-            showBack={true}
-            backRoute={createPageUrl("UploadScan")}
-            isDarkMode={isDarkMode}
-            actions={
-              <Button 
-                className="btn-interaction"
-                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-                onClick={handleDownloadPDF}
-                disabled={downloadingPDF}
-              >
-                {downloadingPDF ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {language === 'th' ? 'กำลังสร้าง...' : 'Generating...'}
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 mr-2" />
-                    {strings.downloadPDF}
-                  </>
-                )}
-              </Button>
-            }
-          />
+
 
           {/* Language Banner */}
           {showLanguageBanner && (
