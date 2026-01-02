@@ -438,18 +438,20 @@ const RIGHTS_SUPPRESSION_RULES = [
     rule_id: 'RIGHTS_USE_RESTRICTIONS',
     patterns: [
       /(?:prohibit|ban|not.*allow|ห้าม|ไม่อนุญาต).{0,50}(?:cook|laundry|hang|dry|work|business|ทำอาหาร|ซักผ้า|ตาก|ทำงาน)/i,
-      /(?:no|not|ห้าม).{0,30}(?:alterations|decorat|paint|nail|ดัดแปลง|ตกแต่ง|ทาสี|ตะปู)/i
+      /(?:no|not|ห้าม).{0,30}(?:alterations|decorat|paint|nail|ดัดแปลง|ตกแต่ง|ทาสี|ตะปู)/i,
+      /(?:sublet|sublease|assign|โอนสิทธิ|ให้เช่าช่วง)/i,
+      /(?:short-?term|daily|รายวัน).{0,30}(?:rental|letting|ให้เช่า)/i
     ],
     severity: 'medium',
     category: 'Rights & Usage',
-    title_en: 'Excessive Property Use Restrictions',
-    title_th: 'ข้อจำกัดการใช้งานอสังหาริมทรัพย์ที่มากเกินไป',
-    description_en: 'Restricts normal residential activities beyond reasonable bounds (cooking, laundry, decoration, work-from-home)',
-    description_th: 'จำกัดกิจกรรมที่พักอาศัยปกติเกินกว่าขอบเขตที่สมเหตุสมผล (ทำอาหาร ซักผ้า การตกแต่ง การทำงานจากที่บ้าน)',
-    explanation_en: 'Unreasonable restrictions interfere with livability and modern lifestyle. Particularly problematic for work-from-home bans in post-COVID era.',
-    explanation_th: 'ข้อจำกัดที่ไม่สมเหตุสมผลขัดขวางการอยู่อาศัยและไลฟ์สไตล์สมัยใหม่ มีปัญหาโดยเฉพาะสำหรับการห้ามทำงานจากที่บ้านในยุคหลัง COVID',
-    recommendation_en: '• Allow normal residential activities\n• Limit restrictions to safety/structural concerns\n• Clarify what modifications require approval\n• Allow work-from-home unless commercial activity',
-    recommendation_th: '• อนุญาตกิจกรรมที่พักอาศัยปกติ\n• จำกัดข้อจำกัดเฉพาะความกังวลด้านความปลอดภัย/โครงสร้าง\n• ชี้แจงว่าการดัดแปลงใดต้องได้รับอนุมัติ\n• อนุญาตทำงานจากที่บ้านเว้นแต่เป็นกิจกรรมเชิงพาณิชย์'
+    title_en: 'Excessive Property Use & Letting Restrictions',
+    title_th: 'ข้อจำกัดการใช้งานและการให้เช่าที่มากเกินไป',
+    description_en: 'Restricts normal residential activities, subletting/assignment, or short-term letting; may include overbroad WFH bans',
+    description_th: 'จำกัดกิจกรรมที่พักอาศัย การให้เช่าช่วง/โอนสิทธิ หรือการให้เช่าระยะสั้น; อาจรวมการห้ามทำงานที่บ้านที่กว้างเกินไป',
+    explanation_en: 'Overbroad bans can lead to immediate termination and financial loss; allow reasonable usage with fair process.',
+    explanation_th: 'การห้ามที่กว้างเกินไปอาจนำไปสู่การยกเลิกทันทีและความเสียหายทางการเงิน; ควรอนุญาตการใช้งานตามสมควรพร้อมกระบวนการที่เป็นธรรม',
+    recommendation_en: '• Allow reasonable WFH\n• Replace absolute bans with approval process\n• Proportionate remedies without immediate termination',
+    recommendation_th: '• อนุญาตทำงานจากที่บ้านที่สมเหตุสมผล\n• แทนการห้ามเด็ดขาดด้วยกระบวนการอนุมัติ\n• แนวทางการเยียวยาที่ได้สัดส่วนโดยไม่มีการยกเลิกทันที'
   }
 ];
 
