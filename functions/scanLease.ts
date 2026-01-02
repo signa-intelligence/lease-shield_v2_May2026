@@ -88,88 +88,53 @@ function emitIssue(draft, meta) {
 // PENALTY PARSER
 function parsePenalties(text, monthlyRent = 0) {
   const penalties = [];
-  
+  const norm = (s) => (s || '').toLowerCase();
+  const t = norm(text);
+
   // Daily penalties - EN + TH
   const dailyPatterns = [
-    /(?:฿\s*)?(\d{1,3}(?:,\d{3})*)\s*(?:baht|บาท)?.*(?:per day|daily|วันละ|ต่อวัน|รายวัน)/gi,
-    /(?:per day|daily|วันละ|ต่อวัน).*(?:฿\s*)?(\d{1,3}(?:,\d{3})*)/gi
+    /(?:per\s*day|daily|วันละ|ต่อวัน|รายวัน)/i
   ];
-  
-  dailyPatterns.forEach(pattern => {
-    const matches = [...text.matchAll(pattern)];
-    matches.forEach(match => {
-      const amount = parseInt(match[1].replace(/,/g, ''));
-      if (amount > 50) {
-        let severity = 'high';
-        if (monthlyRent > 0 && (amount / monthlyRent > 0.005)) {
-          severity = 'critical';
-        }
-        penalties.push({
-          type: 'daily',
-          amount,
-          severity,
-          context: match[0].substring(0, 150)
-        });
-      }
-    });
-  });
-
-  // Fixed penalties
-  const fixedPatterns = [
-    /(?:fine|penalty|charge|fee|ค่าปรับ|ค่าธรรมเนียม).{0,40}(?:฿\s*)?(\d{1,3}(?:,\d{3})*)/gi,
-    /(?:฿\s*)?(\d{1,3}(?:,\d{3})*)\s*(?:baht|บาท).{0,40}(?:fine|penalty|charge|ค่าปรับ)/gi
-  ];
-  
-  fixedPatterns.forEach(pattern => {
-    const matches = [...text.matchAll(pattern)];
-    matches.forEach(match => {
-      const amount = parseInt(match[1].replace(/,/g, ''));
-      if (amount > 1000 && !match[0].toLowerCase().includes('per day') && !match[0].includes('วันละ')) {
-        let severity = 'medium';
-        if (monthlyRent > 0) {
-          const ratio = amount / monthlyRent;
-          if (ratio >= 1.0) severity = 'critical';
-          else if (ratio >= 0.5) severity = 'high';
-        } else if (amount >= 20000) {
-          severity = 'high';
-        }
-        penalties.push({
-          type: 'fixed',
-          amount,
-          severity,
-          context: match[0].substring(0, 150)
-        });
-      }
-    });
-  });
-
-  // Multipliers
-  const multiplierPatterns = [
-    /(?:double|twice|two times|2x|สอง\s*เท่า).*(?:rent|ค่าเช่า)/gi,
-    /(?:triple|three times|3x|สาม\s*เท่า).*(?:rent|ค่าเช่า)/gi,
-    /(?:rent|ค่าเช่า).*(?:double|twice|2x|สอง\s*เท่า)/gi,
-    /(?:rent|ค่าเช่า).*(?:triple|3x|สาม\s*เท่า)/gi
-  ];
-  
-  multiplierPatterns.forEach(pattern => {
-    if (pattern.test(text)) {
-      const multiplier = text.match(/three|triple|3x|สาม/i) ? 3 : 2;
-      penalties.push({
-        type: 'multiplier',
-        multiplier,
-        severity: 'critical',
-        context: text.match(pattern)?.[0]?.substring(0, 150) || 'multiplier detected'
-      });
+  dailyPatterns.forEach(p => {
+    if (p.test(t)) {
+      const amountMatch = text.match(/฿\s*(\d{1,3}(?:,\d{3})*)|([0-9]{2,6})/);
+      const amountRaw = amountMatch ? (amountMatch[1] || amountMatch[2]) : '0';
+      const amount = parseInt((amountRaw || '0').replace(/,/g, '')) || 0;
+      const severity = amount && monthlyRent ? (amount / monthlyRent > 0.005 ? 'critical' : 'high') : 'high';
+      penalties.push({ type: 'daily', amount, severity, context: text.substring(0, 150) });
     }
   });
 
+  // Fixed penalties (fine/fee)
+  if (/(fine|penalty|charge|fee|ค่าปรับ|ค่าธรรมเนียม)/i.test(t)) {
+    const amt = text.match(/฿\s*(\d{1,3}(?:,\d{3})*)|([0-9]{2,7})/);
+    const amount = parseInt((amt?.[1] || amt?.[2] || '0').replace(/,/g, '')) || 0;
+    let severity = 'medium';
+    if (monthlyRent && amount / monthlyRent >= 1.0) severity = 'critical';
+    else if (monthlyRent && amount / monthlyRent >= 0.5) severity = 'high';
+    else if (amount >= 20000) severity = 'high';
+    if (amount > 0) penalties.push({ type: 'fixed', amount, severity, context: text.substring(0, 150) });
+  }
+
+  // Multipliers (holdover etc.)
+  if (/(holdover|overstay|remain|อยู่เกิน|พักอาศัยเกิน)/i.test(t) && /(2x|double|twice|สอง\s*เท่า|3x|triple|สาม\s*เท่า|200%|300%)/i.test(t)) {
+    const multiplier = /(3x|triple|สาม)/i.test(t) ? 3 : 2;
+    penalties.push({ type: 'multiplier', multiplier, severity: 'critical', context: text.substring(0, 150) });
+  }
+
+  // Minimum fees
+  if (/(minimum|ไม่น้อยกว่า)/i.test(t)) {
+    penalties.push({ type: 'minimum', severity: 'high', context: text.substring(0, 150) });
+  }
+
+  // Category-specific: pet/guest/smoking
+  if (/(smoking|บุหรี่)/i.test(t)) penalties.push({ type: 'smoking', severity: 'high', context: text.substring(0, 150) });
+  if (/(guest|visitor|แขก|ผู้มาเยือน)/i.test(t)) penalties.push({ type: 'guest', severity: 'medium', context: text.substring(0, 150) });
+  if (/(pet|สัตว์เลี้ยง)/i.test(t)) penalties.push({ type: 'pet', severity: 'medium', context: text.substring(0, 150) });
+
   // Forfeiture
   if (/forfeit|forfeiture|ริบ|ริบเงิน/i.test(text)) {
-    penalties.push({
-      type: 'forfeiture',
-      severity: /any.*reason|ทุก.*กรณี/i.test(text) ? 'critical' : 'high',
-      context: text.match(/forfeit.*|ริบ.*/i)?.[0]?.substring(0, 150) || 'forfeiture clause'
-    });
+    penalties.push({ type: 'forfeiture', severity: /any.*reason|ทุก.*กรณี/i.test(text) ? 'critical' : 'high', context: text.substring(0, 150) });
   }
 
   return penalties;
