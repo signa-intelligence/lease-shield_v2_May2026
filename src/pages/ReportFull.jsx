@@ -888,6 +888,23 @@ function ReportFullContent() {
     );
   }
 
+  // Gate on scan_full presence first (no redirects)
+  if (!scan?.scan_full) {
+    return (
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-4xl mx-auto">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="w-6 h-6 mx-auto mb-3 text-amber-600" />
+              <h2 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Report data unavailable</h2>
+              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>Scan data is loading or incomplete.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   // Gate on taxonomy_report presence without redirecting
   if (!taxonomyReport) {
     return (
