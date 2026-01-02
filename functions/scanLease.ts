@@ -1029,50 +1029,75 @@ Be thorough.`,
       if (emitted) detectedIssues.push(emitted);
     }
 
-    // Deterministic de-duplication by canonical key (rule_id + clause_hash)
-    const severityRank = { critical: 3, high: 2, medium: 1, low: 0 };
-    const mergedMap = new Map();
-
-    // Helper: simple clause hash from first clause_ref snippet
-    const hashText = (s='') => {
-      const t = s.toLowerCase().replace(/\s+/g,' ').trim();
-      let h = 0; for (let i=0;i<t.length;i++){ h = ((h<<5)-h) + t.charCodeAt(i); h |= 0; }
-      return String(h);
-    };
+    // DETERMINISTIC DEDUPLICATION by issue_id (already unique from generateIssueId)
+    // Merge duplicates: keep highest severity, union recs/refs, best why_it_matters
+    const severityRank = { CRITICAL: 3, HIGH: 2, MEDIUM: 1, LOW: 0, critical: 3, high: 2, medium: 1, low: 0 };
+    const dedupeMap = new Map();
 
     detectedIssues.forEach(issue => {
-      const firstRef = Array.isArray(issue.clause_refs) && issue.clause_refs[0] ? issue.clause_refs[0] : { clause_id: issue.clause_id || 'GLOBAL', snippet: issue.evidence || '' };
-      const clauseHash = hashText(firstRef.snippet || '');
-      const key = `${issue.rule_id}:${clauseHash}`;
-
-      if (!mergedMap.has(key)) {
-        mergedMap.set(key, { ...issue, clause_refs: [...(issue.clause_refs || [])], _clause_hash: clauseHash });
+      const key = issue.issue_id;
+      
+      if (!dedupeMap.has(key)) {
+        dedupeMap.set(key, { ...issue });
       } else {
-        const existing = mergedMap.get(key);
-        // keep highest severity
-        if (severityRank[issue.severity] > severityRank[existing.severity]) {
+        const existing = dedupeMap.get(key);
+        
+        // Merge: highest severity
+        const issueSevRank = severityRank[issue.severity] || 0;
+        const existingSevRank = severityRank[existing.severity] || 0;
+        if (issueSevRank > existingSevRank) {
           existing.severity = issue.severity;
         }
-        // merge unique recommendations
-        const recSet = new Set((existing.recommendations||[]).map(r=>r.trim()));
-        (issue.recommendations||[]).forEach(r=>{ const t = String(r||'').trim(); if (t && !recSet.has(t)) recSet.add(t); });
-        existing.recommendations = Array.from(recSet).slice(0,5);
-        // keep longest summary
-        if ((issue.summary||'').length > (existing.summary||'').length) existing.summary = issue.summary;
-        // merge unique clause refs
-        const seenRef = new Set((existing.clause_refs||[]).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
-        (issue.clause_refs || []).forEach(c => {
-          const sig = `${c.clause_id}|${c.page}|${c.snippet}`;
-          if (!seenRef.has(sig)) {
-            existing.clause_refs = [...(existing.clause_refs||[]), c];
-            seenRef.add(sig);
-          }
+        
+        // Merge: unique recommendations
+        const recSet = new Set((existing.recommendations || []).map(r => String(r || '').trim()).filter(Boolean));
+        (issue.recommendations || []).forEach(r => {
+          const cleaned = String(r || '').trim();
+          if (cleaned) recSet.add(cleaned);
+        });
+        existing.recommendations = Array.from(recSet).slice(0, 5);
+        
+        // Merge: best why_it_matters (prefer longer non-empty)
+        const issueWhy = String(issue.why_it_matters || '').trim();
+        const existingWhy = String(existing.why_it_matters || '').trim();
+        if (issueWhy.length > existingWhy.length) {
+          existing.why_it_matters = issueWhy;
+        }
+        
+        // Merge: union clause_ids and page_refs
+        if (Array.isArray(issue.clause_ids)) {
+          const clauseSet = new Set(existing.clause_ids || []);
+          issue.clause_ids.forEach(c => clauseSet.add(c));
+          existing.clause_ids = Array.from(clauseSet);
+        }
+        if (Array.isArray(issue.page_refs)) {
+          const pageSet = new Set(existing.page_refs || []);
+          issue.page_refs.forEach(p => pageSet.add(p));
+          existing.page_refs = Array.from(pageSet);
+        }
+        
+        // Legacy: merge clause_refs
+        if (Array.isArray(issue.clause_refs)) {
+          const seenRef = new Set((existing.clause_refs || []).map(c => `${c.clause_id}|${c.page}|${c.snippet}`));
+          issue.clause_refs.forEach(c => {
+            const sig = `${c.clause_id}|${c.page}|${c.snippet}`;
+            if (!seenRef.has(sig)) {
+              existing.clause_refs = [...(existing.clause_refs || []), c];
+            }
+          });
+        }
+        
+        console.log('[IssueDedupMerged]', {
+          event: 'IssueDedupMerged',
+          issue_id: key,
+          leaseId: meta?.leaseId,
+          scanId: meta?.scanId
         });
       }
     });
 
-    const uniqueIssues = Array.from(mergedMap.values());
-    logStage('DedupApplied', { before: detectedIssues.length, after: uniqueIssues.length, invalid: invalidIssues.length });
+    const uniqueIssues = Array.from(dedupeMap.values());
+    logStage('DedupApplied', { before: detectedIssues.length, after: uniqueIssues.length, dropped: detectedIssues.length - uniqueIssues.length, invalid: invalidIssues.length });
 
     // Emit structured event for invalid issues
     if (invalidIssues.length > 0) {
