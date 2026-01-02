@@ -83,7 +83,51 @@ function emitIssue(draft, meta) {
   };
 
   return validateRiskIssue(issue, issue.rule_id, meta) ? issue : null;
-}
+  }
+
+  // Detailed validator helper used for structured invalid logging
+  function collectInvalid(draft, ruleId) {
+    const preview = {
+      title: typeof draft.title === 'string' ? draft.title : (typeof draft.summary === 'string' ? draft.summary.slice(0, 80) : 'Untitled'),
+      rule_id: draft.rule_id || ruleId || 'UNKNOWN_RULE',
+      category_id: draft.category_id || draft.category || 'UNSPECIFIED',
+      severity: draft.severity || 'medium'
+    };
+
+    const missing = [];
+    const types = [];
+
+    if (!draft.title) missing.push('title');
+    if (!draft.summary && !draft.description) missing.push('summary');
+    if (!draft.why_it_matters && !draft.explanation) missing.push('why_it_matters');
+
+    const recsLen = Array.isArray(draft.recommendations)
+      ? draft.recommendations.length
+      : (typeof draft.recommendation === 'string' && draft.recommendation.trim() ? draft.recommendation.split('\n').filter(Boolean).length : 0);
+    if (recsLen < 1) missing.push('recommendations');
+
+    const clauseLen = Array.isArray(draft.clause_refs) ? draft.clause_refs.length : (draft.clause_id ? 1 : 0);
+    if (clauseLen < 1) missing.push('clause_refs');
+
+    if (Array.isArray(draft.clause_refs)) {
+      draft.clause_refs.forEach((c, i) => {
+        if (!c || typeof c !== 'object') types.push(`clause_refs[${i}] not object`);
+        else {
+          if (typeof c.clause_id !== 'string') types.push(`clause_refs[${i}].clause_id type`);
+          if (typeof c.page !== 'number' && typeof c.page !== 'undefined') types.push(`clause_refs[${i}].page type`);
+          if (typeof c.snippet !== 'string') types.push(`clause_refs[${i}].snippet type`);
+        }
+      });
+    }
+
+    return {
+      issue_preview: preview,
+      missing_fields: missing,
+      type_errors: types,
+      clause_refs_length: clauseLen,
+      recommendations_length: recsLen
+    };
+  }
 
 // PENALTY PARSER
 function parsePenalties(text, monthlyRent = 0) {
