@@ -874,6 +874,21 @@ Be thorough.`,
     logStage('PREDATORY_LANGUAGE_START', {});
     const fullText = clauses.map(c => c.raw_text).join(' ');
     const predatoryRisk = analyzePredatoryLanguage(fullText, userLang);
+    // Utilities pricing abuse (rates may change without notice / landlord sets arbitrary rates)
+    if (/(rates?\s*may\s*change\s*without\s*notice|อัตรา.*เปลี่ยนแปลง.*โดยไม่แจ้ง)/i.test(fullText)) {
+      const emitted = emitIssue({
+        rule_id: 'FIN_UTILITY_RATE_CHANGE_NO_NOTICE',
+        severity: 'high',
+        category: 'Financial Risk',
+        title: userLang === 'th' ? 'อัตราค่าสาธารณูปโภคอาจเปลี่ยนแปลงโดยไม่แจ้ง' : 'Utility Rates May Change Without Notice',
+        summary: userLang === 'th' ? 'ข้อกำหนดให้อัตราค่าสาธารณูปโภคเปลี่ยนได้โดยไม่แจ้ง' : 'Clause allows utility rates to change without notice',
+        why_it_matters: userLang === 'th' ? 'เสี่ยงถูกคิดราคาเกินจริงโดยไม่มีการแจ้งล่วงหน้า' : 'Risk of price gouging without advance notice',
+        recommendations: [userLang === 'th' ? 'กำหนดเพดานและแจ้งล่วงหน้า' : 'Add cap and advance notice requirement'],
+        clause_refs: [{ clause_id: 'GLOBAL', page: 1, snippet: 'Utility rates may change without notice' }]
+      }, { leaseId, scanId });
+      if (emitted) detectedIssues.push(emitted);
+    }
+
     if (predatoryRisk) {
       const emitted = emitIssue({
         ...predatoryRisk,
