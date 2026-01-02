@@ -1125,13 +1125,13 @@ function ReportFullContent() {
                 <div className="flex-1">
                   <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
                     {language === 'th' 
-                      ? `${schemaInvalidCount} ปัญหาไม่สามารถแสดงได้ (รหัสข้อผิดพลาด: ISSUE_SCHEMA_INVALID)`
-                      : `${schemaInvalidCount} issue(s) could not be displayed (Error Code: ISSUE_SCHEMA_INVALID)`}
+                      ? `${schemaInvalidCount} ปัญหาไม่สามารถแสดงได้ (ISSUE_SCHEMA_INVALID)`
+                      : `${schemaInvalidCount} issue(s) quarantined (ISSUE_SCHEMA_INVALID)`}
                   </p>
                   <p className="text-xs mt-1" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
                     {language === 'th'
-                      ? 'ข้อมูลบางอย่างไม่สมบูรณ์ กรุณาติดต่อฝ่ายสนับสนุนหากต้องการความช่วยเหลือ'
-                      : 'Some data was incomplete. Contact support if you need assistance.'}
+                      ? 'เฉพาะประเด็นที่ผ่านการตรวจสอบเท่านั้นที่จะแสดงในรายงานและ PDF'
+                      : 'Only validated issues are shown in the report and PDF.'}
                   </p>
                   {Array.isArray(invalidCodes) && invalidCodes.length > 0 && (
                     <p className="text-[10px] opacity-75 mt-1" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
