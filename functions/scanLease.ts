@@ -782,12 +782,20 @@ Be thorough.`,
         const matched = rule.patterns.some(pattern => pattern.test(clause.raw_text));
         if (matched) {
           const penalties = parsePenalties(clause.raw_text, monthlyRent);
-          const maxSeverity = penalties.length > 0 
+          const baseSeverity = penalties.length > 0 
             ? penalties.reduce((max, p) => {
                 const order = { critical: 3, high: 2, medium: 1, low: 0 };
                 return (order[p.severity] || 0) > (order[max] || 0) ? p.severity : max;
               }, rule.severity)
             : rule.severity;
+          let maxSeverity = baseSeverity;
+          const lower = (clause.raw_text || '').toLowerCase();
+          if (/(immediate|ทันที).{0,20}(termination|ยกเลิก)/i.test(lower)) {
+            if (maxSeverity === 'medium') maxSeverity = 'high';
+          }
+          if (/(no\s*refund|ไม่คืนเงิน)/i.test(lower)) {
+            if (maxSeverity !== 'critical') maxSeverity = 'high';
+          }
 
           const emitted = emitIssue({
             rule_id: rule.rule_id,
