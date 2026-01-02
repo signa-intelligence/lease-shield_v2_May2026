@@ -77,7 +77,7 @@ function ReportFullContent() {
     }
   });
 
-  // Fetch scan
+  // Fetch scan (read-only) — no redirects, no side-effects
   const { data: scan, isLoading: scanLoading, error: scanError } = useQuery({
     queryKey: ['scan', scanId],
     queryFn: async () => {

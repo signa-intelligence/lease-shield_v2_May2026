@@ -484,7 +484,9 @@ function ScanPreviewContent() {
                       </p>
                       <div className="flex flex-col gap-2">
                         <button
+                          disabled={isLoading}
                           onClick={() => {
+                            if (isLoading) return;
                             haptic.medium();
                             navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`, { replace: false });
                           }}
@@ -598,7 +600,9 @@ function ScanPreviewContent() {
                           <ArrowRight className="w-5 h-5" />
                         </button>
                         <button
+                          disabled={isLoading}
                           onClick={() => {
+                            if (isLoading) return;
                             haptic.light();
                             navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`, { replace: false });
                           }}
@@ -860,7 +864,9 @@ function ScanPreviewContent() {
           <div className="max-w-4xl mx-auto px-4 py-4">
             <div className="flex flex-col sm:flex-row gap-3">
               <button
+                disabled={isLoading}
                 onClick={() => {
+                  if (isLoading) return;
                   haptic.medium();
                   navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`, { replace: false });
                 }}
