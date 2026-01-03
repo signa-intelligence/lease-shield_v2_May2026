@@ -105,7 +105,9 @@ function ReportFullContent() {
             scanId: foundScan.id, 
             riskScore: foundScan.risk_score,
             hasFlags: !!foundScan.scan_full?.flags,
-            flagsCount: foundScan.scan_full?.flags?.length || 0
+            flagsCount: foundScan.scan_full?.flags?.length || 0,
+            hasScanFull: !!foundScan.scan_full,
+            hasTaxonomy: Array.isArray(foundScan.scan_full?.taxonomy_report)
           });
         }
         
@@ -306,6 +308,21 @@ function ReportFullContent() {
     hasLease: !!lease,
     scanKeys: scan ? Object.keys(scan) : [],
     reportShape: scan?.scan_full ? Object.keys(scan.scan_full) : []
+  });
+
+  // Early derived scan data for safe gating (TEMP LOGGING)
+  const missingItems = scan?.scan_full?.missing_items || [];
+  const keyTerms = scan?.scan_full?.key_terms || {};
+  const taxonomyReport = Array.isArray(scan?.scan_full?.taxonomy_report) ? scan.scan_full.taxonomy_report : null;
+  const coverageSummary = scan?.scan_full?.coverage_summary || null;
+  const taxonomyValid = Array.isArray(taxonomyReport) && taxonomyReport.length === 30 && taxonomyReport.every(t => t && typeof t === 'object' && 'category_name' in t && 'status' in t && 'risk_level' in t && 'confidence' in t && 'detected_text_excerpt' in t);
+
+  console.log('[REPORTFULL_LOAD]', {
+    step: 'DATA_GUARDS',
+    hasScanFull: !!scan?.scan_full,
+    hasTaxonomy: !!taxonomyReport,
+    taxonomyLength: Array.isArray(taxonomyReport) ? taxonomyReport.length : null,
+    taxonomyValid
   });
 
   const t = {
@@ -890,14 +907,18 @@ function ReportFullContent() {
 
   // Gate on scan_full presence first (no redirects)
   if (!scan?.scan_full) {
+    console.log('[REPORTFULL_LOAD]', { step: 'GATE_NO_SCAN_FULL', scanId, leaseId });
     return (
       <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
           <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-8 text-center">
               <AlertCircle className="w-6 h-6 mx-auto mb-3 text-amber-600" />
-              <h2 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Report data unavailable</h2>
+              <h2 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Report not ready yet</h2>
               <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>Scan data is loading or incomplete.</p>
+              <div className="mt-4 flex justify-center">
+                <Button onClick={() => window.location.reload()}>Retry</Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -905,8 +926,9 @@ function ReportFullContent() {
     );
   }
 
-  // Gate on taxonomy_report presence without redirecting
+  // Gate on taxonomy_report presence/shape without redirecting
   if (!taxonomyReport) {
+    console.log('[REPORTFULL_LOAD]', { step: 'GATE_NO_TAXONOMY', scanId, leaseId });
     return (
       <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
@@ -914,7 +936,29 @@ function ReportFullContent() {
             <CardContent className="p-8 text-center">
               <Loader2 className="w-6 h-6 mx-auto mb-3 animate-spin" />
               <h2 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Scan processing, please wait</h2>
-              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>Preparing clause-first coverage...</p>
+              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>Preparing clause-first coverage (10–30s)...</p>
+              <div className="mt-4 flex justify-center">
+                <Button onClick={() => window.location.reload()}>Retry</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  } else if (!taxonomyValid) {
+    console.log('[REPORTFULL_LOAD]', { step: 'GATE_INVALID_TAXONOMY', scanId, leaseId, taxonomyLength: Array.isArray(taxonomyReport) ? taxonomyReport.length : null });
+    return (
+      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-4xl mx-auto">
+          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="w-6 h-6 mx-auto mb-3 text-red-600" />
+              <h2 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Report data invalid</h2>
+              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>Please re-scan your lease or try again.</p>
+              <div className="mt-4 flex gap-2 justify-center">
+                <Button onClick={() => window.location.reload()}>Retry</Button>
+                <Button variant="outline" onClick={() => navigate(createPageUrl('UploadScan'))}>Rescan</Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -946,11 +990,7 @@ function ReportFullContent() {
   const theme = riskTheme(scan?.risk_score || 0, scan?.overall_risk);
   const riskLevel = theme ? { level: theme.key, label: theme.key === 'high' ? (language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий риск' : 'HIGH RISK') : theme.key === 'medium' ? (language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний риск' : 'MEDIUM RISK') : (language === 'th' ? 'ความเสี่ยงต่ำ' : language === 'ru' ? 'Низкий риск' : 'LOW RISK'), color: theme.color, bg: theme.bg } : null;
   
-  // Extract other scan data
-  const missingItems = scan?.scan_full?.missing_items || [];
-  const keyTerms = scan?.scan_full?.key_terms || {};
-  const taxonomyReport = Array.isArray(scan?.scan_full?.taxonomy_report) ? scan.scan_full.taxonomy_report : null;
-  const coverageSummary = scan?.scan_full?.coverage_summary || null;
+  // Extracted earlier for safe gating
 
   // LIMIT FLAGS BASED ON TIER (consistent with ScanPreview)
   const getFullDisplayFlags = () => {
@@ -1465,7 +1505,7 @@ function ReportFullContent() {
             </Card>
           )}
           {/* Clause Review (Accordion-like) */}
-          {showClauseReview && Array.isArray(scan?.scan_full?.clause_reviews) && (
+          {Array.isArray(scan?.scan_full?.clause_reviews) && scan.scan_full.clause_reviews.length > 0 && (
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
                 <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
