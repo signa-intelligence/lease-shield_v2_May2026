@@ -101,6 +101,9 @@ export function validateFileUrl(url) {
     'qtrypzzcjebvfcihiynt.supabase.co',
     'supabase.co'
   ];
+
+  // Allowed file extensions
+  const ALLOWED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg'];
   
   try {
     const urlObj = new URL(url);
@@ -108,6 +111,13 @@ export function validateFileUrl(url) {
     
     if (!isTrusted) {
       return { valid: false, error: 'URL must be from trusted storage' };
+    }
+
+    // Validate extension
+    const pathname = urlObj.pathname.toLowerCase();
+    const hasValidExtension = ALLOWED_EXTENSIONS.some(ext => pathname.endsWith(ext));
+    if (!hasValidExtension) {
+      return { valid: false, error: 'Invalid file type. Allowed: PDF, PNG, JPG' };
     }
     
     return { valid: true };

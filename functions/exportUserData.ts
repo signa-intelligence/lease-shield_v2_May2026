@@ -17,6 +17,12 @@ Deno.serve(async (req) => {
     
     await safeLog('EXPORT_USER_DATA', { userId: user.id, isAdmin });
 
+    // PREMIUM GATE: restrict data export for free tier
+    const plan = (user.plan_tier || 'free').toLowerCase();
+    if (plan === 'free' && !isAdmin) {
+      return Response.json({ error: 'Upgrade required to export data' }, { status: 403 });
+    }
+
     // SECURITY FIX: Enforce object-level authorization - only fetch user's own data
     // Admin already verified above, regular users can only export own data
     const [leases, scans, deposits, documents, cases, payments, maintenance, notifications] = await Promise.all([

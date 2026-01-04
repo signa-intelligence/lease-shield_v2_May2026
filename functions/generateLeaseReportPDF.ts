@@ -36,6 +36,12 @@ Deno.serve(async (req) => {
     const { user, base44 } = await requireAuth(req);
 
     const { scanData, language = 'en', correlationId: clientCorrelationId } = await req.json();
+
+    // PREMIUM GATE: restrict PDF generation for free tier
+    const plan = (user.plan_tier || 'free').toLowerCase();
+    if (plan === 'free') {
+      return Response.json({ error: 'Upgrade required to generate PDF' }, { status: 403 });
+    }
     const trackingId = clientCorrelationId || correlationId;
     
     // SECURITY FIX: Redact PII from logs

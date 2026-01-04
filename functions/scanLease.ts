@@ -768,6 +768,22 @@ Deno.serve(async (req) => {
           diagnostic: { scanId, requestId, errorCategory: 'VALIDATION_ERROR' }
         }, { status: 400 });
       }
+
+      // Enforce max size 10MB via HEAD request if available
+      try {
+        const headRes = await fetch(url, { method: 'HEAD' });
+        const sizeHeader = headRes.headers.get('content-length');
+        if (sizeHeader && parseInt(sizeHeader, 10) > 10 * 1024 * 1024) {
+          await safeLog('SCAN_FILE_TOO_LARGE', { size: parseInt(sizeHeader, 10) });
+          return Response.json({
+            success: false,
+            error: 'File too large. Maximum size: 10MB',
+            diagnostic: { scanId, requestId, errorCategory: 'VALIDATION_ERROR' }
+          }, { status: 400 });
+        }
+      } catch (e) {
+        // If HEAD fails, continue; size will be validated downstream if needed
+      }
     }
 
     logStage('CLAUSE_EXTRACTION_START', { fileCount: urlArray.length });
