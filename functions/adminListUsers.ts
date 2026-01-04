@@ -8,6 +8,8 @@ Deno.serve(async (req) => {
   try {
     // SECURITY FIX: Role-based auth instead of hard-coded emails
     const { user, base44 } = await requireSuperAdmin(req);
+    const recent = requireRecentAuth(req, 600);
+    if (!recent.ok) return err(req, 'REAUTH_REQUIRED', 'Please reauthenticate to proceed', 401);
     
     await safeLog('ADMIN_LIST_USERS', { userId: user.id, timestamp: new Date().toISOString() });
 

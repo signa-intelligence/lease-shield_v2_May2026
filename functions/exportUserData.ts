@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { jsPDF } from 'npm:jspdf@2.5.1';
 import { requireAuth, requireOwnerOrAdmin, safeLog, hashUserId } from './authGuards.js';
-import { handleCors, ensureAllowedOrigin, err } from './http.js';
+import { handleCors, ensureAllowedOrigin, err, requireRecentAuth } from './http.js';
 
 Deno.serve(async (req) => {
   const pre = handleCors(req); if (pre) return pre;

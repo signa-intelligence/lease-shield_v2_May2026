@@ -125,3 +125,12 @@ export function validateFileUrl(url) {
     return { valid: false, error: 'Malformed URL' };
   }
 }
+
+// Storage key sanitizer - blocks traversal and normalizes to user namespace
+export function sanitizeStorageKey(userId, keyHint = 'report.pdf') {
+  const safeUser = String(userId || 'anon').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+  const safeName = String(keyHint).toLowerCase().replace(/[^a-z0-9._-]/g, '-');
+  const noTraversal = safeName.replace(/\.\.+/g, '-');
+  const ts = Date.now();
+  return `${safeUser}/${ts}-${crypto.randomUUID().slice(0,8)}-${noTraversal || 'file.bin'}`;
+}

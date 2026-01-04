@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import Stripe from 'npm:stripe@14.10.0';
 import { requireAuth, safeLog } from './authGuards.js';
 import { enforceRateLimit } from './rateLimiter.js';
-import { handleCors, ensureAllowedOrigin, err } from './http.js';
+import { handleCors, ensureAllowedOrigin, err, requireRecentAuth } from './http.js';
 
 /**
  * STRIPE CHECKOUT CREATOR - Standalone, no external dependencies
