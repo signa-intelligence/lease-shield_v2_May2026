@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { jsPDF } from 'npm:jspdf@2.5.2';
+import { requireAuth, safeLog } from './authGuards.js';
 
 // Risk theme mapping - consistent UI and PDF colors
 function getRiskTheme(riskScore) {
@@ -31,20 +32,15 @@ Deno.serve(async (req) => {
   const correlationId = `pdf-gen-${Date.now()}`;
   
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      console.error(`[${correlationId}] Unauthorized access attempt`);
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // SECURITY FIX: Use centralized auth guard
+    const { user, base44 } = await requireAuth(req);
 
     const { scanData, language = 'en', correlationId: clientCorrelationId } = await req.json();
     const trackingId = clientCorrelationId || correlationId;
     
-    console.log(`[${trackingId}] PDF generation started`, {
+    // SECURITY FIX: Redact PII from logs
+    await safeLog('PDF_GENERATION_START', {
       userId: user.id,
-      userEmail: user.email,
       language,
       hasScanData: !!scanData
     });
@@ -316,10 +312,10 @@ Deno.serve(async (req) => {
     }
 
     // Generate and upload PDF
-    console.log(`[${trackingId}] Generating PDF binary`);
+    await safeLog('PDF_GENERATING', { correlationId: trackingId });
     const pdfBytes = doc.output('arraybuffer');
     
-    console.log(`[${trackingId}] PDF binary generated`, {
+    await safeLog('PDF_BINARY_GENERATED', {
       sizeBytes: pdfBytes.byteLength,
       sizeMB: (pdfBytes.byteLength / 1024 / 1024).toFixed(2)
     });
@@ -329,7 +325,7 @@ Deno.serve(async (req) => {
       type: 'application/pdf' 
     });
     
-    console.log(`[${trackingId}] Uploading PDF to storage`, {
+    await safeLog('PDF_UPLOADING', {
       fileName: pdfFile.name,
       fileSize: pdfFile.size
     });
@@ -338,9 +334,7 @@ Deno.serve(async (req) => {
       file: pdfFile 
     });
     
-    console.log(`[${trackingId}] PDF uploaded successfully`, {
-      fileUrl: uploadResult.file_url
-    });
+    await safeLog('PDF_UPLOADED', { success: true });
 
     return Response.json({ 
       success: true, 
@@ -349,15 +343,16 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error(`[${correlationId}] PDF generation error:`, {
-      error: error.message,
-      stack: error.stack,
-      name: error.name
-    });
+    if (error.message === 'UNAUTHORIZED') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    // SECURITY FIX: Don't expose error details to client
+    console.error('[PDF_ERROR]', { error: error.message, correlationId });
     
     return Response.json({ 
       success: false, 
-      error: error.message,
+      error: 'PDF generation failed. Please try again.',
       correlationId
     }, { status: 500 });
   }
