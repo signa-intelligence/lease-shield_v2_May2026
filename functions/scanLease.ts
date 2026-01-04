@@ -714,6 +714,17 @@ Deno.serve(async (req) => {
 
     // SECURITY FIX: Validate user has scan quota (server-side check)
     const userTier = user.plan_tier || 'free';
+
+    // PREMIUM GATE: restrict scanning for free tier
+    if (userTier === 'free') {
+      await safeLog('SCAN_PREMIUM_GATE', { userId: user.id });
+      return Response.json({ 
+        success: false,
+        error: 'Upgrade required to scan',
+        diagnostic: { requestId, errorCategory: 'PREMIUM_REQUIRED' }
+      }, { status: 403 });
+    }
+
     const scanLimits = {
       free: { limit: 1, period: 'lifetime' },
       lite: { limit: 6, period: 'year' },
