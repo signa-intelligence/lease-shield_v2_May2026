@@ -7,7 +7,8 @@ const ALLOWED_ORIGINS = [
 ];
 
 function isAllowedOrigin(origin) {
-  if (!origin) return true; // Non-browser (e.g., Stripe) calls
+  // Browser requests must provide Origin and be allowlisted
+  if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;
   // Allow Base44 preview subdomains
   try {
