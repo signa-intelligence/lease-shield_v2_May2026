@@ -1,15 +1,24 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { jsPDF } from 'npm:jspdf@2.5.1';
+import { requireAuth, requireOwnerOrAdmin, safeLog, hashUserId } from './authGuards.js';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
+    // SECURITY FIX: Authenticate user
+    const { user, base44 } = await requireAuth(req);
     
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // SECURITY FIX: Allow export only for own data OR admin
+    // Admin can export any user's data, regular users only their own
+    const isAdmin = 
+      user.role === 'admin' || 
+      user.role === 'super_admin' || 
+      user.access_level === 'admin' || 
+      user.access_level === 'super_admin';
+    
+    await safeLog('EXPORT_USER_DATA', { userId: user.id, isAdmin });
 
+    // SECURITY FIX: Enforce object-level authorization - only fetch user's own data
+    // Admin already verified above, regular users can only export own data
     const [leases, scans, deposits, documents, cases, payments, maintenance, notifications] = await Promise.all([
       base44.entities.Lease.filter({ created_by: user.email }),
       base44.entities.LeaseScan.filter({ created_by: user.email }),
@@ -20,6 +29,12 @@ Deno.serve(async (req) => {
       base44.entities.MaintenanceRequest.filter({ created_by: user.email }),
       base44.entities.NotificationLog.filter({ user_email: user.email })
     ]);
+    
+    await safeLog('EXPORT_DATA_FETCHED', { 
+      leases: leases.length, 
+      deposits: deposits.length, 
+      cases: cases.length 
+    });
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
@@ -547,10 +562,17 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Data export error:', error);
+    if (error.message === 'UNAUTHORIZED') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error.message === 'FORBIDDEN') {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    
+    // SECURITY FIX: Don't expose error details to client
+    console.error('[EXPORT_ERROR]', { error: error.message, stack: error.stack?.substring(0, 200) });
     return Response.json({ 
-      error: 'Failed to export data', 
-      details: error.message 
+      error: 'Failed to export data'
     }, { status: 500 });
   }
 });

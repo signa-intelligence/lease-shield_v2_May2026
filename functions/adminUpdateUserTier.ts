@@ -1,19 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireSuperAdmin, safeLog } from './authGuards.js';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const currentUser = await base44.auth.me();
-
-    if (!currentUser) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Only super admins allowed
-    const superAdmins = ['steve.l@signa-consultants.com', 'steve.d.lockhart@gmail.com'];
-    if (!superAdmins.includes(currentUser.email.toLowerCase())) {
-      return Response.json({ error: 'Forbidden - Super admin access required' }, { status: 403 });
-    }
+    // SECURITY FIX: Role-based auth instead of hard-coded emails
+    const { user, base44 } = await requireSuperAdmin(req);
 
     const { userId, tier } = await req.json();
 
@@ -27,12 +18,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid tier' }, { status: 400 });
     }
 
-    console.log('🔄 Updating user tier:', { userId, tier });
+    await safeLog('ADMIN_UPDATE_TIER', { userId, tier });
 
     // Update user using service role
     const updatedUser = await base44.asServiceRole.entities.User.update(userId, { plan_tier: tier });
 
-    console.log('✅ Tier update complete:', updatedUser);
+    await safeLog('ADMIN_UPDATE_TIER_SUCCESS', { userId, newTier: tier });
 
     return Response.json({ 
       success: true,
@@ -41,9 +32,16 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Admin update tier error:', error);
+    if (error.message === 'UNAUTHORIZED') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error.message === 'FORBIDDEN') {
+      return Response.json({ error: 'Forbidden - Super admin access required' }, { status: 403 });
+    }
+    
+    console.error('[ADMIN_UPDATE_TIER_ERROR]', { error: error.message });
     return Response.json({ 
-      error: error.message || 'Failed to update user tier'
+      error: 'Failed to update user tier'
     }, { status: 500 });
   }
 });

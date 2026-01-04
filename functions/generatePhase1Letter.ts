@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { requireAuth, safeLog } from './authGuards.js';
+import { enforceRateLimit } from './rateLimiter.js';
+import { sanitizeHTML } from './sanitizer.js';
 
 /**
  * Lease Shield – LLM-powered Letters (STEP 1: Generate & Deduct Credits)
@@ -8,19 +11,18 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // SECURITY FIX: Authenticate and enforce rate limiting
+    const { user, base44 } = await requireAuth(req);
+    await enforceRateLimit(user.id, 'generatePhase1Letter', base44);
 
     const args = await req.json();
 
-    // Check user credits BEFORE generating
-    const userCredits = user.letter_credits || 0;
+    // SECURITY FIX: Server-side credit verification (don't trust client)
+    const freshUser = await base44.auth.me();
+    const userCredits = freshUser.letter_credits || 0;
+    
     if (userCredits < 1) {
+      await safeLog('LETTER_INSUFFICIENT_CREDITS', { userId: user.id, credits: userCredits });
       return Response.json({
         error: 'Insufficient credits. Please purchase credits to generate letters.',
         code: 'insufficient_credits'
@@ -148,19 +150,27 @@ Deno.serve(async (req) => {
       throw new Error('Failed to generate letter content from LLM. Please try again.');
     }
 
+    // SECURITY FIX: Sanitize LLM output before returning
+    const sanitizedEN = sanitizeHTML(response.letter_en);
+    const sanitizedTH = sanitizeHTML(response.letter_th);
+
     // DEDUCT CREDIT IMMEDIATELY after successful generation
     await base44.auth.updateMe({
       letter_credits: Math.max(0, userCredits - 1)
     });
 
-    console.log(`✅ Letter generated successfully. Credit deducted. Credits remaining: ${userCredits - 1}`);
+    await safeLog('LETTER_GENERATED', { 
+      userId: user.id, 
+      subject, 
+      creditsRemaining: userCredits - 1 
+    });
 
     // Return the generated content for user review
     return Response.json({
       ok: true,
       letter_content: {
-        letter_en: response.letter_en,
-        letter_th: response.letter_th
+        letter_en: sanitizedEN,
+        letter_th: sanitizedTH
       },
       subject: subject,
       letterConfig: {
@@ -172,10 +182,21 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Letter generation error:', error);
+    if (error.message === 'UNAUTHORIZED') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error.message === 'RATE_LIMIT_EXCEEDED') {
+      return Response.json({ 
+        error: 'Too many requests. Please try again later.',
+        retryAfter: error.retryAfter
+      }, { status: 429 });
+    }
+    
+    // SECURITY FIX: Don't expose error details
+    console.error('[LETTER_GEN_ERROR]', { error: error.message });
     return Response.json({
       ok: false,
-      error: error.message
+      error: 'Failed to generate letter. Please try again.'
     }, { status: 500 });
   }
 });

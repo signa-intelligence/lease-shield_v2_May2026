@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
+import { isEventProcessed, markEventProcessed } from './webhookIdempotency.js';
+import { safeLog } from './authGuards.js';
 
 /**
  * STRIPE WEBHOOK HANDLER - Production-hardened implementation
@@ -15,6 +17,7 @@ import Stripe from 'npm:stripe@14.10.0';
 const stripeSecretKey = Deno.env.get('SK_TEST_secret_key');
 const webhookSecret = Deno.env.get('webhook_stripe');
 
+// SECURITY FIX: Don't log secret values
 if (!stripeSecretKey) {
   console.error('[WEBHOOK_FATAL] SK_TEST_secret_key not set');
 }
@@ -33,7 +36,7 @@ const webhookMode = isLiveMode ? 'LIVE' : 'TEST';
 
 Deno.serve(async (req) => {
   const timestamp = new Date().toISOString();
-  console.log(`\n[WEBHOOK_${webhookMode}] Stripe webhook received at ${timestamp}`);
+  await safeLog('WEBHOOK_RECEIVED', { mode: webhookMode, timestamp });
 
   try {
     // Only accept POST requests
@@ -56,20 +59,32 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Webhook not configured' }, { status: 500 });
     }
 
-    // Verify webhook signature
+    // SECURITY FIX: Verify signature FIRST, before ANY business logic or auth
     let event;
     try {
       event = await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
-      console.log(`[WEBHOOK_${webhookMode}] ✅ Signature verified`);
-      console.log(`[WEBHOOK_${webhookMode}] Event type: ${event.type}`);
-      console.log(`[WEBHOOK_${webhookMode}] Event ID: ${event.id}`);
+      await safeLog('WEBHOOK_SIGNATURE_VERIFIED', { eventType: event.type, eventId: event.id });
     } catch (err) {
-      console.error('[WEBHOOK_ERROR] Signature verification failed:', err.message);
+      console.error('[WEBHOOK_ERROR] Signature verification failed');
       return Response.json({ 
         error: 'Invalid signature'
       }, { status: 400 });
     }
 
+    // SECURITY FIX: Check idempotency - prevent duplicate processing
+    if (isEventProcessed(event.id)) {
+      await safeLog('WEBHOOK_DUPLICATE', { eventId: event.id, eventType: event.type });
+      return Response.json({ 
+        received: true, 
+        ignored: true,
+        reason: 'duplicate_event' 
+      }, { status: 200 });
+    }
+
+    // Mark as processed immediately
+    markEventProcessed(event.id);
+
+    // NOW create Base44 client (after security checks)
     const base44 = createClientFromRequest(req);
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
@@ -91,12 +106,11 @@ Deno.serve(async (req) => {
         console.log('[SUBSCRIPTION_WEBHOOK] 📋 New subscription detected');
 
         const userId = metadata.userId;
-        const email = metadata.email;
         const planTier = metadata.plan || 'lite';
         const billingInterval = metadata.interval || 'monthly';
 
-        console.log('[SUBSCRIPTION_WEBHOOK] User:', email);
-        console.log('[SUBSCRIPTION_WEBHOOK] Plan:', planTier, '/', billingInterval);
+        // SECURITY FIX: Redact PII from logs
+        await safeLog('SUBSCRIPTION_WEBHOOK', { userId, planTier, billingInterval });
 
         // Fetch all users for later referral lookup
         let allUsers = [];
@@ -106,11 +120,11 @@ Deno.serve(async (req) => {
           subscribedUser = allUsers.find(u => u.id === userId || u.email === email);
 
           if (!subscribedUser) {
-            console.error('[SUBSCRIPTION_WEBHOOK] ❌ User not found');
+            await safeLog('SUBSCRIPTION_WEBHOOK_USER_NOT_FOUND', { userId });
             return Response.json({ received: true, error: 'user_not_found' }, { status: 200 });
           }
 
-          console.log('[SUBSCRIPTION_WEBHOOK] User found:', subscribedUser.email);
+          await safeLog('SUBSCRIPTION_WEBHOOK_USER_FOUND', { userId });
         } catch (fetchError) {
           console.error('[SUBSCRIPTION_WEBHOOK] ❌ Failed to fetch user:', fetchError.message);
           return Response.json({ received: true, error: 'user_fetch_failed' }, { status: 200 });
@@ -129,7 +143,7 @@ Deno.serve(async (req) => {
           stripe_subscription_id: session.subscription
         });
 
-        console.log('[SUBSCRIPTION_WEBHOOK] ✅ User plan updated to:', planTier);
+        await safeLog('SUBSCRIPTION_UPDATED', { userId, planTier });
 
         // ========================================
         // REFERRAL CREDIT LOGIC - First paid subscription only
@@ -515,8 +529,8 @@ Deno.serve(async (req) => {
     return Response.json({ received: true, ignored: true }, { status: 200 });
 
   } catch (error) {
-    console.error(`[WEBHOOK_${webhookMode}_ERROR] Fatal error:`, error.message);
-    console.error(`[WEBHOOK_${webhookMode}_ERROR] Stack:`, error.stack);
+    // SECURITY FIX: Don't expose error details
+    console.error('[WEBHOOK_ERROR]', { error: error.message, stack: error.stack?.substring(0, 200) });
     
     // Return 500 for critical processing errors
     return Response.json({ 

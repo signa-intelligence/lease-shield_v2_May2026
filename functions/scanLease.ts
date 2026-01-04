@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { requireAuth, safeLog } from './authGuards.js';
+import { enforceRateLimit } from './rateLimiter.js';
+import { validateFileUrl, sanitizeHTML } from './sanitizer.js';
 
 // Deterministic SHA-256 helper (hex)
 async function sha256Hex(input) {
@@ -700,18 +703,46 @@ Deno.serve(async (req) => {
   };
 
   try {
-    logStage('ENGINE_START', { version: 'v2.1-multi-engine-validated' });
+    logStage('ENGINE_START', { version: 'v2.1-multi-engine-validated-secure' });
 
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    // SECURITY FIX: Authenticate user first
+    const { user, base44 } = await requireAuth(req);
     
-    if (!user) {
-      logStage('AUTH_FAILED', {});
+    // SECURITY FIX: Enforce rate limiting
+    const rateLimitResult = await enforceRateLimit(user.id, 'scanLease', base44);
+    await safeLog('SCAN_RATE_LIMIT', { remaining: rateLimitResult.remaining });
+
+    // SECURITY FIX: Validate user has scan quota (server-side check)
+    const userTier = user.plan_tier || 'free';
+    const scanLimits = {
+      free: { limit: 1, period: 'lifetime' },
+      lite: { limit: 6, period: 'year' },
+      protect: { limit: 12, period: 'year' },
+      secure: { limit: 999999, period: 'year' }
+    };
+    
+    const tierLimit = scanLimits[userTier] || scanLimits.free;
+    const leases = await base44.entities.Lease.filter({ created_by: user.email });
+    
+    let scannedCount = 0;
+    if (tierLimit.period === 'lifetime') {
+      scannedCount = leases.filter(l => l.status === 'scanned' || l.status === 'paid').length;
+    } else if (tierLimit.period === 'year') {
+      const thisYear = new Date().getFullYear();
+      scannedCount = leases.filter(l => {
+        if (!l.created_date) return false;
+        const leaseYear = new Date(l.created_date).getFullYear();
+        return leaseYear === thisYear && (l.status === 'scanned' || l.status === 'paid');
+      }).length;
+    }
+    
+    if (scannedCount >= tierLimit.limit) {
+      await safeLog('SCAN_QUOTA_EXCEEDED', { userId: user.id, scannedCount, limit: tierLimit.limit });
       return Response.json({ 
         success: false,
-        error: 'Unauthorized',
-        diagnostic: { requestId, errorCategory: 'AUTH_ERROR' }
-      }, { status: 401 });
+        error: 'Scan quota exceeded for your plan tier',
+        diagnostic: { requestId, errorCategory: 'QUOTA_ERROR' }
+      }, { status: 403 });
     }
 
     const { fileUrls, leaseId } = body;
@@ -725,7 +756,21 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    logStage('CLAUSE_EXTRACTION_START', { fileCount: fileUrls.length });
+    // SECURITY FIX: Validate all file URLs
+    const urlArray = Array.isArray(fileUrls) ? fileUrls : [fileUrls];
+    for (const url of urlArray) {
+      const validation = validateFileUrl(url);
+      if (!validation.valid) {
+        await safeLog('SCAN_INVALID_FILE_URL', { error: validation.error });
+        return Response.json({
+          success: false,
+          error: validation.error,
+          diagnostic: { scanId, requestId, errorCategory: 'VALIDATION_ERROR' }
+        }, { status: 400 });
+      }
+    }
+
+    logStage('CLAUSE_EXTRACTION_START', { fileCount: urlArray.length });
     
     const extractionResult = await base44.integrations.Core.InvokeLLM({
       prompt: `Extract ALL clauses from this residential lease document.
@@ -1819,11 +1864,22 @@ OUTPUT FORMAT:
     });
 
   } catch (error) {
-    logStage('ERROR', { error: error.message, stack: error.stack });
+    if (error.message === 'UNAUTHORIZED') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error.message === 'RATE_LIMIT_EXCEEDED') {
+      return Response.json({ 
+        error: 'Rate limit exceeded. Please try again later.',
+        retryAfter: error.retryAfter
+      }, { status: 429 });
+    }
+    
+    // SECURITY FIX: Don't expose error details to client
+    console.error('[SCAN_ERROR]', { error: error.message, stack: error.stack?.substring(0, 200) });
     
     return Response.json({ 
       success: false,
-      error: error.message,
+      error: 'Scan failed. Please try again.',
       diagnostic: {
         scanId,
         requestId,

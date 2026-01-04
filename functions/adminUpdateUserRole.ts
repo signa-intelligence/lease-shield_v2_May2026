@@ -1,19 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { requireSuperAdmin, safeLog } from './authGuards.js';
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const currentUser = await base44.auth.me();
-
-    if (!currentUser) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Only super admins allowed
-    const superAdmins = ['steve.l@signa-consultants.com', 'steve.d.lockhart@gmail.com'];
-    if (!superAdmins.includes(currentUser.email.toLowerCase())) {
-      return Response.json({ error: 'Forbidden - Super admin access required' }, { status: 403 });
-    }
+    // SECURITY FIX: Role-based auth instead of hard-coded emails
+    const { user, base44 } = await requireSuperAdmin(req);
 
     const { userId, role } = await req.json();
 
@@ -27,12 +18,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid role' }, { status: 400 });
     }
 
-    console.log('🔄 Updating user role:', { userId, role });
+    await safeLog('ADMIN_UPDATE_ROLE', { userId, role });
 
     // Update user using service role (access_level, not role)
     const updatedUser = await base44.asServiceRole.entities.User.update(userId, { access_level: role });
 
-    console.log('✅ Role update complete:', updatedUser);
+    await safeLog('ADMIN_UPDATE_ROLE_SUCCESS', { userId, newRole: role });
 
     return Response.json({ 
       success: true,
@@ -41,9 +32,16 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Admin update role error:', error);
+    if (error.message === 'UNAUTHORIZED') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error.message === 'FORBIDDEN') {
+      return Response.json({ error: 'Forbidden - Super admin access required' }, { status: 403 });
+    }
+    
+    console.error('[ADMIN_UPDATE_ROLE_ERROR]', { error: error.message });
     return Response.json({ 
-      error: error.message || 'Failed to update user role'
+      error: 'Failed to update user role'
     }, { status: 500 });
   }
 });

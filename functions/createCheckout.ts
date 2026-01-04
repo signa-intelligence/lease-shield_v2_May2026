@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
+import { requireAuth, safeLog } from './authGuards.js';
+import { enforceRateLimit } from './rateLimiter.js';
 
 /**
  * STRIPE CHECKOUT CREATOR - Standalone, no external dependencies
@@ -26,43 +28,34 @@ Deno.serve(async (req) => {
     apiVersion: '2024-06-20',
   });
 
-  console.log('\n\n═══════════════════════════════════════');
-  console.log('🔥 CREATE_CHECKOUT - Entry');
-  console.log('═══════════════════════════════════════');
-  console.log('[CREATE_CHECKOUT] Timestamp:', new Date().toISOString());
-  console.log('[CREATE_CHECKOUT] Stripe mode:', stripeKey?.startsWith('sk_live_') ? '🟢 LIVE' : stripeKey?.startsWith('sk_test_') ? '🟡 TEST' : '❌ INVALID');
+  await safeLog('CREATE_CHECKOUT_START', { 
+    mode: stripeKey?.startsWith('sk_live_') ? 'LIVE' : 'TEST',
+    timestamp: new Date().toISOString()
+  });
   
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      console.error('[CREATE_CHECKOUT] ❌ No authenticated user');
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    console.log('[CREATE_CHECKOUT] ✅ User:', user.email, '| ID:', user.id);
+    // SECURITY FIX: Authenticate user
+    const { user, base44 } = await requireAuth(req);
+    
+    // SECURITY FIX: Enforce rate limiting
+    await enforceRateLimit(user.id, 'createCheckout', base44);
 
     const { priceId, mode, amount, currency, description, successUrl, cancelUrl, metadata } = await req.json();
 
-    console.log('[CREATE_CHECKOUT] 📦 Request payload:', JSON.stringify({ 
-      priceId, 
+    await safeLog('CREATE_CHECKOUT_PARAMS', { 
+      userId: user.id,
       mode, 
       amount, 
-      currency, 
-      description,
-      metadata
-    }, null, 2));
+      currency
+    });
 
     // Get or create Stripe customer
     let customerId = user.stripe_customer_id;
     const isLiveMode = stripeKey?.startsWith('sk_live_');
     
-    console.log('[CREATE_CHECKOUT] Customer resolution:', {
-      savedCustomerId: customerId?.substring(0, 20) || 'none',
-      mode: isLiveMode ? 'LIVE' : 'TEST',
-      referralCode: user.referral_code || 'none',
-      referredBy: user.referred_by || 'none'
+    await safeLog('CHECKOUT_CUSTOMER_RESOLUTION', {
+      hasCustomerId: !!customerId,
+      mode: isLiveMode ? 'LIVE' : 'TEST'
     });
     
     // Validate customer exists in current mode
@@ -283,20 +276,26 @@ Deno.serve(async (req) => {
 
     return Response.json({ url: session.url });
   } catch (error) {
-    console.error('\n[CREATE_CHECKOUT] ❌❌❌ FATAL ERROR ❌❌❌');
-    console.error('[CREATE_CHECKOUT] Type:', error.type || typeof error);
-    console.error('[CREATE_CHECKOUT] Code:', error.code || 'none');
-    console.error('[CREATE_CHECKOUT] Message:', error.message);
-    console.error('[CREATE_CHECKOUT] Stack:', error.stack);
-    console.error('[CREATE_CHECKOUT] Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-    console.error('[CREATE_CHECKOUT] ═══════════════════════════════════════\n');
+    if (error.message === 'UNAUTHORIZED') {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error.message === 'RATE_LIMIT_EXCEEDED') {
+      return Response.json({ 
+        error: 'Too many requests. Please try again later.',
+        retryAfter: error.retryAfter
+      }, { status: 429 });
+    }
+    
+    // SECURITY FIX: Don't expose detailed error info to client
+    console.error('[CREATE_CHECKOUT_ERROR]', { 
+      error: error.message, 
+      code: error.code,
+      stack: error.stack?.substring(0, 200)
+    });
     
     return Response.json({ 
-      error: error.message || 'Checkout creation failed',
-      code: error.code || 'unknown_error',
-      type: error.type || 'internal_error',
-      details: error.raw?.message || error.message,
-      diagnostic: 'See createCheckout logs for full error trace'
+      error: 'Checkout creation failed. Please try again.',
+      code: error.code || 'checkout_error'
     }, { status: 500 });
   }
 });

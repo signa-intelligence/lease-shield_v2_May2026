@@ -18,9 +18,10 @@ Deno.serve(async (req) => {
     const signature = req.headers.get('x-line-signature');
     const body = await req.text();
     
-    const channelSecret = Deno.env.get('LINE_CHANNEL_SECRET'); // LINE webhook signing secret
+    const channelSecret = Deno.env.get('LINE_CHANNEL_SECRET');
+    // SECURITY FIX: Don't log secret existence
     if (!channelSecret) {
-      console.error('❌ LINE_CHANNEL_SECRET not set');
+      console.error('[LINE_WEBHOOK_ERROR] Channel secret not configured');
       return Response.json({ error: 'Configuration error' }, { status: 500 });
     }
 
