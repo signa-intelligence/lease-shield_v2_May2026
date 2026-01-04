@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     // SECURITY FIX: Don't log secret existence
     if (!channelSecret) {
       console.error('[LINE_WEBHOOK_ERROR] Channel secret not configured');
-      return Response.json({ error: 'Configuration error' }, { status: 500 });
+      return new Response(JSON.stringify({ errorCode: 'CONFIG_ERROR', message: 'Configuration error', requestId: crypto.randomUUID().slice(0,8) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
     const hash = createHmac('sha256', channelSecret).update(body).digest('base64');

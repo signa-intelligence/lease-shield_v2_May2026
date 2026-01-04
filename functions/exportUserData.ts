@@ -1,8 +1,11 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { jsPDF } from 'npm:jspdf@2.5.1';
 import { requireAuth, requireOwnerOrAdmin, safeLog, hashUserId } from './authGuards.js';
+import { handleCors, ensureAllowedOrigin, err } from './http.js';
 
 Deno.serve(async (req) => {
+  const pre = handleCors(req); if (pre) return pre;
+  const { allowed, requestId } = ensureAllowedOrigin(req); if (!allowed) return err(req, 'CORS_FORBIDDEN', 'Origin not allowed', 403, requestId);
   try {
     // SECURITY FIX: Authenticate user
     const { user, base44 } = await requireAuth(req);
@@ -569,16 +572,14 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     if (error.message === 'UNAUTHORIZED') {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return err(req, 'UNAUTHORIZED', 'Unauthorized', 401);
     }
     if (error.message === 'FORBIDDEN') {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
+      return err(req, 'FORBIDDEN', 'Forbidden', 403);
     }
     
     // SECURITY FIX: Don't expose error details to client
     console.error('[EXPORT_ERROR]', { error: error.message, stack: error.stack?.substring(0, 200) });
-    return Response.json({ 
-      error: 'Failed to export data'
-    }, { status: 500 });
+    return err(req, 'EXPORT_FAILED', 'Failed to export data', 500);
   }
 });

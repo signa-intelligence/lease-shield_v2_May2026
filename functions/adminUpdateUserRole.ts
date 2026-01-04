@@ -1,10 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { requireSuperAdmin, safeLog } from './authGuards.js';
+import { handleCors, ensureAllowedOrigin, err, requireRecentAuth } from './http.js';
 
 Deno.serve(async (req) => {
+  const pre = handleCors(req); if (pre) return pre;
+  const { allowed, requestId } = ensureAllowedOrigin(req); if (!allowed) return err(req, 'CORS_FORBIDDEN', 'Origin not allowed', 403, requestId);
   try {
     // SECURITY FIX: Role-based auth instead of hard-coded emails
     const { user, base44 } = await requireSuperAdmin(req);
+    // Session recent-auth check (10 minutes)
+    const recent = requireRecentAuth(req, 600);
+    if (!recent.ok) return err(req, 'REAUTH_REQUIRED', 'Please reauthenticate to proceed', 401);
 
     const { userId, role } = await req.json();
 
@@ -33,7 +39,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     if (error.message === 'UNAUTHORIZED') {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return err(req, 'UNAUTHORIZED', 'Unauthorized', 401);
     }
     if (error.message === 'FORBIDDEN') {
       return Response.json({ error: 'Forbidden - Super admin access required' }, { status: 403 });

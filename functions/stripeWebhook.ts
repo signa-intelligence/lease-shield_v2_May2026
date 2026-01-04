@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import Stripe from 'npm:stripe@14.10.0';
 import { isEventProcessed, markEventProcessed } from './webhookIdempotency.js';
 import { safeLog } from './authGuards.js';

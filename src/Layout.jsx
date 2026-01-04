@@ -424,7 +424,7 @@ export default function Layout({ children, currentPageName }) {
       {/* SECURITY FIX: Add Content Security Policy */}
       <meta 
         httpEquiv="Content-Security-Policy" 
-        content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://qtrypzzcjebvfcihiynt.supabase.co https://api.stripe.com https://api.resend.com; frame-src https://checkout.stripe.com;" 
+        content="default-src 'self'; script-src 'self' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https://qtrypzzcjebvfcihiynt.supabase.co https://api.stripe.com https://api.resend.com; frame-src https://js.stripe.com https://checkout.stripe.com;" 
       />
       
       <style>{`

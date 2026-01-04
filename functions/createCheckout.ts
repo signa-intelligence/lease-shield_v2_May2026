@@ -1,7 +1,8 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import Stripe from 'npm:stripe@14.10.0';
 import { requireAuth, safeLog } from './authGuards.js';
 import { enforceRateLimit } from './rateLimiter.js';
+import { handleCors, ensureAllowedOrigin, err } from './http.js';
 
 /**
  * STRIPE CHECKOUT CREATOR - Standalone, no external dependencies
@@ -14,6 +15,8 @@ import { enforceRateLimit } from './rateLimiter.js';
  */
 
 Deno.serve(async (req) => {
+  const pre = handleCors(req); if (pre) return pre;
+  const { allowed, requestId } = ensureAllowedOrigin(req); if (!allowed) return err(req, 'CORS_FORBIDDEN', 'Origin not allowed', 403, requestId);
   const stripeKey = Deno.env.get('SK_TEST_secret_key');
   
   if (!stripeKey) {
@@ -277,7 +280,7 @@ Deno.serve(async (req) => {
     return Response.json({ url: session.url });
   } catch (error) {
     if (error.message === 'UNAUTHORIZED') {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return err(req, 'UNAUTHORIZED', 'Unauthorized', 401);
     }
     if (error.message === 'RATE_LIMIT_EXCEEDED') {
       return Response.json({ 
@@ -293,9 +296,6 @@ Deno.serve(async (req) => {
       stack: error.stack?.substring(0, 200)
     });
     
-    return Response.json({ 
-      error: 'Checkout creation failed. Please try again.',
-      code: error.code || 'checkout_error'
-    }, { status: 500 });
+    return err(req, 'CHECKOUT_FAILED', 'Checkout creation failed. Please try again.', 500);
   }
 });

@@ -1,7 +1,8 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { requireAuth, safeLog } from './authGuards.js';
 import { enforceRateLimit } from './rateLimiter.js';
 import { validateFileUrl, sanitizeHTML } from './sanitizer.js';
+import { handleCors, ensureAllowedOrigin, err } from './http.js';
 
 // Deterministic SHA-256 helper (hex)
 async function sha256Hex(input) {
@@ -749,22 +750,14 @@ Deno.serve(async (req) => {
     
     if (scannedCount >= tierLimit.limit) {
       await safeLog('SCAN_QUOTA_EXCEEDED', { userId: user.id, scannedCount, limit: tierLimit.limit });
-      return Response.json({ 
-        success: false,
-        error: 'Scan quota exceeded for your plan tier',
-        diagnostic: { requestId, errorCategory: 'QUOTA_ERROR' }
-      }, { status: 403 });
+      return err(req, 'QUOTA_EXCEEDED', 'Scan quota exceeded for your plan tier', 403, requestId);
     }
 
     const { fileUrls, leaseId } = body;
     
     if (!fileUrls || fileUrls.length === 0) {
       logStage('VALIDATION_FAILED', { reason: 'no_files' });
-      return Response.json({ 
-        success: false,
-        error: 'No file URLs provided',
-        diagnostic: { scanId, requestId, errorCategory: 'VALIDATION_ERROR' }
-      }, { status: 400 });
+      return err(req, 'VALIDATION_ERROR', 'No file URLs provided', 400, requestId);
     }
 
     // SECURITY FIX: Validate all file URLs
@@ -773,11 +766,7 @@ Deno.serve(async (req) => {
       const validation = validateFileUrl(url);
       if (!validation.valid) {
         await safeLog('SCAN_INVALID_FILE_URL', { error: validation.error });
-        return Response.json({
-          success: false,
-          error: validation.error,
-          diagnostic: { scanId, requestId, errorCategory: 'VALIDATION_ERROR' }
-        }, { status: 400 });
+        return err(req, 'INVALID_FILE_URL', validation.error, 400, requestId);
       }
 
       // Enforce max size 10MB via HEAD request if available
@@ -786,11 +775,7 @@ Deno.serve(async (req) => {
         const sizeHeader = headRes.headers.get('content-length');
         if (sizeHeader && parseInt(sizeHeader, 10) > 10 * 1024 * 1024) {
           await safeLog('SCAN_FILE_TOO_LARGE', { size: parseInt(sizeHeader, 10) });
-          return Response.json({
-            success: false,
-            error: 'File too large. Maximum size: 10MB',
-            diagnostic: { scanId, requestId, errorCategory: 'VALIDATION_ERROR' }
-          }, { status: 400 });
+          return err(req, 'FILE_TOO_LARGE', 'File too large. Maximum size: 10MB', 400, requestId);
         }
       } catch (e) {
         // If HEAD fails, continue; size will be validated downstream if needed
@@ -1892,7 +1877,7 @@ OUTPUT FORMAT:
 
   } catch (error) {
     if (error.message === 'UNAUTHORIZED') {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return err(req, 'UNAUTHORIZED', 'Unauthorized', 401, requestId);
     }
     if (error.message === 'RATE_LIMIT_EXCEEDED') {
       return Response.json({ 

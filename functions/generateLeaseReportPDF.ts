@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { jsPDF } from 'npm:jspdf@2.5.2';
 import { requireAuth, safeLog } from './authGuards.js';
+import { handleCors, ensureAllowedOrigin, err } from './http.js';
 
 // Risk theme mapping - consistent UI and PDF colors
 function getRiskTheme(riskScore) {
@@ -31,6 +32,8 @@ function getRiskTheme(riskScore) {
 Deno.serve(async (req) => {
   const correlationId = `pdf-gen-${Date.now()}`;
   
+  const pre = handleCors(req); if (pre) return pre;
+  const { allowed, requestId } = ensureAllowedOrigin(req); if (!allowed) return err(req, 'CORS_FORBIDDEN', 'Origin not allowed', 403, requestId);
   try {
     // SECURITY FIX: Use centralized auth guard
     const { user, base44 } = await requireAuth(req);
@@ -350,16 +353,12 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     if (error.message === 'UNAUTHORIZED') {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return err(req, 'UNAUTHORIZED', 'Unauthorized', 401, correlationId.slice(-8));
     }
     
     // SECURITY FIX: Don't expose error details to client
     console.error('[PDF_ERROR]', { error: error.message, correlationId });
     
-    return Response.json({ 
-      success: false, 
-      error: 'PDF generation failed. Please try again.',
-      correlationId
-    }, { status: 500 });
+    return err(req, 'PDF_FAILED', 'PDF generation failed. Please try again.', 500, correlationId.slice(-8));
   }
 });

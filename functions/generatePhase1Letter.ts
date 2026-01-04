@@ -1,7 +1,8 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { requireAuth, safeLog } from './authGuards.js';
 import { enforceRateLimit } from './rateLimiter.js';
 import { sanitizeHTML } from './sanitizer.js';
+import { handleCors, ensureAllowedOrigin, err } from './http.js';
 
 /**
  * Lease Shield – LLM-powered Letters (STEP 1: Generate & Deduct Credits)
@@ -10,6 +11,8 @@ import { sanitizeHTML } from './sanitizer.js';
  */
 
 Deno.serve(async (req) => {
+  const pre = handleCors(req); if (pre) return pre;
+  const { allowed, requestId } = ensureAllowedOrigin(req); if (!allowed) return err(req, 'CORS_FORBIDDEN', 'Origin not allowed', 403, requestId);
   try {
     // SECURITY FIX: Authenticate and enforce rate limiting
     const { user, base44 } = await requireAuth(req);
@@ -23,10 +26,7 @@ Deno.serve(async (req) => {
     
     if (userCredits < 1) {
       await safeLog('LETTER_INSUFFICIENT_CREDITS', { userId: user.id, credits: userCredits });
-      return Response.json({
-        error: 'Insufficient credits. Please purchase credits to generate letters.',
-        code: 'insufficient_credits'
-      }, { status: 402 });
+      return err(req, 'INSUFFICIENT_CREDITS', 'Insufficient credits. Please purchase credits to generate letters.', 402, requestId);
     }
 
     const {
@@ -194,9 +194,6 @@ Deno.serve(async (req) => {
     
     // SECURITY FIX: Don't expose error details
     console.error('[LETTER_GEN_ERROR]', { error: error.message });
-    return Response.json({
-      ok: false,
-      error: 'Failed to generate letter. Please try again.'
-    }, { status: 500 });
+    return err(req, 'LETTER_GEN_FAILED', 'Failed to generate letter. Please try again.', 500, requestId);
   }
 });
