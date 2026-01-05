@@ -1228,7 +1228,7 @@ function UploadScanPageContent() {
         setAnalysisStage('extracting');
         setUploadProgress(70);
 
-        await base44.entities.Lease.update(createdLeaseId, {
+        await base44.entities.Lease.update(lease.id, {
           status: 'scanned',
           property_address: scanResult.property_address || null,
           start_date: scanResult.start_date || null,
