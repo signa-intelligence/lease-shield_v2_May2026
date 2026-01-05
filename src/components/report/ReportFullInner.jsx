@@ -108,42 +108,53 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           throw err;
         }
 
-        // STEP 5: Validate materialized report (persisted in scan_full.canonical_report)
+        // STEP 5: Validate materialized report (persisted in scan_full.canonical_report.pdfPayload)
         logStep('VALIDATE_REPORT_START', {});
         const canonical = scanData?.scan_full?.canonical_report || null;
         validation.hasCanonical = !!canonical;
+        validation.reportStatus = canonical?.status || 'unknown';
         validation.hasClauseLedger = !!(canonical?.clause_ledger);
         validation.clauseLedgerLength = canonical?.clause_ledger?.length || 0;
         validation.hasPdfPayload = !!(canonical?.pdfPayload);
+        validation.isFallback = canonical?.pdfPayload?.fallback || false;
 
-        if (!canonical || !canonical.clause_ledger || canonical.clause_ledger.length === 0) {
-          const err = new Error(`REPORT_NOT_MATERIALIZED: No canonical_report or empty clause_ledger for scanId ${scanId}`);
+        // Check if generator failed but has fallback
+        if (canonical?.status === 'failed' && canonical?.pdfPayload) {
+          logStep('USING_FALLBACK_PAYLOAD', { 
+            reason: canonical.pdfPayload.fallback_reason,
+            error: canonical.error 
+          });
+          // Continue with fallback - don't throw
+        } else if (!canonical || !canonical.pdfPayload) {
+          const err = new Error(`REPORT_NOT_MATERIALIZED: No pdfPayload persisted for scanId ${scanId}`);
           err.code = 'REPORT_NOT_MATERIALIZED';
           err.step = 'VALIDATE_REPORT';
           err.debugData = {
             hasCanonical: !!canonical,
-            hasClauseLedger: !!(canonical?.clause_ledger),
-            clauseLedgerLength: canonical?.clause_ledger?.length || 0
+            hasPdfPayload: !!(canonical?.pdfPayload),
+            status: canonical?.status,
+            error: canonical?.error
           };
           throw err;
         }
 
         validation.issuesCount = canonical.pdfPayload?.flags?.length || 0;
-        validation.clausesTotal = canonical.clause_ledger.length;
+        validation.clausesTotal = canonical.pdfPayload.clause_ledger?.length || 0;
         validation.clausesReviewed = canonical.clause_review?.length || 0;
-        validation.riskScore = canonical.risk_score || scanData.risk_score || 0;
+        validation.riskScore = canonical.pdfPayload.risk_score || scanData.risk_score || 0;
 
         logStep('VALIDATE_REPORT_COMPLETE', validation);
         if (!cancelled) setDbValidation(validation);
 
-        // STEP 6: Build normalized report from materialized data
+        // STEP 6: Use pdfPayload directly (materialized at scan time)
         logStep('BUILD_REPORT_START', {});
-        const clauseReview = Array.isArray(canonical?.clause_review) ? canonical.clause_review : [];
-        const clauseLedger = Array.isArray(canonical?.clause_ledger) ? canonical.clause_ledger : [];
-        const flags = Array.isArray(scanData?.flags) ? scanData.flags : (Array.isArray(scanData?.scan_full?.flags) ? scanData.scan_full.flags : []);
-        const keyTerms = scanData?.scan_full?.key_terms || {};
-        const mappings = Array.isArray(canonical?.mappings) ? canonical.mappings : [];
-        const missingClauses = Array.isArray(canonical?.missing_clauses) ? canonical.missing_clauses : [];
+        const pdfPayload = canonical.pdfPayload;
+        const clauseReview = Array.isArray(pdfPayload.clause_review) ? pdfPayload.clause_review : [];
+        const clauseLedger = Array.isArray(pdfPayload.clause_ledger) ? pdfPayload.clause_ledger : [];
+        const flags = Array.isArray(pdfPayload.flags) ? pdfPayload.flags : [];
+        const keyTerms = pdfPayload.key_terms || {};
+        const mappings = Array.isArray(pdfPayload.mappings) ? pdfPayload.mappings : [];
+        const missingClauses = Array.isArray(pdfPayload.missing_clauses) ? pdfPayload.missing_clauses : [];
 
         // Build unified issues
         const byClause = {};
@@ -228,18 +239,20 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         } : null;
 
         const normalized = {
-          lease_address: leaseData?.property_address || 'Lease Agreement',
-          generated_date: new Date().toISOString(),
-          risk_score: scanData?.risk_score || canonical?.risk_score || 0,
-          summary: scanData?.summary || '',
+          lease_address: pdfPayload.lease_address || leaseData?.property_address || 'Lease Agreement',
+          generated_date: pdfPayload.generated_date || new Date().toISOString(),
+          risk_score: pdfPayload.risk_score || scanData?.risk_score || 0,
+          summary: pdfPayload.summary || scanData?.summary || '',
           key_terms: keyTerms,
           flags: flagsForDisplay,
           clause_review: clauseReview,
           clause_ledger: clauseLedger,
           mappings,
           missing_clauses: missingClauses,
-          coverage_summary: canonical?.summary || scanData?.scan_full?.coverage_summary || {},
-          coverageSummary
+          coverage_summary: pdfPayload.coverage_summary || {},
+          coverageSummary,
+          isFallback: pdfPayload.fallback || false,
+          fallbackReason: pdfPayload.fallback_reason
         };
 
         logStep('BUILD_REPORT_COMPLETE', {

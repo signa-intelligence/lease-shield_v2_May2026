@@ -123,9 +123,12 @@ export default function PreviewHarness({ forensicData }) {
                     Loading...
                   </>
                 ) : (
-                  <>Load Most Recent Scan</>
+                  <>Load Most Recent Scan (Auto-Redirect)</>
                 )}
               </Button>
+              <p className="text-xs text-emerald-700 mt-1">
+                Queries DB for your latest scan, then redirects to /reportfull with params
+              </p>
             </div>
 
             {/* Warning */}

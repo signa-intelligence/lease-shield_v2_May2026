@@ -1082,22 +1082,127 @@ Be thorough.`,
     else if (clauses_risk >= 3) summary = `${clauses_risk} clauses flagged with risks; review recommended before signing.`;
     else summary = `Low number of risk clauses detected (${clauses_risk}).`;
 
-    // Run the new canonical clause ledger scan
+    // MATERIALIZE CANONICAL REPORT (MANDATORY - NEVER SKIP)
+    logStage('CANONICAL_GENERATOR_START', {});
     let canonicalReport = null;
+    let canonicalError = null;
+    const canonicalStartTime = Date.now();
+    
     try {
       const canonicalResult = await base44.asServiceRole.functions.invoke('clauseLedgerScan', {
         fileUrls: urlArray,
         leaseId,
         scanId
       });
+      
+      const canonicalDuration = Date.now() - canonicalStartTime;
+      logStage('CANONICAL_GENERATOR_COMPLETE', { 
+        duration: canonicalDuration,
+        success: canonicalResult.data?.success 
+      });
+      
       if (canonicalResult.data?.success) {
         canonicalReport = canonicalResult.data.result;
+      } else {
+        throw new Error(canonicalResult.data?.error || 'Canonical scan returned non-success');
       }
-    } catch (canonicalError) {
-      console.warn('[CANONICAL_SCAN_WARNING]', canonicalError.message);
+    } catch (err) {
+      const canonicalDuration = Date.now() - canonicalStartTime;
+      canonicalError = {
+        code: 'CANONICAL_GENERATOR_FAILED',
+        message: err.message || String(err),
+        stack: err.stack?.substring(0, 500),
+        duration: canonicalDuration
+      };
+      
+      logStage('CANONICAL_GENERATOR_FAILED', canonicalError);
+      console.error('[CANONICAL_GENERATOR_ERROR]', canonicalError);
     }
 
-    // Persist to LeaseScan if possible (best-effort)
+    // MANDATORY PERSISTENCE: Build and persist report (never skip, never best-effort)
+    logStage('PERSISTENCE_START', {});
+    
+    // Build fallback pdfPayload if canonical failed
+    let finalPdfPayload = null;
+    let finalStatus = 'ok';
+    let finalReport = canonicalReport;
+    
+    if (canonicalReport && canonicalReport.pdfPayload) {
+      // Canonical succeeded - use its payload
+      finalPdfPayload = canonicalReport.pdfPayload;
+      finalStatus = 'ok';
+    } else {
+      // Canonical failed or incomplete - build fallback
+      logStage('BUILDING_FALLBACK_PAYLOAD', { reason: canonicalError ? 'generator_failed' : 'missing_payload' });
+      
+      const fallbackFlags = issues_validated.map((issue, idx) => {
+        const recs = issue.recommendations || [];
+        while (recs.length < 2) recs.push('Request clarification and amend this clause.');
+        
+        return {
+          clause_id: issue.clause_refs?.[0]?.clause_id || `ISSUE-${idx}`,
+          severity: issue.severity || 'medium',
+          category: issue.category || 'Other Risks',
+          title: issue.title || 'Issue detected',
+          description: issue.summary || issue.why_it_matters || 'Review required',
+          explanation: issue.why_it_matters || '',
+          recommendation: recs.join('\n'),
+          evidence: issue.clause_refs?.[0]?.snippet || 'Evidence not available'
+        };
+      });
+      
+      finalPdfPayload = {
+        lease_address: keyTerms.property_address || 'Lease Agreement',
+        generated_date: new Date().toISOString(),
+        risk_score: riskScore,
+        summary,
+        key_terms: keyTerms,
+        flags: fallbackFlags,
+        clause_review: clauseReview || [],
+        clause_ledger: clause_ledger || [],
+        mappings: [],
+        missing_clauses: [],
+        coverage_summary: coverage_summary,
+        fallback: true,
+        fallback_reason: canonicalError ? 'Canonical generator failed' : 'Canonical payload missing'
+      };
+      
+      finalStatus = canonicalError ? 'failed' : 'ok';
+      
+      // Build minimal canonical report structure
+      finalReport = {
+        pdfPayload: finalPdfPayload,
+        clause_ledger: clause_ledger || [],
+        clause_review: clauseReview || [],
+        issues: fallbackFlags,
+        status: finalStatus,
+        generatedAt: new Date().toISOString(),
+        failedAt: canonicalError ? new Date().toISOString() : null,
+        error: canonicalError
+      };
+    }
+    
+    // CRITICAL: Validate pdfPayload has required structure
+    if (!finalPdfPayload || !finalPdfPayload.flags || !Array.isArray(finalPdfPayload.clause_ledger)) {
+      logStage('PAYLOAD_VALIDATION_FAILED', {
+        hasPdfPayload: !!finalPdfPayload,
+        hasFlags: !!(finalPdfPayload?.flags),
+        hasClauseLedger: Array.isArray(finalPdfPayload?.clause_ledger)
+      });
+      
+      throw new Error('PAYLOAD_BUILD_FAILED: Required pdfPayload structure missing');
+    }
+    
+    // Build pipeline log
+    const pipeline = stages.map(s => ({
+      step: s.stage,
+      at: s.timestamp,
+      ok: !s.error,
+      ms: s.elapsed || 0,
+      meta: s
+    }));
+    
+    // PERSIST (non-optional)
     try {
       await base44.asServiceRole.entities.LeaseScan.update(scanId, {
         lease_id: leaseId,
@@ -1110,20 +1215,55 @@ Be thorough.`,
           language_detected: keyTerms.language_detected,
           taxonomy_report,
           coverage_summary,
-          canonical_report: canonicalReport,
-          version: 'clause-ledger-v3-canonical'
+          canonical_report: finalReport,
+          pipeline,
+          version: 'clause-ledger-v4-materialized'
         },
         summary: canonicalReport ? 
-          `${canonicalReport.clause_ledger?.length || 0} clauses extracted, ${canonicalReport.clause_review?.filter(r => r.risk_level !== 'none').length || 0} with risks, ${canonicalReport.missing_clauses?.length || 0} missing.` : 
+          `${canonicalReport.clause_ledger?.length || 0} clauses, ${canonicalReport.clause_review?.filter(r => r.risk_level !== 'none').length || 0} risks, ${canonicalReport.missing_clauses?.length || 0} missing.` : 
           summary
       });
-    } catch (_) {}
+      
+      logStage('PERSISTENCE_COMPLETE', {
+        pdfPayloadSize: JSON.stringify(finalPdfPayload).length,
+        clausesCount: finalPdfPayload.clause_ledger.length,
+        issuesCount: finalPdfPayload.flags.length,
+        status: finalStatus
+      });
+    } catch (persistErr) {
+      logStage('PERSISTENCE_FAILED', { error: persistErr.message });
+      throw new Error(`PERSISTENCE_FAILED: ${persistErr.message}`);
+    }
+
+    // SELF-CHECK: Verify pdfPayload persisted
+    logStage('SELF_CHECK_START', {});
+    const verifyScans = await base44.asServiceRole.entities.LeaseScan.filter({ id: scanId });
+    const verifyScan = verifyScans?.[0];
+    const verifyPayload = verifyScan?.scan_full?.canonical_report?.pdfPayload;
+    
+    if (!verifyPayload || !Array.isArray(verifyPayload.clause_ledger) || verifyPayload.clause_ledger.length === 0) {
+      logStage('SELF_CHECK_FAILED', {
+        hasPayload: !!verifyPayload,
+        hasLedger: Array.isArray(verifyPayload?.clause_ledger),
+        ledgerLength: verifyPayload?.clause_ledger?.length || 0
+      });
+      
+      throw new Error('SELF_CHECK_FAILED: pdfPayload not persisted correctly');
+    }
+    
+    logStage('SELF_CHECK_PASSED', {
+      clausesTotal: verifyPayload.clause_ledger.length,
+      issuesCount: verifyPayload.flags?.length || 0,
+      hasFallback: verifyPayload.fallback || false
+    });
 
     return Response.json({
       success: true,
       result: {
-        risk_score: riskScore,
-        summary,
+        risk_score: canonicalReport?.risk_score || riskScore,
+        summary: canonicalReport ? 
+          `${canonicalReport.clause_ledger?.length || 0} clauses, ${canonicalReport.clause_review?.filter(r => r.risk_level !== 'none').length || 0} risks.` : 
+          summary,
         clauses_extracted,
         clause_ledger,
         issues_validated,
@@ -1134,9 +1274,17 @@ Be thorough.`,
         end_date: keyTerms.end_date,
         rent_amount: keyTerms.rent_amount,
         deposit_amount: keyTerms.deposit_amount,
-        language_detected: keyTerms.language_detected
+        language_detected: keyTerms.language_detected,
+        canonical_status: finalStatus,
+        has_pdf_payload: true
       },
-      diagnostic: { scanId, requestId }
+      diagnostic: { 
+        scanId, 
+        requestId,
+        totalDuration: Date.now() - startTime,
+        pipelineSteps: pipeline.length,
+        canonicalStatus: finalStatus
+      }
     });
 
     // Legacy analysis removed (replaced by Clause Ledger architecture)
