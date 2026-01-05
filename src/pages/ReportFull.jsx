@@ -108,21 +108,16 @@ function ReportFullContent() {
     haptic.medium();
     
     try {
-      // Build scanData payload for PDF generator
-      const canonicalReport = scanData?.scan_full?.canonical_report || {};
+      // Build scanData payload for PDF generator - use flags as PRIMARY source
       const pdfPayload = {
         lease_address: leaseData?.property_address || 'Lease Agreement',
         generated_date: new Date().toISOString(),
         risk_score: scanData?.risk_score || 0,
         summary: scanData?.summary || '',
-        key_terms: canonicalReport.key_terms || scanData?.scan_full?.key_terms || {},
-        clause_review: canonicalReport.clause_review || [],
-        clause_ledger: canonicalReport.clause_ledger || [],
-        missing_clauses: canonicalReport.missing_clauses || [],
-        mappings: canonicalReport.mappings || [],
+        key_terms: scanData?.scan_full?.key_terms || {},
+        flags: scanData?.flags || scanData?.scan_full?.flags || [], // PRIMARY DATA
         taxonomy_report: scanData?.scan_full?.taxonomy_report || [],
-        coverage_summary: canonicalReport.summary || {},
-        clause_reviews: scanData?.scan_full?.clause_reviews || [], // Legacy fallback
+        coverage_summary: scanData?.scan_full?.coverage_summary || {},
         missing_items: scanData?.scan_full?.missing_items || []
       };
 
