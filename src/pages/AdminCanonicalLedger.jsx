@@ -18,7 +18,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { haptic } from "../components/shared/HapticFeedback";
-import { ErrorBoundary } from "react-error-boundary";
+import ErrorBoundary from "../components/shared/ErrorBoundary";
 
 // ============================================================================
 // FALLBACK CATALOG - Hard-embedded for zero-dependency debugging
