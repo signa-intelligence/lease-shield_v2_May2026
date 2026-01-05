@@ -186,7 +186,7 @@ ${navigationLogRef.current.map(n => `  ${n.time}: ${n.reason}`).join('\n')}`}
                 onClick={() => {
                   logNavigation('Go back clicked');
                   haptic.light();
-                  navigate(createPageUrl("UploadScan"));
+                  navigate('/UploadScan');
                 }}
                 style={{ backgroundColor: '#0C3B2E', color: '#fff' }}
               >
