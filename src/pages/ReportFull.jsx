@@ -235,8 +235,7 @@ function ReportFullContent() {
       clauseAnalysis: "การวิเคราะห์ทีละข้อ",
       showAllClauses: "แสดงข้อกำหนดทั้งหมด",
       hideOkClauses: "ซ่อนข้อกำหนดที่ปลอดภัย",
-      safeClauses: "ข้อกำหนดที่ปลอดภัย",
-      missingClauses: "ข้อกำหนดมาตรฐานที่ขาดหาย",
+
       exportPdf: "ส่งออก PDF",
       upgradeForPdf: "อัปเกรดเพื่อ PDF",
       viewLease: "ดูสัญญาเช่าต้นฉบับ",
