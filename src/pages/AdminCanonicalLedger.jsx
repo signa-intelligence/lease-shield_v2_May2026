@@ -385,7 +385,7 @@ function AdminCanonicalLedgerContent() {
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 text-sm">
-                  <p className="font-semibold text-amber-800">Fetch Diagnostics</p>
+                  <p className="font-semibold text-amber-800">Fetch Diagnostics (V1 Functions)</p>
                   <p className="text-amber-700">
                     <strong>Request:</strong> {String(fetchDiagnostics.url || 'Not started')}
                   </p>
@@ -410,10 +410,35 @@ function AdminCanonicalLedgerContent() {
                     </div>
                   )}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => refetch()}>
-                  <RefreshCw className="w-4 h-4 mr-1" /> Retry
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button variant="outline" size="sm" onClick={() => refetch()}>
+                    <RefreshCw className="w-4 h-4 mr-1" /> Retry
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handlePingFunctions} disabled={pingResults.loading}>
+                    {pingResults.loading ? 'Testing...' : 'Ping Functions'}
+                  </Button>
+                </div>
               </div>
+              
+              {(pingResults.ping || pingResults.catalog) && (
+                <div className="mt-4 border-t pt-3" style={{ borderColor: isDarkMode ? '#374151' : '#FCD34D' }}>
+                  <p className="font-semibold text-amber-800 mb-2">Function Deployment Test Results:</p>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs font-bold text-amber-700">pingV1:</p>
+                      <pre className="text-xs bg-white/50 p-2 rounded overflow-auto max-h-24" style={{ color: pingResults.ping?.status === 200 ? '#059669' : '#DC2626' }}>
+                        {JSON.stringify(pingResults.ping, null, 2)}
+                      </pre>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-amber-700">getCanonicalLedgerV1:</p>
+                      <pre className="text-xs bg-white/50 p-2 rounded overflow-auto max-h-24" style={{ color: pingResults.catalog?.status === 200 ? '#059669' : '#DC2626' }}>
+                        {JSON.stringify(pingResults.catalog?.error ? pingResults.catalog : { status: pingResults.catalog?.status, count: pingResults.catalog?.data?.catalog_count, source: pingResults.catalog?.data?.source }, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
