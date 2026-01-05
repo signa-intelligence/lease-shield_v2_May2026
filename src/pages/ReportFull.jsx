@@ -194,18 +194,9 @@ function ReportFullContent() {
   const lease = leaseData;
   const scan = scanData;
   
-  // Extract canonical report data
-  const canonicalReport = scan.scan_full?.canonical_report || {};
-  const clauseReview = canonicalReport.clause_review || [];
-  const clauseLedger = canonicalReport.clause_ledger || [];
-  const mappings = canonicalReport.mappings || [];
-  const missingClauses = canonicalReport.missing_clauses || [];
-  const keyTerms = canonicalReport.key_terms || scan.scan_full?.key_terms || {};
-  const summary = canonicalReport.summary || {};
-  
-  // Fallback to flags if no clause_review
+  // Extract data - PRIMARY SOURCE is flags array (the original expert output)
   const flags = scan.flags || scan.scan_full?.flags || [];
-  const hasCanonicalData = clauseReview.length > 0;
+  const keyTerms = scan.scan_full?.key_terms || {};
 
   const getRiskLevel = (score) => {
     if (score >= 70) return { level: 'high', label: 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' };
