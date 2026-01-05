@@ -38,7 +38,8 @@ Deno.serve(async (req) => {
     // SECURITY FIX: Use centralized auth guard
     const { user, base44 } = await requireAuth(req);
 
-    const { scanData, language = 'en', correlationId: clientCorrelationId } = await req.json();
+    const body = await req.json();
+    let { scanId, scanData, language = 'en', correlationId: clientCorrelationId } = body;
 
     // PREMIUM GATE: restrict PDF generation for free tier
     const plan = (user.plan_tier || 'free').toLowerCase();
@@ -51,13 +52,85 @@ Deno.serve(async (req) => {
     await safeLog('PDF_GENERATION_START', {
       userId: user.id,
       language,
-      hasScanData: !!scanData
+      hasScanData: !!scanData,
+      hasScanId: !!scanId
     });
 
-    if (!scanData) {
-      console.error(`[${trackingId}] Missing scan data in request`);
-      return Response.json({ error: 'Missing scan data' }, { status: 400 });
+    // Resolve scanData from scanId if needed and validate structure
+    let resolvedData = scanData;
+    if (!resolvedData && scanId) {
+      const scans = await base44.entities.LeaseScan.filter({ id: scanId });
+      const scan = scans?.[0];
+      if (!scan) {
+        return Response.json({ error: 'SCAN_NOT_FOUND', message: `No LeaseScan found for ${scanId}` }, { status: 404 });
+      }
+      const canonical = scan?.scan_full?.canonical_report?.pdfPayload;
+      if (canonical && Array.isArray(canonical.clause_ledger)) {
+        resolvedData = canonical;
+      } else if (Array.isArray(scan?.scan_full?.clause_ledger) && scan.scan_full.clause_ledger.length > 0) {
+        const ledger = scan.scan_full.clause_ledger;
+        // Prefer stored review, else synthesize 'none' coverage
+        const reviewIn = Array.isArray(scan?.scan_full?.canonical_report?.clause_review)
+          ? scan.scan_full.canonical_report.clause_review
+          : [];
+        const reviewMap = new Map(reviewIn.filter(r => r && r.clause_id).map(r => [r.clause_id, r]));
+        const flags = Array.isArray(scan.flags) ? scan.flags : (Array.isArray(scan?.scan_full?.canonical_report?.issues) ? scan.scan_full.canonical_report.issues : []);
+        const flagsByClause = new Map();
+        flags.forEach(f => {
+          const cid = f?.clause_id; if (!cid) return; const list = flagsByClause.get(cid) || []; list.push(f); flagsByClause.set(cid, list);
+        });
+        const fullReview = ledger.map(c => {
+          const base = reviewMap.get(c.clause_id);
+          if (base && base.risk_level) return base;
+          const fl = (flagsByClause.get(c.clause_id) || [])[0];
+          if (fl) {
+            return {
+              clause_id: c.clause_id,
+              risk_level: fl.severity || 'medium',
+              risk_summary: fl.description || fl.title || 'Review required'
+            };
+          }
+          return { clause_id: c.clause_id, risk_level: 'none' };
+        });
+        const cov = {
+          total_clauses: ledger.length,
+          clauses_reviewed: fullReview.length,
+          clauses_flagged: fullReview.filter(r => r.risk_level && r.risk_level !== 'none').length
+        };
+        resolvedData = {
+          lease_address: scan?.scan_full?.key_terms?.property_address || scan.lease_id || 'Lease Agreement',
+          generated_date: new Date().toISOString(),
+          risk_score: scan.risk_score || 0,
+          summary: scan.summary || `${flags.length} issues detected`,
+          key_terms: scan?.scan_full?.key_terms || {},
+          flags,
+          clause_review: fullReview,
+          clause_ledger: ledger,
+          mappings: [],
+          missing_clauses: [],
+          coverage_summary: cov
+        };
+      }
     }
+
+    if (!resolvedData) {
+      return Response.json({
+        error: 'MISSING_REPORT_DATA',
+        message: 'Report data not available for PDF generation',
+        missing_fields: scanId ? ['canonical_report.pdfPayload', 'scan_full.clause_ledger'] : ['scanData']
+      }, { status: 400 });
+    }
+
+    // Validate minimum structure
+    const missing = [];
+    if (!Array.isArray(resolvedData.clause_ledger) || resolvedData.clause_ledger.length === 0) missing.push('clause_ledger');
+    if (!Array.isArray(resolvedData.clause_review) || resolvedData.clause_review.length !== resolvedData.clause_ledger.length) missing.push('clause_review(full_coverage)');
+    if (missing.length > 0) {
+      return Response.json({ error: 'MISSING_REPORT_DATA', missing_fields: missing }, { status: 400 });
+    }
+
+    // Use resolvedData going forward
+    scanData = resolvedData;
 
     // Generate PDF
     const doc = new jsPDF();
@@ -568,6 +641,7 @@ Deno.serve(async (req) => {
     // SECURITY FIX: Don't expose error details to client
     console.error('[PDF_ERROR]', { error: error.message, correlationId });
     
+    // If structural validation failed earlier, it would have returned 400; otherwise generic failure
     return err(req, 'PDF_FAILED', 'PDF generation failed. Please try again.', 500, correlationId.slice(-8));
   }
 });

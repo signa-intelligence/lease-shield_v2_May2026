@@ -175,7 +175,7 @@ Be thorough.`,
 
     // STEP 2: BUILD SIMPLE ISSUES LIST FOR FALLBACK
     const clauses_extracted = clauses.map((c, idx) => ({
-      clause_id: String(c.clause_id || `CLAUSE-${idx + 1}`),
+      clause_id: String(c.clause_id || `CLAUSE-${String(idx + 1).padStart(3, '0')}`),
       heading: c.title || null,
       full_text: c.raw_text || '',
       page: c.page_number || null
@@ -277,7 +277,7 @@ Be thorough.`,
       });
       
       const fallbackFlags = simpleIssues.map((issue, idx) => ({
-        clause_id: issue.clause_refs?.[0]?.clause_id || `ISSUE-${idx}`,
+        clause_id: issue.clause_refs?.[0]?.clause_id || `CLAUSE-${String(idx + 1).padStart(3, '0')}`,
         severity: issue.severity || 'medium',
         category: issue.category || 'Other Risks',
         title: issue.title || 'Issue detected',
@@ -287,8 +287,8 @@ Be thorough.`,
         evidence: issue.clause_refs?.[0]?.snippet || 'Evidence not available'
       }));
       
-      const fallbackClauseLedger = clauses_extracted.map(c => ({
-        clause_id: c.clause_id,
+      const fallbackClauseLedger = clauses_extracted.map((c, idx) => ({
+        clause_id: c.clause_id || `CLAUSE-${String(idx + 1).padStart(3, '0')}`,
         heading: c.heading,
         full_text: c.full_text,
         page: c.page,
@@ -328,6 +328,62 @@ Be thorough.`,
         clausesCount: fallbackClauseLedger.length,
         issuesCount: fallbackFlags.length
       });
+    }
+
+    // ENFORCE STRUCTURED DATA CONSISTENCY (ledger + full clause_review + coverage)
+    {
+      const ledger = Array.isArray(finalPdfPayload?.clause_ledger) ? finalPdfPayload.clause_ledger : [];
+      const reviewIn = Array.isArray(finalPdfPayload?.clause_review) ? finalPdfPayload.clause_review : [];
+      const flagsIn = Array.isArray(finalPdfPayload?.flags) ? finalPdfPayload.flags : [];
+
+      const reviewMap = new Map(reviewIn.filter(r => r && r.clause_id).map(r => [r.clause_id, r]));
+      const flagsByClause = new Map();
+      flagsIn.forEach(f => {
+        const cid = f?.clause_id;
+        if (!cid) return;
+        const list = flagsByClause.get(cid) || [];
+        list.push(f);
+        flagsByClause.set(cid, list);
+      });
+
+      const normalizedReview = ledger.map((c) => {
+        const base = reviewMap.get(c.clause_id);
+        if (base && base.risk_level) return base;
+        const fl = (flagsByClause.get(c.clause_id) || [])[0];
+        if (fl) {
+          return {
+            clause_id: c.clause_id,
+            risk_level: fl.severity || 'medium',
+            risk_summary: fl.description || fl.title || 'Review required',
+            recommended_change: Array.isArray(fl.recommendations) ? fl.recommendations[0] : (String(fl.recommendation || '').split(/\n/)[0] || undefined),
+            negotiation_tip: undefined,
+            category: fl.category
+          };
+        }
+        return { clause_id: c.clause_id, risk_level: 'none' };
+      });
+
+      const coverage = {
+        total_clauses: ledger.length,
+        clauses_reviewed: normalizedReview.length,
+        clauses_flagged: normalizedReview.filter(r => r.risk_level && r.risk_level !== 'none').length
+      };
+
+      if (!finalPdfPayload.generated_date) finalPdfPayload.generated_date = new Date().toISOString();
+      finalPdfPayload.clause_ledger = ledger;
+      finalPdfPayload.clause_review = normalizedReview;
+      finalPdfPayload.coverage_summary = coverage;
+
+      // Keep finalReport fields in sync
+      finalReport = {
+        ...(finalReport || {}),
+        pdfPayload: finalPdfPayload,
+        clause_ledger: ledger,
+        clause_review: normalizedReview,
+        issues: flagsIn,
+        status: finalStatus,
+        generatedAt: finalReport?.generatedAt || new Date().toISOString(),
+      };
     }
     
     // CRITICAL VALIDATION
@@ -372,6 +428,14 @@ Be thorough.`,
           language_detected: keyTerms.language_detected,
           canonical_report: finalReport,
           pipeline,
+          diagnostics: {
+            requestId,
+            timestamps: { started_at: new Date(startTime).toISOString(), completed_at: new Date().toISOString() },
+            clause_count: finalPdfPayload.clause_ledger?.length || 0,
+            review_count: finalPdfPayload.clause_review?.length || 0,
+            flags_count: (finalPdfPayload.flags || []).length,
+            model_used: 'Core.InvokeLLM'
+          },
           version: 'v4.1-guaranteed'
         }
       });
@@ -453,13 +517,15 @@ Be thorough.`,
         summary: finalPdfPayload.summary,
         clauses_extracted,
         clause_ledger: finalPdfPayload.clause_ledger,
-        issues_validated: finalPdfPayload.flags || [],
+        clause_review: finalPdfPayload.clause_review,
+        flags: finalPdfPayload.flags || [],
         property_address: keyTerms.property_address,
         start_date: keyTerms.start_date,
         end_date: keyTerms.end_date,
         rent_amount: keyTerms.rent_amount,
         deposit_amount: keyTerms.deposit_amount,
         language_detected: keyTerms.language_detected,
+        coverage_summary: finalPdfPayload.coverage_summary,
         canonical_status: selfCheckPassed ? finalStatus : 'needs_materialization',
         has_pdf_payload: selfCheckPassed
       },
@@ -469,7 +535,10 @@ Be thorough.`,
         totalDuration: Date.now() - startTime,
         pipelineSteps: pipeline.length,
         canonicalStatus: selfCheckPassed ? finalStatus : 'needs_materialization',
-        selfCheckPassed
+        selfCheckPassed,
+        clauseCount: finalPdfPayload.clause_ledger?.length || 0,
+        reviewCount: finalPdfPayload.clause_review?.length || 0,
+        flagsCount: (finalPdfPayload.flags || []).length
       }
     });
 
