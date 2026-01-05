@@ -320,21 +320,32 @@ Deno.serve(async (req) => {
           y = addText(review.risk_summary, 25, 9);
         }
 
-        if (review.risk_level === 'none') {
-          y += 4;
-          return;
-        }
-
-        if (review.tenant_view) {
-          doc.setFont('helvetica','bold'); doc.text('Tenant Impact:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          y = addText(review.tenant_view, 25, 9);
-        }
-
-        if (review.recommended_change && review.recommended_change !== 'No change recommended') {
-          doc.setFont('helvetica','bold'); doc.text('Recommended Change:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          y = addText(review.recommended_change, 25, 9);
+        if (review.risk_level !== 'none') {
+          if (review.tenant_view) {
+            doc.setFont('helvetica','bold'); doc.text('Tenant Impact:', 25, y); y += 5;
+            doc.setFont('helvetica','normal');
+            y = addText(review.tenant_view, 25, 9);
+          }
+          if (review.landlord_view) {
+            doc.setFont('helvetica','bold'); doc.text('Landlord View:', 25, y); y += 5;
+            doc.setFont('helvetica','normal');
+            y = addText(review.landlord_view, 25, 9);
+          }
+          if (review.lawyer_view) {
+            doc.setFont('helvetica','bold'); doc.text('Thai Law Context:', 25, y); y += 5;
+            doc.setFont('helvetica','normal');
+            y = addText(review.lawyer_view, 25, 9);
+          }
+          if (review.recommended_change && review.recommended_change !== 'No change recommended') {
+            doc.setFont('helvetica','bold'); doc.text('Recommended Change:', 25, y); y += 5;
+            doc.setFont('helvetica','normal');
+            y = addText(review.recommended_change, 25, 9);
+          }
+          if (review.negotiation_tip && review.negotiation_tip !== 'Accept as standard.') {
+            doc.setFont('helvetica','bold'); doc.text('Negotiation Tip:', 25, y); y += 5;
+            doc.setFont('helvetica','normal');
+            y = addText(review.negotiation_tip, 25, 9);
+          }
         }
 
         y += 8;
