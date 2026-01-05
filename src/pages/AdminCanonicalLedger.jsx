@@ -18,6 +18,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { haptic } from "../components/shared/HapticFeedback";
+import { ErrorBoundary } from "react-error-boundary";
 
 // ============================================================================
 // FALLBACK CATALOG - Hard-embedded for zero-dependency debugging
@@ -119,44 +120,64 @@ function AdminCanonicalLedgerContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRows, setExpandedRows] = useState({});
   const [showRawJson, setShowRawJson] = useState(false);
+  const [fetchDiagnostics, setFetchDiagnostics] = useState({ url: '', status: '', message: '', responseText: '' });
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
 
-  const [fetchDiagnostics, setFetchDiagnostics] = useState({ url: '', status: '', message: '' });
-  const [usingFallback, setUsingFallback] = useState(false);
-
   const { data: catalogData, isLoading, error, refetch } = useQuery({
     queryKey: ['canonicalLedger'],
     queryFn: async () => {
       const functionName = 'getCanonicalLedger';
       console.log('[CANONICAL_LEDGER] Fetching catalog via base44.functions.invoke:', functionName);
-      setFetchDiagnostics({ url: `base44.functions.invoke('${functionName}', {})`, status: 'fetching...', message: '' });
+      setFetchDiagnostics({ url: `base44.functions.invoke('${functionName}', {})`, status: 'fetching...', message: '', responseText: '' });
       
       try {
         const response = await base44.functions.invoke(functionName, {});
         console.log('[CANONICAL_LEDGER] Response received:', response);
+        
+        // Validate response shape
+        if (!response || !response.data) {
+          throw new Error('Invalid response shape: missing data field');
+        }
+        
+        const payload = response.data;
+        
+        // Validate catalog is array
+        if (payload.catalog && !Array.isArray(payload.catalog)) {
+          console.error('[CANONICAL_LEDGER] Invalid catalog shape - not an array:', typeof payload.catalog);
+          throw new Error('Invalid catalog shape: catalog is not an array');
+        }
+        
         setFetchDiagnostics({ 
           url: `base44.functions.invoke('${functionName}', {})`, 
-          status: response.status || '200', 
-          message: 'Success' 
+          status: String(response.status || '200'), 
+          message: 'Success',
+          responseText: JSON.stringify(payload, null, 2).substring(0, 500) + '...'
         });
-        setUsingFallback(false);
-        return response.data;
+        
+        return payload;
       } catch (fetchError) {
         console.error('[CANONICAL_LEDGER] Fetch failed:', fetchError);
+        const errorMessage = String(fetchError?.message || 'Unknown error');
+        const errorStatus = String(fetchError?.response?.status || 'ERROR');
+        const errorText = fetchError?.response?.data ? JSON.stringify(fetchError.response.data, null, 2) : errorMessage;
+        
         setFetchDiagnostics({ 
           url: `base44.functions.invoke('${functionName}', {})`, 
-          status: fetchError.response?.status || 'ERROR', 
-          message: fetchError.message || 'Unknown error'
+          status: errorStatus, 
+          message: errorMessage,
+          responseText: errorText
         });
-        throw fetchError;
+        
+        // Don't throw - return null to trigger fallback
+        return null;
       }
     },
     enabled: !!user,
-    retry: 1
+    retry: false
   });
 
   const isDarkMode = user?.theme === 'dark';
@@ -205,29 +226,36 @@ function AdminCanonicalLedgerContent() {
   }
 
   const handleExportJSON = () => {
-    if (!effectiveData?.catalog) return;
-    haptic.medium();
-    
-    const exportData = {
-      catalog_version: effectiveData.catalog_version,
-      catalog_updated_at: effectiveData.catalog_updated_at,
-      catalog_count: effectiveData.catalog_count,
-      exported_at: new Date().toISOString(),
-      source: isUsingFallback ? 'FALLBACK' : 'BACKEND',
-      catalog: effectiveData.catalog
-    };
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `canonical-ledger-${effectiveData.catalog_version}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast.success(`Downloaded: canonical-ledger-${effectiveData.catalog_version}.json`);
+    try {
+      haptic.medium();
+      
+      // Always export whatever we have - even if it's fallback or empty
+      const exportData = {
+        catalog_version: effectiveData?.catalog_version || 'v1.0',
+        catalog_updated_at: effectiveData?.catalog_updated_at || new Date().toISOString(),
+        catalog_count: effectiveData?.catalog_count || 0,
+        exported_at: new Date().toISOString(),
+        source: isUsingFallback ? 'FALLBACK' : 'BACKEND',
+        catalog: Array.isArray(effectiveData?.catalog) ? effectiveData.catalog : [],
+        error_note: (!effectiveData || !effectiveData.catalog) ? 'Backend fetch failed - empty catalog' : null
+      };
+      
+      const jsonString = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `canonical-ledger-${exportData.catalog_version}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`Downloaded: canonical-ledger-${exportData.catalog_version}.json`);
+    } catch (err) {
+      console.error('[EXPORT] Failed:', err);
+      toast.error('Export failed: ' + String(err.message || 'Unknown error'));
+    }
   };
 
   const handleViewRawJson = () => {
@@ -236,34 +264,40 @@ function AdminCanonicalLedgerContent() {
   };
 
   const handleCopyJSON = async () => {
-    if (!effectiveData?.catalog) return;
-    haptic.light();
-    
-    const exportData = {
-      catalog_version: effectiveData.catalog_version,
-      catalog_updated_at: effectiveData.catalog_updated_at,
-      catalog_count: effectiveData.catalog_count,
-      source: isUsingFallback ? 'FALLBACK' : 'BACKEND',
-      catalog: effectiveData.catalog
-    };
-    
     try {
-      await navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
+      haptic.light();
+      
+      const exportData = {
+        catalog_version: effectiveData?.catalog_version || 'v1.0',
+        catalog_updated_at: effectiveData?.catalog_updated_at || new Date().toISOString(),
+        catalog_count: effectiveData?.catalog_count || 0,
+        source: isUsingFallback ? 'FALLBACK' : 'BACKEND',
+        catalog: Array.isArray(effectiveData?.catalog) ? effectiveData.catalog : [],
+        error_note: (!effectiveData || !effectiveData.catalog) ? 'Backend fetch failed' : null
+      };
+      
+      const jsonString = JSON.stringify(exportData, null, 2);
+      await navigator.clipboard.writeText(jsonString);
       toast.success('Catalog JSON copied to clipboard');
     } catch (err) {
-      toast.error('Failed to copy to clipboard');
+      console.error('[COPY] Failed:', err);
+      toast.error('Failed to copy: ' + String(err.message || 'Unknown error'));
     }
   };
 
-  // Use fallback if error or no data
+  // Use fallback if error or no data - with strict validation
   const effectiveData = useMemo(() => {
-    if (catalogData && catalogData.catalog) {
-      return catalogData;
-    }
-    if (error || (!isLoading && !catalogData)) {
+    try {
+      if (catalogData && catalogData.catalog && Array.isArray(catalogData.catalog)) {
+        return catalogData;
+      }
+      // Fallback mode
+      console.warn('[CANONICAL_LEDGER] Using fallback catalog');
+      return FALLBACK_CATALOG;
+    } catch (err) {
+      console.error('[CANONICAL_LEDGER] effectiveData error:', err);
       return FALLBACK_CATALOG;
     }
-    return null;
   }, [catalogData, error, isLoading]);
 
   // Track if using fallback
@@ -304,7 +338,7 @@ function AdminCanonicalLedgerContent() {
       <div className="max-w-7xl mx-auto">
         <PageHeader
           title="Canonical Clause Catalog"
-          subtitle={`Thailand Residential Lease Standard • ${catalogData?.catalog_count || 0} entries`}
+          subtitle={`Thailand Residential Lease Standard • ${String(effectiveData?.catalog_count || 0)} entries`}
           icon={Database}
           iconColor="#0C3B2E"
           showBack={true}
@@ -319,7 +353,7 @@ function AdminCanonicalLedgerContent() {
                 <Copy className="w-4 h-4 mr-2" /> Copy
               </Button>
               <Button style={{ backgroundColor: '#0C3B2E', color: '#fff' }} onClick={handleExportJSON}>
-                <Download className="w-4 h-4 mr-2" /> Download canonical-ledger-{catalogData?.catalog_version}.json
+                <Download className="w-4 h-4 mr-2" /> Download canonical-ledger-{String(effectiveData?.catalog_version || 'v1.0')}.json
               </Button>
             </div>
           }
@@ -334,10 +368,10 @@ function AdminCanonicalLedgerContent() {
                 <div className="flex-1 text-sm">
                   <p className="font-semibold text-amber-800">Fetch Diagnostics</p>
                   <p className="text-amber-700">
-                    <strong>Request:</strong> {fetchDiagnostics.url || 'Not started'}
+                    <strong>Request:</strong> {String(fetchDiagnostics.url || 'Not started')}
                   </p>
                   <p className="text-amber-700">
-                    <strong>Status:</strong> {fetchDiagnostics.status || 'N/A'} • <strong>Message:</strong> {fetchDiagnostics.message || 'N/A'}
+                    <strong>Status:</strong> {String(fetchDiagnostics.status || 'N/A')} • <strong>Message:</strong> {String(fetchDiagnostics.message || 'N/A')}
                   </p>
                   {isUsingFallback && (
                     <p className="text-red-600 font-bold mt-1">
@@ -345,9 +379,16 @@ function AdminCanonicalLedgerContent() {
                     </p>
                   )}
                   {error && (
-                    <p className="text-red-600 mt-1">
-                      <strong>Error:</strong> {error.message}
-                    </p>
+                    <div className="mt-2">
+                      <p className="text-red-600 font-bold">
+                        <strong>Error:</strong> {String(error?.message || 'Unknown error')}
+                      </p>
+                      {fetchDiagnostics.responseText && (
+                        <pre className="mt-2 text-xs bg-red-50 p-2 rounded overflow-auto max-h-32 text-red-900">
+                          {String(fetchDiagnostics.responseText)}
+                        </pre>
+                      )}
+                    </div>
                   )}
                 </div>
                 <Button variant="outline" size="sm" onClick={() => refetch()}>
@@ -365,7 +406,7 @@ function AdminCanonicalLedgerContent() {
               <div className="flex items-center gap-3">
                 <Badge className="bg-red-600 text-white text-lg px-4 py-2">FALLBACK MODE</Badge>
                 <span className="text-red-800 font-medium">
-                  Backend fetch failing - displaying hard-embedded catalog ({FALLBACK_CATALOG.catalog_count} entries)
+                  Backend fetch failing - displaying hard-embedded catalog ({String(FALLBACK_CATALOG.catalog_count)} entries)
                 </span>
               </div>
             </CardContent>
@@ -379,7 +420,7 @@ function AdminCanonicalLedgerContent() {
               <div>
                 <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>Export Options</h3>
                 <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  Version {effectiveData?.catalog_version} • {effectiveData?.catalog_count} entries
+                  Version {String(effectiveData?.catalog_version || 'v1.0')} • {String(effectiveData?.catalog_count || 0)} entries
                   {isUsingFallback && <span className="text-red-600 ml-2">(FALLBACK)</span>}
                 </p>
               </div>
@@ -393,7 +434,7 @@ function AdminCanonicalLedgerContent() {
                   className="gap-2"
                 >
                   <Download className="w-4 h-4" /> 
-                  Download canonical-ledger-{effectiveData?.catalog_version}.json
+                  Download canonical-ledger-{String(effectiveData?.catalog_version || 'v1.0')}.json
                 </Button>
               </div>
             </div>
@@ -406,16 +447,16 @@ function AdminCanonicalLedgerContent() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F0FDF4' }}>
                 <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Version</div>
-                <div className="text-xl font-bold" style={{ color: '#0C3B2E' }}>{effectiveData?.catalog_version}</div>
+                <div className="text-xl font-bold" style={{ color: '#0C3B2E' }}>{String(effectiveData?.catalog_version || 'v1.0')}</div>
               </div>
               <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#EFF6FF' }}>
                 <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Total Entries</div>
-                <div className="text-xl font-bold" style={{ color: '#3B82F6' }}>{effectiveData?.catalog_count}</div>
+                <div className="text-xl font-bold" style={{ color: '#3B82F6' }}>{String(effectiveData?.catalog_count || 0)}</div>
               </div>
               <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7' }}>
                 <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Active</div>
                 <div className="text-xl font-bold" style={{ color: '#F59E0B' }}>
-                  {effectiveData?.catalog?.filter(c => c.is_active !== false).length || 0}
+                  {String(Array.isArray(effectiveData?.catalog) ? effectiveData.catalog.filter(c => c.is_active !== false).length : 0)}
                 </div>
               </div>
               <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
@@ -443,7 +484,7 @@ function AdminCanonicalLedgerContent() {
             </div>
             {searchTerm && (
               <div className="mt-2 text-sm" style={{ color: colors.textSecondary }}>
-                Showing {filteredCatalog.length} of {effectiveData?.catalog_count} entries
+                Showing {String(filteredCatalog.length)} of {String(effectiveData?.catalog_count || 0)} entries
               </div>
             )}
           </CardContent>
@@ -461,7 +502,7 @@ function AdminCanonicalLedgerContent() {
                 <div>
                   <h2 className="text-lg font-bold" style={{ color: colors.textPrimary }}>Raw JSON View</h2>
                   <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    canonical-ledger-{effectiveData?.catalog_version}.json • {effectiveData?.catalog_count} entries
+                    canonical-ledger-{String(effectiveData?.catalog_version || 'v1.0')}.json • {String(effectiveData?.catalog_count || 0)} entries
                     {isUsingFallback && <span className="text-red-600 ml-2">(FALLBACK)</span>}
                   </p>
                 </div>
@@ -487,7 +528,7 @@ function AdminCanonicalLedgerContent() {
                     borderRadius: '8px'
                   }}
                 >
-                  {JSON.stringify(effectiveData, null, 2)}
+                  {effectiveData ? JSON.stringify(effectiveData, null, 2) : '{}'}
                 </pre>
               </div>
             </div>
@@ -515,8 +556,8 @@ function AdminCanonicalLedgerContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredCatalog.map((entry, idx) => (
-                    <React.Fragment key={entry.catalog_id}>
+                  {Array.isArray(filteredCatalog) && filteredCatalog.length > 0 ? filteredCatalog.map((entry, idx) => (
+                    <React.Fragment key={String(entry.catalog_id || idx)}>
                       <tr 
                         className="border-b cursor-pointer hover:opacity-80"
                         style={{ borderColor: colors.borderColor }}
@@ -524,29 +565,29 @@ function AdminCanonicalLedgerContent() {
                       >
                         <td className="px-4 py-3">
                           <Badge variant="outline" style={{ fontFamily: 'monospace' }}>
-                            {entry.catalog_id}
+                            {String(entry.catalog_id || 'N/A')}
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="font-medium" style={{ color: colors.textPrimary }}>
-                            {entry.canonical_name}
-                          </div>
+                         <div className="font-medium" style={{ color: colors.textPrimary }}>
+                           {String(entry.canonical_name || 'Unnamed')}
+                         </div>
                         </td>
                         <td className="px-4 py-3 hidden md:table-cell">
-                          <div className="text-sm line-clamp-2" style={{ color: colors.textSecondary }}>
-                            {entry.purpose}
-                          </div>
+                         <div className="text-sm line-clamp-2" style={{ color: colors.textSecondary }}>
+                           {String(entry.purpose || 'No description')}
+                         </div>
                         </td>
                         <td className="px-4 py-3 hidden lg:table-cell">
                           <div className="flex flex-wrap gap-1">
-                            {entry.typical_keywords?.slice(0, 3).map((kw, i) => (
+                            {Array.isArray(entry.typical_keywords) && entry.typical_keywords.slice(0, 3).map((kw, i) => (
                               <Badge key={i} variant="secondary" className="text-xs">
-                                {kw}
+                                {String(kw)}
                               </Badge>
                             ))}
-                            {entry.typical_keywords?.length > 3 && (
+                            {Array.isArray(entry.typical_keywords) && entry.typical_keywords.length > 3 && (
                               <Badge variant="secondary" className="text-xs">
-                                +{entry.typical_keywords.length - 3}
+                                +{String(entry.typical_keywords.length - 3)}
                               </Badge>
                             )}
                           </div>
@@ -560,7 +601,7 @@ function AdminCanonicalLedgerContent() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className="text-xs" style={{ color: colors.textSecondary }}>
-                            {entry.catalog_version}
+                            {String(entry.catalog_version || 'v1.0')}
                           </span>
                         </td>
                       </tr>
@@ -572,15 +613,15 @@ function AdminCanonicalLedgerContent() {
                             <div className="grid md:grid-cols-2 gap-4">
                               <div>
                                 <div className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>Purpose</div>
-                                <div className="text-sm" style={{ color: colors.textPrimary }}>{entry.purpose}</div>
+                                <div className="text-sm" style={{ color: colors.textPrimary }}>{String(entry.purpose || 'No description')}</div>
                               </div>
                               <div>
                                 <div className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>Typical Variants</div>
                                 <div className="flex flex-wrap gap-1">
-                                  {entry.typical_variants?.map((v, i) => (
-                                    <Badge key={i} variant="outline" className="text-xs">{v}</Badge>
+                                  {Array.isArray(entry.typical_variants) && entry.typical_variants.map((v, i) => (
+                                    <Badge key={i} variant="outline" className="text-xs">{String(v)}</Badge>
                                   ))}
-                                  {(!entry.typical_variants || entry.typical_variants.length === 0) && (
+                                  {(!Array.isArray(entry.typical_variants) || entry.typical_variants.length === 0) && (
                                     <span className="text-sm" style={{ color: colors.textSecondary }}>None</span>
                                   )}
                                 </div>
@@ -588,17 +629,23 @@ function AdminCanonicalLedgerContent() {
                               <div>
                                 <div className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>All Keywords</div>
                                 <div className="flex flex-wrap gap-1">
-                                  {entry.typical_keywords?.map((kw, i) => (
-                                    <Badge key={i} variant="secondary" className="text-xs">{kw}</Badge>
+                                  {Array.isArray(entry.typical_keywords) && entry.typical_keywords.map((kw, i) => (
+                                    <Badge key={i} variant="secondary" className="text-xs">{String(kw)}</Badge>
                                   ))}
+                                  {(!Array.isArray(entry.typical_keywords) || entry.typical_keywords.length === 0) && (
+                                    <span className="text-sm" style={{ color: colors.textSecondary }}>None</span>
+                                  )}
                                 </div>
                               </div>
                               <div>
                                 <div className="text-xs font-semibold mb-2 text-red-600">Risk Triggers</div>
                                 <ul className="list-disc list-inside text-sm" style={{ color: colors.textPrimary }}>
-                                  {entry.risk_triggers?.map((rt, i) => (
-                                    <li key={i}>{rt}</li>
+                                  {Array.isArray(entry.risk_triggers) && entry.risk_triggers.map((rt, i) => (
+                                    <li key={i}>{String(rt)}</li>
                                   ))}
+                                  {(!Array.isArray(entry.risk_triggers) || entry.risk_triggers.length === 0) && (
+                                    <li>None specified</li>
+                                  )}
                                 </ul>
                               </div>
                             </div>
@@ -606,7 +653,13 @@ function AdminCanonicalLedgerContent() {
                         </tr>
                       )}
                     </React.Fragment>
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center" style={{ color: colors.textSecondary }}>
+                        No catalog entries found
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -616,7 +669,7 @@ function AdminCanonicalLedgerContent() {
         {/* Debug Fallback: ALWAYS VISIBLE Raw JSON */}
         <Card className="mt-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderColor: colors.borderColor }}>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">DEBUG</Badge>
                 {isUsingFallback && <Badge className="bg-red-600 text-white">FALLBACK</Badge>}
@@ -637,11 +690,11 @@ function AdminCanonicalLedgerContent() {
           <CardContent className="pt-0">
             <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F0FDF4' }}>
               <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                Version: {effectiveData?.catalog_version} • Entries: {effectiveData?.catalog_count} • 
+                Version: {String(effectiveData?.catalog_version || 'v1.0')} • Entries: {String(effectiveData?.catalog_count || 0)} • 
                 {effectiveData?.catalog_count === 83 ? (
                   <span className="text-emerald-600 ml-1">✓ Count verified (83)</span>
                 ) : (
-                  <span className="text-red-600 ml-1">⚠ Expected 83, got {effectiveData?.catalog_count}</span>
+                  <span className="text-red-600 ml-1">⚠ Expected 83, got {String(effectiveData?.catalog_count || 0)}</span>
                 )}
                 {isUsingFallback && <span className="text-red-600 ml-2">(FALLBACK DATA)</span>}
               </span>
@@ -655,8 +708,93 @@ function AdminCanonicalLedgerContent() {
                 maxHeight: '400px'
               }}
             >
-              {JSON.stringify(effectiveData, null, 2)}
+              {effectiveData ? JSON.stringify(effectiveData, null, 2) : '{}'}
             </pre>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// Error Boundary Fallback Component
+function CatalogErrorFallback({ error, resetError }) {
+  const isDarkMode = false; // Safe default
+  const colors = {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB'
+  };
+
+  const handleDownloadFallback = () => {
+    try {
+      const exportData = {
+        catalog_version: 'v1.0',
+        catalog_count: 83,
+        exported_at: new Date().toISOString(),
+        source: 'FALLBACK',
+        error: String(error?.message || 'Page crashed - using fallback'),
+        catalog: FALLBACK_CATALOG.catalog
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'canonical-ledger-v1.0-fallback.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (exportErr) {
+      alert('Export failed: ' + String(exportErr.message));
+    }
+  };
+
+  return (
+    <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
+      <div className="max-w-4xl mx-auto">
+        <Card style={{ backgroundColor: colors.cardBg, borderLeft: '6px solid #EF4444' }}>
+          <CardContent className="p-8">
+            <div className="text-center mb-6">
+              <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+              <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                Page Render Error
+              </h2>
+              <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                AdminCanonicalLedger crashed. Using fallback mode.
+              </p>
+            </div>
+
+            <div className="mb-4">
+              <Badge className="bg-red-600 text-white mb-2">ERROR DETAILS</Badge>
+              <pre 
+                className="text-xs font-mono whitespace-pre-wrap break-all p-4 rounded-lg bg-red-50 text-red-900 overflow-auto max-h-48"
+              >
+                {String(error?.message || 'Unknown error')}
+                {error?.stack && '\n\n' + String(error.stack)}
+              </pre>
+            </div>
+
+            <div className="flex gap-3 flex-wrap justify-center">
+              <Button variant="outline" onClick={resetError}>
+                <RefreshCw className="w-4 h-4 mr-2" /> Try Again
+              </Button>
+              <Button style={{ backgroundColor: '#0C3B2E', color: '#fff' }} onClick={handleDownloadFallback}>
+                <Download className="w-4 h-4 mr-2" /> Download Fallback JSON (83 entries)
+              </Button>
+            </div>
+
+            <div className="mt-6">
+              <Badge className="bg-amber-100 text-amber-800 mb-2">FALLBACK CATALOG PREVIEW</Badge>
+              <pre 
+                className="text-xs font-mono whitespace-pre-wrap break-all p-4 rounded-lg bg-gray-50 overflow-auto max-h-64"
+              >
+                {JSON.stringify(FALLBACK_CATALOG, null, 2)}
+              </pre>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -668,7 +806,9 @@ export default function AdminCanonicalLedger() {
   return (
     <AuthGuard>
       <ToastProvider>
-        <AdminCanonicalLedgerContent />
+        <ErrorBoundary FallbackComponent={CatalogErrorFallback}>
+          <AdminCanonicalLedgerContent />
+        </ErrorBoundary>
       </ToastProvider>
     </AuthGuard>
   );
