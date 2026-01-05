@@ -27,10 +27,11 @@ function getRiskLevel(score) {
   return { level: 'low', label: 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
 }
 
-export default function ReportFullInner({ scanId, leaseId, showDebug }) {
+export default function ReportFullInner({ scanId, leaseId, showDebug, forensicData }) {
   // ALL HOOKS UNCONDITIONAL - ALWAYS RUN
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dbValidation, setDbValidation] = useState(null);
   const [user, setUser] = useState(null);
   const [lease, setLease] = useState(null);
   const [scan, setScan] = useState(null);
@@ -52,17 +53,43 @@ export default function ReportFullInner({ scanId, leaseId, showDebug }) {
         const leaseData = leaseArr?.[0] || null;
         const scanData = scanArr?.[0] || null;
 
+        // DB VALIDATION
+        const validation = {
+          scanFound: !!scanData,
+          leaseFound: !!leaseData,
+          scanId,
+          leaseId
+        };
+
         if (!leaseData || !scanData) {
-          if (!cancelled) setError('Report data not found');
+          if (!cancelled) {
+            setDbValidation(validation);
+            setError(`${!scanData ? 'Scan' : 'Lease'} record not found (ID: ${!scanData ? scanId : leaseId})`);
+          }
           return;
         }
 
         // Check for materialized report
         const canonical = scanData?.scan_full?.canonical_report || null;
+        validation.hasCanonical = !!canonical;
+        validation.hasClauseLedger = !!(canonical?.clause_ledger);
+        validation.clauseLedgerLength = canonical?.clause_ledger?.length || 0;
+        validation.hasPdfPayload = !!(canonical?.pdfPayload);
+
         if (!canonical || !canonical.clause_ledger || canonical.clause_ledger.length === 0) {
-          if (!cancelled) setError('Report not generated yet. Please re-run the scan.');
+          if (!cancelled) {
+            setDbValidation(validation);
+            setError('Report not generated yet. Scan-time persistence failed. Please re-run scan.');
+          }
           return;
         }
+
+        validation.issuesCount = canonical.pdfPayload?.flags?.length || 0;
+        validation.clausesTotal = canonical.clause_ledger.length;
+        validation.clausesReviewed = canonical.clause_review?.length || 0;
+        validation.riskScore = canonical.risk_score || scanData.risk_score || 0;
+
+        if (!cancelled) setDbValidation(validation);
 
         // Use materialized report
         const clauseReview = Array.isArray(canonical?.clause_review) ? canonical.clause_review : [];
@@ -268,18 +295,38 @@ export default function ReportFullInner({ scanId, leaseId, showDebug }) {
       <div className="max-w-4xl mx-auto">
 
 
-        {showDebug && isAdmin && (
+        {showDebug && (
           <Card className="mb-4 border-2 border-emerald-500" style={{ backgroundColor: '#D1FAE5' }}>
             <CardContent className="p-4">
-              <h3 className="font-bold text-emerald-800 mb-2">🔧 Debug Panel</h3>
+              <h3 className="font-bold text-emerald-800 mb-2">🔧 Forensic Debug Panel</h3>
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                  <div className="text-xs font-bold text-emerald-700 mb-1">URL INFO</div>
+                  <div className="bg-white p-2 rounded text-xs font-mono">
+                    <div>Path: {forensicData?.pathname || 'N/A'}</div>
+                    <div>Search: {forensicData?.search || '(empty)'}</div>
+                    <div>Editor: {String(forensicData?.isEditorPreview)}</div>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-emerald-700 mb-1">PARAMS RESOLVED</div>
+                  <div className="bg-white p-2 rounded text-xs font-mono">
+                    <div>scanId: {scanId}</div>
+                    <div>leaseId: {leaseId}</div>
+                  </div>
+                </div>
+              </div>
+              <div className="text-xs font-bold text-emerald-700 mb-1">DB VALIDATION</div>
               <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-{`Report loaded
-Scan: ${scan?.id} | Lease: ${lease?.id}
-Risk Score: ${reportData.risk_score}
+{dbValidation ? JSON.stringify(dbValidation, null, 2) : 'Loading...'}
+              </pre>
+              <div className="text-xs font-bold text-emerald-700 mb-1 mt-3">REPORT DATA</div>
+              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
+{`Risk Score: ${reportData.risk_score}
 Total Clauses: ${totalClauses}
 Risks: ${risksCount}
-Ledger Present: ${(reportData.clause_ledger || []).length > 0}
-Flags: ${(reportData.flags || []).length}`}
+Flags: ${(reportData.flags || []).length}
+Has PDF Payload: ${!!(scan?.scan_full?.canonical_report?.pdfPayload)}`}
               </pre>
             </CardContent>
           </Card>
