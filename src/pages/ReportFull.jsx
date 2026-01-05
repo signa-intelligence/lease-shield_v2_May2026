@@ -452,7 +452,7 @@ Flags (issues): ${flags.length}`}
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-orange-600" />
-              {strings.allIssues} ({flags.length})
+              {strings.allIssues} ({flagsForDisplay.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
