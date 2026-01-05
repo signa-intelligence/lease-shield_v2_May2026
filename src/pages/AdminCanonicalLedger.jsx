@@ -203,10 +203,6 @@ function AdminCanonicalLedgerContent() {
   const isDarkMode = user?.theme === 'dark';
   const language = user?.language || 'en';
 
-  const userRole = user?.role?.toLowerCase();
-  const accessLevel = user?.access_level?.toLowerCase();
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || accessLevel === 'admin' || accessLevel === 'super_admin';
-
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
     cardBg: '#2A2D30',
