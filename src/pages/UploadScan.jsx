@@ -877,9 +877,13 @@ function UploadScanPageContent() {
         // Create LeaseScan record before analysis
         const scan = await base44.entities.LeaseScan.create({
           lease_id: lease.id,
-          status: 'processing'
+          status: 'initiated',
+          request_id: requestId
         });
 
+        if (!scan.id) {
+          throw new Error('BUG: scanId missing');
+        }
         if (lease.id === scan.id) {
           throw new Error('BUG: scanId incorrectly equals leaseId. Aborting.');
         }
@@ -899,18 +903,22 @@ function UploadScanPageContent() {
           throw err;
         }
 
-        // Verify payload was created
+        // Verify payload was created and navigate to report
         const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: scan.id });
         if (!verifyStatus?.hasPdfPayload) {
           throw new Error(`Scan saved but report payload missing. Scan pipeline failed: ${verifyStatus?.error?.message || 'Unknown error'}`);
         }
+        await base44.entities.LeaseScan.update(scan.id, {
+          status: 'ok',
+          risk_score: scanResponse?.result?.risk_score,
+          summary: scanResponse?.result?.summary
+        });
+        if (!scan.id) throw new Error('BUG: scanId missing');
+        if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        window.location.href = `/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`;
+        return;
 
-        // VERIFY PAYLOAD PERSISTED
-        const { data: verifyStatus1 } = await base44.functions.invoke('debugScanStatus', { scanId: scan.id });
-        if (!verifyStatus1?.hasPdfPayload) {
-          console.error('[SCAN_PAYLOAD_MISSING]', verifyStatus1);
-          throw new Error(`Scan saved but report payload missing: ${verifyStatus1?.error || 'Unknown error'}`);
-        }
+
         
         const scanResult = scanResponse.result;
         setAnalysisStage('extracting');
@@ -1006,6 +1014,7 @@ function UploadScanPageContent() {
     const maxRetries = 0; // Disable auto-retry to show errors immediately
 
     const attemptUpload = async () => {
+      let scanId = null;
       try {
         // STEP 0: Preflight check - verify files are readable
         logStage('PREFLIGHT_CHECK_START', {
@@ -1147,7 +1156,7 @@ function UploadScanPageContent() {
           fileUrls: fileUrls,
           requestId,
           leaseId: createdLeaseId,
-          scanId: createdLeaseId
+          scanId
         });
 
         const analysisDuration = Date.now() - analysisStartTime;
@@ -1175,8 +1184,8 @@ function UploadScanPageContent() {
         }
 
         // VERIFY PAYLOAD PERSISTED
-        logStage('VERIFICATION_START', { scanId: createdScanId });
-        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: createdScanId });
+        logStage('VERIFICATION_START', { scanId });
+        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId });
         
         if (!verifyStatus?.hasPdfPayload) {
           const verificationError = new Error(`Post-scan verification failed: Report payload is missing.`);
@@ -1194,20 +1203,16 @@ function UploadScanPageContent() {
           flagsCount: scanResponse.result?.flags?.length
         });
 
-        // VERIFY PAYLOAD PERSISTED
-        logStage('VERIFICATION_START', { scanId: createdLeaseId });
-        const { data: verifyStatus2 } = await base44.functions.invoke('debugScanStatus', { scanId: createdLeaseId });
-        
-        if (!verifyStatus2?.hasPdfPayload) {
-          logStage('VERIFICATION_FAILED', verifyStatus2);
-          throw new Error(`Scan saved but report payload missing. Pipeline failed at: ${verifyStatus2?.canonicalStatus || 'unknown'}`);
-        }
-        
-        logStage('VERIFICATION_PASSED', {
-          clausesTotal: verifyStatus2.clauseLedgerLength,
-          issuesCount: verifyStatus2.issuesCount,
-          isFallback: verifyStatus2.isFallback
+        // Update LeaseScan status and navigate to report
+        await base44.entities.LeaseScan.update(scanId, {
+          status: 'ok',
+          risk_score: scanResponse?.result?.risk_score,
+          summary: scanResponse?.result?.summary
         });
+        if (!scanId) throw new Error('BUG: scanId missing');
+        if (scanId === createdLeaseId) throw new Error('BUG: scanId incorrectly equals leaseId');
+        window.location.href = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(createdLeaseId)}`;
+        return;
 
         const scanResult = scanResponse.result;
         setAnalysisStage('extracting');
@@ -1284,6 +1289,7 @@ function UploadScanPageContent() {
           const formattedError = formatErrorForUser(err, requestId, language, {
             uploadStage: analysisStage
           });
+          formattedError.scanId = scanId || null;
           const debugData = createDebugLog(requestId, stages, deviceContext, networkLog);
           
           logStage('FINAL_FAILURE', {
@@ -1872,6 +1878,9 @@ function UploadScanPageContent() {
                 </p>
                 {typeof error === 'object' && error.requestId && (
                     <p className="text-red-500 text-xs font-mono">Request ID: {error.requestId}</p>
+                )}
+                {typeof error === 'object' && error.scanId && (
+                    <p className="text-red-500 text-xs font-mono">Scan ID: {error.scanId}</p>
                 )}
                 <div className="mt-4 flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" onClick={handleRetry} className="border-red-300 text-red-700 hover:bg-red-100">
