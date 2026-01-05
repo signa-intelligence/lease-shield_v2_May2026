@@ -127,6 +127,7 @@ function AdminCanonicalLedgerContent() {
   const [expandedRows, setExpandedRows] = useState({});
   const [showRawJson, setShowRawJson] = useState(false);
   const [fetchDiagnostics, setFetchDiagnostics] = useState({ url: '', status: '', message: '', responseText: '' });
+  const [pingResults, setPingResults] = useState({ catalog: null, ping: null, loading: false });
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
