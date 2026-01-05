@@ -883,12 +883,7 @@ function UploadScanPageContent() {
         if (!scanId) { throw new Error('FATAL_CLIENT_ERROR: scanId missing from backend response'); }
         if (scanId === lease.id) { throw new Error('BUG: scanId incorrectly equals leaseId'); }
 
-        if (!scanResponse || scanResponse.ok === false) {
-          const err = new Error(scanResponse?.error?.message || 'Scan failed with no message');
-          err.code = scanResponse?.error?.code || 'UNKNOWN';
-          err.step = scanResponse?.error?.step || 'ANALYSIS';
-          throw err;
-        }
+
 
         // Verify payload was created
         const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId });
@@ -1457,21 +1452,18 @@ function UploadScanPageContent() {
       setAnalysisStage('scanning');
       setUploadProgress(50);
 
-      // Re-trigger analysis
+      // Re-trigger analysis (server creates new scan)
       const { data: scanResponse } = await base44.functions.invoke('scanLease', {
         fileUrls: allUrls,
         requestId: `reanalyze-${Date.now()}`,
-        leaseId: addingPagesToLease.id,
-        scanId: addingPagesToLease.id
+        leaseId: addingPagesToLease.id
       });
-
-      if (!scanResponse || !scanResponse.success) {
-        throw new Error(scanResponse?.error || 'Re-analysis failed');
-      }
-
-      const scanResult = scanResponse.result;
-      setAnalysisStage('extracting');
-      setUploadProgress(70);
+      const scanId = scanResponse?.scanId;
+      if (!scanId) { throw new Error('FATAL_CLIENT_ERROR: scanId missing from backend response'); }
+      const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId });
+      if (!verifyStatus?.hasPdfPayload) { throw new Error('Re-analysis saved but report payload missing'); }
+      window.location.href = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(addingPagesToLease.id)}`;
+      return;
 
       await base44.entities.Lease.update(addingPagesToLease.id, {
         status: 'scanned',
