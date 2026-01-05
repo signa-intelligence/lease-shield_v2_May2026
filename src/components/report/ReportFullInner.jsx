@@ -1,9 +1,24 @@
-import React from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, FileText, Info, Loader2, RefreshCw } from "lucide-react";
+import {
+  Shield,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  AlertCircle,
+  FileText,
+  ArrowLeft,
+  ExternalLink,
+  Download,
+  Loader2,
+  RefreshCw
+} from "lucide-react";
+import { haptic } from "../shared/HapticFeedback";
 
 const SEVERITY_CONFIG = {
   none: { color: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'NO RISK', icon: CheckCircle2 },
@@ -13,174 +28,86 @@ const SEVERITY_CONFIG = {
   critical: { color: 'bg-red-100 text-red-800 border-red-200', label: 'Critical', icon: AlertCircle }
 };
 
-function defaultRecsFor(category) {
-  const c = category || 'clause';
-  return [
-    `Request to narrow or clarify ${c} terms to tenant-favorable language`,
-    `Add explicit safeguard for ${c} to prevent overbroad interpretation`
-  ];
-}
+export default function ReportFullInner({ scanId, leaseId, showDebug }) {
+  const navigate = useNavigate();
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [backfillError, setBackfillError] = useState(null);
+  const backfillAttemptedRef = useRef(new Set());
 
-function getRiskLevel(score) {
-  if ((score || 0) >= 70) return { level: 'high', label: 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' };
-  if ((score || 0) >= 40) return { level: 'medium', label: 'MEDIUM RISK', color: '#F59E0B', bg: '#FEF3C7' };
-  return { level: 'low', label: 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
-}
-
-export default function ReportFullInner({ scanId, leaseId }) {
-  // Unconditional hooks
-  const [state, setState] = React.useState({
-    user: null,
-    lease: null,
-    scan: null,
-    loading: true,
-    error: null,
-    reportData: null,
+  // Fetch user (always runs)
+  const { data: user, isLoading: userLoading, error: userError } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    retry: false,
+    staleTime: 60000
   });
-  const [exportingPdf, setExportingPdf] = React.useState(false);
-  const [backfillError, setBackfillError] = React.useState(null);
-  const backfillAttemptedRef = React.useRef(new Set());
-  const [refreshKey, setRefreshKey] = React.useState(0);
 
-  // Effect #1: fetch + normalize
-  React.useEffect(() => {
-    let isCancelled = false;
-    async function fetchAll() {
-      try {
-        setState(prev => ({ ...prev, loading: true, error: null }));
-        const user = await base44.auth.me();
-        const leaseArr = await base44.entities.Lease.filter({ id: leaseId });
-        const scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
-        const lease = leaseArr?.[0] || null;
-        const scan = scanArr?.[0] || null;
+  // Fetch lease (always runs)
+  const { data: leaseData, isLoading: leaseLoading, error: leaseError } = useQuery({
+    queryKey: ['lease', leaseId],
+    queryFn: async () => {
+      const results = await base44.entities.Lease.filter({ id: leaseId });
+      return results?.[0] || null;
+    },
+    enabled: !!leaseId && !!user,
+    retry: false,
+    staleTime: 60000
+  });
 
-        // Build normalized reportData
-        const canonical = scan?.scan_full?.canonical_report || null;
-        const clauseReview = canonical?.clause_review || [];
-        const clauseLedger = canonical?.clause_ledger || [];
-        const flags = scan?.flags || scan?.scan_full?.flags || [];
-        const keyTerms = scan?.scan_full?.key_terms || {};
-        const mappings = canonical?.mappings || [];
-        const missingClauses = canonical?.missing_clauses || [];
+  // Fetch scan (always runs)
+  const { data: scanData, isLoading: scanLoading, error: scanError } = useQuery({
+    queryKey: ['scan', scanId],
+    queryFn: async () => {
+      const results = await base44.entities.LeaseScan.filter({ id: scanId });
+      return results?.[0] || null;
+    },
+    enabled: !!scanId && !!user,
+    retry: false,
+    staleTime: 60000
+  });
 
-        // Unify risks
-        const unifiedIssuesRaw = (() => {
-          const byClause = {};
-          const reviews = Array.isArray(clauseReview) ? clauseReview : [];
-          const ledger = Array.isArray(clauseLedger) ? clauseLedger : [];
-          const fl = Array.isArray(flags) ? flags : [];
+  const isDarkMode = user?.theme === 'dark';
+  const language = user?.language || 'en';
 
-          reviews.forEach(r => {
-            if (!r.risk_level || r.risk_level === 'none') return;
-            byClause[r.clause_id] = { review: r };
-          });
-          fl.forEach(f => {
-            const key = f.clause_id || `flag-${f.pattern_id || f.title || Math.random()}`;
-            if (!byClause[key]) byClause[key] = {};
-            byClause[key].flag = f;
-          });
+  const colors = isDarkMode ? {
+    bg: '#1A1D1F',
+    cardBg: '#2A2D30',
+    textPrimary: '#ECEFED',
+    textSecondary: '#A8ABAD',
+    borderColor: '#3A3D40'
+  } : {
+    bg: '#F8FAFC',
+    cardBg: '#FFFFFF',
+    textPrimary: '#1A1D1F',
+    textSecondary: '#64748b',
+    borderColor: '#E5E7EB'
+  };
 
-          const list = Object.entries(byClause).map(([_, pair]) => {
-            const r = pair.review;
-            const f = pair.flag;
-            const clause = ledger.find(c => c.clause_id === (r?.clause_id || f?.clause_id));
-            const severity = f?.severity || (r?.risk_level || 'medium');
-            const category = f?.category || (r?.mapped_catalog_ids?.[0] ? r.mapped_catalog_ids[0] : 'clause');
-            const title = f?.title || clause?.heading || (r?.risk_summary?.substring(0, 80) || 'Issue identified');
-            const impact = f?.description || r?.risk_summary || 'Review required';
-            const explanation = f?.explanation || r?.lawyer_view || r?.tenant_view || '';
-            let recs = [];
-            if (f?.recommendation) {
-              recs = String(f.recommendation).split(/[\n•\-–]/g).map(s => s.trim()).filter(Boolean);
-            } else {
-              if (r?.recommended_change && r.recommended_change !== 'No change recommended') recs.push(r.recommended_change);
-              if (r?.negotiation_tip && r.negotiation_tip !== 'Accept as standard.') recs.push(r.negotiation_tip);
-            }
-            while (recs.length < 2) {
-              defaultRecsFor(category).forEach(x => { if (recs.length < 2) recs.push(x); });
-            }
-            let evidence = (f?.evidence || clause?.full_text || '').substring(0, 240);
-            if (!evidence || evidence.length < 10) evidence = `[Evidence not extracted for ${title}]`;
-            return {
-              clause_id: r?.clause_id || f?.clause_id || `unknown-${Math.random().toString(36).slice(2,9)}`,
-              category,
-              severity,
-              title,
-              impact,
-              explanation,
-              recommendations: recs,
-              evidence
-            };
-          });
-          const order = { critical: 0, high: 1, medium: 2, low: 3 };
-          list.sort((a,b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
-          return list;
-        })();
-        const seen = new Set();
-        const unifiedIssues = unifiedIssuesRaw.filter(i => {
-          const key = `${i.clause_id}::${i.severity}::${i.category}`;
-          if (seen.has(key)) return false; seen.add(key); return true;
-        });
+  const lease = leaseData;
+  const scan = scanData;
+  const canonical = scan?.scan_full?.canonical_report || null;
+  const clauseReview = canonical?.clause_review || [];
+  const clauseLedger = canonical?.clause_ledger || [];
+  const flags = scan?.flags || scan?.scan_full?.flags || [];
+  const keyTerms = scan?.scan_full?.key_terms || {};
+  const mappings = canonical?.mappings || [];
+  const missingClauses = canonical?.missing_clauses || [];
 
-        const flagsForDisplay = unifiedIssues.map(i => ({
-          severity: i.severity,
-          category: i.category,
-          title: i.title,
-          description: i.impact,
-          explanation: i.explanation,
-          recommendation: i.recommendations.join('\n'),
-          evidence: i.evidence,
-          clause_id: i.clause_id
-        }));
+  // One-shot backfill (always runs)
+  useEffect(() => {
+    if (!leaseId || !scanId || !lease || !scan) return;
+    const ledgerLen = clauseLedger.length;
+    const backfillKey = `${scanId}:${leaseId}`;
+    if (backfillAttemptedRef.current.has(backfillKey)) return;
+    if (ledgerLen >= 80) return;
 
-        const coverageSummary = canonical ? {
-          total_clauses: clauseLedger.length,
-          clauses_reviewed: clauseReview.length,
-          clauses_flagged: clauseReview.filter(r => r.risk_level && r.risk_level !== 'none').length,
-          unmapped_clauses: (canonical?.mappings || []).filter(m => Array.isArray(m.mapped_catalog_ids) && m.mapped_catalog_ids.includes('CAT-UNMAPPED')).length,
-          missing_expected_categories: (canonical?.missing_clauses || []).length,
-          mapped_count: canonical?.summary?.mapped_count,
-          mapped_pct: canonical?.summary?.mapped_pct
-        } : null;
+    backfillAttemptedRef.current.add(backfillKey);
+    const files = (Array.isArray(lease?.file_urls) && lease.file_urls.length) ? lease.file_urls : (lease?.file_url ? [lease.file_url] : []);
 
-        const reportData = {
-          lease_address: lease?.property_address || 'Lease Agreement',
-          generated_date: new Date().toISOString(),
-          risk_score: scan?.risk_score || canonical?.risk_score || 0,
-          summary: scan?.summary || '',
-          key_terms: keyTerms,
-          flags: flagsForDisplay,
-          clause_review: clauseReview,
-          clause_ledger: clauseLedger,
-          mappings,
-          missing_clauses: missingClauses,
-          coverage_summary: canonical?.summary || scan?.scan_full?.coverage_summary || {},
-        };
-
-        if (!isCancelled) {
-          setState({ user, lease, scan, loading: false, error: null, reportData, coverageSummary });
-        }
-      } catch (err) {
-        if (!isCancelled) setState(prev => ({ ...prev, loading: false, error: err?.message || 'Failed to load data' }));
-      }
-    }
-    fetchAll();
-    return () => { isCancelled = true; };
-  }, [scanId, leaseId, refreshKey]);
-
-  // Effect #2: one-shot backfill only if ledger empty
-  React.useEffect(() => {
-    const key = `${scanId}:${leaseId}`;
-    const clauseLedger = state?.reportData?.clause_ledger || [];
-    if (!clauseLedger || clauseLedger.length > 0) return;
-    if (backfillAttemptedRef.current.has(key)) return;
-    backfillAttemptedRef.current.add(key);
-    const files = (Array.isArray(state.lease?.file_urls) && state.lease.file_urls.length) ? state.lease.file_urls : (state.lease?.file_url ? [state.lease.file_url] : []);
-    base44.functions.invoke('syncScanClauseLedger', { scanId, leaseId, fileUrls: files })
+    base44.functions.invoke('syncScanClauseLedger', { scanId, lease_id: leaseId, file_urls: files })
       .then((res) => {
         if (res?.data?.status === 'ok') {
-          // re-fetch data instead of reloading
-          setRefreshKey(v => v + 1);
+          setTimeout(() => window.location.reload(), 800);
         } else if (res?.data?.status === 'error' && res?.data?.code === 'deploymentNotFound') {
           setBackfillError('Ledger generator not deployed. Publish backend functions (clauseLedgerScan) and retry.');
         }
@@ -193,18 +120,26 @@ export default function ReportFullInner({ scanId, leaseId }) {
         } else {
           setBackfillError('Failed to generate ledger. Please try again later.');
         }
+        console.error('[ReportFull] backfill error', err);
       });
-  }, [scanId, leaseId, state?.reportData?.clause_ledger, state.lease]);
+  }, [leaseId, scanId, lease, scan, clauseLedger.length]);
 
-  const isDarkMode = state.user?.theme === 'dark';
-  const colors = isDarkMode ? {
-    bg: '#1A1D1F', cardBg: '#2A2D30', textPrimary: '#ECEFED', textSecondary: '#A8ABAD', borderColor: '#3A3D40'
-  } : {
-    bg: '#F8FAFC', cardBg: '#FFFFFF', textPrimary: '#1A1D1F', textSecondary: '#64748b', borderColor: '#E5E7EB'
+  const defaultRecsFor = (cat) => {
+    const c = cat || 'clause';
+    return [
+      `Request to narrow or clarify ${c} terms to tenant-favorable language`,
+      `Add explicit safeguard for ${c} to prevent overbroad interpretation`
+    ];
   };
 
-  // Rendering (no hooks below)
-  if (state.loading) {
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || 
+                  user?.access_level === 'admin' || user?.access_level === 'super_admin';
+  const userTier = (user?.plan_tier || 'free').toLowerCase();
+  const canExportPdf = userTier !== 'free';
+
+  const isLoading = userLoading || leaseLoading || scanLoading;
+
+  if (isLoading) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20">
@@ -215,15 +150,18 @@ export default function ReportFullInner({ scanId, leaseId }) {
     );
   }
 
-  if (state.error || !state.user || !state.lease || !state.scan) {
+  if (userError || !user) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
           <Card style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-8 text-center">
               <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-              <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>Error Loading Report</h2>
-              <p className="mb-6" style={{ color: colors.textSecondary }}>{state.error || 'Failed to load report data.'}</p>
+              <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>Authentication Required</h2>
+              <p className="mb-6" style={{ color: colors.textSecondary }}>Please log in to view this report.</p>
+              <Button onClick={() => navigate('/')} style={{ backgroundColor: '#0C3B2E', color: '#fff' }}>
+                <ArrowLeft className="w-4 h-4 mr-2" />Go Home
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -231,18 +169,201 @@ export default function ReportFullInner({ scanId, leaseId }) {
     );
   }
 
-  const lease = state.lease; const reportData = state.reportData || {};
-  const riskLevel = getRiskLevel(reportData.risk_score);
-  const totalClauses = (reportData.clause_ledger || []).length;
-  const risksCount = (reportData.clause_review || []).filter(r => r.risk_level && r.risk_level !== 'none').length;
+  if (leaseError || scanError || !lease || !scan) {
+    return (
+      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
+        <div className="max-w-4xl mx-auto">
+          <Card style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-8 text-center">
+              <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+              <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>Report Not Found</h2>
+              <p className="mb-6" style={{ color: colors.textSecondary }}>The requested lease scan could not be found.</p>
+              <div className="flex gap-3 justify-center">
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />Retry
+                </Button>
+                <Button onClick={() => navigate('/UploadScan')} style={{ backgroundColor: '#0C3B2E', color: '#fff' }}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />Back to Scans
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Normalize data (always runs after fetch completes)
+  const unifiedIssuesRaw = useMemo(() => {
+    const byClause = {};
+    const reviews = Array.isArray(clauseReview) ? clauseReview : [];
+    const ledger = Array.isArray(clauseLedger) ? clauseLedger : [];
+    const fl = Array.isArray(flags) ? flags : [];
+
+    reviews.forEach(r => {
+      if (!r.risk_level || r.risk_level === 'none') return;
+      byClause[r.clause_id] = { review: r };
+    });
+
+    fl.forEach(f => {
+      const key = f.clause_id || `flag-${f.pattern_id || f.title || Math.random()}`;
+      if (!byClause[key]) byClause[key] = {};
+      byClause[key].flag = f;
+    });
+
+    const list = Object.entries(byClause).map(([_, pair]) => {
+      const r = pair.review;
+      const f = pair.flag;
+      const clause = ledger.find(c => c.clause_id === (r?.clause_id || f?.clause_id));
+      const severity = f?.severity || (r?.risk_level || 'medium');
+      const category = f?.category || (r?.mapped_catalog_ids?.[0] ? r.mapped_catalog_ids[0] : 'clause');
+      const title = f?.title || clause?.heading || (r?.risk_summary?.substring(0, 80) || 'Issue identified');
+      const impact = f?.description || r?.risk_summary || 'Review required';
+      const explanation = f?.explanation || r?.lawyer_view || r?.tenant_view || '';
+
+      let recs = [];
+      if (f?.recommendation) {
+        recs = String(f.recommendation).split(/[\n•\-–]/g).map(s => s.trim()).filter(Boolean);
+      } else {
+        if (r?.recommended_change && r.recommended_change !== 'No change recommended') recs.push(r.recommended_change);
+        if (r?.negotiation_tip && r.negotiation_tip !== 'Accept as standard.') recs.push(r.negotiation_tip);
+      }
+      while (recs.length < 2) {
+        defaultRecsFor(category).forEach(x => { if (recs.length < 2) recs.push(x); });
+      }
+
+      let evidence = (f?.evidence || clause?.full_text || '').substring(0, 240);
+      if (!evidence || evidence.length < 10) {
+        evidence = `[Evidence not extracted for ${title}]`;
+      }
+
+      return {
+        clause_id: r?.clause_id || f?.clause_id || `unknown-${Math.random().toString(36).slice(2,9)}`,
+        category,
+        severity,
+        title,
+        impact,
+        explanation,
+        recommendations: recs,
+        evidence
+      };
+    });
+
+    const order = { critical: 0, high: 1, medium: 2, low: 3 };
+    list.sort((a,b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
+    return list;
+  }, [clauseReview, clauseLedger, flags]);
+
+  const unifiedIssues = useMemo(() => {
+    const seen = new Set();
+    return unifiedIssuesRaw.filter(i => {
+      const key = `${i.clause_id}::${i.severity}::${i.category}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [unifiedIssuesRaw]);
+
+  const issuesByClauseId = useMemo(() => {
+    const map = new Map();
+    unifiedIssues.forEach(i => { if (i.clause_id) map.set(i.clause_id, i); });
+    return map;
+  }, [unifiedIssues]);
+
+  const clauseEntries = useMemo(() => {
+    const ledger = Array.isArray(clauseLedger) ? clauseLedger : [];
+    const reviews = Array.isArray(clauseReview) ? clauseReview : [];
+
+    return ledger.map((c, idx) => {
+      const r = reviews.find(x => x.clause_id === c.clause_id) || {};
+      const riskLevel = r.risk_level || 'none';
+      const isRisk = riskLevel !== 'none';
+
+      let recs = [];
+      if (isRisk) {
+        if (r?.recommended_change && r.recommended_change !== 'No change recommended') recs.push(r.recommended_change);
+        if (r?.negotiation_tip && r.negotiation_tip !== 'Accept as standard.') recs.push(r.negotiation_tip);
+        if (recs.length === 0) {
+          const fromIssue = issuesByClauseId.get(c.clause_id);
+          if (fromIssue?.recommendations?.length) recs = [...fromIssue.recommendations];
+        }
+        const category = r.mapped_catalog_ids?.[0] || 'clause';
+        while (recs.length < 2) {
+          defaultRecsFor(category).forEach(x => { if (recs.length < 2) recs.push(x); });
+        }
+      }
+
+      let snippet = (c.full_text || '').slice(0, 240);
+      if (!snippet || snippet.length < 10) {
+        const fromIssue = issuesByClauseId.get(c.clause_id);
+        snippet = fromIssue?.evidence || `[Snippet not extracted for ${c.heading || c.clause_id}]`;
+      }
+
+      const rationale = r.risk_summary || (isRisk ? 'Review required' : (r.tenant_view || 'Accept as standard.'));
+
+      return {
+        clause_id: c.clause_id || `CL-${String(idx+1).padStart(3,'0')}`,
+        heading: c.heading || `Clause ${idx+1}`,
+        snippet,
+        risk_level: riskLevel,
+        category: (r.mapped_catalog_ids?.[0]) || undefined,
+        recommendations: recs,
+        rationale,
+        isRisk
+      };
+    });
+  }, [clauseLedger, clauseReview, issuesByClauseId]);
+
+  const totalClauses = clauseEntries.length;
+  const risksCount = clauseEntries.filter(e => e.isRisk).length;
+  const nonRisksCount = totalClauses - risksCount;
+  const pdfEntriesCount = totalClauses;
+
+  const coverageSummary = canonical ? {
+    total_clauses: clauseLedger.length,
+    clauses_reviewed: clauseReview.length,
+    clauses_flagged: clauseReview.filter(r => r.risk_level && r.risk_level !== 'none').length,
+    unmapped_clauses: mappings.filter(m => Array.isArray(m.mapped_catalog_ids) && m.mapped_catalog_ids.includes('CAT-UNMAPPED')).length,
+    missing_expected_categories: missingClauses.length,
+    mapped_count: canonical?.summary?.mapped_count,
+    mapped_pct: canonical?.summary?.mapped_pct
+  } : null;
+
+  const flagsForDisplay = unifiedIssues.map(i => ({
+    severity: i.severity,
+    category: i.category,
+    title: i.title,
+    description: i.impact,
+    explanation: i.explanation,
+    recommendation: i.recommendations.join('\n'),
+    evidence: i.evidence,
+    clause_id: i.clause_id
+  }));
+
+  const reportData = {
+    lease_address: lease?.property_address || 'Lease Agreement',
+    generated_date: new Date().toISOString(),
+    risk_score: scan?.risk_score || canonical?.risk_score || 0,
+    summary: scan?.summary || '',
+    key_terms: keyTerms,
+    flags: flagsForDisplay,
+    clause_review: clauseReview,
+    clause_ledger: clauseLedger,
+    mappings,
+    missing_clauses: missingClauses,
+    coverage_summary: canonical?.summary || scan?.scan_full?.coverage_summary || {},
+    taxonomy_report: scan?.scan_full?.taxonomy_report || [],
+    missing_items: scan?.scan_full?.missing_items || []
+  };
 
   const handleExportPdf = async () => {
-    if (exportingPdf) return;
+    if (!canExportPdf || exportingPdf) return;
     setExportingPdf(true);
+    haptic.medium();
     try {
       const response = await base44.functions.invoke('generateLeaseReportPDF', {
         scanData: reportData,
-        language: state.user?.language || 'en'
+        language
       });
       if (response?.data?.pdf_url) {
         window.open(response.data.pdf_url, '_blank');
@@ -250,11 +371,61 @@ export default function ReportFullInner({ scanId, leaseId }) {
         alert('PDF generation failed. Please try again.');
       }
     } catch (err) {
+      console.error('[ReportFull] PDF export error:', err);
       alert('PDF export failed: ' + (err.message || 'Unknown error'));
     } finally {
       setExportingPdf(false);
     }
   };
+
+  const getRiskLevel = (score) => {
+    if (score >= 70) return { level: 'high', label: 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' };
+    if (score >= 40) return { level: 'medium', label: 'MEDIUM RISK', color: '#F59E0B', bg: '#FEF3C7' };
+    return { level: 'low', label: 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
+  };
+  const riskLevel = getRiskLevel(reportData.risk_score);
+
+  const t = {
+    en: {
+      fullReport: "Full Lease Analysis Report",
+      property: "Property",
+      summary: "Summary",
+      riskScore: "Risk Score",
+      allIssues: "Issues Requiring Attention",
+      clauseAnalysis: "Clause-by-Clause Analysis",
+      exportPdf: "Export PDF",
+      upgradeForPdf: "Upgrade for PDF",
+      viewLease: "View Original Lease",
+      viewTemplates: "View Letter Templates",
+      keyTerms: "Key Lease Terms",
+      monthlyRent: "Monthly Rent",
+      deposit: "Security Deposit",
+      leasePeriod: "Lease Period",
+      noIssues: "No issues found in this lease.",
+      clauseCoverage: "Clause Coverage",
+      coverageSubtitle: "92 standard clause categories"
+    },
+    th: {
+      fullReport: "รายงานวิเคราะห์สัญญาเช่าฉบับเต็ม",
+      property: "ทรัพย์สิน",
+      summary: "สรุป",
+      riskScore: "คะแนนความเสี่ยง",
+      allIssues: "ปัญหาที่ต้องให้ความสนใจ",
+      clauseAnalysis: "การวิเคราะห์ทีละข้อ",
+      exportPdf: "ส่งออก PDF",
+      upgradeForPdf: "อัปเกรดเพื่อ PDF",
+      viewLease: "ดูสัญญาเช่าต้นฉบับ",
+      viewTemplates: "ดูเทมเพลตจดหมาย",
+      keyTerms: "ข้อกำหนดสำคัญ",
+      monthlyRent: "ค่าเช่ารายเดือน",
+      deposit: "เงินมัดจำ",
+      leasePeriod: "ระยะเวลาเช่า",
+      noIssues: "ไม่พบปัญหาในสัญญานี้",
+      clauseCoverage: "ความครอบคลุมข้อกำหนด",
+      coverageSubtitle: "หมวดหมู่ข้อกำหนดมาตรฐาน 92 ข้อ"
+    }
+  };
+  const strings = t[language] || t.en;
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '100px' }}>
@@ -267,8 +438,16 @@ export default function ReportFullInner({ scanId, leaseId }) {
                 <div className="flex-1">
                   <h3 className="font-bold text-red-800 mb-1">Ledger Generation Failed</h3>
                   <p className="text-sm text-red-700 mb-3">{backfillError}</p>
-                  <Button variant="outline" size="sm" onClick={() => { setBackfillError(null); setRefreshKey(v => v + 1); }}>
-                    <RefreshCw className="w-4 h-4 mr-2" /> Retry Backfill
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      backfillAttemptedRef.current.clear();
+                      setBackfillError(null);
+                      window.location.reload();
+                    }}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />Retry Backfill
                   </Button>
                 </div>
               </div>
@@ -276,25 +455,57 @@ export default function ReportFullInner({ scanId, leaseId }) {
           </Card>
         )}
 
+        {showDebug && isAdmin && (
+          <Card className="mb-4 border-2 border-emerald-500" style={{ backgroundColor: '#D1FAE5' }}>
+            <CardContent className="p-4">
+              <h3 className="font-bold text-emerald-800 mb-2">🔧 Debug Panel</h3>
+              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
+{`✅ Report loaded
+Scan: ${scan.id} | Lease: ${lease.id}
+Risk Score: ${reportData.risk_score}
+Total Clauses: ${totalClauses}
+Risks: ${risksCount}
+Non-Risks: ${nonRisksCount}
+PDF Entries: ${pdfEntriesCount}
+Ledger Present: ${clauseLedger.length > 0}
+Unified Issues: ${unifiedIssues.length}
+Flags: ${reportData.flags.length}`}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" onClick={() => window.history.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back
+          <Button variant="ghost" onClick={() => { haptic.light(); navigate(-1); }}>
+            <ArrowLeft className="w-4 h-4 mr-2" />Back
           </Button>
-          <Button onClick={handleExportPdf} disabled={exportingPdf} style={{ backgroundColor: '#0C3B2E', color: '#fff' }}>
-            {exportingPdf ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>) : (<><Download className="w-4 h-4 mr-2" />Export PDF</>)}
+          <Button
+            onClick={canExportPdf ? handleExportPdf : () => navigate('/Account#plans')}
+            disabled={exportingPdf}
+            style={{ backgroundColor: '#0C3B2E', color: '#fff' }}
+          >
+            {exportingPdf ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
+            ) : (
+              <><Download className="w-4 h-4 mr-2" />{canExportPdf ? strings.exportPdf : strings.upgradeForPdf}</>
+            )}
           </Button>
         </div>
 
         <Card className="border-none shadow-xl mb-6 overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ backgroundColor: riskLevel.color }}>
             <div className="text-white">
-              <CardTitle className="text-2xl font-bold mb-3">Full Lease Analysis Report</CardTitle>
+              <CardTitle className="text-2xl font-bold mb-3">{strings.fullReport}</CardTitle>
               <div className="flex flex-wrap items-center gap-3">
-                <Badge className="text-2xl px-4 py-2 font-bold" style={{ backgroundColor: riskLevel.bg, color: riskLevel.color, border: `2px solid ${riskLevel.color}` }}>
+                <Badge className="text-2xl px-4 py-2 font-bold" style={{
+                  backgroundColor: riskLevel.bg,
+                  color: riskLevel.color,
+                  border: `2px solid ${riskLevel.color}`
+                }}>
                   {reportData.risk_score || 0}/100
                 </Badge>
                 <Badge className="text-lg px-4 py-2 font-bold" style={{ backgroundColor: '#FFFFFF', color: riskLevel.color }}>
-                  {riskLevel.label}
+                  {getRiskLevel(reportData.risk_score).label}
                 </Badge>
               </div>
             </div>
@@ -302,14 +513,37 @@ export default function ReportFullInner({ scanId, leaseId }) {
           <CardContent className="p-6">
             {lease.property_address && (
               <div className="mb-4">
-                <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>Property:</span>
+                <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.property}:</span>
                 <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>{lease.property_address}</p>
               </div>
             )}
             <div className="mb-4">
-              <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>Summary:</span>
+              <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.summary}:</span>
               <p className="mt-1" style={{ color: colors.textPrimary }}>{reportData.summary || 'No summary available.'}</p>
             </div>
+
+            {(reportData.key_terms?.monthly_rent || reportData.key_terms?.deposit_amount) && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
+                {reportData.key_terms?.monthly_rent && (
+                  <div>
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>{strings.monthlyRent}</span>
+                    <p className="font-bold" style={{ color: colors.textPrimary }}>฿{reportData.key_terms.monthly_rent.toLocaleString()}</p>
+                  </div>
+                )}
+                {reportData.key_terms?.deposit_amount && (
+                  <div>
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>{strings.deposit}</span>
+                    <p className="font-bold" style={{ color: colors.textPrimary }}>฿{reportData.key_terms.deposit_amount.toLocaleString()}</p>
+                  </div>
+                )}
+                {reportData.key_terms?.lease_start_date && reportData.key_terms?.lease_end_date && (
+                  <div className="col-span-2">
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>{strings.leasePeriod}</span>
+                    <p className="font-bold" style={{ color: colors.textPrimary }}>{reportData.key_terms.lease_start_date} → {reportData.key_terms.lease_end_date}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -317,17 +551,17 @@ export default function ReportFullInner({ scanId, leaseId }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-orange-600" />
-              Issues Requiring Attention ({(reportData.flags || []).length})
+              {strings.allIssues} ({reportData.flags.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(reportData.flags || []).length === 0 ? (
+            {reportData.flags.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
-                <p style={{ color: colors.textSecondary }}>No issues found in this lease.</p>
+                <p style={{ color: colors.textSecondary }}>{strings.noIssues}</p>
               </div>
             ) : (
-              (reportData.flags || []).map((flag, idx) => {
+              reportData.flags.map((flag, idx) => {
                 const severityConfig = SEVERITY_CONFIG[flag.severity] || SEVERITY_CONFIG.medium;
                 const Icon = severityConfig.icon;
                 const recText = String(flag.recommendation || '');
@@ -345,10 +579,12 @@ export default function ReportFullInner({ scanId, leaseId }) {
                     </div>
                     <h4 className="text-base font-bold mb-2" style={{ color: colors.textPrimary }}>{flag.title || flag.description}</h4>
                     {flag.description && flag.title && (<p className="text-sm mb-3" style={{ color: colors.textPrimary }}>{flag.description}</p>)}
-                    <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F3F4F6' }}>
-                      <p className="text-xs font-bold text-gray-600 mb-1">Evidence:</p>
-                      <p className="text-sm" style={{ color: colors.textPrimary }}>{flag.evidence || `[Evidence not extracted for ${flag.title || 'issue'}]`}</p>
-                    </div>
+                    {flag.evidence && (
+                      <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F3F4F6' }}>
+                        <p className="text-xs font-bold text-gray-600 mb-1">Evidence:</p>
+                        <p className="text-sm" style={{ color: colors.textPrimary }}>{flag.evidence}</p>
+                      </div>
+                    )}
                     {flag.explanation && (
                       <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7' }}>
                         <p className="text-xs font-bold text-amber-700 mb-1">Why this matters:</p>
@@ -378,45 +614,36 @@ export default function ReportFullInner({ scanId, leaseId }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-6 h-6 text-emerald-700" />
-              Clause-by-Clause Analysis ({totalClauses})
+              {strings.clauseAnalysis} ({totalClauses})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {(reportData.clause_ledger || []).map((c, idx) => {
-              const review = (reportData.clause_review || []).find(r => r.clause_id === c.clause_id) || {};
-              const isRisk = review.risk_level && review.risk_level !== 'none';
-              const sev = isRisk ? (SEVERITY_CONFIG[review.risk_level] || SEVERITY_CONFIG.medium) : SEVERITY_CONFIG.none;
+            {clauseEntries.map((c) => {
+              const sev = c.isRisk ? (SEVERITY_CONFIG[c.risk_level] || SEVERITY_CONFIG.medium) : SEVERITY_CONFIG.none;
               const Icon = sev.icon;
-              let snippet = (c.full_text || '').slice(0, 240);
-              if (!snippet || snippet.length < 10) snippet = `[Snippet not extracted for ${c.heading || c.clause_id}]`;
-              const recs = [];
-              if (isRisk) {
-                if (review?.recommended_change && review.recommended_change !== 'No change recommended') recs.push(review.recommended_change);
-                if (review?.negotiation_tip && review.negotiation_tip !== 'Accept as standard.') recs.push(review.negotiation_tip);
-                const cat = (Array.isArray(review.mapped_catalog_ids) ? review.mapped_catalog_ids[0] : review.category) || 'clause';
-                while (recs.length < 2) defaultRecsFor(cat).forEach(x => { if (recs.length < 2) recs.push(x); });
-              }
               return (
-                <div key={c.clause_id || idx} className="p-4 rounded-xl border" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF', borderColor: colors.borderColor }}>
+                <div key={c.clause_id} className="p-4 rounded-xl border" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF', borderColor: colors.borderColor }}>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <Badge className={`${sev.color} border flex items-center gap-1`}><Icon className="w-3 h-3" />{isRisk ? (review.risk_level?.toUpperCase() + ' RISK') : 'NO RISK'}</Badge>
-                    {review?.mapped_catalog_ids?.[0] && <Badge variant="outline">{review.mapped_catalog_ids[0]}</Badge>}
+                    <Badge className={`${sev.color} border flex items-center gap-1`}><Icon className="w-3 h-3" />{c.isRisk ? (c.risk_level?.toUpperCase() + ' RISK') : 'NO RISK'}</Badge>
+                    {c.category && <Badge variant="outline">{c.category}</Badge>}
                     {c.clause_id && <Badge variant="outline">{c.clause_id}</Badge>}
                   </div>
                   <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>{c.heading || c.clause_id}</h4>
-                  <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F3F4F6' }}>
-                    <p className="text-xs font-bold text-gray-600 mb-1">Snippet:</p>
-                    <p className="text-sm" style={{ color: colors.textPrimary }}>{snippet}</p>
-                  </div>
+                  {c.snippet && (
+                    <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F3F4F6' }}>
+                      <p className="text-xs font-bold text-gray-600 mb-1">Snippet:</p>
+                      <p className="text-sm" style={{ color: colors.textPrimary }}>{c.snippet}</p>
+                    </div>
+                  )}
                   <div className="mb-1">
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{isRisk ? 'Impact / Rationale' : 'Rationale'}</p>
-                    <p className="text-sm" style={{ color: colors.textPrimary }}>{review.risk_summary || (isRisk ? 'Review required' : (review.tenant_view || 'Accept as standard.'))}</p>
+                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{c.isRisk ? 'Impact / Rationale' : 'Rationale'}</p>
+                    <p className="text-sm" style={{ color: colors.textPrimary }}>{c.rationale || (c.isRisk ? 'See details above.' : 'Accept as standard.')}</p>
                   </div>
-                  {isRisk && recs.length > 0 && (
+                  {c.isRisk && c.recommendations?.length > 0 && (
                     <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#ECFDF5' }}>
                       <p className="text-xs font-bold text-emerald-700 mb-2">Recommendations:</p>
                       <ul className="space-y-1">
-                        {recs.map((line, i) => (
+                        {c.recommendations.map((line, i) => (
                           <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textPrimary }}>
                             <span className="text-emerald-600">•</span><span>{line}</span>
                           </li>
@@ -430,23 +657,23 @@ export default function ReportFullInner({ scanId, leaseId }) {
           </CardContent>
         </Card>
 
-        {state.coverageSummary && (
+        {coverageSummary && (
           <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader>
-              <CardTitle>Clause Coverage — 92 standard clause categories</CardTitle>
+              <CardTitle>{strings.clauseCoverage} — {strings.coverageSubtitle}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Total Clauses:</span> <span style={{ color: colors.textPrimary }}>{state.coverageSummary.total_clauses}</span></div>
-                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Reviewed:</span> <span style={{ color: colors.textPrimary }}>{state.coverageSummary.clauses_reviewed}</span></div>
-                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Flagged:</span> <span style={{ color: colors.textPrimary }}>{state.coverageSummary.clauses_flagged}</span></div>
-                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Unmapped:</span> <span style={{ color: colors.textPrimary }}>{state.coverageSummary.unmapped_clauses}</span></div>
-                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Missing Categories:</span> <span style={{ color: colors.textPrimary }}>{state.coverageSummary.missing_expected_categories}</span></div>
-                {typeof state.coverageSummary.mapped_pct === 'number' && (
-                  <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Coverage:</span> <span style={{ color: colors.textPrimary }}>{state.coverageSummary.mapped_pct}%</span></div>
+                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Total Clauses:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.total_clauses}</span></div>
+                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Reviewed:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.clauses_reviewed}</span></div>
+                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Flagged:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.clauses_flagged}</span></div>
+                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Unmapped:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.unmapped_clauses}</span></div>
+                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Missing Categories:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.missing_expected_categories}</span></div>
+                {typeof coverageSummary.mapped_pct === 'number' && (
+                  <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Coverage:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.mapped_pct}%</span></div>
                 )}
               </div>
-              {typeof state.coverageSummary.mapped_pct === 'number' && state.coverageSummary.mapped_pct !== 100 && (
+              {typeof coverageSummary.mapped_pct === 'number' && coverageSummary.mapped_pct !== 100 && (
                 <div className="mt-3 p-3 rounded" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7', color: '#92400E' }}>
                   Rescan required – taxonomy coverage incomplete.
                 </div>
@@ -458,11 +685,11 @@ export default function ReportFullInner({ scanId, leaseId }) {
         <div className="flex flex-col sm:flex-row gap-3">
           {lease.file_url && (
             <Button variant="outline" onClick={() => window.open(lease.file_url, '_blank')} className="flex-1">
-              <ExternalLink className="w-4 h-4 mr-2" />View Original Lease
+              <ExternalLink className="w-4 h-4 mr-2" />{strings.viewLease}
             </Button>
           )}
-          <Button onClick={handleExportPdf} style={{ backgroundColor: '#0C3B2E', color: '#fff' }} className="flex-1">
-            <FileText className="w-4 h-4 mr-2" />Export PDF
+          <Button onClick={() => { haptic.medium(); navigate('/Templates'); }} style={{ backgroundColor: '#0C3B2E', color: '#fff' }} className="flex-1">
+            <FileText className="w-4 h-4 mr-2" />{strings.viewTemplates}
           </Button>
         </div>
       </div>
