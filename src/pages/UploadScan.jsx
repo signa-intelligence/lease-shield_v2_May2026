@@ -884,6 +884,13 @@ function UploadScanPageContent() {
         if (!scanResponse || !scanResponse.success) {
           throw new Error(scanResponse?.error || 'Scan failed');
         }
+
+        // VERIFY PAYLOAD PERSISTED
+        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: lease.id });
+        if (!verifyStatus?.hasPdfPayload) {
+          console.error('[SCAN_PAYLOAD_MISSING]', verifyStatus);
+          throw new Error(`Scan saved but report payload missing: ${verifyStatus?.error || 'Unknown error'}`);
+        }
         
         const scanResult = scanResponse.result;
         setAnalysisStage('extracting');
@@ -1132,9 +1139,9 @@ function UploadScanPageContent() {
 
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
           fileUrls: fileUrls,
-          requestId, // Pass requestId to backend
-          leaseId: createdLeaseId, // Pass leaseId for status tracking
-          scanId: createdLeaseId // Use leaseId as scanId for tracing
+          requestId,
+          leaseId: createdLeaseId,
+          scanId: createdLeaseId
         });
 
         const analysisDuration = Date.now() - analysisStartTime;
@@ -1170,6 +1177,21 @@ function UploadScanPageContent() {
         logStage('ANALYSIS_SUCCESS', {
           riskScore: scanResponse.result?.risk_score,
           flagsCount: scanResponse.result?.flags?.length
+        });
+
+        // VERIFY PAYLOAD PERSISTED
+        logStage('VERIFICATION_START', { scanId: createdLeaseId });
+        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: createdLeaseId });
+        
+        if (!verifyStatus?.hasPdfPayload) {
+          logStage('VERIFICATION_FAILED', verifyStatus);
+          throw new Error(`Scan saved but report payload missing. Pipeline failed at: ${verifyStatus?.canonicalStatus || 'unknown'}`);
+        }
+        
+        logStage('VERIFICATION_PASSED', {
+          clausesTotal: verifyStatus.clauseLedgerLength,
+          issuesCount: verifyStatus.issuesCount,
+          isFallback: verifyStatus.isFallback
         });
 
         const scanResult = scanResponse.result;
