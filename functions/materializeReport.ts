@@ -19,7 +19,30 @@ import { requireAuth, safeLog } from './authGuards.js';
  */
 
 Deno.serve(async (req) => {
-  const body = await req.json();
+  // Handle OPTIONS for CORS
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      }
+    });
+  }
+
+  // Parse body safely
+  let body = {};
+  try {
+    body = await req.json();
+  } catch (e) {
+    return Response.json({
+      ok: false,
+      error: 'INVALID_JSON',
+      message: 'Request body must be valid JSON'
+    }, { status: 400 });
+  }
+
   const { scanId } = body;
   const requestId = body.requestId || crypto.randomUUID().slice(0, 8);
   const startTime = Date.now();
