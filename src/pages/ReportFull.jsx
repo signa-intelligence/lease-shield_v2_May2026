@@ -172,7 +172,7 @@ function ReportFullContent() {
           if (ledgerLen < 80) {
             didBackfillRef.current = true;
             const files = (lease?.file_urls && lease.file_urls.length) ? lease.file_urls : (lease?.file_url ? [lease.file_url] : []);
-            base44.functions.invoke('clauseLedgerScan', {
+            base44.functions.invoke('syncScanClauseLedger', {
               scanId,
               lease_id: leaseId,
               file_urls: files
