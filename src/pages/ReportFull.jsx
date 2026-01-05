@@ -35,7 +35,6 @@ const SEVERITY_CONFIG = {
 function ReportFullContent() {
   const navigate = useNavigate();
   const [exportingPdf, setExportingPdf] = useState(false);
-  const [showAllClauses, setShowAllClauses] = useState(false);
   
   // CRITICAL: Refs to prevent infinite loops
   const renderCountRef = useRef(0);
