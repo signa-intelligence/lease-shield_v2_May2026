@@ -874,15 +874,35 @@ function UploadScanPageContent() {
         setUploadProgress(60);
 
         // Trigger analysis with all pages
+        // Create LeaseScan record before analysis
+        const scan = await base44.entities.LeaseScan.create({
+          lease_id: lease.id,
+          status: 'processing'
+        });
+
+        if (lease.id === scan.id) {
+          throw new Error('BUG: scanId incorrectly equals leaseId. Aborting.');
+        }
+
+        // Trigger analysis with all pages
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
           fileUrls: uploadedUrls,
           requestId,
           leaseId: lease.id,
-          scanId: lease.id
+          scanId: scan.id
         });
 
-        if (!scanResponse || !scanResponse.success) {
-          throw new Error(scanResponse?.error || 'Scan failed');
+        if (!scanResponse || scanResponse.ok === false) {
+          const err = new Error(scanResponse?.error?.message || 'Scan failed with no message');
+          err.code = scanResponse?.error?.code || 'UNKNOWN';
+          err.step = scanResponse?.error?.step || 'ANALYSIS';
+          throw err;
+        }
+
+        // Verify payload was created
+        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: scan.id });
+        if (!verifyStatus?.hasPdfPayload) {
+          throw new Error(`Scan saved but report payload missing. Scan pipeline failed: ${verifyStatus?.error?.message || 'Unknown error'}`);
         }
 
         // VERIFY PAYLOAD PERSISTED
@@ -905,23 +925,9 @@ function UploadScanPageContent() {
           deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
           language_detected: scanResult.language_detected || 'en'
         });
-        setUploadProgress(80);
+        setUploadProgress(90);
 
         setAnalysisStage('finalizing');
-
-        await base44.entities.LeaseScan.create({
-          lease_id: lease.id,
-          risk_score: scanResult.risk_score,
-          flags: scanResult.issues_validated || scanResult.flags || [],
-          summary: scanResult.summary,
-          scan_full: {
-            ...scanResult,
-            issues_validated: scanResult.issues_validated || scanResult.flags || [],
-            issues_invalid: scanResult.issues_invalid || [],
-            flags: scanResult.issues_validated || scanResult.flags || []
-          },
-          version: '3.0'
-        });
         setUploadProgress(100);
         setCurrentStep(2);
 
@@ -997,7 +1003,7 @@ function UploadScanPageContent() {
 
     let currentRetry = 0;
     let createdLeaseId = null;
-    const maxRetries = 3;
+    const maxRetries = 0; // Disable auto-retry to show errors immediately
 
     const attemptUpload = async () => {
       try {
@@ -1155,24 +1161,33 @@ function UploadScanPageContent() {
           error: scanResponse?.error
         });
 
-        if (!scanResponse || !scanResponse.success) {
-          const backendError = scanResponse?.error || 'Scan failed';
-          const backendDetails = scanResponse?.details || '';
-          const diagnostic = scanResponse?.diagnostic || {};
+        if (!scanResponse || scanResponse.ok === false) {
+          const backendError = scanResponse?.error || { code: 'UNKNOWN_BACKEND_ERROR', step: 'ANALYSIS', message: 'Scan failed without specific error' };
           
-          logStage('ANALYSIS_FAILED', {
-            error: backendError,
-            details: backendDetails,
-            diagnostic
-          });
-          
-          // Throw detailed error for better debugging
-          const errorObj = new Error(backendError);
-          errorObj.details = backendDetails;
-          errorObj.diagnostic = diagnostic;
+          logStage('ANALYSIS_FAILED', { error: backendError });
+
+          const errorObj = new Error(backendError.message);
+          errorObj.code = backendError.code;
+          errorObj.step = backendError.step;
+          errorObj.stack = backendError.stack;
           errorObj.requestId = requestId;
           throw errorObj;
         }
+
+        // VERIFY PAYLOAD PERSISTED
+        logStage('VERIFICATION_START', { scanId: createdScanId });
+        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: createdScanId });
+        
+        if (!verifyStatus?.hasPdfPayload) {
+          const verificationError = new Error(`Post-scan verification failed: Report payload is missing.`);
+          verificationError.code = 'VERIFICATION_FAILED';
+          verificationError.step = 'SELF_CHECK';
+          verificationError.details = verifyStatus;
+          throw verificationError;
+        }
+        
+        logStage('VERIFICATION_PASSED', { isFallback: verifyStatus.isFallback });
+        setUploadProgress(90);
         
         logStage('ANALYSIS_SUCCESS', {
           riskScore: scanResponse.result?.risk_score,
@@ -1211,19 +1226,7 @@ function UploadScanPageContent() {
 
         setAnalysisStage('finalizing');
 
-        await base44.entities.LeaseScan.create({
-          lease_id: createdLeaseId,
-          risk_score: scanResult.risk_score,
-          flags: scanResult.issues_validated || scanResult.flags || [],
-          summary: scanResult.summary,
-          scan_full: {
-            ...scanResult,
-            issues_validated: scanResult.issues_validated || scanResult.flags || [],
-            issues_invalid: scanResult.issues_invalid || [],
-            flags: scanResult.issues_validated || scanResult.flags || []
-          },
-          version: '3.0'
-        });
+
         setUploadProgress(100);
         setCurrentStep(2); // Move to results step
 
@@ -1274,23 +1277,8 @@ function UploadScanPageContent() {
         currentRetry++;
         setRetryCount(currentRetry);
 
-        if (currentRetry <= maxRetries) {
-          setError(language === 'th'
-            ? `เกิดข้อผิดพลาด กำลังลองใหม่... (${currentRetry}/${maxRetries})`
-            : `Error occurred. Retrying... (${currentRetry}/${maxRetries})`);
-
-          await new Promise(resolve => setTimeout(resolve, 2000 * currentRetry));
-
-          if (createdLeaseId && analysisStage !== 'uploading') {
-            try {
-              await base44.entities.Lease.delete(createdLeaseId);
-              createdLeaseId = null;
-            } catch (cleanupErr) {
-              console.error('Failed to cleanup lease:', cleanupErr);
-            }
-          }
-
-          return attemptUpload();
+        if (false) { // RETRY DISABLED
+          // This block is now disabled to show errors immediately.
         } else {
           // Final failure after all retries - categorize and format error
           const formattedError = formatErrorForUser(err, requestId, language, {
@@ -1872,32 +1860,28 @@ function UploadScanPageContent() {
         )}
 
         {error && (
-          <div className="mb-6 p-4 rounded-lg border-2 border-red-200" style={{
-            backgroundColor: isDarkMode ? '#3A2626' : '#FEE2F2'
-          }}>
+          <div className="mb-6 p-4 rounded-lg border-2 border-red-200" style={{ backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2' }}>
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-red-600 font-semibold mb-1">
-                  {typeof error === 'object' ? error.title : (language === 'th' ? 'เกิดข้อผิดพลาด' : 'Error Occurred')}
+                  {typeof error === 'object' ? `[${error.code || 'FAIL'}] Scan failed at step: ${error.step || 'ANALYSIS'}` : 'Error Occurred'}
                 </p>
-                <p className="text-red-600 text-sm whitespace-pre-line">
-                  {typeof error === 'object' ? error.message : error}
+                <p className="text-red-600 text-sm whitespace-pre-line mb-2">
+                  {typeof error === 'object' ? error.message : String(error)}
                 </p>
-                {retryCount > 0 && retryCount < 3 && (
-                  <p className="text-red-500 text-xs mt-2">
-                    {language === 'th'
-                      ? `🔄 กำลังลองอีกครั้ง... (ครั้งที่ ${retryCount}/3)`
-                      : `🔄 Retrying... (Attempt ${retryCount}/3)`}
-                  </p>
+                {typeof error === 'object' && error.requestId && (
+                    <p className="text-red-500 text-xs font-mono">Request ID: {error.requestId}</p>
                 )}
+                <div className="mt-4 flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" onClick={handleRetry} className="border-red-300 text-red-700 hover:bg-red-100">
+                        Try Again
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(JSON.stringify({error, debugLog}, null, 2))}>
+                        <Copy className="w-3 h-3 mr-1" /> Copy Error
+                    </Button>
+                </div>
               </div>
-              <button
-                onClick={handleRetry}
-                className="text-red-600 hover:text-red-800 font-semibold text-sm"
-              >
-                ✕
-              </button>
             </div>
           </div>
         )}
