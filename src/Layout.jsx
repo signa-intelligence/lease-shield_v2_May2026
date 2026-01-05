@@ -409,6 +409,7 @@ export default function Layout({ children, currentPageName }) {
   };
 
   return (
+    <GlobalErrorBoundary>
     <div style={{ 
       minHeight: '100vh',
       display: 'flex',
