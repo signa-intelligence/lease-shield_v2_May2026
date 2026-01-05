@@ -903,11 +903,17 @@ function UploadScanPageContent() {
           throw err;
         }
 
-        // Verify payload was created and navigate to report
-        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: scan.id });
-        if (!verifyStatus?.hasPdfPayload) {
-          throw new Error(`Scan saved but report payload missing. Scan pipeline failed: ${verifyStatus?.error?.message || 'Unknown error'}`);
+        // Update scan status and navigate to report (ReportFull will materialize if needed)
+        try {
+          const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: scan.id, requestId });
+          console.log(`[${requestId}] VERIFY_MULTI_PAGE:`, { 
+            hasPdfPayload: verifyStatus?.hasPdfPayload,
+            canMaterialize: verifyStatus?.diagnostics?.canMaterialize
+          });
+        } catch (verifyErr) {
+          console.log(`[${requestId}] VERIFY_ERROR (non-blocking):`, verifyErr.message);
         }
+        
         await base44.entities.LeaseScan.update(scan.id, {
           status: 'ok',
           risk_score: scanResponse?.result?.risk_score,
@@ -1193,19 +1199,29 @@ function UploadScanPageContent() {
           throw errorObj;
         }
 
-        // VERIFY PAYLOAD PERSISTED
+        // VERIFY PAYLOAD - NON-BLOCKING (ReportFull will materialize if needed)
         logStage('VERIFICATION_START', { scanId });
-        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId });
-        
-        if (!verifyStatus?.hasPdfPayload) {
-          const verificationError = new Error(`Post-scan verification failed: Report payload is missing.`);
-          verificationError.code = 'VERIFICATION_FAILED';
-          verificationError.step = 'SELF_CHECK';
-          verificationError.details = verifyStatus;
-          throw verificationError;
+        try {
+          const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId, requestId });
+          logStage('VERIFICATION_RESULT', { 
+            hasPdfPayload: verifyStatus?.hasPdfPayload,
+            needsMaterialization: scanResponse?.needsMaterialization,
+            isFallback: verifyStatus?.isFallback,
+            canMaterialize: verifyStatus?.diagnostics?.canMaterialize
+          });
+          
+          // Log warning but DON'T throw - ReportFull will handle materialization
+          if (!verifyStatus?.hasPdfPayload) {
+            logStage('VERIFICATION_WARN', { 
+              message: 'pdfPayload missing, ReportFull will trigger materialization',
+              canMaterialize: verifyStatus?.diagnostics?.canMaterialize
+            });
+          }
+        } catch (verifyErr) {
+          // Don't fail the flow on verification error
+          logStage('VERIFICATION_ERROR', { error: verifyErr.message });
         }
         
-        logStage('VERIFICATION_PASSED', { isFallback: verifyStatus.isFallback });
         setUploadProgress(90);
         
         logStage('ANALYSIS_SUCCESS', {

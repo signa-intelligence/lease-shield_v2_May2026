@@ -40,9 +40,9 @@ import Search from './pages/Search';
 import Support from './pages/Support';
 import Templates from './pages/Templates';
 import Timeline from './pages/Timeline';
+import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
-import UploadScan from './pages/UploadScan';
 import __Layout from './Layout.jsx';
 
 
@@ -89,9 +89,9 @@ export const PAGES = {
     "Support": Support,
     "Templates": Templates,
     "Timeline": Timeline,
+    "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
-    "UploadScan": UploadScan,
 }
 
 export const pagesConfig = {
