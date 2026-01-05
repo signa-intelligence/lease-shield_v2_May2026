@@ -906,10 +906,10 @@ function UploadScanPageContent() {
         }
 
         // VERIFY PAYLOAD PERSISTED
-        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: lease.id });
-        if (!verifyStatus?.hasPdfPayload) {
-          console.error('[SCAN_PAYLOAD_MISSING]', verifyStatus);
-          throw new Error(`Scan saved but report payload missing: ${verifyStatus?.error || 'Unknown error'}`);
+        const { data: verifyStatus1 } = await base44.functions.invoke('debugScanStatus', { scanId: scan.id });
+        if (!verifyStatus1?.hasPdfPayload) {
+          console.error('[SCAN_PAYLOAD_MISSING]', verifyStatus1);
+          throw new Error(`Scan saved but report payload missing: ${verifyStatus1?.error || 'Unknown error'}`);
         }
         
         const scanResult = scanResponse.result;
@@ -1196,17 +1196,17 @@ function UploadScanPageContent() {
 
         // VERIFY PAYLOAD PERSISTED
         logStage('VERIFICATION_START', { scanId: createdLeaseId });
-        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: createdLeaseId });
+        const { data: verifyStatus2 } = await base44.functions.invoke('debugScanStatus', { scanId: createdLeaseId });
         
-        if (!verifyStatus?.hasPdfPayload) {
-          logStage('VERIFICATION_FAILED', verifyStatus);
-          throw new Error(`Scan saved but report payload missing. Pipeline failed at: ${verifyStatus?.canonicalStatus || 'unknown'}`);
+        if (!verifyStatus2?.hasPdfPayload) {
+          logStage('VERIFICATION_FAILED', verifyStatus2);
+          throw new Error(`Scan saved but report payload missing. Pipeline failed at: ${verifyStatus2?.canonicalStatus || 'unknown'}`);
         }
         
         logStage('VERIFICATION_PASSED', {
-          clausesTotal: verifyStatus.clauseLedgerLength,
-          issuesCount: verifyStatus.issuesCount,
-          isFallback: verifyStatus.isFallback
+          clausesTotal: verifyStatus2.clauseLedgerLength,
+          issuesCount: verifyStatus2.issuesCount,
+          isFallback: verifyStatus2.isFallback
         });
 
         const scanResult = scanResponse.result;
