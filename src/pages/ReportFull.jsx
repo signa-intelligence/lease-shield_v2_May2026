@@ -91,6 +91,11 @@ function ReportFullContent() {
           borderColor: '#E5E7EB'
         };
 
+        // Extract canonical early for useEffect dependencies
+        const lease = leaseData;
+        const scan = scanData;
+        const canonical = scan?.scan_full?.canonical_report || null;
+
         // Category-default recommendation synthesis to avoid generic repeats
         const defaultRecsFor = (cat) => {
           const c = cat || 'clause';
@@ -159,9 +164,6 @@ function ReportFullContent() {
         if (!leaseData || !scanData) return renderErrorPage('Report Not Found', 'The requested lease scan could not be found.', false);
 
         // === SUCCESS: Build single source of truth ===
-        const lease = leaseData;
-        const scan = scanData;
-        const canonical = scan.scan_full?.canonical_report || null;
         const clauseReview = canonical?.clause_review || [];
         const clauseLedger = canonical?.clause_ledger || [];
         const flags = scan.flags || scan.scan_full?.flags || [];
