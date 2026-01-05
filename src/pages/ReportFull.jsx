@@ -206,14 +206,7 @@ function ReportFullContent() {
 
   const riskLevel = getRiskLevel(scan.risk_score || 0);
 
-  // Sort clause reviews by risk
-  const sortedClauseReviews = [...clauseReview].sort((a, b) => {
-    const order = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
-    return (order[a.risk_level] || 4) - (order[b.risk_level] || 4);
-  });
 
-  const riskClauseReviews = sortedClauseReviews.filter(r => r.risk_level && r.risk_level !== 'none');
-  const safeClauseReviews = sortedClauseReviews.filter(r => !r.risk_level || r.risk_level === 'none');
 
   const t = {
     en: {
