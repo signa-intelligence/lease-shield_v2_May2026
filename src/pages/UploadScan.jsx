@@ -873,28 +873,15 @@ function UploadScanPageContent() {
         setAnalysisStage('scanning');
         setUploadProgress(60);
 
-        // Trigger analysis with all pages
-        // Create LeaseScan record before analysis
-        const scan = await base44.entities.LeaseScan.create({
-          lease_id: lease.id,
-          status: 'initiated',
-          request_id: requestId
-        });
-
-        if (!scan.id) {
-          throw new Error('BUG: scanId missing');
-        }
-        if (lease.id === scan.id) {
-          throw new Error('BUG: scanId incorrectly equals leaseId. Aborting.');
-        }
-
-        // Trigger analysis with all pages
+        // Trigger analysis with all pages (server creates scanId)
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
           fileUrls: uploadedUrls,
           requestId,
-          leaseId: lease.id,
-          scanId: scan.id
+          leaseId: lease.id
         });
+        const scanId = scanResponse?.scanId;
+        if (!scanId) { throw new Error('FATAL_CLIENT_ERROR: scanId missing from backend response'); }
+        if (scanId === lease.id) { throw new Error('BUG: scanId incorrectly equals leaseId'); }
 
         if (!scanResponse || scanResponse.ok === false) {
           const err = new Error(scanResponse?.error?.message || 'Scan failed with no message');
@@ -1148,9 +1135,11 @@ function UploadScanPageContent() {
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
           fileUrls: fileUrls,
           requestId,
-          leaseId: createdLeaseId,
-          scanId
+          leaseId: createdLeaseId
         });
+        scanId = scanResponse?.scanId;
+        if (!scanId) { throw new Error('FATAL_CLIENT_ERROR: scanId missing from backend response'); }
+        if (scanId === createdLeaseId) { throw new Error('BUG: scanId incorrectly equals leaseId'); }
 
         const analysisDuration = Date.now() - analysisStartTime;
         
@@ -1196,12 +1185,7 @@ function UploadScanPageContent() {
           flagsCount: scanResponse.result?.flags?.length
         });
 
-        // Update LeaseScan status and navigate to report
-        await base44.entities.LeaseScan.update(scanId, {
-          status: 'ok',
-          risk_score: scanResponse?.result?.risk_score,
-          summary: scanResponse?.result?.summary
-        });
+        // Navigate to report with server-provided scanId
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === createdLeaseId) throw new Error('BUG: scanId incorrectly equals leaseId');
         window.location.href = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(createdLeaseId)}`;
