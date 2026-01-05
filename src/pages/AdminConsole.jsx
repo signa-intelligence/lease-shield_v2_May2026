@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle, UserX, UserCheck, Scale, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
+import { Users, FileText, Shield, Database, TestTube, Send, Loader2, Settings, Trash2, Ban, CheckCircle, Crown, Coins, Lock, Unlock, DollarSign, TrendingUp, AlertCircle, UserX, UserCheck, Scale, ChevronDown, ChevronUp, MessageCircle, BookOpen } from "lucide-react";
 import { format, differenceInDays, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
@@ -1289,6 +1289,44 @@ function AdminConsoleContent() {
                 <Button className="bg-emerald-600 hover:bg-emerald-700">
                   <MessageCircle className="w-4 h-4 mr-2" />
                   {strings.goToSupport}
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 2.5. CANONICAL CLAUSE LEDGER */}
+        <Card className="mb-6 border-none shadow-lg" style={{ 
+          backgroundColor: colors.cardBg,
+          borderLeft: '6px solid #8B5CF6'
+        }}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: '#8B5CF6',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                    Canonical Clause Ledger
+                  </h3>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    View and export the 83-category Thailand lease clause taxonomy
+                  </p>
+                </div>
+              </div>
+              <Link to={createPageUrl("AdminCanonicalLedger")}>
+                <Button className="bg-purple-600 hover:bg-purple-700">
+                  <Database className="w-4 h-4 mr-2" />
+                  View Ledger
                 </Button>
               </Link>
             </div>

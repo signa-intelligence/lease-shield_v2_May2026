@@ -11,7 +11,7 @@ import {
   Download, Copy, Search, CheckCircle2, AlertTriangle, 
   ArrowLeft, FileText, Database, RefreshCw, Code, ChevronDown, ChevronUp 
 } from "lucide-react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 import AuthGuard from "../components/shared/AuthGuard";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
@@ -24,7 +24,6 @@ function AdminCanonicalLedgerContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRows, setExpandedRows] = useState({});
   const [showRawJson, setShowRawJson] = useState(false);
-  const [debugExpanded, setDebugExpanded] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -212,6 +211,33 @@ function AdminCanonicalLedgerContent() {
             </div>
           }
         />
+
+        {/* Export Actions Bar - ALWAYS VISIBLE AT TOP */}
+        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '6px solid #0C3B2E' }}>
+          <CardContent className="p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>Export Options</h3>
+                <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  Version {catalogData?.catalog_version} • {catalogData?.catalog_count} entries
+                </p>
+              </div>
+              <div className="flex gap-3 flex-wrap">
+                <Button variant="outline" onClick={handleViewRawJson} className="gap-2">
+                  <Code className="w-4 h-4" /> View Raw JSON
+                </Button>
+                <Button 
+                  style={{ backgroundColor: '#0C3B2E', color: '#fff' }} 
+                  onClick={handleExportJSON}
+                  className="gap-2"
+                >
+                  <Download className="w-4 h-4" /> 
+                  Download canonical-ledger-{catalogData?.catalog_version}.json
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Catalog Info Card */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
@@ -425,60 +451,49 @@ function AdminCanonicalLedgerContent() {
           </CardContent>
         </Card>
 
-        {/* Debug Fallback: Collapsible Raw JSON */}
+        {/* Debug Fallback: ALWAYS VISIBLE Raw JSON */}
         <Card className="mt-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <Collapsible open={debugExpanded} onOpenChange={setDebugExpanded}>
-            <CollapsibleTrigger asChild>
-              <CardHeader 
-                className="cursor-pointer hover:opacity-80 transition-opacity flex flex-row items-center justify-between"
-                style={{ borderColor: colors.borderColor }}
-              >
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">DEBUG</Badge>
-                  <CardTitle className="text-base" style={{ color: colors.textPrimary }}>
-                    Raw Catalog JSON (Fallback Export)
-                  </CardTitle>
-                </div>
-                {debugExpanded ? (
-                  <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+          <CardHeader style={{ borderColor: colors.borderColor }}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">DEBUG</Badge>
+                <CardTitle className="text-base" style={{ color: colors.textPrimary }}>
+                  Raw Catalog JSON (Always Visible)
+                </CardTitle>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleCopyJSON}>
+                  <Copy className="w-4 h-4 mr-1" /> Copy All
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportJSON}>
+                  <Download className="w-4 h-4 mr-1" /> Download
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F0FDF4' }}>
+              <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                Version: {catalogData?.catalog_version} • Entries: {catalogData?.catalog_count} • 
+                {catalogData?.catalog_count === 83 ? (
+                  <span className="text-emerald-600 ml-1">✓ Count verified (83)</span>
                 ) : (
-                  <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                  <span className="text-red-600 ml-1">⚠ Expected 83, got {catalogData?.catalog_count}</span>
                 )}
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0">
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm" style={{ color: colors.textSecondary }}>
-                    Version: {catalogData?.catalog_version} • Entries: {catalogData?.catalog_count} • 
-                    {catalogData?.catalog_count === 83 ? (
-                      <span className="text-emerald-600 ml-1">✓ Count verified (83)</span>
-                    ) : (
-                      <span className="text-red-600 ml-1">⚠ Expected 83, got {catalogData?.catalog_count}</span>
-                    )}
-                  </span>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={handleCopyJSON}>
-                      <Copy className="w-4 h-4 mr-1" /> Copy All
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleExportJSON}>
-                      <Download className="w-4 h-4 mr-1" /> Download
-                    </Button>
-                  </div>
-                </div>
-                <pre 
-                  className="text-xs font-mono whitespace-pre-wrap break-all overflow-auto max-h-96 p-4 rounded-lg"
-                  style={{ 
-                    color: colors.textPrimary,
-                    backgroundColor: isDarkMode ? '#1A1D1F' : '#F1F5F9',
-                    border: `1px solid ${colors.borderColor}`
-                  }}
-                >
-                  {JSON.stringify(catalogData, null, 2)}
-                </pre>
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
+              </span>
+            </div>
+            <pre 
+              className="text-xs font-mono whitespace-pre-wrap break-all overflow-auto p-4 rounded-lg"
+              style={{ 
+                color: colors.textPrimary,
+                backgroundColor: isDarkMode ? '#1A1D1F' : '#F1F5F9',
+                border: `1px solid ${colors.borderColor}`,
+                maxHeight: '400px'
+              }}
+            >
+              {JSON.stringify(catalogData, null, 2)}
+            </pre>
+          </CardContent>
         </Card>
       </div>
     </div>
