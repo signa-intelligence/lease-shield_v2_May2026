@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   };
 
   try {
-    logStage('ENGINE_START', { version: 'v4.0-materialized-guaranteed' });
+    logStage('ENGINE_START', { version: 'v4.1-guaranteed-materialize' });
 
     // AUTH & SECURITY
     const { user, base44 } = await requireAuth(req);
