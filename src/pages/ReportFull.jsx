@@ -462,7 +462,7 @@ Flags (issues): ${flags.length}`}
                 <p style={{ color: colors.textSecondary }}>{strings.noIssues}</p>
               </div>
             ) : (
-              flags.map((flag, idx) => {
+              flagsForDisplay.map((flag, idx) => {
                 const severityConfig = SEVERITY_CONFIG[flag.severity] || SEVERITY_CONFIG.medium;
                 const Icon = severityConfig.icon;
                 
