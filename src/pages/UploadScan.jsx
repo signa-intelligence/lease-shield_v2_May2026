@@ -944,8 +944,8 @@ function UploadScanPageContent() {
           console.log('[AUTO_POPULATE] Preparing data for review...');
           const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
             scanResult,
-            leaseId: createdLeaseId,
-            scanId: createdLeaseId
+            leaseId: lease.id,
+            scanId: scan.id
           });
           
           if (populateResponse?.success && populateResponse.review_mode) {
