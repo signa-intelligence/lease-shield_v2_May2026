@@ -265,12 +265,7 @@ function ReportFullContent() {
 {`✅ Report loaded
 Scan: ${scan.id} | Lease: ${lease.id}
 Risk Score: ${scan.risk_score}
-Canonical Data: ${hasCanonicalData ? 'YES' : 'NO (fallback)'}
-Clause Reviews: ${clauseReview.length}
-Clause Ledger: ${clauseLedger.length}
-Mappings: ${mappings.length}
-Missing Clauses: ${missingClauses.length}
-Flags: ${flags.length}`}
+Flags (issues): ${flags.length}`}
               </pre>
             </CardContent>
           </Card>
