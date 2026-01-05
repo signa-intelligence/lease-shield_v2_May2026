@@ -456,7 +456,7 @@ Flags (issues): ${flags.length}`}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {flags.length === 0 ? (
+            {flagsForDisplay.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
                 <p style={{ color: colors.textSecondary }}>{strings.noIssues}</p>
