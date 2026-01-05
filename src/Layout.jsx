@@ -1010,7 +1010,7 @@ export default function Layout({ children, currentPageName }) {
           onClose={() => setShowQuickGuide(false)}
           onDismiss={() => setShowQuickGuide(false)}
         />
-        </div>
-        </GlobalErrorBoundary>
-        );
-        }
+    </div>
+    </GlobalErrorBoundary>
+  );
+}
