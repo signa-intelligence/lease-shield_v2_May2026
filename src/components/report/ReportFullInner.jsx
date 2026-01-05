@@ -1,3 +1,4 @@
+// components/report/ReportFullInner.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -41,47 +42,94 @@ function getRiskLevel(score) {
 }
 
 /**
- * Calls Base44 function by trying multiple slugs in order.
- * This removes all guessing: whichever slug is actually deployed will be used.
+ * Build a safe fallback canonical_report payload from whatever scan data exists.
+ * This is intentionally tolerant of partial/legacy scan shapes.
  */
-async function invokeFirstAvailable(slugs, payload, logStep) {
-  const attempts = [];
-  for (const slug of slugs) {
-    try {
-      logStep("INVOKE_FUNCTION_ATTEMPT", { slug });
-      const res = await base44.functions.invoke(slug, payload);
-      const data = res?.data;
-      attempts.push({ slug, ok: true, dataPreview: data ? Object.keys(data).slice(0, 10) : null });
+function buildClientFallbackCanonicalReport({ scan, lease, requestId }) {
+  const scanFull = scan?.scan_full || {};
+  const canonical = scanFull?.canonical_report || {};
 
-      logStep("INVOKE_FUNCTION_SUCCESS", {
-        slug,
-        ok: data?.ok,
-        hasPdfPayload: data?.hasPdfPayload,
-        already: data?.already,
-        fallback: data?.fallback
-      });
+  const clausesExtracted = Array.isArray(scanFull?.clauses_extracted) ? scanFull.clauses_extracted : [];
+  const existingClauseLedger =
+    (Array.isArray(scanFull?.clause_ledger) ? scanFull.clause_ledger : []) ||
+    (Array.isArray(canonical?.clause_ledger) ? canonical.clause_ledger : []);
 
-      return { slug, res };
-    } catch (e) {
-      const msg = e?.message || "Unknown error";
-      attempts.push({ slug, ok: false, message: msg });
+  const keyTerms = scanFull?.key_terms || {};
+  const existingIssues = canonical?.issues || scan?.flags || [];
+  const existingRiskScore = canonical?.risk_score || scan?.risk_score || 0;
+  const existingSummary = canonical?.summary || scan?.summary || "";
 
-      // Base44 commonly throws "Request failed with status code 404" for missing deployment
-      logStep("INVOKE_FUNCTION_FAIL", { slug, message: msg });
-
-      // Continue to next slug
-    }
+  // Build clause ledger
+  let clauseLedger = [];
+  if (Array.isArray(existingClauseLedger) && existingClauseLedger.length > 0) {
+    clauseLedger = existingClauseLedger.map((c, idx) => ({
+      clause_id: c?.clause_id || `CLAUSE-${idx + 1}`,
+      heading: c?.heading || c?.title || null,
+      full_text: c?.full_text || c?.raw_text || "",
+      page: c?.page || c?.page_number || null,
+      risk_level: c?.risk_level || "unknown"
+    }));
+  } else if (Array.isArray(clausesExtracted) && clausesExtracted.length > 0) {
+    clauseLedger = clausesExtracted.map((c, idx) => ({
+      clause_id: c?.clause_id || `CLAUSE-${idx + 1}`,
+      heading: c?.heading || c?.title || null,
+      full_text: c?.full_text || c?.raw_text || "",
+      page: c?.page || c?.page_number || null,
+      risk_level: "unknown"
+    }));
   }
 
-  const err = new Error(`All materializeReport slugs failed: ${attempts.map(a => `${a.slug}:${a.ok ? "ok" : "fail"}`).join(", ")}`);
-  err.code = "ALL_MATERIALIZE_SLUGS_FAILED";
-  err.step = "MATERIALIZE";
-  err.debugData = { attempts };
-  throw err;
+  // Build flags from existing issues
+  const flags = (existingIssues || []).map((issue, idx) => ({
+    clause_id: issue?.clause_id || issue?.clause_refs?.[0]?.clause_id || `ISSUE-${idx + 1}`,
+    severity: issue?.severity || "medium",
+    category: issue?.category || "Other Risks",
+    title: issue?.title || "Issue detected",
+    description: issue?.summary || issue?.description || issue?.why_it_matters || "Review required",
+    explanation: issue?.why_it_matters || issue?.explanation || "",
+    recommendation: Array.isArray(issue?.recommendations)
+      ? issue.recommendations.join("\n")
+      : (issue?.recommendation || "Review with legal counsel"),
+    evidence: issue?.clause_refs?.[0]?.snippet || issue?.evidence || "Evidence not available"
+  }));
+
+  const nowIso = new Date().toISOString();
+
+  const pdfPayload = {
+    lease_address: keyTerms?.property_address || lease?.property_address || scan?.lease_id || "Lease Agreement",
+    generated_date: nowIso,
+    risk_score: existingRiskScore,
+    summary: existingSummary || `${flags.length} issues detected (client-side fallback)`,
+    key_terms: keyTerms,
+    flags,
+    clause_review: [],
+    clause_ledger: clauseLedger,
+    mappings: [],
+    missing_clauses: [],
+    coverage_summary: {
+      total_clauses: clauseLedger.length,
+      clauses_reviewed: 0,
+      clauses_flagged: flags.length
+    },
+    fallback: true,
+    fallback_reason: "client_materialize",
+    materialized_at: nowIso,
+    requestId
+  };
+
+  return {
+    status: "ok",
+    generatedAt: nowIso,
+    pdfPayload,
+    clause_ledger: clauseLedger,
+    clause_review: [],
+    issues: flags,
+    fallback: true,
+    fallback_reason: "client_materialize"
+  };
 }
 
 export default function ReportFullInner({ scanId, leaseId, showDebug, forensicData }) {
-  // ALL HOOKS UNCONDITIONAL - ALWAYS RUN
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dbValidation, setDbValidation] = useState(null);
@@ -101,16 +149,30 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
     const steps = [];
 
     const logStep = (step, data) => {
-      const entry = { step, timestamp: Date.now() - startTime, ...data };
+      const entry = { step, timestamp: Date.now() - startTime, ...(data || {}) };
       steps.push(entry);
-      console.log(`[${requestId}] ${step}:`, data);
-      if (!cancelled) setLoadSteps(prev => [...prev, entry]);
+      // eslint-disable-next-line no-console
+      console.log(`[${requestId}] ${step}:`, data || {});
+      if (!cancelled) setLoadSteps((prev) => [...prev, entry]);
     };
 
     const timeoutId = setTimeout(() => {
+      // eslint-disable-next-line no-console
       console.error(`[${requestId}] WATCHDOG TIMEOUT at ${Date.now() - startTime}ms`);
-      // Note: we keep this as a log only; base44 SDK doesn't accept AbortController in your calls.
-    }, 15000);
+      if (!cancelled) {
+        setError({
+          step: "WATCHDOG",
+          code: "TIMEOUT",
+          message: "Report load timed out.",
+          requestId,
+          scanId,
+          leaseId,
+          elapsedMs: Date.now() - startTime,
+          debugData: { steps }
+        });
+        setLoading(false);
+      }
+    }, 20000);
 
     async function loadData() {
       try {
@@ -118,25 +180,25 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         setError(null);
         logStep("INIT", { scanId, leaseId, requestId });
 
-        // STEP 1: Fetch user
-        logStep("FETCH_USER_START", {});
+        // STEP 1: user
+        logStep("FETCH_USER_START");
         const userRes = await base44.auth.me();
         logStep("FETCH_USER_COMPLETE", { userId: userRes?.id });
 
-        // STEP 2: Fetch lease
+        // STEP 2: lease
         logStep("FETCH_LEASE_START", { leaseId });
         const leaseArr = await base44.entities.Lease.filter({ id: leaseId });
         const leaseData = leaseArr?.[0] || null;
         logStep("FETCH_LEASE_COMPLETE", { found: !!leaseData });
 
-        // STEP 3: Fetch scan
+        // STEP 3: scan
         logStep("FETCH_SCAN_START", { scanId });
         const scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
         let scanData = scanArr?.[0] || null;
         logStep("FETCH_SCAN_COMPLETE", { found: !!scanData });
 
-        // STEP 4: Validate records
-        logStep("VALIDATE_RECORDS_START", {});
+        // STEP 4: validate presence
+        logStep("VALIDATE_RECORDS_START");
         const validation = {
           scanFound: !!scanData,
           leaseFound: !!leaseData,
@@ -157,122 +219,119 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           throw err;
         }
 
-        // STEP 5: Validate materialized report
-        logStep("VALIDATE_REPORT_START", {});
+        // STEP 5: ensure canonical_report.pdfPayload exists
+        logStep("VALIDATE_REPORT_START");
         let canonical = scanData?.scan_full?.canonical_report || null;
 
         validation.hasCanonical = !!canonical;
         validation.reportStatus = canonical?.status || "unknown";
-        validation.hasClauseLedger = !!canonical?.clause_ledger;
-        validation.clauseLedgerLength = canonical?.clause_ledger?.length || 0;
         validation.hasPdfPayload = !!canonical?.pdfPayload;
-        validation.isFallback = canonical?.pdfPayload?.fallback || false;
 
-        // If failed but has fallback, continue
-        if (canonical?.status === "failed" && canonical?.pdfPayload) {
-          logStep("USING_FALLBACK_PAYLOAD", {
-            reason: canonical.pdfPayload.fallback_reason,
-            error: canonical.error
-          });
-        } else if (!canonical || !canonical.pdfPayload) {
-          // Materialize ONCE
+        if (!canonical || !canonical.pdfPayload) {
+          // Client-side materialize exactly once
           if (!materializeAttempted.current) {
             materializeAttempted.current = true;
-            logStep("MATERIALIZE_ATTEMPT", { scanId });
+            logStep("CLIENT_MATERIALIZE_ATTEMPT", { scanId });
 
             try {
               if (!cancelled) setMaterializing(true);
 
-              // Try all possible slugs (in order)
-              const slugs = ["materializeReport", "materializeReportV2", "materializeReport_v2"];
-              const payload = { scanId, requestId };
+              const scanFull = scanData?.scan_full || {};
+              const hasSource =
+                (Array.isArray(scanFull?.clause_ledger) && scanFull.clause_ledger.length > 0) ||
+                (Array.isArray(scanFull?.clauses_extracted) && scanFull.clauses_extracted.length > 0) ||
+                (Array.isArray(scanData?.flags) && scanData.flags.length > 0) ||
+                !!scanData?.summary;
 
-              const { slug, res } = await invokeFirstAvailable(slugs, payload, logStep);
-              const materializeResult = res?.data;
-
-              logStep("MATERIALIZE_RESULT", { usedSlug: slug, ...materializeResult });
-
-              if (materializeResult?.ok) {
-                // Re-fetch scan
-                logStep("REFETCH_AFTER_MATERIALIZE", {});
-                const refetchedScans = await base44.entities.LeaseScan.filter({ id: scanId });
-                const refetchedScan = refetchedScans?.[0];
-
-                if (refetchedScan) {
-                  scanData = refetchedScan;
-                  canonical = refetchedScan?.scan_full?.canonical_report || null;
-
-                  validation.hasCanonical = !!canonical;
-                  validation.hasPdfPayload = !!canonical?.pdfPayload;
-                  validation.isFallback = canonical?.pdfPayload?.fallback || materializeResult?.fallback;
-                  validation.materialized = true;
-                  validation.materializeUsedSlug = slug;
-
-                  logStep("REFETCH_SUCCESS", {
-                    hasPdfPayload: validation.hasPdfPayload,
-                    isFallback: validation.isFallback,
-                    usedSlug: slug
-                  });
-                }
-              } else {
-                const err = new Error(materializeResult?.message || "Materialization failed");
-                err.code = materializeResult?.error || "MATERIALIZE_FAILED";
+              if (!hasSource) {
+                const err = new Error(
+                  "NO_SOURCE_DATA: Scan has no clause_ledger/clauses_extracted/flags/summary to build a report"
+                );
+                err.code = "NO_SOURCE_DATA";
                 err.step = "MATERIALIZE";
-                err.debugData = materializeResult;
+                err.debugData = { scanFullKeys: Object.keys(scanFull || {}) };
                 throw err;
               }
-            } catch (matErr) {
-              logStep("MATERIALIZE_ERROR", { error: matErr?.message || String(matErr) });
-              const err = new Error(`Report materialization failed: ${matErr?.message || "Unknown error"}`);
-              err.code = matErr?.code || "MATERIALIZE_ERROR";
-              err.step = "MATERIALIZE";
-              err.debugData = matErr?.debugData || {
-                hasCanonical: !!canonical,
-                hasPdfPayload: !!canonical?.pdfPayload,
-                materializeError: matErr?.message
-              };
-              throw err;
+
+              const canonicalReport = buildClientFallbackCanonicalReport({
+                scan: scanData,
+                lease: leaseData,
+                requestId
+              });
+
+              // Persist fallback to LeaseScan using entities update (no functions)
+              await base44.entities.LeaseScan.update(scanId, {
+                risk_score: canonicalReport?.pdfPayload?.risk_score || 0,
+                flags: canonicalReport?.pdfPayload?.flags || [],
+                summary: canonicalReport?.pdfPayload?.summary || "",
+                scan_full: {
+                  ...scanFull,
+                  canonical_report: canonicalReport,
+                  materialized_at: new Date().toISOString(),
+                  materialized_status: "ok_client"
+                }
+              });
+
+              logStep("CLIENT_MATERIALIZE_PERSISTED", {
+                clauseCount: canonicalReport?.pdfPayload?.clause_ledger?.length || 0,
+                flagsCount: canonicalReport?.pdfPayload?.flags?.length || 0
+              });
+
+              // Re-fetch scan
+              logStep("REFETCH_AFTER_CLIENT_MATERIALIZE");
+              const refetched = await base44.entities.LeaseScan.filter({ id: scanId });
+              const refetchedScan = refetched?.[0] || null;
+
+              if (!refetchedScan) {
+                const err = new Error("REFETCH_FAILED: Scan not found after materialization");
+                err.code = "REFETCH_FAILED";
+                err.step = "MATERIALIZE";
+                throw err;
+              }
+
+              scanData = refetchedScan;
+              canonical = refetchedScan?.scan_full?.canonical_report || null;
+
+              validation.hasCanonical = !!canonical;
+              validation.hasPdfPayload = !!canonical?.pdfPayload;
+              validation.isFallback = canonical?.pdfPayload?.fallback || true;
+              validation.materialized = true;
+              validation.materializeMode = "client";
+              logStep("REFETCH_SUCCESS", {
+                hasPdfPayload: validation.hasPdfPayload,
+                isFallback: validation.isFallback,
+                mode: "client"
+              });
             } finally {
               if (!cancelled) setMaterializing(false);
             }
-          } else {
-            const err = new Error(`REPORT_NOT_MATERIALIZED: No pdfPayload after materialization attempt for scanId ${scanId}`);
-            err.code = "REPORT_NOT_MATERIALIZED";
-            err.step = "VALIDATE_REPORT";
-            err.debugData = {
-              hasCanonical: !!canonical,
-              hasPdfPayload: !!canonical?.pdfPayload,
-              status: canonical?.status,
-              error: canonical?.error,
-              materializeAttempted: true
-            };
-            throw err;
           }
         }
 
-        if (!canonical?.pdfPayload) {
-          const err = new Error("REPORT_PAYLOAD_MISSING: canonical_report.pdfPayload is still null/empty");
-          err.code = "REPORT_PAYLOAD_MISSING";
+        canonical = scanData?.scan_full?.canonical_report || canonical;
+
+        if (!canonical || !canonical.pdfPayload) {
+          const err = new Error(`REPORT_NOT_MATERIALIZED: No pdfPayload for scanId ${scanId}`);
+          err.code = "REPORT_NOT_MATERIALIZED";
           err.step = "VALIDATE_REPORT";
           err.debugData = {
             hasCanonical: !!canonical,
-            canonicalStatus: canonical?.status,
-            canonicalError: canonical?.error
+            hasPdfPayload: !!canonical?.pdfPayload
           };
           throw err;
         }
 
-        validation.issuesCount = canonical.pdfPayload?.flags?.length || 0;
-        validation.clausesTotal = canonical.pdfPayload?.clause_ledger?.length || 0;
-        validation.clausesReviewed = canonical?.clause_review?.length || 0;
-        validation.riskScore = canonical.pdfPayload?.risk_score || scanData?.risk_score || 0;
-
+        // Populate validation details for debug panel
+        const pdfPayload = canonical.pdfPayload;
+        validation.issuesCount = pdfPayload?.flags?.length || 0;
+        validation.clausesTotal = pdfPayload?.clause_ledger?.length || 0;
+        validation.clausesReviewed = (pdfPayload?.clause_review || []).length;
+        validation.riskScore = pdfPayload?.risk_score || scanData?.risk_score || 0;
         logStep("VALIDATE_REPORT_COMPLETE", validation);
         if (!cancelled) setDbValidation(validation);
 
-        // STEP 6: Build report data
-        logStep("BUILD_REPORT_START", {});
-        const pdfPayload = canonical.pdfPayload;
+        // STEP 6: Build normalized report object for rendering
+        logStep("BUILD_REPORT_START");
 
         const clauseReview = Array.isArray(pdfPayload.clause_review) ? pdfPayload.clause_review : [];
         const clauseLedger = Array.isArray(pdfPayload.clause_ledger) ? pdfPayload.clause_ledger : [];
@@ -281,14 +340,14 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         const mappings = Array.isArray(pdfPayload.mappings) ? pdfPayload.mappings : [];
         const missingClauses = Array.isArray(pdfPayload.missing_clauses) ? pdfPayload.missing_clauses : [];
 
-        // Build unified issues
+        // Unify issues across flags + clause_review
         const byClause = {};
-        clauseReview.forEach(r => {
-          if (!r.risk_level || r.risk_level === "none") return;
+        clauseReview.forEach((r) => {
+          if (!r?.risk_level || r.risk_level === "none") return;
           byClause[r.clause_id] = { review: r };
         });
-        flags.forEach(f => {
-          const key = f.clause_id || `flag-${f.pattern_id || f.title || Math.random()}`;
+        flags.forEach((f) => {
+          const key = f?.clause_id || `flag-${f?.pattern_id || f?.title || Math.random()}`;
           if (!byClause[key]) byClause[key] = {};
           byClause[key].flag = f;
         });
@@ -296,9 +355,9 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         const unifiedIssuesRaw = Object.entries(byClause).map(([_, pair]) => {
           const r = pair.review;
           const f = pair.flag;
-          const clause = clauseLedger.find(c => c.clause_id === (r?.clause_id || f?.clause_id));
+          const clause = clauseLedger.find((c) => c?.clause_id === (r?.clause_id || f?.clause_id));
 
-          const severity = f?.severity || r?.risk_level || "medium";
+          const severity = f?.severity || (r?.risk_level || "medium");
           const category = f?.category || (r?.mapped_catalog_ids?.[0] ? r.mapped_catalog_ids[0] : "clause");
           const title = f?.title || clause?.heading || (r?.risk_summary?.substring(0, 80) || "Issue identified");
           const impact = f?.description || r?.risk_summary || "Review required";
@@ -306,18 +365,21 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
 
           let recs = [];
           if (f?.recommendation) {
-            recs = String(f.recommendation).split(/[\n•\-–]/g).map(s => s.trim()).filter(Boolean);
+            recs = String(f.recommendation)
+              .split(/[\n•\-–]/g)
+              .map((s) => s.trim())
+              .filter(Boolean);
           } else {
             if (r?.recommended_change && r.recommended_change !== "No change recommended") recs.push(r.recommended_change);
             if (r?.negotiation_tip && r.negotiation_tip !== "Accept as standard.") recs.push(r.negotiation_tip);
           }
           while (recs.length < 2) {
-            defaultRecsFor(category).forEach(x => {
+            defaultRecsFor(category).forEach((x) => {
               if (recs.length < 2) recs.push(x);
             });
           }
 
-          let evidence = (f?.evidence || clause?.full_text || "").substring(0, 240);
+          let evidence = String(f?.evidence || clause?.full_text || "").substring(0, 240);
           if (!evidence || evidence.length < 10) evidence = `[Evidence not extracted for ${title}]`;
 
           return {
@@ -332,18 +394,18 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           };
         });
 
-        const order = { critical: 0, high: 1, medium: 2, low: 3 };
-        unifiedIssuesRaw.sort((a, b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
+        const order = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
+        unifiedIssuesRaw.sort((a, b) => (order[a.severity] ?? 9) - (order[b.severity] ?? 9));
 
         const seen = new Set();
-        const unifiedIssues = unifiedIssuesRaw.filter(i => {
+        const unifiedIssues = unifiedIssuesRaw.filter((i) => {
           const key = `${i.clause_id}::${i.severity}::${i.category}`;
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
         });
 
-        const flagsForDisplay = unifiedIssues.map(i => ({
+        const flagsForDisplay = unifiedIssues.map((i) => ({
           severity: i.severity,
           category: i.category,
           title: i.title,
@@ -358,8 +420,10 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           ? {
               total_clauses: clauseLedger.length,
               clauses_reviewed: clauseReview.length,
-              clauses_flagged: clauseReview.filter(r => r.risk_level && r.risk_level !== "none").length,
-              unmapped_clauses: mappings.filter(m => Array.isArray(m.mapped_catalog_ids) && m.mapped_catalog_ids.includes("CAT-UNMAPPED")).length,
+              clauses_flagged: clauseReview.filter((r) => r?.risk_level && r.risk_level !== "none").length,
+              unmapped_clauses: mappings.filter(
+                (m) => Array.isArray(m?.mapped_catalog_ids) && m.mapped_catalog_ids.includes("CAT-UNMAPPED")
+              ).length,
               missing_expected_categories: missingClauses.length,
               mapped_count: canonical?.summary?.mapped_count,
               mapped_pct: canonical?.summary?.mapped_pct
@@ -383,10 +447,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           fallbackReason: pdfPayload.fallback_reason
         };
 
-        logStep("BUILD_REPORT_COMPLETE", {
-          issuesCount: flagsForDisplay.length,
-          clausesTotal: clauseLedger.length
-        });
+        logStep("BUILD_REPORT_COMPLETE", { issuesCount: flagsForDisplay.length, clausesTotal: clauseLedger.length });
 
         if (!cancelled) {
           setUser(userRes);
@@ -394,7 +455,6 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           setScan(scanData);
           setReportData(normalized);
           setLoading(false);
-          setMaterializing(false);
           logStep("RENDER_SUCCESS", { totalElapsed: Date.now() - startTime });
         }
       } catch (err) {
@@ -406,7 +466,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         });
 
         if (!cancelled) {
-          const errorObj = {
+          setError({
             step: err?.step || "UNKNOWN",
             code: err?.code || "UNKNOWN",
             message: err?.message || "Failed to load report",
@@ -417,8 +477,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
             elapsedMs: Date.now() - startTime,
             debugData: err?.debugData || {},
             steps
-          };
-          setError(errorObj);
+          });
           setLoading(false);
         }
       } finally {
@@ -428,20 +487,20 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
     }
 
     loadData();
+
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
     };
   }, [scanId, leaseId]);
 
-  // Compute colors and language (NO HOOKS)
+  // Compute colors and language (NO HOOKS BELOW)
   const isDarkMode = user?.theme === "dark";
   const language = user?.language || "en";
   const colors = isDarkMode
     ? { bg: "#1A1D1F", cardBg: "#2A2D30", textPrimary: "#ECEFED", textSecondary: "#A8ABAD", borderColor: "#3A3D40" }
     : { bg: "#F8FAFC", cardBg: "#FFFFFF", textPrimary: "#1A1D1F", textSecondary: "#64748b", borderColor: "#E5E7EB" };
 
-  // RENDERING
   if (loading) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
@@ -491,7 +550,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
 
   const riskLevel = getRiskLevel(reportData.risk_score);
   const totalClauses = (reportData.clause_ledger || []).length;
-  const risksCount = (reportData.clause_review || []).filter(r => r.risk_level && r.risk_level !== "none").length;
+  const risksCount = (reportData.clause_review || []).filter((r) => r?.risk_level && r.risk_level !== "none").length;
 
   const handleExportPdf = async () => {
     if (exportingPdf) return;
@@ -564,16 +623,17 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
 
               <div className="text-xs font-bold text-emerald-700 mb-1 mt-3">REPORT DATA</div>
               <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-                {`Risk Score: ${reportData.risk_score}
+{`Risk Score: ${reportData.risk_score}
 Total Clauses: ${totalClauses}
 Risks: ${risksCount}
 Flags: ${(reportData.flags || []).length}
-Has PDF Payload: ${!!scan?.scan_full?.canonical_report?.pdfPayload}`}
+Has PDF Payload: ${!!(scan?.scan_full?.canonical_report?.pdfPayload)}
+Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               </pre>
 
               <div className="text-xs font-bold text-emerald-700 mb-1 mt-3">LOAD STEPS</div>
               <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-                {loadSteps.map(s => `[${s.timestamp}ms] ${s.step}`).join("\n")}
+                {loadSteps.map((s) => `[${s.timestamp}ms] ${s.step}`).join("\n")}
               </pre>
             </CardContent>
           </Card>
@@ -660,7 +720,7 @@ Has PDF Payload: ${!!scan?.scan_full?.canonical_report?.pdfPayload}`}
                 const severityConfig = SEVERITY_CONFIG[flag.severity] || SEVERITY_CONFIG.medium;
                 const Icon = severityConfig.icon;
                 const recText = String(flag.recommendation || "");
-                const recLines = recText.split(/[\n•\-–]/g).map(s => s.trim()).filter(Boolean);
+                const recLines = recText.split(/[\n•\-–]/g).map((s) => s.trim()).filter(Boolean);
 
                 return (
                   <div
@@ -735,43 +795,39 @@ Has PDF Payload: ${!!scan?.scan_full?.canonical_report?.pdfPayload}`}
 
           <CardContent className="space-y-3">
             {(reportData.clause_ledger || []).map((c, idx) => {
-              const review = (reportData.clause_review || []).find(r => r.clause_id === c.clause_id) || {};
-              const isRisk = review.risk_level && review.risk_level !== "none";
+              const review = (reportData.clause_review || []).find((r) => r?.clause_id === c?.clause_id) || {};
+              const isRisk = review?.risk_level && review.risk_level !== "none";
               const sev = isRisk ? (SEVERITY_CONFIG[review.risk_level] || SEVERITY_CONFIG.medium) : SEVERITY_CONFIG.none;
               const Icon = sev.icon;
 
-              let snippet = (c.full_text || "").slice(0, 240);
-              if (!snippet || snippet.length < 10) snippet = `[Snippet not extracted for ${c.heading || c.clause_id}]`;
+              let snippet = String(c?.full_text || "").slice(0, 240);
+              if (!snippet || snippet.length < 10) snippet = `[Snippet not extracted for ${c?.heading || c?.clause_id || idx}]`;
 
               const recs = [];
               if (isRisk) {
                 if (review?.recommended_change && review.recommended_change !== "No change recommended") recs.push(review.recommended_change);
                 if (review?.negotiation_tip && review.negotiation_tip !== "Accept as standard.") recs.push(review.negotiation_tip);
-                const cat = (Array.isArray(review.mapped_catalog_ids) ? review.mapped_catalog_ids[0] : review.category) || "clause";
-                while (recs.length < 2) {
-                  defaultRecsFor(cat).forEach(x => {
-                    if (recs.length < 2) recs.push(x);
-                  });
-                }
+                const cat = (Array.isArray(review?.mapped_catalog_ids) ? review.mapped_catalog_ids[0] : review.category) || "clause";
+                while (recs.length < 2) defaultRecsFor(cat).forEach((x) => { if (recs.length < 2) recs.push(x); });
               }
 
               return (
                 <div
-                  key={c.clause_id || idx}
+                  key={c?.clause_id || idx}
                   className="p-4 rounded-xl border"
                   style={{ backgroundColor: isDarkMode ? "#353A3D" : "#FFFFFF", borderColor: colors.borderColor }}
                 >
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <Badge className={`${sev.color} border flex items-center gap-1`}>
                       <Icon className="w-3 h-3" />
-                      {isRisk ? `${review.risk_level?.toUpperCase()} RISK` : "NO RISK"}
+                      {isRisk ? (String(review.risk_level || "").toUpperCase() + " RISK") : "NO RISK"}
                     </Badge>
                     {review?.mapped_catalog_ids?.[0] && <Badge variant="outline">{review.mapped_catalog_ids[0]}</Badge>}
-                    {c.clause_id && <Badge variant="outline">{c.clause_id}</Badge>}
+                    {c?.clause_id && <Badge variant="outline">{c.clause_id}</Badge>}
                   </div>
 
                   <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
-                    {c.heading || c.clause_id}
+                    {c?.heading || c?.clause_id || `Clause ${idx + 1}`}
                   </h4>
 
                   <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? "#1F2937" : "#F3F4F6" }}>
@@ -786,7 +842,7 @@ Has PDF Payload: ${!!scan?.scan_full?.canonical_report?.pdfPayload}`}
                       {isRisk ? "Impact" : "Rationale"}
                     </p>
                     <p className="text-sm" style={{ color: colors.textPrimary }}>
-                      {review.risk_summary || (isRisk ? "Review required" : review.tenant_view || "Accept as standard.")}
+                      {review?.risk_summary || (isRisk ? "Review required" : (review?.tenant_view || "Accept as standard."))}
                     </p>
                   </div>
 
@@ -817,21 +873,15 @@ Has PDF Payload: ${!!scan?.scan_full?.canonical_report?.pdfPayload}`}
             <CardContent>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                 <div>
-                  <span className="font-semibold" style={{ color: colors.textSecondary }}>
-                    Total:
-                  </span>{" "}
+                  <span className="font-semibold" style={{ color: colors.textSecondary }}>Total:</span>{" "}
                   <span style={{ color: colors.textPrimary }}>{reportData.coverageSummary.total_clauses}</span>
                 </div>
                 <div>
-                  <span className="font-semibold" style={{ color: colors.textSecondary }}>
-                    Reviewed:
-                  </span>{" "}
+                  <span className="font-semibold" style={{ color: colors.textSecondary }}>Reviewed:</span>{" "}
                   <span style={{ color: colors.textPrimary }}>{reportData.coverageSummary.clauses_reviewed}</span>
                 </div>
                 <div>
-                  <span className="font-semibold" style={{ color: colors.textSecondary }}>
-                    Flagged:
-                  </span>{" "}
+                  <span className="font-semibold" style={{ color: colors.textSecondary }}>Flagged:</span>{" "}
                   <span style={{ color: colors.textPrimary }}>{reportData.coverageSummary.clauses_flagged}</span>
                 </div>
               </div>
