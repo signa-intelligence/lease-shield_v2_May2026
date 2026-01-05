@@ -183,48 +183,114 @@ Deno.serve(async (req) => {
       y += 10;
     }
 
-    // Coverage Summary (Taxonomy 30 categories)
-    const cov = scanData.coverage_summary;
-    if (cov && typeof cov.total_categories === 'number') {
-      if (y > pageHeight - 50) { doc.addPage(); y = 20; }
-      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('Coverage Summary (30 Categories)', 20, y); y += 8;
-      doc.setFontSize(10); doc.setFont('helvetica','normal');
-      doc.text(`Total categories: ${cov.total_categories}`, 25, y); y += 6;
-      doc.text(`Present: ${cov.present}`, 25, y); y += 6;
-      doc.text(`Missing: ${cov.missing}`, 25, y); y += 6;
-      doc.text(`Unclear: ${cov.unclear}`, 25, y); y += 10;
-    } else {
-      if (y > pageHeight - 30) { doc.addPage(); y = 20; }
-      doc.setFontSize(10); doc.setFont('helvetica','normal');
-      doc.text('Re-scan required for full coverage (taxonomy missing).', 20, y); y += 10;
-    }
-
-    // Risk Categories (from taxonomy) - main body
-    const taxonomy = Array.isArray(scanData.taxonomy_report) ? scanData.taxonomy_report : [];
-    const riskyCats = taxonomy.filter(t => t.risk_level && t.risk_level !== 'NO_RISK' && t.status === 'PRESENT');
-    if (riskyCats.length > 0) {
+    // =====================================================================
+    // DETAILED ISSUES (PRIMARY DATA SOURCE - flags array)
+    // This is the main content that renders ALL issues with recommendations
+    // =====================================================================
+    const flags = Array.isArray(scanData.flags) ? scanData.flags : [];
+    
+    if (flags.length > 0) {
       if (y > pageHeight - 60) { doc.addPage(); y = 20; }
-      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text(`Risk Categories (${riskyCats.length})`, 20, y); y += 10;
-      doc.setFont('helvetica','normal');
-      riskyCats.forEach((t, idx) => {
-        if (y > pageHeight - 45) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Detailed Issues (${flags.length})`, 20, y);
+      y += 10;
+      doc.setFont('helvetica', 'normal');
+
+      // Sort by severity: critical, high, medium, low
+      const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+      const sortedFlags = [...flags].sort((a, b) => 
+        (severityOrder[a.severity] || 3) - (severityOrder[b.severity] || 3)
+      );
+
+      sortedFlags.forEach((flag, idx) => {
+        // Page break check - ensure enough space for issue block
+        if (y > pageHeight - 80) { doc.addPage(); y = 20; }
+        
+        // Issue title
         doc.setFontSize(11); doc.setFont('helvetica','bold');
-        y = addText(`${idx + 1}. ${t.category_name}`, 20, 11, 'bold');
+        const title = flag.title || flag.description?.substring(0, 60) || `Issue ${idx + 1}`;
+        y = addText(`${idx + 1}. ${title}`, 20, 11, 'bold');
+
+        // Severity badge
         doc.setFontSize(9); doc.setFont('helvetica','normal');
-        y = addText(`Status: ${t.status}  •  Risk: ${t.risk_level}  •  Confidence: ${t.confidence}`, 25, 9);
-        if (t.explanation) { y = addText(`Why: ${t.explanation}`, 25, 9); }
-        if (t.detected_text_excerpt && t.detected_text_excerpt !== 'NOT FOUND') {
-          y = addText(`Excerpt: ${t.detected_text_excerpt}`, 25, 9);
+        const severityLabel = (flag.severity || 'medium').toUpperCase();
+        y = addText(`Severity: ${severityLabel}`, 25, 9);
+        
+        // Category
+        if (flag.category) {
+          y = addText(`Category: ${flag.category}`, 25, 9);
         }
-        y += 6;
+
+        // Description / Impact
+        if (flag.description) {
+          if (y > pageHeight - 30) { doc.addPage(); y = 20; }
+          doc.setFont('helvetica','bold'); doc.text('Impact:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          y = addText(flag.description, 25, 9);
+        }
+
+        // Explanation (why this matters)
+        if (flag.explanation) {
+          if (y > pageHeight - 30) { doc.addPage(); y = 20; }
+          doc.setFont('helvetica','bold'); doc.text('Why this matters:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          y = addText(flag.explanation, 25, 9);
+        }
+
+        // Recommendations (the detailed bullet points)
+        if (flag.recommendation) {
+          if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+          doc.setFont('helvetica','bold'); doc.text('Recommendations:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          
+          // Parse recommendations - may be string with bullets or array
+          const recText = String(flag.recommendation || '');
+          const recLines = recText.split(/[\n•\-–]/g).map(s => s.trim()).filter(s => s.length > 0);
+          
+          recLines.forEach(line => {
+            if (y > pageHeight - 15) { doc.addPage(); y = 20; }
+            doc.text(`• ${line}`, 25, y);
+            y += 5;
+          });
+        }
+
+        // Evidence excerpt
+        if (flag.evidence && flag.evidence.length > 10) {
+          if (y > pageHeight - 25) { doc.addPage(); y = 20; }
+          doc.setFont('helvetica','bold'); doc.text('Evidence:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          doc.setFontSize(8);
+          const excerpt = flag.evidence.substring(0, 200) + (flag.evidence.length > 200 ? '...' : '');
+          y = addText(excerpt, 25, 8);
+          doc.setFontSize(9);
+        }
+
+        y += 10; // Space between issues
       });
     }
 
-    // Clause-by-Clause Reviews (canonical ledger architecture)
+    // =====================================================================
+    // TAXONOMY COVERAGE (if available)
+    // =====================================================================
+    const cov = scanData.coverage_summary;
+    if (cov && typeof cov.total_categories === 'number') {
+      if (y > pageHeight - 50) { doc.addPage(); y = 20; }
+      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('Coverage Summary', 20, y); y += 8;
+      doc.setFontSize(10); doc.setFont('helvetica','normal');
+      doc.text(`Total categories: ${cov.total_categories}`, 25, y); y += 6;
+      doc.text(`Present: ${cov.present}`, 25, y); y += 6;
+      doc.text(`Missing: ${cov.missing}`, 25, y); y += 10;
+    }
+
+    // =====================================================================
+    // CLAUSE-BY-CLAUSE REVIEW (if canonical data available)
+    // =====================================================================
     const clauseReview = Array.isArray(scanData.clause_review) ? scanData.clause_review : [];
     const clauseLedger = Array.isArray(scanData.clause_ledger) ? scanData.clause_ledger : [];
     
-    if (clauseReview.length > 0) {
+    // Only render if we have canonical clause reviews AND no flags (to avoid duplication)
+    if (clauseReview.length > 0 && flags.length === 0) {
       if (y > pageHeight - 60) { doc.addPage(); y = 20; }
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
@@ -232,7 +298,6 @@ Deno.serve(async (req) => {
       y += 10;
       doc.setFont('helvetica', 'normal');
 
-      // Sort by risk level: high, medium, low, none
       const riskOrder = { high: 0, medium: 1, low: 2, none: 3 };
       const sortedReviews = [...clauseReview].sort((a, b) => 
         (riskOrder[a.risk_level] || 3) - (riskOrder[b.risk_level] || 3)
@@ -243,97 +308,36 @@ Deno.serve(async (req) => {
         
         if (y > pageHeight - 60) { doc.addPage(); y = 20; }
         
-        // Header line: Clause heading
         doc.setFontSize(11); doc.setFont('helvetica','bold');
         const heading = ledgerItem?.heading || `Clause ${review.clause_id}`;
         y = addText(`${idx + 1}. ${heading}`, 20, 11, 'bold');
 
-        // Risk badge
         doc.setFontSize(9); doc.setFont('helvetica','normal');
         const riskLabel = review.risk_level === 'none' ? 'NO RISK' : review.risk_level.toUpperCase() + ' RISK';
         y = addText(`Risk Level: ${riskLabel}`, 25, 9);
 
-        // Risk summary
         if (review.risk_summary) {
           y = addText(review.risk_summary, 25, 9);
         }
 
-        // Skip expanded details for no-risk clauses
         if (review.risk_level === 'none') {
           y += 4;
           return;
         }
 
-        // Three perspectives
         if (review.tenant_view) {
           doc.setFont('helvetica','bold'); doc.text('Tenant Impact:', 25, y); y += 5;
           doc.setFont('helvetica','normal');
           y = addText(review.tenant_view, 25, 9);
         }
 
-        if (review.landlord_view) {
-          doc.setFont('helvetica','bold'); doc.text('Landlord Benefit:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          y = addText(review.landlord_view, 25, 9);
-        }
-
-        if (review.lawyer_view) {
-          doc.setFont('helvetica','bold'); doc.text('Thai Law Context:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          y = addText(review.lawyer_view, 25, 9);
-        }
-
-        // Recommended change
         if (review.recommended_change && review.recommended_change !== 'No change recommended') {
           doc.setFont('helvetica','bold'); doc.text('Recommended Change:', 25, y); y += 5;
           doc.setFont('helvetica','normal');
           y = addText(review.recommended_change, 25, 9);
         }
 
-        // Negotiation tip
-        if (review.negotiation_tip) {
-          doc.setFont('helvetica','bold'); doc.text('Negotiation Tip:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          y = addText(review.negotiation_tip, 25, 9);
-        }
-
         y += 8;
-      });
-    }
-
-    // Legacy fallback: old clause_reviews format
-    const legacyClauses = Array.isArray(scanData.clause_reviews) ? scanData.clause_reviews : [];
-    if (clauseReview.length === 0 && legacyClauses.length > 0) {
-      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Clause Reviews (${legacyClauses.length})`, 20, y);
-      y += 10;
-      doc.setFont('helvetica', 'normal');
-
-      legacyClauses.forEach((c, idx) => {
-        if (y > pageHeight - 50) { doc.addPage(); y = 20; }
-        doc.setFontSize(11); doc.setFont('helvetica','bold');
-        const title = c.clause_title ? ` — ${c.clause_title}` : '';
-        y = addText(`${idx + 1}. Clause ${c.clause_number}${title}`, 20, 11, 'bold');
-        doc.setFontSize(9); doc.setFont('helvetica','normal');
-        y = addText(`Risk: ${c.risk_level}`, 25, 9);
-        if (c.risk_level === 'NO_RISK') {
-          y = addText('No risk detected.', 25, 9);
-          y += 4;
-          return;
-        }
-        if (c.why_this_matters) {
-          doc.setFont('helvetica','bold'); doc.text('Why this matters:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          y = addText(c.why_this_matters, 25, 9);
-        }
-        if (c.recommended_action) {
-          doc.setFont('helvetica','bold'); doc.text('Recommended action:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          y = addText(c.recommended_action, 25, 9);
-        }
-        y += 6;
       });
     }
     
