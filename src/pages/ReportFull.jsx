@@ -553,7 +553,7 @@ Flags (issues): ${flags.length}`}
                   <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Coverage:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.mapped_pct}%</span></div>
                 )}
               </div>
-              {coverageSummary.mapped_pct !== 100 && (
+              {typeof coverageSummary.mapped_pct === 'number' && coverageSummary.mapped_pct !== 100 && (
                 <div className="mt-3 p-3 rounded" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7', color: '#92400E' }}>
                   Rescan required – taxonomy coverage incomplete.
                 </div>
