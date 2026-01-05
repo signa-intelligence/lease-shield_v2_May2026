@@ -47,6 +47,10 @@ Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
       return new Response(null, { status: 204 });
     }
+
+    if (req.method === 'GET') {
+      return Response.json({ ok: true, name: 'clauseLedgerScan' });
+    }
     
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -56,7 +60,12 @@ Deno.serve(async (req) => {
     }
     
     const body = await req.json();
-    const { fileUrls, leaseId, scanId } = body;
+    if (body && body.ping) {
+      return Response.json({ ok: true, name: 'clauseLedgerScan' });
+    }
+    const fileUrls = body.fileUrls || body.file_urls;
+    const leaseId = body.leaseId || body.lease_id;
+    const scanId = body.scanId || body.scan_id;
     
     if (!fileUrls || fileUrls.length === 0) {
       return Response.json({ success: false, error: 'No file URLs provided' }, { status: 400 });

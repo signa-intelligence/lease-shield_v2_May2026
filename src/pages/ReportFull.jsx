@@ -183,7 +183,15 @@ function ReportFullContent() {
             const files = (Array.isArray(lease?.file_urls) && lease.file_urls.length) ? lease.file_urls : (lease?.file_url ? [lease.file_url] : []);
             base44.functions.invoke('syncScanClauseLedger', { scanId, lease_id: leaseId, file_urls: files })
               .then(() => setTimeout(() => window.location.reload(), 800))
-              .catch(err => console.error('[ReportFull] backfill error', err));
+              .catch(err => {
+                const msg = err?.response?.data?.error || err?.message || String(err);
+                if (msg.includes('deploymentNotFound')) {
+                  alert('Ledger generator not deployed. Publish backend functions and retry. Function: clauseLedgerScan');
+                } else {
+                  alert('Failed to start ledger generation. Please try again later.');
+                }
+                console.error('[ReportFull] backfill error', err);
+              });
           }
         }, [canonical?.clause_ledger, lease?.file_url, lease?.file_urls, scanId, leaseId]);
 

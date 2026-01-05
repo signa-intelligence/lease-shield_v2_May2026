@@ -24,13 +24,19 @@ Deno.serve(async (req) => {
     const files = (file_urls && file_urls.length) ? file_urls : [];
     const res = await base44.functions.invoke('clauseLedgerScan', {
       scanId,
-      lease_id,
-      file_urls: files
+      leaseId,
+      fileUrls: files
     });
 
-    const updated = res?.data?.canonical_report || true;
+    const updated = !!(res?.data?.result);
     return Response.json({ status: 'ok', updated });
   } catch (err) {
-    return Response.json({ error: err.message || String(err) }, { status: 500 });
+    const msg = err?.message || String(err);
+    const code = err?.code || '';
+    const isDeploy = msg.includes('deploymentNotFound') || code === 'deploymentNotFound';
+    if (isDeploy) {
+      return Response.json({ error: 'Ledger generator not deployed. Publish backend functions and retry.', function: 'clauseLedgerScan', code: 'deploymentNotFound' }, { status: 503 });
+    }
+    return Response.json({ error: msg }, { status: 500 });
   }
 });
