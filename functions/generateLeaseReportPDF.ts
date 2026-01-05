@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
 
     // =====================================================================
     // DETAILED ISSUES (PRIMARY DATA SOURCE - flags array)
-    // This is the main content that renders ALL issues with recommendations
+    // Renders ALL issues with full recommendations and evidence
     // =====================================================================
     const flags = Array.isArray(scanData.flags) ? scanData.flags : [];
     
@@ -205,30 +205,25 @@ Deno.serve(async (req) => {
 
       sortedFlags.forEach((flag, idx) => {
         // Page break check - ensure enough space for issue block
-        if (y > pageHeight - 80) { doc.addPage(); y = 20; }
+        if (y > pageHeight - 90) { doc.addPage(); y = 20; }
         
         // Issue title
         doc.setFontSize(11); doc.setFont('helvetica','bold');
         const title = flag.title || flag.description?.substring(0, 60) || `Issue ${idx + 1}`;
         y = addText(`${idx + 1}. ${title}`, 20, 11, 'bold');
 
-        // Severity badge
+        // Severity badge + category on same line
         doc.setFontSize(9); doc.setFont('helvetica','normal');
         const severityLabel = (flag.severity || 'medium').toUpperCase();
-        y = addText(`Severity: ${severityLabel}`, 25, 9);
-        
-        // Category
-        if (flag.category) {
-          y = addText(`Category: ${flag.category}`, 25, 9);
-        }
+        const catLabel = flag.category ? ` | Category: ${flag.category}` : '';
+        y = addText(`Severity: ${severityLabel}${catLabel}`, 25, 9);
 
-        // Description / Impact
-        if (flag.description) {
-          if (y > pageHeight - 30) { doc.addPage(); y = 20; }
-          doc.setFont('helvetica','bold'); doc.text('Impact:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          y = addText(flag.description, 25, 9);
-        }
+        // Description / Impact (always show)
+        if (y > pageHeight - 30) { doc.addPage(); y = 20; }
+        doc.setFont('helvetica','bold'); doc.text('Impact:', 25, y); y += 5;
+        doc.setFont('helvetica','normal');
+        const impact = flag.description || flag.impact || 'Review required';
+        y = addText(impact, 25, 9);
 
         // Explanation (why this matters)
         if (flag.explanation) {
@@ -238,36 +233,53 @@ Deno.serve(async (req) => {
           y = addText(flag.explanation, 25, 9);
         }
 
-        // Recommendations (the detailed bullet points)
-        if (flag.recommendation) {
-          if (y > pageHeight - 40) { doc.addPage(); y = 20; }
-          doc.setFont('helvetica','bold'); doc.text('Recommendations:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          
-          // Parse recommendations - may be string with bullets or array
-          const recText = String(flag.recommendation || '');
-          const recLines = recText.split(/[\n•\-–]/g).map(s => s.trim()).filter(s => s.length > 0);
-          
-          recLines.forEach(line => {
-            if (y > pageHeight - 15) { doc.addPage(); y = 20; }
-            doc.text(`• ${line}`, 25, y);
-            y += 5;
-          });
+        // Recommendations (REQUIRED - minimum 2 specific bullets)
+        const recText = flag.recommendation || flag.recommendations || '';
+        const recLines = Array.isArray(recText) ? recText : String(recText).split(/[\n•\-–]/g).map(s => s.trim()).filter(s => s.length > 0);
+        
+        if (recLines.length === 0) {
+          // Synthesize category-based recs
+          const cat = flag.category || 'clause';
+          recLines.push(`Request to narrow or clarify ${cat} terms to tenant-favorable language`);
+          recLines.push(`Add explicit safeguard for ${cat} to prevent overbroad interpretation`);
         }
+        
+        if (y > pageHeight - 45) { doc.addPage(); y = 20; }
+        doc.setFont('helvetica','bold'); doc.text('Recommendations:', 25, y); y += 5;
+        doc.setFont('helvetica','normal');
+        recLines.slice(0, 5).forEach(line => {
+          if (y > pageHeight - 15) { doc.addPage(); y = 20; }
+          doc.text(`• ${line}`, 25, y);
+          y += 5;
+        });
 
-        // Evidence excerpt
-        if (flag.evidence && flag.evidence.length > 10) {
-          if (y > pageHeight - 25) { doc.addPage(); y = 20; }
-          doc.setFont('helvetica','bold'); doc.text('Evidence:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          doc.setFontSize(8);
-          const excerpt = flag.evidence.substring(0, 200) + (flag.evidence.length > 200 ? '...' : '');
-          y = addText(excerpt, 25, 8);
-          doc.setFontSize(9);
+        // Evidence excerpt (REQUIRED - synthesize if missing)
+        let evidence = flag.evidence || '';
+        if (!evidence || evidence.length < 10) {
+          evidence = `[Evidence not extracted for ${title}]`;
         }
+        
+        if (y > pageHeight - 25) { doc.addPage(); y = 20; }
+        doc.setFont('helvetica','bold'); doc.text('Evidence:', 25, y); y += 5;
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(8);
+        const excerpt = evidence.substring(0, 240) + (evidence.length > 240 ? '...' : '');
+        y = addText(excerpt, 25, 8);
+        doc.setFontSize(9);
 
-        y += 10; // Space between issues
+        y += 8; // Space between issues
       });
+    } else {
+      // No issues found
+      if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detailed Issues', 20, y);
+      y += 10;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('No significant issues requiring attention were identified.', 25, y);
+      y += 15;
     }
 
     // =====================================================================
@@ -307,11 +319,11 @@ Deno.serve(async (req) => {
 
       clauseLedger.forEach((clause, idx) => {
         const review = clauseReview.find(r => r.clause_id === clause.clause_id) || {};
-        if (y > pageHeight - 70) { doc.addPage(); y = 20; }
+        if (y > pageHeight - 80) { doc.addPage(); y = 20; }
 
         // Heading
         doc.setFontSize(11); doc.setFont('helvetica','bold');
-        const heading = clause.heading || `Clause ${clause.clause_id}`;
+        const heading = clause.heading || `Clause ${clause.clause_id || idx+1}`;
         y = addText(`${idx + 1}. ${heading}`, 20, 11, 'bold');
 
         // Risk label
@@ -320,37 +332,57 @@ Deno.serve(async (req) => {
         const riskLabel = riskLevel === 'none' ? 'NO RISK' : riskLevel.toUpperCase() + ' RISK';
         y = addText(`Risk Level: ${riskLabel}`, 25, 9);
 
-        // Snippet/evidence
-        const snippet = (clause.full_text || '').substring(0, 240);
-        if (snippet) {
-          doc.setFont('helvetica','bold'); doc.text('Snippet:', 25, y); y += 5;
-          doc.setFont('helvetica','normal');
-          y = addText(snippet, 25, 8);
+        // Snippet/evidence (REQUIRED - synthesize if missing)
+        let snippet = (clause.full_text || '').substring(0, 240);
+        if (!snippet || snippet.length < 10) {
+          snippet = `[Snippet not extracted for ${heading}]`;
         }
+        if (y > pageHeight - 25) { doc.addPage(); y = 20; }
+        doc.setFont('helvetica','bold'); doc.text('Snippet:', 25, y); y += 5;
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(8);
+        y = addText(snippet, 25, 8);
+        doc.setFontSize(9);
 
         // Rationale / impact
-        if (review.risk_summary) {
-          y = addText(review.risk_summary, 25, 9);
-        } else if (riskLevel === 'none') {
-          y = addText('Accept as standard.', 25, 9);
-        }
+        const rationale = review.risk_summary || (riskLevel === 'none' ? 'Accept as standard.' : 'Review required');
+        y = addText(rationale, 25, 9);
 
-        // Recommendations (ensure at least 2 when risk)
+        // Recommendations (REQUIRED minimum 2 for risks)
         if (riskLevel !== 'none') {
           const recs = [];
           if (review.recommended_change && review.recommended_change !== 'No change recommended') recs.push(review.recommended_change);
           if (review.negotiation_tip && review.negotiation_tip !== 'Accept as standard.') recs.push(review.negotiation_tip);
+          
+          // Synthesize if missing
+          const cat = (Array.isArray(review.mapped_catalog_ids) ? review.mapped_catalog_ids[0] : review.category) || 'clause';
           while (recs.length < 2) {
-            const cat = Array.isArray(review.mapped_catalog_ids) ? review.mapped_catalog_ids[0] : review.category;
             defaultRecsFor(cat).forEach(r => { if (recs.length < 2) recs.push(r); });
           }
+          
+          if (y > pageHeight - 30) { doc.addPage(); y = 20; }
           doc.setFont('helvetica','bold'); doc.text('Recommendations:', 25, y); y += 5;
           doc.setFont('helvetica','normal');
-          recs.forEach(line => { if (y > pageHeight - 15) { doc.addPage(); y = 20; } doc.text(`\u2022 ${line}`, 25, y); y += 5; });
+          recs.forEach(line => {
+            if (y > pageHeight - 15) { doc.addPage(); y = 20; }
+            doc.text(`\u2022 ${line}`, 25, y);
+            y += 5;
+          });
         }
 
-        y += 8;
+        y += 6;
       });
+    } else {
+      // Ledger missing
+      if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Clause-by-Clause Review', 20, y);
+      y += 10;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('Ledger not generated yet. Run backfill to generate full clause coverage.', 25, y);
+      y += 15;
     }
     
     // Missing Clauses (gap report from canonical catalog)

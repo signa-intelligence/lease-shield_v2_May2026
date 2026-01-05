@@ -33,16 +33,13 @@ const SEVERITY_CONFIG = {
 function ReportFullContent() {
         const navigate = useNavigate();
         const [exportingPdf, setExportingPdf] = useState(false);
-        const didBackfillRef = useRef(false);
+        const backfillAttemptedRef = useRef(new Set());
+        const [backfillError, setBackfillError] = useState(null);
 
-        // CRITICAL: Refs to prevent infinite loops
-        const renderCountRef = useRef(0);
-        renderCountRef.current += 1;
-
-        // Parse URL params once
+        // Parse URL params with fallbacks (canonical + legacy casing)
         const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
-        const scanId = urlParams.get('scanId');
-        const leaseId = urlParams.get('leaseId');
+        const scanId = (urlParams.get('scanId') || urlParams.get('scanid') || urlParams.get('scan_id') || '').trim();
+        const leaseId = (urlParams.get('leaseId') || urlParams.get('leaseid') || urlParams.get('lease_id') || '').trim();
         const showDebug = urlParams.get('debug') === '1';
 
         // Fetch user
@@ -108,7 +105,7 @@ function ReportFullContent() {
         const userTier = (user?.plan_tier || 'free').toLowerCase();
         const canExportPdf = userTier !== 'free';
 
-        // Error page renderer
+        // Error page renderer (non-hook dependent)
         const renderErrorPage = (title, message, showRetry = true) => (
           <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
             <div className="max-w-4xl mx-auto">
@@ -133,12 +130,19 @@ function ReportFullContent() {
           </div>
         );
 
-        // State checks
-        if (!scanId || !leaseId) {
-          return renderErrorPage('Missing Parameters', 'This report requires both scanId and leaseId parameters.', false);
+        // CRITICAL: Check params AFTER all hooks
+        const missingParams = !scanId || !leaseId;
+        const isLoading = userLoading || leaseLoading || scanLoading;
+
+        // Conditional rendering AFTER hooks
+        if (missingParams) {
+          return renderErrorPage(
+            'Missing Parameters',
+            'This report requires scanId and leaseId query parameters. Open with: /ReportFull?scanId=xxx&leaseId=yyy',
+            false
+          );
         }
 
-        const isLoading = userLoading || leaseLoading || scanLoading;
         if (isLoading) {
           return (
             <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
@@ -174,49 +178,66 @@ function ReportFullContent() {
           mapped_pct: canonical?.summary?.mapped_pct
         } : null;
 
-        // One-time backfill if clause ledger missing/partial (HOOK MUST BE UNCONDITIONAL)
+        // One-shot backfill if clause ledger missing (HOOK MUST BE UNCONDITIONAL)
         useEffect(() => {
+          if (!leaseId || !scanId || !lease || !scan) return;
           const ledgerLen = (Array.isArray(canonical?.clause_ledger) ? canonical.clause_ledger.length : 0);
-          if (didBackfillRef.current) return;
-          if (ledgerLen < 80 && leaseId && scanId) {
-            didBackfillRef.current = true;
-            const files = (Array.isArray(lease?.file_urls) && lease.file_urls.length) ? lease.file_urls : (lease?.file_url ? [lease.file_url] : []);
-            base44.functions.invoke('syncScanClauseLedger', { scanId, lease_id: leaseId, file_urls: files })
-              .then(() => setTimeout(() => window.location.reload(), 800))
-              .catch(err => {
-                const msg = err?.response?.data?.error || err?.message || String(err);
-                if (msg.includes('deploymentNotFound')) {
-                  alert('Ledger generator not deployed. Publish backend functions and retry. Function: clauseLedgerScan');
-                } else {
-                  alert('Failed to start ledger generation. Please try again later.');
-                }
-                console.error('[ReportFull] backfill error', err);
-              });
-          }
-        }, [canonical?.clause_ledger, lease?.file_url, lease?.file_urls, scanId, leaseId]);
+          const backfillKey = `${scanId}:${leaseId}`;
+          if (backfillAttemptedRef.current.has(backfillKey)) return;
+          if (ledgerLen >= 80) return;
 
-        // Unify risks from flags + reviews
+          backfillAttemptedRef.current.add(backfillKey);
+          const files = (Array.isArray(lease?.file_urls) && lease.file_urls.length) ? lease.file_urls : (lease?.file_url ? [lease.file_url] : []);
+          
+          base44.functions.invoke('syncScanClauseLedger', { scanId, lease_id: leaseId, file_urls: files })
+            .then((res) => {
+              if (res?.data?.status === 'ok') {
+                setTimeout(() => window.location.reload(), 800);
+              } else if (res?.data?.status === 'error' && res?.data?.code === 'deploymentNotFound') {
+                setBackfillError('Ledger generator not deployed. Publish backend functions (clauseLedgerScan) and retry.');
+              }
+            })
+            .catch(err => {
+              const msg = err?.response?.data?.error || err?.message || String(err);
+              const code = err?.response?.data?.code || '';
+              if (msg.includes('deploymentNotFound') || code === 'deploymentNotFound') {
+                setBackfillError('Ledger generator not deployed. Publish backend functions (clauseLedgerScan) and retry.');
+              } else {
+                setBackfillError('Failed to generate ledger. Please try again later.');
+              }
+              console.error('[ReportFull] backfill error', err);
+            });
+        }, [leaseId, scanId, lease, scan, canonical?.clause_ledger]);
+
+        // Unify risks from flags + reviews (HARD GUARD: always return valid arrays)
         const unifiedIssuesRaw = useMemo(() => {
           const byClause = {};
-          clauseReview.forEach(r => {
+          const reviews = Array.isArray(clauseReview) ? clauseReview : [];
+          const ledger = Array.isArray(clauseLedger) ? clauseLedger : [];
+          const fl = Array.isArray(flags) ? flags : [];
+
+          reviews.forEach(r => {
             if (!r.risk_level || r.risk_level === 'none') return;
             byClause[r.clause_id] = { review: r };
           });
-          const fl = Array.isArray(flags) ? flags : [];
+          
           fl.forEach(f => {
             const key = f.clause_id || `flag-${f.pattern_id || f.title || Math.random()}`;
             if (!byClause[key]) byClause[key] = {};
             byClause[key].flag = f;
           });
+
           const list = Object.entries(byClause).map(([_, pair]) => {
             const r = pair.review;
             const f = pair.flag;
-            const clause = clauseLedger.find(c => c.clause_id === (r?.clause_id || f?.clause_id));
+            const clause = ledger.find(c => c.clause_id === (r?.clause_id || f?.clause_id));
             const severity = f?.severity || (r?.risk_level || 'medium');
-            const category = f?.category || (r?.mapped_catalog_ids?.[0] ? r.mapped_catalog_ids[0] : undefined);
-            const title = f?.title || clause?.heading || (r?.risk_summary?.substring(0, 80) || 'Issue');
-            const impact = f?.description || r?.risk_summary || '';
+            const category = f?.category || (r?.mapped_catalog_ids?.[0] ? r.mapped_catalog_ids[0] : 'clause');
+            const title = f?.title || clause?.heading || (r?.risk_summary?.substring(0, 80) || 'Issue identified');
+            const impact = f?.description || r?.risk_summary || 'Review required';
             const explanation = f?.explanation || r?.lawyer_view || r?.tenant_view || '';
+            
+            // Build recommendations with minimum 2 specific items
             let recs = [];
             if (f?.recommendation) {
               recs = String(f.recommendation).split(/[\n•\-–]/g).map(s => s.trim()).filter(Boolean);
@@ -227,11 +248,15 @@ function ReportFullContent() {
             while (recs.length < 2) {
               defaultRecsFor(category).forEach(x => { if (recs.length < 2) recs.push(x); });
             }
-            const evidence = (f?.evidence || clause?.full_text || '').substring(0, 240);
-            const hasSupport = Boolean(evidence?.length || r?.clause_id || f?.missing_safeguard);
+            
+            // Evidence/snippet required (synthesize if missing)
+            let evidence = (f?.evidence || clause?.full_text || '').substring(0, 240);
+            if (!evidence || evidence.length < 10) {
+              evidence = `[Evidence not extracted for ${title}]`;
+            }
+            
             return {
-              status: hasSupport ? 'VALID' : 'INVALID',
-              clause_id: r?.clause_id || f?.clause_id,
+              clause_id: r?.clause_id || f?.clause_id || `unknown-${Math.random().toString(36).slice(2,9)}`,
               category,
               severity,
               title,
@@ -240,17 +265,18 @@ function ReportFullContent() {
               recommendations: recs,
               evidence
             };
-          }).filter(i => i.status === 'VALID');
+          });
+
           const order = { critical: 0, high: 1, medium: 2, low: 3 };
           list.sort((a,b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
           return list;
         }, [clauseReview, clauseLedger, flags]);
 
-        // Deduplicate risks (same title + evidence)
+        // Deduplicate using stable key (clause_id + severity + category)
         const unifiedIssues = useMemo(() => {
           const seen = new Set();
           return unifiedIssuesRaw.filter(i => {
-            const key = `${(i.title||'').trim()}::${(i.evidence||'').trim()}`;
+            const key = `${i.clause_id}::${i.severity}::${i.category}`;
             if (seen.has(key)) return false;
             seen.add(key);
             return true;
@@ -264,30 +290,44 @@ function ReportFullContent() {
           return map;
         }, [unifiedIssues]);
 
-        // Clause-by-clause entries (risk + non-risk)
+        // Clause-by-clause entries (risk + non-risk) - HARD GUARD
         const clauseEntries = useMemo(() => {
-          return (clauseLedger || []).map(c => {
-            const r = clauseReview.find(x => x.clause_id === c.clause_id) || {};
+          const ledger = Array.isArray(clauseLedger) ? clauseLedger : [];
+          const reviews = Array.isArray(clauseReview) ? clauseReview : [];
+          
+          return ledger.map((c, idx) => {
+            const r = reviews.find(x => x.clause_id === c.clause_id) || {};
             const riskLevel = r.risk_level || 'none';
             const isRisk = riskLevel !== 'none';
+            
+            // Build recommendations
             let recs = [];
             if (isRisk) {
               if (r?.recommended_change && r.recommended_change !== 'No change recommended') recs.push(r.recommended_change);
               if (r?.negotiation_tip && r.negotiation_tip !== 'Accept as standard.') recs.push(r.negotiation_tip);
               if (recs.length === 0) {
                 const fromIssue = issuesByClauseId.get(c.clause_id);
-                if (fromIssue?.recommendations?.length) recs = fromIssue.recommendations;
+                if (fromIssue?.recommendations?.length) recs = [...fromIssue.recommendations];
+              }
+              // Ensure min 2 recs for risks
+              const category = r.mapped_catalog_ids?.[0] || 'clause';
+              while (recs.length < 2) {
+                defaultRecsFor(category).forEach(x => { if (recs.length < 2) recs.push(x); });
               }
             }
+            
+            // Snippet required
             let snippet = (c.full_text || '').slice(0, 240);
-            if (!snippet) {
+            if (!snippet || snippet.length < 10) {
               const fromIssue = issuesByClauseId.get(c.clause_id);
-              if (fromIssue?.evidence) snippet = fromIssue.evidence;
+              snippet = fromIssue?.evidence || `[Snippet not extracted for ${c.heading || c.clause_id}]`;
             }
-            const rationale = r.risk_summary || (isRisk ? '' : (r.tenant_view || 'Accept as standard.'));
+            
+            const rationale = r.risk_summary || (isRisk ? 'Review required' : (r.tenant_view || 'Accept as standard.'));
+            
             return {
-              clause_id: c.clause_id,
-              heading: c.heading,
+              clause_id: c.clause_id || `CL-${String(idx+1).padStart(3,'0')}`,
+              heading: c.heading || `Clause ${idx+1}`,
               snippet,
               risk_level: riskLevel,
               category: (r.mapped_catalog_ids?.[0]) || undefined,
@@ -414,19 +454,48 @@ function ReportFullContent() {
         return (
           <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '100px' }}>
             <div className="max-w-4xl mx-auto">
+              {/* Backfill Error Banner */}
+              {backfillError && (
+                <Card className="mb-4 border-2 border-red-500" style={{ backgroundColor: '#FEE2E2' }}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
+                      <div className="flex-1">
+                        <h3 className="font-bold text-red-800 mb-1">Ledger Generation Failed</h3>
+                        <p className="text-sm text-red-700 mb-3">{backfillError}</p>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            backfillAttemptedRef.current.clear();
+                            setBackfillError(null);
+                            window.location.reload();
+                          }}
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2" />Retry Backfill
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Debug Panel */}
               {showDebug && isAdmin && (
                 <Card className="mb-4 border-2 border-emerald-500" style={{ backgroundColor: '#D1FAE5' }}>
                   <CardContent className="p-4">
                     <h3 className="font-bold text-emerald-800 mb-2">🔧 Debug Panel</h3>
                     <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-{`✅ Report loaded
-Scan: ${scan.id} | Lease: ${lease.id}
-Risk Score: ${reportData.risk_score}
-Total Clauses: ${totalClauses}
-Risks: ${risksCount}
-Non-Risks: ${nonRisksCount}
-PDF Entries: ${pdfEntriesCount}`}
+              {`✅ Report loaded
+              Scan: ${scan.id} | Lease: ${lease.id}
+              Risk Score: ${reportData.risk_score}
+              Total Clauses: ${totalClauses}
+              Risks: ${risksCount}
+              Non-Risks: ${nonRisksCount}
+              PDF Entries: ${pdfEntriesCount}
+              Ledger Present: ${clauseLedger.length > 0}
+              Unified Issues: ${unifiedIssues.length}
+              Flags: ${reportData.flags.length}`}
                     </pre>
                   </CardContent>
                 </Card>

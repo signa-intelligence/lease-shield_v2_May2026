@@ -31,12 +31,17 @@ Deno.serve(async (req) => {
     const updated = !!(res?.data?.result);
     return Response.json({ status: 'ok', updated });
   } catch (err) {
-    const msg = err?.message || String(err);
-    const code = err?.code || '';
+    const msg = err?.response?.data?.error || err?.message || String(err);
+    const code = err?.response?.data?.code || err?.code || '';
     const isDeploy = msg.includes('deploymentNotFound') || code === 'deploymentNotFound';
     if (isDeploy) {
-      return Response.json({ error: 'Ledger generator not deployed. Publish backend functions and retry.', function: 'clauseLedgerScan', code: 'deploymentNotFound' }, { status: 503 });
+      return Response.json({ 
+        status: 'error', 
+        code: 'deploymentNotFound', 
+        error: 'Ledger generator not deployed. Publish backend functions and retry.', 
+        function: 'clauseLedgerScan' 
+      }, { status: 503 });
     }
-    return Response.json({ error: msg }, { status: 500 });
+    return Response.json({ status: 'error', error: msg }, { status: 500 });
   }
 });
