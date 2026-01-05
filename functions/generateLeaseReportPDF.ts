@@ -383,13 +383,13 @@ Deno.serve(async (req) => {
       });
     }
     
-    // Clause Coverage Summary (92 categories)
-    const coverageSummary = scanData.coverage_summary || {};
+    // Clause Coverage Summary (driven by canonical summary metrics)
+    const canonicalSummary = scanData.coverage_summary || {};
     const mappingsCount = Array.isArray(scanData.mappings) ? scanData.mappings.length : 0;
     const missingCount = missingClauses.length;
     const totalCatalog = 92; // Canonical catalog size
     
-    if (mappingsCount > 0 || missingCount > 0) {
+    if (mappingsCount > 0 || missingCount > 0 || canonicalSummary.mapped_pct != null) {
       if (y > pageHeight - 60) { doc.addPage(); y = 20; }
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
