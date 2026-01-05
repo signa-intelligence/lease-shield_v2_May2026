@@ -433,46 +433,7 @@ Flags: ${flags.length}`}
 
 
 
-        {/* Missing Standard Clauses */}
-        {missingClauses.length > 0 && (
-          <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="w-6 h-6 text-red-500" />
-                {strings.missingClauses} ({missingClauses.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {missingClauses.slice(0, 15).map((missing, idx) => (
-                <div key={idx} className="p-3 rounded-lg border" style={{ 
-                  borderColor: colors.borderColor,
-                  backgroundColor: isDarkMode ? '#2A2D30' : '#FAFAFA'
-                }}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge className={
-                      missing.priority === 'high' ? 'bg-red-100 text-red-800' :
-                      missing.priority === 'medium' ? 'bg-amber-100 text-amber-800' :
-                      'bg-blue-100 text-blue-800'
-                    }>
-                      {missing.priority?.toUpperCase() || 'LOW'}
-                    </Badge>
-                    <span className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                      {missing.canonical_name}
-                    </span>
-                  </div>
-                  {missing.why_it_matters && (
-                    <p className="text-xs" style={{ color: colors.textSecondary }}>{missing.why_it_matters}</p>
-                  )}
-                  {missing.suggested_addition_text && (
-                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                      💡 {missing.suggested_addition_text}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
