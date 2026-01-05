@@ -452,7 +452,7 @@ Flags (issues): ${flags.length}`}
           </CardContent>
         </Card>
 
-        {/* Issues Requiring Attention - PRIMARY SOURCE: flags array */}
+        {/* Issues Requiring Attention - unifiedIssues from canonical+flags */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
