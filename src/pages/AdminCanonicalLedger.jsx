@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
   Download, Copy, Search, CheckCircle2, AlertTriangle, 
-  ArrowLeft, FileText, Database, RefreshCw 
+  ArrowLeft, FileText, Database, RefreshCw, Code, ChevronDown, ChevronUp 
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AuthGuard from "../components/shared/AuthGuard";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
@@ -22,6 +23,8 @@ function AdminCanonicalLedgerContent() {
   const toast = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRows, setExpandedRows] = useState({});
+  const [showRawJson, setShowRawJson] = useState(false);
+  const [debugExpanded, setDebugExpanded] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -98,13 +101,18 @@ function AdminCanonicalLedgerContent() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `canonical-clause-catalog-${catalogData.catalog_version}.json`;
+    a.download = `canonical-ledger-${catalogData.catalog_version}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    toast.success('Catalog exported as JSON');
+    toast.success(`Downloaded: canonical-ledger-${catalogData.catalog_version}.json`);
+  };
+
+  const handleViewRawJson = () => {
+    haptic.light();
+    setShowRawJson(true);
   };
 
   const handleCopyJSON = async () => {
@@ -191,12 +199,15 @@ function AdminCanonicalLedgerContent() {
           backRoute={createPageUrl("AdminConsole")}
           isDarkMode={isDarkMode}
           actions={
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" onClick={handleViewRawJson}>
+                <Code className="w-4 h-4 mr-2" /> View Raw JSON
+              </Button>
               <Button variant="outline" onClick={handleCopyJSON}>
-                <Copy className="w-4 h-4 mr-2" /> Copy JSON
+                <Copy className="w-4 h-4 mr-2" /> Copy
               </Button>
               <Button style={{ backgroundColor: '#0C3B2E', color: '#fff' }} onClick={handleExportJSON}>
-                <Download className="w-4 h-4 mr-2" /> Export JSON
+                <Download className="w-4 h-4 mr-2" /> Download canonical-ledger-{catalogData?.catalog_version}.json
               </Button>
             </div>
           }
@@ -250,6 +261,50 @@ function AdminCanonicalLedgerContent() {
             )}
           </CardContent>
         </Card>
+
+        {/* Raw JSON Modal */}
+        {showRawJson && (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowRawJson(false)}>
+            <div 
+              className="w-full max-w-5xl max-h-[90vh] rounded-lg overflow-hidden flex flex-col"
+              style={{ backgroundColor: colors.cardBg }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: colors.borderColor }}>
+                <div>
+                  <h2 className="text-lg font-bold" style={{ color: colors.textPrimary }}>Raw JSON View</h2>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    canonical-ledger-{catalogData?.catalog_version}.json • {catalogData?.catalog_count} entries
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleCopyJSON}>
+                    <Copy className="w-4 h-4 mr-1" /> Copy
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleExportJSON}>
+                    <Download className="w-4 h-4 mr-1" /> Download
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowRawJson(false)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-auto p-4">
+                <pre 
+                  className="text-xs font-mono whitespace-pre-wrap break-all"
+                  style={{ 
+                    color: colors.textPrimary,
+                    backgroundColor: isDarkMode ? '#1A1D1F' : '#F8FAFC',
+                    padding: '16px',
+                    borderRadius: '8px'
+                  }}
+                >
+                  {JSON.stringify(catalogData, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Catalog Table */}
         <Card className="border-none shadow-lg overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
@@ -368,6 +423,62 @@ function AdminCanonicalLedgerContent() {
               </table>
             </div>
           </CardContent>
+        </Card>
+
+        {/* Debug Fallback: Collapsible Raw JSON */}
+        <Card className="mt-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+          <Collapsible open={debugExpanded} onOpenChange={setDebugExpanded}>
+            <CollapsibleTrigger asChild>
+              <CardHeader 
+                className="cursor-pointer hover:opacity-80 transition-opacity flex flex-row items-center justify-between"
+                style={{ borderColor: colors.borderColor }}
+              >
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">DEBUG</Badge>
+                  <CardTitle className="text-base" style={{ color: colors.textPrimary }}>
+                    Raw Catalog JSON (Fallback Export)
+                  </CardTitle>
+                </div>
+                {debugExpanded ? (
+                  <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                ) : (
+                  <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
+                )}
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm" style={{ color: colors.textSecondary }}>
+                    Version: {catalogData?.catalog_version} • Entries: {catalogData?.catalog_count} • 
+                    {catalogData?.catalog_count === 83 ? (
+                      <span className="text-emerald-600 ml-1">✓ Count verified (83)</span>
+                    ) : (
+                      <span className="text-red-600 ml-1">⚠ Expected 83, got {catalogData?.catalog_count}</span>
+                    )}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleCopyJSON}>
+                      <Copy className="w-4 h-4 mr-1" /> Copy All
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleExportJSON}>
+                      <Download className="w-4 h-4 mr-1" /> Download
+                    </Button>
+                  </div>
+                </div>
+                <pre 
+                  className="text-xs font-mono whitespace-pre-wrap break-all overflow-auto max-h-96 p-4 rounded-lg"
+                  style={{ 
+                    color: colors.textPrimary,
+                    backgroundColor: isDarkMode ? '#1A1D1F' : '#F1F5F9',
+                    border: `1px solid ${colors.borderColor}`
+                  }}
+                >
+                  {JSON.stringify(catalogData, null, 2)}
+                </pre>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
       </div>
     </div>
