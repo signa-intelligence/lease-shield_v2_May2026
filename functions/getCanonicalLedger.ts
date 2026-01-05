@@ -2,12 +2,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { handleCors, ensureAllowedOrigin } from './http.js';
 
 // ============================================================================
-// CANONICAL CLAUSE CATALOG - Thailand Residential Lease Standard v1.0
+// CANONICAL CLAUSE CATALOG - Thailand Residential Lease Standard v1.1
 // This is the authoritative source of truth for lease clause taxonomy
 // ============================================================================
 
-const CATALOG_VERSION = "v1.0";
-const CATALOG_UPDATED_AT = "2025-01-05T00:00:00Z";
+const CATALOG_VERSION = "v1.1";
+const CATALOG_UPDATED_AT = "2026-01-05T00:00:00Z";
 
 const CANONICAL_CLAUSE_CATALOG = [
   // === PARTIES & PROPERTY (CAT-001 to CAT-005) ===
@@ -854,6 +854,98 @@ const CANONICAL_CLAUSE_CATALOG = [
     sort_order: 82
   },
 
+  // === LEASE SHIELD ENHANCED CLAUSES v1.1 (CAT-121 to CAT-129) ===
+  {
+    catalog_id: "CAT-121",
+    canonical_name: "Grace Period Definition",
+    purpose: "Define the number of days after rent due date before late fees apply",
+    typical_keywords: ["grace period", "grace days", "late after", "ระยะผ่อนผัน", "วันผ่อนผัน"],
+    typical_variants: ["Payment Grace", "Late Payment Buffer", "Due Date Extension"],
+    risk_triggers: ["no grace period", "grace period less than 5 days", "grace period applies only on landlord discretion"],
+    is_active: true,
+    sort_order: 121
+  },
+  {
+    catalog_id: "CAT-122",
+    canonical_name: "Rent Suspension Conditions",
+    purpose: "Define conditions when rent may be suspended or abated due to uninhabitability",
+    typical_keywords: ["rent suspension", "rent abatement", "uninhabitable", "cannot occupy", "ระงับค่าเช่า", "อยู่ไม่ได้"],
+    typical_variants: ["Rent Abatement", "Habitability Clause", "Rent Relief"],
+    risk_triggers: ["no rent suspension provision", "tenant must pay rent even if uninhabitable", "landlord sole discretion on habitability"],
+    is_active: true,
+    sort_order: 122
+  },
+  {
+    catalog_id: "CAT-123",
+    canonical_name: "Deposit Is Not Rent",
+    purpose: "Clarify that security deposit cannot be applied as last month's rent by tenant",
+    typical_keywords: ["deposit not rent", "cannot apply deposit", "last month rent", "มัดจำไม่ใช่ค่าเช่า", "ห้ามหักมัดจำ"],
+    typical_variants: ["Deposit Application Restriction", "No Rent Offset", "Deposit Purpose"],
+    risk_triggers: ["silent on deposit-as-rent", "allows tenant to use deposit for rent", "ambiguous deposit terms"],
+    is_active: true,
+    sort_order: 123
+  },
+  {
+    catalog_id: "CAT-124",
+    canonical_name: "Wear and Tear Safe Harbour",
+    purpose: "Explicitly exclude normal wear and tear from deposit deductions with specific examples",
+    typical_keywords: ["normal wear excluded", "fair wear", "reasonable deterioration", "safe harbour", "การสึกหรอปกติ", "ยกเว้น"],
+    typical_variants: ["Wear Exclusion", "Depreciation Allowance", "Natural Deterioration"],
+    risk_triggers: ["no wear and tear exclusion", "all damage deductible", "wear and tear not defined"],
+    is_active: true,
+    sort_order: 124
+  },
+  {
+    catalog_id: "CAT-125",
+    canonical_name: "Quiet Enjoyment Covenant",
+    purpose: "Guarantee tenant's right to peaceful possession without landlord interference",
+    typical_keywords: ["quiet enjoyment", "peaceful possession", "no interference", "สิทธิครอบครอง", "ไม่รบกวน"],
+    typical_variants: ["Peaceful Enjoyment", "Non-Interference", "Possession Rights"],
+    risk_triggers: ["no quiet enjoyment clause", "landlord unlimited access", "frequent inspections permitted"],
+    is_active: true,
+    sort_order: 125
+  },
+  {
+    catalog_id: "CAT-126",
+    canonical_name: "Cure Period Exceptions",
+    purpose: "Define which breaches cannot be cured (e.g., non-payment, serious violations)",
+    typical_keywords: ["non-curable", "cure exception", "immediate termination", "serious breach", "ไม่สามารถแก้ไข", "ละเมิดร้ายแรง"],
+    typical_variants: ["Incurable Defaults", "No Remedy Breaches", "Automatic Termination Events"],
+    risk_triggers: ["too many non-curable breaches", "minor breaches listed as non-curable", "no cure period at all"],
+    is_active: true,
+    sort_order: 126
+  },
+  {
+    catalog_id: "CAT-127",
+    canonical_name: "Early Termination Penalty Formula",
+    purpose: "Define the specific calculation for early termination penalties based on remaining term",
+    typical_keywords: ["termination penalty", "early exit fee", "penalty formula", "months remaining", "ค่าปรับยกเลิก", "สูตรคำนวณ"],
+    typical_variants: ["Break Fee Calculation", "Exit Penalty", "Termination Damages"],
+    risk_triggers: ["excessive penalty (>2 months)", "full remaining rent as penalty", "no sliding scale", "penalty increases over time"],
+    is_active: true,
+    sort_order: 127
+  },
+  {
+    catalog_id: "CAT-128",
+    canonical_name: "Rent Abatement vs Force Majeure",
+    purpose: "Distinguish between rent abatement (habitability) and force majeure (external events) provisions",
+    typical_keywords: ["abatement", "force majeure", "rent reduction", "external event", "ลดค่าเช่า", "เหตุสุดวิสัย"],
+    typical_variants: ["Rent Relief Distinction", "Habitability vs FM", "Abatement Triggers"],
+    risk_triggers: ["no distinction between abatement and FM", "FM excludes rent relief", "tenant bears all FM risk"],
+    is_active: true,
+    sort_order: 128
+  },
+  {
+    catalog_id: "CAT-129",
+    canonical_name: "Utility Interruption – Rent Still Payable",
+    purpose: "Clarify tenant's rent obligation during utility service interruptions not caused by tenant",
+    typical_keywords: ["utility interruption", "service outage", "rent during outage", "ไฟฟ้าดับ", "น้ำไม่ไหล", "ค่าเช่าระหว่าง"],
+    typical_variants: ["Service Interruption", "Utility Failure", "Outage Rent Terms"],
+    risk_triggers: ["tenant must pay full rent during extended outage", "no abatement for utility failure", "landlord not responsible for utilities"],
+    is_active: true,
+    sort_order: 129
+  },
+
   // === UNMAPPED CATCH-ALL ===
   {
     catalog_id: "CAT-UNMAPPED",
@@ -863,7 +955,7 @@ const CANONICAL_CLAUSE_CATALOG = [
     typical_variants: [],
     risk_triggers: ["unusual or non-standard terms requiring manual review"],
     is_active: true,
-    sort_order: 99
+    sort_order: 999
   }
 ];
 
