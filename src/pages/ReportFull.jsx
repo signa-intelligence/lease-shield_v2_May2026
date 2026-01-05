@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-// NOTE: NOT using createPageUrl for this page to avoid redirect loops
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,31 +16,31 @@ import {
   ExternalLink,
   Download,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
+import ClauseCoverageTable from "../components/report/ClauseCoverageTable";
+import NegotiationPlan from "../components/report/NegotiationPlan";
+import RecommendationCard from "../components/report/RecommendationCard";
 
 const SEVERITY_CONFIG = {
-  low: { color: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'Low', icon: CheckCircle2 },
-  medium: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Medium', icon: Info },
+  none: { color: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'NO RISK', icon: CheckCircle2 },
+  low: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Low', icon: Info },
+  medium: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Medium', icon: AlertTriangle },
   high: { color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'High', icon: AlertTriangle },
   critical: { color: 'bg-red-100 text-red-800 border-red-200', label: 'Critical', icon: AlertCircle }
 };
 
 function ReportFullContent() {
   const navigate = useNavigate();
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const [showAllClauses, setShowAllClauses] = useState(false);
   
-  // CRITICAL: Refs to prevent infinite loops - persisted across renders
-  const redirectAttemptedRef = useRef(false);
-  const fetchAttemptCountRef = useRef(0);
+  // CRITICAL: Refs to prevent infinite loops
   const renderCountRef = useRef(0);
-  const navigationLogRef = useRef([]);
-  
-  // Debug state (only shown with ?debug=1)
-  const [debugInfo, setDebugInfo] = useState({ renders: 0, fetches: 0, navigations: [] });
-  
-  // Increment render count
   renderCountRef.current += 1;
   
   // Parse URL params once
@@ -49,70 +48,36 @@ function ReportFullContent() {
   const scanId = urlParams.get('scanId');
   const leaseId = urlParams.get('leaseId');
   const showDebug = urlParams.get('debug') === '1';
-  
-  // Log navigation helper
-  const logNavigation = (reason) => {
-    const entry = { time: new Date().toISOString(), reason };
-    navigationLogRef.current.push(entry);
-    console.log('[ReportFull] Navigation:', reason);
-    if (showDebug) {
-      setDebugInfo(prev => ({
-        ...prev,
-        navigations: [...prev.navigations, entry]
-      }));
-    }
-  };
-
-  // Update debug info on render
-  useEffect(() => {
-    if (showDebug) {
-      setDebugInfo(prev => ({
-        ...prev,
-        renders: renderCountRef.current,
-        fetches: fetchAttemptCountRef.current
-      }));
-    }
-  }, [showDebug]);
 
   // Fetch user
   const { data: user, isLoading: userLoading, error: userError } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
-    retry: false, // NO RETRY - prevents loop
+    retry: false,
     staleTime: 60000
   });
 
-  // Fetch lease - ONLY when leaseId is present
+  // Fetch lease
   const { data: leaseData, isLoading: leaseLoading, error: leaseError } = useQuery({
     queryKey: ['lease', leaseId],
     queryFn: async () => {
-      fetchAttemptCountRef.current += 1;
-      if (showDebug) {
-        setDebugInfo(prev => ({ ...prev, fetches: fetchAttemptCountRef.current }));
-      }
-      console.log('[ReportFull] Fetching lease:', leaseId);
       const results = await base44.entities.Lease.filter({ id: leaseId });
       return results?.[0] || null;
     },
-    enabled: !!leaseId && !!user, // Only fetch if we have both
-    retry: false, // NO RETRY
+    enabled: !!leaseId && !!user,
+    retry: false,
     staleTime: 60000
   });
 
-  // Fetch scan - ONLY when scanId is present
+  // Fetch scan
   const { data: scanData, isLoading: scanLoading, error: scanError } = useQuery({
     queryKey: ['scan', scanId],
     queryFn: async () => {
-      fetchAttemptCountRef.current += 1;
-      if (showDebug) {
-        setDebugInfo(prev => ({ ...prev, fetches: fetchAttemptCountRef.current }));
-      }
-      console.log('[ReportFull] Fetching scan:', scanId);
       const results = await base44.entities.LeaseScan.filter({ id: scanId });
       return results?.[0] || null;
     },
-    enabled: !!scanId && !!user, // Only fetch if we have both
-    retry: false, // NO RETRY
+    enabled: !!scanId && !!user,
+    retry: false,
     staleTime: 60000
   });
 
@@ -133,65 +98,72 @@ function ReportFullContent() {
     borderColor: '#E5E7EB'
   };
 
-  // Check admin for debug panel
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || 
                   user?.access_level === 'admin' || user?.access_level === 'super_admin';
+  const userTier = (user?.plan_tier || 'free').toLowerCase();
+  const canExportPdf = userTier !== 'free';
 
-  // CRITICAL: Stable error page component - NO navigation calls
+  // Export PDF handler
+  const handleExportPdf = async () => {
+    if (!canExportPdf || exportingPdf) return;
+    
+    setExportingPdf(true);
+    haptic.medium();
+    
+    try {
+      // Build scanData payload for PDF generator
+      const canonicalReport = scanData?.scan_full?.canonical_report || {};
+      const pdfPayload = {
+        lease_address: leaseData?.property_address || 'Lease Agreement',
+        generated_date: new Date().toISOString(),
+        risk_score: scanData?.risk_score || 0,
+        summary: scanData?.summary || '',
+        key_terms: canonicalReport.key_terms || scanData?.scan_full?.key_terms || {},
+        clause_review: canonicalReport.clause_review || [],
+        clause_ledger: canonicalReport.clause_ledger || [],
+        missing_clauses: canonicalReport.missing_clauses || [],
+        mappings: canonicalReport.mappings || [],
+        taxonomy_report: scanData?.scan_full?.taxonomy_report || [],
+        coverage_summary: canonicalReport.summary || {},
+        clause_reviews: scanData?.scan_full?.clause_reviews || [], // Legacy fallback
+        missing_items: scanData?.scan_full?.missing_items || []
+      };
+
+      const response = await base44.functions.invoke('generateLeaseReportPDF', {
+        scanData: pdfPayload,
+        language
+      });
+
+      if (response?.data?.pdf_url) {
+        window.open(response.data.pdf_url, '_blank');
+      } else {
+        alert('PDF generation failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('[ReportFull] PDF export error:', err);
+      alert('PDF export failed: ' + (err.message || 'Unknown error'));
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  // Error page renderer
   const renderErrorPage = (title, message, showRetry = true) => (
     <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-4xl mx-auto">
-        {/* Debug Panel - Admin only with ?debug=1 */}
-        {showDebug && isAdmin && (
-          <Card className="mb-4 border-2 border-red-500" style={{ backgroundColor: '#FEE2E2' }}>
-            <CardContent className="p-4">
-              <h3 className="font-bold text-red-800 mb-2">🔧 Debug Panel (Admin)</h3>
-              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-{`URL: ${window.location.href}
-Params: scanId=${scanId || 'MISSING'}, leaseId=${leaseId || 'MISSING'}
-User: ${user?.email || 'NOT LOADED'}
-Render Count: ${renderCountRef.current}
-Fetch Attempts: ${fetchAttemptCountRef.current}
-Redirect Attempted: ${redirectAttemptedRef.current}
-Navigation Log:
-${navigationLogRef.current.map(n => `  ${n.time}: ${n.reason}`).join('\n')}`}
-              </pre>
-            </CardContent>
-          </Card>
-        )}
-        
         <Card style={{ backgroundColor: colors.cardBg }}>
           <CardContent className="p-8 text-center">
             <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-            <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-              {title}
-            </h2>
-            <p className="mb-6" style={{ color: colors.textSecondary }}>
-              {message}
-            </p>
+            <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>{title}</h2>
+            <p className="mb-6" style={{ color: colors.textSecondary }}>{message}</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               {showRetry && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    logNavigation('Manual retry clicked');
-                    window.location.reload();
-                  }}
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Retry
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  <RefreshCw className="w-4 h-4 mr-2" />Retry
                 </Button>
               )}
-              <Button
-                onClick={() => {
-                  logNavigation('Go back clicked');
-                  haptic.light();
-                  navigate('/UploadScan');
-                }}
-                style={{ backgroundColor: '#0C3B2E', color: '#fff' }}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Scans
+              <Button onClick={() => navigate('/UploadScan')} style={{ backgroundColor: '#0C3B2E', color: '#fff' }}>
+                <ArrowLeft className="w-4 h-4 mr-2" />Back to Scans
               </Button>
             </div>
           </CardContent>
@@ -200,90 +172,43 @@ ${navigationLogRef.current.map(n => `  ${n.time}: ${n.reason}`).join('\n')}`}
     </div>
   );
 
-  // === STATE CHECKS (in order, with stable error pages) ===
-
-  // 1. Missing required params - STABLE ERROR (no redirect)
+  // State checks
   if (!scanId || !leaseId) {
-    console.log('[ReportFull] Missing params:', { scanId, leaseId });
-    return renderErrorPage(
-      'Missing Parameters',
-      'This report requires both scanId and leaseId parameters. Please navigate from a valid scan result.',
-      false
-    );
+    return renderErrorPage('Missing Parameters', 'This report requires both scanId and leaseId parameters.', false);
   }
 
-  // 2. Loading state
   const isLoading = userLoading || leaseLoading || scanLoading;
   if (isLoading) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-4xl mx-auto">
-          {showDebug && isAdmin && (
-            <Card className="mb-4 border-2 border-amber-500" style={{ backgroundColor: '#FEF3C7' }}>
-              <CardContent className="p-4">
-                <h3 className="font-bold text-amber-800 mb-2">🔧 Debug Panel - Loading</h3>
-                <pre className="text-xs bg-white p-2 rounded">
-{`Renders: ${renderCountRef.current}, Fetches: ${fetchAttemptCountRef.current}
-userLoading: ${userLoading}, leaseLoading: ${leaseLoading}, scanLoading: ${scanLoading}`}
-                </pre>
-              </CardContent>
-            </Card>
-          )}
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: '#0C3B2E' }} />
-            <p className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
-              Loading report...
-            </p>
-          </div>
+        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20">
+          <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: '#0C3B2E' }} />
+          <p className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Loading report...</p>
         </div>
       </div>
     );
   }
 
-  // 3. Auth error - STABLE ERROR (no auto-redirect to login)
-  if (userError || !user) {
-    console.log('[ReportFull] Auth error:', userError?.message);
-    return renderErrorPage(
-      'Authentication Required',
-      'Please log in to view this report.',
-      false
-    );
-  }
-
-  // 4. Data fetch errors - STABLE ERROR
-  if (leaseError || scanError) {
-    const errorMsg = leaseError?.message || scanError?.message || 'Unknown error';
-    console.log('[ReportFull] Fetch error:', errorMsg);
-    
-    // Check for rate limit
-    if (errorMsg.includes('429') || errorMsg.toLowerCase().includes('rate')) {
-      return renderErrorPage(
-        'Rate Limited',
-        'Too many requests. Please wait 10 seconds and try again.',
-        true
-      );
-    }
-    
-    return renderErrorPage(
-      'Error Loading Report',
-      `Failed to load report data: ${errorMsg}`,
-      true
-    );
-  }
-
-  // 5. Data not found - STABLE ERROR (no redirect)
-  if (!leaseData || !scanData) {
-    console.log('[ReportFull] Data not found:', { hasLease: !!leaseData, hasScan: !!scanData });
-    return renderErrorPage(
-      'Report Not Found',
-      'The requested lease scan could not be found. It may have been deleted or you may not have access.',
-      false
-    );
-  }
+  if (userError || !user) return renderErrorPage('Authentication Required', 'Please log in to view this report.', false);
+  if (leaseError || scanError) return renderErrorPage('Error Loading Report', 'Failed to load report data.', true);
+  if (!leaseData || !scanData) return renderErrorPage('Report Not Found', 'The requested lease scan could not be found.', false);
 
   // === SUCCESS: Render the full report ===
   const lease = leaseData;
   const scan = scanData;
+  
+  // Extract canonical report data
+  const canonicalReport = scan.scan_full?.canonical_report || {};
+  const clauseReview = canonicalReport.clause_review || [];
+  const clauseLedger = canonicalReport.clause_ledger || [];
+  const mappings = canonicalReport.mappings || [];
+  const missingClauses = canonicalReport.missing_clauses || [];
+  const keyTerms = canonicalReport.key_terms || scan.scan_full?.key_terms || {};
+  const summary = canonicalReport.summary || {};
+  
+  // Fallback to flags if no clause_review
+  const flags = scan.flags || scan.scan_full?.flags || [];
+  const hasCanonicalData = clauseReview.length > 0;
 
   const getRiskLevel = (score) => {
     if (score >= 70) return { level: 'high', label: 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' };
@@ -292,8 +217,65 @@ userLoading: ${userLoading}, leaseLoading: ${leaseLoading}, scanLoading: ${scanL
   };
 
   const riskLevel = getRiskLevel(scan.risk_score || 0);
-  const flags = scan.flags || [];
-  const scanFull = scan.scan_full || {};
+
+  // Sort clause reviews by risk
+  const sortedClauseReviews = [...clauseReview].sort((a, b) => {
+    const order = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
+    return (order[a.risk_level] || 4) - (order[b.risk_level] || 4);
+  });
+
+  const riskClauseReviews = sortedClauseReviews.filter(r => r.risk_level && r.risk_level !== 'none');
+  const safeClauseReviews = sortedClauseReviews.filter(r => !r.risk_level || r.risk_level === 'none');
+
+  const t = {
+    en: {
+      fullReport: "Full Lease Analysis Report",
+      property: "Property",
+      summary: "Summary",
+      riskScore: "Risk Score",
+      allIssues: "Issues Requiring Attention",
+      clauseAnalysis: "Clause-by-Clause Analysis",
+      showAllClauses: "Show All Clauses",
+      hideOkClauses: "Hide OK Clauses",
+      safeClauses: "Safe Clauses",
+      missingClauses: "Missing Standard Clauses",
+      exportPdf: "Export PDF",
+      upgradeForPdf: "Upgrade for PDF",
+      viewLease: "View Original Lease",
+      viewTemplates: "View Letter Templates",
+      keyTerms: "Key Lease Terms",
+      monthlyRent: "Monthly Rent",
+      deposit: "Security Deposit",
+      leasePeriod: "Lease Period",
+      noIssues: "No issues found in this lease.",
+      clauseCoverage: "Clause Coverage",
+      coverageSubtitle: "92 standard clause categories"
+    },
+    th: {
+      fullReport: "รายงานวิเคราะห์สัญญาเช่าฉบับเต็ม",
+      property: "ทรัพย์สิน",
+      summary: "สรุป",
+      riskScore: "คะแนนความเสี่ยง",
+      allIssues: "ปัญหาที่ต้องให้ความสนใจ",
+      clauseAnalysis: "การวิเคราะห์ทีละข้อ",
+      showAllClauses: "แสดงข้อกำหนดทั้งหมด",
+      hideOkClauses: "ซ่อนข้อกำหนดที่ปลอดภัย",
+      safeClauses: "ข้อกำหนดที่ปลอดภัย",
+      missingClauses: "ข้อกำหนดมาตรฐานที่ขาดหาย",
+      exportPdf: "ส่งออก PDF",
+      upgradeForPdf: "อัปเกรดเพื่อ PDF",
+      viewLease: "ดูสัญญาเช่าต้นฉบับ",
+      viewTemplates: "ดูเทมเพลตจดหมาย",
+      keyTerms: "ข้อกำหนดสำคัญ",
+      monthlyRent: "ค่าเช่ารายเดือน",
+      deposit: "เงินมัดจำ",
+      leasePeriod: "ระยะเวลาเช่า",
+      noIssues: "ไม่พบปัญหาในสัญญานี้",
+      clauseCoverage: "ความครอบคลุมข้อกำหนด",
+      coverageSubtitle: "หมวดหมู่ข้อกำหนดมาตรฐาน 92 ข้อ"
+    }
+  };
+  const strings = t[language] || t.en;
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '100px' }}>
@@ -302,38 +284,45 @@ userLoading: ${userLoading}, leaseLoading: ${leaseLoading}, scanLoading: ${scanL
         {showDebug && isAdmin && (
           <Card className="mb-4 border-2 border-emerald-500" style={{ backgroundColor: '#D1FAE5' }}>
             <CardContent className="p-4">
-              <h3 className="font-bold text-emerald-800 mb-2">🔧 Debug Panel - Success</h3>
+              <h3 className="font-bold text-emerald-800 mb-2">🔧 Debug Panel</h3>
               <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
-{`✅ Report loaded successfully
-URL: ${window.location.href}
-Renders: ${renderCountRef.current}, Fetches: ${fetchAttemptCountRef.current}
-Lease: ${lease.id} | Scan: ${scan.id}
+{`✅ Report loaded
+Scan: ${scan.id} | Lease: ${lease.id}
 Risk Score: ${scan.risk_score}
+Canonical Data: ${hasCanonicalData ? 'YES' : 'NO (fallback)'}
+Clause Reviews: ${clauseReview.length}
+Clause Ledger: ${clauseLedger.length}
+Mappings: ${mappings.length}
+Missing Clauses: ${missingClauses.length}
 Flags: ${flags.length}`}
               </pre>
             </CardContent>
           </Card>
         )}
 
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => {
-            logNavigation('Back button clicked');
-            haptic.light();
-            navigate(-1);
-          }}
-          className="mb-6"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        {/* Back Button + Export */}
+        <div className="flex items-center justify-between mb-6">
+          <Button variant="ghost" onClick={() => { haptic.light(); navigate(-1); }}>
+            <ArrowLeft className="w-4 h-4 mr-2" />Back
+          </Button>
+          <Button
+            onClick={canExportPdf ? handleExportPdf : () => navigate('/Account#plans')}
+            disabled={exportingPdf}
+            style={{ backgroundColor: '#0C3B2E', color: '#fff' }}
+          >
+            {exportingPdf ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
+            ) : (
+              <><Download className="w-4 h-4 mr-2" />{canExportPdf ? strings.exportPdf : strings.upgradeForPdf}</>
+            )}
+          </Button>
+        </div>
 
         {/* Header Card with Risk Score */}
         <Card className="border-none shadow-xl mb-6 overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ backgroundColor: riskLevel.color }}>
             <div className="text-white">
-              <CardTitle className="text-2xl font-bold mb-3">Full Lease Analysis Report</CardTitle>
+              <CardTitle className="text-2xl font-bold mb-3">{strings.fullReport}</CardTitle>
               <div className="flex flex-wrap items-center gap-3">
                 <Badge className="text-2xl px-4 py-2 font-bold" style={{
                   backgroundColor: riskLevel.bg,
@@ -342,10 +331,7 @@ Flags: ${flags.length}`}
                 }}>
                   {scan.risk_score || 0}/100
                 </Badge>
-                <Badge className="text-lg px-4 py-2 font-bold" style={{
-                  backgroundColor: '#FFFFFF',
-                  color: riskLevel.color
-                }}>
+                <Badge className="text-lg px-4 py-2 font-bold" style={{ backgroundColor: '#FFFFFF', color: riskLevel.color }}>
                   {riskLevel.label}
                 </Badge>
               </div>
@@ -354,97 +340,205 @@ Flags: ${flags.length}`}
           <CardContent className="p-6">
             {lease.property_address && (
               <div className="mb-4">
-                <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>Property:</span>
+                <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.property}:</span>
                 <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>{lease.property_address}</p>
               </div>
             )}
-            <div>
-              <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>Summary:</span>
+            <div className="mb-4">
+              <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.summary}:</span>
               <p className="mt-1" style={{ color: colors.textPrimary }}>{scan.summary || 'No summary available.'}</p>
             </div>
+            
+            {/* Key Terms */}
+            {(keyTerms.monthly_rent || keyTerms.deposit_amount) && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
+                {keyTerms.monthly_rent && (
+                  <div>
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>{strings.monthlyRent}</span>
+                    <p className="font-bold" style={{ color: colors.textPrimary }}>฿{keyTerms.monthly_rent.toLocaleString()}</p>
+                  </div>
+                )}
+                {keyTerms.deposit_amount && (
+                  <div>
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>{strings.deposit}</span>
+                    <p className="font-bold" style={{ color: colors.textPrimary }}>฿{keyTerms.deposit_amount.toLocaleString()}</p>
+                  </div>
+                )}
+                {keyTerms.lease_start_date && keyTerms.lease_end_date && (
+                  <div className="col-span-2">
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>{strings.leasePeriod}</span>
+                    <p className="font-bold" style={{ color: colors.textPrimary }}>{keyTerms.lease_start_date} → {keyTerms.lease_end_date}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* All Issues */}
+        {/* Negotiation Plan */}
+        {(riskClauseReviews.length > 0 || flags.length > 0) && (
+          <div className="mb-6">
+            <NegotiationPlan 
+              clauseReview={clauseReview}
+              flags={flags}
+              colors={colors}
+              isDarkMode={isDarkMode}
+              language={language}
+            />
+          </div>
+        )}
+
+        {/* Clause Coverage Table (92 entries) */}
+        {hasCanonicalData && (
+          <div className="mb-6">
+            <ClauseCoverageTable
+              clauseReview={clauseReview}
+              mappings={mappings}
+              missingClauses={missingClauses}
+              colors={colors}
+              isDarkMode={isDarkMode}
+              language={language}
+            />
+          </div>
+        )}
+
+        {/* Issues Requiring Attention */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="w-6 h-6 text-orange-600" />
-              All Issues Found ({flags.length})
+              {strings.allIssues} ({riskClauseReviews.length || flags.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {flags.length === 0 ? (
-              <div className="text-center py-8">
-                <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
-                <p style={{ color: colors.textSecondary }}>No issues found in this lease.</p>
-              </div>
+            {/* Use canonical clause_review if available, else fallback to flags */}
+            {hasCanonicalData ? (
+              riskClauseReviews.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
+                  <p style={{ color: colors.textSecondary }}>{strings.noIssues}</p>
+                </div>
+              ) : (
+                riskClauseReviews.map((review, idx) => {
+                  const ledgerItem = clauseLedger.find(c => c.clause_id === review.clause_id);
+                  return (
+                    <RecommendationCard
+                      key={idx}
+                      review={review}
+                      clauseHeading={ledgerItem?.heading}
+                      index={idx}
+                      colors={colors}
+                      isDarkMode={isDarkMode}
+                      language={language}
+                    />
+                  );
+                })
+              )
             ) : (
-              flags.map((flag, idx) => {
-                const severityConfig = SEVERITY_CONFIG[flag.severity] || SEVERITY_CONFIG.medium;
-                const Icon = severityConfig.icon;
-                return (
-                  <div key={idx} className="p-4 rounded-xl border-2" style={{
-                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB'
-                  }}>
-                    <div className="flex items-start justify-between mb-2 gap-2 flex-wrap">
-                      <Badge className={`${severityConfig.color} border flex items-center gap-1`}>
-                        <Icon className="w-3 h-3" />
-                        {severityConfig.label}
-                      </Badge>
-                      {flag.category && (
-                        <Badge variant="outline">{flag.category}</Badge>
+              // Fallback to flags
+              flags.length === 0 ? (
+                <div className="text-center py-8">
+                  <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
+                  <p style={{ color: colors.textSecondary }}>{strings.noIssues}</p>
+                </div>
+              ) : (
+                flags.map((flag, idx) => {
+                  const severityConfig = SEVERITY_CONFIG[flag.severity] || SEVERITY_CONFIG.medium;
+                  const Icon = severityConfig.icon;
+                  return (
+                    <div key={idx} className="p-4 rounded-xl border-2" style={{
+                      backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                      borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB'
+                    }}>
+                      <div className="flex items-start justify-between mb-2 gap-2 flex-wrap">
+                        <Badge className={`${severityConfig.color} border flex items-center gap-1`}>
+                          <Icon className="w-3 h-3" />{severityConfig.label}
+                        </Badge>
+                        {flag.category && <Badge variant="outline">{flag.category}</Badge>}
+                      </div>
+                      <p className="text-base font-semibold mb-2" style={{ color: colors.textPrimary }}>{flag.description}</p>
+                      {flag.recommendation && (
+                        <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#ECFDF5' }}>
+                          <p className="text-sm" style={{ color: colors.textPrimary }}>💡 {flag.recommendation}</p>
+                        </div>
                       )}
                     </div>
-                    <p className="text-base font-semibold" style={{ color: colors.textPrimary }}>
-                      {flag.description}
-                    </p>
-                    {flag.recommendation && (
-                      <p className="mt-2 text-sm" style={{ color: colors.textSecondary }}>
-                        💡 {flag.recommendation}
-                      </p>
-                    )}
-                  </div>
-                );
-              })
+                  );
+                })
+              )
             )}
           </CardContent>
         </Card>
 
-        {/* Detailed Analysis (if available) */}
-        {scanFull.clause_review && Object.keys(scanFull.clause_review).length > 0 && (
+        {/* Safe Clauses (collapsible) */}
+        {hasCanonicalData && safeClauseReviews.length > 0 && (
+          <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader>
+              <button 
+                onClick={() => setShowAllClauses(!showAllClauses)}
+                className="w-full flex items-center justify-between"
+              >
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                  {strings.safeClauses} ({safeClauseReviews.length})
+                </CardTitle>
+                {showAllClauses ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+              </button>
+            </CardHeader>
+            {showAllClauses && (
+              <CardContent className="space-y-2">
+                {safeClauseReviews.map((review, idx) => {
+                  const ledgerItem = clauseLedger.find(c => c.clause_id === review.clause_id);
+                  return (
+                    <RecommendationCard
+                      key={idx}
+                      review={review}
+                      clauseHeading={ledgerItem?.heading}
+                      colors={colors}
+                      isDarkMode={isDarkMode}
+                      language={language}
+                      compact={true}
+                    />
+                  );
+                })}
+              </CardContent>
+            )}
+          </Card>
+        )}
+
+        {/* Missing Standard Clauses */}
+        {missingClauses.length > 0 && (
           <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <FileText className="w-6 h-6" style={{ color: '#0C3B2E' }} />
-                Detailed Clause Analysis
+                <AlertCircle className="w-6 h-6 text-red-500" />
+                {strings.missingClauses} ({missingClauses.length})
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {Object.entries(scanFull.clause_review).slice(0, 20).map(([clauseId, review], idx) => (
-                <div key={idx} className="p-4 rounded-lg border" style={{
+            <CardContent className="space-y-3">
+              {missingClauses.slice(0, 15).map((missing, idx) => (
+                <div key={idx} className="p-3 rounded-lg border" style={{ 
                   borderColor: colors.borderColor,
-                  backgroundColor: isDarkMode ? '#353A3D' : '#FAFAFA'
+                  backgroundColor: isDarkMode ? '#2A2D30' : '#FAFAFA'
                 }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="outline" className="font-mono text-xs">{clauseId}</Badge>
-                    {review.tenant_risk_level && (
-                      <Badge className={
-                        review.tenant_risk_level === 'high' ? 'bg-red-100 text-red-800' :
-                        review.tenant_risk_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-emerald-100 text-emerald-800'
-                      }>
-                        {review.tenant_risk_level} risk
-                      </Badge>
-                    )}
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge className={
+                      missing.priority === 'high' ? 'bg-red-100 text-red-800' :
+                      missing.priority === 'medium' ? 'bg-amber-100 text-amber-800' :
+                      'bg-blue-100 text-blue-800'
+                    }>
+                      {missing.priority?.toUpperCase() || 'LOW'}
+                    </Badge>
+                    <span className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                      {missing.canonical_name}
+                    </span>
                   </div>
-                  {review.tenant_summary && (
-                    <p className="text-sm" style={{ color: colors.textPrimary }}>{review.tenant_summary}</p>
+                  {missing.why_it_matters && (
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>{missing.why_it_matters}</p>
                   )}
-                  {review.tenant_recommendation && (
-                    <p className="mt-2 text-sm" style={{ color: colors.textSecondary }}>
-                      💡 {review.tenant_recommendation}
+                  {missing.suggested_addition_text && (
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                      💡 {missing.suggested_addition_text}
                     </p>
                   )}
                 </div>
@@ -456,25 +550,12 @@ Flags: ${flags.length}`}
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
           {lease.file_url && (
-            <Button
-              variant="outline"
-              onClick={() => window.open(lease.file_url, '_blank')}
-              className="flex-1"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              View Original Lease
+            <Button variant="outline" onClick={() => window.open(lease.file_url, '_blank')} className="flex-1">
+              <ExternalLink className="w-4 h-4 mr-2" />{strings.viewLease}
             </Button>
           )}
-          <Button
-            onClick={() => {
-              haptic.medium();
-              navigate('/Templates');
-            }}
-            style={{ backgroundColor: '#0C3B2E', color: '#fff' }}
-            className="flex-1"
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            View Letter Templates
+          <Button onClick={() => { haptic.medium(); navigate('/Templates'); }} style={{ backgroundColor: '#0C3B2E', color: '#fff' }} className="flex-1">
+            <FileText className="w-4 h-4 mr-2" />{strings.viewTemplates}
           </Button>
         </div>
       </div>
