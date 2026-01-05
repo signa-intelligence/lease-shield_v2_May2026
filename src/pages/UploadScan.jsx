@@ -903,19 +903,12 @@ function UploadScanPageContent() {
           throw err;
         }
 
-        // Verify payload was created and navigate to report
-        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: scan.id });
+        // Verify payload was created
+        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId });
         if (!verifyStatus?.hasPdfPayload) {
           throw new Error(`Scan saved but report payload missing. Scan pipeline failed: ${verifyStatus?.error?.message || 'Unknown error'}`);
         }
-        await base44.entities.LeaseScan.update(scan.id, {
-          status: 'ok',
-          risk_score: scanResponse?.result?.risk_score,
-          summary: scanResponse?.result?.summary
-        });
-        if (!scan.id) throw new Error('BUG: scanId missing');
-        if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
-        window.location.href = `/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`;
+        window.location.href = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
         return;
 
 
