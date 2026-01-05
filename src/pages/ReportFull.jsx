@@ -110,12 +110,17 @@ function ReportFullContent() {
       const pdfPayload = {
         lease_address: leaseData?.property_address || 'Lease Agreement',
         generated_date: new Date().toISOString(),
-        risk_score: scanData?.risk_score || 0,
+        risk_score: scanData?.risk_score || canonical?.risk_score || 0,
         summary: scanData?.summary || '',
         key_terms: scanData?.scan_full?.key_terms || {},
-        flags: scanData?.flags || scanData?.scan_full?.flags || [], // PRIMARY DATA
+        flags: flagsForDisplay, // unified expert issues
+        // Canonical data for coverage + appendix
+        clause_review: clauseReview,
+        clause_ledger: clauseLedger,
+        mappings,
+        missing_clauses: missingClauses,
+        coverage_summary: canonical?.summary || scanData?.scan_full?.coverage_summary || {},
         taxonomy_report: scanData?.scan_full?.taxonomy_report || [],
-        coverage_summary: scanData?.scan_full?.coverage_summary || {},
         missing_items: scanData?.scan_full?.missing_items || []
       };
 
