@@ -398,10 +398,17 @@ Deno.serve(async (req) => {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       
-      const presentCount = coverageSummary.mapped_count || (totalCatalog - missingCount);
-      doc.text(`• Present in lease: ${presentCount} clauses`, 25, y); y += 6;
-      doc.text(`• Missing from lease: ${missingCount} clauses`, 25, y); y += 6;
-      doc.text(`• Coverage: ${Math.round((presentCount / totalCatalog) * 100)}%`, 25, y); y += 10;
+      const presentCount = canonicalSummary.mapped_count || (totalCatalog - missingCount);
+      doc.text(`• Present in lease: ${presentCount} categories`, 25, y); y += 6;
+      doc.text(`• Missing categories: ${missingCount}`, 25, y); y += 6;
+      const pct = canonicalSummary.mapped_pct != null ? canonicalSummary.mapped_pct : Math.round((presentCount / totalCatalog) * 100);
+      doc.text(`• Coverage: ${pct}%`, 25, y); y += 10;
+      if (pct < 100) {
+        doc.setTextColor(146,64,14); doc.setFont('helvetica','bold');
+        doc.text('Warning: Rescan required – taxonomy coverage incomplete.', 25, y);
+        doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+        y += 10;
+      }
     }
     
     // Negotiation Plan Summary
