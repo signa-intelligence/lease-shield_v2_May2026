@@ -536,6 +536,32 @@ Flags (issues): ${flags.length}`}
 
 
 
+        {/* Coverage Metrics */}
+        {coverageSummary && (
+          <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader>
+              <CardTitle>{strings.clauseCoverage} — {strings.coverageSubtitle}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Total Clauses:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.total_clauses}</span></div>
+                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Reviewed:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.clauses_reviewed}</span></div>
+                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Flagged:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.clauses_flagged}</span></div>
+                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Unmapped:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.unmapped_clauses}</span></div>
+                <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Missing Categories:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.missing_expected_categories}</span></div>
+                {typeof coverageSummary.mapped_pct === 'number' && (
+                  <div><span className="font-semibold" style={{ color: colors.textSecondary }}>Coverage:</span> <span style={{ color: colors.textPrimary }}>{coverageSummary.mapped_pct}%</span></div>
+                )}
+              </div>
+              {coverageSummary.mapped_pct !== 100 && (
+                <div className="mt-3 p-3 rounded" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7', color: '#92400E' }}>
+                  Rescan required – taxonomy coverage incomplete.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3">
           {lease.file_url && (
