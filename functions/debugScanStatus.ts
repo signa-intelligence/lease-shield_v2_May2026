@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
     const { user, base44 } = await requireAuth(req);
 
     if (!scanId) {
-      return Response.json({ error: 'Missing scanId parameter' }, { status: 400 });
+      return Response.json({ found: false, hasPdfPayload: false, error: 'Missing scanId' });
     }
 
     const scans = await base44.entities.LeaseScan.filter({ id: scanId });

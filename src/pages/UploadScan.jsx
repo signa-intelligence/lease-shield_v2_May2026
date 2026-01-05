@@ -1148,6 +1148,16 @@ function UploadScanPageContent() {
         setAnalysisStage('scanning');
         setUploadProgress(60);
 
+        // Create LeaseScan FIRST and capture id
+        const scan = await base44.entities.LeaseScan.create({
+          lease_id: lease.id,
+          status: 'initiated',
+          request_id: requestId,
+          created_at: new Date().toISOString()
+        });
+        scanId = scan?.id;
+        if (!scanId) throw new Error('BUG: scanId missing after LeaseScan.create');
+
         // STEP 3: Invoke analysis
         logStage('ANALYSIS_START', { fileUrls });
         const analysisStartTime = Date.now();
@@ -1155,7 +1165,7 @@ function UploadScanPageContent() {
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
           fileUrls: fileUrls,
           requestId,
-          leaseId: createdLeaseId,
+          leaseId: lease.id,
           scanId
         });
 
@@ -1210,8 +1220,8 @@ function UploadScanPageContent() {
           summary: scanResponse?.result?.summary
         });
         if (!scanId) throw new Error('BUG: scanId missing');
-        if (scanId === createdLeaseId) throw new Error('BUG: scanId incorrectly equals leaseId');
-        window.location.href = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(createdLeaseId)}`;
+        if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`);
         return;
 
         const scanResult = scanResponse.result;
@@ -1240,7 +1250,7 @@ function UploadScanPageContent() {
           console.log('[AUTO_POPULATE] Starting auto-population...');
           const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
             scanResult,
-            leaseId: createdLeaseId,
+            leaseId: lease.id,
             scanId
           });
           

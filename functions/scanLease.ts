@@ -351,7 +351,16 @@ Be thorough.`,
     
     // STEP 5: PERSIST (NON-OPTIONAL)
     try {
-      await base44.asServiceRole.entities.LeaseScan.update(scanId, {
+      let persistedScanId = scanId;
+      const existing = await base44.asServiceRole.entities.LeaseScan.filter({ id: scanId });
+      if (!existing || existing.length === 0) {
+        const createdRecord = await base44.asServiceRole.entities.LeaseScan.create({
+          lease_id: leaseId,
+          status: 'processing'
+        });
+        persistedScanId = createdRecord.id;
+      }
+      await base44.asServiceRole.entities.LeaseScan.update(persistedScanId, {
         lease_id: leaseId,
         risk_score: finalPdfPayload.risk_score,
         flags: finalPdfPayload.flags || [],
@@ -380,7 +389,7 @@ Be thorough.`,
 
     // STEP 6: SELF-CHECK (VERIFY PERSISTENCE)
     logStage('SELF_CHECK_START', {});
-    const verifyScans = await base44.asServiceRole.entities.LeaseScan.filter({ id: scanId });
+    const verifyScans = await base44.asServiceRole.entities.LeaseScan.filter({ id: persistedScanId });
     const verifyScan = verifyScans?.[0];
     const verifyPayload = verifyScan?.scan_full?.canonical_report?.pdfPayload;
     
@@ -418,7 +427,7 @@ Be thorough.`,
         has_pdf_payload: true
       },
       diagnostic: { 
-        scanId, 
+        scanId: persistedScanId, 
         requestId,
         totalDuration: Date.now() - startTime,
         pipelineSteps: pipeline.length,
