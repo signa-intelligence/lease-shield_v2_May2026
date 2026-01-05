@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { CANONICAL_CLAUSE_CATALOG, getCanonicalCatalog } from './canonicalClauseCatalog.js';
+import { VERSIONED_CATALOG, CATALOG_VERSION, CATALOG_UPDATED_AT } from './getCanonicalLedger.js';
 
 // ============================================================================
 // CLAUSE LEDGER SCAN - Deterministic, 100% Coverage Architecture
@@ -65,10 +65,14 @@ Deno.serve(async (req) => {
     log('START', { leaseId, scanId, fileCount: Array.isArray(fileUrls) ? fileUrls.length : 1 });
     
     // ========================================================================
-    // STEP 0: Load Canonical Catalog
+    // STEP 0: Load Canonical Catalog from authoritative source
     // ========================================================================
-    const canonical_clause_catalog = getCanonicalCatalog();
-    log('STEP_0_CATALOG_LOADED', { total_categories: canonical_clause_catalog.length });
+    const canonical_clause_catalog = VERSIONED_CATALOG;
+    const catalog_version_used = CATALOG_VERSION;
+    log('STEP_0_CATALOG_LOADED', { 
+      total_categories: canonical_clause_catalog.length,
+      catalog_version: catalog_version_used 
+    });
     
     // ========================================================================
     // STEP 1: Extract ALL Clauses (100% coverage)
@@ -396,6 +400,7 @@ Total clause count: ${clause_ledger.length}`;
       scan_id: scanId || crypto.randomUUID(),
       lease_id: leaseId,
       scanned_at: new Date().toISOString(),
+      catalog_version_used,
       canonical_clause_catalog,
       clause_ledger,
       mappings,
