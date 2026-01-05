@@ -136,24 +136,10 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
             try {
               if (!cancelled) setMaterializing(true);
               
-              let materializeResult = null;
-              try {
-                const response = await base44.functions.invoke('materializeReportV2', {
-                  scanId,
-                  requestId
-                });
-                materializeResult = response.data;
-              } catch (invokeErr) {
-                // Check if 404 deployment missing
-                if (invokeErr?.response?.status === 404 || invokeErr?.message?.includes('404')) {
-                  logStep('MATERIALIZE_404_DEPLOYMENT_MISSING', { error: invokeErr.message });
-                  const deployErr = new Error('Report service not deployed. Please republish functions.');
-                  deployErr.code = 'DEPLOYMENT_MISSING';
-                  deployErr.step = 'MATERIALIZE';
-                  throw deployErr;
-                }
-                throw invokeErr;
-              }
+              const { data: materializeResult } = await base44.functions.invoke('materializeReport_v2', {
+                scanId,
+                requestId
+              });
               
               logStep('MATERIALIZE_RESULT', materializeResult);
               
