@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, FileText, Info, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, FileText, Info, Loader2, RefreshCw, Wrench } from "lucide-react";
 import ErrorPanel from "./ErrorPanel";
 
 const SEVERITY_CONFIG = {
@@ -39,6 +39,8 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
   const [scan, setScan] = useState(null);
   const [reportData, setReportData] = useState(null);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [materializing, setMaterializing] = useState(false);
+  const materializeAttempted = useRef(false);
 
   // Effect #1: Fetch all data with WATCHDOG (ALWAYS RUNS, ALWAYS TERMINATES)
   useEffect(() => {
@@ -110,7 +112,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
 
         // STEP 5: Validate materialized report (persisted in scan_full.canonical_report.pdfPayload)
         logStep('VALIDATE_REPORT_START', {});
-        const canonical = scanData?.scan_full?.canonical_report || null;
+        let canonical = scanData?.scan_full?.canonical_report || null;
         validation.hasCanonical = !!canonical;
         validation.reportStatus = canonical?.status || 'unknown';
         validation.hasClauseLedger = !!(canonical?.clause_ledger);
@@ -126,16 +128,77 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           });
           // Continue with fallback - don't throw
         } else if (!canonical || !canonical.pdfPayload) {
-          const err = new Error(`REPORT_NOT_MATERIALIZED: No pdfPayload persisted for scanId ${scanId}`);
-          err.code = 'REPORT_NOT_MATERIALIZED';
-          err.step = 'VALIDATE_REPORT';
-          err.debugData = {
-            hasCanonical: !!canonical,
-            hasPdfPayload: !!(canonical?.pdfPayload),
-            status: canonical?.status,
-            error: canonical?.error
-          };
-          throw err;
+          // ATTEMPT IDEMPOTENT MATERIALIZATION (ONCE)
+          if (!materializeAttempted.current) {
+            materializeAttempted.current = true;
+            logStep('MATERIALIZE_ATTEMPT', { scanId });
+            
+            try {
+              if (!cancelled) setMaterializing(true);
+              
+              const { data: materializeResult } = await base44.functions.invoke('materializeReport', {
+                scanId,
+                requestId
+              });
+              
+              logStep('MATERIALIZE_RESULT', materializeResult);
+              
+              if (materializeResult?.ok) {
+                // Re-fetch scan to get materialized data
+                logStep('REFETCH_AFTER_MATERIALIZE', {});
+                const refetchedScans = await base44.entities.LeaseScan.filter({ id: scanId });
+                const refetchedScan = refetchedScans?.[0];
+                
+                if (refetchedScan) {
+                  // Update scanData and canonical with refetched data
+                  scanData = refetchedScan;
+                  canonical = refetchedScan?.scan_full?.canonical_report || null;
+                  validation.hasCanonical = !!canonical;
+                  validation.hasPdfPayload = !!(canonical?.pdfPayload);
+                  validation.isFallback = canonical?.pdfPayload?.fallback || materializeResult.fallback;
+                  validation.materialized = true;
+                  
+                  logStep('REFETCH_SUCCESS', { 
+                    hasPdfPayload: validation.hasPdfPayload,
+                    isFallback: validation.isFallback
+                  });
+                }
+              } else {
+                // Materialization failed - throw with details
+                const err = new Error(materializeResult?.message || 'Materialization failed');
+                err.code = materializeResult?.error || 'MATERIALIZE_FAILED';
+                err.step = 'MATERIALIZE';
+                err.debugData = materializeResult;
+                throw err;
+              }
+            } catch (matErr) {
+              logStep('MATERIALIZE_ERROR', { error: matErr.message });
+              const err = new Error(`Report materialization failed: ${matErr.message}`);
+              err.code = matErr.code || 'MATERIALIZE_ERROR';
+              err.step = 'MATERIALIZE';
+              err.debugData = {
+                hasCanonical: !!canonical,
+                hasPdfPayload: !!(canonical?.pdfPayload),
+                materializeError: matErr.message
+              };
+              throw err;
+            } finally {
+              if (!cancelled) setMaterializing(false);
+            }
+          } else {
+            // Already attempted materialization, still no payload
+            const err = new Error(`REPORT_NOT_MATERIALIZED: No pdfPayload after materialization attempt for scanId ${scanId}`);
+            err.code = 'REPORT_NOT_MATERIALIZED';
+            err.step = 'VALIDATE_REPORT';
+            err.debugData = {
+              hasCanonical: !!canonical,
+              hasPdfPayload: !!(canonical?.pdfPayload),
+              status: canonical?.status,
+              error: canonical?.error,
+              materializeAttempted: true
+            };
+            throw err;
+          }
         }
 
         validation.issuesCount = canonical.pdfPayload?.flags?.length || 0;
@@ -266,6 +329,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           setScan(scanData);
           setReportData(normalized);
           setLoading(false);
+          setMaterializing(false);
           logStep('RENDER_SUCCESS', { totalElapsed: Date.now() - startTime });
         }
       } catch (err) {
@@ -328,7 +392,15 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20">
           <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: '#0C3B2E' }} />
-          <p className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Loading report...</p>
+          <p className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
+            {materializing ? 'Materializing report...' : 'Loading report...'}
+          </p>
+          {materializing && (
+            <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
+              <Wrench className="w-4 h-4" />
+              <span>Building report from scan data</span>
+            </div>
+          )}
         </div>
       </div>
     );
