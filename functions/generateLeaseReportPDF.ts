@@ -284,13 +284,13 @@ Deno.serve(async (req) => {
     }
 
     // =====================================================================
-    // CLAUSE-BY-CLAUSE REVIEW (if canonical data available)
+    // CLAUSE-BY-CLAUSE REVIEW (always render from canonical if provided)
     // =====================================================================
     const clauseReview = Array.isArray(scanData.clause_review) ? scanData.clause_review : [];
     const clauseLedger = Array.isArray(scanData.clause_ledger) ? scanData.clause_ledger : [];
     
-    // Only render if we have canonical clause reviews AND no flags (to avoid duplication)
-    if (clauseReview.length > 0 && flags.length === 0) {
+    // Always render clause-by-clause even if flags exist (non-duplicative content)
+    if (clauseReview.length > 0 && clauseLedger.length > 0) {
       if (y > pageHeight - 60) { doc.addPage(); y = 20; }
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
