@@ -210,6 +210,30 @@ function AdminCanonicalLedgerContent() {
     borderColor: '#E5E7EB'
   };
 
+  const handlePingFunctions = async () => {
+    setPingResults({ catalog: null, ping: null, loading: true });
+    
+    // Test pingV1
+    let pingResult = null;
+    try {
+      const pingRes = await base44.functions.invoke('pingV1', {});
+      pingResult = { status: pingRes.status || 200, data: pingRes.data };
+    } catch (err) {
+      pingResult = { status: err?.response?.status || 'ERROR', error: err.message };
+    }
+    
+    // Test getCanonicalLedgerV1
+    let catalogResult = null;
+    try {
+      const catRes = await base44.functions.invoke('getCanonicalLedgerV1', {});
+      catalogResult = { status: catRes.status || 200, data: catRes.data };
+    } catch (err) {
+      catalogResult = { status: err?.response?.status || 'ERROR', error: err.message };
+    }
+    
+    setPingResults({ catalog: catalogResult, ping: pingResult, loading: false });
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
