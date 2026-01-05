@@ -255,6 +255,20 @@ function AdminCanonicalLedgerContent() {
     }
   };
 
+  // Use fallback if error or no data
+  const effectiveData = useMemo(() => {
+    if (catalogData && catalogData.catalog) {
+      return catalogData;
+    }
+    if (error || (!isLoading && !catalogData)) {
+      return FALLBACK_CATALOG;
+    }
+    return null;
+  }, [catalogData, error, isLoading]);
+
+  // Track if using fallback
+  const isUsingFallback = effectiveData === FALLBACK_CATALOG;
+
   const toggleRow = (catalogId) => {
     setExpandedRows(prev => ({
       ...prev,
@@ -284,20 +298,6 @@ function AdminCanonicalLedgerContent() {
       </div>
     );
   }
-
-  // Use fallback if error or no data
-  const effectiveData = useMemo(() => {
-    if (catalogData && catalogData.catalog) {
-      return catalogData;
-    }
-    if (error || (!isLoading && !catalogData)) {
-      return FALLBACK_CATALOG;
-    }
-    return null;
-  }, [catalogData, error, isLoading]);
-
-  // Track if using fallback
-  const isUsingFallback = effectiveData === FALLBACK_CATALOG;
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
