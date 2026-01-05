@@ -3,7 +3,9 @@
 // Validates: (1) 100% coverage (2) review count match (3) schema validation
 // ============================================================================
 
-import { CANONICAL_CLAUSE_CATALOG } from './canonicalClauseCatalog.js';
+import { VERSIONED_CATALOG, CATALOG_VERSION } from './getCanonicalLedger.js';
+
+const CANONICAL_CLAUSE_CATALOG = VERSIONED_CATALOG;
 
 // Test 1: Clause coverage - every extracted clause must have a review
 function testClauseCoverage(report) {
