@@ -974,20 +974,32 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     
     if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }, { status: 401 });
     }
     
+    // Check admin access
+    const userRole = user.role?.toLowerCase();
+    const accessLevel = user.access_level?.toLowerCase();
+    const isAdmin = userRole === 'admin' || userRole === 'super_admin' || 
+                    accessLevel === 'admin' || accessLevel === 'super_admin' || accessLevel === 'va';
+    
+    if (!isAdmin) {
+      return Response.json({ error: 'Forbidden: Admin access required', code: 'ADMIN_REQUIRED' }, { status: 403 });
+    }
+    
+    // Return the canonical catalog from this function (single source of truth)
     return Response.json({
       success: true,
       catalog_version: CATALOG_VERSION,
       catalog_updated_at: CATALOG_UPDATED_AT,
       catalog_count: VERSIONED_CATALOG.length,
+      source: 'LEASE_SHIELD_CANONICAL',
       catalog: VERSIONED_CATALOG
     });
     
   } catch (error) {
     console.error('[GET_CANONICAL_LEDGER_ERROR]', error.message);
-    return Response.json({ error: 'Failed to retrieve catalog' }, { status: 500 });
+    return Response.json({ error: 'Failed to retrieve catalog', details: error.message }, { status: 500 });
   }
 });
 

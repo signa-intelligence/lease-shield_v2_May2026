@@ -141,19 +141,25 @@ function AdminCanonicalLedgerContent() {
   const { data: catalogData, isLoading, error, refetch } = useQuery({
     queryKey: ['canonicalLedger'],
     queryFn: async () => {
-      const functionName = 'getCanonicalLedger';
-      console.log('[CANONICAL_LEDGER] Fetching catalog via base44.functions.invoke:', functionName);
-      setFetchDiagnostics({ url: `base44.functions.invoke('${functionName}', {})`, status: 'fetching...', message: '', responseText: '' });
+      // Use base44.functions.invoke which handles auth headers automatically
+      const endpoint = 'getCanonicalLedger';
+      console.log('[CANONICAL_LEDGER] Fetching catalog via base44.functions.invoke:', endpoint);
+      setFetchDiagnostics({ url: `base44.functions.invoke('${endpoint}')`, status: 'fetching...', message: '', responseText: '' });
       
       try {
-        const response = await base44.functions.invoke(functionName, {});
+        const response = await base44.functions.invoke(endpoint, {});
         console.log('[CANONICAL_LEDGER] Response received:', response);
         
-        if (!response || !response.data) {
-          throw new Error('Invalid response shape: missing data field');
+        // base44.functions.invoke returns axios response with data property
+        const payload = response?.data;
+        
+        if (!payload) {
+          throw new Error('Empty response from server');
         }
         
-        const payload = response.data;
+        if (payload.error) {
+          throw new Error(payload.error);
+        }
         
         if (payload.catalog && !Array.isArray(payload.catalog)) {
           console.error('[CANONICAL_LEDGER] Invalid catalog shape - not an array:', typeof payload.catalog);
@@ -161,9 +167,9 @@ function AdminCanonicalLedgerContent() {
         }
         
         setFetchDiagnostics({ 
-          url: `base44.functions.invoke('${functionName}', {})`, 
-          status: String(response.status || '200'), 
-          message: 'Success',
+          url: `base44.functions.invoke('${endpoint}')`, 
+          status: String(response.status || 200), 
+          message: 'Success - source: ' + (payload.source || 'unknown'),
           responseText: JSON.stringify(payload, null, 2).substring(0, 500) + '...'
         });
         
@@ -171,21 +177,23 @@ function AdminCanonicalLedgerContent() {
       } catch (fetchError) {
         console.error('[CANONICAL_LEDGER] Fetch failed:', fetchError);
         const errorMessage = String(fetchError?.message || 'Unknown error');
-        const errorStatus = String(fetchError?.response?.status || 'ERROR');
+        const errorStatus = String(fetchError?.response?.status || fetchError?.status || 'ERROR');
         const errorText = fetchError?.response?.data ? JSON.stringify(fetchError.response.data, null, 2) : errorMessage;
         
         setFetchDiagnostics({ 
-          url: `base44.functions.invoke('${functionName}', {})`, 
+          url: `base44.functions.invoke('${endpoint}')`, 
           status: errorStatus, 
           message: errorMessage,
           responseText: errorText
         });
         
-        return null;
+        // Re-throw to let react-query handle the error state
+        throw fetchError;
       }
     },
-    enabled: !!user,
-    retry: false
+    enabled: !!user && isAdmin,
+    retry: 1,
+    retryDelay: 1000
   });
 
   const isDarkMode = user?.theme === 'dark';
