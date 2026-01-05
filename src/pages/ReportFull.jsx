@@ -375,18 +375,85 @@ Flags: ${flags.length}`}
           </CardContent>
         </Card>
 
-        {/* Negotiation Plan */}
-        {(riskClauseReviews.length > 0 || flags.length > 0) && (
-          <div className="mb-6">
-            <NegotiationPlan 
-              clauseReview={clauseReview}
-              flags={flags}
-              colors={colors}
-              isDarkMode={isDarkMode}
-              language={language}
-            />
-          </div>
-        )}
+        {/* Issues Requiring Attention - PRIMARY SOURCE: flags array */}
+        <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-6 h-6 text-orange-600" />
+              {strings.allIssues} ({flags.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {flags.length === 0 ? (
+              <div className="text-center py-8">
+                <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-emerald-500" />
+                <p style={{ color: colors.textSecondary }}>{strings.noIssues}</p>
+              </div>
+            ) : (
+              flags.map((flag, idx) => {
+                const severityConfig = SEVERITY_CONFIG[flag.severity] || SEVERITY_CONFIG.medium;
+                const Icon = severityConfig.icon;
+                
+                // Parse recommendations from string (may have bullets/newlines)
+                const recText = String(flag.recommendation || '');
+                const recLines = recText.split(/[\n•\-–]/g).map(s => s.trim()).filter(s => s.length > 0);
+                
+                return (
+                  <div key={idx} className="p-4 rounded-xl border-2" style={{
+                    backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB'
+                  }}>
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-3 gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <Badge className={`${severityConfig.color} border flex items-center gap-1`}>
+                          <Icon className="w-3 h-3" />
+                          {severityConfig.label}
+                        </Badge>
+                        {flag.category && <Badge variant="outline">{flag.category}</Badge>}
+                      </div>
+                    </div>
+                    
+                    {/* Title */}
+                    <h4 className="text-base font-bold mb-2" style={{ color: colors.textPrimary }}>
+                      {flag.title || flag.description}
+                    </h4>
+                    
+                    {/* Description/Impact */}
+                    {flag.description && flag.title && (
+                      <p className="text-sm mb-3" style={{ color: colors.textPrimary }}>
+                        {flag.description}
+                      </p>
+                    )}
+                    
+                    {/* Explanation */}
+                    {flag.explanation && (
+                      <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7' }}>
+                        <p className="text-xs font-bold text-amber-700 mb-1">Why this matters:</p>
+                        <p className="text-sm" style={{ color: colors.textPrimary }}>{flag.explanation}</p>
+                      </div>
+                    )}
+                    
+                    {/* Recommendations */}
+                    {recLines.length > 0 && (
+                      <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#ECFDF5' }}>
+                        <p className="text-xs font-bold text-emerald-700 mb-2">Recommendations:</p>
+                        <ul className="space-y-1">
+                          {recLines.map((line, i) => (
+                            <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textPrimary }}>
+                              <span className="text-emerald-600">•</span>
+                              <span>{line}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
 
         {/* Clause Coverage Table (92 entries) */}
         {hasCanonicalData && (
