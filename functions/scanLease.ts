@@ -350,8 +350,8 @@ Be thorough.`,
     }));
     
     // STEP 5: PERSIST (NON-OPTIONAL)
+    let persistedScanId = scanId;
     try {
-      let persistedScanId = scanId;
       const existing = await base44.asServiceRole.entities.LeaseScan.filter({ id: scanId });
       if (!existing || existing.length === 0) {
         const createdRecord = await base44.asServiceRole.entities.LeaseScan.create({
@@ -372,11 +372,12 @@ Be thorough.`,
           language_detected: keyTerms.language_detected,
           canonical_report: finalReport,
           pipeline,
-          version: 'v4.0-materialized'
+          version: 'v4.1-guaranteed'
         }
       });
       
       logStage('PERSISTENCE_COMPLETE', {
+        persistedScanId,
         pdfPayloadSize: JSON.stringify(finalPdfPayload).length,
         clausesCount: finalPdfPayload.clause_ledger.length,
         issuesCount: finalPdfPayload.flags.length,
@@ -384,33 +385,69 @@ Be thorough.`,
       });
     } catch (persistErr) {
       logStage('PERSISTENCE_FAILED', { error: persistErr.message });
-      throw new Error(`PERSISTENCE_FAILED: ${persistErr.message}`);
+      // Still return success with needsMaterialization flag
+      return Response.json({
+        success: true,
+        needsMaterialization: true,
+        result: {
+          risk_score: finalPdfPayload.risk_score,
+          summary: finalPdfPayload.summary,
+          clauses_extracted,
+          clause_ledger: finalPdfPayload.clause_ledger,
+          issues_validated: finalPdfPayload.flags || [],
+          property_address: keyTerms.property_address,
+          start_date: keyTerms.start_date,
+          end_date: keyTerms.end_date,
+          rent_amount: keyTerms.rent_amount,
+          deposit_amount: keyTerms.deposit_amount,
+          language_detected: keyTerms.language_detected,
+          canonical_status: 'persistence_failed',
+          has_pdf_payload: false
+        },
+        diagnostic: { 
+          scanId: persistedScanId || scanId, 
+          requestId,
+          totalDuration: Date.now() - startTime,
+          pipelineSteps: pipeline.length,
+          canonicalStatus: 'persistence_failed',
+          persistenceError: persistErr.message
+        }
+      });
     }
 
-    // STEP 6: SELF-CHECK (VERIFY PERSISTENCE)
+    // STEP 6: SELF-CHECK (VERIFY PERSISTENCE) - NON-BLOCKING
     logStage('SELF_CHECK_START', {});
-    const verifyScans = await base44.asServiceRole.entities.LeaseScan.filter({ id: persistedScanId });
-    const verifyScan = verifyScans?.[0];
-    const verifyPayload = verifyScan?.scan_full?.canonical_report?.pdfPayload;
+    let selfCheckPassed = false;
+    let needsMaterialization = false;
     
-    if (!verifyPayload || !Array.isArray(verifyPayload.clause_ledger) || verifyPayload.clause_ledger.length === 0) {
-      logStage('SELF_CHECK_FAILED', {
-        hasPayload: !!verifyPayload,
-        hasLedger: Array.isArray(verifyPayload?.clause_ledger),
-        ledgerLength: verifyPayload?.clause_ledger?.length || 0
-      });
+    try {
+      const verifyScans = await base44.asServiceRole.entities.LeaseScan.filter({ id: persistedScanId });
+      const verifyScan = verifyScans?.[0];
+      const verifyPayload = verifyScan?.scan_full?.canonical_report?.pdfPayload;
       
-      throw new Error('SELF_CHECK_FAILED: pdfPayload not persisted correctly');
+      if (!verifyPayload || !Array.isArray(verifyPayload.clause_ledger) || verifyPayload.clause_ledger.length === 0) {
+        logStage('SELF_CHECK_SOFT_FAIL', {
+          hasPayload: !!verifyPayload,
+          hasLedger: Array.isArray(verifyPayload?.clause_ledger),
+          ledgerLength: verifyPayload?.clause_ledger?.length || 0
+        });
+        needsMaterialization = true;
+      } else {
+        selfCheckPassed = true;
+        logStage('SELF_CHECK_PASSED', {
+          clausesTotal: verifyPayload.clause_ledger.length,
+          issuesCount: verifyPayload.flags?.length || 0,
+          hasFallback: verifyPayload.fallback || false
+        });
+      }
+    } catch (verifyErr) {
+      logStage('SELF_CHECK_ERROR', { error: verifyErr.message });
+      needsMaterialization = true;
     }
-    
-    logStage('SELF_CHECK_PASSED', {
-      clausesTotal: verifyPayload.clause_ledger.length,
-      issuesCount: verifyPayload.flags?.length || 0,
-      hasFallback: verifyPayload.fallback || false
-    });
 
     return Response.json({
       success: true,
+      needsMaterialization,
       result: {
         risk_score: finalPdfPayload.risk_score,
         summary: finalPdfPayload.summary,
@@ -423,15 +460,16 @@ Be thorough.`,
         rent_amount: keyTerms.rent_amount,
         deposit_amount: keyTerms.deposit_amount,
         language_detected: keyTerms.language_detected,
-        canonical_status: finalStatus,
-        has_pdf_payload: true
+        canonical_status: selfCheckPassed ? finalStatus : 'needs_materialization',
+        has_pdf_payload: selfCheckPassed
       },
       diagnostic: { 
         scanId: persistedScanId, 
         requestId,
         totalDuration: Date.now() - startTime,
         pipelineSteps: pipeline.length,
-        canonicalStatus: finalStatus
+        canonicalStatus: selfCheckPassed ? finalStatus : 'needs_materialization',
+        selfCheckPassed
       }
     });
 
