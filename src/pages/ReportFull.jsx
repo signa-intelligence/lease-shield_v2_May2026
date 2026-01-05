@@ -16,9 +16,7 @@ import {
   ExternalLink,
   Download,
   Loader2,
-  RefreshCw,
-  ChevronDown,
-  ChevronUp
+  RefreshCw
 } from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
