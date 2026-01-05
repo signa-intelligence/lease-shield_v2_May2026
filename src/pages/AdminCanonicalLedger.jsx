@@ -138,15 +138,15 @@ function AdminCanonicalLedgerContent() {
   const isAdmin = userRole === 'admin' || userRole === 'super_admin' || accessLevel === 'admin' || accessLevel === 'super_admin';
 
   const { data: catalogData, isLoading, error, refetch } = useQuery({
-    queryKey: ['canonicalLedger'],
+    queryKey: ['canonicalLedgerV1'],
     queryFn: async () => {
-      const endpoint = 'getCanonicalLedger';
-      console.log('[CANONICAL_LEDGER] Fetching catalog via base44.functions.invoke:', endpoint);
+      const endpoint = 'getCanonicalLedgerV1';
+      console.log('[CANONICAL_LEDGER_V1] Fetching catalog via base44.functions.invoke:', endpoint);
       setFetchDiagnostics({ url: `base44.functions.invoke('${endpoint}')`, status: 'fetching...', message: '', responseText: '' });
       
       try {
         const response = await base44.functions.invoke(endpoint, {});
-        console.log('[CANONICAL_LEDGER] Response received:', response);
+        console.log('[CANONICAL_LEDGER_V1] Response received:', response);
         
         const payload = response?.data;
         
@@ -159,7 +159,7 @@ function AdminCanonicalLedgerContent() {
         }
         
         if (payload.catalog && !Array.isArray(payload.catalog)) {
-          console.error('[CANONICAL_LEDGER] Invalid catalog shape - not an array:', typeof payload.catalog);
+          console.error('[CANONICAL_LEDGER_V1] Invalid catalog shape - not an array:', typeof payload.catalog);
           throw new Error('Invalid catalog shape: catalog is not an array');
         }
         
@@ -172,7 +172,7 @@ function AdminCanonicalLedgerContent() {
         
         return payload;
       } catch (fetchError) {
-        console.error('[CANONICAL_LEDGER] Fetch failed:', fetchError);
+        console.error('[CANONICAL_LEDGER_V1] Fetch failed:', fetchError);
         const errorMessage = String(fetchError?.message || 'Unknown error');
         const errorStatus = String(fetchError?.response?.status || fetchError?.status || 'ERROR');
         const errorText = fetchError?.response?.data ? JSON.stringify(fetchError.response.data, null, 2) : errorMessage;
