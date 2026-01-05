@@ -83,7 +83,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         // STEP 3: Fetch scan
         logStep('FETCH_SCAN_START', { scanId });
         const scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
-        const scanData = scanArr?.[0] || null;
+        let scanData = scanArr?.[0] || null;
         logStep('FETCH_SCAN_COMPLETE', { found: !!scanData });
 
         // STEP 4: Validate records
