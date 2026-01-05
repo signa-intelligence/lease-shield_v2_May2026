@@ -20,9 +20,6 @@ import SkeletonLoader from "../components/shared/SkeletonLoader";
 import { haptic } from "../components/shared/HapticFeedback";
 import ErrorBoundary from "../components/shared/ErrorBoundary";
 
-// ============================================================================
-// FALLBACK CATALOG v1.1 - Hard-embedded for zero-dependency debugging
-// ============================================================================
 const FALLBACK_CATALOG = {
   catalog_version: "v1.1",
   catalog_updated_at: "2026-01-05T00:00:00Z",
@@ -110,7 +107,6 @@ const FALLBACK_CATALOG = {
     { catalog_id: "CAT-080", canonical_name: "Move-Out Procedure", purpose: "Steps when vacating", typical_keywords: ["move-out", "vacate"], typical_variants: ["End of Tenancy"], risk_triggers: ["unreasonable requirements"], is_active: true, sort_order: 80, catalog_version: "v1.1" },
     { catalog_id: "CAT-081", canonical_name: "Signatures & Witnesses", purpose: "Execution requirements", typical_keywords: ["sign", "execute"], typical_variants: ["Contract Execution"], risk_triggers: ["witness required but missing"], is_active: true, sort_order: 81, catalog_version: "v1.1" },
     { catalog_id: "CAT-082", canonical_name: "Language & Translation", purpose: "Which language controls", typical_keywords: ["language", "Thai", "English"], typical_variants: ["Controlling Version"], risk_triggers: ["foreign language controls"], is_active: true, sort_order: 82, catalog_version: "v1.1" },
-    
     { catalog_id: "CAT-121", canonical_name: "Grace Period Definition", purpose: "Define the number of days after rent due date before late fees apply", typical_keywords: ["grace period", "grace days", "late after", "ระยะผ่อนผัน"], typical_variants: ["Payment Grace", "Late Payment Buffer"], risk_triggers: ["no grace period", "grace period less than 5 days"], is_active: true, sort_order: 121, catalog_version: "v1.1" },
     { catalog_id: "CAT-122", canonical_name: "Rent Suspension Conditions", purpose: "Define conditions when rent may be suspended or abated due to uninhabitability", typical_keywords: ["rent suspension", "rent abatement", "uninhabitable", "อยู่ไม่ได้"], typical_variants: ["Rent Abatement", "Habitability Clause"], risk_triggers: ["no rent suspension provision", "tenant must pay even if uninhabitable"], is_active: true, sort_order: 122, catalog_version: "v1.1" },
     { catalog_id: "CAT-123", canonical_name: "Deposit Is Not Rent", purpose: "Clarify that security deposit cannot be applied as last month's rent by tenant", typical_keywords: ["deposit not rent", "cannot apply deposit", "มัดจำไม่ใช่ค่าเช่า"], typical_variants: ["Deposit Application Restriction", "No Rent Offset"], risk_triggers: ["silent on deposit-as-rent", "allows tenant to use deposit for rent"], is_active: true, sort_order: 123, catalog_version: "v1.1" },
@@ -120,7 +116,6 @@ const FALLBACK_CATALOG = {
     { catalog_id: "CAT-127", canonical_name: "Early Termination Penalty Formula", purpose: "Define the specific calculation for early termination penalties based on remaining term", typical_keywords: ["termination penalty", "early exit fee", "penalty formula", "ค่าปรับยกเลิก"], typical_variants: ["Break Fee Calculation", "Exit Penalty"], risk_triggers: ["excessive penalty (>2 months)", "full remaining rent as penalty"], is_active: true, sort_order: 127, catalog_version: "v1.1" },
     { catalog_id: "CAT-128", canonical_name: "Rent Abatement vs Force Majeure", purpose: "Distinguish between rent abatement (habitability) and force majeure (external events) provisions", typical_keywords: ["abatement", "force majeure", "rent reduction", "ลดค่าเช่า"], typical_variants: ["Rent Relief Distinction", "Habitability vs FM"], risk_triggers: ["no distinction between abatement and FM", "FM excludes rent relief"], is_active: true, sort_order: 128, catalog_version: "v1.1" },
     { catalog_id: "CAT-129", canonical_name: "Utility Interruption – Rent Still Payable", purpose: "Clarify tenant's rent obligation during utility service interruptions not caused by tenant", typical_keywords: ["utility interruption", "service outage", "ไฟฟ้าดับ", "น้ำไม่ไหล"], typical_variants: ["Service Interruption", "Utility Failure"], risk_triggers: ["tenant must pay full rent during extended outage", "no abatement for utility failure"], is_active: true, sort_order: 129, catalog_version: "v1.1" },
-    
     { catalog_id: "CAT-UNMAPPED", canonical_name: "Unclassified Clause", purpose: "Clauses that don't fit categories", typical_keywords: [], typical_variants: [], risk_triggers: ["unusual or non-standard terms"], is_active: true, sort_order: 999, catalog_version: "v1.1" }
   ]
 };
@@ -145,7 +140,6 @@ function AdminCanonicalLedgerContent() {
   const { data: catalogData, isLoading, error, refetch } = useQuery({
     queryKey: ['canonicalLedger'],
     queryFn: async () => {
-      // Use base44.functions.invoke which handles auth headers automatically
       const endpoint = 'getCanonicalLedger';
       console.log('[CANONICAL_LEDGER] Fetching catalog via base44.functions.invoke:', endpoint);
       setFetchDiagnostics({ url: `base44.functions.invoke('${endpoint}')`, status: 'fetching...', message: '', responseText: '' });
@@ -154,7 +148,6 @@ function AdminCanonicalLedgerContent() {
         const response = await base44.functions.invoke(endpoint, {});
         console.log('[CANONICAL_LEDGER] Response received:', response);
         
-        // base44.functions.invoke returns axios response with data property
         const payload = response?.data;
         
         if (!payload) {
@@ -191,7 +184,6 @@ function AdminCanonicalLedgerContent() {
           responseText: errorText
         });
         
-        // Re-throw to let react-query handle the error state
         throw fetchError;
       }
     },
@@ -240,6 +232,21 @@ function AdminCanonicalLedgerContent() {
     );
   }
 
+  const effectiveData = useMemo(() => {
+    try {
+      if (catalogData && catalogData.catalog && Array.isArray(catalogData.catalog)) {
+        return catalogData;
+      }
+      console.warn('[CANONICAL_LEDGER] Using fallback catalog');
+      return FALLBACK_CATALOG;
+    } catch (err) {
+      console.error('[CANONICAL_LEDGER] effectiveData error:', err);
+      return FALLBACK_CATALOG;
+    }
+  }, [catalogData]);
+
+  const isUsingFallback = effectiveData === FALLBACK_CATALOG;
+
   const handleExportJSON = () => {
     try {
       haptic.medium();
@@ -249,9 +256,8 @@ function AdminCanonicalLedgerContent() {
         catalog_updated_at: effectiveData?.catalog_updated_at || new Date().toISOString(),
         catalog_count: effectiveData?.catalog_count || 0,
         exported_at: new Date().toISOString(),
-        source: isUsingFallback ? 'FALLBACK' : 'BACKEND',
-        catalog: Array.isArray(effectiveData?.catalog) ? effectiveData.catalog : [],
-        error_note: (!effectiveData || !effectiveData.catalog) ? 'Backend fetch failed - empty catalog' : null
+        source: isUsingFallback ? 'FALLBACK' : (effectiveData?.source || 'BACKEND'),
+        catalog: Array.isArray(effectiveData?.catalog) ? effectiveData.catalog : []
       };
       
       const jsonString = JSON.stringify(exportData, null, 2);
@@ -272,11 +278,6 @@ function AdminCanonicalLedgerContent() {
     }
   };
 
-  const handleViewRawJson = () => {
-    haptic.light();
-    setShowRawJson(true);
-  };
-
   const handleCopyJSON = async () => {
     try {
       haptic.light();
@@ -285,9 +286,8 @@ function AdminCanonicalLedgerContent() {
         catalog_version: effectiveData?.catalog_version || 'v1.1',
         catalog_updated_at: effectiveData?.catalog_updated_at || new Date().toISOString(),
         catalog_count: effectiveData?.catalog_count || 0,
-        source: isUsingFallback ? 'FALLBACK' : 'BACKEND',
-        catalog: Array.isArray(effectiveData?.catalog) ? effectiveData.catalog : [],
-        error_note: (!effectiveData || !effectiveData.catalog) ? 'Backend fetch failed' : null
+        source: isUsingFallback ? 'FALLBACK' : (effectiveData?.source || 'BACKEND'),
+        catalog: Array.isArray(effectiveData?.catalog) ? effectiveData.catalog : []
       };
       
       const jsonString = JSON.stringify(exportData, null, 2);
@@ -298,21 +298,6 @@ function AdminCanonicalLedgerContent() {
       toast.error('Failed to copy: ' + String(err.message || 'Unknown error'));
     }
   };
-
-  const effectiveData = useMemo(() => {
-    try {
-      if (catalogData && catalogData.catalog && Array.isArray(catalogData.catalog)) {
-        return catalogData;
-      }
-      console.warn('[CANONICAL_LEDGER] Using fallback catalog');
-      return FALLBACK_CATALOG;
-    } catch (err) {
-      console.error('[CANONICAL_LEDGER] effectiveData error:', err);
-      return FALLBACK_CATALOG;
-    }
-  }, [catalogData, error, isLoading]);
-
-  const isUsingFallback = effectiveData === FALLBACK_CATALOG;
 
   const toggleRow = (catalogId) => {
     setExpandedRows(prev => ({
@@ -356,14 +341,14 @@ function AdminCanonicalLedgerContent() {
           isDarkMode={isDarkMode}
           actions={
             <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" onClick={handleViewRawJson}>
+              <Button variant="outline" onClick={() => setShowRawJson(true)}>
                 <Code className="w-4 h-4 mr-2" /> View Raw JSON
               </Button>
               <Button variant="outline" onClick={handleCopyJSON}>
                 <Copy className="w-4 h-4 mr-2" /> Copy
               </Button>
               <Button style={{ backgroundColor: '#0C3B2E', color: '#fff' }} onClick={handleExportJSON}>
-                <Download className="w-4 h-4 mr-2" /> Download canonical-ledger-{String(effectiveData?.catalog_version || 'v1.1')}.json
+                <Download className="w-4 h-4 mr-2" /> Download
               </Button>
             </div>
           }
@@ -421,33 +406,6 @@ function AdminCanonicalLedgerContent() {
           </Card>
         )}
 
-        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '6px solid #0C3B2E' }}>
-          <CardContent className="p-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>Export Options</h3>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>
-                  Version {String(effectiveData?.catalog_version || 'v1.1')} • {String(effectiveData?.catalog_count || 0)} entries
-                  {isUsingFallback && <span className="text-red-600 ml-2">(FALLBACK)</span>}
-                </p>
-              </div>
-              <div className="flex gap-3 flex-wrap">
-                <Button variant="outline" onClick={handleViewRawJson} className="gap-2">
-                  <Code className="w-4 h-4" /> View Raw JSON
-                </Button>
-                <Button 
-                  style={{ backgroundColor: '#0C3B2E', color: '#fff' }} 
-                  onClick={handleExportJSON}
-                  className="gap-2"
-                >
-                  <Download className="w-4 h-4" /> 
-                  Download canonical-ledger-{String(effectiveData?.catalog_version || 'v1.1')}.json
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardContent className="p-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -466,9 +424,9 @@ function AdminCanonicalLedgerContent() {
                 </div>
               </div>
               <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
-                <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Updated</div>
-                <div className="text-sm font-medium" style={{ color: colors.textPrimary }}>
-                  {effectiveData?.catalog_updated_at ? new Date(effectiveData.catalog_updated_at).toLocaleDateString() : 'N/A'}
+                <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Source</div>
+                <div className="text-sm font-semibold" style={{ color: isUsingFallback ? '#EF4444' : '#10B981' }}>
+                  {isUsingFallback ? 'FALLBACK' : (effectiveData?.source || 'BACKEND')}
                 </div>
               </div>
             </div>
@@ -542,7 +500,8 @@ function AdminCanonicalLedgerContent() {
         <Card className="border-none shadow-lg overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
             <CardTitle style={{ color: colors.textPrimary }}>
-              Clause Catalog Entries
+              Clause Catalog Entries • v{effectiveData?.catalog_version || 'v1.1'} • {effectiveData?.catalog_count || 0} total
+              {effectiveData?.catalog_count === 92 && <CheckCircle2 className="inline w-5 h-5 ml-2 text-emerald-600" />}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -555,7 +514,6 @@ function AdminCanonicalLedgerContent() {
                     <th className="px-4 py-3 text-left text-xs font-semibold hidden md:table-cell" style={{ color: colors.textSecondary }}>Purpose</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold hidden lg:table-cell" style={{ color: colors.textSecondary }}>Keywords</th>
                     <th className="px-4 py-3 text-center text-xs font-semibold" style={{ color: colors.textSecondary }}>Status</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold" style={{ color: colors.textSecondary }}>Ver</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -602,16 +560,11 @@ function AdminCanonicalLedgerContent() {
                             <AlertTriangle className="w-5 h-5 text-amber-500 mx-auto" />
                           )}
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className="text-xs" style={{ color: colors.textSecondary }}>
-                            {String(entry.catalog_version || 'v1.1')}
-                          </span>
-                        </td>
                       </tr>
                       
                       {expandedRows[entry.catalog_id] && (
                         <tr style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
-                          <td colSpan={6} className="px-4 py-4">
+                          <td colSpan={5} className="px-4 py-4">
                             <div className="grid md:grid-cols-2 gap-4">
                               <div>
                                 <div className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>Purpose</div>
@@ -657,7 +610,7 @@ function AdminCanonicalLedgerContent() {
                     </React.Fragment>
                   )) : (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center" style={{ color: colors.textSecondary }}>
+                      <td colSpan={5} className="px-4 py-8 text-center" style={{ color: colors.textSecondary }}>
                         No catalog entries found
                       </td>
                     </tr>
@@ -667,59 +620,12 @@ function AdminCanonicalLedgerContent() {
             </div>
           </CardContent>
         </Card>
-
-        <Card className="mt-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderColor: colors.borderColor }}>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">DEBUG</Badge>
-                {isUsingFallback && <Badge className="bg-red-600 text-white">FALLBACK</Badge>}
-                <CardTitle className="text-base" style={{ color: colors.textPrimary }}>
-                  Raw Catalog JSON (Always Visible)
-                </CardTitle>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleCopyJSON}>
-                  <Copy className="w-4 h-4 mr-1" /> Copy All
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleExportJSON}>
-                  <Download className="w-4 h-4 mr-1" /> Download
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F0FDF4' }}>
-              <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                Version: {String(effectiveData?.catalog_version || 'v1.1')} • Entries: {String(effectiveData?.catalog_count || 0)} • 
-                {effectiveData?.catalog_count === 92 ? (
-                  <span className="text-emerald-600 ml-1">✓ Count verified (92)</span>
-                ) : (
-                  <span className="text-red-600 ml-1">⚠ Expected 92, got {String(effectiveData?.catalog_count || 0)}</span>
-                )}
-                {isUsingFallback && <span className="text-red-600 ml-2">(FALLBACK DATA)</span>}
-              </span>
-            </div>
-            <pre 
-              className="text-xs font-mono whitespace-pre-wrap break-all overflow-auto p-4 rounded-lg"
-              style={{ 
-                color: colors.textPrimary,
-                backgroundColor: isDarkMode ? '#1A1D1F' : '#F1F5F9',
-                border: `1px solid ${colors.borderColor}`,
-                maxHeight: '400px'
-              }}
-            >
-              {effectiveData ? JSON.stringify(effectiveData, null, 2) : '{}'}
-            </pre>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
 }
 
 function CatalogErrorFallback({ error, resetError }) {
-  const isDarkMode = false;
   const colors = {
     bg: '#F8FAFC',
     cardBg: '#FFFFFF',
@@ -770,9 +676,7 @@ function CatalogErrorFallback({ error, resetError }) {
 
             <div className="mb-4">
               <Badge className="bg-red-600 text-white mb-2">ERROR DETAILS</Badge>
-              <pre 
-                className="text-xs font-mono whitespace-pre-wrap break-all p-4 rounded-lg bg-red-50 text-red-900 overflow-auto max-h-48"
-              >
+              <pre className="text-xs font-mono whitespace-pre-wrap break-all p-4 rounded-lg bg-red-50 text-red-900 overflow-auto max-h-48">
                 {String(error?.message || 'Unknown error')}
                 {error?.stack && '\n\n' + String(error.stack)}
               </pre>
@@ -785,15 +689,6 @@ function CatalogErrorFallback({ error, resetError }) {
               <Button style={{ backgroundColor: '#0C3B2E', color: '#fff' }} onClick={handleDownloadFallback}>
                 <Download className="w-4 h-4 mr-2" /> Download Fallback JSON (92 entries)
               </Button>
-            </div>
-
-            <div className="mt-6">
-              <Badge className="bg-amber-100 text-amber-800 mb-2">FALLBACK CATALOG PREVIEW</Badge>
-              <pre 
-                className="text-xs font-mono whitespace-pre-wrap break-all p-4 rounded-lg bg-gray-50 overflow-auto max-h-64"
-              >
-                {JSON.stringify(FALLBACK_CATALOG, null, 2)}
-              </pre>
             </div>
           </CardContent>
         </Card>
