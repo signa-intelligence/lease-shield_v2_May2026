@@ -30,7 +30,6 @@ import Profile from './pages/Profile';
 import PropertyTracker from './pages/PropertyTracker';
 import RecycleBin from './pages/RecycleBin';
 import RefundPolicy from './pages/RefundPolicy';
-import ReportFull from './pages/ReportFull';
 import ResolveCase from './pages/ResolveCase';
 import RevenueAnalytics from './pages/RevenueAnalytics';
 import RiskFeedbackAdmin from './pages/RiskFeedbackAdmin';
@@ -79,7 +78,6 @@ export const PAGES = {
     "PropertyTracker": PropertyTracker,
     "RecycleBin": RecycleBin,
     "RefundPolicy": RefundPolicy,
-    "ReportFull": ReportFull,
     "ResolveCase": ResolveCase,
     "RevenueAnalytics": RevenueAnalytics,
     "RiskFeedbackAdmin": RiskFeedbackAdmin,

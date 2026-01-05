@@ -220,53 +220,151 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Clause Reviews (one per clause)
-    const clauses = Array.isArray(scanData.clause_reviews) ? scanData.clause_reviews : [];
-    if (clauses.length > 0) {
+    // Clause-by-Clause Reviews (canonical ledger architecture)
+    const clauseReview = Array.isArray(scanData.clause_review) ? scanData.clause_review : [];
+    const clauseLedger = Array.isArray(scanData.clause_ledger) ? scanData.clause_ledger : [];
+    
+    if (clauseReview.length > 0) {
       if (y > pageHeight - 60) { doc.addPage(); y = 20; }
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Clause Reviews (${clauses.length})`, 20, y);
+      doc.text(`Clause-by-Clause Review (${clauseReview.length} clauses)`, 20, y);
       y += 10;
       doc.setFont('helvetica', 'normal');
 
-      clauses.forEach((c, idx) => {
+      // Sort by risk level: high, medium, low, none
+      const riskOrder = { high: 0, medium: 1, low: 2, none: 3 };
+      const sortedReviews = [...clauseReview].sort((a, b) => 
+        (riskOrder[a.risk_level] || 3) - (riskOrder[b.risk_level] || 3)
+      );
+
+      sortedReviews.forEach((review, idx) => {
+        const ledgerItem = clauseLedger.find(c => c.clause_id === review.clause_id);
+        
+        if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+        
+        // Header line: Clause heading
+        doc.setFontSize(11); doc.setFont('helvetica','bold');
+        const heading = ledgerItem?.heading || `Clause ${review.clause_id}`;
+        y = addText(`${idx + 1}. ${heading}`, 20, 11, 'bold');
+
+        // Risk badge
+        doc.setFontSize(9); doc.setFont('helvetica','normal');
+        const riskLabel = review.risk_level === 'none' ? 'NO RISK' : review.risk_level.toUpperCase() + ' RISK';
+        y = addText(`Risk Level: ${riskLabel}`, 25, 9);
+
+        // Risk summary
+        if (review.risk_summary) {
+          y = addText(review.risk_summary, 25, 9);
+        }
+
+        // Skip expanded details for no-risk clauses
+        if (review.risk_level === 'none') {
+          y += 4;
+          return;
+        }
+
+        // Three perspectives
+        if (review.tenant_view) {
+          doc.setFont('helvetica','bold'); doc.text('Tenant Impact:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          y = addText(review.tenant_view, 25, 9);
+        }
+
+        if (review.landlord_view) {
+          doc.setFont('helvetica','bold'); doc.text('Landlord Benefit:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          y = addText(review.landlord_view, 25, 9);
+        }
+
+        if (review.lawyer_view) {
+          doc.setFont('helvetica','bold'); doc.text('Thai Law Context:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          y = addText(review.lawyer_view, 25, 9);
+        }
+
+        // Recommended change
+        if (review.recommended_change && review.recommended_change !== 'No change recommended') {
+          doc.setFont('helvetica','bold'); doc.text('Recommended Change:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          y = addText(review.recommended_change, 25, 9);
+        }
+
+        // Negotiation tip
+        if (review.negotiation_tip) {
+          doc.setFont('helvetica','bold'); doc.text('Negotiation Tip:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          y = addText(review.negotiation_tip, 25, 9);
+        }
+
+        y += 8;
+      });
+    }
+
+    // Legacy fallback: old clause_reviews format
+    const legacyClauses = Array.isArray(scanData.clause_reviews) ? scanData.clause_reviews : [];
+    if (clauseReview.length === 0 && legacyClauses.length > 0) {
+      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Clause Reviews (${legacyClauses.length})`, 20, y);
+      y += 10;
+      doc.setFont('helvetica', 'normal');
+
+      legacyClauses.forEach((c, idx) => {
         if (y > pageHeight - 50) { doc.addPage(); y = 20; }
-        // Header line: Clause number and title
         doc.setFontSize(11); doc.setFont('helvetica','bold');
         const title = c.clause_title ? ` — ${c.clause_title}` : '';
         y = addText(`${idx + 1}. Clause ${c.clause_number}${title}`, 20, 11, 'bold');
-
-        // Risk level
         doc.setFontSize(9); doc.setFont('helvetica','normal');
         y = addText(`Risk: ${c.risk_level}`, 25, 9);
-
         if (c.risk_level === 'NO_RISK') {
           y = addText('No risk detected.', 25, 9);
           y += 4;
           return;
         }
-
-        // Why this matters
         if (c.why_this_matters) {
           doc.setFont('helvetica','bold'); doc.text('Why this matters:', 25, y); y += 5;
           doc.setFont('helvetica','normal');
           y = addText(c.why_this_matters, 25, 9);
         }
-
-        // Recommended action
         if (c.recommended_action) {
           doc.setFont('helvetica','bold'); doc.text('Recommended action:', 25, y); y += 5;
           doc.setFont('helvetica','normal');
           y = addText(c.recommended_action, 25, 9);
         }
-
-        // Low confidence note
-        if (typeof c.confidence === 'number' && c.confidence < 0.6) {
-          y = addText('Note: Low confidence – manual review recommended.', 25, 9);
-        }
-
         y += 6;
+      });
+    }
+    
+    // Missing Clauses (gap report from canonical catalog)
+    const missingClauses = Array.isArray(scanData.missing_clauses) ? scanData.missing_clauses : [];
+    if (missingClauses.length > 0) {
+      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Missing Standard Clauses (${missingClauses.length})`, 20, y);
+      y += 10;
+      doc.setFont('helvetica', 'normal');
+      
+      // Sort by priority: high, medium, low
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      const sortedMissing = [...missingClauses].sort((a, b) => 
+        (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2)
+      );
+
+      sortedMissing.forEach((missing, idx) => {
+        if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+        doc.setFontSize(10); doc.setFont('helvetica','bold');
+        y = addText(`${idx + 1}. ${missing.canonical_name} [${missing.priority?.toUpperCase() || 'LOW'}]`, 20, 10, 'bold');
+        doc.setFontSize(9); doc.setFont('helvetica','normal');
+        if (missing.why_it_matters) {
+          y = addText(`Why it matters: ${missing.why_it_matters}`, 25, 9);
+        }
+        if (missing.suggested_addition_text) {
+          y = addText(`Suggested: ${missing.suggested_addition_text}`, 25, 9);
+        }
+        y += 4;
       });
     }
 
