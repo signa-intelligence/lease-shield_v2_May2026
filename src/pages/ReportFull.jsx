@@ -302,7 +302,7 @@ function ReportFullContent() {
     return { level: 'low', label: 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
   };
 
-  const riskLevel = getRiskLevel(scan.risk_score || 0);
+  const riskLevel = getRiskLevel(scan.risk_score || canonical?.risk_score || 0);
 
 
 
