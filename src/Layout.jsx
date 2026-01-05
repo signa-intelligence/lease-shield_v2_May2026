@@ -11,6 +11,7 @@ import MobileMenuDrawer from "./components/shared/MobileMenuDrawer";
 import LanguageSelector from "./components/shared/LanguageSelector";
 import QuickGuide from "./components/shared/QuickGuide";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
+import GlobalErrorBoundary from "./components/shared/GlobalErrorBoundary";
 
 
 // Animation utilities inlined
