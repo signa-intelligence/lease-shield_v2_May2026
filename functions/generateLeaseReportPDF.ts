@@ -367,6 +367,62 @@ Deno.serve(async (req) => {
         y += 4;
       });
     }
+    
+    // Clause Coverage Summary (92 categories)
+    const coverageSummary = scanData.coverage_summary || {};
+    const mappingsCount = Array.isArray(scanData.mappings) ? scanData.mappings.length : 0;
+    const missingCount = missingClauses.length;
+    const totalCatalog = 92; // Canonical catalog size
+    
+    if (mappingsCount > 0 || missingCount > 0) {
+      if (y > pageHeight - 60) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Clause Coverage Summary (92 Standard Categories)', 20, y);
+      y += 10;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      const presentCount = coverageSummary.mapped_count || (totalCatalog - missingCount);
+      doc.text(`• Present in lease: ${presentCount} clauses`, 25, y); y += 6;
+      doc.text(`• Missing from lease: ${missingCount} clauses`, 25, y); y += 6;
+      doc.text(`• Coverage: ${Math.round((presentCount / totalCatalog) * 100)}%`, 25, y); y += 10;
+    }
+    
+    // Negotiation Plan Summary
+    const riskClauses = Array.isArray(scanData.clause_review) 
+      ? scanData.clause_review.filter(r => r.risk_level && r.risk_level !== 'none')
+      : [];
+    
+    if (riskClauses.length > 0) {
+      if (y > pageHeight - 80) { doc.addPage(); y = 20; }
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Negotiation Plan - Top Changes to Request', 20, y);
+      y += 10;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      
+      // Sort by risk and take top 5
+      const riskOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+      const topRisks = [...riskClauses]
+        .sort((a, b) => (riskOrder[a.risk_level] || 3) - (riskOrder[b.risk_level] || 3))
+        .slice(0, 5);
+      
+      topRisks.forEach((risk, idx) => {
+        if (y > pageHeight - 30) { doc.addPage(); y = 20; }
+        doc.setFontSize(10); doc.setFont('helvetica','bold');
+        y = addText(`${idx + 1}. [${risk.risk_level?.toUpperCase()}] ${risk.risk_summary?.substring(0, 80) || 'Issue identified'}`, 20, 10, 'bold');
+        doc.setFontSize(9); doc.setFont('helvetica','normal');
+        if (risk.recommended_change && risk.recommended_change !== 'No change recommended') {
+          y = addText(`→ Request: ${risk.recommended_change}`, 25, 9);
+        }
+        if (risk.negotiation_tip && risk.negotiation_tip !== 'Accept as standard.') {
+          y = addText(`💡 Tip: ${risk.negotiation_tip}`, 25, 9);
+        }
+        y += 4;
+      });
+    }
 
     // Taxonomy Appendix: all 30 categories
     if (Array.isArray(scanData.taxonomy_report) && scanData.taxonomy_report.length === 30) {
