@@ -873,24 +873,49 @@ function UploadScanPageContent() {
         setAnalysisStage('scanning');
         setUploadProgress(60);
 
-        // Trigger analysis with all pages (server creates scanId)
+        // Trigger analysis with all pages
+        // Create LeaseScan record before analysis
+        const scan = await base44.entities.LeaseScan.create({
+          lease_id: lease.id,
+          status: 'initiated',
+          request_id: requestId
+        });
+
+        if (!scan.id) {
+          throw new Error('BUG: scanId missing');
+        }
+        if (lease.id === scan.id) {
+          throw new Error('BUG: scanId incorrectly equals leaseId. Aborting.');
+        }
+
+        // Trigger analysis with all pages
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
           fileUrls: uploadedUrls,
           requestId,
-          leaseId: lease.id
+          leaseId: lease.id,
+          scanId: scan.id
         });
-        const scanId = scanResponse?.scanId;
-        if (!scanId) { throw new Error('FATAL_CLIENT_ERROR: scanId missing from backend response'); }
-        if (scanId === lease.id) { throw new Error('BUG: scanId incorrectly equals leaseId'); }
 
+        if (!scanResponse || scanResponse.ok === false) {
+          const err = new Error(scanResponse?.error?.message || 'Scan failed with no message');
+          err.code = scanResponse?.error?.code || 'UNKNOWN';
+          err.step = scanResponse?.error?.step || 'ANALYSIS';
+          throw err;
+        }
 
-
-        // Verify payload was created
-        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId });
+        // Verify payload was created and navigate to report
+        const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: scan.id });
         if (!verifyStatus?.hasPdfPayload) {
           throw new Error(`Scan saved but report payload missing. Scan pipeline failed: ${verifyStatus?.error?.message || 'Unknown error'}`);
         }
-        window.location.href = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
+        await base44.entities.LeaseScan.update(scan.id, {
+          status: 'ok',
+          risk_score: scanResponse?.result?.risk_score,
+          summary: scanResponse?.result?.summary
+        });
+        if (!scan.id) throw new Error('BUG: scanId missing');
+        if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        window.location.href = `/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`;
         return;
 
 
@@ -920,7 +945,7 @@ function UploadScanPageContent() {
           const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
             scanResult,
             leaseId: lease.id,
-            scanId
+            scanId: scan.id
           });
           
           if (populateResponse?.success && populateResponse.review_mode) {
@@ -1130,11 +1155,9 @@ function UploadScanPageContent() {
         const { data: scanResponse } = await base44.functions.invoke('scanLease', {
           fileUrls: fileUrls,
           requestId,
-          leaseId: createdLeaseId
+          leaseId: createdLeaseId,
+          scanId
         });
-        scanId = scanResponse?.scanId;
-        if (!scanId) { throw new Error('FATAL_CLIENT_ERROR: scanId missing from backend response'); }
-        if (scanId === createdLeaseId) { throw new Error('BUG: scanId incorrectly equals leaseId'); }
 
         const analysisDuration = Date.now() - analysisStartTime;
         
@@ -1180,7 +1203,12 @@ function UploadScanPageContent() {
           flagsCount: scanResponse.result?.flags?.length
         });
 
-        // Navigate to report with server-provided scanId
+        // Update LeaseScan status and navigate to report
+        await base44.entities.LeaseScan.update(scanId, {
+          status: 'ok',
+          risk_score: scanResponse?.result?.risk_score,
+          summary: scanResponse?.result?.summary
+        });
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === createdLeaseId) throw new Error('BUG: scanId incorrectly equals leaseId');
         window.location.href = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(createdLeaseId)}`;
@@ -1452,18 +1480,21 @@ function UploadScanPageContent() {
       setAnalysisStage('scanning');
       setUploadProgress(50);
 
-      // Re-trigger analysis (server creates new scan)
+      // Re-trigger analysis
       const { data: scanResponse } = await base44.functions.invoke('scanLease', {
         fileUrls: allUrls,
         requestId: `reanalyze-${Date.now()}`,
-        leaseId: addingPagesToLease.id
+        leaseId: addingPagesToLease.id,
+        scanId: addingPagesToLease.id
       });
-      const scanId = scanResponse?.scanId;
-      if (!scanId) { throw new Error('FATAL_CLIENT_ERROR: scanId missing from backend response'); }
-      const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId });
-      if (!verifyStatus?.hasPdfPayload) { throw new Error('Re-analysis saved but report payload missing'); }
-      window.location.href = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(addingPagesToLease.id)}`;
-      return;
+
+      if (!scanResponse || !scanResponse.success) {
+        throw new Error(scanResponse?.error || 'Re-analysis failed');
+      }
+
+      const scanResult = scanResponse.result;
+      setAnalysisStage('extracting');
+      setUploadProgress(70);
 
       await base44.entities.Lease.update(addingPagesToLease.id, {
         status: 'scanned',

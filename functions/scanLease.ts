@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
   const body = await req.json();
   const requestId = body.requestId || crypto.randomUUID().slice(0, 8);
   const startTime = Date.now();
-  let scanId = null;
+  const scanId = body.scanId || crypto.randomUUID();
   const stages = [];
   
   const logStage = (stage, data) => {
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       return err(req, 'QUOTA_EXCEEDED', 'Scan quota exceeded for your plan tier', 403, requestId);
     }
 
-    const { fileUrls, leaseId, requestId: reqId } = body;
+    const { fileUrls, leaseId } = body;
     
     if (!fileUrls || fileUrls.length === 0) {
       logStage('VALIDATION_FAILED', { reason: 'no_files' });
@@ -96,21 +96,6 @@ Deno.serve(async (req) => {
       } catch (e) {
         // If HEAD fails, continue
       }
-    }
-
-    // CREATE SCAN RECORD (server-side authority)
-    logStage('SCAN_RECORD_CREATE_START', { leaseId });
-    let createdScan;
-    try {
-      createdScan = await base44.entities.LeaseScan.create({
-        lease_id: leaseId,
-        status: 'initiated'
-      });
-      scanId = createdScan.id;
-      logStage('SCAN_RECORD_CREATED', { scanId });
-    } catch (e) {
-      await safeLog('SCAN_CREATE_FAILED', { message: e.message });
-      return Response.json({ error: 'SCAN_CREATE_FAILED', message: e.message, requestId, leaseId }, { status: 500 });
     }
 
     // STEP 1: EXTRACT CLAUSES & KEY TERMS
@@ -416,9 +401,29 @@ Be thorough.`,
     });
 
     return Response.json({
-      scanId,
-      leaseId,
-      status: finalStatus
+      success: true,
+      result: {
+        risk_score: finalPdfPayload.risk_score,
+        summary: finalPdfPayload.summary,
+        clauses_extracted,
+        clause_ledger: finalPdfPayload.clause_ledger,
+        issues_validated: finalPdfPayload.flags || [],
+        property_address: keyTerms.property_address,
+        start_date: keyTerms.start_date,
+        end_date: keyTerms.end_date,
+        rent_amount: keyTerms.rent_amount,
+        deposit_amount: keyTerms.deposit_amount,
+        language_detected: keyTerms.language_detected,
+        canonical_status: finalStatus,
+        has_pdf_payload: true
+      },
+      diagnostic: { 
+        scanId, 
+        requestId,
+        totalDuration: Date.now() - startTime,
+        pipelineSteps: pipeline.length,
+        canonicalStatus: finalStatus
+      }
     });
 
   } catch (error) {
@@ -435,11 +440,15 @@ Be thorough.`,
     console.error('[SCAN_ERROR]', { error: error.message, stack: error.stack?.substring(0, 200) });
     
     return Response.json({ 
+      success: false,
       error: 'Scan failed. Please try again.',
       details: error.message,
-      scanId,
-      leaseId,
-      requestId
+      diagnostic: {
+        scanId,
+        requestId,
+        errorCategory: 'ANALYSIS_ERROR',
+        duration: Date.now() - startTime
+      }
     }, { status: 500 });
   }
 });
