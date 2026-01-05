@@ -1011,5 +1011,6 @@ export default function Layout({ children, currentPageName }) {
           onDismiss={() => setShowQuickGuide(false)}
         />
         </div>
+        </GlobalErrorBoundary>
         );
         }
