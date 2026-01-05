@@ -920,7 +920,7 @@ function UploadScanPageContent() {
           const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
             scanResult,
             leaseId: lease.id,
-            scanId: scan.id
+            scanId
           });
           
           if (populateResponse?.success && populateResponse.review_mode) {
