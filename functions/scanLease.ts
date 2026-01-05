@@ -1082,11 +1082,26 @@ Be thorough.`,
     else if (clauses_risk >= 3) summary = `${clauses_risk} clauses flagged with risks; review recommended before signing.`;
     else summary = `Low number of risk clauses detected (${clauses_risk}).`;
 
+    // Run the new canonical clause ledger scan
+    let canonicalReport = null;
+    try {
+      const canonicalResult = await base44.asServiceRole.functions.invoke('clauseLedgerScan', {
+        fileUrls: urlArray,
+        leaseId,
+        scanId
+      });
+      if (canonicalResult.data?.success) {
+        canonicalReport = canonicalResult.data.result;
+      }
+    } catch (canonicalError) {
+      console.warn('[CANONICAL_SCAN_WARNING]', canonicalError.message);
+    }
+
     // Persist to LeaseScan if possible (best-effort)
     try {
       await base44.asServiceRole.entities.LeaseScan.update(scanId, {
         lease_id: leaseId,
-        risk_score: riskScore,
+        risk_score: canonicalReport?.risk_score || riskScore,
         scan_full: {
           clauses_extracted,
           clause_ledger,
@@ -1095,9 +1110,12 @@ Be thorough.`,
           language_detected: keyTerms.language_detected,
           taxonomy_report,
           coverage_summary,
-          version: 'clause-ledger-v2-taxonomy'
+          canonical_report: canonicalReport,
+          version: 'clause-ledger-v3-canonical'
         },
-        summary
+        summary: canonicalReport ? 
+          `${canonicalReport.clause_ledger?.length || 0} clauses extracted, ${canonicalReport.clause_review?.filter(r => r.risk_level !== 'none').length || 0} with risks, ${canonicalReport.missing_clauses?.length || 0} missing.` : 
+          summary
       });
     } catch (_) {}
 
