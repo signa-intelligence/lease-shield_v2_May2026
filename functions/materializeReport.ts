@@ -3,6 +3,7 @@ import { requireAuth, safeLog } from './authGuards.js';
 
 /**
  * materializeReport.js
+ * v1.1 - Force redeploy 2026-01-05
  * 
  * IDEMPOTENT server-side materializer for pdfPayload.
  * 
