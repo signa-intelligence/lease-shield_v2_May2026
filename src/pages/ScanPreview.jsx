@@ -198,7 +198,8 @@ function ScanPreviewContent() {
                 variant="outline"
                 onClick={() => {
                   haptic.light();
-                  window.location.reload();
+                  // Manual refresh via React Query invalidation instead of hard reload
+                  navigate(0);
                 }}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
