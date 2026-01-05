@@ -468,7 +468,7 @@ Flags: ${flags.length}`}
           <Button
             onClick={() => {
               haptic.medium();
-              navigate(createPageUrl("Templates"));
+              navigate('/Templates');
             }}
             style={{ backgroundColor: '#0C3B2E', color: '#fff' }}
             className="flex-1"
