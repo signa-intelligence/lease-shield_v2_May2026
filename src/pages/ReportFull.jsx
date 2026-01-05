@@ -22,9 +22,7 @@ import {
 } from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
-import ClauseCoverageTable from "../components/report/ClauseCoverageTable";
-import NegotiationPlan from "../components/report/NegotiationPlan";
-import RecommendationCard from "../components/report/RecommendationCard";
+// Removed: ClauseCoverageTable, NegotiationPlan, RecommendationCard - using direct flags rendering
 
 const SEVERITY_CONFIG = {
   none: { color: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'NO RISK', icon: CheckCircle2 },
