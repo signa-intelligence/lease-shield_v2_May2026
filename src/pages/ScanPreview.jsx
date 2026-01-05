@@ -489,7 +489,7 @@ function ScanPreviewContent() {
                           onClick={() => {
                             if (isLoading) return;
                             haptic.medium();
-                            navigate(`/ReportFull?scanId=${scan.id}&leaseId=${lease.id}`);
+                            navigate(`/reportfull?scanId=${scan.id}&leaseId=${lease.id}`);
                           }}
                           className="btn-interaction"
                           style={{
@@ -605,7 +605,7 @@ function ScanPreviewContent() {
                           onClick={() => {
                             if (isLoading) return;
                             haptic.light();
-                            navigate(`/ReportFull?scanId=${scan.id}&leaseId=${lease.id}`);
+                            navigate(`/reportfull?scanId=${scan.id}&leaseId=${lease.id}`);
                           }}
                           style={{
                             width: '100%',
@@ -869,7 +869,7 @@ function ScanPreviewContent() {
                 onClick={() => {
                   if (isLoading) return;
                   haptic.medium();
-                  navigate(createPageUrl("ReportFull") + `?scanId=${scan.id}&leaseId=${lease.id}`, { replace: false });
+                  navigate(`/reportfull?scanId=${scan.id}&leaseId=${lease.id}`);
                 }}
                 className="btn-interaction"
                 style={{

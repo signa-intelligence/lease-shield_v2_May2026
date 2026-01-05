@@ -2124,7 +2124,7 @@ function UploadScanPageContent() {
                         onClick={() => {
                           haptic.medium();
                           setSelectedLease(null);
-                          navigate(createPageUrl("ReportFull") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
+                          navigate(`/reportfull?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
                         }}
                         className="w-full py-4 text-base font-bold"
                         style={{
