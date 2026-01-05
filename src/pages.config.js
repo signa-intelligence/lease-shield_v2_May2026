@@ -43,6 +43,7 @@ import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
 import reportfull from './pages/reportfull';
+import ReportFull from './pages/ReportFull';
 import __Layout from './Layout.jsx';
 
 
@@ -92,6 +93,7 @@ export const PAGES = {
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
     "reportfull": reportfull,
+    "ReportFull": ReportFull,
 }
 
 export const pagesConfig = {
