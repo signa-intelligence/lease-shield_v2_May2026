@@ -166,15 +166,10 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   React.useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then((registration) => {
-          console.log('✅ Service Worker registered:', registration.scope);
-        })
-        .catch((error) => {
-          console.error('❌ Service Worker registration failed:', error);
-        });
-    }
+    // SERVICE WORKER DISABLED: Platform cannot serve /service-worker.js with correct MIME type
+    // This prevents the "unsupported MIME type text/html" console error
+    // To re-enable, the platform must serve /service-worker.js as application/javascript
+    console.log('[Layout] Service Worker registration disabled (platform limitation)');
 
     const link = document.querySelector('link[rel="manifest"]');
     if (!link) {
