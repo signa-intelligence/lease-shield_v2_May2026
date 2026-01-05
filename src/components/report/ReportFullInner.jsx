@@ -36,8 +36,6 @@ export default function ReportFullInner({ scanId, leaseId, showDebug }) {
   const [scan, setScan] = useState(null);
   const [reportData, setReportData] = useState(null);
   const [exportingPdf, setExportingPdf] = useState(false);
-  const [backfillError, setBackfillError] = useState(null);
-  const backfillAttemptedRef = useRef(new Set());
 
   // Effect #1: Fetch all data (ALWAYS RUNS)
   useEffect(() => {
@@ -59,8 +57,14 @@ export default function ReportFullInner({ scanId, leaseId, showDebug }) {
           return;
         }
 
-        // Normalize report data
+        // Check for materialized report
         const canonical = scanData?.scan_full?.canonical_report || null;
+        if (!canonical || !canonical.clause_ledger || canonical.clause_ledger.length === 0) {
+          if (!cancelled) setError('Report not generated yet. Please re-run the scan.');
+          return;
+        }
+
+        // Use materialized report
         const clauseReview = Array.isArray(canonical?.clause_review) ? canonical.clause_review : [];
         const clauseLedger = Array.isArray(canonical?.clause_ledger) ? canonical.clause_ledger : [];
         const flags = Array.isArray(scanData?.flags) ? scanData.flags : (Array.isArray(scanData?.scan_full?.flags) ? scanData.scan_full.flags : []);
@@ -184,37 +188,8 @@ export default function ReportFullInner({ scanId, leaseId, showDebug }) {
     return () => { cancelled = true; };
   }, [scanId, leaseId]);
 
-  // Effect #2: ONE-SHOT backfill (ALWAYS RUNS)
-  useEffect(() => {
-    if (!reportData || !lease || !scan) return;
-    
-    const clauseLedgerLen = (reportData.clause_ledger || []).length;
-    const key = `${scanId}:${leaseId}`;
-    
-    if (clauseLedgerLen >= 80) return;
-    if (backfillAttemptedRef.current.has(key)) return;
-
-    backfillAttemptedRef.current.add(key);
-    const files = (Array.isArray(lease.file_urls) && lease.file_urls.length) ? lease.file_urls : (lease.file_url ? [lease.file_url] : []);
-
-    base44.functions.invoke('syncScanClauseLedger', { scanId, leaseId, fileUrls: files })
-      .then((res) => {
-        if (res?.data?.status === 'ok') {
-          window.location.reload();
-        } else if (res?.data?.status === 'error' && res?.data?.code === 'deploymentNotFound') {
-          setBackfillError('Ledger generator not deployed. Publish backend functions (clauseLedgerScan) and retry.');
-        }
-      })
-      .catch(err => {
-        const msg = err?.response?.data?.error || err?.message || String(err);
-        const code = err?.response?.data?.code || '';
-        if (msg.includes('deploymentNotFound') || code === 'deploymentNotFound') {
-          setBackfillError('Ledger generator not deployed. Publish backend functions (clauseLedgerScan) and retry.');
-        } else {
-          setBackfillError('Failed to generate ledger.');
-        }
-      });
-  }, [reportData, lease, scan, scanId, leaseId]);
+  // NO BACKFILL - Report is materialized at scan time
+  // If report missing, user must re-run scan
 
   // Compute colors and language (NO HOOKS)
   const isDarkMode = user?.theme === 'dark';
@@ -267,7 +242,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug }) {
     setExportingPdf(true);
     try {
       const response = await base44.functions.invoke('generateLeaseReportPDF', {
-        scanData: reportData,
+        scanId,
         language
       });
       if (response?.data?.pdf_url) {
@@ -291,22 +266,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug }) {
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '100px' }}>
       <div className="max-w-4xl mx-auto">
-        {backfillError && (
-          <Card className="mb-4 border-2 border-red-500" style={{ backgroundColor: '#FEE2E2' }}>
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
-                <div className="flex-1">
-                  <h3 className="font-bold text-red-800 mb-1">Ledger Generation Failed</h3>
-                  <p className="text-sm text-red-700 mb-3">{backfillError}</p>
-                  <Button variant="outline" size="sm" onClick={() => { backfillAttemptedRef.current.clear(); setBackfillError(null); window.location.reload(); }}>
-                    <RefreshCw className="w-4 h-4 mr-2" />Retry Backfill
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+
 
         {showDebug && isAdmin && (
           <Card className="mb-4 border-2 border-emerald-500" style={{ backgroundColor: '#D1FAE5' }}>

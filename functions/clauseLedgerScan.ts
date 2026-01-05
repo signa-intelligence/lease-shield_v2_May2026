@@ -404,6 +404,54 @@ Total clause count: ${clause_ledger.length}`;
       (riskCounts.high * 25) + (riskCounts.medium * 10) + (riskCounts.low * 3)
     );
     
+    // Build PDF-ready payload
+    const issuesForPdf = [];
+    const seen = new Set();
+    clause_review.forEach(r => {
+      if (!r.risk_level || r.risk_level === 'none') return;
+      const clause = clause_ledger.find(c => c.clause_id === r.clause_id);
+      const key = `${r.clause_id}::${r.risk_level}::${r.mapped_catalog_ids?.[0] || 'clause'}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+
+      const recs = [];
+      if (r.recommended_change && r.recommended_change !== 'No change recommended') recs.push(r.recommended_change);
+      if (r.negotiation_tip && r.negotiation_tip !== 'Accept as standard.') recs.push(r.negotiation_tip);
+      const category = r.mapped_catalog_ids?.[0] || 'clause';
+      while (recs.length < 2) {
+        recs.push(`Request to narrow or clarify ${category} terms to tenant-favorable language`);
+        if (recs.length < 2) recs.push(`Add explicit safeguard for ${category} to prevent overbroad interpretation`);
+      }
+
+      let evidence = (clause?.full_text || '').substring(0, 240);
+      if (!evidence || evidence.length < 10) evidence = `[Evidence not extracted for ${r.clause_id}]`;
+
+      issuesForPdf.push({
+        clause_id: r.clause_id,
+        severity: r.risk_level,
+        category,
+        title: clause?.heading || r.risk_summary?.substring(0, 80) || 'Issue identified',
+        description: r.risk_summary || 'Review required',
+        explanation: r.lawyer_view || r.tenant_view || '',
+        recommendation: recs.join('\n'),
+        evidence
+      });
+    });
+
+    const pdfPayload = {
+      lease_address: key_terms.property_address || 'Lease Agreement',
+      generated_date: new Date().toISOString(),
+      risk_score: riskScore,
+      summary: `Extracted ${clause_ledger.length} clauses. ${riskCounts.high} high-risk, ${riskCounts.medium} medium-risk. ${missing_clauses.length} standard clauses missing.`,
+      key_terms,
+      flags: issuesForPdf,
+      clause_review,
+      clause_ledger,
+      mappings,
+      missing_clauses,
+      coverage_summary: summary
+    };
+
     const finalReport = {
       scan_version: SCAN_VERSION,
       scan_id: scanId || crypto.randomUUID(),
@@ -417,7 +465,8 @@ Total clause count: ${clause_ledger.length}`;
       missing_clauses,
       key_terms,
       summary,
-      risk_score: riskScore
+      risk_score: riskScore,
+      pdfPayload
     };
     
     // VALIDATE SCHEMA
