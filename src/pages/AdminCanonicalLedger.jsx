@@ -138,6 +138,10 @@ function AdminCanonicalLedgerContent() {
     queryFn: () => base44.auth.me()
   });
 
+  const userRole = user?.role?.toLowerCase();
+  const accessLevel = user?.access_level?.toLowerCase();
+  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || accessLevel === 'admin' || accessLevel === 'super_admin';
+
   const { data: catalogData, isLoading, error, refetch } = useQuery({
     queryKey: ['canonicalLedger'],
     queryFn: async () => {
