@@ -1,14 +1,13 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { riskTheme, LEGAL_DISCLAIMER } from "../components/shared/riskTheme";
-import DOMPurify from 'npm:dompurify@3.0.8';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, Shield, FileText, ArrowLeft, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2, DollarSign, Home } from "lucide-react";
+import { Download, Shield, FileText, AlertTriangle, Info, CheckCircle2, AlertCircle, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { FeatureGate } from "../components/shared/FeatureGate";
 import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
@@ -18,273 +17,45 @@ import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 
 function ReportFullContent() {
-  // ============================================================================
-  // ALL HOOKS FIRST - UNCONDITIONAL, TOP-LEVEL, STABLE ORDER
-  // ============================================================================
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const toast = useToast();
   
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [expandedClauses, setExpandedClauses] = useState({});
-  const [schemaInvalidCount, setSchemaInvalidCount] = useState(0);
-  const [repairAttempted, setRepairAttempted] = useState(false);
+  const [showAllClauses, setShowAllClauses] = useState(false);
 
-  // Parse URL params
   const urlParams = new URLSearchParams(window.location.search);
   const scanId = urlParams.get('scanId');
   const leaseId = urlParams.get('leaseId');
 
-  // Log route access
-  React.useEffect(() => {
-    console.log('[REPORTFULL_LOAD]', {
-      step: 'RENDER_START',
-      scanId,
-      leaseId,
-      url: window.location.href,
-      timestamp: new Date().toISOString()
-    });
-  }, [scanId, leaseId]);
-
-
-  // Fetch user
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: async () => {
-      try {
-        console.log('[REPORTFULL_LOAD]', { step: 'FETCH_USER_START' });
-        const userData = await base44.auth.me();
-        console.log('[REPORTFULL_LOAD]', { 
-          step: 'FETCH_USER_SUCCESS', 
-          userId: userData?.id, 
-          email: userData?.email 
-        });
-        return userData;
-      } catch (error) {
-        console.error('[REPORTFULL_LOAD]', { 
-          step: 'FETCH_USER_ERROR', 
-          error: error.message, 
-          stack: error.stack 
-        });
-        console.error('[TELEMETRY] ReportFullLoadFailed', {
-          step: 'AUTH',
-          scanId,
-          leaseId,
-          errorMessage: error.message,
-          stackTrace: error.stack?.substring(0, 200)
-        });
-        throw error;
-      }
-    }
+    queryFn: () => base44.auth.me()
   });
 
-  // Fetch scan (read-only) — no redirects, no side-effects
   const { data: scan, isLoading: scanLoading, error: scanError } = useQuery({
     queryKey: ['scan', scanId],
     queryFn: async () => {
-      try {
-        console.log('[REPORTFULL_LOAD]', { step: 'FETCH_SCAN_START', scanId });
-        const scans = await base44.entities.LeaseScan.list();
-        const foundScan = scans.find(s => s.id === scanId);
-        
-        if (!foundScan) {
-          console.error('[REPORTFULL_LOAD]', { 
-            step: 'FETCH_SCAN_NOT_FOUND', 
-            scanId, 
-            totalScans: scans.length 
-          });
-          console.error('[TELEMETRY] ReportFullLoadFailed', {
-            step: 'FETCH',
-            scanId,
-            leaseId,
-            errorMessage: 'Scan not found',
-            httpStatus: 404
-          });
-        } else {
-          console.log('[REPORTFULL_LOAD]', { 
-            step: 'FETCH_SCAN_SUCCESS',
-            scanId: foundScan.id, 
-            riskScore: foundScan.risk_score,
-            hasFlags: !!foundScan.scan_full?.flags,
-            flagsCount: foundScan.scan_full?.flags?.length || 0,
-            hasScanFull: !!foundScan.scan_full,
-            hasTaxonomy: Array.isArray(foundScan.scan_full?.taxonomy_report)
-          });
-        }
-        
-        return foundScan;
-      } catch (error) {
-        console.error('[REPORTFULL_LOAD]', { 
-          step: 'FETCH_SCAN_ERROR',
-          scanId, 
-          error: error.message, 
-          status: error.response?.status,
-          stack: error.stack 
-        });
-        console.error('[TELEMETRY] ReportFullLoadFailed', {
-          step: 'FETCH',
-          scanId,
-          leaseId,
-          httpStatus: error.response?.status,
-          errorMessage: error.message,
-          stackTrace: error.stack?.substring(0, 200)
-        });
-        throw error;
-      }
+      const scans = await base44.entities.LeaseScan.list();
+      return scans.find(s => s.id === scanId);
     },
     enabled: !!scanId && !!user,
     retry: 1
   });
 
-  // Fetch lease
-  const { data: lease, isLoading: leaseLoading, error: leaseError } = useQuery({
+  const { data: lease, isLoading: leaseLoading } = useQuery({
     queryKey: ['lease', scan?.lease_id || leaseId],
     queryFn: async () => {
-      try {
-        const targetLeaseId = scan?.lease_id || leaseId;
-        console.log('[REPORTFULL_LOAD]', { step: 'FETCH_LEASE_START', leaseId: targetLeaseId });
-        const leases = await base44.entities.Lease.list();
-        const foundLease = leases.find(l => l.id === targetLeaseId);
-        
-        if (!foundLease) {
-          console.error('[REPORTFULL_LOAD]', { 
-            step: 'FETCH_LEASE_NOT_FOUND', 
-            leaseId: targetLeaseId, 
-            totalLeases: leases.length 
-          });
-        } else {
-          console.log('[REPORTFULL_LOAD]', { 
-            step: 'FETCH_LEASE_SUCCESS',
-            leaseId: foundLease.id, 
-            address: foundLease.property_address 
-          });
-        }
-        
-        return foundLease;
-      } catch (error) {
-        console.error('[REPORTFULL_LOAD]', { 
-          step: 'FETCH_LEASE_ERROR',
-          leaseId: scan?.lease_id || leaseId,
-          error: error.message,
-          status: error.response?.status,
-          stack: error.stack
-        });
-        console.error('[TELEMETRY] ReportFullLoadFailed', {
-          step: 'FETCH',
-          scanId,
-          leaseId: scan?.lease_id || leaseId,
-          httpStatus: error.response?.status,
-          errorMessage: error.message,
-          stackTrace: error.stack?.substring(0, 200)
-        });
-        throw error;
-      }
+      const leases = await base44.entities.Lease.list();
+      return leases.find(l => l.id === (scan?.lease_id || leaseId));
     },
     enabled: !!(scan?.lease_id || leaseId) && !!user,
     retry: 1
   });
 
-  // SINGLE SOURCE OF TRUTH: Use scan's issues_validated (or fallback to flags with validation)
-  const { validatedFlags, invalidCount, invalidCodes, invalidDetails, clauseLedger, clausesExtracted } = React.useMemo(() => {
-    if (!scan) return { validatedFlags: [], invalidCount: 0, invalidCodes: [], invalidDetails: [], clauseLedger: [], clausesExtracted: [] };
-
-    const clauseLedger = Array.isArray(scan.scan_full?.clause_ledger) ? scan.scan_full.clause_ledger : [];
-    const clausesExtracted = Array.isArray(scan.scan_full?.clauses_extracted) ? scan.scan_full.clauses_extracted : [];
-    let validatedIssues = Array.isArray(scan.scan_full?.issues_validated) ? scan.scan_full.issues_validated : [];
-
-    const invalidIssues = scan.scan_full?.issues_invalid || [];
-    const invalidCount = invalidIssues.length;
-    const invalidCodes = invalidIssues.map(inv => `${inv.rule_id || 'UNKNOWN'}:${(inv.missing_fields || []).join(',')}`);
-    const invalidDetails = invalidIssues.map((inv, idx) => ({ index: idx, ruleId: inv.rule_id, missingFields: inv.missing_fields || [] }));
-
-    return { validatedFlags: validatedIssues, invalidCount, invalidCodes, invalidDetails, clauseLedger, clausesExtracted };
-  }, [scan, lease]);
-
-  // Update invalid count state
-  React.useEffect(() => {
-    if (invalidCount > 0) {
-      setSchemaInvalidCount(invalidCount);
-      console.error('[TELEMETRY] ReportFullLoadFailed', {
-        step: 'RENDER',
-        scanId,
-        leaseId,
-        errorMessage: `${invalidCount} issues failed schema validation`,
-        httpStatus: 'N/A'
-      });
-    }
-  }, [invalidCount, scanId, leaseId]);
-
-  // Background repair for legacy invalid issues: attempt safe defaults then persist
-  React.useEffect(() => {
-    if (!scan || repairAttempted || invalidCount <= 0) return;
-    const invalidList = Array.isArray(scan?.scan_full?.issues_invalid) ? scan.scan_full.issues_invalid : [];
-
-    const originalFlags = Array.isArray(scan?.scan_full?.flags) ? scan.scan_full.flags : [];
-
-    const repairOne = (f) => {
-      const safe = (v, fb='') => (typeof v === 'string' && v.trim()) || fb;
-      const recs = Array.isArray(f.recommendations) && f.recommendations.length > 0
-        ? f.recommendations
-        : (safe(f.recommendation,'').split('\n').map(s=>s.replace(/^•\s*/, '').trim()).filter(Boolean));
-      const title = safe(f.title, safe(f.name, 'Detected risk'));
-      const severity = ['critical','high','medium','low'].includes(f.severity) ? f.severity : 'medium';
-      const description = safe(f.description, 'This clause may pose a tenant risk. Review recommended.');
-      const explanation = safe(f.explanation, 'Impact not provided');
-      const recommendation = recs.length > 0 ? recs.join('\n') : 'Request clarification and amend this clause.';
-      const clause_id = safe(f.clause_id, 'UNKNOWN');
-      const page_number = typeof f.page_number === 'number' ? f.page_number : (Number(f.page_number) || 1);
-      const evidence = safe(f.evidence, safe(f.evidence_snippet, 'Evidence unavailable'));
-      const rule_id = safe(f.rule_id, 'LEGACY_UNKNOWN_RULE');
-      const category = safe(f.category, 'Other Risks');
-
-      const repaired = {
-        ...f,
-        rule_id,
-        category,
-        title,
-        severity,
-        description,
-        explanation,
-        recommendation,
-        evidence,
-        clause_id,
-        page_number
-      };
-
-      const ok = repaired.title && repaired.severity && (repaired.description || repaired.explanation) && repaired.recommendation;
-      return ok ? repaired : null;
-    };
-
-    const repaired = invalidList.map(repairOne).filter(Boolean);
-    const merged = [...validatedFlags, ...repaired];
-
-    if (merged.length > validatedFlags.length) {
-      setRepairAttempted(true);
-      base44.entities.LeaseScan.update(scan.id, { scan_full: { ...(scan.scan_full||{}), flags: merged } })
-        .then(() => {
-          console.log('[REPORTFULL_REPAIR]', { scanId: scan.id, repaired_count: repaired.length, dropped_count: invalidCount - repaired.length });
-          queryClient.invalidateQueries({ queryKey: ['scan', scanId] });
-        })
-        .catch(err => {
-          console.error('[REPORTFULL_REPAIR_ERROR]', err?.message);
-        });
-    } else {
-      setRepairAttempted(true);
-    }
-  }, [scan, invalidCount, validatedFlags, queryClient, repairAttempted, scanId]);
-
-  // ============================================================================
-  // DERIVED STATE - AFTER ALL HOOKS
-  // ============================================================================
   const isLoading = scanLoading || leaseLoading;
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-  const userTier = user?.plan_tier || 'free';
-
-  const userRole = user?.role?.toLowerCase();
-  const accessLevel = user?.access_level?.toLowerCase();
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin' || userRole === 'va' || accessLevel === 'admin' || accessLevel === 'super_admin' || accessLevel === 'va';
-  const showInvalidBanner = isAdmin && schemaInvalidCount > 0;
 
   const colors = isDarkMode ? {
     bg: '#1A1D1F',
@@ -300,574 +71,139 @@ function ReportFullContent() {
     borderColor: '#E5E7EB'
   };
 
-  console.log('[REPORTFULL_LOAD]', {
-    step: 'REPORT_STATUS',
-    scanId,
-    leaseId,
-    isLoading,
-    hasScan: !!scan,
-    hasLease: !!lease,
-    scanKeys: scan ? Object.keys(scan) : [],
-    reportShape: scan?.scan_full ? Object.keys(scan.scan_full) : []
-  });
+  // Extract canonical report from scan
+  const canonicalReport = scan?.scan_full?.canonical_report;
+  const hasCanonicalReport = !!canonicalReport && 
+    Array.isArray(canonicalReport.clause_ledger) && 
+    Array.isArray(canonicalReport.clause_review);
 
-  // Early derived scan data for safe gating (TEMP LOGGING)
-  const missingItems = scan?.scan_full?.missing_items || [];
-  const keyTerms = scan?.scan_full?.key_terms || {};
-  const taxonomyReport = Array.isArray(scan?.scan_full?.taxonomy_report) ? scan.scan_full.taxonomy_report : null;
-  const coverageSummary = scan?.scan_full?.coverage_summary || null;
-  const taxonomyValid = Array.isArray(taxonomyReport) && taxonomyReport.length === 30 && taxonomyReport.every(t => t && typeof t === 'object' && 'category_name' in t && 'status' in t && 'risk_level' in t && 'confidence' in t && 'detected_text_excerpt' in t);
-
-  console.log('[REPORTFULL_LOAD]', {
-    step: 'DATA_GUARDS',
-    hasScanFull: !!scan?.scan_full,
-    hasTaxonomy: !!taxonomyReport,
-    taxonomyLength: Array.isArray(taxonomyReport) ? taxonomyReport.length : null,
-    taxonomyValid
-  });
-
-  const t = {
-    en: {
-      negotiateBeforeSigning: "Recommended: Review Letter Templates",
-      negotiateDesc: "Download editable document templates to communicate with your landlord. Choose the template that matches your situation.",
-      openLetterTemplates: "View Document Templates",
-      noScanReportFound: "No scan report found",
-      uploadALease: "Upload a Lease",
-      fullLeaseReport: "Full Lease Report",
-      downloadPDF: "Download PDF",
-      riskAssessment: "Risk Assessment",
-      score: "Score",
-      keyLeaseTerms: "Key Lease Terms",
-      propertyAddress: "Property Address",
-      monthlyRent: "Monthly Rent",
-      securityDeposit: "Security Deposit",
-      leasePeriod: "Lease Period",
-      leaseStart: "Lease Start",
-      leaseEnd: "Lease End",
-      leaseType: "Lease Type",
-      language: "Language",
-      detailedIssues: "Detailed Issues & Recommendations",
-      evidence: "Evidence",
-      explanation: "Explanation",
-      recommendation: "Recommended Action",
-      impact: "Impact",
-      likelihood: "Likelihood",
-      missingProtections: "Missing Protections",
-      suggestedNextSteps: "Suggested Next Steps",
-      enableDepositShield: "Enable Deposit Shield",
-      trackYourSecurityDeposit: "Track your security deposit",
-      moreDetailedIssues: "More Detailed Issue(s)",
-      upgradeToUnlock: "Upgrade to Unlock",
-      backToSummary: "Back to Summary",
-      originalClause: "Original Clause",
-      clauseReference: "Clause",
-      pageReference: "Page",
-      whyThisMatters: "Why This Matters",
-      proceduralRisks: "Procedural Risks",
-      financialRisks: "Financial Risks",
-      rightsLegalRisks: "Rights & Legal Risks",
-      privacyAccess: "Privacy & Access",
-      fairnessBalance: "Fairness & Balance",
-      rightsUsage: "Rights & Usage",
-      legalRights: "Legal Rights",
-      otherRisks: "Other Risks",
-      leaseLanguageBanner: "This lease is written in {leaseLanguage}. Analysis provided in {uiLanguage}.",
-      compoundRisk: "Multi-Clause Pattern",
-      penaltyDetails: "Penalty Details"
-    },
-    th: {
-      negotiateBeforeSigning: "แนะนำ: ดูเทมเพลตเอกสาร",
-      negotiateDesc: "ดาวน์โหลดเทมเพลตที่แก้ไขได้เพื่อติดต่อกับเจ้าของบ้าน เลือกเทมเพลตที่ตรงกับสถานการณ์ของคุณ",
-      openLetterTemplates: "ดูเทมเพลตเอกสาร",
-      noScanReportFound: "ไม่พบรายงานการสแกน",
-      uploadALease: "อัปโหลดสัญญาเช่า",
-      fullLeaseReport: "รายงานการเช่าฉบับเต็ม",
-      downloadPDF: "ดาวน์โหลด PDF",
-      riskAssessment: "การประเมินความเสี่ยง",
-      score: "คะแนน",
-      keyLeaseTerms: "ข้อกำหนดสัญญาเช่าที่สำคัญ",
-      propertyAddress: "ที่อยู่ทรัพย์สิน",
-      monthlyRent: "ค่าเช่ารายเดือน",
-      securityDeposit: "เงินประกัน",
-      leasePeriod: "ระยะเวลาเช่า",
-      leaseStart: "วันเริ่มสัญญา",
-      leaseEnd: "วันสิ้นสุดสัญญา",
-      leaseType: "ประเภทสัญญาเช่า",
-      language: "ภาษา",
-      detailedIssues: "ปัญหาและข้อแนะนำโดยละเอียด",
-      evidence: "หลักฐาน",
-      explanation: "คำอธิบาย",
-      recommendation: "การดำเนินการที่แนะนำ",
-      impact: "ผลกระทบ",
-      likelihood: "โอกาส",
-      missingProtections: "การป้องกันที่ขาดหายไป",
-      suggestedNextSteps: "ขั้นตอนที่แนะนำ",
-      enableDepositShield: "เปิดใช้งาน Deposit Shield",
-      trackYourSecurityDeposit: "ติดตามเงินมัดจำของคุณ",
-      moreDetailedIssues: "เหลืออีก {count} ปัญหาโดยละเอียด",
-      upgradeToUnlock: "อัปเกรดเพื่อปลดล็อค",
-      backToSummary: "กลับไปที่สรุป",
-      originalClause: "ข้อความในสัญญาเดิม",
-      clauseReference: "ข้อ",
-      pageReference: "หน้า",
-      whyThisMatters: "ทำไมสำคัญ",
-      proceduralRisks: "ความเสี่ยงด้านขั้นตอน",
-      financialRisks: "ความเสี่ยงทางการเงิน",
-      rightsLegalRisks: "ความเสี่ยงด้านสิทธิและกฎหมาย",
-      privacyAccess: "ความเป็นส่วนตัวและการเข้าถึง",
-      fairnessBalance: "ความเป็นธรรมและความสมดุล",
-      rightsUsage: "สิทธิและการใช้งาน",
-      legalRights: "สิทธิและกฎหมาย",
-      otherRisks: "ความเสี่ยงอื่นๆ",
-      leaseLanguageBanner: "สัญญานี้เขียนเป็นภาษา{leaseLanguage} การวิเคราะห์แสดงเป็นภาษา{uiLanguage}",
-      compoundRisk: "รูปแบบหลายข้อ",
-      penaltyDetails: "รายละเอียดค่าปรับ"
-    },
-    zh: {
-      autoGenerateLetters: "自动生成信件",
-      autoGenerateDesc: "根据您的扫描结果自动创建谈判信件",
-      secureTierOnly: "仅限安全层",
-      generating: "正在分析扫描并生成...",
-      generated: "信件已生成！",
-      viewLetters: "查看信件",
-      upgradeToSecure: "升级到安全层",
-      upgradeDesc: "根据您的租约扫描结果获取自动信件生成",
-      lettersGenerated: "信件生成成功",
-      analysisComplete: "分析完成 - 根据扫描建议创建信件",
-      noScanReportFound: "未找到扫描报告",
-      uploadALease: "上传租约",
-      fullLeaseReport: "完整租约报告",
-      downloadPDF: "下载PDF",
-      riskAssessment: "风险评估",
-      score: "评分",
-      keyLeaseTerms: "关键租约条款",
-      propertyAddress: "物业地址",
-      monthlyRent: "月租金",
-      securityDeposit: "押金",
-      leasePeriod: "租期",
-      leaseStart: "租约开始",
-      leaseEnd: "租约结束",
-      leaseType: "租约类型",
-      language: "语言",
-      detailedIssues: "详细问题与建议",
-      evidence: "证据",
-      explanation: "解释",
-      recommendation: "建议",
-      impact: "影响",
-      likelihood: "可能性",
-      missingProtections: "缺失的保护",
-      suggestedNextSteps: "建议的下一步",
-      enableDepositShield: "启用押金盾",
-      trackYourSecurityDeposit: "追踪您的押金",
-      generateLetter: "生成信件",
-      professionalTenantLetters: "专业租户信件",
-      failedToGenerateLetters: "生成信件失败。请重试。",
-      moreDetailedIssues: "{count} 个更详细的问题",
-      upgradeToUnlock: "升级以解锁",
-      backToSummary: "返回摘要"
-    },
-    ja: {
-      autoGenerateLetters: "自動レター生成",
-      autoGenerateDesc: "スキャン結果に基づいて交渉レターを自動作成",
-      secureTierOnly: "セキュアティアのみ",
-      generating: "スキャンを分析して生成中...",
-      generated: "レター生成完了！",
-      viewLetters: "レターを表示",
-      upgradeToSecure: "セキュアにアップグレード",
-      upgradeDesc: "賃貸契約スキャン結果に基づく自動レター生成を取得",
-      lettersGenerated: "レターが正常に生成されました",
-      analysisComplete: "分析完了 - スキャン推奨事項からレターを作成",
-      noScanReportFound: "スキャンレポートが見つかりません",
-      uploadALease: "賃貸契約をアップロード",
-      fullLeaseReport: "完全な賃貸レポート",
-      downloadPDF: "PDFをダウンロード",
-      riskAssessment: "リスク評価",
-      score: "スコア",
-      keyLeaseTerms: "主要な賃貸条件",
-      propertyAddress: "物件住所",
-      monthlyRent: "月額家賃",
-      securityDeposit: "敷金",
-      leasePeriod: "賃貸期間",
-      leaseStart: "契約開始",
-      leaseEnd: "契約終了",
-      leaseType: "賃貸タイプ",
-      language: "言語",
-      detailedIssues: "詳細な問題と推奨事項",
-      evidence: "証拠",
-      explanation: "説明",
-      recommendation: "推奨事項",
-      impact: "影響",
-      likelihood: "可能性",
-      missingProtections: "不足している保護",
-      suggestedNextSteps: "推奨される次のステップ",
-      enableDepositShield: "デポジットシールドを有効化",
-      trackYourSecurityDeposit: "敷金を追跡",
-      generateLetter: "レターを生成",
-      professionalTenantLetters: "プロフェッショナルな賃借人レター",
-      failedToGenerateLetters: "レターの生成に失敗しました。もう一度お試しください。",
-      moreDetailedIssues: "その他 {count} 件の詳細な問題",
-      upgradeToUnlock: "アップグレードしてロック解除",
-      backToSummary: "概要に戻る"
-    },
-    ko: {
-      autoGenerateLetters: "자동 편지 생성",
-      autoGenerateDesc: "스캔 결과를 기반으로 협상 편지를 자동 생성합니다",
-      secureTierOnly: "시큐어 티어 전용",
-      generating: "스캔 분석 및 생성 중...",
-      generated: "편지 생성 완료!",
-      viewLetters: "편지 보기",
-      upgradeToSecure: "시큐어로 업그레이드",
-      upgradeDesc: "임대 계약 스캔 결과를 기반으로 자동 편지 생성 받기",
-      lettersGenerated: "편지가 성공적으로 생성되었습니다",
-      analysisComplete: "분석 완료 - 스캔 권장사항에서 편지 생성됨",
-      noScanReportFound: "스캔 보고서를 찾을 수 없음",
-      uploadALease: "임대 계약 업로드",
-      fullLeaseReport: "전체 임대 보고서",
-      downloadPDF: "PDF 다운로드",
-      riskAssessment: "위험 평가",
-      score: "점수",
-      keyLeaseTerms: "주요 임대 조건",
-      propertyAddress: "부동산 주소",
-      monthlyRent: "월 임대료",
-      securityDeposit: "보증금",
-      leasePeriod: "임대 기간",
-      leaseStart: "계약 시작",
-      leaseEnd: "계약 종료",
-      leaseType: "임대 유형",
-      language: "언어",
-      detailedIssues: "상세 문제 및 권장사항",
-      evidence: "증거",
-      explanation: "설명",
-      recommendation: "권장사항",
-      impact: "영향",
-      likelihood: "가능성",
-      missingProtections: "누락된 보호",
-      suggestedNextSteps: "제안된 다음 단계",
-      enableDepositShield: "보증금 실드 활성화",
-      trackYourSecurityDeposit: "보증금 추적",
-      generateLetter: "편지 생성",
-      professionalTenantLetters: "전문 임차인 편지",
-      failedToGenerateLetters: "편지 생성에 실패했습니다. 다시 시도해주세요.",
-      moreDetailedIssues: "{count}개의 상세 문제 더 보기",
-      upgradeToUnlock: "업그레이드하여 잠금 해제",
-      backToSummary: "요약으로 돌아가기"
-    }
-  };
-
-  const strings = t[language] || t.en;
-
-  // Currency sanitizer - removes all non-numeric characters except digits, decimal, minus
-  const sanitizeCurrency = (value) => {
-    if (value === null || value === undefined) return 0;
-    
-    // Debug log to see raw value
-    console.log('[ReportFull] Raw currency value:', value, typeof value);
-    
-    // Convert to string and remove everything except digits, decimal point, and minus
-    const cleanedString = String(value).replace(/[^0-9.-]/g, '');
-    const numericValue = parseFloat(cleanedString);
-    
-    // Debug log cleaned value
-    console.log('[ReportFull] Sanitized to:', numericValue);
-    
-    return isNaN(numericValue) ? 0 : numericValue;
+  const toggleClause = (clauseId) => {
+    setExpandedClauses(prev => ({
+      ...prev,
+      [clauseId]: !prev[clauseId]
+    }));
   };
 
   const handleDownloadPDF = async () => {
-    if (!scan || !lease) return;
-
+    if (!scan || !canonicalReport) return;
     setDownloadingPDF(true);
     haptic.medium();
 
-    const correlationId = `pdf-dl-${Date.now()}-${user.id.substring(0, 8)}`;
-    console.log('[REPORTFULL_LOAD]', { 
-      step: 'EXPORT_PDF_START',
-      correlationId,
-      userId: user.id,
-      userEmail: user.email,
-      scanId: scan.id,
-      leaseId: lease.id,
-      validatedCount: validatedFlags.length
-    });
-
     try {
-      // Use ONLY validated flags - strict final sanitization
-      const sanitizedFlags = validatedFlags.map(f => ({
-        title: f.title,
-        severity: f.severity,
-        why_it_matters: f.why_it_matters || f.summary || f.explanation || f.description || '',
-        summary: f.summary || f.why_it_matters || f.explanation || f.description || '',
-        recommendations: Array.isArray(f.recommendations) 
-          ? f.recommendations.map(r => String(r || '').replace(/^[\s•\-–—!*→'"]+/, '').trim()).filter(Boolean)
-          : String(f.recommendation || '')
-              .split('\n')
-              .map(s => s.replace(/^[\s•\-–—!*→'"]+/, '').trim())
-              .filter(Boolean)
-      })).filter(x => {
-        // Final guard: reject if missing core content
-        const valid = x.title && x.title.trim().length > 0 &&
-                     x.why_it_matters && x.why_it_matters.trim().length > 0 &&
-                     Array.isArray(x.recommendations) && x.recommendations.length > 0;
-
-        if (!valid) {
-          console.error('[PDFSanitizationDropped]', {
-            title: x.title,
-            hasWhyMatters: !!x.why_it_matters,
-            recCount: x.recommendations?.length || 0
-          });
-        }
-
-        return valid;
-      });
-
-      // COUNT VALIDATION
-      if (sanitizedFlags.length !== validatedFlags.length) {
-        console.error('[ReportCountMismatch]', {
-          event: 'ReportCountMismatch',
-          context: 'PDF_EXPORT_PREP',
-          validated: validatedFlags.length,
-          sanitized: sanitizedFlags.length,
-          dropped: validatedFlags.length - sanitizedFlags.length
-        });
-      }
-
-      const pdfData = {
-        lease_address: lease.property_address || 'Lease Agreement',
-        risk_score: scan.risk_score,
-        summary: scan.summary,
-        issues_validated: sanitizedFlags,
-        clause_ledger: scan.scan_full?.clause_ledger || [],
-        clause_reviews: scan.scan_full?.clause_reviews || [],
-        missing_items: scan.scan_full?.missing_items || [],
-        key_terms: scan.scan_full?.key_terms || {},
-        generated_date: new Date().toISOString()
-      };
-
-      console.log('[REPORTFULL_LOAD]', { 
-        step: 'EXPORT_PDF_FUNCTION_CALL',
-        correlationId,
-        dataSize: JSON.stringify(pdfData).length,
-        issuesCount: (pdfData.issues_validated || []).length,
+      const response = await base44.functions.invoke('generateLeaseReportPDF', {
+        scanData: {
+          lease_address: lease?.property_address || 'Lease Agreement',
+          risk_score: canonicalReport.risk_score,
+          summary: canonicalReport.summary,
+          clause_ledger: canonicalReport.clause_ledger,
+          clause_review: canonicalReport.clause_review,
+          missing_clauses: canonicalReport.missing_clauses,
+          key_terms: canonicalReport.key_terms,
+          generated_date: new Date().toISOString()
+        },
         language
       });
 
-      // Call PDF generation function (returns uploaded PDF URL)
-      const response = await base44.functions.invoke('generateLeaseReportPDF', {
-        scanData: pdfData,
-        language: language,
-        correlationId
-      });
-
-      console.log('[REPORTFULL_LOAD]', { 
-        step: 'EXPORT_PDF_FUNCTION_RESPONSE',
-        correlationId,
-        success: response.data?.success,
-        hasPdfUrl: !!response.data?.pdf_url,
-        status: response.status
-      });
-
       if (response.data?.success && response.data?.pdf_url) {
-        const pdfUrl = response.data.pdf_url;
-        console.log('[REPORTFULL_LOAD]', { 
-          step: 'EXPORT_PDF_SUCCESS',
-          correlationId,
-          pdfUrl 
-        });
-        
-        // MOBILE-SAFE DOWNLOAD: Direct navigation to PDF URL
-        window.location.href = pdfUrl;
-        
+        window.location.href = response.data.pdf_url;
         toast.success(language === 'th' ? 'กำลังดาวน์โหลด PDF' : 'Downloading PDF');
         haptic.success();
       } else {
-        console.error('[REPORTFULL_LOAD]', { 
-          step: 'EXPORT_PDF_FAILED',
-          correlationId,
-          success: response.data?.success,
-          error: response.data?.error
-        });
-        console.error('[TELEMETRY] ReportFullLoadFailed', {
-          step: 'EXPORT_PDF',
-          scanId,
-          leaseId: lease?.id,
-          errorMessage: response.data?.error || 'PDF generation failed',
-          httpStatus: response.status
-        });
         throw new Error(response.data?.error || 'PDF generation failed');
       }
     } catch (error) {
-      console.error('[REPORTFULL_LOAD]', {
-        step: 'EXPORT_PDF_ERROR',
-        correlationId,
-        message: error.message,
-        stack: error.stack,
-        response: error.response?.data,
-        status: error.response?.status,
-        userId: user.id,
-        scanId: scan?.id,
-        leaseId: lease?.id
-      });
-      
-      console.error('[TELEMETRY] ReportFullLoadFailed', {
-        step: 'EXPORT_PDF',
-        scanId: scan?.id,
-        leaseId: lease?.id,
-        errorMessage: error.message,
-        httpStatus: error.response?.status,
-        stackTrace: error.stack?.substring(0, 200)
-      });
-      
-      // User-friendly error messages based on status
-      let errorMsg;
-      const status = error.response?.status;
-      
-      if (status === 401 || status === 403) {
-        errorMsg = language === 'th' 
-          ? 'กรุณาเข้าสู่ระบบอีกครั้งและลองใหม่'
-          : 'Please sign in again and retry';
-      } else if (status >= 500) {
-        errorMsg = language === 'th'
-          ? 'การสร้าง PDF ล้มเหลวบนเซิร์ฟเวอร์ กรุณาลองใหม่'
-          : 'PDF generation failed on server. Please retry';
-      } else {
-        errorMsg = language === 'th' 
-          ? 'การดาวน์โหลด PDF ล้มเหลว กรุณาลองใหม่'
-          : language === 'zh'
-            ? 'PDF下载失败 请重试'
-            : language === 'ja'
-              ? 'PDFダウンロード失敗 再試行してください'
-              : language === 'ko'
-                ? 'PDF 다운로드 실패 다시 시도하세요'
-                : 'PDF download failed. Please retry';
-      }
-      
-      toast.error(errorMsg);
+      console.error('[PDF_ERROR]', error.message);
+      toast.error(language === 'th' ? 'การดาวน์โหลด PDF ล้มเหลว' : 'PDF download failed');
       haptic.error();
     } finally {
       setDownloadingPDF(false);
     }
   };
 
-
-
-  // VALIDATION: Check for required params
-  if (!scanId) {
-    console.error('[ReportFull] Missing scanId parameter');
-    return (
-      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-4xl mx-auto">
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-8 text-center">
-              <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-              <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'ลิงก์รายงานไม่ถูกต้อง' : 'Invalid Report Link'}
-              </h2>
-              <p className="mb-4" style={{ color: colors.textSecondary }}>
-                {language === 'th' 
-                  ? 'ไม่พบข้อมูลการสแกน กรุณาสแกนสัญญาใหม่'
-                  : 'Scan data not found. Please scan your lease again.'}
-              </p>
-              <Button onClick={() => navigate(createPageUrl("UploadScan"))}>
-                {strings.uploadALease}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // AUTH ERROR HANDLING
-  if (user === undefined && !isLoading) {
-    console.error('[ReportFull] User not authenticated');
-    console.error('[TELEMETRY] ReportFullLoadFailed', {
-      step: 'AUTH',
-      scanId,
-      leaseId,
-      errorMessage: 'User not authenticated',
-      httpStatus: 401
-    });
-    
-    return (
-      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-4xl mx-auto">
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-8 text-center">
-              <Shield className="w-16 h-16 mx-auto mb-4 text-amber-500" />
-              <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'กรุณาเข้าสู่ระบบ' : 'Sign In Required'}
-              </h2>
-              <p className="mb-4" style={{ color: colors.textSecondary }}>
-                {language === 'th' 
-                  ? 'กรุณาเข้าสู่ระบบเพื่อดูรายงานนี้'
-                  : 'Please sign in to view this report'}
-              </p>
-              <Button onClick={() => base44.auth.redirectToLogin(window.location.pathname + window.location.search)}>
-                {language === 'th' ? 'เข้าสู่ระบบ' : 'Sign In'}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // FETCH ERROR HANDLING
-  if (scanError || leaseError) {
-    const error = scanError || leaseError;
-    const status = error?.response?.status;
-    
-    console.error('[ReportFull] Data fetch error', { 
-      scanError: scanError?.message, 
-      leaseError: leaseError?.message,
-      status 
-    });
-    
-    if (status === 401 || status === 403) {
-      return (
-        <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-          <div className="max-w-4xl mx-auto">
-            <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-              <CardContent className="p-8 text-center">
-                <Shield className="w-16 h-16 mx-auto mb-4 text-amber-500" />
-                <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'ไม่มีสิทธิ์เข้าถึง' : 'Access Denied'}
-                </h2>
-                <p className="mb-4" style={{ color: colors.textSecondary }}>
-                  {language === 'th' 
-                    ? 'คุณไม่มีสิทธิ์ดูรายงานนี้ หรือเซสชันหมดอายุ'
-                    : 'You do not have permission to view this report, or your session expired'}
-                </p>
-                <Button onClick={() => base44.auth.redirectToLogin(window.location.pathname + window.location.search)}>
-                  {language === 'th' ? 'เข้าสู่ระบบอีกครั้ง' : 'Sign In Again'}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      );
+  const strings = {
+    en: {
+      fullLeaseReport: "Full Lease Report",
+      downloadPDF: "Download PDF",
+      riskAssessment: "Risk Assessment",
+      score: "Score",
+      keyLeaseTerms: "Key Lease Terms",
+      clauseReview: "Clause-by-Clause Review",
+      missingClauses: "Missing Clauses",
+      tenantView: "Tenant Impact",
+      landlordView: "Landlord Benefit",
+      lawyerView: "Thai Law Context",
+      recommendedChange: "Recommended Change",
+      negotiationTip: "Negotiation Tip",
+      noRiskDetected: "No risk detected",
+      lowRisk: "Low Risk",
+      mediumRisk: "Medium Risk",
+      highRisk: "High Risk",
+      suggestedAddition: "Suggested Addition",
+      whyItMatters: "Why It Matters",
+      priority: "Priority",
+      showAllClauses: "Show All Clauses",
+      hideNoRiskClauses: "Hide No-Risk Clauses"
+    },
+    th: {
+      fullLeaseReport: "รายงานสัญญาเช่าฉบับเต็ม",
+      downloadPDF: "ดาวน์โหลด PDF",
+      riskAssessment: "การประเมินความเสี่ยง",
+      score: "คะแนน",
+      keyLeaseTerms: "ข้อกำหนดสำคัญ",
+      clauseReview: "การตรวจสอบทีละข้อ",
+      missingClauses: "ข้อที่ขาดหายไป",
+      tenantView: "ผลกระทบต่อผู้เช่า",
+      landlordView: "ประโยชน์ของเจ้าของ",
+      lawyerView: "บริบทกฎหมายไทย",
+      recommendedChange: "การเปลี่ยนแปลงที่แนะนำ",
+      negotiationTip: "เคล็ดลับการเจรจา",
+      noRiskDetected: "ไม่พบความเสี่ยง",
+      lowRisk: "ความเสี่ยงต่ำ",
+      mediumRisk: "ความเสี่ยงปานกลาง",
+      highRisk: "ความเสี่ยงสูง",
+      suggestedAddition: "ข้อความที่แนะนำให้เพิ่ม",
+      whyItMatters: "ทำไมจึงสำคัญ",
+      priority: "ลำดับความสำคัญ",
+      showAllClauses: "แสดงข้อทั้งหมด",
+      hideNoRiskClauses: "ซ่อนข้อที่ไม่มีความเสี่ยง"
     }
+  };
 
+  const t = strings[language] || strings.en;
+
+  const getRiskBadge = (riskLevel) => {
+    const config = {
+      none: { label: t.noRiskDetected, bg: '#D1FAE5', color: '#065F46', icon: CheckCircle2 },
+      low: { label: t.lowRisk, bg: '#DBEAFE', color: '#1E40AF', icon: Info },
+      medium: { label: t.mediumRisk, bg: '#FEF3C7', color: '#92400E', icon: AlertTriangle },
+      high: { label: t.highRisk, bg: '#FEE2E2', color: '#991B1B', icon: AlertTriangle }
+    };
+    return config[riskLevel] || config.none;
+  };
+
+  const getPriorityColor = (priority) => {
+    const config = {
+      high: { bg: '#FEE2E2', color: '#991B1B' },
+      medium: { bg: '#FEF3C7', color: '#92400E' },
+      low: { bg: '#DBEAFE', color: '#1E40AF' }
+    };
+    return config[priority] || config.low;
+  };
+
+  // Error and loading states
+  if (!scanId) {
     return (
-      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+          <Card style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-8 text-center">
               <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
               <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'โหลดรายงานล้มเหลว' : 'Failed to Load Report'}
+                Invalid Report Link
               </h2>
-              <p className="mb-4" style={{ color: colors.textSecondary }}>
-                {error?.message || (language === 'th' ? 'เกิดข้อผิดพลาดในการโหลดข้อมูล' : 'An error occurred while loading data')}
-              </p>
-              <div className="flex gap-2 justify-center">
-                <Button onClick={() => window.location.reload()}>
-                  {language === 'th' ? 'ลองใหม่' : 'Retry'}
-                </Button>
-                <Button variant="outline" onClick={() => navigate(createPageUrl("UploadScan"))}>
-                  {language === 'th' ? 'กลับ' : 'Go Back'}
-                </Button>
-              </div>
+              <Button onClick={() => navigate(createPageUrl("UploadScan"))}>
+                Upload a Lease
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -877,7 +213,7 @@ function ReportFullContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
           <SkeletonLoader variant="card" count={3} isDarkMode={isDarkMode} />
         </div>
@@ -885,20 +221,24 @@ function ReportFullContent() {
     );
   }
 
-  if (!scan || !lease) {
+  if (!scan || !hasCanonicalReport) {
     return (
-      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-0">
-              <EmptyState
-                icon={FileText}
-                title={strings.noScanReportFound}
-                description=""
-                actionLabel={strings.uploadALease}
-                onAction={() => navigate(createPageUrl("UploadScan"))}
-                isDarkMode={isDarkMode}
-              />
+          <Card style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-8 text-center">
+              <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-amber-500" />
+              <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'กำลังประมวลผลการสแกน...' : 'Processing Scan...'}
+              </h2>
+              <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
+                  ? 'ระบบกำลังวิเคราะห์สัญญาเช่าของคุณ กรุณารอสักครู่'
+                  : 'Analyzing your lease document. Please wait...'}
+              </p>
+              <Button onClick={() => window.location.reload()}>
+                {language === 'th' ? 'รีเฟรช' : 'Refresh'}
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -906,403 +246,112 @@ function ReportFullContent() {
     );
   }
 
-  // Gate on scan_full presence first (no redirects)
-  if (!scan?.scan_full) {
-    console.log('[REPORTFULL_LOAD]', { step: 'GATE_NO_SCAN_FULL', scanId, leaseId });
-    return (
-      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-4xl mx-auto">
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-8 text-center">
-              <AlertCircle className="w-6 h-6 mx-auto mb-3 text-amber-600" />
-              <h2 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Report not ready yet</h2>
-              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>Scan data is loading or incomplete.</p>
-              <div className="mt-4 flex justify-center">
-                <Button onClick={() => window.location.reload()}>Retry</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  const { clause_ledger, clause_review, missing_clauses, summary, key_terms } = canonicalReport;
+  const riskScore = canonicalReport.risk_score || 0;
 
-  // Gate on taxonomy_report presence/shape without redirecting
-  if (!taxonomyReport) {
-    console.log('[REPORTFULL_LOAD]', { step: 'GATE_NO_TAXONOMY', scanId, leaseId });
-    return (
-      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-4xl mx-auto">
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-8 text-center">
-              <Loader2 className="w-6 h-6 mx-auto mb-3 animate-spin" />
-              <h2 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Scan processing, please wait</h2>
-              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>Preparing clause-first coverage (10–30s)...</p>
-              <div className="mt-4 flex justify-center">
-                <Button onClick={() => window.location.reload()}>Retry</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  } else if (!taxonomyValid) {
-    console.log('[REPORTFULL_LOAD]', { step: 'GATE_INVALID_TAXONOMY', scanId, leaseId, taxonomyLength: Array.isArray(taxonomyReport) ? taxonomyReport.length : null });
-    return (
-      <div className="min-h-screen p-6 page-transition" style={{ backgroundColor: colors.bg }}>
-        <div className="max-w-4xl mx-auto">
-          <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-            <CardContent className="p-8 text-center">
-              <AlertCircle className="w-6 h-6 mx-auto mb-3 text-red-600" />
-              <h2 className="text-lg font-semibold" style={{ color: colors.textPrimary }}>Report data invalid</h2>
-              <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>Please re-scan your lease or try again.</p>
-              <div className="mt-4 flex gap-2 justify-center">
-                <Button onClick={() => window.location.reload()}>Retry</Button>
-                <Button variant="outline" onClick={() => navigate(createPageUrl('UploadScan'))}>Rescan</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  // Filter clauses based on toggle
+  const riskyReviews = clause_review.filter(r => r.risk_level !== 'none');
+  const noRiskReviews = clause_review.filter(r => r.risk_level === 'none');
+  const displayReviews = showAllClauses ? clause_review : riskyReviews;
 
-  const getSeverityIcon = (severity) => {
-    const icons = { critical: AlertTriangle, high: AlertTriangle, medium: Info, low: CheckCircle2 };
-    return icons[severity] || Info;
-  };
-
-  const getSeverityColor = (severity) => {
-    const colors = {
-      critical: "text-red-600 bg-red-50 border-red-200",
-      high: "text-orange-600 bg-orange-50 border-orange-200",
-      medium: "text-amber-600 bg-amber-50 border-amber-200",
-      low: "text-emerald-600 bg-emerald-50 border-emerald-200"
-    };
-    return colors[severity] || "text-slate-600 bg-slate-50 border-slate-200";
-  };
-
-  const getRiskLevel = (score) => {
-    if (score >= 70) return { level: 'high', label: language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий риск' : 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' };
-    if (score >= 40) return { level: 'medium', label: language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний риск' : 'MEDIUM RISK', color: '#F59E0B', bg: '#FEF3C7' };
-    return { level: 'low', label: language === 'th' ? 'ความเสี่ยงต่ำ' : language === 'ru' ? 'Низкий риск' : 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
-  };
-
-  const theme = riskTheme(scan?.risk_score || 0, scan?.overall_risk);
-  const riskLevel = theme ? { level: theme.key, label: theme.key === 'high' ? (language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий риск' : 'HIGH RISK') : theme.key === 'medium' ? (language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний риск' : 'MEDIUM RISK') : (language === 'th' ? 'ความเสี่ยงต่ำ' : language === 'ru' ? 'Низкий риск' : 'LOW RISK'), color: theme.color, bg: theme.bg } : null;
-  
-  // Extracted earlier for safe gating
-
-  // LIMIT FLAGS BASED ON TIER (consistent with ScanPreview)
-  const getFullDisplayFlags = () => {
-    // Lite tier: Show max 5 flags
-    if (userTier === 'lite') {
-      return validatedFlags.slice(0, 5);
-    }
-    
-    // Free tier shouldn't access this page, but if they do, show 4
-    if (userTier === 'free') {
-      return validatedFlags.slice(0, 4);
-    }
-    
-    // Protect and Secure: Show all flags
-    return validatedFlags;
-  };
-
-  const allFlags = validatedFlags;
-  const mainFlags = allFlags.filter(f => (f.confidence || 'HIGH') !== 'LOW');
-  const lowConfidence = allFlags.filter(f => (f.confidence || 'HIGH') === 'LOW');
-  const fullFlags = getFullDisplayFlags(mainFlags);
-  const totalFlags = mainFlags.length;
-  const hiddenFlagsCount = mainFlags.length - fullFlags.length;
-
-  // Clause coverage values from ledger
-  const clausesTotal = clauseLedger?.length || 0;
-  const clausesRisk = clauseLedger?.filter(c => c.risk_level && c.risk_level !== 'NO_RISK').length || 0;
-  const clausesNoRisk = clausesTotal - clausesRisk;
-
-  // DEFENSIVE: Group flags by category with fallback
-  const groupedFlags = fullFlags.reduce((groups, flag) => {
-    try {
-      const category = flag?.category || 'Other Risks';
-      if (!groups[category]) groups[category] = [];
-      groups[category].push(flag);
-    } catch (error) {
-      console.error('[ReportFull] Error grouping flag', { flag, error: error.message });
-      console.error('[TELEMETRY] ReportFullLoadFailed', {
-        step: 'RENDER',
-        scanId,
-        leaseId,
-        errorMessage: 'Flag grouping error: ' + error.message,
-        stackTrace: error.stack?.substring(0, 200)
-      });
-    }
-    return groups;
-  }, {});
-
-  // Sort within groups by severity
-  const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-  Object.keys(groupedFlags).forEach(category => {
-    groupedFlags[category].sort((a, b) => 
-      (severityOrder[a.severity] || 99) - (severityOrder[b.severity] || 99)
-    );
-  });
-
-  // Category display order
-  const categoryOrder = [
-    'Legal Rights',
-    'Procedural Fairness',
-    'Financial Risk',
-    'Rights & Legal',
-    'Privacy & Access',
-    'Rights & Usage',
-    'Fairness & Balance'
-  ];
-
-  const getCategoryTitle = (category) => {
-    const map = {
-      'Procedural Fairness': language === 'th' ? 'ความเสี่ยงด้านขั้นตอน' : 'Procedural Risks',
-      'Financial Risk': language === 'th' ? 'ความเสี่ยงทางการเงิน' : 'Financial Risks',
-      'Rights & Legal': language === 'th' ? 'ความเสี่ยงด้านสิทธิและกฎหมาย' : 'Rights & Legal Risks',
-      'Legal Rights': language === 'th' ? 'ความเสี่ยงด้านสิทธิและกฎหมาย' : 'Rights & Legal Risks',
-      'Privacy & Access': language === 'th' ? 'ความเป็นส่วนตัวและการเข้าถึง' : 'Privacy & Access',
-      'Fairness & Balance': language === 'th' ? 'ความเป็นธรรมและความสมดุล' : 'Fairness & Balance',
-      'Rights & Usage': language === 'th' ? 'สิทธิและการใช้งาน' : 'Rights & Usage'
-    };
-    return map[category] || category;
-  };
-
-  const getCategoryIcon = (category) => {
-    const icons = {
-      'Legal Rights': Shield,
-      'Procedural Fairness': AlertTriangle,
-      'Financial Risk': DollarSign,
-      'Rights & Legal': Shield,
-      'Privacy & Access': Home,
-      'Rights & Usage': Home,
-      'Fairness & Balance': AlertCircle
-    };
-    return icons[category] || AlertCircle;
-  };
-
-  // Check if lease language differs from UI language
-  const leaseLanguage = scan.scan_full?.language_detected || lease.language_detected || 'en';
-  const uiLanguage = language;
-  const showLanguageBanner = leaseLanguage !== uiLanguage;
-
-  const getLanguageLabel = (code) => {
-    const labels = { en: 'English', th: 'Thai', zh: 'Chinese', ja: 'Japanese', ko: 'Korean', ru: 'Russian', mixed: 'Mixed' };
-    return labels[code] || code.toUpperCase();
-  };
-
-  // STEP 3: Log render start
-  console.log('[REPORTFULL_LOAD]', { 
-    step: 'RENDER_REPORT_START',
-    flagsToRender: fullFlags.length
-  });
+  const theme = riskTheme(riskScore);
 
   return (
     <FeatureGate feature="full_report">
-      <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
+      <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
-          
-          {/* SCHEMA INVALID BANNER */}
-          {showInvalidBanner && (
-            <div className="mb-4 p-4 rounded-lg border-2" style={{
-              backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-              borderColor: '#DC2626'
-            }}>
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
-                    {language === 'th' 
-                      ? `${schemaInvalidCount} ปัญหาไม่สามารถแสดงได้ (ISSUE_SCHEMA_INVALID)`
-                      : `${schemaInvalidCount} issue(s) quarantined (ISSUE_SCHEMA_INVALID)`}
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
-                    {language === 'th'
-                      ? 'เฉพาะประเด็นที่ผ่านการตรวจสอบเท่านั้นที่จะแสดงในรายงานและ PDF'
-                      : 'Only validated issues are shown in the report and PDF.'}
-                  </p>
-                  {Array.isArray(invalidCodes) && invalidCodes.length > 0 && (
-                    <p className="text-[10px] opacity-75 mt-1" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
-                      Codes: {invalidCodes.slice(0,3).join(', ')}{invalidCodes.length>3?` +${invalidCodes.length-3} more`:''}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
           <PageHeader
-            title={strings.fullLeaseReport}
-            subtitle={lease.property_address || 'Lease Agreement'}
+            title={t.fullLeaseReport}
+            subtitle={lease?.property_address || 'Lease Agreement'}
             icon={FileText}
             iconColor="#0C3B2E"
             showBack={true}
             backRoute={createPageUrl("UploadScan")}
             isDarkMode={isDarkMode}
             actions={
-              <div className="flex gap-2">
-                <Button 
-                  className="btn-interaction"
-                  style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-                  onClick={handleDownloadPDF}
-                  disabled={downloadingPDF}
-                >
-                  {downloadingPDF ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      {language === 'th' ? 'กำลังสร้าง...' : 'Generating...'}
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4 mr-2" />
-                      {strings.downloadPDF}
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button 
+                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                onClick={handleDownloadPDF}
+                disabled={downloadingPDF}
+              >
+                {downloadingPDF ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating...</>
+                ) : (
+                  <><Download className="w-4 h-4 mr-2" />{t.downloadPDF}</>
+                )}
+              </Button>
             }
           />
 
-
-          {/* Language Banner */}
-          {showLanguageBanner && (
-            <div className="mb-4 p-4 rounded-lg border-2" style={{
-              backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-              borderColor: '#3B82F6'
-            }}>
-              <div className="flex items-center gap-3">
-                <Info className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                <p className="text-sm font-medium" style={{ color: isDarkMode ? '#93C5FD' : '#1E40AF' }}>
-                  {strings.leaseLanguageBanner
-                    .replace('{leaseLanguage}', getLanguageLabel(leaseLanguage))
-                    .replace('{uiLanguage}', getLanguageLabel(uiLanguage))}
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Risk Score Summary */}
           <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-            <CardHeader style={{ 
-              backgroundColor: riskLevel?.color || '#0C3B2E',
-              color: '#FFFFFF'
-            }}>
-              <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <span>{strings.riskAssessment}</span>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge className="text-lg px-4 py-2" style={{
-                    backgroundColor: riskLevel?.bg || '#fff',
-                    color: riskLevel?.color || '#1F2937',
-                    border: `2px solid ${riskLevel?.color || '#D1D5DB'}`
-                  }}>
-                    {strings.score}: {scan.risk_score}/100
-                  </Badge>
-                  <Badge className="text-sm px-3 py-1.5 font-bold flex items-center gap-1" style={{
-                    backgroundColor: '#FFFFFF',
-                    color: riskLevel?.color || '#10B981'
-                  }}>
-                    {riskLevel?.level === 'high' && <AlertTriangle className="w-4 h-4" />}
-                    {riskLevel?.label || 'LOW RISK'}
-                  </Badge>
-                </div>
+            <CardHeader style={{ backgroundColor: theme?.color || '#0C3B2E', color: '#FFFFFF' }}>
+              <CardTitle className="flex items-center justify-between">
+                <span>{t.riskAssessment}</span>
+                <Badge className="text-lg px-4 py-2" style={{
+                  backgroundColor: theme?.bg || '#fff',
+                  color: theme?.color || '#1F2937'
+                }}>
+                  {t.score}: {riskScore}/100
+                </Badge>
               </CardTitle>
             </CardHeader>
-            {riskLevel?.level === 'high' && (
-              <div className="px-6 pt-4 pb-2">
-                <div className="p-3 rounded-lg border-l-4" style={{
-                  backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
-                  borderLeftColor: '#EF4444'
-                }}>
-                  <p className="text-sm font-semibold" style={{ color: isDarkMode ? '#FCA5A5' : '#DC2626' }}>
-                    {language === 'th' 
-                      ? 'ความเสี่ยงสูง: สัญญานี้มีข้อกำหนดที่เอื้อประโยชน์ต่อเจ้าของบ้านอย่างมาก ตรวจสอบก่อนเซ็น'
-                      : language === 'ru'
-                        ? 'Высокий риск: этот договор содержит условия, которые сильно благоприятствуют арендодателю. Проверьте перед подписанием.'
-                        : 'High risk: this lease contains clauses that heavily favour the landlord. Review before signing.'}
-                  </p>
+            <CardContent className="p-6">
+              <p style={{ color: colors.textPrimary }}>{summary?.total_extracted || clause_ledger.length} clauses extracted, {riskyReviews.length} with risks, {missing_clauses?.length || 0} standard clauses missing.</p>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                <div className="p-3 rounded-lg border" style={{ borderColor: colors.borderColor }}>
+                  <div className="text-xs" style={{ color: colors.textSecondary }}>Total Clauses</div>
+                  <div className="text-2xl font-bold" style={{ color: colors.textPrimary }}>{clause_ledger.length}</div>
+                </div>
+                <div className="p-3 rounded-lg border" style={{ borderColor: '#EF4444' }}>
+                  <div className="text-xs" style={{ color: colors.textSecondary }}>High Risk</div>
+                  <div className="text-2xl font-bold text-red-600">{clause_review.filter(r => r.risk_level === 'high').length}</div>
+                </div>
+                <div className="p-3 rounded-lg border" style={{ borderColor: '#F59E0B' }}>
+                  <div className="text-xs" style={{ color: colors.textSecondary }}>Medium Risk</div>
+                  <div className="text-2xl font-bold text-amber-600">{clause_review.filter(r => r.risk_level === 'medium').length}</div>
+                </div>
+                <div className="p-3 rounded-lg border" style={{ borderColor: '#10B981' }}>
+                  <div className="text-xs" style={{ color: colors.textSecondary }}>No Risk</div>
+                  <div className="text-2xl font-bold text-emerald-600">{noRiskReviews.length}</div>
                 </div>
               </div>
-            )}
-            <CardContent className="p-6">
-              <p className="leading-relaxed" style={{ color: colors.textPrimary }}>{scan.summary}</p>
-              {/* Coverage Summary (Taxonomy 30 categories) */}
-              {coverageSummary ? (
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
-                  <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5', border: `1px solid ${colors.borderColor}` }}>
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Total categories</p>
-                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{coverageSummary.total_categories}</p>
-                  </div>
-                  <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1E4435' : '#E8FFF5', border: `1px solid ${colors.borderColor}` }}>
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Present</p>
-                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{coverageSummary.present}</p>
-                  </div>
-                  <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2', border: `1px solid ${colors.borderColor}` }}>
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Missing</p>
-                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{coverageSummary.missing}</p>
-                  </div>
-                  <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC', border: `1px solid ${colors.borderColor}` }}>
-                    <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Unclear</p>
-                    <p className="text-xl font-bold" style={{ color: colors.textPrimary }}>{coverageSummary.unclear}</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-4 p-3 rounded-lg border" style={{ borderColor: colors.borderColor }}>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>Scan processing, please wait</p>
-                </div>
-              )}
             </CardContent>
-            </Card>
+          </Card>
 
-            {/* Key Terms */}
-            {Object.keys(keyTerms).length > 0 && (
+          {/* Key Terms */}
+          {key_terms && Object.keys(key_terms).length > 0 && (
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
-                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <FileText className="w-5 h-5" style={{ color: '#0C3B2E' }} />
-                  {strings.keyLeaseTerms}
-                </CardTitle>
+                <CardTitle style={{ color: colors.textPrimary }}>{t.keyLeaseTerms}</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="grid md:grid-cols-2 gap-4">
-                  {keyTerms.property_address && (
+                  {key_terms.property_address && (
                     <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.propertyAddress}</p>
-                      <p className="font-medium" style={{ color: colors.textPrimary }}>{keyTerms.property_address}</p>
+                      <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Property Address</div>
+                      <div className="font-medium" style={{ color: colors.textPrimary }}>{key_terms.property_address}</div>
                     </div>
                   )}
-                  {keyTerms.rent_amount && (
+                  {key_terms.monthly_rent > 0 && (
                     <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.monthlyRent}</p>
-                      <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>฿{sanitizeCurrency(keyTerms.rent_amount).toLocaleString('en-US')}</p>
+                      <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Monthly Rent</div>
+                      <div className="font-medium" style={{ color: colors.textPrimary }}>฿{key_terms.monthly_rent?.toLocaleString()}</div>
                     </div>
                   )}
-                  {keyTerms.deposit_amount && (
+                  {key_terms.deposit_amount > 0 && (
                     <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.securityDeposit}</p>
-                      <p className="font-medium text-lg" style={{ color: colors.textPrimary }}>฿{sanitizeCurrency(keyTerms.deposit_amount).toLocaleString('en-US')}</p>
+                      <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Security Deposit</div>
+                      <div className="font-medium" style={{ color: colors.textPrimary }}>฿{key_terms.deposit_amount?.toLocaleString()}</div>
                     </div>
                   )}
-                  {keyTerms.start_date && (
+                  {key_terms.lease_start_date && (
                     <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.leasePeriod}</p>
-                      <p className="font-medium" style={{ color: colors.textPrimary }}>
-                        {keyTerms.start_date} {keyTerms.end_date && `to ${keyTerms.end_date}`}
-                      </p>
-                    </div>
-                  )}
-                  {keyTerms.lease_type_detected && (
-                    <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.leaseType}</p>
-                      <p className="font-medium capitalize" style={{ color: colors.textPrimary }}>{keyTerms.lease_type_detected.replace('_', ' ')}</p>
-                    </div>
-                  )}
-                  {keyTerms.language_detected && (
-                    <div className="p-4 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
-                      <p className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{strings.language}</p>
-                      <p className="font-medium uppercase" style={{ color: colors.textPrimary }}>{keyTerms.language_detected}</p>
+                      <div className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Lease Period</div>
+                      <div className="font-medium" style={{ color: colors.textPrimary }}>
+                        {key_terms.lease_start_date} to {key_terms.lease_end_date || 'TBD'}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1310,305 +359,175 @@ function ReportFullContent() {
             </Card>
           )}
 
-          {/* Clause Coverage (30 Categories) */}
-          {taxonomyReport ? (
-            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-              <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
-                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  Clause Coverage (30 Categories)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                {/* Risky first */}
-                <div className="space-y-2">
-                  {taxonomyReport.filter(t => t.risk_level !== 'NO_RISK' && t.status === 'PRESENT').map((t, idx) => {
-                    const sev = String(t.risk_level).toUpperCase();
-                    const color = sev === 'CRITICAL' ? '#EF4444' : sev === 'HIGH' ? '#F59E0B' : sev === 'MEDIUM' ? '#EAB308' : '#10B981';
-                    return (
-                      <div key={`tax-risk-${idx}`} className="rounded-lg border-2 p-3" style={{ borderColor: color }}>
+          {/* Clause-by-Clause Review */}
+          <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+            <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
+              <CardTitle className="flex items-center justify-between" style={{ color: colors.textPrimary }}>
+                <span>{t.clauseReview} ({displayReviews.length})</span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowAllClauses(!showAllClauses)}
+                >
+                  {showAllClauses ? t.hideNoRiskClauses : t.showAllClauses}
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {displayReviews.map((review, idx) => {
+                  const ledgerItem = clause_ledger.find(c => c.clause_id === review.clause_id);
+                  const riskBadge = getRiskBadge(review.risk_level);
+                  const RiskIcon = riskBadge.icon;
+                  const isExpanded = expandedClauses[review.clause_id];
+
+                  return (
+                    <div 
+                      key={review.clause_id || idx} 
+                      className="rounded-xl border-2 overflow-hidden"
+                      style={{ borderColor: riskBadge.color }}
+                    >
+                      {/* Header - always visible */}
+                      <div 
+                        className="p-4 cursor-pointer"
+                        style={{ backgroundColor: riskBadge.bg }}
+                        onClick={() => toggleClause(review.clause_id)}
+                      >
                         <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-semibold" style={{ color: colors.textPrimary }}>{t.category_name}</div>
-                            <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{t.detected_text_excerpt}</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className="text-xs" style={{ backgroundColor: color, color: '#fff' }}>{sev}</Badge>
-                            <Badge variant="outline" className="text-xs">{t.status}</Badge>
-                            <Badge variant="outline" className="text-xs">{t.confidence}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Collapsible for others */}
-                <details className="mt-4">
-                  <summary className="cursor-pointer text-sm font-semibold" style={{ color: '#0C3B2E' }}>Show remaining categories</summary>
-                  <div className="mt-3 space-y-2">
-                    {taxonomyReport.filter(t => !(t.risk_level !== 'NO_RISK' && t.status === 'PRESENT')).map((t, idx) => (
-                      <div key={`tax-all-${idx}`} className="rounded-lg border p-3" style={{ borderColor: colors.borderColor }}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-medium" style={{ color: colors.textPrimary }}>{t.category_name}</div>
-                            <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{t.detected_text_excerpt}</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className="text-xs" variant="outline">{t.risk_level}</Badge>
-                            <Badge className="text-xs" variant="outline">{t.status}</Badge>
-                            <Badge className="text-xs" variant="outline">{t.confidence}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-              <CardContent className="p-6">
-                <div className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>Scan processing, please wait</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Clause Review (Coverage 100%) */}
-          {clauseLedger && clauseLedger.length > 0 && (
-            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-              <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
-                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  Clause Review (Coverage 100%) — {clausesTotal} clauses
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid md:grid-cols-2 gap-3 mb-4">
-                  <div className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
-                    <div className="text-xs" style={{ color: colors.textSecondary }}>Clauses with risks</div>
-                    <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{clausesRisk}</div>
-                  </div>
-                  <div className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
-                    <div className="text-xs" style={{ color: colors.textSecondary }}>No automated risk indicators</div>
-                    <div className="text-lg font-bold" style={{ color: colors.textPrimary }}>{clausesNoRisk}</div>
-                  </div>
-                </div>
-
-                {/* Risk clauses */}
-                <div className="space-y-3">
-                  {clauseLedger.filter(c=>c.risk_level!== 'NO_RISK').map((c, idx) => {
-                    const sev = String(c.risk_level).toUpperCase();
-                    const color = sev === 'CRITICAL' ? '#EF4444' : sev === 'HIGH' ? '#F59E0B' : sev === 'MEDIUM' ? '#EAB308' : '#10B981';
-                    return (
-                      <div key={`risk-${idx}`} className="rounded-xl border-2 overflow-hidden" style={{ backgroundColor: colors.cardBg, borderColor: color }}>
-                        <div className="p-4" style={{ backgroundColor: sev === 'CRITICAL' ? (isDarkMode ? '#3A2626' : '#FEE2E2') : sev === 'HIGH' ? (isDarkMode ? '#3A2D1C' : '#FFF7ED') : sev === 'MEDIUM' ? (isDarkMode ? '#3A3420' : '#FEF9C3') : (isDarkMode ? '#1E4435' : '#ECFDF5') }}>
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3">
+                            <RiskIcon className="w-5 h-5 mt-0.5" style={{ color: riskBadge.color }} />
                             <div>
-                              <div className="font-bold" style={{ color: colors.textPrimary }}>Clause {c.clause_number}{c.clause_title ? ` — ${c.clause_title}` : ''}</div>
-                              <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{c.rationale}</div>
+                              <div className="font-bold" style={{ color: riskBadge.color }}>
+                                {ledgerItem?.heading || `Clause ${review.clause_id}`}
+                              </div>
+                              <div className="text-sm mt-1" style={{ color: colors.textSecondary }}>
+                                {review.risk_summary}
+                              </div>
                             </div>
-                            <Badge className="text-xs font-bold" style={{ backgroundColor: color, color: '#fff' }}>{sev}</Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge style={{ backgroundColor: riskBadge.bg, color: riskBadge.color, border: `1px solid ${riskBadge.color}` }}>
+                              {riskBadge.label}
+                            </Badge>
+                            {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                           </div>
                         </div>
-                        <div className="p-4">
-                          {Array.isArray(c.recommended_actions) && c.recommended_actions.length > 0 && (
-                            <div className="text-sm" style={{ color: colors.textPrimary }}>
-                              {c.recommended_actions.map((r,i)=> (
-                                <div key={i} className="flex gap-2"><span>•</span><span>{r}</span></div>
-                              ))}
+                      </div>
+
+                      {/* Expanded content */}
+                      {isExpanded && (
+                        <div className="p-4 border-t" style={{ borderColor: colors.borderColor, backgroundColor: colors.cardBg }}>
+                          {/* Original clause text */}
+                          {ledgerItem?.full_text && (
+                            <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F1F5F9' }}>
+                              <div className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>Original Clause Text</div>
+                              <div className="text-sm" style={{ color: colors.textPrimary }}>{ledgerItem.full_text}</div>
                             </div>
                           )}
-                          <div className="mt-2 text-xs" style={{ color: colors.textSecondary }}>Confidence: {c.confidence}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
 
-                {/* No risk collapsible */}
-                <details className="mt-6">
-                  <summary className="cursor-pointer text-sm font-semibold" style={{ color: '#0C3B2E' }}>Show {clausesNoRisk} “No risk detected” clauses</summary>
-                  <div className="mt-3 space-y-2">
-                    {clauseLedger.filter(c=>c.risk_level=== 'NO_RISK').map((c, idx) => (
-                      <div key={`norisk-${idx}`} className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm" style={{ color: colors.textPrimary }}>Clause {c.clause_number}{c.clause_title ? ` — ${c.clause_title}` : ''}</div>
-                          <div className="text-xs" style={{ color: colors.textSecondary }}>Confidence: {c.confidence}</div>
-                        </div>
-                        <div className="text-xs mt-1" style={{ color: colors.textSecondary }}>{c.rationale}</div>
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              </CardContent>
-            </Card>
-          )}
+                          {/* Three perspectives */}
+                          <div className="space-y-3">
+                            <div className="p-3 rounded-lg border-l-4" style={{ borderLeftColor: '#3B82F6', backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF' }}>
+                              <div className="text-xs font-semibold mb-1" style={{ color: '#3B82F6' }}>{t.tenantView}</div>
+                              <div className="text-sm" style={{ color: colors.textPrimary }}>{review.tenant_view}</div>
+                            </div>
 
-          {hiddenFlagsCount > 0 && (
-            <div className="mt-6 p-6 rounded-xl border-2 border-dashed" style={{
-              backgroundColor: isDarkMode ? '#2A2D30' : '#FEF9C3',
-              borderColor: isDarkMode ? '#C7A338' : '#EAB308'
-            }}>
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
-                    {language === 'th' 
-                      ? strings.moreDetailedIssues.replace('{count}', hiddenFlagsCount)
-                      : `${hiddenFlagsCount} ${strings.moreDetailedIssues.replace('{count}', hiddenFlagsCount)}`}
-                  </h4>
-                  <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
-                    {language === 'th' 
-                      ? 'อัปเกรดเป็น Protect หรือ Secure เพื่อดูการวิเคราะห์ทั้งหมดพร้อมคำแนะนำโดยละเอียด'
-                      : 'Upgrade to Protect or Secure to view complete analysis with detailed recommendations'}
-                  </p>
-                  <Button
-                    onClick={() => navigate(createPageUrl("Account") + '?highlight=plans')}
-                    className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800"
-                  >
-                    {strings.upgradeToUnlock}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate(createPageUrl("ScanPreview") + `?scanId=${scanId}`)}
-                    className="w-full mt-2"
-                    style={isDarkMode ? { borderColor: colors.borderColor, color: colors.textPrimary } : {}}
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    {strings.backToSummary}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+                            <div className="p-3 rounded-lg border-l-4" style={{ borderLeftColor: '#8B5CF6', backgroundColor: isDarkMode ? '#2D2B55' : '#F5F3FF' }}>
+                              <div className="text-xs font-semibold mb-1" style={{ color: '#8B5CF6' }}>{t.landlordView}</div>
+                              <div className="text-sm" style={{ color: colors.textPrimary }}>{review.landlord_view}</div>
+                            </div>
 
-          {/* Additional Observations (LOW confidence) */}
-          {lowConfidence.length > 0 && (
-            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-              <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
-                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <Info className="w-5 h-5 text-slate-500" /> Additional Observations (verify)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-3">
-                {lowConfidence.map((f,i)=> (
-                  <div key={i} className="p-3 rounded border" style={{ borderColor: colors.borderColor }}>
-                    <div className="text-sm font-semibold" style={{ color: colors.textPrimary }}>{f.title}</div>
-                    <div className="text-xs" style={{ color: colors.textSecondary }}>{f.summary}</div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-          {/* Clause Review (Accordion-like) */}
-          {Array.isArray(scan?.scan_full?.clause_reviews) && scan.scan_full.clause_reviews.length > 0 && (
-            <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-              <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
-                <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                  <Info className="w-5 h-5 text-slate-500" /> Clause Review
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-2">
-                  {scan.scan_full.clause_reviews.map((c, idx) => (
-                    <div key={idx} className="p-3 rounded-lg border" style={{ borderColor: colors.borderColor }}>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                          Clause {c.clause_no} {c.page ? `(Page ${c.page})` : ''}
-                        </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${c.status==='RISK' ? 'bg-red-100 text-red-700' : c.status==='INFO' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>{c.status}</span>
-                      </div>
-                      {Array.isArray(c.taxonomy_hits) && c.taxonomy_hits.length>0 && (
-                        <div className="mt-2 text-xs" style={{ color: colors.textSecondary }}>
-                          Codes: {c.taxonomy_hits.map(h=>h.taxonomy_code).join(', ')}
-                          {c.taxonomy_hits[0]?.rationale && (
-                            <div className="mt-1">{c.taxonomy_hits[0].rationale}</div>
+                            <div className="p-3 rounded-lg border-l-4" style={{ borderLeftColor: '#0C3B2E', backgroundColor: isDarkMode ? '#1E3A2E' : '#ECFDF5' }}>
+                              <div className="text-xs font-semibold mb-1" style={{ color: '#0C3B2E' }}>{t.lawyerView}</div>
+                              <div className="text-sm" style={{ color: colors.textPrimary }}>{review.lawyer_view}</div>
+                            </div>
+                          </div>
+
+                          {/* Recommended change & negotiation tip */}
+                          {review.recommended_change && review.recommended_change !== 'No change recommended' && (
+                            <div className="mt-4 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#2A2D30' : '#FEF3C7' }}>
+                              <div className="text-xs font-semibold mb-1" style={{ color: '#92400E' }}>{t.recommendedChange}</div>
+                              <div className="text-sm" style={{ color: colors.textPrimary }}>{review.recommended_change}</div>
+                            </div>
+                          )}
+
+                          {review.negotiation_tip && (
+                            <div className="mt-3 p-3 rounded-lg border" style={{ borderColor: colors.borderColor }}>
+                              <div className="text-xs font-semibold mb-1" style={{ color: colors.textSecondary }}>{t.negotiationTip}</div>
+                              <div className="text-sm italic" style={{ color: colors.textPrimary }}>{review.negotiation_tip}</div>
+                            </div>
                           )}
                         </div>
                       )}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Missing Protections */}
-          {missingItems.length > 0 && (
+          {/* Missing Clauses */}
+          {missing_clauses && missing_clauses.length > 0 && (
             <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
               <CardHeader className="border-b" style={{ borderColor: colors.borderColor }}>
                 <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
                   <AlertCircle className="w-5 h-5 text-amber-600" />
-                  {strings.missingProtections} ({missingItems.length})
+                  {t.missingClauses} ({missing_clauses.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="grid md:grid-cols-2 gap-3">
-                  {missingItems.map((item, index) => (
-                    <div key={index} className="flex items-start gap-2 p-3 rounded-lg border border-amber-200" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#FFFBEB' }}>
-                      <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-amber-900 leading-relaxed" style={{ color: isDarkMode ? colors.textPrimary : '#B45309' }}>{item}</p>
-                    </div>
-                  ))}
+                <div className="space-y-3">
+                  {missing_clauses.filter(m => m.priority === 'high').concat(
+                    missing_clauses.filter(m => m.priority === 'medium'),
+                    missing_clauses.filter(m => m.priority === 'low')
+                  ).map((missing, idx) => {
+                    const priorityStyle = getPriorityColor(missing.priority);
+                    return (
+                      <div key={idx} className="p-4 rounded-lg border" style={{ borderColor: priorityStyle.color }}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-semibold" style={{ color: colors.textPrimary }}>{missing.canonical_name}</div>
+                            <div className="text-sm mt-1" style={{ color: colors.textSecondary }}>{missing.why_it_matters}</div>
+                            {missing.suggested_addition_text && (
+                              <div className="mt-2 p-2 rounded text-sm" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
+                                <span className="font-semibold" style={{ color: colors.textSecondary }}>{t.suggestedAddition}: </span>
+                                <span style={{ color: colors.textPrimary }}>{missing.suggested_addition_text}</span>
+                              </div>
+                            )}
+                          </div>
+                          <Badge style={{ backgroundColor: priorityStyle.bg, color: priorityStyle.color }}>
+                            {missing.priority.toUpperCase()}
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* Next Steps */}
-          <Card className="border-none shadow-lg" style={{ 
-            backgroundColor: colors.cardBg,
-            background: isDarkMode 
-              ? 'linear-gradient(to br, #2A2D30, #1F2937)' 
-              : 'linear-gradient(to br, #F0FDF4, #DBEAFE)'
-          }}>
+          <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
             <CardContent className="p-6">
               <h3 className="font-bold text-lg mb-4" style={{ color: colors.textPrimary }}>
-                {strings.suggestedNextSteps}
+                {language === 'th' ? 'ขั้นตอนต่อไป' : 'Suggested Next Steps'}
               </h3>
-
-              {/* Open Letter Templates */}
-              <div className="mb-4 rounded-xl border-2 overflow-hidden" style={{
-                backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
-                borderColor: '#0C3B2E'
-              }}>
-                <div className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{
-                      backgroundColor: '#0C3B2E'
-                    }}>
-                      <FileText className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold mb-2" style={{ color: colors.textPrimary }}>
-                        {strings.negotiateBeforeSigning}
-                      </h4>
-                      <p className="text-sm mb-3" style={{ color: colors.textSecondary }}>
-                        {strings.negotiateDesc}
-                      </p>
-                      <Button
-                        onClick={() => {
-                          haptic.medium();
-                          navigate(createPageUrl("Templates"));
-                        }}
-                        className="w-full btn-interaction"
-                        style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        {strings.openLetterTemplates}
-                      </Button>
-                    </div>
+              
+              <div className="grid md:grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4"
+                  onClick={() => navigate(createPageUrl("Templates"))}
+                  style={isDarkMode ? { backgroundColor: colors.cardBg, borderColor: colors.borderColor, color: colors.textPrimary } : {}}
+                >
+                  <FileText className="w-5 h-5 mr-3 text-blue-600" />
+                  <div className="text-left">
+                    <div className="font-semibold">{language === 'th' ? 'ดูเทมเพลตเอกสาร' : 'View Document Templates'}</div>
+                    <div className="text-xs" style={{ color: colors.textSecondary }}>{language === 'th' ? 'สร้างจดหมายเพื่อเจรจา' : 'Generate negotiation letters'}</div>
                   </div>
-                </div>
-              </div>
-
-              {/* Other suggested actions */}
-              <div className="grid md:grid-cols-1 gap-3">
+                </Button>
+                
                 <Button
                   variant="outline"
                   className="justify-start h-auto py-4"
@@ -1617,25 +536,21 @@ function ReportFullContent() {
                 >
                   <Shield className="w-5 h-5 mr-3 text-emerald-600" />
                   <div className="text-left">
-                    <div className="font-semibold" style={{ color: colors.textPrimary }}>
-                      {strings.enableDepositShield}
-                    </div>
-                    <div className="text-xs" style={{ color: colors.textSecondary }}>
-                      {strings.trackYourSecurityDeposit}
-                    </div>
+                    <div className="font-semibold">{language === 'th' ? 'ติดตามเงินมัดจำ' : 'Track Your Deposit'}</div>
+                    <div className="text-xs" style={{ color: colors.textSecondary }}>{language === 'th' ? 'เปิดใช้งาน Deposit Shield' : 'Enable Deposit Shield'}</div>
                   </div>
                 </Button>
               </div>
+
               <div className="mt-6 text-xs italic" style={{ color: colors.textSecondary }}>
                 {LEGAL_DISCLAIMER}
               </div>
             </CardContent>
           </Card>
-          </div>
-          </div>
-
-          </FeatureGate>
-          );
+        </div>
+      </div>
+    </FeatureGate>
+  );
 }
 
 export default function ReportFull() {
