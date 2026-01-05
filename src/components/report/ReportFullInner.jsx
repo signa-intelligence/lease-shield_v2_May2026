@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, AlertTriangle, ArrowLeft, CheckCircle2, Download, ExternalLink, FileText, Info, Loader2, RefreshCw } from "lucide-react";
+import ErrorPanel from "./ErrorPanel";
 
 const SEVERITY_CONFIG = {
   none: { color: 'bg-emerald-100 text-emerald-800 border-emerald-200', label: 'NO RISK', icon: CheckCircle2 },
@@ -32,28 +33,60 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dbValidation, setDbValidation] = useState(null);
+  const [loadSteps, setLoadSteps] = useState([]);
   const [user, setUser] = useState(null);
   const [lease, setLease] = useState(null);
   const [scan, setScan] = useState(null);
   const [reportData, setReportData] = useState(null);
   const [exportingPdf, setExportingPdf] = useState(false);
 
-  // Effect #1: Fetch all data (ALWAYS RUNS)
+  // Effect #1: Fetch all data with WATCHDOG (ALWAYS RUNS, ALWAYS TERMINATES)
   useEffect(() => {
     let cancelled = false;
+    const requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
+    const startTime = Date.now();
+    const steps = [];
+    
+    const logStep = (step, data) => {
+      const entry = { step, timestamp: Date.now() - startTime, ...data };
+      steps.push(entry);
+      console.log(`[${requestId}] ${step}:`, data);
+      if (!cancelled) setLoadSteps(prev => [...prev, entry]);
+    };
+
+    // WATCHDOG: 15s timeout
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.error(`[${requestId}] WATCHDOG TIMEOUT at ${Date.now() - startTime}ms`);
+      abortController.abort();
+    }, 15000);
     
     async function loadData() {
       try {
         setLoading(true);
         setError(null);
+        logStep('INIT', { scanId, leaseId, requestId });
 
+        // STEP 1: Fetch user
+        logStep('FETCH_USER_START', {});
         const userRes = await base44.auth.me();
-        const leaseArr = await base44.entities.Lease.filter({ id: leaseId });
-        const scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
-        const leaseData = leaseArr?.[0] || null;
-        const scanData = scanArr?.[0] || null;
+        logStep('FETCH_USER_COMPLETE', { userId: userRes?.id });
 
-        // DB VALIDATION
+        // STEP 2: Fetch lease
+        logStep('FETCH_LEASE_START', { leaseId });
+        const leaseArr = await base44.entities.Lease.filter({ id: leaseId });
+        const leaseData = leaseArr?.[0] || null;
+        logStep('FETCH_LEASE_COMPLETE', { found: !!leaseData });
+
+        // STEP 3: Fetch scan
+        logStep('FETCH_SCAN_START', { scanId });
+        const scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
+        const scanData = scanArr?.[0] || null;
+        logStep('FETCH_SCAN_COMPLETE', { found: !!scanData });
+
+        // STEP 4: Validate records
+        logStep('VALIDATE_RECORDS_START', {});
+        
         const validation = {
           scanFound: !!scanData,
           leaseFound: !!leaseData,
@@ -61,15 +94,22 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           leaseId
         };
 
-        if (!leaseData || !scanData) {
-          if (!cancelled) {
-            setDbValidation(validation);
-            setError(`${!scanData ? 'Scan' : 'Lease'} record not found (ID: ${!scanData ? scanId : leaseId})`);
-          }
-          return;
+        if (!leaseData) {
+          const err = new Error(`LEASE_NOT_FOUND: No lease record for ID ${leaseId}`);
+          err.code = 'LEASE_NOT_FOUND';
+          err.step = 'FETCH_LEASE';
+          throw err;
         }
 
-        // Check for materialized report
+        if (!scanData) {
+          const err = new Error(`SCAN_NOT_FOUND: No scan record for ID ${scanId}`);
+          err.code = 'SCAN_NOT_FOUND';
+          err.step = 'FETCH_SCAN';
+          throw err;
+        }
+
+        // STEP 5: Validate materialized report (persisted in scan_full.canonical_report)
+        logStep('VALIDATE_REPORT_START', {});
         const canonical = scanData?.scan_full?.canonical_report || null;
         validation.hasCanonical = !!canonical;
         validation.hasClauseLedger = !!(canonical?.clause_ledger);
@@ -77,11 +117,15 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         validation.hasPdfPayload = !!(canonical?.pdfPayload);
 
         if (!canonical || !canonical.clause_ledger || canonical.clause_ledger.length === 0) {
-          if (!cancelled) {
-            setDbValidation(validation);
-            setError('Report not generated yet. Scan-time persistence failed. Please re-run scan.');
-          }
-          return;
+          const err = new Error(`REPORT_NOT_MATERIALIZED: No canonical_report or empty clause_ledger for scanId ${scanId}`);
+          err.code = 'REPORT_NOT_MATERIALIZED';
+          err.step = 'VALIDATE_REPORT';
+          err.debugData = {
+            hasCanonical: !!canonical,
+            hasClauseLedger: !!(canonical?.clause_ledger),
+            clauseLedgerLength: canonical?.clause_ledger?.length || 0
+          };
+          throw err;
         }
 
         validation.issuesCount = canonical.pdfPayload?.flags?.length || 0;
@@ -89,9 +133,11 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         validation.clausesReviewed = canonical.clause_review?.length || 0;
         validation.riskScore = canonical.risk_score || scanData.risk_score || 0;
 
+        logStep('VALIDATE_REPORT_COMPLETE', validation);
         if (!cancelled) setDbValidation(validation);
 
-        // Use materialized report
+        // STEP 6: Build normalized report from materialized data
+        logStep('BUILD_REPORT_START', {});
         const clauseReview = Array.isArray(canonical?.clause_review) ? canonical.clause_review : [];
         const clauseLedger = Array.isArray(canonical?.clause_ledger) ? canonical.clause_ledger : [];
         const flags = Array.isArray(scanData?.flags) ? scanData.flags : (Array.isArray(scanData?.scan_full?.flags) ? scanData.scan_full.flags : []);
@@ -196,23 +242,57 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           coverageSummary
         };
 
+        logStep('BUILD_REPORT_COMPLETE', {
+          issuesCount: flagsForDisplay.length,
+          clausesTotal: clauseLedger.length
+        });
+
         if (!cancelled) {
           setUser(userRes);
           setLease(leaseData);
           setScan(scanData);
           setReportData(normalized);
           setLoading(false);
+          logStep('RENDER_SUCCESS', { totalElapsed: Date.now() - startTime });
         }
       } catch (err) {
+        logStep('ERROR_CAUGHT', {
+          step: err.step || 'UNKNOWN',
+          code: err.code || 'UNKNOWN',
+          message: err.message,
+          elapsed: Date.now() - startTime
+        });
+
         if (!cancelled) {
-          setError(err?.message || 'Failed to load report');
+          const errorObj = {
+            step: err.step || 'UNKNOWN',
+            code: err.code || 'UNKNOWN',
+            message: err.message || 'Failed to load report',
+            stack: err.stack,
+            requestId,
+            scanId,
+            leaseId,
+            elapsedMs: Date.now() - startTime,
+            debugData: err.debugData || {},
+            steps
+          };
+          
+          setError(errorObj);
           setLoading(false);
+        }
+      } finally {
+        clearTimeout(timeoutId);
+        if (!cancelled) {
+          setLoading(false); // Guaranteed termination
         }
       }
     }
 
     loadData();
-    return () => { cancelled = true; };
+    return () => { 
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [scanId, leaseId]);
 
   // NO BACKFILL - Report is materialized at scan time
@@ -241,7 +321,11 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
     );
   }
 
-  if (error || !user || !lease || !scan || !reportData) {
+  if (error) {
+    return <ErrorPanel error={error} colors={colors} />;
+  }
+
+  if (!user || !lease || !scan || !reportData) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto">
@@ -249,7 +333,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
             <CardContent className="p-8 text-center">
               <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
               <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>Error Loading Report</h2>
-              <p className="mb-6" style={{ color: colors.textSecondary }}>{error || 'Failed to load report data.'}</p>
+              <p className="mb-6" style={{ color: colors.textSecondary }}>Failed to load report data.</p>
               <Button variant="outline" onClick={() => window.location.reload()}>
                 <RefreshCw className="w-4 h-4 mr-2" />Retry
               </Button>
@@ -327,6 +411,10 @@ Total Clauses: ${totalClauses}
 Risks: ${risksCount}
 Flags: ${(reportData.flags || []).length}
 Has PDF Payload: ${!!(scan?.scan_full?.canonical_report?.pdfPayload)}`}
+              </pre>
+              <div className="text-xs font-bold text-emerald-700 mb-1 mt-3">LOAD STEPS</div>
+              <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
+{loadSteps.map(s => `[${s.timestamp}ms] ${s.step}`).join('\n')}
               </pre>
             </CardContent>
           </Card>

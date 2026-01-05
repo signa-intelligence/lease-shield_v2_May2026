@@ -12,24 +12,35 @@ export default function PreviewHarness({ forensicData }) {
 
   const handleManualLoad = () => {
     if (!manualScanId || !manualLeaseId) return;
-    window.location.href = `/reportfull?scanId=${manualScanId}&leaseId=${manualLeaseId}`;
+    const targetUrl = `${window.location.origin}/reportfull?scanId=${encodeURIComponent(manualScanId)}&leaseId=${encodeURIComponent(manualLeaseId)}&debug=1`;
+    console.log('[PreviewHarness] Redirecting to:', targetUrl);
+    window.location.href = targetUrl;
   };
 
   const handleLoadRecent = async () => {
     setLoadingRecent(true);
     try {
       const user = await base44.auth.me();
+      if (!user) {
+        alert('Editor preview cannot read your DB session. Paste scanId/leaseId manually or test on production domain.');
+        setLoadingRecent(false);
+        return;
+      }
+      
       const scans = await base44.entities.LeaseScan.filter({ created_by: user.email }, '-created_date', 1);
       if (scans && scans.length > 0) {
         const scan = scans[0];
         const leaseId = scan.lease_id;
-        window.location.href = `/reportfull?scanId=${scan.id}&leaseId=${leaseId}&debug=1`;
+        const targetUrl = `${window.location.origin}/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(leaseId)}&debug=1`;
+        console.log('[PreviewHarness] Auto-load redirecting to:', targetUrl);
+        window.location.href = targetUrl;
       } else {
         alert('No scans found for your account');
         setLoadingRecent(false);
       }
     } catch (err) {
-      alert('Failed to load recent scan: ' + err.message);
+      console.error('[PreviewHarness] Load recent failed:', err);
+      alert('Editor preview cannot read your DB session. Paste scanId/leaseId manually or test on production domain.');
       setLoadingRecent(false);
     }
   };
