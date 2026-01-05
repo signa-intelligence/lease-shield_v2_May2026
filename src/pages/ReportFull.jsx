@@ -191,6 +191,111 @@ function ReportFullContent() {
   const flags = scan.flags || scan.scan_full?.flags || [];
   const keyTerms = scan.scan_full?.key_terms || {};
 
+  // Canonical clause ledger (if available)
+  const canonical = scan.scan_full?.canonical_report || null;
+  const clauseReview = canonical?.clause_review || [];
+  const clauseLedger = canonical?.clause_ledger || [];
+  const mappings = canonical?.mappings || [];
+  const missingClauses = canonical?.missing_clauses || [];
+  const coverageSummary = canonical ? {
+    total_clauses: clauseLedger.length,
+    clauses_reviewed: clauseReview.length,
+    clauses_flagged: clauseReview.filter(r => r.risk_level && r.risk_level !== 'none').length,
+    unmapped_clauses: mappings.filter(m => Array.isArray(m.mapped_catalog_ids) && m.mapped_catalog_ids.includes('CAT-UNMAPPED')).length,
+    missing_expected_categories: missingClauses.length,
+    mapped_count: canonical?.summary?.mapped_count,
+    mapped_pct: canonical?.summary?.mapped_pct
+  } : null;
+
+  // Unify issues from clause review + flags so UI and PDF use same source
+  const unifiedIssues = (() => {
+    const byClause = {};
+    clauseReview.forEach(r => {
+      if (!r.risk_level || r.risk_level === 'none') return;
+      byClause[r.clause_id] = { review: r };
+    });
+    const fl = Array.isArray(flags) ? flags : [];
+    fl.forEach(f => {
+      const key = f.clause_id || `flag-${f.pattern_id || f.title || Math.random()}`;
+      if (!byClause[key]) byClause[key] = {};
+      byClause[key].flag = f;
+    });
+
+    const list = Object.entries(byClause).map(([key, pair]) => {
+      const r = pair.review;
+      const f = pair.flag;
+      const clause = clauseLedger.find(c => c.clause_id === (r?.clause_id || f?.clause_id));
+      const severity = f?.severity || (r?.risk_level || 'medium');
+      const category = f?.category || (r?.mapped_catalog_ids?.[0] ? r.mapped_catalog_ids[0] : undefined);
+      const title = f?.title || clause?.heading || (r?.risk_summary?.substring(0, 80) || 'Issue');
+      const impact = f?.description || r?.risk_summary || '';
+      const explanation = f?.explanation || r?.lawyer_view || r?.tenant_view || '';
+      // Build recommendations
+      let recs = [];
+      if (f?.recommendation) {
+        recs = String(f.recommendation).split(/[\n•\-–]/g).map(s => s.trim()).filter(Boolean);
+      } else {
+        if (r?.recommended_change && r.recommended_change !== 'No change recommended') recs.push(r.recommended_change);
+        if (r?.negotiation_tip && r.negotiation_tip !== 'Accept as standard.') recs.push(r.negotiation_tip);
+      }
+      if (recs.length === 0) recs = ['INCOMPLETE: insufficient clause text to generate specific recommendations'];
+
+      const hasSupport = Boolean((clause?.full_text && clause.full_text.length > 0) || f?.evidence || r?.clause_id || f?.missing_safeguard);
+      const status = hasSupport ? 'VALID' : 'INVALID';
+
+      return {
+        status,
+        clause_id: r?.clause_id || f?.clause_id,
+        category,
+        severity,
+        title,
+        impact,
+        explanation,
+        recommendations: recs,
+        evidence: f?.evidence || (clause?.full_text ? clause.full_text.substring(0, 240) : '')
+      };
+    });
+
+    // Filter invalid risks per requirement #3
+    const validList = list.filter(i => i.status === 'VALID');
+    // Also include any remaining pure flags without clause review that have support
+    fl.forEach(f => {
+      const exists = validList.some(i => (i.clause_id && f.clause_id && i.clause_id === f.clause_id) || i.title === f.title);
+      if (exists) return;
+      const recs = String(f.recommendation || '').split(/[\n•\-–]/g).map(s => s.trim()).filter(Boolean);
+      const hasSupport = Boolean(f.evidence || f.clause_id || f.missing_safeguard);
+      if (!hasSupport) return; // invalid
+      validList.push({
+        status: 'VALID',
+        clause_id: f.clause_id,
+        category: f.category,
+        severity: f.severity || 'medium',
+        title: f.title || 'Issue',
+        impact: f.description || '',
+        explanation: f.explanation || '',
+        recommendations: recs.length ? recs : ['INCOMPLETE: insufficient clause text to generate specific recommendations'],
+        evidence: f.evidence || ''
+      });
+    });
+
+    // Sort by severity order
+    const order = { critical: 0, high: 1, medium: 2, low: 3 };
+    validList.sort((a,b) => (order[a.severity] ?? 3) - (order[b.severity] ?? 3));
+    return validList;
+  })();
+
+  // Shape for UI rendering (reuse existing flag UI)
+  const flagsForDisplay = unifiedIssues.map(i => ({
+    severity: i.severity,
+    category: i.category,
+    title: i.title,
+    description: i.impact,
+    explanation: i.explanation,
+    recommendation: i.recommendations.join('\n'),
+    evidence: i.evidence,
+    clause_id: i.clause_id
+  }));
+
   const getRiskLevel = (score) => {
     if (score >= 70) return { level: 'high', label: 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' };
     if (score >= 40) return { level: 'medium', label: 'MEDIUM RISK', color: '#F59E0B', bg: '#FEF3C7' };
