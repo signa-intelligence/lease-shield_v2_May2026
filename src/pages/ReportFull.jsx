@@ -213,8 +213,7 @@ function ReportFullContent() {
       clauseAnalysis: "Clause-by-Clause Analysis",
       showAllClauses: "Show All Clauses",
       hideOkClauses: "Hide OK Clauses",
-      safeClauses: "Safe Clauses",
-      missingClauses: "Missing Standard Clauses",
+
       exportPdf: "Export PDF",
       upgradeForPdf: "Upgrade for PDF",
       viewLease: "View Original Lease",
