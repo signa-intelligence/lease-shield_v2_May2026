@@ -1241,7 +1241,7 @@ function UploadScanPageContent() {
           const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
             scanResult,
             leaseId: createdLeaseId,
-            scanId: createdLeaseId
+            scanId
           });
           
           if (populateResponse?.success) {
