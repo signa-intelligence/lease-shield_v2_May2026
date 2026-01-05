@@ -1,43 +1,107 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import AuthGuard from "../components/shared/AuthGuard";
 import MissingParams from "../components/report/MissingParams";
 import ReportFullInner from "../components/report/ReportFullInner";
 import PreviewHarness from "../components/report/PreviewHarness";
 
 export default function ReportFull() {
-  // FORENSIC PARAM PARSING - all variants
-  const urlParams = new URLSearchParams(window.location.search);
-  const scanId = (urlParams.get('scanId') || urlParams.get('scanid') || urlParams.get('scan_id') || '').trim();
-  const leaseId = (urlParams.get('leaseId') || urlParams.get('leaseid') || urlParams.get('lease_id') || '').trim();
-  const showDebug = urlParams.get('debug') === '1' || urlParams.get('forensics') === '1';
+  // State for param resolution - starts false until useEffect runs
+  const [paramsResolved, setParamsResolved] = useState(false);
+  const [scanId, setScanId] = useState('');
+  const [leaseId, setLeaseId] = useState('');
+  const [showDebug, setShowDebug] = useState(false);
+  const [isEditorPreview, setIsEditorPreview] = useState(false);
+  const [forensicData, setForensicData] = useState(null);
 
-  // DETECT EDITOR PREVIEW
-  const isEditorPreview = typeof window !== 'undefined' && 
-    (window.location.hostname.includes('app.base44.com') || window.location.hostname.includes('localhost')) &&
-    window.location.pathname.includes('/editor/preview');
+  // Parse params ONLY after mount (window-safe)
+  useEffect(() => {
+    // Safe access to window after mount
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Resolve scanId with all case variants
+    const resolvedScanId = (
+      urlParams.get('scanId') || 
+      urlParams.get('scanid') || 
+      urlParams.get('scan_id') || 
+      ''
+    ).trim();
+    
+    // Resolve leaseId with all case variants
+    const resolvedLeaseId = (
+      urlParams.get('leaseId') || 
+      urlParams.get('leaseid') || 
+      urlParams.get('lease_id') || 
+      ''
+    ).trim();
+    
+    // Debug flags
+    const debugFlag = urlParams.get('debug') === '1' || urlParams.get('forensics') === '1';
+    
+    // Detect editor preview environment
+    const editorPreview = 
+      (window.location.hostname.includes('app.base44.com') || 
+       window.location.hostname.includes('localhost')) &&
+      window.location.pathname.includes('/editor/preview');
+    
+    // Build forensic data for debugging
+    const forensic = {
+      href: window.location.href,
+      pathname: window.location.pathname,
+      search: window.location.search,
+      isEditorPreview: editorPreview,
+      params: {
+        scanId: urlParams.get('scanId'),
+        scanid: urlParams.get('scanid'),
+        scan_id: urlParams.get('scan_id'),
+        leaseId: urlParams.get('leaseId'),
+        leaseid: urlParams.get('leaseid'),
+        lease_id: urlParams.get('lease_id')
+      },
+      resolved: { 
+        scanId: resolvedScanId, 
+        leaseId: resolvedLeaseId 
+      },
+      hasParams: !!(resolvedScanId && resolvedLeaseId)
+    };
+    
+    // Set all state at once
+    setScanId(resolvedScanId);
+    setLeaseId(resolvedLeaseId);
+    setShowDebug(debugFlag);
+    setIsEditorPreview(editorPreview);
+    setForensicData(forensic);
+    
+    // Mark params as resolved - triggers render with actual content
+    setParamsResolved(true);
+  }, []);
 
-  // FORENSIC DEBUG DATA (always computed, conditionally rendered)
-  const forensicData = {
-    href: typeof window !== 'undefined' ? window.location.href : '',
-    pathname: typeof window !== 'undefined' ? window.location.pathname : '',
-    search: typeof window !== 'undefined' ? window.location.search : '',
-    isEditorPreview,
-    params: {
-      scanId: urlParams.get('scanId'),
-      scanid: urlParams.get('scanid'),
-      scan_id: urlParams.get('scan_id'),
-      leaseId: urlParams.get('leaseId'),
-      leaseid: urlParams.get('leaseid'),
-      lease_id: urlParams.get('lease_id')
-    },
-    resolved: { scanId, leaseId },
-    hasParams: !!(scanId && leaseId)
-  };
+  // LOADING SHELL: Render while params are being resolved (SSR-safe)
+  if (!paramsResolved) {
+    return (
+      <AuthGuard>
+        <div 
+          className="min-h-screen flex items-center justify-center" 
+          style={{ backgroundColor: '#F3F6F5' }}
+        >
+          <div 
+            className="animate-spin rounded-full h-8 w-8 border-b-2" 
+            style={{ borderColor: '#0C3B2E' }}
+          />
+        </div>
+      </AuthGuard>
+    );
+  }
 
+  // RESOLVED: Render appropriate content based on params
   return (
     <AuthGuard>
       {scanId && leaseId ? (
-        <ReportFullInner scanId={scanId} leaseId={leaseId} showDebug={showDebug} forensicData={forensicData} />
+        <ReportFullInner 
+          scanId={scanId} 
+          leaseId={leaseId} 
+          showDebug={showDebug} 
+          forensicData={forensicData} 
+        />
       ) : isEditorPreview ? (
         <PreviewHarness forensicData={forensicData} />
       ) : (
