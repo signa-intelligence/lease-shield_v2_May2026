@@ -149,8 +149,8 @@ Deno.serve(async (req) => {
       y += 10;
     }
 
-    // Key Lease Terms
-    if (Object.keys(scanData.key_terms).length > 0) {
+    // Key Lease Terms (safe guard)
+    if (scanData.key_terms && Object.keys(scanData.key_terms || {}).length > 0) {
       if (y > pageHeight - 60) {
         doc.addPage();
         y = 20;
@@ -284,68 +284,69 @@ Deno.serve(async (req) => {
     }
 
     // =====================================================================
-    // CLAUSE-BY-CLAUSE REVIEW (always render from canonical if provided)
+    // CLAUSE-BY-CLAUSE REVIEW (render ALL clauses with pagination)
     // =====================================================================
     const clauseReview = Array.isArray(scanData.clause_review) ? scanData.clause_review : [];
     const clauseLedger = Array.isArray(scanData.clause_ledger) ? scanData.clause_ledger : [];
-    
-    // Always render clause-by-clause even if flags exist (non-duplicative content)
-    if (clauseReview.length > 0 && clauseLedger.length > 0) {
+
+    const defaultRecsFor = (cat) => {
+      const c = cat || 'clause';
+      return [
+        `Request to narrow or clarify ${c} terms to tenant-favorable language`,
+        `Add explicit safeguard for ${c} to prevent overbroad interpretation`
+      ];
+    };
+
+    if (clauseLedger.length > 0) {
       if (y > pageHeight - 60) { doc.addPage(); y = 20; }
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Clause-by-Clause Review (${clauseReview.length} clauses)`, 20, y);
+      doc.text(`Clause-by-Clause Review (${clauseLedger.length} clauses)`, 20, y);
       y += 10;
       doc.setFont('helvetica', 'normal');
 
-      const riskOrder = { high: 0, medium: 1, low: 2, none: 3 };
-      const sortedReviews = [...clauseReview].sort((a, b) => 
-        (riskOrder[a.risk_level] || 3) - (riskOrder[b.risk_level] || 3)
-      );
+      clauseLedger.forEach((clause, idx) => {
+        const review = clauseReview.find(r => r.clause_id === clause.clause_id) || {};
+        if (y > pageHeight - 70) { doc.addPage(); y = 20; }
 
-      sortedReviews.forEach((review, idx) => {
-        const ledgerItem = clauseLedger.find(c => c.clause_id === review.clause_id);
-        
-        if (y > pageHeight - 60) { doc.addPage(); y = 20; }
-        
+        // Heading
         doc.setFontSize(11); doc.setFont('helvetica','bold');
-        const heading = ledgerItem?.heading || `Clause ${review.clause_id}`;
+        const heading = clause.heading || `Clause ${clause.clause_id}`;
         y = addText(`${idx + 1}. ${heading}`, 20, 11, 'bold');
 
+        // Risk label
         doc.setFontSize(9); doc.setFont('helvetica','normal');
-        const riskLabel = review.risk_level === 'none' ? 'NO RISK' : review.risk_level.toUpperCase() + ' RISK';
+        const riskLevel = review.risk_level || 'none';
+        const riskLabel = riskLevel === 'none' ? 'NO RISK' : riskLevel.toUpperCase() + ' RISK';
         y = addText(`Risk Level: ${riskLabel}`, 25, 9);
 
-        if (review.risk_summary) {
-          y = addText(review.risk_summary, 25, 9);
+        // Snippet/evidence
+        const snippet = (clause.full_text || '').substring(0, 240);
+        if (snippet) {
+          doc.setFont('helvetica','bold'); doc.text('Snippet:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          y = addText(snippet, 25, 8);
         }
 
-        if (review.risk_level !== 'none') {
-          if (review.tenant_view) {
-            doc.setFont('helvetica','bold'); doc.text('Tenant Impact:', 25, y); y += 5;
-            doc.setFont('helvetica','normal');
-            y = addText(review.tenant_view, 25, 9);
+        // Rationale / impact
+        if (review.risk_summary) {
+          y = addText(review.risk_summary, 25, 9);
+        } else if (riskLevel === 'none') {
+          y = addText('Accept as standard.', 25, 9);
+        }
+
+        // Recommendations (ensure at least 2 when risk)
+        if (riskLevel !== 'none') {
+          const recs = [];
+          if (review.recommended_change && review.recommended_change !== 'No change recommended') recs.push(review.recommended_change);
+          if (review.negotiation_tip && review.negotiation_tip !== 'Accept as standard.') recs.push(review.negotiation_tip);
+          while (recs.length < 2) {
+            const cat = Array.isArray(review.mapped_catalog_ids) ? review.mapped_catalog_ids[0] : review.category;
+            defaultRecsFor(cat).forEach(r => { if (recs.length < 2) recs.push(r); });
           }
-          if (review.landlord_view) {
-            doc.setFont('helvetica','bold'); doc.text('Landlord View:', 25, y); y += 5;
-            doc.setFont('helvetica','normal');
-            y = addText(review.landlord_view, 25, 9);
-          }
-          if (review.lawyer_view) {
-            doc.setFont('helvetica','bold'); doc.text('Thai Law Context:', 25, y); y += 5;
-            doc.setFont('helvetica','normal');
-            y = addText(review.lawyer_view, 25, 9);
-          }
-          if (review.recommended_change && review.recommended_change !== 'No change recommended') {
-            doc.setFont('helvetica','bold'); doc.text('Recommended Change:', 25, y); y += 5;
-            doc.setFont('helvetica','normal');
-            y = addText(review.recommended_change, 25, 9);
-          }
-          if (review.negotiation_tip && review.negotiation_tip !== 'Accept as standard.') {
-            doc.setFont('helvetica','bold'); doc.text('Negotiation Tip:', 25, y); y += 5;
-            doc.setFont('helvetica','normal');
-            y = addText(review.negotiation_tip, 25, 9);
-          }
+          doc.setFont('helvetica','bold'); doc.text('Recommendations:', 25, y); y += 5;
+          doc.setFont('helvetica','normal');
+          recs.forEach(line => { if (y > pageHeight - 15) { doc.addPage(); y = 20; } doc.text(`\u2022 ${line}`, 25, y); y += 5; });
         }
 
         y += 8;

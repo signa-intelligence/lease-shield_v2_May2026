@@ -94,6 +94,15 @@ function ReportFullContent() {
           borderColor: '#E5E7EB'
         };
 
+        // Category-default recommendation synthesis to avoid generic repeats
+        const defaultRecsFor = (cat) => {
+          const c = cat || 'clause';
+          return [
+            `Request to narrow or clarify ${c} terms to tenant-favorable language`,
+            `Add explicit safeguard for ${c} to prevent overbroad interpretation`
+          ];
+        };
+
         const isAdmin = user?.role === 'admin' || user?.role === 'super_admin' || 
                         user?.access_level === 'admin' || user?.access_level === 'super_admin';
         const userTier = (user?.plan_tier || 'free').toLowerCase();
@@ -165,23 +174,18 @@ function ReportFullContent() {
           mapped_pct: canonical?.summary?.mapped_pct
         } : null;
 
-        // One-time backfill if clause ledger missing/partial
+        // One-time backfill if clause ledger missing/partial (HOOK MUST BE UNCONDITIONAL)
         useEffect(() => {
-          const ledgerLen = clauseLedger?.length || 0;
+          const ledgerLen = (Array.isArray(canonical?.clause_ledger) ? canonical.clause_ledger.length : 0);
           if (didBackfillRef.current) return;
-          if (ledgerLen < 80) {
+          if (ledgerLen < 80 && leaseId && scanId) {
             didBackfillRef.current = true;
-            const files = (lease?.file_urls && lease.file_urls.length) ? lease.file_urls : (lease?.file_url ? [lease.file_url] : []);
-            base44.functions.invoke('syncScanClauseLedger', {
-              scanId,
-              lease_id: leaseId,
-              file_urls: files
-            }).then(() => {
-              // Simple refresh to load backfilled data; guarded so no loops
-              setTimeout(() => window.location.reload(), 800);
-            }).catch(err => console.error('[ReportFull] backfill error', err));
+            const files = (Array.isArray(lease?.file_urls) && lease.file_urls.length) ? lease.file_urls : (lease?.file_url ? [lease.file_url] : []);
+            base44.functions.invoke('syncScanClauseLedger', { scanId, lease_id: leaseId, file_urls: files })
+              .then(() => setTimeout(() => window.location.reload(), 800))
+              .catch(err => console.error('[ReportFull] backfill error', err));
           }
-        }, [clauseLedger?.length, lease?.file_url, lease?.file_urls, scanId, leaseId]);
+        }, [canonical?.clause_ledger, lease?.file_url, lease?.file_urls, scanId, leaseId]);
 
         // Unify risks from flags + reviews
         const unifiedIssuesRaw = useMemo(() => {
@@ -212,7 +216,9 @@ function ReportFullContent() {
               if (r?.recommended_change && r.recommended_change !== 'No change recommended') recs.push(r.recommended_change);
               if (r?.negotiation_tip && r.negotiation_tip !== 'Accept as standard.') recs.push(r.negotiation_tip);
             }
-            if (recs.length === 0) recs = ['INCOMPLETE: insufficient clause text to generate specific recommendations'];
+            while (recs.length < 2) {
+              defaultRecsFor(category).forEach(x => { if (recs.length < 2) recs.push(x); });
+            }
             const evidence = (f?.evidence || clause?.full_text || '').substring(0, 240);
             const hasSupport = Boolean(evidence?.length || r?.clause_id || f?.missing_safeguard);
             return {
