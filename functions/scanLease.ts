@@ -273,20 +273,6 @@ function computeSummary(issues) {
   return n > 0 ? `${n} issues found. Review recommendations before signing.` : 'No major issues detected.';
 }
 
-function captureBackendError(err) {
-  const name = err?.name || 'Error';
-  const message = String(err?.message || err);
-  const stackTop = String(err?.stack || '').split('\n').slice(0, 3).join('\n');
-  const upstreamStatus = err?.status || err?.response?.status || null;
-  let upstreamBodySnippet = null;
-  const body = err?.response?.data;
-  if (typeof body === 'string') upstreamBodySnippet = body.slice(0, 500);
-  else if (body && typeof body === 'object') {
-    try { upstreamBodySnippet = JSON.stringify(body).slice(0, 500); } catch { upstreamBodySnippet = String(body).slice(0, 500); }
-  }
-  return { name, message, stackTop, upstreamStatus, upstreamBodySnippet };
-}
-
 Deno.serve(async (req) => {
   const startedAt = Date.now();
   const debugLog = {
@@ -304,24 +290,17 @@ Deno.serve(async (req) => {
   try {
     // Parse body
     const body = await req.json().catch(() => ({}));
-    const requestId = body?.requestId || `req-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
     const scanId = body?.scanId || null;
     const leaseId = body?.leaseId || null;
     const rawFileUrls = body?.fileUrls || body?.file_url || body?.fileURL || [];
     const fileUrls = Array.isArray(rawFileUrls) ? rawFileUrls : [rawFileUrls].filter(Boolean);
 
-    if (!leaseId) return json(400, { ok: false, error_code: 'MISSING_LEASE_ID', step: 'INIT', retryable: false, requestId, scanId, leaseId, debugLog });
-    if (!fileUrls || fileUrls.length === 0) return json(400, { ok: false, error_code: 'NO_FILE_URLS', step: 'INIT', retryable: false, requestId, scanId, leaseId, debugLog });
+    if (!leaseId) return json(400, { ok: false, error_code: 'MISSING_LEASE_ID', retryable: false });
+    if (!fileUrls || fileUrls.length === 0) return json(400, { ok: false, error_code: 'NO_FILE_URLS', retryable: false });
 
     // Auth
     const tAuth = Date.now();
-    let base44, user;
-    try {
-      ({ base44, user } = await requireAuth(req));
-    } catch (err) {
-      debugLog.backendError = captureBackendError(err);
-      return json(401, { ok: false, error_code: 'UNAUTHORIZED', step: 'AUTH', retryable: false, requestId, scanId, leaseId, debugLog });
-    }
+    const { base44, user } = await requireAuth(req);
     time('AUTH', tAuth);
 
     // TEXT EXTRACTION (no OCR fallback)
@@ -345,7 +324,7 @@ Deno.serve(async (req) => {
     stage('FETCH_AND_EXTRACT_DONE', { total_len: combinedText.length });
 
     if (!combinedText || combinedText.length < 300) {
-      return json(200, { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', step: 'TEXT_EXTRACT', retryable: true, requestId, scanId, leaseId, debugLog });
+      return json(200, { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', retryable: true, debugLog });
     }
 
     // PHASE 1: Chunk + extract clauses (TEXT-ONLY)
@@ -377,8 +356,7 @@ Deno.serve(async (req) => {
         debugLog.extract.chunks_succeeded += 1;
       } catch (e) {
         debugLog.extract.chunks_failed += 1;
-        debugLog.backendError = captureBackendError(e);
-        return json(200, { ok: false, error_code: 'LLM_EXTRACT_FAILED', step: 'CLAUSE_EXTRACT', retryable: true, message: String(e?.message || e), requestId, scanId, leaseId, debugLog });
+        return json(200, { ok: false, error_code: 'LLM_EXTRACT_FAILED', retryable: true, message: String(e?.message || e), debugLog });
       }
     }
 
@@ -400,8 +378,7 @@ Deno.serve(async (req) => {
         const row = await llmAnalyzeClause(base44, clause);
         clause_ledger.push(row);
       } catch (e) {
-        debugLog.backendError = captureBackendError(e);
-        return json(200, { ok: false, error_code: 'LLM_ANALYZE_FAILED', step: 'CLAUSE_ANALYZE', retryable: true, message: String(e?.message || e), requestId, scanId, leaseId, debugLog });
+        return json(200, { ok: false, error_code: 'LLM_ANALYZE_FAILED', retryable: true, message: String(e?.message || e), debugLog });
       }
     }
 
@@ -439,60 +416,50 @@ Deno.serve(async (req) => {
 
     let targetScanId = scanId;
     let existing = null;
-    try {
-      if (targetScanId) {
-        const arr = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.filter({ id: targetScanId });
-        existing = arr?.[0] || null;
-      }
-    } catch (err) {
-      debugLog.backendError = captureBackendError(err);
-      return json(200, { ok: false, error_code: 'PERSIST_LOOKUP_FAILED', step: 'PERSIST', retryable: true, requestId, scanId: targetScanId, leaseId, debugLog });
+    if (targetScanId) {
+      const arr = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.filter({ id: targetScanId });
+      existing = arr?.[0] || null;
     }
 
     let persisted = null;
-    try {
-      if (existing) {
-        persisted = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.update(targetScanId, {
-          lease_id: leaseId,
-          status: 'completed',
-          risk_score,
+    if (existing) {
+      persisted = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.update(targetScanId, {
+        lease_id: leaseId,
+        status: 'completed',
+        risk_score,
+        flags,
+        summary,
+        scan_full: {
+          clauses_extracted: extracted,
+          clause_ledger,
+          issues_validated,
           flags,
           summary,
-          scan_full: {
-            clauses_extracted: extracted,
-            clause_ledger,
-            issues_validated,
-            flags,
-            summary,
-            debugLog,
-            pipeline: debugLog.pipeline,
-            version: 'text-only-v1'
-          },
-        });
-      } else {
-        const created = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.create({
-          lease_id: leaseId,
-          status: 'completed',
-          risk_score,
+          debugLog,
+          pipeline: debugLog.pipeline,
+          version: 'text-only-v1'
+        },
+      });
+    } else {
+      const created = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.create({
+        lease_id: leaseId,
+        status: 'completed',
+        risk_score,
+        flags,
+        summary,
+        scan_full: {
+          clauses_extracted: extracted,
+          clause_ledger,
+          issues_validated,
           flags,
           summary,
-          scan_full: {
-            clauses_extracted: extracted,
-            clause_ledger,
-            issues_validated,
-            flags,
-            summary,
-            debugLog,
-            pipeline: debugLog.pipeline,
-            version: 'text-only-v1'
-          },
-        });
-        targetScanId = created.id;
-        persisted = created;
-      }
-    } catch (err) {
-      debugLog.backendError = captureBackendError(err);
-      return json(200, { ok: false, error_code: 'PERSIST_FAILED', step: 'PERSIST', retryable: true, requestId, scanId: targetScanId, leaseId, debugLog });
+          debugLog,
+          pipeline: debugLog.pipeline,
+          version: 'text-only-v1'
+        },
+      });
+      targetScanId = created.id;
+      persisted = created;
     }
 
     time('PERSIST', tPersist);
@@ -501,56 +468,43 @@ Deno.serve(async (req) => {
     // POST-WRITE VERIFY
     stage('VERIFY_START');
     const tVerify = Date.now();
-    let savedArr, saved, sf, okCounts;
-    try {
-      savedArr = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.filter({ id: targetScanId });
-      saved = savedArr?.[0] || null;
-      sf = saved?.scan_full || {};
-      okCounts = Array.isArray(sf?.clauses_extracted) && Array.isArray(sf?.clause_ledger) && sf.clauses_extracted.length > 0 && sf.clauses_extracted.length === sf.clause_ledger.length;
-    } catch (err) {
-      debugLog.backendError = captureBackendError(err);
-      return json(200, { ok: false, error_code: 'PersistVerificationQueryFailed', step: 'VERIFY', retryable: true, requestId, scanId: targetScanId, leaseId, debugLog });
-    }
+    const savedArr = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.filter({ id: targetScanId });
+    const saved = savedArr?.[0] || null;
+    const sf = saved?.scan_full || {};
+    const okCounts = Array.isArray(sf?.clauses_extracted) && Array.isArray(sf?.clause_ledger) && sf.clauses_extracted.length > 0 && sf.clauses_extracted.length === sf.clause_ledger.length;
     time('VERIFY', tVerify);
     stage('VERIFY_DONE', { okCounts });
 
     if (!okCounts) {
-      return json(200, { ok: false, error_code: 'PersistVerificationFailed', step: 'VERIFY', retryable: false, requestId, scanId: targetScanId, leaseId, debugLog });
+      return json(200, { ok: false, error_code: 'PersistVerificationFailed', retryable: false, scanId: targetScanId, debugLog });
     }
 
     // Optionally mark lease scanned (kept for compatibility)
     try {
       await (await requireAuth(req)).base44.asServiceRole.entities.Lease.update(leaseId, { status: 'scanned' });
-    } catch (err) {
-      debugLog.backendError = captureBackendError(err);
-    }
+    } catch { /* non-blocking */ }
 
     return json(200, {
       ok: true,
+      success: true,
+      status: 'ok',
       scanId: targetScanId,
       leaseId,
-      result: {
-        clauses_extracted: extracted,
-        clause_ledger,
-        issues_validated,
-        summary,
-        flags
-      },
+      risk_score,
+      summary,
+      flags,
+      clauses_extracted: extracted,
+      clause_ledger,
+      issues_validated,
       debugLog,
     });
   } catch (e) {
-    const backendError = captureBackendError(e);
-    const requestId = `fatal-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
     return json(200, {
       ok: false,
       error_code: 'SCAN_FATAL',
-      step: 'FATAL',
       retryable: true,
       message: String(e?.message || e),
-      requestId,
-      scanId: null,
-      leaseId: null,
-      debugLog: { ...debugLog, backendError }
+      debugLog
     });
   }
 });
