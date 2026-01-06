@@ -485,12 +485,16 @@ Total clause count: ${clause_ledger.length}`;
     // Persist to LeaseScan entity
     try {
       if (scanId) {
+        const existingArr = await base44.asServiceRole.entities.LeaseScan.filter({ id: scanId });
+        const existing = existingArr?.[0] || {};
+        const mergedScanFull = {
+          ...(existing.scan_full || {}),
+          canonical_report: finalReport
+        };
         await base44.asServiceRole.entities.LeaseScan.update(scanId, {
           lease_id: leaseId,
           risk_score: riskScore,
-          scan_full: {
-            canonical_report: finalReport
-          },
+          scan_full: mergedScanFull,
           summary: `Extracted ${clause_ledger.length} clauses. ${riskCounts.high} high-risk, ${riskCounts.medium} medium-risk. ${missing_clauses.length} standard clauses missing.`,
           version: SCAN_VERSION
         });
