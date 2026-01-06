@@ -171,21 +171,28 @@ export default function Leases() {
       setUploading(false); // Set uploading to false after upload, before analysis starts
 
       // Call backend scan function (persists full ledger + canonical report)
-      const { data } = await base44.functions.invoke('scanLease', {
+      const resp = await base44.functions.invoke('scanLease', {
         leaseId: lease.id,
         fileUrls: [file_url]
       });
+      const out = resp?.data ?? resp;
 
-      if (!data?.ok) {
-        const msg = data?.error?.message || data?.error_code || 'Scan failed';
+      if (!out || typeof out !== 'object') {
+        throw new Error('EMPTY_BACKEND_RESPONSE');
+      }
+
+      if (out.ok === false) {
+        const msg = `${out.error_code || 'UNKNOWN_BACKEND_ERROR'} [${out.step || 'ANALYSIS'}]: ${out.message || 'Scan failed'}`;
+        console.error('scanLease error payload:', out);
+        setError(msg);
         throw new Error(msg);
       }
 
-      // Update lease status based on scan outcome
-      await base44.entities.Lease.update(lease.id, { status: data.success ? 'scanned' : 'uploaded' });
+      // Update lease status on success
+      await base44.entities.Lease.update(lease.id, { status: 'scanned' });
 
       // Load the persisted scan to show in UI
-      const refetched = await base44.entities.LeaseScan.filter({ id: data.scanId });
+      const refetched = await base44.entities.LeaseScan.filter({ id: out.scanId });
       const scan = refetched?.[0];
 
       setCurrentScan(scan);

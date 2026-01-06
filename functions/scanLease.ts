@@ -28,10 +28,12 @@ function json(status, body) {
       const { error_code, step, message, retryable, debugLog } = body;
       payload = {
         ok: false,
-        error_code: error_code || 'UNKNOWN_ERROR',
-        step: step || body?.stage || 'unspecified',
-        message: (typeof message === 'string' ? message : String(message || '')),
+        error_code: error_code || 'UNKNOWN_BACKEND_ERROR',
+        step: step || body?.stage || 'ANALYSIS',
+        message: (typeof message === 'string' ? message : String(message || 'Scan failed')),
         retryable: typeof retryable === 'boolean' ? retryable : true,
+        scanId: body?.scanId ?? null,
+        leaseId: body?.leaseId ?? null,
         debugLog: debugLog ?? null,
       };
     } else {
