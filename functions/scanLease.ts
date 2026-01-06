@@ -1890,6 +1890,9 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
     });
 
     if (verifyPersist.__failed || !verifyPersist.okFull) {
+      try {
+        await base44.asServiceRole.entities.LeaseScan.update(persistedScanId, { status: 'failed' });
+      } catch (_) {}
       return json(200, {
         ok: false,
         success: false,
