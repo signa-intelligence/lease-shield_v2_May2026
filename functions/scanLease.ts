@@ -273,6 +273,20 @@ function computeSummary(issues) {
   return n > 0 ? `${n} issues found. Review recommendations before signing.` : 'No major issues detected.';
 }
 
+function captureBackendError(err) {
+  const name = err?.name || 'Error';
+  const message = String(err?.message || err);
+  const stackTop = String(err?.stack || '').split('\n').slice(0, 3).join('\n');
+  const upstreamStatus = err?.status || err?.response?.status || null;
+  let upstreamBodySnippet = null;
+  const body = err?.response?.data;
+  if (typeof body === 'string') upstreamBodySnippet = body.slice(0, 500);
+  else if (body && typeof body === 'object') {
+    try { upstreamBodySnippet = JSON.stringify(body).slice(0, 500); } catch { upstreamBodySnippet = String(body).slice(0, 500); }
+  }
+  return { name, message, stackTop, upstreamStatus, upstreamBodySnippet };
+}
+
 Deno.serve(async (req) => {
   const startedAt = Date.now();
   const debugLog = {
