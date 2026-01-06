@@ -304,17 +304,24 @@ Deno.serve(async (req) => {
   try {
     // Parse body
     const body = await req.json().catch(() => ({}));
+    const requestId = body?.requestId || `req-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
     const scanId = body?.scanId || null;
     const leaseId = body?.leaseId || null;
     const rawFileUrls = body?.fileUrls || body?.file_url || body?.fileURL || [];
     const fileUrls = Array.isArray(rawFileUrls) ? rawFileUrls : [rawFileUrls].filter(Boolean);
 
-    if (!leaseId) return json(400, { ok: false, error_code: 'MISSING_LEASE_ID', retryable: false });
-    if (!fileUrls || fileUrls.length === 0) return json(400, { ok: false, error_code: 'NO_FILE_URLS', retryable: false });
+    if (!leaseId) return json(400, { ok: false, error_code: 'MISSING_LEASE_ID', step: 'INIT', retryable: false, requestId, scanId, leaseId, debugLog });
+    if (!fileUrls || fileUrls.length === 0) return json(400, { ok: false, error_code: 'NO_FILE_URLS', step: 'INIT', retryable: false, requestId, scanId, leaseId, debugLog });
 
     // Auth
     const tAuth = Date.now();
-    const { base44, user } = await requireAuth(req);
+    let base44, user;
+    try {
+      ({ base44, user } = await requireAuth(req));
+    } catch (err) {
+      debugLog.backendError = captureBackendError(err);
+      return json(401, { ok: false, error_code: 'UNAUTHORIZED', step: 'AUTH', retryable: false, requestId, scanId, leaseId, debugLog });
+    }
     time('AUTH', tAuth);
 
     // TEXT EXTRACTION (no OCR fallback)
@@ -338,7 +345,7 @@ Deno.serve(async (req) => {
     stage('FETCH_AND_EXTRACT_DONE', { total_len: combinedText.length });
 
     if (!combinedText || combinedText.length < 300) {
-      return json(200, { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', retryable: true, debugLog });
+      return json(200, { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', step: 'TEXT_EXTRACT', retryable: true, requestId, scanId, leaseId, debugLog });
     }
 
     // PHASE 1: Chunk + extract clauses (TEXT-ONLY)
@@ -370,7 +377,8 @@ Deno.serve(async (req) => {
         debugLog.extract.chunks_succeeded += 1;
       } catch (e) {
         debugLog.extract.chunks_failed += 1;
-        return json(200, { ok: false, error_code: 'LLM_EXTRACT_FAILED', retryable: true, message: String(e?.message || e), debugLog });
+        debugLog.backendError = captureBackendError(e);
+        return json(200, { ok: false, error_code: 'LLM_EXTRACT_FAILED', step: 'CLAUSE_EXTRACT', retryable: true, message: String(e?.message || e), requestId, scanId, leaseId, debugLog });
       }
     }
 
