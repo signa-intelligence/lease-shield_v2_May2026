@@ -1037,8 +1037,16 @@ function json(status, body) {
   });
 }
 
-function err(code, message, status = 400, requestId = "") {
-  return json(status, { success: false, error: code, message, requestId });
+function err(code, message, status = 400, requestId = "", details = null) {
+  return json(status, { success: false, error: code, message, requestId, details });
+}
+
+function safeError(e) {
+  const msg = String(e?.message || e || "Unknown error");
+  const stack = String(e?.stack || "");
+  let raw = null;
+  try { raw = JSON.stringify(e, Object.getOwnPropertyNames(e)); } catch(_) { raw = null; }
+  return { msg, stack: stack.slice(0, 1200), raw: raw ? String(raw).slice(0, 1200) : null };
 }
 
 function validateFileUrl(url) {
@@ -1244,9 +1252,21 @@ Deno.serve(async (req) => {
 
   const requestId = body.requestId || `req-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   const startTime = Date.now();
+  let stage = "INIT";
+  const diagnostics = { persist_warnings: [] };
+  let clauseCountSoFar = 0;
+  let flagsCountSoFar = 0;
 
   try {
-    const { user, base44 } = await requireAuth(req);
+    stage = "AUTH";
+    let user, base44;
+    try { ({ user, base44 } = await requireAuth(req)); }
+    catch (e) {
+      const se = safeError(e);
+      const code = /unauth/i.test(se.msg) ? "UNAUTHORIZED" : "SCAN_FAILED";
+      const status = code === "UNAUTHORIZED" ? 401 : 500;
+      return err(code, se.msg, status, requestId, { stage, ...se, elapsedMs: Date.now() - startTime });
+    }
 
     const scanId = body.scanId || crypto.randomUUID();
     const leaseId = body.leaseId;
@@ -1402,16 +1422,24 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
     // 4) Persist scan + mark lease scanned
     let persistedScanId = scanId;
 
-    const existing = await base44.asServiceRole.entities.LeaseScan.filter({ id: scanId });
-    if (!existing || existing.length === 0) {
-      const created = await base44.asServiceRole.entities.LeaseScan.create({
-        lease_id: leaseId,
-        status: "processing",
-      });
-      persistedScanId = created.id;
+    stage = "PERSIST_SCAN_CREATE";
+    try {
+      const existing = await base44.asServiceRole.entities.LeaseScan.filter({ id: scanId });
+      if (!existing || existing.length === 0) {
+        const created = await base44.asServiceRole.entities.LeaseScan.create({
+          lease_id: leaseId,
+          status: "processing",
+        });
+        persistedScanId = created.id;
+      }
+    } catch(e) {
+      const se = safeError(e);
+      diagnostics.persist_warnings.push({ stage, msg: se.msg });
     }
 
-    await base44.asServiceRole.entities.LeaseScan.update(persistedScanId, {
+    stage = "PERSIST_SCAN_UPDATE";
+    try {
+      await base44.asServiceRole.entities.LeaseScan.update(persistedScanId, {
       lease_id: leaseId,
       status: "completed",
       risk_score,
@@ -1441,14 +1469,20 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       },
     });
 
-    await base44.asServiceRole.entities.Lease.update(leaseId, { status: "scanned" });
+    stage = "PERSIST_LEASE_UPDATE";
+    try {
+      await base44.asServiceRole.entities.Lease.update(leaseId, { status: "scanned" });
+    } catch(e) {
+      const se = safeError(e);
+      diagnostics.persist_warnings.push({ stage, msg: se.msg });
+    }
 
     return json(200, {
       success: true,
       scanId: persistedScanId,
       leaseId,
       result: pdfPayload,
-      diagnostic: { requestId, elapsedMs: Date.now() - startTime, ...(diag||{}) },
+      diagnostic: { requestId, elapsedMs: Date.now() - startTime, ...(diag||{}), ...diagnostics },
     });
   } catch (e) {
     const msg = String((e && e.message) || e);
