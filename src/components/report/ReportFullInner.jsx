@@ -18,13 +18,14 @@ import {
   Wrench
 } from "lucide-react";
 import ErrorPanel from "./ErrorPanel";
+import { severityPalette, highestSeverity } from "../shared/severityPalette";
 
 const SEVERITY_CONFIG = {
-  none: { color: "bg-emerald-100 text-emerald-800 border-emerald-200", label: "NO RISK", icon: CheckCircle2 },
-  low: { color: "bg-blue-100 text-blue-800 border-blue-200", label: "Low", icon: Info },
-  medium: { color: "bg-yellow-100 text-yellow-800 border-yellow-200", label: "Medium", icon: AlertTriangle },
-  high: { color: "bg-orange-100 text-orange-800 border-orange-200", label: "High", icon: AlertTriangle },
-  critical: { color: "bg-red-100 text-red-800 border-red-200", label: "Critical", icon: AlertCircle }
+  none: { label: "NO RISK", icon: CheckCircle2, palette: severityPalette.none },
+  low: { label: "Low", icon: Info, palette: severityPalette.low },
+  medium: { label: "Medium", icon: AlertTriangle, palette: severityPalette.medium },
+  high: { label: "High", icon: AlertTriangle, palette: severityPalette.high },
+  critical: { label: "Critical", icon: AlertCircle, palette: severityPalette.critical }
 };
 
 function defaultRecsFor(category) {
@@ -591,7 +592,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
   const strings = t[language] || t.en;
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: "100px" }}>
+    <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: "100px", fontFamily: 'Noto Sans Thai, Inter, system-ui' }}>
       <div className="max-w-4xl mx-auto">
         {showDebug && (
           <Card className="mb-4 border-2 border-emerald-500" style={{ backgroundColor: "#D1FAE5" }}>
@@ -661,7 +662,10 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
         </div>
 
         <Card className="border-none shadow-xl mb-6 overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ backgroundColor: riskLevel.color }}>
+          <CardHeader style={{ backgroundColor: (() => {
+            const sev = highestSeverity((reportData.flags||[]).map(f=>f.severity));
+            return SEVERITY_CONFIG[sev]?.palette?.border || '#0C3B2E';
+          })() }}>
             <div className="text-white">
               <CardTitle className="text-2xl font-bold mb-3">Full Lease Analysis Report</CardTitle>
               <div className="flex flex-wrap items-center gap-3">
@@ -730,10 +734,14 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                   >
                     <div className="flex items-start justify-between mb-3 gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <Badge className={`${severityConfig.color} border flex items-center gap-1`}>
-                          <Icon className="w-3 h-3" />
-                          {severityConfig.label}
-                        </Badge>
+                          <Badge className={`border flex items-center gap-1`} style={{
+                            backgroundColor: severityConfig.palette.badgeBg,
+                            color: severityConfig.palette.badgeText,
+                            borderColor: severityConfig.palette.border
+                          }}>
+                            <Icon className="w-3 h-3" />
+                            {severityConfig.label}
+                          </Badge>
                         {flag.category && <Badge variant="outline">{flag.category}</Badge>}
                         {flag.clause_id && <Badge variant="outline">{flag.clause_id}</Badge>}
                       </div>
@@ -818,10 +826,14 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                   style={{ backgroundColor: isDarkMode ? "#353A3D" : "#FFFFFF", borderColor: colors.borderColor }}
                 >
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <Badge className={`${sev.color} border flex items-center gap-1`}>
-                      <Icon className="w-3 h-3" />
-                      {isRisk ? (String(review.risk_level || "").toUpperCase() + " RISK") : "NO RISK"}
-                    </Badge>
+                      <Badge className={`border flex items-center gap-1`} style={{
+                        backgroundColor: SEVERITY_CONFIG[isRisk ? review.risk_level : 'none'].palette.badgeBg,
+                        color: SEVERITY_CONFIG[isRisk ? review.risk_level : 'none'].palette.badgeText,
+                        borderColor: SEVERITY_CONFIG[isRisk ? review.risk_level : 'none'].palette.border
+                      }}>
+                        <Icon className="w-3 h-3" />
+                        {isRisk ? (String(review.risk_level || "").toUpperCase() + " RISK") : "NO RISK"}
+                      </Badge>
                     {review?.mapped_catalog_ids?.[0] && <Badge variant="outline">{review.mapped_catalog_ids[0]}</Badge>}
                     {c?.clause_id && <Badge variant="outline">{c.clause_id}</Badge>}
                   </div>
@@ -830,7 +842,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                     {c?.heading || c?.clause_id || `Clause ${idx + 1}`}
                   </h4>
 
-                  <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? "#1F2937" : "#F3F4F6" }}>
+                  <div className="mb-3 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? "#1F2937" : "#F3F4F6", fontFamily: 'Noto Sans Thai, Inter, system-ui' }}>
                     <p className="text-xs font-bold text-gray-600 mb-1">Snippet:</p>
                     <p className="text-sm" style={{ color: colors.textPrimary }}>
                       {snippet}

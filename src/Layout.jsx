@@ -198,6 +198,18 @@ export default function Layout({ children, currentPageName }) {
       meta.content = content;
     });
 
+    // Load Thai font (Noto Sans Thai)
+    try {
+      const existingFont = document.querySelector('link[data-font="noto-sans-thai"]');
+      if (!existingFont) {
+        const fontLink = document.createElement('link');
+        fontLink.rel = 'stylesheet';
+        fontLink.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&display=swap';
+        fontLink.setAttribute('data-font','noto-sans-thai');
+        document.head.appendChild(fontLink);
+      }
+    } catch (e) { console.warn('Font load failed', e); }
+
     // Favicon setup with cache busting
     const faviconUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png';
     const cacheBust = `?v=${Date.now()}`;

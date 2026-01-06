@@ -1448,7 +1448,7 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       scanId: persistedScanId,
       leaseId,
       result: pdfPayload,
-      diagnostic: { requestId, elapsedMs: Date.now() - startTime },
+      diagnostic: { requestId, elapsedMs: Date.now() - startTime, ...(diag||{}) },
     });
   } catch (e) {
     const msg = String((e && e.message) || e);
