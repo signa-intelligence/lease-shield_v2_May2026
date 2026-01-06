@@ -345,8 +345,8 @@ async function execute(req) {
     const rawFileUrls = body?.fileUrls || body?.file_url || body?.fileURL || [];
     const fileUrls = Array.isArray(rawFileUrls) ? rawFileUrls : [rawFileUrls].filter(Boolean);
 
-    if (!leaseId) return { ok: false, error_code: 'MISSING_LEASE_ID', step: 'input', message: 'leaseId is required', retryable: false, scanId, leaseId, debugLog };
-    if (!fileUrls || fileUrls.length === 0) return { ok: false, error_code: 'NO_FILE_URLS', step: 'input', message: 'fileUrls are required', retryable: false, scanId, leaseId, debugLog };
+    if (!leaseId) { const out = { ok: false, error_code: 'MISSING_LEASE_ID', step: 'input', message: 'leaseId is required', retryable: false, scanId, leaseId, debugLog }; return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } }); }
+    if (!fileUrls || fileUrls.length === 0) { const out = { ok: false, error_code: 'NO_FILE_URLS', step: 'input', message: 'fileUrls are required', retryable: false, scanId, leaseId, debugLog }; return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } }); }
 
     // Auth
     const tAuth = Date.now();
@@ -377,7 +377,8 @@ async function execute(req) {
     stage('FETCH_AND_EXTRACT_DONE', { total_len: combinedText.length });
 
     if (!combinedText || combinedText.length < 300) {
-      return { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', step: 'extract', message: 'Extracted text too short', retryable: true, scanId, leaseId, debugLog };
+      const out = { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', step: 'extract', message: 'Extracted text too short', retryable: true, scanId, leaseId, debugLog };
+      return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
     }
 
     // PHASE 1: Chunk + extract clauses (TEXT-ONLY)
@@ -413,7 +414,7 @@ async function execute(req) {
               } catch (e) {
                 debugLog.stages.push({ name: 'LLM_CALL', phase: 'extract', when: 'error', chunkIndex: i, error: String(e?.message || e) });
                 debugLog.extract.chunks_failed += 1;
-                return { ok: false, error_code: 'LLM_EXTRACT_FAILED', step: 'extract', message: String(e?.message || e), retryable: true, scanId, leaseId, debugLog };
+                        { const out = { ok: false, error_code: 'LLM_EXTRACT_FAILED', step: 'extract', message: String(e?.message || e), retryable: true, scanId, leaseId, debugLog }; return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } }); }
               }
     }
 
@@ -422,7 +423,8 @@ async function execute(req) {
     stage('CLAUSE_EXTRACT_DONE', { clauses_extracted: extracted.length });
 
     if (!extracted.length) {
-      return { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', step: 'extract', message: 'No clauses extracted', retryable: true, scanId, leaseId, debugLog };
+      const out = { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', step: 'extract', message: 'No clauses extracted', retryable: true, scanId, leaseId, debugLog };
+      return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
     }
 
     // PHASE 2: Analyze each clause (TEXT-ONLY)
@@ -446,7 +448,8 @@ async function execute(req) {
     stage('CLAUSE_ANALYZE_DONE', { ledger_rows: clause_ledger.length });
 
     if (clause_ledger.length !== extracted.length) {
-      return { ok: false, error_code: 'CoverageFailure_MismatchCounts', step: 'analyze', message: 'Clause ledger count mismatch', retryable: true, scanId, leaseId, debugLog };
+      const out = { ok: false, error_code: 'CoverageFailure_MismatchCounts', step: 'analyze', message: 'Clause ledger count mismatch', retryable: true, scanId, leaseId, debugLog };
+      return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
     }
 
     // Derive issues and flags
@@ -538,7 +541,8 @@ async function execute(req) {
     stage('VERIFY_DONE', { okCounts });
 
     if (!okCounts) {
-      return { ok: false, error_code: 'PersistVerificationFailed', step: 'verify', message: 'Post-write verification failed', retryable: false, scanId: targetScanId, leaseId, debugLog };
+      const out = { ok: false, error_code: 'PersistVerificationFailed', step: 'verify', message: 'Post-write verification failed', retryable: false, scanId: targetScanId, leaseId, debugLog };
+      return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
     }
 
     // Optionally mark lease scanned (kept for compatibility)
@@ -546,7 +550,7 @@ async function execute(req) {
       await (await requireAuth(req)).base44.asServiceRole.entities.Lease.update(leaseId, { status: 'scanned' });
     } catch { /* non-blocking */ }
 
-    return {
+    { const out = {
       ok: true,
       scanId: targetScanId,
       leaseId,
@@ -559,11 +563,11 @@ async function execute(req) {
         issues_validated,
       },
       debugLog,
-    };
+    }; return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } }); }
   } catch (e) {
     const stack = String(e?.stack || '').split('\n').slice(0,12).join('\n');
     debugLog.stages.push({ name: 'CRASH', when: 'catch' });
-    return {
+    const out = {
       ok: false,
       error_code: e?.code || 'UNKNOWN_BACKEND_ERROR',
       step: e?.step || 'ANALYSIS',
@@ -573,6 +577,7 @@ async function execute(req) {
       leaseId: knownLeaseId || null,
       debugLog: { ...debugLog, crash: { name: e?.name || 'Error', message: e?.message || String(e), stack } }
     };
+    return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
   }
 }
 
@@ -581,7 +586,7 @@ export default async function handler(req) {
     return await execute(req);
   } catch (err) {
     const stack = String(err?.stack || '').split('\n').slice(0,12).join('\n');
-    return {
+    const out = {
       ok: false,
       error_code: err?.code || 'SCANLEASE_CRASH',
       step: 'ANALYSIS',
@@ -589,30 +594,23 @@ export default async function handler(req) {
       retryable: true,
       debugLog: { stages: [{ name: 'CRASH_IN_EXPORT', when: 'catch' }], crash: { name: err?.name, message: err?.message, stack } }
     };
+    return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
   }
 }
 
 Deno.serve(async (req) => {
   try {
-    const out = await handler(req);
-    return Response.json(out && typeof out === 'object' ? out : {
-      ok: false,
-      error_code: 'INVALID_HANDLER_OUTPUT',
-      step: 'ANALYSIS',
-      message: 'Handler returned non-object',
-      retryable: true,
-      debugLog: { stages: [{ name: 'RESPONSE_NORMALIZE', when: 'invalid' }] }
-    }, { status: 200 });
+    return await handler(req);
   } catch (err) {
     const stack = String(err?.stack || '').split('\n').slice(0,12).join('\n');
-    const debugLog = { stages: [{ name: 'CRASH_BEFORE_RETURN', when: 'catch' }], crash: { name: err?.name, message: err?.message, stack } };
-    return Response.json({
+    const debugOut = {
       ok: false,
       error_code: err?.code || 'SCANLEASE_CRASH',
       step: 'ANALYSIS',
       message: err?.message || 'scanLease crashed',
       retryable: true,
-      debugLog
-    }, { status: 200 });
+      debugLog: { stages: [{ name: 'CRASH_BEFORE_RETURN', when: 'catch' }], crash: { name: err?.name, message: err?.message, stack } }
+    };
+    return new Response(JSON.stringify(debugOut), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
   }
 });
