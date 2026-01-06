@@ -540,12 +540,14 @@ Deno.serve(async (req) => {
       debugLog,
     };
   } catch (e) {
-    return json(200, {
+    const stack = String(e?.stack || '').split('\n').slice(0,3);
+    return {
       ok: false,
-      error_code: 'SCAN_FATAL',
+      error_code: e?.code || 'UNKNOWN_BACKEND_ERROR',
+      step: e?.step || 'ANALYSIS',
+      message: e?.message || 'Scan failed',
       retryable: true,
-      message: String(e?.message || e),
-      debugLog
-    });
+      debugLog: { ...debugLog, backendError: { name: e?.name || 'Error', message: e?.message || String(e), stackTop: stack } }
+    };
   }
 });
