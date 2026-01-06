@@ -111,11 +111,14 @@ async function extractTextFromUrl(url) {
     : 'binary_unknown';
 
   if (mode === 'pdf_text') {
+    const { default: pdfParse } = await import('npm:pdf-parse@1.1.1');
+    const { Buffer } = await import('node:buffer');
     const buf = Buffer.from(u8);
     const parsed = await pdfParse(buf);
     return { text: (parsed?.text || '').trim(), mime, extraction_mode: 'pdf_text' };
   }
   if (mode === 'docx_text') {
+    const { default: mammoth } = await import('npm:mammoth@1.6.0');
     const result = await mammoth.extractRawText({ arrayBuffer });
     return { text: (result?.value || '').trim(), mime, extraction_mode: 'docx_text' };
   }
@@ -314,7 +317,7 @@ function computeSummary(issues) {
   return n > 0 ? `${n} issues found. Review recommendations before signing.` : 'No major issues detected.';
 }
 
-export default async function handler(req) {
+async function execute(req) {
   const startedAt = Date.now();
   const debugLog = {
     startedAt: new Date(startedAt).toISOString(),
@@ -322,7 +325,8 @@ export default async function handler(req) {
     extraction_mode: 'text_only',
     extract: { chunks_total: 0, chunks_succeeded: 0, chunks_failed: 0, retries_used: 0, elapsedMs: 0 },
     timings: {},
-    pipeline: []
+    pipeline: [],
+    stages: []
   };
 
   const time = (label, t0) => { debugLog.timings[label] = Date.now() - t0; };
@@ -356,12 +360,15 @@ export default async function handler(req) {
     let combinedText = '';
     for (const url of fileUrls) {
       try {
+        debugLog.stages.push({ name: 'DOWNLOAD_FILE', when: 'start', url });
         const info = await extractTextFromUrl(url);
         debugLog.mime.push({ url, detected: info.mime, extraction_mode: info.extraction_mode });
+        debugLog.stages.push({ name: 'EXTRACT_TEXT', when: 'end', url, mode: info.extraction_mode, len: info.text ? info.text.length : 0 });
         if (info.text) {
           combinedText += (combinedText ? '\n\n--- FILE BREAK ---\n\n' : '') + info.text;
         }
       } catch (e) {
+        debugLog.stages.push({ name: 'DOWNLOAD_FILE', when: 'error', url, error: String(e?.message || e) });
         debugLog.mime.push({ url, detected: 'error', extraction_mode: 'error', err: String(e?.message || e) });
       }
     }
@@ -379,6 +386,7 @@ export default async function handler(req) {
 
     const chunks = chunkText(combinedText, MAX_CHARS_PER_CHUNK);
     debugLog.extract.chunks_total = chunks.length;
+    debugLog.stages.push({ name: 'CHUNK', when: 'done', count: chunks.length });
 
     const extracted = [];
     const seen = new Set();
@@ -386,24 +394,27 @@ export default async function handler(req) {
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       try {
-        const part = await llmExtractClauses(base44, chunk);
-        for (const c of part) {
-          const sig = normalizeClauseSignature(c);
-          if (!sig || seen.has(sig)) continue;
-          seen.add(sig);
-          extracted.push({
-            clause_id: c.clause_id,
-            clause_number: extracted.length + 1, // deterministic re-index across all chunks
-            title: c.title || null,
-            text: c.text || '',
-            page_number: typeof c.page_number === 'number' ? c.page_number : null,
-          });
-        }
-        debugLog.extract.chunks_succeeded += 1;
-      } catch (e) {
-        debugLog.extract.chunks_failed += 1;
-        return { ok: false, error_code: 'LLM_EXTRACT_FAILED', step: 'extract', message: String(e?.message || e), retryable: true, scanId, leaseId, debugLog };
-      }
+                debugLog.stages.push({ name: 'LLM_CALL', phase: 'extract', when: 'start', chunkIndex: i });
+                const part = await llmExtractClauses(base44, chunk);
+                debugLog.stages.push({ name: 'LLM_CALL', phase: 'extract', when: 'end', chunkIndex: i, clauses: Array.isArray(part) ? part.length : 0 });
+                for (const c of part) {
+                  const sig = normalizeClauseSignature(c);
+                  if (!sig || seen.has(sig)) continue;
+                  seen.add(sig);
+                  extracted.push({
+                    clause_id: c.clause_id,
+                    clause_number: extracted.length + 1, // deterministic re-index across all chunks
+                    title: c.title || null,
+                    text: c.text || '',
+                    page_number: typeof c.page_number === 'number' ? c.page_number : null,
+                  });
+                }
+                debugLog.extract.chunks_succeeded += 1;
+              } catch (e) {
+                debugLog.stages.push({ name: 'LLM_CALL', phase: 'extract', when: 'error', chunkIndex: i, error: String(e?.message || e) });
+                debugLog.extract.chunks_failed += 1;
+                return { ok: false, error_code: 'LLM_EXTRACT_FAILED', step: 'extract', message: String(e?.message || e), retryable: true, scanId, leaseId, debugLog };
+              }
     }
 
     debugLog.extract.elapsedMs = Date.now() - tC1;
@@ -421,9 +432,12 @@ export default async function handler(req) {
     const clause_ledger = [];
     for (const clause of extracted) {
       try {
+        debugLog.stages.push({ name: 'LLM_CALL', phase: 'analyze', when: 'start', clause_id: clause.clause_id });
         const row = await llmAnalyzeClause(base44, clause);
+        debugLog.stages.push({ name: 'LLM_CALL', phase: 'analyze', when: 'end', clause_id: clause.clause_id, risk: row?.risk_level });
         clause_ledger.push(row);
       } catch (e) {
+        debugLog.stages.push({ name: 'LLM_CALL', phase: 'analyze', when: 'error', clause_id: clause.clause_id, error: String(e?.message || e) });
         return { ok: false, error_code: 'LLM_ANALYZE_FAILED', step: 'analyze', message: String(e?.message || e), retryable: true, scanId, leaseId, debugLog };
       }
     }
@@ -458,6 +472,7 @@ export default async function handler(req) {
 
     // WRITE ONCE (end) — update existing scan or create new with full scan_full
     stage('PERSIST_START');
+    debugLog.stages.push({ name: 'PERSIST', when: 'start' });
     const tPersist = Date.now();
 
     let targetScanId = scanId;
@@ -510,6 +525,7 @@ export default async function handler(req) {
 
     time('PERSIST', tPersist);
     stage('PERSIST_DONE', { scanId: targetScanId });
+    debugLog.stages.push({ name: 'PERSIST', when: 'end', scanId: targetScanId });
 
     // POST-WRITE VERIFY
     stage('VERIFY_START');
@@ -545,7 +561,8 @@ export default async function handler(req) {
       debugLog,
     };
   } catch (e) {
-    const stack = String(e?.stack || '').split('\n').slice(0,3);
+    const stack = String(e?.stack || '').split('\n').slice(0,12).join('\n');
+    debugLog.stages.push({ name: 'CRASH', when: 'catch' });
     return {
       ok: false,
       error_code: e?.code || 'UNKNOWN_BACKEND_ERROR',
@@ -554,7 +571,32 @@ export default async function handler(req) {
       retryable: true,
       scanId: knownScanId || null,
       leaseId: knownLeaseId || null,
-      debugLog: { ...debugLog, backendError: { name: e?.name || 'Error', message: e?.message || String(e), stackTop: stack } }
+      debugLog: { ...debugLog, crash: { name: e?.name || 'Error', message: e?.message || String(e), stack } }
     };
+  }
+}
+
+Deno.serve(async (req) => {
+  try {
+    const out = await execute(req);
+    return Response.json(out && typeof out === 'object' ? out : {
+      ok: false,
+      error_code: 'INVALID_HANDLER_OUTPUT',
+      step: 'ANALYSIS',
+      message: 'Handler returned non-object',
+      retryable: true,
+      debugLog: { stages: [{ name: 'RESPONSE_NORMALIZE', when: 'invalid' }] }
+    }, { status: 200 });
+  } catch (err) {
+    const stack = String(err?.stack || '').split('\n').slice(0,12).join('\n');
+    const debugLog = { stages: [{ name: 'CRASH_BEFORE_RETURN', when: 'catch' }], crash: { name: err?.name, message: err?.message, stack } };
+    return Response.json({
+      ok: false,
+      error_code: err?.code || 'SCANLEASE_CRASH',
+      step: 'ANALYSIS',
+      message: err?.message || 'scanLease crashed',
+      retryable: true,
+      debugLog
+    }, { status: 200 });
   }
 });
