@@ -157,21 +157,42 @@ ALSO EXTRACT: property_address, start_date, end_date, rent_amount, deposit_amoun
 
     const risk_score = Math.min(100, flags.length * 15);
 
-    // 3) Build payload with FULL coverage (so UI can render clause-by-clause)
-    const clause_review = clauses_extracted.map((c) => {
-      const hit = flags.find((f) => f.clause_id === c.clause_id);
-      if (hit) {
-        return {
-          clause_id: c.clause_id,
-          risk_level: hit.severity || "medium",
-          risk_summary: hit.description || hit.title || "Review required",
-          recommended_change: (hit.recommendation || "").split("\n")[0] || undefined,
-          negotiation_tip: undefined,
-          category: hit.category || "clause",
-        };
-      }
-      return { clause_id: c.clause_id, risk_level: "none", tenant_view: "Accept as standard." };
-    });
+    // 3) Build payload with FULL coverage (risk-aware)
+const flagsByClause = new Map();
+flags.forEach(f => {
+  if (!f.clause_id) return;
+  const list = flagsByClause.get(f.clause_id) || [];
+  list.push(f);
+  flagsByClause.set(f.clause_id, list);
+});
+
+const clause_review = clauses_extracted.map((c) => {
+  const clauseFlags = flagsByClause.get(c.clause_id) || [];
+
+  if (clauseFlags.length === 0) {
+    return {
+      clause_id: c.clause_id,
+      risk_level: "none",
+      risk_summary: "Accept as standard.",
+    };
+  }
+
+  // Highest severity wins
+  const severityRank = { critical: 4, high: 3, medium: 2, low: 1 };
+  const primary = clauseFlags.sort(
+    (a, b) => (severityRank[b.severity] || 0) - (severityRank[a.severity] || 0)
+  )[0];
+
+  return {
+    clause_id: c.clause_id,
+    risk_level: primary.severity || "medium",
+    risk_summary: primary.description || primary.title || "Review required",
+    recommended_change: primary.recommendation
+      ? String(primary.recommendation).split(/\n/)[0]
+      : undefined,
+    category: primary.category,
+  };
+});
 
     const pdfPayload = {
       lease_address: keyTerms.property_address || "Lease Agreement",
