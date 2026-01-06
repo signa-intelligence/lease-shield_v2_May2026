@@ -170,15 +170,36 @@ export default function Leases() {
       setAnalyzing(true);
       setUploading(false); // Set uploading to false after upload, before analysis starts
 
-      // Call backend scan function (persists full ledger + canonical report)
-      const { data } = await base44.functions.invoke('scanLease', {
-        leaseId: lease.id,
-        fileUrls: [file_url]
-      });
+      // Call backend scan function with retries (analysis-only retry policy)
+      const invokeOnce = () => base44.functions.invoke('scanLease', { leaseId: lease.id, fileUrls: [file_url] });
+      const delays = [500, 1500, 3000];
+      let data;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+          const resp = await invokeOnce();
+          data = resp?.data;
+          // If backend returned JSON with ok flag
+          if (typeof data === 'object' && data && ('ok' in data)) {
+            if (data.ok) break; // success
+            // backend error: do not treat as network error
+            if (!delays[attempt]) break; // no more retries
+          } else {
+            // missing ok → treat as transient
+            if (!delays[attempt]) break;
+          }
+        } catch (err) {
+          // Axios-like: err.response?.status
+          const st = err?.response?.status;
+          const transient = !st || st === 502 || st === 503 || st === 504;
+          if (!transient || !delays[attempt]) throw err;
+        }
+        await new Promise(r => setTimeout(r, delays[attempt]));
+      }
 
       if (!data?.ok) {
-        const msg = data?.error?.message || data?.error_code || 'Scan failed';
-        throw new Error(msg);
+        const backMsg = data?.message || data?.error_code || 'Scan failed';
+        const details = data?.requestId ? ` (requestId: ${data.requestId})` : '';
+        throw new Error(`${backMsg}${details}`);
       }
 
       // Update lease status based on scan outcome
