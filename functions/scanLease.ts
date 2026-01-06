@@ -406,7 +406,7 @@ Deno.serve(async (req) => {
     stage('CLAUSE_EXTRACT_DONE', { clauses_extracted: extracted.length });
 
     if (!extracted.length) {
-      return json(200, { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', retryable: true, debugLog });
+      return { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', step: 'extract', message: 'No clauses extracted', retryable: true, scanId, leaseId, debugLog };
     }
 
     // PHASE 2: Analyze each clause (TEXT-ONLY)
