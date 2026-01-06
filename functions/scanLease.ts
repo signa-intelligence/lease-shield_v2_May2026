@@ -552,6 +552,8 @@ Deno.serve(async (req) => {
       step: e?.step || 'ANALYSIS',
       message: e?.message || 'Scan failed',
       retryable: true,
+      scanId: knownScanId || null,
+      leaseId: knownLeaseId || null,
       debugLog: { ...debugLog, backendError: { name: e?.name || 'Error', message: e?.message || String(e), stackTop: stack } }
     };
   }
