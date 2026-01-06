@@ -576,6 +576,22 @@ async function execute(req) {
   }
 }
 
+export default async function handler(req) {
+  try {
+    return await execute(req);
+  } catch (err) {
+    const stack = String(err?.stack || '').split('\n').slice(0,12).join('\n');
+    return {
+      ok: false,
+      error_code: err?.code || 'SCANLEASE_CRASH',
+      step: 'ANALYSIS',
+      message: err?.message || 'scanLease crashed',
+      retryable: true,
+      debugLog: { stages: [{ name: 'CRASH_IN_EXPORT', when: 'catch' }], crash: { name: err?.name, message: err?.message, stack } }
+    };
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const out = await execute(req);
