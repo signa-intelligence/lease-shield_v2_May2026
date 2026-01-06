@@ -314,7 +314,7 @@ function computeSummary(issues) {
   return n > 0 ? `${n} issues found. Review recommendations before signing.` : 'No major issues detected.';
 }
 
-Deno.serve(async (req) => {
+export default async function handler(req) {
   const startedAt = Date.now();
   const debugLog = {
     startedAt: new Date(startedAt).toISOString(),
