@@ -576,7 +576,7 @@ async function execute(req) {
       retryable: true,
       scanId: knownScanId || null,
       leaseId: knownLeaseId || null,
-      debugLog: { ...debugLog, crash: { name: e?.name || 'Error', message: e?.message || String(e), stack } }
+      debugLog: { ...debugLog, crash: { name: e?.name || 'Error', message: e?.message || String(e), stackTop: stack, stack } }
     };
     return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
   }
@@ -593,7 +593,7 @@ export default async function handler(req) {
       step: 'ANALYSIS',
       message: err?.message || 'scanLease crashed',
       retryable: true,
-      debugLog: { stages: [{ name: 'CRASH_IN_EXPORT', when: 'catch' }], crash: { name: err?.name, message: err?.message, stack } }
+      debugLog: { stages: [{ name: 'CRASH_IN_EXPORT', when: 'catch' }], crash: { name: err?.name, message: err?.message, stackTop: stack, stack } }
     };
     return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
   }
@@ -610,7 +610,7 @@ Deno.serve(async (req) => {
       step: 'ANALYSIS',
       message: err?.message || 'scanLease crashed',
       retryable: true,
-      debugLog: { stages: [{ name: 'CRASH_BEFORE_RETURN', when: 'catch' }], crash: { name: err?.name, message: err?.message, stack } }
+      debugLog: { stages: [{ name: 'CRASH_BEFORE_RETURN', when: 'catch' }], crash: { name: err?.name, message: err?.message, stackTop: stack, stack } }
     };
     return new Response(JSON.stringify(debugOut), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
   }
