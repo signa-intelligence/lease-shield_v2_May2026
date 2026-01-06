@@ -1704,8 +1704,11 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       warnings,
       scanId: persistedScanId,
       leaseId,
+      clauses_extracted,
+      clause_ledger,
+      issues_validated: clause_ledger.filter(r => r.risk_level !== 'NO_RISK'),
       result: pdfPayload,
-      diagnostic: { requestId, buildTag: BUILD_TAG, elapsedMs: nowMs() - startTime, budgets, durationsMs, llmUsed, ruleHits: flags.length, clauses: clauses_extracted.length, ...diagnostics },
+      diagnostic: { requestId, buildTag: BUILD_TAG, elapsedMs: nowMs() - startTime, budgets, durationsMs, llmUsed, ruleHits: (pdfPayload.flags||[]).length, clauses: clauses_extracted.length, ...diagnostics },
       debugLog
     });
   } catch (topError) {
