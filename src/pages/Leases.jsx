@@ -169,84 +169,24 @@ export default function Leases() {
 
       setAnalyzing(true);
       setUploading(false); // Set uploading to false after upload, before analysis starts
-      
-      // Enhanced prompt for Word documents
-      const promptText = isWordDoc
-        ? `This is a Word document (.doc or .docx). Please read and extract the text content carefully. If you cannot read the document properly, indicate this clearly in your response.
-        
-        Analyse this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
-        
-        Provide:
-        1. A risk score from 0-100 (0 = very safe, 100 = very risky)
-        2. List of flags with severity (critical, high, medium, low), category, and description
-        3. A summary of the overall lease quality
-        4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)
-        
-        IMPORTANT: If you cannot read the Word document content, set risk_score to -1 and include this in the summary.`
-        : `Analyse this lease agreement and extract key information. Identify any potential issues or unfair clauses that could harm the tenant.
-        
-        Provide:
-        1. A risk score from 0-100 (0 = very safe, 100 = very risky)
-        2. List of flags with severity (critical, high, medium, low), category, and description
-        3. A summary of the overall lease quality
-        4. Extract: property_address, start_date, end_date, rent_amount, deposit_amount, language_detected (en, th, or mixed)`;
-      
-      const scanResult = await base44.integrations.Core.InvokeLLM({
-        prompt: promptText,
-        file_urls: [file_url],
-        response_json_schema: {
-          type: "object",
-          properties: {
-            risk_score: { type: "integer" },
-            flags: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  severity: { type: "string", enum: ["low", "medium", "high", "critical"] },
-                  category: { type: "string" },
-                  description: { type: "string" }
-                }
-              }
-            },
-            summary: { type: "string" },
-            property_address: { type: "string" },
-            start_date: { type: "string" },
-            end_date: { type: "string" },
-            rent_amount: { type: "number" },
-            deposit_amount: { type: "number" },
-            language_detected: { type: "string", enum: ["en", "th", "mixed"] }
-          }
-        }
+
+      // Call backend scan function (persists full ledger + canonical report)
+      const { data } = await base44.functions.invoke('scanLease', {
+        leaseId: lease.id,
+        fileUrls: [file_url]
       });
 
-      // Check if Word document couldn't be read
-      if (scanResult.risk_score === -1 || (isWordDoc && scanResult.risk_score === 0 && !scanResult.summary)) {
-        throw new Error(
-          language === 'th'
-            ? 'ไม่สามารถอ่านไฟล์ Word ได้\n\nกรุณาลองวิธีใดวิธีหนึ่ง:\n• แปลงเป็น PDF ก่อนอัปโหลด\n• ถ่ายภาพหน้าสัญญาแทน\n• ใช้ Google Docs เปิดไฟล์ แล้ว Download เป็น PDF'
-            : 'Unable to read Word document\n\nPlease try:\n• Convert to PDF before uploading\n• Take photos of lease pages\n• Open in Google Docs and download as PDF'
-        );
+      if (!data?.ok) {
+        const msg = data?.error?.message || data?.error_code || 'Scan failed';
+        throw new Error(msg);
       }
 
-      await base44.entities.Lease.update(lease.id, {
-        status: 'scanned',
-        property_address: scanResult.property_address,
-        start_date: scanResult.start_date,
-        end_date: scanResult.end_date,
-        rent_amount: scanResult.rent_amount,
-        deposit_amount: scanResult.deposit_amount,
-        language_detected: scanResult.language_detected
-      });
+      // Update lease status based on scan outcome
+      await base44.entities.Lease.update(lease.id, { status: data.success ? 'scanned' : 'uploaded' });
 
-      const scan = await base44.entities.LeaseScan.create({
-        lease_id: lease.id,
-        risk_score: scanResult.risk_score,
-        flags: scanResult.flags || [],
-        summary: scanResult.summary,
-        scan_full: scanResult,
-        version: '1.0'
-      });
+      // Load the persisted scan to show in UI
+      const refetched = await base44.entities.LeaseScan.filter({ id: data.scanId });
+      const scan = refetched?.[0];
 
       setCurrentScan(scan);
       queryClient.invalidateQueries({ queryKey: ['leases'] });
