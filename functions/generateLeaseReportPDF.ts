@@ -65,7 +65,11 @@ function normalizeBullet(text){
 async function ensureThaiFont(doc){
   try {
     const fontUrl = 'https://raw.githubusercontent.com/google/fonts/main/ofl/notosansthai/NotoSansThai-Regular.ttf';
-    const res = await fetch(fontUrl);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(fontUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!res.ok) return false;
     const buf = await res.arrayBuffer();
     let binary = '';
     const bytes = new Uint8Array(buf);
@@ -343,7 +347,7 @@ Deno.serve(async (req) => {
 
     return json(200, { success: true, pdf_url: upload.file_url, correlationId }, headers);
   } catch (e) {
-    console.error("[PDF_ERROR]", e?.message || e);
-    return json(500, { error: "PDF_FAILED", message: "PDF generation failed" }, headers);
+    console.error("[PDF_ERROR]", correlationId, e?.message || e, e?.stack);
+    return json(200, { success: false, error: "PDF_FAILED", message: String(e?.message || "PDF generation failed"), correlationId }, headers);
   }
 });
