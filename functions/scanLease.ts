@@ -336,7 +336,7 @@ Deno.serve(async (req) => {
     const rawFileUrls = body?.fileUrls || body?.file_url || body?.fileURL || [];
     const fileUrls = Array.isArray(rawFileUrls) ? rawFileUrls : [rawFileUrls].filter(Boolean);
 
-    if (!leaseId) return json(400, { ok: false, error_code: 'MISSING_LEASE_ID', retryable: false });
+    if (!leaseId) return { ok: false, error_code: 'MISSING_LEASE_ID', step: 'input', message: 'leaseId is required', retryable: false, scanId, leaseId, debugLog };
     if (!fileUrls || fileUrls.length === 0) return json(400, { ok: false, error_code: 'NO_FILE_URLS', retryable: false });
 
     // Auth
