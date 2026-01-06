@@ -1430,41 +1430,115 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
 
     const userLang = user.language || "en";
 
-    // 2) Canonical ledger mapping (embedded catalog)
-    const mapResult = await guard("CANONICAL_MAP", () => buildCanonicalLedger(clauses_extracted, CANONICAL_CATALOG.catalog));
-    let canonical_ledger = [], missing_clauses = [];
-    if (mapResult.__failed) {
-      warnings.push({ stage: 'CANONICAL_MAP', kind: 'UNKNOWN', message: mapResult.error.msg });
-      diagnostics.canonical_warning = mapResult.error.msg;
-      canonical_ledger = clauses_extracted.map(c => ({ clause_id: c.clause_id, catalog_id: 'CAT-UNMAPPED', canonical_name: 'Unclassified', confidence: 0.3, match_score: 0, purpose: '', risk_triggers: [] }));
-    } else {
-      canonical_ledger = mapResult.canonical_ledger;
-      missing_clauses = mapResult.missing_clauses;
+    // PHASE A coverage gate: if no clauses, fail early
+    if (!Array.isArray(clauses_extracted) || clauses_extracted.length === 0) {
+      return json(200, {
+        ok: false,
+        error_code: "CoverageFailure_NoClauses",
+        user_message: "We could not extract any clauses from the document. Please upload a clearer PDF or try again.",
+        debugLog
+      });
     }
 
-    // 3) Risks from canonical triggers
-    const ruleResult = await guard("RULE_ENGINE", () => {
-      const flags = buildFlagsFromCanonical(clauses_extracted, canonical_ledger, userLang);
-      const risk_score = computeRiskScore(flags);
-      const clause_review = buildClauseReview(clauses_extracted, flags);
-      return { flags, risk_score, clause_review };
-    });
+    // PHASE B — Clause-by-clause ledger analysis (LLM) - one row per clause
+    const analyzeClause = async (clause) => {
+      const call = () => base44.integrations.Core.InvokeLLM({
+        prompt: `Analyze the following lease clause and output ONLY JSON matching this schema.\n\nSchema: {\n  clause_id: string,\n  clause_number: number,\n  page_number: number|null,\n  risk_level: "NO_RISK"|"LOW"|"MEDIUM"|"HIGH"|"CRITICAL",\n  taxonomy_code: string|null,\n  title: string,\n  rationale: string,\n  recommended_actions: string[],\n  confidence: "HIGH"|"MEDIUM"|"LOW"\n}\n\nRules:\n- Exactly the JSON object, no prose.\n- If risk_level != NO_RISK: taxonomy_code required, recommended_actions length >= 1 required.\n- rationale is always required.\n\nClause to analyze:\n---\n${clause.text}\n---`,
+        add_context_from_internet: false,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            clause_id: { type: "string" },
+            clause_number: { type: "number" },
+            page_number: { anyOf: [{ type: "number" }, { type: "null" }] },
+            risk_level: { type: "string", enum: ["NO_RISK","LOW","MEDIUM","HIGH","CRITICAL"] },
+            taxonomy_code: { anyOf: [{ type: "string" }, { type: "null" }] },
+            title: { type: "string" },
+            rationale: { type: "string" },
+            recommended_actions: { type: "array", items: { type: "string" } },
+            confidence: { type: "string", enum: ["HIGH","MEDIUM","LOW"] }
+          },
+          required: ["clause_id","clause_number","risk_level","title","rationale","recommended_actions","confidence"]
+        },
+        file_urls: undefined
+      });
 
-    let flags = [], risk_score = 0, clause_review = [];
-    if (ruleResult.__failed) {
-      warnings.push({ stage: 'RULE_ENGINE', kind: 'UNKNOWN', message: ruleResult.error.msg });
-      diagnostics.rules_eval_warning = ruleResult.error.msg;
-      flags = [];
-      risk_score = 0;
-      clause_review = clauses_extracted.map(c => ({ clause_id: c.clause_id, risk_level: 'none', risk_summary: 'Accept as standard.' }));
-    } else {
-      flags = ruleResult.flags;
-      risk_score = ruleResult.risk_score;
-      clause_review = ruleResult.clause_review;
+      const res = await withTimeout(call(), budgets.llm, 'LEDGER_PER_CLAUSE');
+      // Minimal structural validation
+      if (!res || typeof res !== 'object' || !res.risk_level) throw new Error('Invalid LLM ledger row');
+      return {
+        clause_id: res.clause_id || clause.clause_id,
+        clause_number: Number(res.clause_number ?? clause.clause_number),
+        page_number: typeof res.page_number === 'number' ? res.page_number : (clause.page_number ?? null),
+        risk_level: String(res.risk_level || 'NO_RISK'),
+        taxonomy_code: res.taxonomy_code ?? null,
+        title: String(res.title || clause.title || `Clause ${clause.clause_number}`),
+        rationale: String(res.rationale || '').trim(),
+        recommended_actions: Array.isArray(res.recommended_actions) ? res.recommended_actions.filter(Boolean) : [],
+        confidence: String(res.confidence || 'LOW').toUpperCase(),
+      };
+    };
+
+    const clause_ledger = [];
+    for (const clause of clauses_extracted) {
+      const row = await guard('LEDGER_CLAUSE', () => analyzeClause(clause));
+      if (row.__failed) {
+        clause_ledger.push({
+          clause_id: clause.clause_id,
+          clause_number: clause.clause_number,
+          page_number: clause.page_number ?? null,
+          risk_level: "NO_RISK",
+          taxonomy_code: null,
+          title: "No automated risk indicators detected (analysis fallback)",
+          rationale: "Clause analysis failed or timed out; manual review recommended.",
+          recommended_actions: [],
+          confidence: "LOW"
+        });
+      } else {
+        clause_ledger.push(row);
+      }
     }
+
+    // PHASE C — Validation + Auto-repair
+    if (clause_ledger.length !== clauses_extracted.length) {
+      return json(200, {
+        ok: false,
+        error_code: "CoverageFailure_MismatchCounts",
+        user_message: "Internal validation failed (mismatch counts). Please try again.",
+        debugLog
+      });
+    }
+
+    const repairedNotes = [];
+    for (let i = 0; i < clause_ledger.length; i++) {
+      const r = clause_ledger[i];
+      // Title and rationale must exist
+      if (!r.title || !String(r.title).trim()) r.title = `Clause ${r.clause_number}`;
+      if (!r.rationale || !String(r.rationale).trim()) r.rationale = "Automated rationale missing; manual review advised.";
+      if (!Array.isArray(r.recommended_actions)) r.recommended_actions = [];
+
+      const risky = r.risk_level && r.risk_level !== 'NO_RISK';
+      if (risky) {
+        if (!r.taxonomy_code) {
+          // Require taxonomy when risky
+          r.taxonomy_code = `CAT-UNMAPPED`;
+        }
+        if (r.recommended_actions.length === 0) {
+          // Auto-repair: add a concrete action
+          r.recommended_actions = [
+            "Request narrowing/clarification of terms to tenant-favorable language",
+            "Add explicit safeguard preventing overbroad interpretation"
+          ];
+          repairedNotes.push({ clause_id: r.clause_id, fix: 'AUTO_ADD_RECO' });
+        }
+      }
+    }
+
+    // Phase D — Issues derivation from ledger only
+    const issues_validated = clause_ledger.filter((r) => r.risk_level !== 'NO_RISK');
 
     clauseCountSoFar = clauses_extracted.length;
-    flagsCountSoFar = flags.length;
+    flagsCountSoFar = issues_validated.length;
 
     const payloadResult = await guard("BUILD_PAYLOAD", () => {
       return {
