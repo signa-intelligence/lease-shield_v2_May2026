@@ -1863,6 +1863,32 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       persistedScanId = persistResult.persistedScanId;
     }
 
+    // Verify persisted scan_full contains required keys
+    const verifyPersist = await guard("VERIFY_PERSIST", async () => {
+      const savedArr = await base44.asServiceRole.entities.LeaseScan.filter({ id: persistedScanId });
+      const saved = savedArr?.[0] || null;
+      const sf = saved?.scan_full || {};
+      const okFull =
+        sf &&
+        Array.isArray(sf.clauses_extracted) &&
+        Array.isArray(sf.clause_ledger) &&
+        Array.isArray(sf.issues_validated);
+      return { saved, okFull };
+    });
+
+    if (verifyPersist.__failed || !verifyPersist.okFull) {
+      return json(200, {
+        ok: false,
+        success: false,
+        error_code: "PersistVerificationFailed",
+        status: "failed",
+        scanId: persistedScanId,
+        leaseId,
+        diagnostic: { requestId, buildTag: BUILD_TAG, elapsedMs: nowMs() - startTime, ...diagnostics },
+        debugLog
+      });
+    }
+
     logStage("FINALIZE");
     const statusMode = warnings.length > 0 ? 'partial' : 'ok';
     return json(200, {
