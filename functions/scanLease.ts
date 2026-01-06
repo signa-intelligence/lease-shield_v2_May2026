@@ -427,7 +427,7 @@ Deno.serve(async (req) => {
     stage('CLAUSE_ANALYZE_DONE', { ledger_rows: clause_ledger.length });
 
     if (clause_ledger.length !== extracted.length) {
-      return json(200, { ok: false, error_code: 'CoverageFailure_MismatchCounts', retryable: true, debugLog });
+      return { ok: false, error_code: 'CoverageFailure_MismatchCounts', step: 'analyze', message: 'Clause ledger count mismatch', retryable: true, scanId, leaseId, debugLog };
     }
 
     // Derive issues and flags
