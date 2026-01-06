@@ -540,12 +540,18 @@ Deno.serve(async (req) => {
       debugLog,
     });
   } catch (e) {
+    const backendError = captureBackendError(e);
+    const requestId = `fatal-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
     return json(200, {
       ok: false,
       error_code: 'SCAN_FATAL',
+      step: 'FATAL',
       retryable: true,
       message: String(e?.message || e),
-      debugLog
+      requestId,
+      scanId: null,
+      leaseId: null,
+      debugLog: { ...debugLog, backendError }
     });
   }
 });
