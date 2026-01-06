@@ -328,6 +328,9 @@ Deno.serve(async (req) => {
   const time = (label, t0) => { debugLog.timings[label] = Date.now() - t0; };
   const stage = (name, meta={}) => debugLog.pipeline.push({ stage: name, at: new Date().toISOString(), ...meta });
 
+  let knownScanId = null;
+  let knownLeaseId = null;
+
   try {
     // Parse body
     const body = await req.json().catch(() => ({}));
