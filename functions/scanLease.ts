@@ -1422,9 +1422,10 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
 
     const clauses_extracted = clauses.map((c, idx) => ({
       clause_id: String((c && c.clause_id) || `CLAUSE-${String(idx + 1).padStart(3, "0")}`),
-      heading: (c && c.title) ? c.title : null,
-      full_text: (c && c.raw_text) ? c.raw_text : "",
-      page: (c && c.page_number) ? c.page_number : 1,
+      clause_number: idx + 1,
+      title: (c && c.title) ? c.title : null,
+      text: (c && c.raw_text) ? c.raw_text : "",
+      page_number: (c && c.page_number) ? c.page_number : null,
     }));
 
     const userLang = user.language || "en";
