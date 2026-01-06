@@ -501,21 +501,29 @@ Deno.serve(async (req) => {
     // POST-WRITE VERIFY
     stage('VERIFY_START');
     const tVerify = Date.now();
-    const savedArr = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.filter({ id: targetScanId });
-    const saved = savedArr?.[0] || null;
-    const sf = saved?.scan_full || {};
-    const okCounts = Array.isArray(sf?.clauses_extracted) && Array.isArray(sf?.clause_ledger) && sf.clauses_extracted.length > 0 && sf.clauses_extracted.length === sf.clause_ledger.length;
+    let savedArr, saved, sf, okCounts;
+    try {
+      savedArr = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.filter({ id: targetScanId });
+      saved = savedArr?.[0] || null;
+      sf = saved?.scan_full || {};
+      okCounts = Array.isArray(sf?.clauses_extracted) && Array.isArray(sf?.clause_ledger) && sf.clauses_extracted.length > 0 && sf.clauses_extracted.length === sf.clause_ledger.length;
+    } catch (err) {
+      debugLog.backendError = captureBackendError(err);
+      return json(200, { ok: false, error_code: 'PersistVerificationQueryFailed', step: 'VERIFY', retryable: true, requestId, scanId: targetScanId, leaseId, debugLog });
+    }
     time('VERIFY', tVerify);
     stage('VERIFY_DONE', { okCounts });
 
     if (!okCounts) {
-      return json(200, { ok: false, error_code: 'PersistVerificationFailed', retryable: false, scanId: targetScanId, debugLog });
+      return json(200, { ok: false, error_code: 'PersistVerificationFailed', step: 'VERIFY', retryable: false, requestId, scanId: targetScanId, leaseId, debugLog });
     }
 
     // Optionally mark lease scanned (kept for compatibility)
     try {
       await (await requireAuth(req)).base44.asServiceRole.entities.Lease.update(leaseId, { status: 'scanned' });
-    } catch { /* non-blocking */ }
+    } catch (err) {
+      debugLog.backendError = captureBackendError(err);
+    }
 
     return json(200, {
       ok: true,
