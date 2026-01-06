@@ -95,7 +95,7 @@ export default function ReportFull() {
   // RESOLVED: Render appropriate content based on params
   return (
     <AuthGuard>
-      {scanId && leaseId ? (
+      {scanId ? (
         <ReportFullInner 
           scanId={scanId} 
           leaseId={leaseId} 

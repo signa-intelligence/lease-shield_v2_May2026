@@ -187,17 +187,32 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         const userRes = await base44.auth.me();
         logStep("FETCH_USER_COMPLETE", { userId: userRes?.id });
 
-        // STEP 2: lease
-        logStep("FETCH_LEASE_START", { leaseId });
-        const leaseArr = await base44.entities.Lease.filter({ id: leaseId });
-        const leaseData = leaseArr?.[0] || null;
-        logStep("FETCH_LEASE_COMPLETE", { found: !!leaseData });
+        // STEP 2: lease (optional upfront)
+        let leaseData = null;
+        let leaseIdToUse = leaseId;
+        if (leaseIdToUse) {
+          logStep("FETCH_LEASE_START", { leaseId: leaseIdToUse });
+          const leaseArr = await base44.entities.Lease.filter({ id: leaseIdToUse });
+          leaseData = leaseArr?.[0] || null;
+          logStep("FETCH_LEASE_COMPLETE", { found: !!leaseData });
+        }
 
-        // STEP 3: scan
+        // STEP 3: scan (always by scanId)
         logStep("FETCH_SCAN_START", { scanId });
         const scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
         let scanData = scanArr?.[0] || null;
-        logStep("FETCH_SCAN_COMPLETE", { found: !!scanData });
+        logStep("FETCH_SCAN_COMPLETE", { found: !!scanData, returnedId: scanData?.id, lease_id: scanData?.lease_id });
+
+        // If lease was not fetched yet, derive from scan
+        if (!leaseData) {
+          leaseIdToUse = scanData?.lease_id || leaseIdToUse;
+          logStep("FETCH_LEASE_FROM_SCAN_START", { leaseId: leaseIdToUse });
+          if (leaseIdToUse) {
+            const leaseArr2 = await base44.entities.Lease.filter({ id: leaseIdToUse });
+            leaseData = leaseArr2?.[0] || null;
+          }
+          logStep("FETCH_LEASE_FROM_SCAN_COMPLETE", { found: !!leaseData });
+        }
 
         // STEP 4: validate presence
         logStep("VALIDATE_RECORDS_START");

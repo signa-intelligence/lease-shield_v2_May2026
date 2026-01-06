@@ -121,8 +121,19 @@ Deno.serve(async (req) => {
       const scans = await svc.entities.LeaseScan.filter({ id: scanId });
       const scan = scans?.[0];
 
+      const debugRead = {
+        scanIdRequested: scanId,
+        scanIdReturned: scan?.id || null,
+        leaseIdFromRecord: scan?.lease_id || null,
+        scanFullKeys: Object.keys(scan?.scan_full || {})
+      };
+
       if (!scan) {
-        return json(404, { error: "SCAN_NOT_FOUND", message: `No LeaseScan found for ${scanId}` }, headers);
+        return json(404, { error: "SCAN_NOT_FOUND", message: `No LeaseScan found for ${scanId}`, debugRead }, headers);
+      }
+
+      if (scan.id !== scanId) {
+        return json(200, { success: false, error: "ScanIdMismatch", message: "Requested scanId does not match record id", debugRead }, headers);
       }
 
       // Ledger-first source of truth
@@ -190,7 +201,7 @@ Deno.serve(async (req) => {
     if (!data) {
       return json(
         200,
-        { success: false, error: "NO_SOURCE_DATA", message: "Scan data not saved. Please re-scan.", scanId, correlationId },
+        { success: false, error: "NO_SOURCE_DATA", message: "Scan data not saved. Please re-scan.", scanId, correlationId, debugRead },
         headers
       );
     }
@@ -221,7 +232,7 @@ Deno.serve(async (req) => {
       });
     }
     if (missing.length > 0) {
-      return json(200, { success: false, error: "MISSING_REPORT_DATA", message: "Scan data not saved. Please re-scan.", missing_fields: missing, scanId, correlationId }, headers);
+      return json(200, { success: false, error: "MISSING_REPORT_DATA", message: "Scan data not saved. Please re-scan.", missing_fields: missing, scanId, correlationId, debugRead }, headers);
     }
 
     // -------- PDF generation --------
@@ -362,7 +373,7 @@ Deno.serve(async (req) => {
     const pdfFile = new File([pdfBytes], `LeaseShield-Report-${Date.now()}.pdf`, { type: "application/pdf" });
     const upload = await svc.integrations.Core.UploadFile({ file: pdfFile });
 
-    return json(200, { success: true, pdf_url: upload.file_url, correlationId }, headers);
+    return json(200, { success: true, pdf_url: upload.file_url, correlationId, debugRead }, headers);
   } catch (e) {
     console.error("[PDF_ERROR]", correlationId, e?.message || e, e?.stack);
     return json(200, { success: false, error: "PDF_FAILED", message: String(e?.message || "PDF generation failed"), correlationId }, headers);

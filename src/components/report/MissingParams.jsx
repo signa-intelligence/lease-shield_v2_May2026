@@ -12,7 +12,7 @@ export default function MissingParams({ forensicData }) {
             <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
             <h2 className="text-xl font-bold mb-2">Missing Parameters</h2>
             <p className="mb-6 text-gray-600">
-              Expected URL: <code className="bg-gray-100 px-2 py-1 rounded">/reportfull?scanId=xxx&leaseId=yyy</code>
+              Missing scanId. Expected URL: <code className="bg-gray-100 px-2 py-1 rounded">/reportfull?scanId=xxx</code>
             </p>
             <div className="flex justify-center gap-3">
               <Button variant="outline" onClick={() => (window.location.href = '/uploadscan')}>
