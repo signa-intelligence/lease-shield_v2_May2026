@@ -125,48 +125,66 @@ Deno.serve(async (req) => {
         return json(404, { error: "SCAN_NOT_FOUND", message: `No LeaseScan found for ${scanId}` }, headers);
       }
 
-      // Preferred: canonical payload
-      const canonical = scan?.scan_full?.canonical_report?.pdfPayload;
-      if (canonical && Array.isArray(canonical.clause_ledger) && canonical.clause_ledger.length > 0) {
-        data = canonical;
-      } else {
-        // Fallback: synthesize from stored ledger/flags
-        const ledger =
-          Array.isArray(scan?.scan_full?.clause_ledger) ? scan.scan_full.clause_ledger : [];
-        const flags =
-          Array.isArray(scan?.flags) ? scan.flags : [];
+      // Ledger-first source of truth
+      const clause_ledger_rows = Array.isArray(scan?.scan_full?.clause_ledger) ? scan.scan_full.clause_ledger : [];
+      const issues_validated_rows = Array.isArray(scan?.scan_full?.issues_validated)
+        ? scan.scan_full.issues_validated
+        : clause_ledger_rows.filter((r) => r?.risk_level && r.risk_level !== 'NO_RISK');
+      const clauses_extracted_rows = Array.isArray(scan?.scan_full?.clauses_extracted) ? scan.scan_full.clauses_extracted : [];
 
-        const review = ledger.map((c) => {
-          const hit = flags.find((f) => f?.clause_id && f.clause_id === c.clause_id);
-          if (hit) {
-            return {
-              clause_id: c.clause_id,
-              risk_level: hit.severity || "medium",
-              risk_summary: hit.description || hit.title || "Review required",
-              recommended_change: hit.recommendation || "",
-            };
-          }
-          return { clause_id: c.clause_id, risk_level: "none", risk_summary: "Accept as standard." };
-        });
-
-        data = {
-          lease_address: scan?.scan_full?.key_terms?.property_address || "Lease Agreement",
-          generated_date: new Date().toISOString(),
-          risk_score: Number(scan?.risk_score || 0),
-          summary: scan?.summary || `${flags.length} issues detected`,
-          key_terms: scan?.scan_full?.key_terms || {},
-          flags,
-          clause_review: review,
-          clause_ledger: ledger,
-          mappings: [],
-          missing_clauses: [],
-          coverage_summary: {
-            total_clauses: ledger.length,
-            clauses_reviewed: review.length,
-            clauses_flagged: review.filter((r) => r.risk_level && r.risk_level !== "none").length,
-          },
+      // Build flags (for visual styling) from issues_validated
+      const flags = issues_validated_rows.map((r) => {
+        const src = clauses_extracted_rows.find(c => c?.clause_id === r.clause_id);
+        return {
+          clause_id: r.clause_id,
+          severity: String(r.risk_level || 'LOW').toLowerCase(),
+          category: r.taxonomy_code || 'Unclassified',
+          title: r.title || (src?.title) || `Clause ${r.clause_number}`,
+          description: r.rationale || '',
+          explanation: r.rationale || '',
+          recommendation: Array.isArray(r.recommended_actions) ? r.recommended_actions.join("\n") : '',
+          evidence: (src?.text || '').slice(0, 240)
         };
-      }
+      });
+
+      // Clause review for appendix
+      const clause_review = clause_ledger_rows.map((r) => ({
+        clause_id: r.clause_id,
+        risk_level: String(r.risk_level || 'NO_RISK').toLowerCase().replace('no_risk','none'),
+        risk_summary: r.rationale || '',
+        recommended_change: Array.isArray(r.recommended_actions) ? r.recommended_actions[0] || '' : ''
+      }));
+
+      // Build display ledger with text from clauses_extracted
+      const clause_ledger_display = clause_ledger_rows.map((r) => {
+        const src = clauses_extracted_rows.find(c => c?.clause_id === r.clause_id);
+        return {
+          clause_id: r.clause_id,
+          heading: src?.title || r.title || `Clause ${r.clause_number}`,
+          full_text: src?.text || '',
+          page: src?.page_number || 1
+        };
+      });
+
+      // Risk score derived from issues
+      const score = Math.min(100, issues_validated_rows.reduce((acc, row) => acc + (row.risk_level === 'CRITICAL' ? 25 : row.risk_level === 'HIGH' ? 18 : row.risk_level === 'MEDIUM' ? 10 : 6), 0));
+      const summary = issues_validated_rows.length > 0 ? `${issues_validated_rows.length} issues found. Review recommendations before signing.` : 'No major issues detected.';
+
+      data = {
+        lease_address: scan?.scan_full?.key_terms?.property_address || "Lease Agreement",
+        generated_date: new Date().toISOString(),
+        risk_score: score,
+        summary,
+        key_terms: scan?.scan_full?.key_terms || {},
+        flags,
+        clause_review,
+        clause_ledger: clause_ledger_display,
+        coverage_summary: {
+          total_clauses: clause_ledger_rows.length,
+          clauses_reviewed: clause_review.length,
+          clauses_flagged: issues_validated_rows.length,
+        },
+      };
     }
 
     if (!data) {

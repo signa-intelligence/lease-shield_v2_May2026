@@ -773,7 +773,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                       </div>
                     )}
 
-                    {recLines.length > 0 && (
+                    {recLines.length > 0 ? (
                       <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? "#1F2937" : "#ECFDF5" }}>
                         <p className="text-xs font-bold text-emerald-700 mb-2">Recommendations:</p>
                         <ul className="space-y-1">
@@ -785,6 +785,12 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                           ))}
                         </ul>
                       </div>
+                    ) : (
+                      severityConfig.label !== 'NO RISK' && (
+                        <div className="p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? "#1F2937" : "#FEF3C7" }}>
+                          <p className="text-xs font-bold text-amber-700 mb-1">Recommendations unavailable (data error) — rescan recommended</p>
+                        </div>
+                      )
                     )}
                   </div>
                 );
@@ -827,10 +833,10 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 >
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <Badge className={`border flex items-center gap-1`} style={{
-                        backgroundColor: SEVERITY_CONFIG[isRisk ? review.risk_level : 'none'].palette.badgeBg,
-                        color: SEVERITY_CONFIG[isRisk ? review.risk_level : 'none'].palette.badgeText,
-                        borderColor: SEVERITY_CONFIG[isRisk ? review.risk_level : 'none'].palette.border
-                      }}>
+                            backgroundColor: SEVERITY_CONFIG[isRisk ? review.risk_level : 'none'].palette.badgeBg,
+                            color: SEVERITY_CONFIG[isRisk ? review.risk_level : 'none'].palette.badgeText,
+                            borderColor: SEVERITY_CONFIG[isRisk ? review.risk_level : 'none'].palette.border
+                          }}>
                         <Icon className="w-3 h-3" />
                         {isRisk ? (String(review.risk_level || "").toUpperCase() + " RISK") : "NO RISK"}
                       </Badge>
@@ -851,26 +857,32 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
 
                   <div className="mb-1">
                     <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                      {isRisk ? "Impact" : "Rationale"}
+                      {isRisk ? "Rationale" : "Rationale"}
                     </p>
                     <p className="text-sm" style={{ color: colors.textPrimary }}>
-                      {review?.risk_summary || (isRisk ? "Review required" : (review?.tenant_view || "Accept as standard."))}
+                      {review?.risk_summary || (isRisk ? "Review required" : "Accept as standard.")}
                     </p>
                   </div>
 
-                  {isRisk && recs.length > 0 && (
-                    <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? "#1F2937" : "#ECFDF5" }}>
-                      <p className="text-xs font-bold text-emerald-700 mb-2">Recommendations:</p>
-                      <ul className="space-y-1">
-                        {recs.map((line, i) => (
-                          <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textPrimary }}>
-                            <span className="text-emerald-600">•</span>
-                            <span>{line}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {isRisk ? (
+                    recs.length > 0 ? (
+                      <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? "#1F2937" : "#ECFDF5" }}>
+                        <p className="text-xs font-bold text-emerald-700 mb-2">Recommendations:</p>
+                        <ul className="space-y-1">
+                          {recs.map((line, i) => (
+                            <li key={i} className="text-sm flex items-start gap-2" style={{ color: colors.textPrimary }}>
+                              <span className="text-emerald-600">•</span>
+                              <span>{line}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? "#1F2937" : "#FEF3C7" }}>
+                        <p className="text-xs font-bold text-amber-700">Recommendations unavailable (data error) — rescan recommended</p>
+                      </div>
+                    )
+                  ) : null}
                 </div>
               );
             })}
