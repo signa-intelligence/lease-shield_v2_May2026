@@ -13,7 +13,48 @@ import { Buffer } from 'node:buffer';
 const MAX_CHARS_PER_CHUNK = 8000;
 
 function json(status, body) {
-  return new Response(JSON.stringify(body), {
+  let payload;
+  try {
+    if (body && body.ok === true) {
+      const { scanId, leaseId, debugLog, ...rest } = body;
+      payload = {
+        ok: true,
+        scanId: scanId ?? null,
+        leaseId: leaseId ?? null,
+        result: rest || {},
+        debugLog: debugLog ?? null,
+      };
+    } else if (body && body.ok === false) {
+      const { error_code, step, message, retryable, debugLog } = body;
+      payload = {
+        ok: false,
+        error_code: error_code || 'UNKNOWN_ERROR',
+        step: step || body?.stage || 'unspecified',
+        message: (typeof message === 'string' ? message : String(message || '')),
+        retryable: typeof retryable === 'boolean' ? retryable : true,
+        debugLog: debugLog ?? null,
+      };
+    } else {
+      payload = {
+        ok: false,
+        error_code: 'INVALID_RESPONSE',
+        step: 'response_build',
+        message: 'Handler returned an invalid shape',
+        retryable: true,
+        debugLog: body?.debugLog ?? null,
+      };
+    }
+  } catch (e) {
+    payload = {
+      ok: false,
+      error_code: 'RESPONSE_NORMALIZE_ERROR',
+      step: 'response_build',
+      message: String(e?.message || e),
+      retryable: true,
+      debugLog: body?.debugLog ?? null,
+    };
+  }
+  return new Response(JSON.stringify(payload), {
     status,
     headers: { 'content-type': 'application/json; charset=utf-8' },
   });
