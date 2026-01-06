@@ -1897,7 +1897,7 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
         status: "failed",
         scanId: persistedScanId,
         leaseId,
-        diagnostic: { requestId, buildTag: BUILD_TAG, elapsedMs: nowMs() - startTime, ...diagnostics },
+        diagnostic: { requestId, buildTag: BUILD_TAG, elapsedMs: nowMs() - startTime, ...diagnostics, verify: verifyPersist },
         debugLog
       });
     }
