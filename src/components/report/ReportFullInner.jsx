@@ -142,6 +142,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
   const [exportingPdf, setExportingPdf] = useState(false);
   const [materializing, setMaterializing] = useState(false);
   const materializeAttempted = useRef(false);
+  const [showSelfTest, setShowSelfTest] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -636,6 +637,54 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               <pre className="text-xs bg-white p-2 rounded overflow-auto max-h-40">
                 {loadSteps.map((s) => `[${s.timestamp}ms] ${s.step}`).join("\n")}
               </pre>
+
+              {/* Diagnostics (Self-Test) */}
+              {(() => {
+                const selfTest = scan?.scan_full?.self_test;
+                if (!selfTest) return null;
+                return (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs font-bold text-emerald-700">Diagnostics (Self-Test)</div>
+                      <Button variant="outline" size="sm" onClick={() => setShowSelfTest(!showSelfTest)}>
+                        {showSelfTest ? 'Hide' : 'Show'}
+                      </Button>
+                    </div>
+
+                    {!selfTest.overall_pass && (
+                      <div className="mt-3 p-3 rounded-md border-2 border-red-500 bg-red-50 text-red-800 text-sm">
+                        Scan diagnostics failed. This indicates missing coverage or mapping. Please rescan or contact support.
+                      </div>
+                    )}
+
+                    {showSelfTest && (
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div className="p-2 rounded border bg-white">
+                          <div className="font-semibold mb-1">Ledger Integrity</div>
+                          <div>clauses_extracted_len: {selfTest.clause_ledger_integrity.clauses_extracted_len}</div>
+                          <div>clause_ledger_len: {selfTest.clause_ledger_integrity.clause_ledger_len}</div>
+                          <div>pass_same_length: {String(selfTest.clause_ledger_integrity.pass_same_length)}</div>
+                        </div>
+                        <div className="p-2 rounded border bg-white">
+                          <div className="font-semibold mb-1">Multi-Risk Expansion</div>
+                          <div>total_risk_items_from_ledger: {selfTest.multi_risk_expansion.total_risk_items_from_ledger}</div>
+                          <div>issues_validated_len: {selfTest.multi_risk_expansion.issues_validated_len}</div>
+                          <div>pass_equal_counts: {String(selfTest.multi_risk_expansion.pass_equal_counts)}</div>
+                        </div>
+                        <div className="p-2 rounded border bg-white">
+                          <div className="font-semibold mb-1">Recommendations</div>
+                          <div>issues_missing_actions: {selfTest.recommendations_guaranteed.issues_missing_actions.length}</div>
+                          <div>pass_all_have_actions: {String(selfTest.recommendations_guaranteed.pass_all_have_actions)}</div>
+                        </div>
+                        <div className="p-2 rounded border bg-white">
+                          <div className="font-semibold mb-1">Overall</div>
+                          <div>overall_pass: {String(selfTest.overall_pass)}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         )}

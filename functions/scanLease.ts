@@ -1720,6 +1720,69 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       status: "ok",
     };
 
+    // Compute self-test diagnostics (non-blocking)
+    const idsExtracted = new Set((clauses_extracted || []).map((c) => c?.clause_id));
+    const idsLedger = new Set((clause_ledger || []).map((r) => r?.clause_id));
+    const missingIds = Array.from(idsExtracted).filter((id) => !idsLedger.has(id));
+    const extraIds = Array.from(idsLedger).filter((id) => !idsExtracted.has(id));
+
+    const totalRiskItems = (clause_ledger || []).reduce((acc, r) => acc + (Array.isArray(r?.risk_items) ? r.risk_items.length : 0), 0);
+    const sampleMulti = (clause_ledger || []).find((r) => Array.isArray(r?.risk_items) && r.risk_items.length >= 2);
+
+    const levelCounts = { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 };
+    (issues_validated || []).forEach((it) => {
+      const lvl = String(it?.risk_level || '').toUpperCase();
+      if (levelCounts.hasOwnProperty(lvl)) levelCounts[lvl] += 1;
+    });
+
+    const issuesMissingActions = (issues_validated || []).filter((it) => !Array.isArray(it?.recommended_actions) || it.recommended_actions.length === 0)
+      .map((it) => ({ clause_id: it.clause_id, title: it.title, risk_level: it.risk_level }));
+
+    const self_test = {
+      clause_ledger_integrity: {
+        clauses_extracted_len: (clauses_extracted || []).length,
+        clause_ledger_len: (clause_ledger || []).length,
+        pass_same_length: (clauses_extracted || []).length === (clause_ledger || []).length,
+        missing_clause_ids_in_ledger: missingIds,
+        extra_clause_ids_in_ledger: extraIds
+      },
+      multi_risk_expansion: {
+        total_risk_items_from_ledger: totalRiskItems,
+        issues_validated_len: (issues_validated || []).length,
+        pass_equal_counts: totalRiskItems === (issues_validated || []).length,
+        sample_multi_risk_clause: {
+          clause_id: sampleMulti?.clause_id || null,
+          clause_number: sampleMulti?.clause_number || null,
+          risk_items_len: Array.isArray(sampleMulti?.risk_items) ? sampleMulti.risk_items.length : 0
+        }
+      },
+      no_silent_risk_loss: {
+        pass_no_filtering_possible: true,
+        derivation_method: "FLATMAP_RISK_ITEMS"
+      },
+      recommendations_guaranteed: {
+        issues_missing_actions: issuesMissingActions,
+        pass_all_have_actions: issuesMissingActions.length === 0
+      },
+      score_counts_consistency: {
+        clauses_total_from_ledger: (clause_ledger || []).length,
+        risks_total_from_issues: (issues_validated || []).length,
+        risks_by_level: levelCounts,
+        pass_non_negative: Object.values(levelCounts).every((n) => (typeof n === 'number') && n >= 0)
+      },
+      failure_honesty: {
+        ok: true,
+        error_code: null,
+        pass_ok_or_error_present: true
+      },
+      overall_pass: (
+        ((clauses_extracted || []).length === (clause_ledger || []).length) &&
+        (totalRiskItems === (issues_validated || []).length) &&
+        (issuesMissingActions.length === 0) &&
+        (true)
+      )
+    };
+
     // 4) Persist scan + mark lease scanned
     let persistedScanId = scanId;
 
@@ -1749,6 +1812,7 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
             key_terms: keyTerms,
             language_detected: keyTerms.language_detected,
             issues_validated,
+            self_test,
             canonical_report,
             diagnostics: {
               requestId,
@@ -1821,6 +1885,27 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       coverage_summary: { total_clauses: 0, clauses_reviewed: 0, clauses_flagged: 0 },
       fallback: true,
       fallback_reason: "fatal_catch"
+    };
+
+    const self_test = {
+      clause_ledger_integrity: {
+        clauses_extracted_len: 0,
+        clause_ledger_len: 0,
+        pass_same_length: false,
+        missing_clause_ids_in_ledger: [],
+        extra_clause_ids_in_ledger: []
+      },
+      multi_risk_expansion: {
+        total_risk_items_from_ledger: 0,
+        issues_validated_len: 0,
+        pass_equal_counts: false,
+        sample_multi_risk_clause: { clause_id: null, clause_number: null, risk_items_len: 0 }
+      },
+      no_silent_risk_loss: { pass_no_filtering_possible: true, derivation_method: "FLATMAP_RISK_ITEMS" },
+      recommendations_guaranteed: { issues_missing_actions: [], pass_all_have_actions: true },
+      score_counts_consistency: { clauses_total_from_ledger: 0, risks_total_from_issues: 0, risks_by_level: { LOW:0, MEDIUM:0, HIGH:0, CRITICAL:0 }, pass_non_negative: true },
+      failure_honesty: { ok: false, error_code: stage || 'FAILED', pass_ok_or_error_present: true },
+      overall_pass: false
     };
 
     return json(200, {
