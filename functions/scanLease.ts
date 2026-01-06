@@ -400,7 +400,8 @@ Deno.serve(async (req) => {
         const row = await llmAnalyzeClause(base44, clause);
         clause_ledger.push(row);
       } catch (e) {
-        return json(200, { ok: false, error_code: 'LLM_ANALYZE_FAILED', retryable: true, message: String(e?.message || e), debugLog });
+        debugLog.backendError = captureBackendError(e);
+        return json(200, { ok: false, error_code: 'LLM_ANALYZE_FAILED', step: 'CLAUSE_ANALYZE', retryable: true, message: String(e?.message || e), requestId, scanId, leaseId, debugLog });
       }
     }
 
