@@ -1541,38 +1541,57 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
     flagsCountSoFar = issues_validated.length;
 
     const payloadResult = await guard("BUILD_PAYLOAD", () => {
+      const issues_validated = clause_ledger.filter((r) => r.risk_level !== 'NO_RISK');
+      const risk_score = Math.min(100, issues_validated.reduce((acc, r) => acc + (r.risk_level === 'CRITICAL' ? 25 : r.risk_level === 'HIGH' ? 18 : r.risk_level === 'MEDIUM' ? 10 : 6), 0));
+      const summary = issues_validated.length > 0
+        ? `${issues_validated.length} issues found. Review recommendations before signing.`
+        : "No major issues detected.";
       return {
-      lease_address: keyTerms.property_address || "Lease Agreement",
-      generated_date: new Date().toISOString(),
-      risk_score,
-      summary: flags.length > 0
-        ? `${flags.length} issues found. Review recommendations before signing.`
-        : "No major issues detected.",
-      key_terms: keyTerms,
-      flags,
-      clause_review,
-
-      // FULL coverage for UI + PDF
-      clause_ledger: clauses_extracted,
-
-      // Canonical coverage
-      canonical_ledger,
-      missing_clauses,
-
-      coverage_summary: {
-        total_clauses: clauses_extracted.length,
-        clauses_reviewed: clause_review.length,
-        clauses_flagged: clause_review.filter((r) => r && r.risk_level && r.risk_level !== "none").length,
-        canonical_catalog_count: CANONICAL_CATALOG.catalog.length,
-        canonical_missing_count: missing_clauses.length,
-      },
-
-      mappings: [],
-      fallback: false,
-      fallback_reason: "",
-      catalog_version: CANONICAL_CATALOG.catalog_version,
-      catalog_source: CANONICAL_CATALOG.source,
-    };
+        lease_address: keyTerms.property_address || "Lease Agreement",
+        generated_date: new Date().toISOString(),
+        risk_score,
+        summary,
+        key_terms: keyTerms,
+        // derive flags from ledger
+        flags: issues_validated.map(r => ({
+          clause_id: r.clause_id,
+          severity: (r.risk_level || 'NO_RISK').toLowerCase(),
+          category: r.taxonomy_code || 'Unclassified',
+          title: r.title,
+          description: r.rationale,
+          explanation: r.rationale,
+          recommendation: r.recommended_actions.join("\n"),
+          evidence: (clauses_extracted.find(c => c.clause_id === r.clause_id)?.text || '').slice(0, 240)
+        })),
+        clause_review: clause_ledger.map(r => ({
+          clause_id: r.clause_id,
+          risk_level: (r.risk_level || 'NO_RISK').toLowerCase().replace('no_risk','none'),
+          risk_summary: r.rationale,
+          recommended_change: r.recommended_actions[0] || undefined,
+          category: r.taxonomy_code || 'Unclassified'
+        })),
+        clause_ledger: clauses_extracted.map(c => ({
+          clause_id: c.clause_id,
+          heading: c.title,
+          full_text: c.text,
+          page: c.page_number || 1
+        })),
+        canonical_ledger: [],
+        missing_clauses: [],
+        coverage_summary: {
+          total_clauses: clauses_extracted.length,
+          clauses_reviewed: clause_ledger.length,
+          clauses_flagged: issues_validated.length,
+          canonical_catalog_count: 0,
+          canonical_missing_count: 0,
+        },
+        mappings: [],
+        fallback: false,
+        fallback_reason: "",
+        catalog_version: CANONICAL_CATALOG.catalog_version,
+        catalog_source: CANONICAL_CATALOG.source,
+        meta: { issues_validated_count: issues_validated.length }
+      };
     });
 
     let pdfPayload;
