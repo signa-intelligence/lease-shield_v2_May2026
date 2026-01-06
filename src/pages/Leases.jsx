@@ -199,20 +199,9 @@ export default function Leases() {
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       
     } catch (err) {
-      console.error('Lease analysis error:', err);
-      
-      // Show the specific error message if it's a formatted one from our custom throw
-      if (err.message && (err.message.includes('Word') || err.message.includes('PDF') || err.message.includes('ไฟล์'))) {
-        setError(err.message);
-      } else {
-        // Generic error with helpful suggestions, especially for Word documents
-        const errorMessage = isWordDoc
-          ? (language === 'th'
-              ? 'ไม่สามารถวิเคราะห์ไฟล์ Word ได้\n\n💡 ลองวิธีนี้:\n• แปลงเป็น PDF ก่อน\n• ถ่ายภาพหน้าสัญญา\n• เปิดด้วย Google Docs แล้วบันทึกเป็น PDF'
-              : 'Failed to analyse Word document\n\n💡 Try this:\n• Convert to PDF first\n• Take photos of pages\n• Open in Google Docs and save as PDF')
-          : strings.failedAnalyse;
-        setError(errorMessage);
-      }
+    console.error('Lease analysis error:', err);
+    const msg = err?.message || strings.failedAnalyse;
+    setError(msg);
     } finally {
       setUploading(false);
       setAnalyzing(false);
