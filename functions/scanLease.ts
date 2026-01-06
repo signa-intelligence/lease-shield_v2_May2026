@@ -1868,12 +1868,12 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       const savedArr = await base44.asServiceRole.entities.LeaseScan.filter({ id: persistedScanId });
       const saved = savedArr?.[0] || null;
       const sf = saved?.scan_full || {};
-      const okFull =
-        sf &&
-        Array.isArray(sf.clauses_extracted) &&
-        Array.isArray(sf.clause_ledger) &&
-        Array.isArray(sf.issues_validated);
-      return { saved, okFull };
+      const hasNewKeys = Array.isArray(sf.clauses_extracted) && sf.clauses_extracted.length > 0 &&
+                         Array.isArray(sf.clause_ledger) && sf.clause_ledger.length > 0 &&
+                         Array.isArray(sf.issues_validated);
+      const hasCanonicalPdf = !!(sf?.canonical_report && sf.canonical_report.pdfPayload);
+      const okFull = !!(hasNewKeys && hasCanonicalPdf);
+      return { saved, okFull, scanFullKeys: Object.keys(sf || {}), canonicalReportKeys: Object.keys(sf?.canonical_report || {}) };
     });
 
     if (verifyPersist.__failed || !verifyPersist.okFull) {
