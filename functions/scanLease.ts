@@ -594,7 +594,7 @@ export default async function handler(req) {
 
 Deno.serve(async (req) => {
   try {
-    const out = await execute(req);
+    const out = await handler(req);
     return Response.json(out && typeof out === 'object' ? out : {
       ok: false,
       error_code: 'INVALID_HANDLER_OUTPUT',
