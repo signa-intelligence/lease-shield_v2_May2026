@@ -439,50 +439,60 @@ Deno.serve(async (req) => {
 
     let targetScanId = scanId;
     let existing = null;
-    if (targetScanId) {
-      const arr = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.filter({ id: targetScanId });
-      existing = arr?.[0] || null;
+    try {
+      if (targetScanId) {
+        const arr = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.filter({ id: targetScanId });
+        existing = arr?.[0] || null;
+      }
+    } catch (err) {
+      debugLog.backendError = captureBackendError(err);
+      return json(200, { ok: false, error_code: 'PERSIST_LOOKUP_FAILED', step: 'PERSIST', retryable: true, requestId, scanId: targetScanId, leaseId, debugLog });
     }
 
     let persisted = null;
-    if (existing) {
-      persisted = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.update(targetScanId, {
-        lease_id: leaseId,
-        status: 'completed',
-        risk_score,
-        flags,
-        summary,
-        scan_full: {
-          clauses_extracted: extracted,
-          clause_ledger,
-          issues_validated,
+    try {
+      if (existing) {
+        persisted = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.update(targetScanId, {
+          lease_id: leaseId,
+          status: 'completed',
+          risk_score,
           flags,
           summary,
-          debugLog,
-          pipeline: debugLog.pipeline,
-          version: 'text-only-v1'
-        },
-      });
-    } else {
-      const created = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.create({
-        lease_id: leaseId,
-        status: 'completed',
-        risk_score,
-        flags,
-        summary,
-        scan_full: {
-          clauses_extracted: extracted,
-          clause_ledger,
-          issues_validated,
+          scan_full: {
+            clauses_extracted: extracted,
+            clause_ledger,
+            issues_validated,
+            flags,
+            summary,
+            debugLog,
+            pipeline: debugLog.pipeline,
+            version: 'text-only-v1'
+          },
+        });
+      } else {
+        const created = await (await requireAuth(req)).base44.asServiceRole.entities.LeaseScan.create({
+          lease_id: leaseId,
+          status: 'completed',
+          risk_score,
           flags,
           summary,
-          debugLog,
-          pipeline: debugLog.pipeline,
-          version: 'text-only-v1'
-        },
-      });
-      targetScanId = created.id;
-      persisted = created;
+          scan_full: {
+            clauses_extracted: extracted,
+            clause_ledger,
+            issues_validated,
+            flags,
+            summary,
+            debugLog,
+            pipeline: debugLog.pipeline,
+            version: 'text-only-v1'
+          },
+        });
+        targetScanId = created.id;
+        persisted = created;
+      }
+    } catch (err) {
+      debugLog.backendError = captureBackendError(err);
+      return json(200, { ok: false, error_code: 'PERSIST_FAILED', step: 'PERSIST', retryable: true, requestId, scanId: targetScanId, leaseId, debugLog });
     }
 
     time('PERSIST', tPersist);
