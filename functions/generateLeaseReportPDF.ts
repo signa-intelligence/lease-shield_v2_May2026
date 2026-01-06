@@ -207,8 +207,7 @@ Deno.serve(async (req) => {
     const doc = new jsPDF();
     const thaiOk = await ensureThaiFont(doc);
     if (thaiOk) { try { doc.setFont('NotoSansThai','normal'); } catch(_) {} }
-    const thaiOk = await ensureThaiFont(doc);
-    if (!thaiOk) { try { doc.setFont('helvetica', 'normal'); } catch(_) {} }
+    else { try { doc.setFont('helvetica', 'normal'); } catch(_) {} }
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     let y = 20;
