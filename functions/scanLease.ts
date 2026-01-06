@@ -336,6 +336,8 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const scanId = body?.scanId || null;
     const leaseId = body?.leaseId || null;
+    knownScanId = scanId;
+    knownLeaseId = leaseId;
     const rawFileUrls = body?.fileUrls || body?.file_url || body?.fileURL || [];
     const fileUrls = Array.isArray(rawFileUrls) ? rawFileUrls : [rawFileUrls].filter(Boolean);
 
