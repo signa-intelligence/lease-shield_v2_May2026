@@ -440,7 +440,8 @@ async function execute(req) {
         clause_ledger.push(row);
       } catch (e) {
         debugLog.stages.push({ name: 'LLM_CALL', phase: 'analyze', when: 'error', clause_id: clause.clause_id, error: String(e?.message || e) });
-        return { ok: false, error_code: 'LLM_ANALYZE_FAILED', step: 'analyze', message: String(e?.message || e), retryable: true, scanId, leaseId, debugLog };
+        const out = { ok: false, error_code: 'LLM_ANALYZE_FAILED', step: 'analyze', message: String(e?.message || e), retryable: true, scanId, leaseId, debugLog };
+        return new Response(JSON.stringify(out), { status: 200, headers: { 'content-type': 'application/json; charset=utf-8' } });
       }
     }
 
