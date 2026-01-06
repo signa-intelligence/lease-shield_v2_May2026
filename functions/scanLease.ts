@@ -1456,26 +1456,63 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
             title: { type: "string" },
             rationale: { type: "string" },
             recommended_actions: { type: "array", items: { type: "string" } },
-            confidence: { type: "string", enum: ["HIGH","MEDIUM","LOW"] }
+            confidence: { type: "string", enum: ["HIGH","MEDIUM","LOW"] },
+            risk_items: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  risk_level: { type: "string", enum: ["LOW","MEDIUM","HIGH","CRITICAL"] },
+                  taxonomy_code: { type: "string" },
+                  title: { type: "string" },
+                  rationale: { type: "string" },
+                  recommended_actions: { type: "array", items: { type: "string" } },
+                  confidence: { type: "string", enum: ["HIGH","MEDIUM","LOW"] }
+                },
+                required: ["risk_level","taxonomy_code","title","rationale","recommended_actions","confidence"]
+              }
+            }
           },
-          required: ["clause_id","clause_number","risk_level","title","rationale","recommended_actions","confidence"]
+          required: ["clause_id","clause_number","risk_level","title","rationale","recommended_actions","confidence","risk_items"]
         },
         file_urls: undefined
       });
 
       const res = await withTimeout(call(), budgets.llm, 'LEDGER_PER_CLAUSE');
       // Minimal structural validation
-      if (!res || typeof res !== 'object' || !res.risk_level) throw new Error('Invalid LLM ledger row');
+      if (!res || typeof res !== 'object' || !('risk_level' in res)) throw new Error('Invalid LLM ledger row');
+
+      const itemsRaw = Array.isArray(res.risk_items) ? res.risk_items : [];
+      const items = itemsRaw.map((it) => ({
+        risk_level: String(it?.risk_level || 'LOW').toUpperCase(),
+        taxonomy_code: String(it?.taxonomy_code || 'CAT-UNMAPPED'),
+        title: String(it?.title || '').trim(),
+        rationale: String(it?.rationale || '').trim(),
+        recommended_actions: Array.isArray(it?.recommended_actions) ? it.recommended_actions.filter(Boolean) : [],
+        confidence: String(it?.confidence || 'LOW').toUpperCase(),
+      })).filter((it) => it.title && it.rationale);
+
+      const rank = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+      const top = items.slice().sort((a,b)=> (rank[b.risk_level]||0) - (rank[a.risk_level]||0))[0];
+
+      const summaryRisk = items.length ? (top?.risk_level || 'LOW') : String(res.risk_level || 'NO_RISK').toUpperCase();
+      const summaryTitle = items.length ? (top?.title || res.title || clause.title || `Clause ${clause.clause_number}`) : String(res.title || clause.title || `Clause ${clause.clause_number}`);
+      const summaryRationale = items.length ? (top?.rationale || res.rationale || '') : String(res.rationale || '').trim();
+      const summaryReco = items.length ? (Array.isArray(top?.recommended_actions) ? top.recommended_actions.filter(Boolean) : []) : (Array.isArray(res.recommended_actions) ? res.recommended_actions.filter(Boolean) : []);
+      const summaryConf = items.length ? String(top?.confidence || 'LOW').toUpperCase() : String(res.confidence || 'LOW').toUpperCase();
+      const summaryTax = items.length ? (top?.taxonomy_code ?? res.taxonomy_code ?? null) : (res.taxonomy_code ?? null);
+
       return {
         clause_id: res.clause_id || clause.clause_id,
         clause_number: Number(res.clause_number ?? clause.clause_number),
         page_number: typeof res.page_number === 'number' ? res.page_number : (clause.page_number ?? null),
-        risk_level: String(res.risk_level || 'NO_RISK'),
-        taxonomy_code: res.taxonomy_code ?? null,
-        title: String(res.title || clause.title || `Clause ${clause.clause_number}`),
-        rationale: String(res.rationale || '').trim(),
-        recommended_actions: Array.isArray(res.recommended_actions) ? res.recommended_actions.filter(Boolean) : [],
-        confidence: String(res.confidence || 'LOW').toUpperCase(),
+        risk_level: summaryRisk,
+        taxonomy_code: summaryTax,
+        title: summaryTitle,
+        rationale: summaryRationale,
+        recommended_actions: summaryReco,
+        confidence: summaryConf,
+        risk_items: items,
       };
     };
 
@@ -1492,7 +1529,8 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
           title: "No automated risk indicators detected (analysis fallback)",
           rationale: "Clause analysis failed or timed out; manual review recommended.",
           recommended_actions: [],
-          confidence: "LOW"
+          confidence: "LOW",
+          risk_items: []
         });
       } else {
         clause_ledger.push(row);
@@ -1516,6 +1554,7 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       if (!r.title || !String(r.title).trim()) r.title = `Clause ${r.clause_number}`;
       if (!r.rationale || !String(r.rationale).trim()) r.rationale = "Automated rationale missing; manual review advised.";
       if (!Array.isArray(r.recommended_actions)) r.recommended_actions = [];
+      if (!Array.isArray(r.risk_items)) r.risk_items = [];
 
       const risky = r.risk_level && r.risk_level !== 'NO_RISK';
       if (risky) {
@@ -1523,28 +1562,69 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
           // Require taxonomy when risky
           r.taxonomy_code = `CAT-UNMAPPED`;
         }
-        if (r.recommended_actions.length === 0) {
-          // Auto-repair: add a concrete action
-          r.recommended_actions = [
-            "Request narrowing/clarification of terms to tenant-favorable language",
-            "Add explicit safeguard preventing overbroad interpretation"
-          ];
-          repairedNotes.push({ clause_id: r.clause_id, fix: 'AUTO_ADD_RECO' });
+        if (r.risk_items.length === 0) {
+          // Auto-repair: synthesize one risk_item from summary
+          r.risk_items.push({
+            risk_level: String(r.risk_level || 'LOW').toUpperCase(),
+            taxonomy_code: r.taxonomy_code || 'CAT-UNMAPPED',
+            title: r.title,
+            rationale: r.rationale,
+            recommended_actions: r.recommended_actions.length ? r.recommended_actions : [
+              "Request narrowing/clarification of terms to tenant-favorable language"
+            ],
+            confidence: String(r.confidence || 'LOW').toUpperCase(),
+          });
+          repairedNotes.push({ clause_id: r.clause_id, fix: 'AUTO_SYNTH_RISK_ITEM' });
         }
+        // Ensure each risk_item has at least one recommendation
+        for (const it of r.risk_items) {
+          if (!Array.isArray(it.recommended_actions) || it.recommended_actions.length === 0) {
+            it.recommended_actions = ["Add explicit safeguard preventing overbroad interpretation"];
+            it.confidence = 'LOW';
+            repairedNotes.push({ clause_id: r.clause_id, fix: 'AUTO_ADD_ITEM_RECO' });
+          }
+        }
+      } else {
+        // No risk → ensure risk_items is empty
+        r.risk_items = [];
       }
     }
 
-    // Phase D — Issues derivation from ledger only
-    const issues_validated = clause_ledger.filter((r) => r.risk_level !== 'NO_RISK');
+    // Phase D — Derive issues from ALL risk_items across clauses
+    const issues_validated = clause_ledger.flatMap((r) =>
+      Array.isArray(r.risk_items) ? r.risk_items.map((item) => ({
+        clause_id: r.clause_id,
+        clause_number: r.clause_number,
+        page_number: r.page_number ?? null,
+        risk_level: String(item.risk_level || 'LOW').toUpperCase(),
+        taxonomy_code: item.taxonomy_code || r.taxonomy_code || 'CAT-UNMAPPED',
+        title: item.title || r.title,
+        rationale: item.rationale || r.rationale,
+        recommended_actions: Array.isArray(item.recommended_actions) ? item.recommended_actions : [],
+        confidence: String(item.confidence || 'LOW').toUpperCase(),
+      })) : []
+    );
 
     clauseCountSoFar = clauses_extracted.length;
     flagsCountSoFar = issues_validated.length;
 
     const payloadResult = await guard("BUILD_PAYLOAD", () => {
-      const issues_validated = clause_ledger.filter((r) => r.risk_level !== 'NO_RISK');
-      const risk_score = Math.min(100, issues_validated.reduce((acc, r) => acc + (r.risk_level === 'CRITICAL' ? 25 : r.risk_level === 'HIGH' ? 18 : r.risk_level === 'MEDIUM' ? 10 : 6), 0));
-      const summary = issues_validated.length > 0
-        ? `${issues_validated.length} issues found. Review recommendations before signing.`
+      const issues_from_items = clause_ledger.flatMap((r) =>
+        Array.isArray(r.risk_items) ? r.risk_items.map((item) => ({
+          clause_id: r.clause_id,
+          clause_number: r.clause_number,
+          page_number: r.page_number ?? null,
+          risk_level: String(item.risk_level || 'LOW').toUpperCase(),
+          taxonomy_code: item.taxonomy_code || r.taxonomy_code || 'Unclassified',
+          title: item.title || r.title,
+          rationale: item.rationale || r.rationale,
+          recommended_actions: Array.isArray(item.recommended_actions) ? item.recommended_actions : [],
+          confidence: String(item.confidence || 'LOW').toUpperCase(),
+        })) : []
+      );
+      const risk_score = Math.min(100, issues_from_items.reduce((acc, r) => acc + (r.risk_level === 'CRITICAL' ? 25 : r.risk_level === 'HIGH' ? 18 : r.risk_level === 'MEDIUM' ? 10 : 6), 0));
+      const summary = issues_from_items.length > 0
+        ? `${issues_from_items.length} issues found. Review recommendations before signing.`
         : "No major issues detected.";
       return {
         lease_address: keyTerms.property_address || "Lease Agreement",
@@ -1552,22 +1632,22 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
         risk_score,
         summary,
         key_terms: keyTerms,
-        // derive flags from ledger
-        flags: issues_validated.map(r => ({
+        // derive flags from issues
+        flags: issues_from_items.map(r => ({
           clause_id: r.clause_id,
-          severity: (r.risk_level || 'NO_RISK').toLowerCase(),
+          severity: (r.risk_level || 'LOW').toLowerCase(),
           category: r.taxonomy_code || 'Unclassified',
           title: r.title,
           description: r.rationale,
           explanation: r.rationale,
-          recommendation: r.recommended_actions.join("\n"),
+          recommendation: (r.recommended_actions || []).join("\n"),
           evidence: (clauses_extracted.find(c => c.clause_id === r.clause_id)?.text || '').slice(0, 240)
         })),
         clause_review: clause_ledger.map(r => ({
           clause_id: r.clause_id,
           risk_level: (r.risk_level || 'NO_RISK').toLowerCase().replace('no_risk','none'),
           risk_summary: r.rationale,
-          recommended_change: r.recommended_actions[0] || undefined,
+          recommended_change: Array.isArray(r.recommended_actions) ? r.recommended_actions[0] || undefined : undefined,
           category: r.taxonomy_code || 'Unclassified'
         })),
         clause_ledger: clauses_extracted.map(c => ({
@@ -1581,7 +1661,7 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
         coverage_summary: {
           total_clauses: clauses_extracted.length,
           clauses_reviewed: clause_ledger.length,
-          clauses_flagged: issues_validated.length,
+          clauses_flagged: issues_from_items.length,
           canonical_catalog_count: 0,
           canonical_missing_count: 0,
         },
@@ -1590,7 +1670,7 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
         fallback_reason: "",
         catalog_version: CANONICAL_CATALOG.catalog_version,
         catalog_source: CANONICAL_CATALOG.source,
-        meta: { issues_validated_count: issues_validated.length }
+        meta: { issues_validated_count: issues_from_items.length }
       };
     });
 
@@ -1616,9 +1696,19 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       pdfPayload = payloadResult;
     }
 
-    const issues_validated = (pdfPayload.meta?.issues_validated_count || 0) > 0
-      ? clause_ledger.filter((r) => r.risk_level !== 'NO_RISK')
-      : clause_ledger.filter((r) => r.risk_level !== 'NO_RISK');
+    const issues_validated = clause_ledger.flatMap((r) =>
+      Array.isArray(r.risk_items) ? r.risk_items.map((item) => ({
+        clause_id: r.clause_id,
+        clause_number: r.clause_number,
+        page_number: r.page_number ?? null,
+        risk_level: String(item.risk_level || 'LOW').toUpperCase(),
+        taxonomy_code: item.taxonomy_code || r.taxonomy_code || 'Unclassified',
+        title: item.title || r.title,
+        rationale: item.rationale || r.rationale,
+        recommended_actions: Array.isArray(item.recommended_actions) ? item.recommended_actions : [],
+        confidence: String(item.confidence || 'LOW').toUpperCase(),
+      })) : []
+    );
 
     const canonical_report = {
       pdfPayload,
@@ -1665,9 +1755,9 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
               started_at: new Date(startTime).toISOString(),
               completed_at: new Date().toISOString(),
               clause_count: clauses_extracted.length,
-              review_count: clause_review.length,
-              flags_count: flags.length,
-              canonical_missing_count: missing_clauses.length,
+              review_count: Array.isArray(pdfPayload.clause_review) ? pdfPayload.clause_review.length : 0,
+              flags_count: Array.isArray(pdfPayload.flags) ? pdfPayload.flags.length : 0,
+              canonical_missing_count: 0,
               catalog_version: CANONICAL_CATALOG.catalog_version,
               catalog_source: CANONICAL_CATALOG.source,
             },
@@ -1706,7 +1796,7 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       leaseId,
       clauses_extracted,
       clause_ledger,
-      issues_validated: clause_ledger.filter(r => r.risk_level !== 'NO_RISK'),
+      issues_validated,
       result: pdfPayload,
       diagnostic: { requestId, buildTag: BUILD_TAG, elapsedMs: nowMs() - startTime, budgets, durationsMs, llmUsed, ruleHits: (pdfPayload.flags||[]).length, clauses: clauses_extracted.length, ...diagnostics },
       debugLog
