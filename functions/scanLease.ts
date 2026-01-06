@@ -517,7 +517,7 @@ Deno.serve(async (req) => {
     stage('VERIFY_DONE', { okCounts });
 
     if (!okCounts) {
-      return json(200, { ok: false, error_code: 'PersistVerificationFailed', retryable: false, scanId: targetScanId, debugLog });
+      return { ok: false, error_code: 'PersistVerificationFailed', step: 'verify', message: 'Post-write verification failed', retryable: false, scanId: targetScanId, leaseId, debugLog };
     }
 
     // Optionally mark lease scanned (kept for compatibility)
