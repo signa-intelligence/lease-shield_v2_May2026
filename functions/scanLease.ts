@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import pdfParse from 'npm:pdf-parse@1.1.1';
-import mammoth from 'npm:mammoth@1.6.0';
-import { Buffer } from 'node:buffer';
+
+
+
 
 // Text-only, chunked lease scan pipeline (no vision, no file attachments)
 // - Extracts plain text from PDF/DOCX
