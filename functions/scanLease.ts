@@ -527,16 +527,15 @@ Deno.serve(async (req) => {
 
     return json(200, {
       ok: true,
-      success: true,
-      status: 'ok',
       scanId: targetScanId,
       leaseId,
-      risk_score,
-      summary,
-      flags,
-      clauses_extracted: extracted,
-      clause_ledger,
-      issues_validated,
+      result: {
+        clauses_extracted: extracted,
+        clause_ledger,
+        issues_validated,
+        summary,
+        flags
+      },
       debugLog,
     });
   } catch (e) {
