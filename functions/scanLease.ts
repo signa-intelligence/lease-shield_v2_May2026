@@ -1616,13 +1616,17 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       pdfPayload = payloadResult;
     }
 
+    const issues_validated = (pdfPayload.meta?.issues_validated_count || 0) > 0
+      ? clause_ledger.filter((r) => r.risk_level !== 'NO_RISK')
+      : clause_ledger.filter((r) => r.risk_level !== 'NO_RISK');
+
     const canonical_report = {
       pdfPayload,
       clause_ledger: clauses_extracted,
-      canonical_ledger,
-      missing_clauses,
-      clause_review,
-      issues: flags,
+      canonical_ledger: [],
+      missing_clauses: [],
+      clause_review: pdfPayload.clause_review || [],
+      issues: pdfPayload.flags || [],
       status: "ok",
     };
 
