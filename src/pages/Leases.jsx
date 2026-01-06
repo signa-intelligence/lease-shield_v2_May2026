@@ -203,7 +203,7 @@ export default function Leases() {
       }
 
       // Update lease status based on scan outcome
-      await base44.entities.Lease.update(lease.id, { status: data.success ? 'scanned' : 'uploaded' });
+      await base44.entities.Lease.update(lease.id, { status: data.ok ? 'scanned' : 'uploaded' });
 
       // Load the persisted scan to show in UI
       const refetched = await base44.entities.LeaseScan.filter({ id: data.scanId });
