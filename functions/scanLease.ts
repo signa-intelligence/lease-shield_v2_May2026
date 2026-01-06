@@ -1783,6 +1783,17 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       )
     };
 
+    // Minimal summary + flags objects for persistence
+    const summaryObj = {
+      clauses_total: (clauses_extracted || []).length,
+      risks_total: (issues_validated || []).length,
+      risk_score: Number(pdfPayload?.risk_score || 0)
+    };
+    const flagsObj = {
+      list: Array.isArray(pdfPayload?.flags) ? pdfPayload.flags : [],
+      counts: levelCounts
+    };
+
     // 4) Persist scan + mark lease scanned
     let persistedScanId = scanId;
 
@@ -1804,15 +1815,19 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
           flags: pdfPayload.flags,
           summary: pdfPayload.summary,
           scan_full: {
+            pipeline: debugLog?.stages || [],
             clauses_extracted,
             clause_ledger: clause_ledger,
-            canonical_ledger: [],
-            missing_clauses: [],
+            issues_validated,
+            flags: flagsObj,
+            summary: summaryObj,
             clause_review: pdfPayload.clause_review,
             key_terms: keyTerms,
             language_detected: keyTerms.language_detected,
-            issues_validated,
             self_test,
+            debugLog,
+            canonical_ledger: [],
+            missing_clauses: [],
             canonical_report,
             diagnostics: {
               requestId,
@@ -1908,6 +1923,19 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       overall_pass: false
     };
 
+    // Try to persist debug info for failed scans (non-blocking)
+    try {
+      const base44 = createClientFromRequest(req);
+      await base44.asServiceRole.entities.LeaseScan.update(body.scanId || null, {
+        status: 'failed',
+        scan_full: {
+          error: { stage, message: se.msg },
+          debugLog,
+          pipeline: debugLog?.stages || []
+        }
+      });
+    } catch (_) {}
+
     return json(200, {
       ok: false,
       success: false,
@@ -1917,6 +1945,7 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       scanId: body.scanId || null,
       leaseId: body.leaseId || null,
       result: minimal,
+      self_test,
       error: { category: "SCAN_FAILED", message: se.msg, requestId, scanId: body.scanId || null, details: { stage, msg: se.msg, stack: se.stack } },
       diagnostic: {
         requestId,

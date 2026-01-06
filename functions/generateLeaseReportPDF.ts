@@ -189,18 +189,17 @@ Deno.serve(async (req) => {
 
     if (!data) {
       return json(
-        400,
-        { error: "MISSING_REPORT_DATA", message: "Provide scanId or scanData" },
+        200,
+        { success: false, error: "NO_SOURCE_DATA", message: "Scan data not saved. Please re-scan.", scanId, correlationId },
         headers
       );
     }
 
-    // Validate minimum structure (this is what was causing 400s)
+    // Validate minimum structure and softly repair
     const missing = [];
     if (!Array.isArray(data.clause_ledger) || data.clause_ledger.length === 0) missing.push("clause_ledger");
     if (!Array.isArray(data.flags)) data.flags = [];
     if (!Array.isArray(data.clause_review) || data.clause_review.length !== data.clause_ledger.length) {
-      // Force full coverage so PDF never 400s for coverage mismatch
       const flagsByClause = new Map();
       data.flags.forEach((f) => {
         if (!f?.clause_id) return;
@@ -222,7 +221,7 @@ Deno.serve(async (req) => {
       });
     }
     if (missing.length > 0) {
-      return json(400, { error: "MISSING_REPORT_DATA", missing_fields: missing }, headers);
+      return json(200, { success: false, error: "MISSING_REPORT_DATA", message: "Scan data not saved. Please re-scan.", missing_fields: missing, scanId, correlationId }, headers);
     }
 
     // -------- PDF generation --------
