@@ -1711,13 +1711,26 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
     );
 
     const canonical_report = {
-      pdfPayload,
+      status: "ok",
+      generatedAt: new Date().toISOString(),
+      pdfPayload: {
+        lease_address: pdfPayload.lease_address,
+        generated_date: pdfPayload.generated_date,
+        risk_score: pdfPayload.risk_score,
+        summary: pdfPayload.summary,
+        key_terms: pdfPayload.key_terms,
+        flags: pdfPayload.flags,
+        clause_review: pdfPayload.clause_review,
+        clause_ledger: pdfPayload.clause_ledger,
+        mappings: pdfPayload.mappings || [],
+        missing_clauses: pdfPayload.missing_clauses || [],
+        coverage_summary: pdfPayload.coverage_summary || {}
+      },
       clause_ledger: clauses_extracted,
       canonical_ledger: [],
       missing_clauses: [],
       clause_review: pdfPayload.clause_review || [],
-      issues: pdfPayload.flags || [],
-      status: "ok",
+      issues: pdfPayload.flags || []
     };
 
     // Compute self-test diagnostics (non-blocking)
