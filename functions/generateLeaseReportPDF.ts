@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 import { jsPDF } from "npm:jspdf@2.5.2";
+import { severityPalette } from "./severityPalette.js";
 
 /**
  * Self-contained CORS + JSON helpers (no local imports)
@@ -50,6 +51,33 @@ function getRiskTheme(riskScore) {
     return { level: "MEDIUM", color: [245, 158, 11] };
   }
   return { level: "LOW", color: [16, 185, 129] };
+}
+
+// Helpers for unified severity + Thai rendering
+const severityOrder = { critical: 4, high: 3, medium: 2, low: 1, none: 0 };
+function highestSeverity(flags){
+  if (!Array.isArray(flags) || flags.length === 0) return 'none';
+  return flags.reduce((acc, f) => (severityOrder[f?.severity] > severityOrder[acc] ? (f?.severity||'none') : acc), 'none');
+}
+function normalizeBullet(text){
+  return String(text||'').replace(/[●▪︎◦·]+/g,'•');
+}
+async function ensureThaiFont(doc){
+  try {
+    const fontUrl = 'https://raw.githubusercontent.com/google/fonts/main/ofl/notosansthai/NotoSansThai-Regular.ttf';
+    const res = await fetch(fontUrl);
+    const buf = await res.arrayBuffer();
+    let binary = '';
+    const bytes = new Uint8Array(buf);
+    const chunk = 0x8000;
+    for (let i=0;i<bytes.length;i+=chunk){
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i+chunk));
+    }
+    const b64 = btoa(binary);
+    doc.addFileToVFS('NotoSansThai-Regular.ttf', b64);
+    doc.addFont('NotoSansThai-Regular.ttf', 'NotoSansThai', 'normal');
+    return true;
+  } catch(_) { return false; }
 }
 
 Deno.serve(async (req) => {
@@ -178,13 +206,15 @@ Deno.serve(async (req) => {
     // -------- PDF generation --------
     const doc = new jsPDF();
     const thaiOk = await ensureThaiFont(doc);
+    if (thaiOk) { try { doc.setFont('NotoSansThai','normal'); } catch(_) {} }
+    const thaiOk = await ensureThaiFont(doc);
     if (!thaiOk) { try { doc.setFont('helvetica', 'normal'); } catch(_) {} }
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     let y = 20;
 
     const addText = (text, x, size, style = "normal", maxWidth = pageWidth - 40) => {
-      doc.setFont("helvetica", style);
+      doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', style);
       doc.setFontSize(size);
       const lines = doc.splitTextToSize(String(text || ""), maxWidth);
       for (const line of lines) {
@@ -213,14 +243,17 @@ Deno.serve(async (req) => {
     doc.text(`Generated: ${new Date(data.generated_date || Date.now()).toLocaleString()}`, 14, y);
     y += 10;
 
-    // Risk banner
-    const theme = getRiskTheme(Number(data.risk_score || 0));
-    doc.setFillColor(...theme.color);
+    // Risk banner uses highest severity across flags
+    const highest = highestSeverity(data.flags);
+    const pal = severityPalette[highest] || severityPalette.none;
+    const [r,g,b] = pal.border || [12,59,46];
+    doc.setFillColor(r,g,b);
     doc.roundedRect(14, y, pageWidth - 28, 18, 3, 3, "F");
     doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
+    doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
     doc.setFontSize(11);
-    doc.text(`Risk: ${theme.level}   Score: ${Number(data.risk_score || 0)}/100`, 18, y + 12);
+    const label = highest==='none' ? 'LOW' : String(highest||'low').toUpperCase();
+    doc.text(`Risk: ${label}   Score: ${Number(data.risk_score || 0)}/100`, 18, y + 12);
     y += 26;
 
     doc.setTextColor(0, 0, 0);
@@ -254,13 +287,18 @@ Deno.serve(async (req) => {
 
       sorted.slice(0, 50).forEach((f, i) => {
         if (y > pageHeight - 30) { doc.addPage(); y = 20; }
-        const title = f.title || f.description || `Issue ${i + 1}`;
-        addText(`${i + 1}. [${String(f.severity || "medium").toUpperCase()}] ${title}`, 14, 9, "bold");
-        doc.setFont("helvetica", "normal");
-        const rec = f.recommendation || "";
+        // Left color bar by severity
+        const pp = severityPalette[f.severity] || severityPalette.none;
+        const [rr,gg,bb] = pp.border || [12,59,46];
+        doc.setFillColor(rr,gg,bb);
+        doc.rect(12, y-2, 2, 20, 'F');
+        const title = normalizeBullet(f.title || f.description || `Issue ${i + 1}`);
+        addText(`${i + 1}. [${String(f.severity || "medium").toUpperCase()}] ${title}`, 16, 9, thaiOk ? 'normal' : "bold");
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
+        const rec = normalizeBullet(f.recommendation || "");
         if (rec) addText(`Recommendation: ${rec}`, 16, 8);
-        const ev = f.evidence || "";
-        if (ev) addText(`Evidence: ${String(ev).slice(0, 240)}`, 16, 8);
+        let ev = f.evidence || "";
+        if (ev) addText(`Evidence: ${normalizeBullet(String(ev).slice(0, 240))}`, 16, 8);
         y += 3;
       });
     }
@@ -285,7 +323,7 @@ Deno.serve(async (req) => {
 
       addText(`${i + 1}. ${c.heading || c.clause_id || "Clause"}`, 14, 8, "bold");
       addText(`Risk: ${String(r.risk_level || "none").toUpperCase()} — ${r.risk_summary || ""}`, 16, 8);
-      const snippet = String(c.full_text || "").slice(0, 220);
+      const snippet = normalizeBullet(String(c.full_text || "").slice(0, 220));
       if (snippet) addText(`Snippet: ${snippet}`, 16, 8);
       y += 2;
     }
