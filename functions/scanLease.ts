@@ -397,7 +397,7 @@ Deno.serve(async (req) => {
         debugLog.extract.chunks_succeeded += 1;
       } catch (e) {
         debugLog.extract.chunks_failed += 1;
-        return json(200, { ok: false, error_code: 'LLM_EXTRACT_FAILED', retryable: true, message: String(e?.message || e), debugLog });
+        return { ok: false, error_code: 'LLM_EXTRACT_FAILED', step: 'extract', message: String(e?.message || e), retryable: true, scanId, leaseId, debugLog };
       }
     }
 
