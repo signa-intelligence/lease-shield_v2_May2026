@@ -1,4 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
+import { nowMs, withTimeout, retry, classifyError } from "./_shared/analysisRuntime.js";
 
 /**
  * scanLease (v5.0-canonical-embedded)
@@ -1252,6 +1253,9 @@ Deno.serve(async (req) => {
 
   const requestId = body.requestId || `req-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   const startTime = Date.now();
+  const budgets = { extract: 12000, split: 4000, rules: 6000, llm: 18000, persist: 6000, total: 55000 };
+  const durationsMs = {}; 
+  const warnings = [];
   let stage = "INIT";
   const diagnostics = { persist_warnings: [] };
   let clauseCountSoFar = 0;
@@ -1299,10 +1303,11 @@ Deno.serve(async (req) => {
     }
 
     // 1) Extract clauses + key terms
-    stage = "EXTRACT_CLAUSES_LLM";
+    stage = "TEXT_EXTRACT_START";
+    let t0 = nowMs();
     let extractionResult;
     try {
-      const extractionPromise = base44.integrations.Core.InvokeLLM({
+      const call = () => base44.integrations.Core.InvokeLLM({
       prompt: `Extract ALL clauses from this residential lease document.
 FOR EACH CLAUSE provide:
 - clause_id
@@ -1345,20 +1350,28 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
         required: ["clauses"],
       },
     });
-      // Timeout after 35s
-      extractionResult = await Promise.race([
-        extractionPromise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('EXTRACTION_TIMEOUT')), 35000))
-      ]);
+      extractionResult = await retry(
+        () => withTimeout(call(), budgets.extract, 'EXTRACT'),
+        { retries: 1, baseDelayMs: 500, maxDelayMs: 1500, jitter: true }
+      );
+      stage = "TEXT_EXTRACT_DONE";
     } catch (e) {
+      const kind = classifyError(e);
       const se = safeError(e);
-      diagnostics.extract_error = { stage, msg: se.msg };
+      warnings.push({ stage: 'EXTRACT_CLAUSES_LLM', kind: kind.kind, message: se.msg });
+      diagnostics.extract_error = { stage: 'EXTRACT_CLAUSES_LLM', msg: se.msg };
       extractionResult = { clauses: [] };
+      stage = "TEXT_EXTRACT_DONE";
+    } finally {
+      durationsMs.extract = nowMs() - t0;
     }
 
+    let llmUsed = true;
     let clauses = (extractionResult && extractionResult.clauses) ? extractionResult.clauses : [];
     if (!Array.isArray(clauses) || clauses.length === 0) {
+      llmUsed = false;
       diagnostics.extract_warning = 'EMPTY_CLAUSES_FALLBACK';
+      warnings.push({ stage: 'EXTRACT_CLAUSES_LLM', kind: 'LLM', message: 'Empty clauses; using fallback' });
       clauses = [{ clause_id: 'CLAUSE-001', title: 'General', raw_text: 'Content not parsed', page_number: 1, language: (user && user.language) || 'en' }];
     }
     const keyTerms = {
@@ -1384,7 +1397,8 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
     const userLang = user.language || "en";
 
     // 2) Canonical ledger mapping (embedded catalog)
-    stage = "CANONICAL_MAP";
+    stage = "CLAUSE_SPLIT_START";
+    t0 = nowMs();
     let canonical_ledger = [], missing_clauses = [];
     try {
       const mapped = buildCanonicalLedger(
@@ -1393,32 +1407,44 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       );
       canonical_ledger = mapped.canonical_ledger;
       missing_clauses = mapped.missing_clauses;
+      stage = "CLAUSE_SPLIT_DONE";
     } catch (e) {
       const se = safeError(e);
       diagnostics.canonical_warning = se.msg;
+      warnings.push({ stage: 'CANONICAL_MAP', kind: 'UNKNOWN', message: se.msg });
       canonical_ledger = clauses_extracted.map(c => ({ clause_id: c.clause_id, catalog_id: 'CAT-UNMAPPED', canonical_name: 'Unclassified Clause', confidence: 0.3, match_score: 0, purpose: '', risk_triggers: [] }));
       missing_clauses = [];
+      stage = "CLAUSE_SPLIT_DONE";
+    } finally {
+      durationsMs.split = nowMs() - t0;
     }
 
     // 3) Risks from canonical triggers
-    stage = "RULES_EVAL";
+    stage = "RULE_ENGINE_START";
+    t0 = nowMs();
     let flags = [], risk_score = 0, clause_review = [];
     try {
       flags = buildFlagsFromCanonical(clauses_extracted, canonical_ledger, userLang);
       risk_score = computeRiskScore(flags);
       clause_review = buildClauseReview(clauses_extracted, flags);
+      stage = "RULE_ENGINE_DONE";
     } catch (e) {
       const se = safeError(e);
       diagnostics.rules_eval_warning = se.msg;
+      warnings.push({ stage: 'RULES_EVAL', kind: 'UNKNOWN', message: se.msg });
       flags = [];
       risk_score = 0;
       clause_review = clauses_extracted.map(c => ({ clause_id: c.clause_id, risk_level: 'none', risk_summary: 'Accept as standard.' }));
+      stage = "RULE_ENGINE_DONE";
+    } finally {
+      durationsMs.rules = nowMs() - t0;
     }
 
     clauseCountSoFar = clauses_extracted.length;
     flagsCountSoFar = flags.length;
 
-    stage = "BUILD_PAYLOAD";
+    stage = "MERGE_RESULTS_START";
+    t0 = nowMs();
     let pdfPayload = {
       lease_address: keyTerms.property_address || "Lease Agreement",
       generated_date: new Date().toISOString(),
@@ -1463,16 +1489,22 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
         issues: flags,
         status: "ok",
       };
+      stage = "MERGE_RESULTS_DONE";
     } catch(e) {
       const se = safeError(e);
       diagnostics.payload_warning = se.msg;
+      warnings.push({ stage: 'BUILD_PAYLOAD', kind: 'UNKNOWN', message: se.msg });
       canonical_report = { pdfPayload, clause_ledger: clauses_extracted, canonical_ledger, missing_clauses, clause_review, issues: flags, status: 'ok' };
+      stage = "MERGE_RESULTS_DONE";
+    } finally {
+      durationsMs.merge = nowMs() - t0;
     }
 
     // 4) Persist scan + mark lease scanned
     let persistedScanId = scanId;
 
-    stage = "PERSIST_SCAN_CREATE";
+    stage = "PERSIST_START";
+    t0 = nowMs();
     try {
       const existing = await base44.asServiceRole.entities.LeaseScan.filter({ id: scanId });
       if (!existing || existing.length === 0) {
@@ -1484,12 +1516,13 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       }
     } catch(e) {
       const se = safeError(e);
-      diagnostics.persist_warnings.push({ stage, msg: se.msg });
+      diagnostics.persist_warnings.push({ stage: 'PERSIST_SCAN_CREATE', msg: se.msg });
+      warnings.push({ stage: 'PERSIST_SCAN_CREATE', kind: 'HTTP', message: se.msg });
     }
 
-    stage = "PERSIST_SCAN_UPDATE";
     try {
-      await base44.asServiceRole.entities.LeaseScan.update(persistedScanId, {
+      await withTimeout(
+        base44.asServiceRole.entities.LeaseScan.update(persistedScanId, {
       lease_id: leaseId,
       status: "completed",
       risk_score,
@@ -1517,36 +1550,70 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
         },
         version: "v5.0-canonical-embedded",
       },
-    });
-
-    stage = "PERSIST_LEASE_UPDATE";
-    try {
-      await base44.asServiceRole.entities.Lease.update(leaseId, { status: "scanned" });
+    }), budgets.persist, 'PERSIST_UPDATE');
     } catch(e) {
       const se = safeError(e);
-      diagnostics.persist_warnings.push({ stage, msg: se.msg });
+      diagnostics.persist_warnings.push({ stage: 'PERSIST_SCAN_UPDATE', msg: se.msg });
+      warnings.push({ stage: 'PERSIST_SCAN_UPDATE', kind: 'HTTP', message: se.msg });
     }
 
+    try {
+      await withTimeout(base44.asServiceRole.entities.Lease.update(leaseId, { status: "scanned" }), budgets.persist, 'PERSIST_LEASE');
+    } catch(e) {
+      const se = safeError(e);
+      diagnostics.persist_warnings.push({ stage: 'PERSIST_LEASE_UPDATE', msg: se.msg });
+      warnings.push({ stage: 'PERSIST_LEASE_UPDATE', kind: 'HTTP', message: se.msg });
+    } finally {
+      durationsMs.persist = nowMs() - t0;
+      stage = "PERSIST_DONE";
+    }
+
+    const status = warnings.length > 0 ? 'partial' : 'ok';
     return json(200, {
       success: true,
+      status,
+      warnings,
       scanId: persistedScanId,
       leaseId,
       result: pdfPayload,
-      diagnostic: { requestId, elapsedMs: Date.now() - startTime, ...(diag||{}), ...diagnostics },
+      diagnostic: { requestId, elapsedMs: Date.now() - startTime, budgets, durationsMs, llmUsed, ruleHits: flags.length, clauses: clauses_extracted.length, ...diagnostics },
     });
   } catch (e) {
+    // Final safety: return partial report instead of 500
     const se = safeError(e);
-    const code = /unauth/i.test(se.msg) ? "UNAUTHORIZED" : "SCAN_FAILED";
-    const status = code === "UNAUTHORIZED" ? 401 : 500;
-    return err(code, se.msg, status, requestId, {
-      stage,
-      msg: se.msg,
-      stack: se.stack,
-      raw: se.raw,
-      elapsedMs: Date.now() - startTime,
-      fileUrlsCount: Array.isArray(body?.fileUrls) ? body.fileUrls.length : (body?.fileUrls ? 1 : 0),
-      clauseCountSoFar,
-      flagsCountSoFar
+    const minimal = {
+      lease_address: "Lease Agreement",
+      generated_date: new Date().toISOString(),
+      risk_score: 0,
+      summary: "Partial analysis due to internal error.",
+      key_terms: {},
+      flags: [],
+      clause_review: [],
+      clause_ledger: [],
+      canonical_ledger: [],
+      missing_clauses: [],
+      coverage_summary: { total_clauses: 0, clauses_reviewed: 0, clauses_flagged: 0 },
+      fallback: true,
+      fallback_reason: "top_level_catch"
+    };
+
+    return json(200, {
+      success: true,
+      status: 'partial',
+      warnings: [{ stage: stage || 'UNKNOWN', kind: 'UNKNOWN', message: se.msg }],
+      scanId: body.scanId || null,
+      leaseId: body.leaseId || null,
+      result: minimal,
+      diagnostic: {
+        requestId,
+        elapsedMs: Date.now() - startTime,
+        budgets: { total: 55000 },
+        durationsMs: {},
+        llmUsed: false,
+        ruleHits: 0,
+        clauses: 0,
+        error: { stage, msg: se.msg, stack: se.stack }
+      }
     });
   }
 });
