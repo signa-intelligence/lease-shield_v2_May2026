@@ -178,10 +178,12 @@ export default function Leases() {
 
       const out = resp?.data ?? resp;
       if (!out || typeof out !== 'object') {
-        const err = new Error('scanLease returned empty result (Base44 invoke contract failure).');
+        const reqId = resp?.headers?.['x-request-id'] || resp?.headers?.['request-id'] || resp?.headers?.['x-b44-request-id'] || null;
+        const msg = `scanLease returned empty result (Base44 invoke contract failure).\nrequestId: ${reqId || 'n/a'}\nscanId: ${lease?.id || 'n/a'}`;
+        const err = new Error(msg);
         err.code = 'EMPTY_FUNCTION_RESULT';
         err.step = 'ANALYSIS';
-        err.requestId = resp?.headers?.['x-request-id'] || resp?.headers?.['request-id'] || resp?.headers?.['x-b44-request-id'] || null;
+        err.requestId = reqId;
         err.scanId = lease?.id || null;
         throw err;
       }
