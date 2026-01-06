@@ -13,6 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import LeaseUploadZone from "../components/leases/LeaseUploadZone";
 import LeaseAnalysisResults from "../components/leases/LeaseAnalysisResults";
 
+// External scanning API base (set your domain here)
+const EXTERNAL_API_BASE = 'https://<my-api-domain>';
+// Try to retrieve Base44 JWT from common locations
+const getAuthToken = () =>
+  localStorage.getItem('base44_jwt') ||
+  localStorage.getItem('jwt') ||
+  localStorage.getItem('token');
+
 export default function Leases() {
   const navigate = useNavigate();
   const [uploading, setUploading] = useState(false);
@@ -168,40 +176,109 @@ export default function Leases() {
       });
 
       setAnalyzing(true);
-      setUploading(false); // Set uploading to false after upload, before analysis starts
+      setUploading(false);
 
-      // Call backend scan function and normalize output shape
-      const resp = await base44.functions.invoke('scanLease', {
-        leaseId: lease.id,
-        fileUrls: [file_url]
+      // 1) Create a LeaseScan record to obtain scanId
+      const newScan = await base44.entities.LeaseScan.create({ lease_id: lease.id });
+
+      // 2) Kick off external scan job
+      const token = getAuthToken();
+      const startRes = await fetch(`${EXTERNAL_API_BASE}/scan`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ leaseId: lease.id, scanId: newScan.id, fileUrl: file_url, language })
       });
 
-      const out = resp?.data ?? resp;
-      if (!out || typeof out !== 'object') {
-        const reqId = resp?.headers?.['x-request-id'] || resp?.headers?.['request-id'] || resp?.headers?.['x-b44-request-id'] || null;
-        const msg = `scanLease returned empty result (Base44 invoke contract failure).\nrequestId: ${reqId || 'n/a'}\nscanId: ${lease?.id || 'n/a'}`;
-        const err = new Error(msg);
-        err.code = 'EMPTY_FUNCTION_RESULT';
-        err.step = 'ANALYSIS';
-        err.requestId = reqId;
-        err.scanId = lease?.id || null;
-        throw err;
+      const startBody = await startRes.json().catch(() => null);
+      if (!startRes.ok) {
+        const msg = startBody?.message || `External scan start failed (${startRes.status})`;
+        throw new Error(`${startBody?.error_code || 'SCAN_START_ERROR'} [${startBody?.step || 'START'}]: ${msg}`);
+      }
+      const jobId = startBody?.jobId;
+      if (!jobId) {
+        throw new Error('SCAN_START_ERROR [START]: Missing jobId from external API');
       }
 
-      if (out.ok === false) {
-        // show structured backend error
-        console.error('scanLease error', out);
-        const msg = `${out.error_code || 'SCAN_ERROR'} [${out.step || 'ANALYSIS'}]: ${out.message || 'Scan failed'}`;
-        throw new Error(msg);
+      // 3) Poll for job status with backoff (2s → exp to 30s, then 5s)
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      let delay = 2000;
+      let elapsed = 0;
+      let final = null;
+
+      while (true) {
+        const statusRes = await fetch(`${EXTERNAL_API_BASE}/scan/${jobId}`, {
+          method: 'GET',
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          }
+        });
+
+        const body = await statusRes.json().catch(() => ({}));
+        if (!statusRes.ok) {
+          // Persist debugLog if present and surface structured error
+          if (body?.debugLog) {
+            await base44.entities.LeaseScan.update(newScan.id, { scan_full: { debugLog: body.debugLog } });
+          }
+          const msg = body?.message || `Status check failed (${statusRes.status})`;
+          throw new Error(`${body?.error_code || 'SCAN_STATUS_ERROR'} [${body?.step || 'POLL'}]: ${msg}`);
+        }
+
+        const status = body?.status || (body?.ok ? 'done' : 'pending');
+        if (status === 'done' || body?.ok === true) {
+          final = body?.result || body;
+          break;
+        }
+        if (status === 'failed' || body?.ok === false) {
+          if (body?.debugLog) {
+            await base44.entities.LeaseScan.update(newScan.id, { scan_full: { debugLog: body.debugLog } });
+          }
+          const msg = `${body?.error_code || 'SCAN_ERROR'} [${body?.step || 'ANALYSIS'}]: ${body?.message || 'Scan failed'}`;
+          throw new Error(msg);
+        }
+
+        await sleep(delay);
+        elapsed += delay;
+        delay = elapsed < 30000 ? Math.min(Math.round(delay * 1.5), 5000) : 5000;
       }
 
-      // Update lease status based on scan outcome
+      // 4) Persist results into LeaseScan.scan_full
+      const {
+        clauses_extracted = [],
+        clause_ledger = [],
+        issues_validated = [],
+        flags = [],
+        summary = '',
+        canonical_report = null,
+        pipeline = [],
+        debugLog = null,
+        risk_score
+      } = final || {};
+
+      await base44.entities.LeaseScan.update(newScan.id, {
+        flags,
+        summary,
+        risk_score: typeof risk_score === 'number' ? risk_score : 0,
+        scan_full: {
+          clauses_extracted,
+          clause_ledger,
+          issues_validated,
+          flags,
+          summary,
+          canonical_report,
+          pipeline,
+          debugLog
+        }
+      });
+
+      // Mark lease as scanned
       await base44.entities.Lease.update(lease.id, { status: 'scanned' });
 
-      // Load the persisted scan to show in UI
-      const refetched = await base44.entities.LeaseScan.filter({ id: out.scanId });
+      // 5) Load persisted scan for UI
+      const refetched = await base44.entities.LeaseScan.filter({ id: newScan.id });
       const scan = refetched?.[0];
-
       setCurrentScan(scan);
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       
