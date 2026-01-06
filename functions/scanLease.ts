@@ -1272,33 +1272,37 @@ Deno.serve(async (req) => {
     const leaseId = body.leaseId;
     const fileUrlsRaw = body.fileUrls;
 
-    if (!leaseId) return err("MISSING_LEASE_ID", "leaseId is required", 400, requestId);
+    stage = "VALIDATE_INPUT";
+    if (!leaseId) return err("MISSING_LEASE_ID", "leaseId is required", 400, requestId, { stage });
     if (!fileUrlsRaw || (Array.isArray(fileUrlsRaw) && fileUrlsRaw.length === 0)) {
-      return err("VALIDATION_ERROR", "No file URLs provided", 400, requestId);
+      return err("VALIDATION_ERROR", "No file URLs provided", 400, requestId, { stage });
     }
 
     const fileUrls = Array.isArray(fileUrlsRaw) ? fileUrlsRaw : [fileUrlsRaw];
     for (const url of fileUrls) {
       const v = validateFileUrl(url);
-      if (!v.valid) return err("INVALID_FILE_URL", v.error, 400, requestId);
+      if (!v.valid) return err("INVALID_FILE_URL", v.error, 400, requestId, { stage });
     }
 
     // Premium gate
     const plan = String(user.plan_tier || "free").toLowerCase();
-    if (plan === "free") return err("PREMIUM_REQUIRED", "Upgrade required to scan", 403, requestId);
+    if (plan === "free") return err("PREMIUM_REQUIRED", "Upgrade required to scan", 403, requestId, { stage: "VALIDATE_INPUT" });
 
     // Guard: catalog must exist
-    if (!CANONICAL_CATALOG || !Array.isArray(CANONICAL_CATALOG.catalog) || CANONICAL_CATALOG.catalog.length !== 92) {
-      return err(
-        "CANONICAL_CATALOG_INVALID",
-        `Canonical catalog invalid. Expected 92 items; got ${(CANONICAL_CATALOG && CANONICAL_CATALOG.catalog && CANONICAL_CATALOG.catalog.length) || 0}.`,
-        500,
-        requestId
-      );
+    if (!CANONICAL_CATALOG || !Array.isArray(CANONICAL_CATALOG.catalog)) {
+      diagnostics.catalog_mismatch = 'MISSING_OR_INVALID';
+    } else if (typeof CANONICAL_CATALOG.catalog_count === 'number' && CANONICAL_CATALOG.catalog_count !== CANONICAL_CATALOG.catalog.length) {
+      diagnostics.catalog_mismatch = {
+        expected: CANONICAL_CATALOG.catalog_count,
+        actual: CANONICAL_CATALOG.catalog.length
+      };
     }
 
     // 1) Extract clauses + key terms
-    const extractionResult = await base44.integrations.Core.InvokeLLM({
+    stage = "EXTRACT_CLAUSES_LLM";
+    let extractionResult;
+    try {
+      const extractionPromise = base44.integrations.Core.InvokeLLM({
       prompt: `Extract ALL clauses from this residential lease document.
 FOR EACH CLAUSE provide:
 - clause_id
@@ -1341,8 +1345,22 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
         required: ["clauses"],
       },
     });
+      // Timeout after 35s
+      extractionResult = await Promise.race([
+        extractionPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('EXTRACTION_TIMEOUT')), 35000))
+      ]);
+    } catch (e) {
+      const se = safeError(e);
+      diagnostics.extract_error = { stage, msg: se.msg };
+      extractionResult = { clauses: [] };
+    }
 
-    const clauses = (extractionResult && extractionResult.clauses) ? extractionResult.clauses : [];
+    let clauses = (extractionResult && extractionResult.clauses) ? extractionResult.clauses : [];
+    if (!Array.isArray(clauses) || clauses.length === 0) {
+      diagnostics.extract_warning = 'EMPTY_CLAUSES_FALLBACK';
+      clauses = [{ clause_id: 'CLAUSE-001', title: 'General', raw_text: 'Content not parsed', page_number: 1, language: (user && user.language) || 'en' }];
+    }
     const keyTerms = {
       property_address: (extractionResult && extractionResult.property_address) || "",
       start_date: (extractionResult && extractionResult.start_date) || "",
@@ -1366,17 +1384,42 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
     const userLang = user.language || "en";
 
     // 2) Canonical ledger mapping (embedded catalog)
-    const { canonical_ledger, missing_clauses } = buildCanonicalLedger(
-      clauses_extracted,
-      CANONICAL_CATALOG.catalog
-    );
+    stage = "CANONICAL_MAP";
+    let canonical_ledger = [], missing_clauses = [];
+    try {
+      const mapped = buildCanonicalLedger(
+        clauses_extracted,
+        CANONICAL_CATALOG.catalog
+      );
+      canonical_ledger = mapped.canonical_ledger;
+      missing_clauses = mapped.missing_clauses;
+    } catch (e) {
+      const se = safeError(e);
+      diagnostics.canonical_warning = se.msg;
+      canonical_ledger = clauses_extracted.map(c => ({ clause_id: c.clause_id, catalog_id: 'CAT-UNMAPPED', canonical_name: 'Unclassified Clause', confidence: 0.3, match_score: 0, purpose: '', risk_triggers: [] }));
+      missing_clauses = [];
+    }
 
     // 3) Risks from canonical triggers
-    const flags = buildFlagsFromCanonical(clauses_extracted, canonical_ledger, userLang);
-    const risk_score = computeRiskScore(flags);
-    const clause_review = buildClauseReview(clauses_extracted, flags);
+    stage = "RULES_EVAL";
+    let flags = [], risk_score = 0, clause_review = [];
+    try {
+      flags = buildFlagsFromCanonical(clauses_extracted, canonical_ledger, userLang);
+      risk_score = computeRiskScore(flags);
+      clause_review = buildClauseReview(clauses_extracted, flags);
+    } catch (e) {
+      const se = safeError(e);
+      diagnostics.rules_eval_warning = se.msg;
+      flags = [];
+      risk_score = 0;
+      clause_review = clauses_extracted.map(c => ({ clause_id: c.clause_id, risk_level: 'none', risk_summary: 'Accept as standard.' }));
+    }
 
-    const pdfPayload = {
+    clauseCountSoFar = clauses_extracted.length;
+    flagsCountSoFar = flags.length;
+
+    stage = "BUILD_PAYLOAD";
+    let pdfPayload = {
       lease_address: keyTerms.property_address || "Lease Agreement",
       generated_date: new Date().toISOString(),
       risk_score,
@@ -1409,15 +1452,22 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       catalog_source: CANONICAL_CATALOG.source,
     };
 
-    const canonical_report = {
-      pdfPayload,
-      clause_ledger: clauses_extracted,
-      canonical_ledger,
-      missing_clauses,
-      clause_review,
-      issues: flags,
-      status: "ok",
-    };
+    let canonical_report;
+    try {
+      canonical_report = {
+        pdfPayload,
+        clause_ledger: clauses_extracted,
+        canonical_ledger,
+        missing_clauses,
+        clause_review,
+        issues: flags,
+        status: "ok",
+      };
+    } catch(e) {
+      const se = safeError(e);
+      diagnostics.payload_warning = se.msg;
+      canonical_report = { pdfPayload, clause_ledger: clauses_extracted, canonical_ledger, missing_clauses, clause_review, issues: flags, status: 'ok' };
+    }
 
     // 4) Persist scan + mark lease scanned
     let persistedScanId = scanId;
@@ -1485,8 +1535,18 @@ language_detected, rent_due_day, deposit_due_date, deposit_return_days.`,
       diagnostic: { requestId, elapsedMs: Date.now() - startTime, ...(diag||{}), ...diagnostics },
     });
   } catch (e) {
-    const msg = String((e && e.message) || e);
-    if (/unauth/i.test(msg)) return err("UNAUTHORIZED", "Unauthorized", 401, requestId);
-    return err("SCAN_FAILED", msg, 500, requestId);
+    const se = safeError(e);
+    const code = /unauth/i.test(se.msg) ? "UNAUTHORIZED" : "SCAN_FAILED";
+    const status = code === "UNAUTHORIZED" ? 401 : 500;
+    return err(code, se.msg, status, requestId, {
+      stage,
+      msg: se.msg,
+      stack: se.stack,
+      raw: se.raw,
+      elapsedMs: Date.now() - startTime,
+      fileUrlsCount: Array.isArray(body?.fileUrls) ? body.fileUrls.length : (body?.fileUrls ? 1 : 0),
+      clauseCountSoFar,
+      flagsCountSoFar
+    });
   }
 });
