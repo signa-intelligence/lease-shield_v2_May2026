@@ -525,20 +525,20 @@ Deno.serve(async (req) => {
       await (await requireAuth(req)).base44.asServiceRole.entities.Lease.update(leaseId, { status: 'scanned' });
     } catch { /* non-blocking */ }
 
-    return json(200, {
+    return {
       ok: true,
-      success: true,
-      status: 'ok',
       scanId: targetScanId,
       leaseId,
-      risk_score,
-      summary,
-      flags,
-      clauses_extracted: extracted,
-      clause_ledger,
-      issues_validated,
+      result: {
+        risk_score,
+        summary,
+        flags,
+        clauses_extracted: extracted,
+        clause_ledger,
+        issues_validated,
+      },
       debugLog,
-    });
+    };
   } catch (e) {
     return json(200, {
       ok: false,
