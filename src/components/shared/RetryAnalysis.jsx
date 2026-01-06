@@ -28,7 +28,7 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
 
       const fileUrls = lease.file_urls || [lease.file_url];
       
-      const { data: scanResponse } = await base44.functions.invoke('scanLease', {
+      const { data: scanResponse } = await base44.functions.invoke('scanLease__DISABLED', {
         fileUrls: fileUrls,
         requestId,
         leaseId: lease.id,

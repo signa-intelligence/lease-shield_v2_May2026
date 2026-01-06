@@ -889,7 +889,7 @@ function UploadScanPageContent() {
         }
 
         // Trigger analysis with all pages
-        const { data: scanResponse } = await base44.functions.invoke('scanLease', {
+        const { data: scanResponse } = await base44.functions.invoke('scanLease__DISABLED', {
           fileUrls: uploadedUrls,
           requestId,
           leaseId: lease.id,
@@ -1168,7 +1168,7 @@ function UploadScanPageContent() {
         logStage('ANALYSIS_START', { fileUrls });
         const analysisStartTime = Date.now();
 
-        const { data: scanResponse } = await base44.functions.invoke('scanLease', {
+        const { data: scanResponse } = await base44.functions.invoke('scanLease__DISABLED', {
           fileUrls: fileUrls,
           requestId,
           leaseId: lease.id,
@@ -1507,7 +1507,7 @@ function UploadScanPageContent() {
       setUploadProgress(50);
 
       // Re-trigger analysis
-      const { data: scanResponse } = await base44.functions.invoke('scanLease', {
+      const { data: scanResponse } = await base44.functions.invoke('scanLease__DISABLED', {
         fileUrls: allUrls,
         requestId: `reanalyze-${Date.now()}`,
         leaseId: addingPagesToLease.id,
