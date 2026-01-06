@@ -28,12 +28,10 @@ function json(status, body) {
       const { error_code, step, message, retryable, debugLog } = body;
       payload = {
         ok: false,
-        error_code: error_code || 'UNKNOWN_BACKEND_ERROR',
-        step: step || body?.stage || 'ANALYSIS',
-        message: (typeof message === 'string' ? message : String(message || 'Scan failed')),
+        error_code: error_code || 'UNKNOWN_ERROR',
+        step: step || body?.stage || 'unspecified',
+        message: (typeof message === 'string' ? message : String(message || '')),
         retryable: typeof retryable === 'boolean' ? retryable : true,
-        scanId: body?.scanId ?? null,
-        leaseId: body?.leaseId ?? null,
         debugLog: debugLog ?? null,
       };
     } else {
@@ -367,7 +365,7 @@ Deno.serve(async (req) => {
     stage('FETCH_AND_EXTRACT_DONE', { total_len: combinedText.length });
 
     if (!combinedText || combinedText.length < 300) {
-      return json(200, { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', retryable: true, debugLog });
+      return { ok: false, error_code: 'TEXT_EXTRACTION_EMPTY', step: 'extract', message: 'Extracted text too short', retryable: true, scanId, leaseId, debugLog };
     }
 
     // PHASE 1: Chunk + extract clauses (TEXT-ONLY)
