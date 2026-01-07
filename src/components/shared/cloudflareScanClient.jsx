@@ -15,7 +15,6 @@ export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
       }),
     });
 
-    // Safe JSON parse
     try {
       return await res.json();
     } catch (e) {
@@ -25,7 +24,7 @@ export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
         error_code: "CLOUDFLARE_UNREACHABLE",
         message: "Cloudflare scan failed",
         retryable: true,
-        debugLog: { cause: String(e?.message || e) },
+        debugLog: { cause: String(e) },
       };
     }
   } catch (err) {
@@ -35,7 +34,7 @@ export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
       error_code: "CLOUDFLARE_UNREACHABLE",
       message: "Cloudflare scan failed",
       retryable: true,
-      debugLog: { cause: String(err?.message || err) },
+      debugLog: { cause: String(err) },
     };
   }
 }
