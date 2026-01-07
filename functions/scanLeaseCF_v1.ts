@@ -112,11 +112,12 @@ Deno.serve(async (req) => {
       }
 
       // Return normalized success/failure envelope
-      if (cfJson.ok === false) {
-        const { step, error_code, message } = cfJson;
-        return new Response(JSON.stringify({ ok: false, scanId: targetScan.id, leaseId, step, error_code, message }), {
-          status: 200, headers: { 'Content-Type': 'application/json' }
-        });
+    if (cfJson.ok === false) {
+            // Destructure debugLog from cfJson
+            const { step, error_code, message, debugLog } = cfJson; 
+            return new Response(JSON.stringify({ ok: false, scanId: targetScan.id, leaseId, step, error_code, message, debugLog }), {
+              status: 200, headers: { 'Content-Type': 'application/json' }
+            });
       }
 
       // Persist only after validation passes
