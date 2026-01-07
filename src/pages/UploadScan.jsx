@@ -1936,9 +1936,6 @@ function UploadScanPageContent() {
                     <Button variant="outline" size="sm" onClick={handleRetry} className="border-red-300 text-red-700 hover:bg-red-100">
                         Try Again
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(JSON.stringify({error, debugLog}, null, 2))}>
-                        <Copy className="w-3 h-3 mr-1" /> Copy Error
-                    </Button>
                 </div>
               </div>
             </div>
