@@ -11,6 +11,7 @@ Deno.serve(async (req) => {
   const jwt = bearer || jwtFromBody || null;
 
   try {
+    console.log("SCANLEASEEXTERNAL_CALLED", { leaseId, hasFileUrl: !!fileUrl, hasJwt: !!jwt });
     const cfRes = await scanViaCloudflare({ leaseId, fileUrl, language, jwt });
     return Response.json(cfRes, { status: 200 });
   } catch (e) {
