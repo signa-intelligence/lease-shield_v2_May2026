@@ -9,6 +9,7 @@ Deno.serve(async (req) => {
     try { payload = JSON.parse(bodyText || '{}'); } catch (_) { payload = {}; }
 
     const { leaseId = null, fileUrl = null, language = null } = payload;
+    const forwardPayload = payload?.debug_test === true ? payload : { leaseId, fileUrl, language };
     if (!leaseId || !fileUrl) {
       return new Response(JSON.stringify({ ok: false, step: 'INPUT_VALIDATION', error_code: 'MISSING_PARAMS', message: 'leaseId and fileUrl are required' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
@@ -19,7 +20,7 @@ Deno.serve(async (req) => {
     const cfRes = await fetch(workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leaseId, fileUrl, language })
+      body: JSON.stringify(forwardPayload)
     });
     console.log('SCAN_CF_V1_HTTP', { worker_url: workerUrl, status: cfRes.status });
 
@@ -28,6 +29,12 @@ Deno.serve(async (req) => {
     console.log('SCAN_CF_V1_BODY_PREVIEW', preview);
     let cfJson = null;
     try { cfJson = JSON.parse(raw); } catch { /* fall-through */ }
+    // Self-test logging
+    try {
+      const scanFullKeys = cfJson?.scan_full ? Object.keys(cfJson.scan_full) : [];
+      const stagesLen = cfJson?.debugLog?.stages ? cfJson.debugLog.stages.length : (cfJson?.scan_full?.debug?.stages?.length ?? null);
+      console.log('SCAN_CF_V1_SELFTEST', { scanFullKeys, stagesLen });
+    } catch (_) {}
 
     // Determine or create the LeaseScan record we will persist to
     let scans = await base44.entities.LeaseScan.filter({ lease_id: leaseId }, '-created_date');

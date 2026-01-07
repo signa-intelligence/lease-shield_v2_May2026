@@ -78,7 +78,7 @@ export default {
       ];
       const resp = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST', headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'gpt-5', temperature: 0.1, response_format: { type: 'json_object' }, messages })
+        body: JSON.stringify({ model: 'gpt-4o-mini', temperature: 0.1, response_format: { type: 'json_object' }, messages })
       });
       if (!resp.ok) throw new Error(`LLM_${resp.status}`);
       const j = await resp.json();
@@ -168,7 +168,7 @@ export default {
       };
 
       console.log('[WORKER] DONE');
-      return respond({ ok:true, scanId:null, leaseId, scan_full });
+      return respond({ ok:true, scanId:null, leaseId, scan_full, debugLog: { stages } });
     } catch (e) {
       warnings.push(String(e?.message||e));
       stages.push({ stage:'DONE', ms: Date.now()-t0, note:'UNHANDLED' });

@@ -10,7 +10,7 @@ export const CLOUDFLARE_URL = "https://lease-scan-worker-01.steve-l.workers.dev"
  */
 export async function callCloudflareScan(payload, jwt) {
   const headers = { 'Content-Type': 'application/json' };
-  if (jwt) headers['Authorization'] = 'Bearer ' + String(jwt);
+  if (jwt) headers['Authorization'] = `Bearer ${jwt}`;
 
   const res = await fetch(CLOUDFLARE_URL, {
     method: 'POST',
