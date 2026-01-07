@@ -889,12 +889,20 @@ function UploadScanPageContent() {
         }
 
         // Trigger analysis with all pages
-        const { data: scanResponse } = await base44.functions.invoke('scanLease__DISABLED', {
-          fileUrls: uploadedUrls,
-          requestId,
+        const resp = await base44.functions.invoke('scanLeaseExternal', {
           leaseId: lease.id,
-          scanId: scan.id
+          fileUrl: uploadedUrls?.[0],
+          language
         });
+        const out = resp?.data ?? resp;
+        if (out?.ok !== true) {
+          setError(`${out.step || 'STUB'}: ${out.message || 'Error'}`);
+          setUploading(false);
+          setAnalyzing(false);
+          setAnalysisStage('');
+          return;
+        }
+        const scanResponse = resp.data;
 
         if (!scanResponse || scanResponse.ok === false) {
           const err = new Error(scanResponse?.error?.message || 'Scan failed with no message');
@@ -1168,12 +1176,20 @@ function UploadScanPageContent() {
         logStage('ANALYSIS_START', { fileUrls });
         const analysisStartTime = Date.now();
 
-        const { data: scanResponse } = await base44.functions.invoke('scanLease__DISABLED', {
-          fileUrls: fileUrls,
-          requestId,
+        const resp = await base44.functions.invoke('scanLeaseExternal', {
           leaseId: lease.id,
-          scanId
+          fileUrl: fileUrls?.[0],
+          language
         });
+        const out = resp?.data ?? resp;
+        if (out?.ok !== true) {
+          setError(`${out.step || 'STUB'}: ${out.message || 'Error'}`);
+          setUploading(false);
+          setAnalyzing(false);
+          setAnalysisStage('');
+          return;
+        }
+        const scanResponse = resp.data;
 
         const analysisDuration = Date.now() - analysisStartTime;
         
@@ -1507,12 +1523,20 @@ function UploadScanPageContent() {
       setUploadProgress(50);
 
       // Re-trigger analysis
-      const { data: scanResponse } = await base44.functions.invoke('scanLease__DISABLED', {
-        fileUrls: allUrls,
-        requestId: `reanalyze-${Date.now()}`,
-        leaseId: addingPagesToLease.id,
-        scanId: addingPagesToLease.id
-      });
+      const resp = await base44.functions.invoke('scanLeaseExternal', {
+          leaseId: addingPagesToLease.id,
+          fileUrl: allUrls?.[0],
+          language
+        });
+        const out = resp?.data ?? resp;
+        if (out?.ok !== true) {
+          setError(`${out.step || 'STUB'}: ${out.message || 'Error'}`);
+          setUploading(false);
+          setAnalyzing(false);
+          setAnalysisStage('');
+          return;
+        }
+        const scanResponse = resp.data;
 
       if (!scanResponse || !scanResponse.success) {
         throw new Error(scanResponse?.error || 'Re-analysis failed');

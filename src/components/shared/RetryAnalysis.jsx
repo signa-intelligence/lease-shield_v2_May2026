@@ -28,12 +28,18 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
 
       const fileUrls = lease.file_urls || [lease.file_url];
       
-      const { data: scanResponse } = await base44.functions.invoke('scanLease__DISABLED', {
-        fileUrls: fileUrls,
-        requestId,
+      const resp = await base44.functions.invoke('scanLeaseExternal', {
         leaseId: lease.id,
-        scanId: lease.id
+        fileUrl: fileUrls?.[0] || lease.file_url,
+        language
       });
+      const out = resp?.data ?? resp;
+      if (out?.ok !== true) {
+        alert(`${out.step || 'STUB'}: ${out.message || 'Error'}`);
+        setRetrying(false);
+        return;
+      }
+      const scanResponse = resp.data;
 
       if (scanResponse?.success) {
         const scanResult = scanResponse.result;
