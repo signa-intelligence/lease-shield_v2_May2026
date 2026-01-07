@@ -94,6 +94,30 @@ function UploadScanPageContent() {
 
   const queryClient = useQueryClient();
 
+  // Upload URL validation & preflight helpers
+  const isValidPublicUrl = (url) => {
+    return (
+      typeof url === 'string' &&
+      url.startsWith('https://base44.app/api/apps/') &&
+      url.includes('/files/public/') &&
+      !/[\[\]\(\)]/.test(url)
+    );
+  };
+  const safeStringify = (obj) => {
+    try { return JSON.stringify(obj).slice(0, 2000); } catch (e) { try { return String(obj).slice(0,2000); } catch { return '[unserializable]'; } }
+  };
+  const preflightUrl = async (url) => {
+    try {
+      let res = await fetch(url, { method: 'HEAD' });
+      if (res.status === 405 || res.status === 501) {
+        res = await fetch(url, { method: 'GET' });
+      }
+      return res.status;
+    } catch {
+      return 0;
+    }
+  };
+
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
@@ -851,7 +875,17 @@ function UploadScanPageContent() {
           setAnalysisStage(language === 'th' ? `กำลังอัปโหลดหน้า ${i + 1}/${selectedFiles.length}` : `Uploading page ${i + 1}/${selectedFiles.length}`);
           setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 30));
 
-          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          console.log('UPLOAD_START', { filename: file?.name, size: file?.size });
+          const uploadResp = await base44.integrations.Core.UploadFile({ file });
+          const file_url = uploadResp?.file_url;
+          console.log('UPLOAD_RESULT', { url_preview: String(file_url || '').slice(0,200) });
+          if (!isValidPublicUrl(file_url)) {
+            setError({ step: 'UPLOAD', code: 'UPLOAD_NO_URL', message: 'Upload did not return a valid public file URL', retryable: false, debugLog: { raw: safeStringify(uploadResp) } });
+            setUploading(false);
+            setAnalyzing(false);
+            setAnalysisStage('');
+            return;
+          }
           uploadedUrls.push(file_url);
         }
 
@@ -888,11 +922,29 @@ function UploadScanPageContent() {
           throw new Error('BUG: scanId incorrectly equals leaseId. Aborting.');
         }
 
-        // Trigger analysis with all pages
-        console.log("INVOKE_SCANLEASEEXTERNAL_START", { leaseId: lease.id, fileUrl: uploadedUrls?.[0], language });
-        const resp = await base44.functions.invoke("scanLeaseCF_v1", {
+        // Validate uploaded URLs array and preflight primary URL
+        const urls = Array.isArray(uploadedUrls) ? uploadedUrls.filter(Boolean) : [];
+        if (!(urls.length >= 1 && isValidPublicUrl(urls[0]))) {
+          setError({ step: 'UPLOAD', code: 'UPLOAD_NO_URL', message: 'Upload did not return a valid public file URL', retryable: false, debugLog: { raw: safeStringify({ urls }) } });
+          await base44.entities.Lease.update(lease.id, { status: 'failed' });
+          setUploading(false); setAnalyzing(false); setAnalysisStage('');
+          return;
+        }
+        const primaryUrl = urls[0];
+        const preStatus = await preflightUrl(primaryUrl);
+        console.log('UPLOAD_PREFLIGHT', { status: preStatus });
+        if (!preStatus || preStatus >= 400) {
+          setError({ step: 'UPLOAD', code: 'UPLOAD_URL_UNREACHABLE', message: `Uploaded URL not reachable (HTTP ${preStatus})`, retryable: false, debugLog: { status: preStatus, url: primaryUrl } });
+          await base44.entities.Lease.update(lease.id, { status: 'failed' });
+          setUploading(false); setAnalyzing(false); setAnalysisStage('');
+          return;
+        }
+
+        // Trigger analysis with verified URL only
+        console.log('SCAN_INVOKE', { leaseId: lease.id, hasFileUrl: !!primaryUrl, language });
+        const resp = await base44.functions.invoke('scanLeaseCF_v1', {
           leaseId: lease.id,
-          fileUrl: uploadedUrls?.[0],
+          fileUrl: primaryUrl,
           language
         });
         const out = resp?.data ?? resp;
@@ -1138,7 +1190,21 @@ function UploadScanPageContent() {
           throw new Error(`UPLOAD_FAILED: ${failedUploads[0].error}`);
         }
         
-        const fileUrls = uploadResults.map(r => r.file_url);
+        const fileUrls = uploadResults.filter(r => r?.success && r?.file_url).map(r => r.file_url);
+        // Validate and preflight
+        if (!(Array.isArray(fileUrls) && fileUrls.length >= 1 && isValidPublicUrl(fileUrls[0]))) {
+          setError({ step: 'UPLOAD', code: 'UPLOAD_NO_URL', message: 'Upload did not return a valid public file URL', retryable: false, debugLog: { raw: safeStringify(uploadResults) } });
+          setUploading(false); setAnalyzing(false); setAnalysisStage('');
+          return;
+        }
+        console.log('UPLOAD_RESULT', { url_preview: String(fileUrls[0]).slice(0,200) });
+        const preStatusSingle = await preflightUrl(fileUrls[0]);
+        console.log('UPLOAD_PREFLIGHT', { status: preStatusSingle });
+        if (!preStatusSingle || preStatusSingle >= 400) {
+          setError({ step: 'UPLOAD', code: 'UPLOAD_URL_UNREACHABLE', message: `Uploaded URL not reachable (HTTP ${preStatusSingle})`, retryable: false, debugLog: { status: preStatusSingle, url: fileUrls[0] } });
+          setUploading(false); setAnalyzing(false); setAnalysisStage('');
+          return;
+        }
         
         // Merge all network logs
         uploadResults.forEach(r => {
@@ -1187,10 +1253,10 @@ function UploadScanPageContent() {
         logStage('ANALYSIS_START', { fileUrls });
         const analysisStartTime = Date.now();
 
-        console.log("INVOKE_SCANLEASEEXTERNAL_START", { leaseId: lease.id, fileUrl: fileUrls?.[0], language });
-        const resp = await base44.functions.invoke("scanLeaseCF_v1", {
+        console.log('SCAN_INVOKE', { leaseId: lease.id, hasFileUrl: !!fileUrls?.[0], language });
+        const resp = await base44.functions.invoke('scanLeaseCF_v1', {
           leaseId: lease.id,
-          fileUrl: fileUrls?.[0],
+          fileUrl: fileUrls[0],
           language
         });
         const out = resp?.data ?? resp;
@@ -1528,11 +1594,33 @@ function UploadScanPageContent() {
         setAnalysisStage(language === 'th' ? `กำลังอัปโหลดหน้าใหม่ ${i + 1}/${additionalFiles.length}` : `Uploading new page ${i + 1}/${additionalFiles.length}`);
         setUploadProgress(Math.round(((i + 1) / additionalFiles.length) * 30));
 
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        console.log('UPLOAD_START', { filename: file?.name, size: file?.size });
+        const uploadResp2 = await base44.integrations.Core.UploadFile({ file });
+        const file_url = uploadResp2?.file_url;
+        console.log('UPLOAD_RESULT', { url_preview: String(file_url || '').slice(0,200) });
+        if (!isValidPublicUrl(file_url)) {
+          setError({ step: 'UPLOAD', code: 'UPLOAD_NO_URL', message: 'Upload did not return a valid public file URL', retryable: false, debugLog: { raw: safeStringify(uploadResp2) } });
+          setUploading(false); setAnalyzing(false); setAnalysisStage('');
+          return;
+        }
         newUrls.push(file_url);
       }
 
       const allUrls = [...existingUrls, ...newUrls];
+
+      // Validate and preflight first URL
+      if (!(Array.isArray(allUrls) && allUrls.length >= 1 && isValidPublicUrl(allUrls[0]))) {
+        setError({ step: 'UPLOAD', code: 'UPLOAD_NO_URL', message: 'Upload did not return a valid public file URL', retryable: false, debugLog: { raw: safeStringify(allUrls) } });
+        setUploading(false); setAnalyzing(false); setAnalysisStage('');
+        return;
+      }
+      const preStatusAdd = await preflightUrl(allUrls[0]);
+      console.log('UPLOAD_PREFLIGHT', { status: preStatusAdd });
+      if (!preStatusAdd || preStatusAdd >= 400) {
+        setError({ step: 'UPLOAD', code: 'UPLOAD_URL_UNREACHABLE', message: `Uploaded URL not reachable (HTTP ${preStatusAdd})`, retryable: false, debugLog: { status: preStatusAdd, url: allUrls[0] } });
+        setUploading(false); setAnalyzing(false); setAnalysisStage('');
+        return;
+      }
 
       // Update lease with new pages and set to re-analyzing
       await base44.entities.Lease.update(addingPagesToLease.id, {
@@ -1545,10 +1633,10 @@ function UploadScanPageContent() {
       setUploadProgress(50);
 
       // Re-trigger analysis
-      console.log("INVOKE_SCANLEASEEXTERNAL_START", { leaseId: addingPagesToLease.id, fileUrl: allUrls?.[0], language });
-      const resp = await base44.functions.invoke("scanLeaseCF_v1", {
+      console.log('SCAN_INVOKE', { leaseId: addingPagesToLease.id, hasFileUrl: !!allUrls?.[0], language });
+      const resp = await base44.functions.invoke('scanLeaseCF_v1', {
           leaseId: addingPagesToLease.id,
-          fileUrl: allUrls?.[0],
+          fileUrl: allUrls[0],
           language
         });
         const out = resp?.data ?? resp;
