@@ -1,6 +1,6 @@
 // Cloudflare Scan Client
 // Raw URL only (no markdown):
-export const CLOUDFLARE_URL = "https://lease-scan-worker-01.steve-l.workers.dev";
+export const CLOUDFLARE_URL = 'https://lease-scan-worker-01.steve-l.workers.dev';
 
 /**
  * Call Cloudflare worker with safe parsing.
