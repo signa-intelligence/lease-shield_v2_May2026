@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
 
     // Forward to Cloudflare Worker
     const workerUrl = 'https://lease-scan-worker-01.steve-l.workers.dev';
+    console.log('SCAN_CF_V1_STAGE', 'CALL_WORKER');
     const cfRes = await fetch(workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
