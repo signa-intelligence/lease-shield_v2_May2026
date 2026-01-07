@@ -14,13 +14,17 @@ Deno.serve(async (req) => {
     }
 
     // Forward to Cloudflare Worker
-    const cfRes = await fetch('https://lease-scan-worker-01.steve-l.workers.dev', {
+    const workerUrl = 'https://lease-scan-worker-01.steve-l.workers.dev';
+    const cfRes = await fetch(workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ leaseId, fileUrl, language })
     });
+    console.log('SCAN_CF_V1_HTTP', { worker_url: workerUrl, status: cfRes.status });
 
     const raw = await cfRes.text();
+    const preview = raw.slice(0, 300);
+    console.log('SCAN_CF_V1_BODY_PREVIEW', preview);
     let cfJson = null;
     try { cfJson = JSON.parse(raw); } catch { /* fall-through */ }
 
@@ -43,17 +47,57 @@ Deno.serve(async (req) => {
       }
 
       // Metrics logging (never log full text)
-      const meta = (cfJson.scan_full || cfJson)?.meta || {};
-      const clausesLen = ((cfJson.scan_full || cfJson)?.clauses || []).length;
-      const riskScore = (cfJson.scan_full || cfJson)?.risk_score;
+      const scanFull = (cfJson.scan_full || cfJson) || {};
+      const meta = scanFull.meta || {};
+      const clausesArr = Array.isArray(scanFull.clauses) ? scanFull.clauses : [];
+      const nonNoneRiskCount = clausesArr.filter(c => (c?.risk_level || 'none') !== 'none').length;
+      const topRisksLen = Array.isArray(scanFull.summary?.top_risks) ? scanFull.summary.top_risks.length : 0;
+      const riskScore = scanFull.risk_score;
+      const warnings = Array.isArray(scanFull.debug?.warnings) ? scanFull.debug.warnings : [];
+
       console.log('SCAN_CF_V1_METRICS', {
+        worker_url: workerUrl,
+        status: cfRes.status,
+        body_preview: preview,
         leaseId,
         scanId: targetScan.id,
         text_length: meta.text_length ?? null,
         chunks: meta.chunks ?? null,
-        clauses: clausesLen,
-        risk_score: riskScore ?? null
+        clauses: clausesArr.length,
+        nonNoneRiskCount,
+        top_risks: topRisksLen,
+        risk_score: riskScore ?? null,
+        warnings
       });
+
+      // Validation: worker ok:true but empty analysis
+      if (cfJson.ok === true) {
+        if ((clausesArr.length === 0) || (topRisksLen === 0) || (nonNoneRiskCount === 0)) {
+          const debugLog = {
+            worker_url: workerUrl,
+            status: cfRes.status,
+            body_preview: preview,
+            leaseId,
+            scanId: targetScan.id,
+            text_length: meta.text_length ?? null,
+            chunks: meta.chunks ?? null,
+            clauses: clausesArr.length,
+            nonNoneRiskCount,
+            top_risks: topRisksLen,
+            risk_score: riskScore ?? null,
+            warnings
+          };
+          return new Response(JSON.stringify({
+            ok: false,
+            scanId: targetScan.id,
+            leaseId,
+            step: 'VALIDATION',
+            error_code: 'EMPTY_ANALYSIS',
+            message: 'Worker returned ok but no meaningful analysis',
+            debugLog
+          }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+      }
 
       // Return normalized success/failure envelope
       if (cfJson.ok === false) {

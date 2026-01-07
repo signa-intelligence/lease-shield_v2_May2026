@@ -292,6 +292,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
   const [materializing, setMaterializing] = useState(false);
   const materializeAttempted = useRef(false);
   const [showSelfTest, setShowSelfTest] = useState(false);
+  const [showDebugAdmin, setShowDebugAdmin] = useState(false);
 
 
   useEffect(() => {
