@@ -907,7 +907,7 @@ function UploadScanPageContent() {
           return;
         }
         if (out?.ok !== true) {
-          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Analysis failed', retryable: out.retryable === true });
+          setError({ code: out.error_code, step: out.step, message: out.message, retryable: out.retryable === true });
           setUploading(false);
           setAnalyzing(false);
           setAnalysisStage('');
@@ -1205,7 +1205,7 @@ function UploadScanPageContent() {
           return;
         }
         if (out?.ok !== true) {
-          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Analysis failed', retryable: out.retryable === true });
+          setError({ code: out.error_code, step: out.step, message: out.message, retryable: out.retryable === true });
           setUploading(false);
           setAnalyzing(false);
           setAnalysisStage('');
@@ -1563,7 +1563,7 @@ function UploadScanPageContent() {
           return;
         }
         if (out?.ok !== true) {
-          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Analysis failed', retryable: out.retryable === true });
+          setError({ code: out.error_code, step: out.step, message: out.message, retryable: out.retryable === true });
           setUploading(false);
           setAnalyzing(false);
           setAnalysisStage('');
