@@ -29,11 +29,22 @@ Deno.serve(async (req) => {
     console.log('SCAN_CF_V1_BODY_PREVIEW', preview);
     let cfJson = null;
     try { cfJson = JSON.parse(raw); } catch { /* fall-through */ }
-    // Self-test logging
+    // Hard debug of Cloudflare response structure
     try {
-      const scanFullKeys = cfJson?.scan_full ? Object.keys(cfJson.scan_full) : [];
+      const cf_ok = cfJson?.ok;
+      const typeof_cfRes = typeof cfJson;
+      const cf_keys = Object.keys(cfJson || {});
+      const scan_full = (cfJson?.scan_full || cfJson) || {};
+      const has_scan_full = !!cfJson?.scan_full;
+      const typeof_scan_full = typeof scan_full;
+      const scan_full_keys = Object.keys(scan_full || {});
+      const scan_full_preview = JSON.stringify(scan_full).slice(0, 1500);
+      console.log('SCAN_CF_V1_CF_DEBUG', { cf_ok, typeof_cfRes, cf_keys });
+      console.log('SCAN_CF_V1_CF_SCANFULL', { has_scan_full, typeof_scan_full, scan_full_keys, scan_full_preview });
+
+      // Self-test logging
       const stagesLen = cfJson?.debugLog?.stages ? cfJson.debugLog.stages.length : (cfJson?.scan_full?.debug?.stages?.length ?? null);
-      console.log('SCAN_CF_V1_SELFTEST', { scanFullKeys, stagesLen });
+      console.log('SCAN_CF_V1_SELFTEST', { scanFullKeys: scan_full_keys, stagesLen });
     } catch (_) {}
 
     // Determine or create the LeaseScan record we will persist to
@@ -71,21 +82,22 @@ Deno.serve(async (req) => {
         warnings
       });
 
-      // Contract validation: ok:true must include scan_full with minimum content
+      // REQUIRED MINIMUM validation for a real analysis
       if (cfJson.ok === true) {
         const scanFullForCheck = (cfJson.scan_full || cfJson) || {};
-        const textLenCheck = Number(scanFullForCheck?.meta?.text_length || 0);
-        const clausesLenCheck = Array.isArray(scanFullForCheck?.clauses) ? scanFullForCheck.clauses.length : 0;
-        if (!(textLenCheck >= 500 && clausesLenCheck >= 5)) {
+        const textLenOk = typeof scanFullForCheck?.meta?.text_length === 'number' && scanFullForCheck.meta.text_length >= 300;
+        const clausesOk = Array.isArray(scanFullForCheck?.clauses) && scanFullForCheck.clauses.length >= 1;
+        const riskScoreOk = typeof scanFullForCheck?.risk_score === 'number';
+        const topRisksOk = Array.isArray(scanFullForCheck?.summary?.top_risks);
+        if (!(textLenOk && clausesOk && riskScoreOk && topRisksOk)) {
           const debugLog = {
+            worker_status: cfRes.status,
             worker_url: workerUrl,
-            status: cfRes.status,
-            body_preview: preview,
+            cf_keys: Object.keys(cfJson || {}),
             scan_full_keys: Object.keys(scanFullForCheck || {}),
-            meta: scanFullForCheck?.meta || null,
-            clauses_len: clausesLenCheck,
-            top_risks_len: Array.isArray(scanFullForCheck?.summary?.top_risks) ? scanFullForCheck.summary.top_risks.length : 0
+            scan_full_preview: JSON.stringify(scanFullForCheck).slice(0, 1500)
           };
+          console.log('SCAN_CF_V1_EMPTY_ANALYSIS', debugLog);
           return new Response(JSON.stringify({
             ok: false,
             step: 'VALIDATION',
