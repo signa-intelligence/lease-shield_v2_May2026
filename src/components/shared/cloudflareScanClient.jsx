@@ -1,26 +1,23 @@
-// Cloudflare Scan Client
-// Calls the real Worker endpoint and safely returns its JSON response.
-
-const CLOUDFLARE_URL = "https://lease-scan-worker-01.steve-l.workers.dev";
+export const CLOUDFLARE_URL = "https://lease-scan-worker-01.steve-l.workers.dev";
 
 export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
   try {
-    const resp = await fetch(CLOUDFLARE_URL, {
+    const res = await fetch(CLOUDFLARE_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(jwt ? { "Authorization": `Bearer ${jwt}` } : {})
+        ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
       },
       body: JSON.stringify({
         leaseId: leaseId ?? null,
         fileUrl: fileUrl ?? null,
-        language: language ?? null
-      })
+        language: language ?? null,
+      }),
     });
 
-    // Try JSON; if this fails, treat as unreachable/non-JSON per contract
+    // Safe JSON parse
     try {
-      return await resp.json();
+      return await res.json();
     } catch (e) {
       return {
         ok: false,
@@ -28,7 +25,7 @@ export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
         error_code: "CLOUDFLARE_UNREACHABLE",
         message: "Cloudflare scan failed",
         retryable: true,
-        debugLog: { cause: String(e?.message || e) }
+        debugLog: { cause: String(e?.message || e) },
       };
     }
   } catch (err) {
@@ -38,7 +35,7 @@ export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
       error_code: "CLOUDFLARE_UNREACHABLE",
       message: "Cloudflare scan failed",
       retryable: true,
-      debugLog: { cause: String(err?.message || err) }
+      debugLog: { cause: String(err?.message || err) },
     };
   }
 }
