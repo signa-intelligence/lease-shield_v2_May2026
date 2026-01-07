@@ -790,6 +790,50 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
         )}
 
 
+        {/* Admin/Dev Debug Accordion (visible to admin/dev) */}
+        {(() => {
+          const role = (user?.role || user?.access_level || '').toLowerCase();
+          const isAdminLike = ['admin','super_admin','va'].includes(role) || showDebug;
+          if (!isAdminLike) return null;
+          const nonNoneRiskCount = clauses.filter(c => (c?.risk_level || 'none') !== 'none').length;
+          return (
+            <Card className="mb-4 border-2" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#14221c' : '#F0FDF4' }}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold" style={{ color: colors.textPrimary }}>Admin Debug</h3>
+                  <Button variant="outline" size="sm" onClick={() => setShowDebugAdmin(v => !v)}> {showDebugAdmin ? 'Hide' : 'Show'} </Button>
+                </div>
+                {showDebugAdmin && (
+                  <div className="mt-3 text-sm" style={{ color: colors.textPrimary }}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+                      <div>text_length: <strong>{meta.text_length || 0}</strong></div>
+                      <div>chunks: <strong>{meta.chunks || 0}</strong></div>
+                      <div>clauses.length: <strong>{clauses.length}</strong></div>
+                      <div>nonNoneRiskCount: <strong>{nonNoneRiskCount}</strong></div>
+                      <div>top_risks.length: <strong>{topRisks.length}</strong></div>
+                      <div>risk_score: <strong>{sf.risk_score ?? 0}</strong></div>
+                    </div>
+                    <div className="mb-3">
+                      <div className="font-semibold mb-1">Top Risks (first 2)</div>
+                      <ul className="list-disc pl-5">
+                        {topRisks.slice(0,2).map((r,i)=>(<li key={i}><strong>{r.title}</strong> — {r.severity}: {r.why}</li>))}
+                        {topRisks.length === 0 && <li>—</li>}
+                      </ul>
+                    </div>
+                    <div>
+                      <div className="font-semibold mb-1">Clauses (first 2)</div>
+                      <ul className="list-disc pl-5">
+                        {clauses.slice(0,2).map((c,i)=>(<li key={c.clause_id || i}><strong>{c.title || `Clause ${c.clause_id || i+1}`}</strong> — risk_level: {c.risk_level || 'none'}</li>))}
+                        {clauses.length === 0 && <li>—</li>}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {/* Existing JSX BELOW — unchanged */}
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" onClick={() => window.history.back()}>
