@@ -44,7 +44,8 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
         return;
       }
       if (out?.ok !== true) {
-        alert(`[${out.step}][${out.error_code}] ${out.message}`);
+        const preview = out?.debugLog?.body_preview ? `\n\n[Preview]\n${out.debugLog.body_preview}` : '';
+        alert(`[${out.step}][${out.error_code}] ${out.message}${preview}`);
         setRetrying(false);
         return;
       }

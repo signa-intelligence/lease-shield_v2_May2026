@@ -1959,6 +1959,12 @@ function UploadScanPageContent() {
                 {typeof error === 'object' && error.requestId && (
                     <p className="text-red-500 text-xs font-mono">Request ID: {error.requestId}</p>
                 )}
+                {typeof error === 'object' && error.debugLog?.body_preview && (user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin' || user?.access_level === 'va') && (
+                  <details className="mt-2">
+                    <summary className="text-xs text-red-600 cursor-pointer">Debug</summary>
+                    <pre className="text-[10px] whitespace-pre-wrap text-red-700 opacity-90">{error.debugLog.body_preview}</pre>
+                  </details>
+                )}
                 {typeof error === 'object' && error.scanId && (
                     <p className="text-red-500 text-xs font-mono">Scan ID: {error.scanId}</p>
                 )}
