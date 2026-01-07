@@ -1,5 +1,3 @@
-// components/shared/cloudflareScanClient.js
-
 export const CLOUDFLARE_URL = "https://lease-scan-worker-01.steve-l.workers.dev";
 
 export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
@@ -17,7 +15,6 @@ export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
       }),
     });
 
-    // Always attempt JSON; if not JSON, capture body text
     const text = await res.text().catch(() => "");
     try {
       return JSON.parse(text);
@@ -42,3 +39,4 @@ export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
     };
   }
 }
+
