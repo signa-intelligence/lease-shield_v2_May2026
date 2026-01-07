@@ -29,7 +29,7 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
       const fileUrls = lease.file_urls || [lease.file_url];
       
       console.log("[RETRY] INVOKE_SCANLEASEEXTERNAL_START", { leaseId: lease.id, fileUrl: fileUrls?.[0] || lease.file_url, language });
-      const resp = await base44.functions.invoke('scanLeaseExternal', {
+      const resp = await base44.functions.invoke("scanLeaseCF_v1", {
         leaseId: lease.id,
         fileUrl: fileUrls?.[0] || lease.file_url,
         language

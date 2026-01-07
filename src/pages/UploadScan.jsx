@@ -890,7 +890,7 @@ function UploadScanPageContent() {
 
         // Trigger analysis with all pages
         console.log("INVOKE_SCANLEASEEXTERNAL_START", { leaseId: lease.id, fileUrl: uploadedUrls?.[0], language });
-        const resp = await base44.functions.invoke('scanLeaseExternal', {
+        const resp = await base44.functions.invoke("scanLeaseCF_v1", {
           leaseId: lease.id,
           fileUrl: uploadedUrls?.[0],
           language
@@ -1188,7 +1188,7 @@ function UploadScanPageContent() {
         const analysisStartTime = Date.now();
 
         console.log("INVOKE_SCANLEASEEXTERNAL_START", { leaseId: lease.id, fileUrl: fileUrls?.[0], language });
-        const resp = await base44.functions.invoke('scanLeaseExternal', {
+        const resp = await base44.functions.invoke("scanLeaseCF_v1", {
           leaseId: lease.id,
           fileUrl: fileUrls?.[0],
           language
@@ -1546,7 +1546,7 @@ function UploadScanPageContent() {
 
       // Re-trigger analysis
       console.log("INVOKE_SCANLEASEEXTERNAL_START", { leaseId: addingPagesToLease.id, fileUrl: allUrls?.[0], language });
-      const resp = await base44.functions.invoke('scanLeaseExternal', {
+      const resp = await base44.functions.invoke("scanLeaseCF_v1", {
           leaseId: addingPagesToLease.id,
           fileUrl: allUrls?.[0],
           language
