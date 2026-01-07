@@ -896,7 +896,7 @@ function UploadScanPageContent() {
         });
         const out = resp?.data ?? resp;
         if (out?.ok !== true) {
-          setError(`${out.step || 'STUB'}: ${out.message || 'Error'}`);
+          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Cloudflare scan failed', retryable: out.retryable === true });
           setUploading(false);
           setAnalyzing(false);
           setAnalysisStage('');
@@ -1183,7 +1183,7 @@ function UploadScanPageContent() {
         });
         const out = resp?.data ?? resp;
         if (out?.ok !== true) {
-          setError(`${out.step || 'STUB'}: ${out.message || 'Error'}`);
+          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Cloudflare scan failed', retryable: out.retryable === true });
           setUploading(false);
           setAnalyzing(false);
           setAnalysisStage('');
@@ -1530,7 +1530,7 @@ function UploadScanPageContent() {
         });
         const out = resp?.data ?? resp;
         if (out?.ok !== true) {
-          setError(`${out.step || 'STUB'}: ${out.message || 'Error'}`);
+          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Cloudflare scan failed', retryable: out.retryable === true });
           setUploading(false);
           setAnalyzing(false);
           setAnalysisStage('');
