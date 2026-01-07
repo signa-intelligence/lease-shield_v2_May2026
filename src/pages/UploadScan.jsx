@@ -889,14 +889,25 @@ function UploadScanPageContent() {
         }
 
         // Trigger analysis with all pages
+        console.log("INVOKE_SCANLEASEEXTERNAL_START", { leaseId: lease.id, fileUrl: uploadedUrls?.[0], language });
         const resp = await base44.functions.invoke('scanLeaseExternal', {
           leaseId: lease.id,
           fileUrl: uploadedUrls?.[0],
           language
         });
         const out = resp?.data ?? resp;
+        console.log("INVOKE_SCANLEASEEXTERNAL_RAW", resp);
+        console.log("INVOKE_SCANLEASEEXTERNAL_OUT", out);
+        
+        if (!out) {
+          setError({ code: 'EMPTY_FUNCTION_RESULT', step: 'FUNCTION_INVOCATION', message: language === 'th' ? 'ไม่ได้รับผลลัพธ์จากการวิเคราะห์' : 'Did not receive analysis result from function', retryable: true });
+          setUploading(false);
+          setAnalyzing(false);
+          setAnalysisStage('');
+          return;
+        }
         if (out?.ok !== true) {
-          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Cloudflare scan failed', retryable: out.retryable === true });
+          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Analysis failed', retryable: out.retryable === true });
           setUploading(false);
           setAnalyzing(false);
           setAnalysisStage('');
@@ -1176,14 +1187,25 @@ function UploadScanPageContent() {
         logStage('ANALYSIS_START', { fileUrls });
         const analysisStartTime = Date.now();
 
+        console.log("INVOKE_SCANLEASEEXTERNAL_START", { leaseId: lease.id, fileUrl: fileUrls?.[0], language });
         const resp = await base44.functions.invoke('scanLeaseExternal', {
           leaseId: lease.id,
           fileUrl: fileUrls?.[0],
           language
         });
         const out = resp?.data ?? resp;
+        console.log("INVOKE_SCANLEASEEXTERNAL_RAW", resp);
+        console.log("INVOKE_SCANLEASEEXTERNAL_OUT", out);
+        
+        if (!out) {
+          setError({ code: 'EMPTY_FUNCTION_RESULT', step: 'FUNCTION_INVOCATION', message: language === 'th' ? 'ไม่ได้รับผลลัพธ์จากการวิเคราะห์' : 'Did not receive analysis result from function', retryable: true });
+          setUploading(false);
+          setAnalyzing(false);
+          setAnalysisStage('');
+          return;
+        }
         if (out?.ok !== true) {
-          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Cloudflare scan failed', retryable: out.retryable === true });
+          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Analysis failed', retryable: out.retryable === true });
           setUploading(false);
           setAnalyzing(false);
           setAnalysisStage('');
@@ -1523,14 +1545,25 @@ function UploadScanPageContent() {
       setUploadProgress(50);
 
       // Re-trigger analysis
+      console.log("INVOKE_SCANLEASEEXTERNAL_START", { leaseId: addingPagesToLease.id, fileUrl: allUrls?.[0], language });
       const resp = await base44.functions.invoke('scanLeaseExternal', {
           leaseId: addingPagesToLease.id,
           fileUrl: allUrls?.[0],
           language
         });
         const out = resp?.data ?? resp;
+        console.log("INVOKE_SCANLEASEEXTERNAL_RAW", resp);
+        console.log("INVOKE_SCANLEASEEXTERNAL_OUT", out);
+        
+        if (!out) {
+          setError({ code: 'EMPTY_FUNCTION_RESULT', step: 'FUNCTION_INVOCATION', message: language === 'th' ? 'ไม่ได้รับผลลัพธ์จากการวิเคราะห์' : 'Did not receive analysis result from function', retryable: true });
+          setUploading(false);
+          setAnalyzing(false);
+          setAnalysisStage('');
+          return;
+        }
         if (out?.ok !== true) {
-          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Cloudflare scan failed', retryable: out.retryable === true });
+          setError({ code: out.error_code || 'UNKNOWN', step: out.step || 'ERROR', message: out.message || 'Analysis failed', retryable: out.retryable === true });
           setUploading(false);
           setAnalyzing(false);
           setAnalysisStage('');

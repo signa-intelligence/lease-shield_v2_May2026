@@ -28,14 +28,23 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
 
       const fileUrls = lease.file_urls || [lease.file_url];
       
+      console.log("[RETRY] INVOKE_SCANLEASEEXTERNAL_START", { leaseId: lease.id, fileUrl: fileUrls?.[0] || lease.file_url, language });
       const resp = await base44.functions.invoke('scanLeaseExternal', {
         leaseId: lease.id,
         fileUrl: fileUrls?.[0] || lease.file_url,
         language
       });
       const out = resp?.data ?? resp;
+      console.log("[RETRY] INVOKE_SCANLEASEEXTERNAL_RAW", resp);
+      console.log("[RETRY] INVOKE_SCANLEASEEXTERNAL_OUT", out);
+      
+      if (!out) {
+        alert(language === 'th' ? 'ไม่ได้รับผลลัพธ์จากการวิเคราะห์' : 'Did not receive analysis result from function');
+        setRetrying(false);
+        return;
+      }
       if (out?.ok !== true) {
-        alert(`[${out.step || 'ERROR'}][${out.error_code || 'UNKNOWN'}] ${out.message || 'Error'}`);
+        alert(`[${out.step || 'ERROR'}][${out.error_code || 'UNKNOWN'}] ${out.message || 'Analysis failed'}`);
         setRetrying(false);
         return;
       }
