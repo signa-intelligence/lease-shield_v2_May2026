@@ -378,128 +378,30 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         }
 
 
-        // STEP 5: MATERIALIZE RESOLUTION (NEW → FALLBACK → SELF-HEAL)
-        logStep("MATERIALIZE_RESOLVE_START");
+        // STEP 5: MATERIALIZE - Cloudflare SSoT
+        logStep("MATERIALIZE_START", {});
         if (!cancelled) setMaterializing(true);
-
-
-        const pdfPayload = resolvePdfPayload({ scanData, leaseData, requestId });
-        const resolved = pdfPayload.__resolved || {};
-        const resolvedLedger = safeArray(resolved.clause_ledger);
-        const resolvedIssues = safeArray(resolved.issues_validated);
-        const scanFullKeys = Object.keys(scanData?.scan_full || {});
-        const canonicalKeys = Object.keys(scanData?.scan_full?.canonical_report || {});
-        const usedCanonicalPdf = !!resolved.usedCanonicalPdf;
-
-
+        const scanFull = scanData?.scan_full ?? null;
+        const scanFullKeys = scanFull ? Object.keys(scanFull) : [];
+        console.log('[MATERIALIZE] scan_full keys:', scanFullKeys);
         validation.scanFullKeys = scanFullKeys;
-        validation.canonicalReportKeys = canonicalKeys;
-        validation.usedCanonicalPdf = usedCanonicalPdf;
-
-
-        const hasSource =
-          resolvedLedger.length > 0 ||
-          safeArray(resolved.clauses_extracted).length > 0 ||
-          resolvedIssues.length > 0;
-
-
-        if (!hasSource) {
-          const err = new Error("NO_SOURCE_DATA: Scan has no data to build a report (even after fallback).");
-          err.code = "NO_SOURCE_DATA";
-          err.step = "MATERIALIZE";
-          err.debugData = {
-            scanFullKeys,
-            canonicalReportKeys: canonicalKeys,
-            usedCanonicalPdf
-          };
+        if (!scanFull) {
+          const err = new Error('NO_SOURCE_DATA');
+          err.code = 'NO_SOURCE_DATA';
+          err.step = 'MATERIALIZE';
           throw err;
         }
-
-
-        // Build flags from issues_validated (so recommendations are always present)
-        const derivedFlags = issuesValidatedToFlags(resolvedIssues, resolvedLedger);
-
-
-        // Self-heal: if scan_full is missing the new keys BUT we managed to resolve from canonical/pdf, write them back.
-        const missingNewKeys =
-          !Array.isArray(scanData?.scan_full?.clause_ledger) ||
-          !Array.isArray(scanData?.scan_full?.clauses_extracted) ||
-          !Array.isArray(scanData?.scan_full?.issues_validated);
-
-
-        if ((usedCanonicalPdf || missingNewKeys) && !materializeAttempted.current) {
-          materializeAttempted.current = true;
-          try {
-            logStep("SELF_HEAL_PERSIST_START", { scanId });
-
-
-            const toPersistClausesExtracted = safeArray(resolved.clauses_extracted).length
-              ? resolved.clauses_extracted
-              : resolvedLedger.map((c, idx) => ({
-                  clause_id: c?.clause_id || `CLAUSE-${idx + 1}`,
-                  clause_number: c?.clause_number || String(idx + 1),
-                  title: c?.title || c?.heading || null,
-                  text: c?.text || c?.full_text || c?.raw_text || "",
-                  page_number: c?.page_number ?? c?.page ?? null
-                }));
-
-
-            await base44.entities.LeaseScan.update(scanId, {
-              risk_score: pdfPayload?.risk_score || scanData?.risk_score || 0,
-              flags: derivedFlags, // keep top-level flags for legacy consumers
-              summary: pdfPayload?.summary || scanData?.summary || "",
-              scan_full: {
-                ...(scanData?.scan_full || {}),
-                clauses_extracted: toPersistClausesExtracted,
-                clause_ledger: resolvedLedger,
-                issues_validated: resolvedIssues,
-                flags: (scanData?.scan_full?.flags || {}),
-                summary: (scanData?.scan_full?.summary || {
-                  clauses_total: resolvedLedger.length,
-                  risks_total: resolvedIssues.length
-                }),
-                migrated_from_canonical_report: usedCanonicalPdf || false,
-                migrated_at: new Date().toISOString(),
-                materialized_status: "ok_client_self_heal"
-              }
-            });
-
-
-            logStep("SELF_HEAL_PERSIST_COMPLETE", {
-              clauses_extracted: toPersistClausesExtracted.length,
-              clause_ledger: resolvedLedger.length,
-              issues_validated: resolvedIssues.length
-            });
-
-
-            // Re-fetch scan so UI reflects persisted state
-            logStep("REFETCH_AFTER_SELF_HEAL");
-            const refetched = await base44.entities.LeaseScan.filter({ id: scanId });
-            const refetchedScan = refetched?.[0] || null;
-            if (refetchedScan) scanData = refetchedScan;
-            logStep("REFETCH_AFTER_SELF_HEAL_COMPLETE", {
-              scanFullKeys: Object.keys(refetchedScan?.scan_full || {})
-            });
-          } catch (e) {
-            logStep("SELF_HEAL_PERSIST_FAILED", { scanId, error: String(e) });
-          }
-        }
-
-
         if (!cancelled) setMaterializing(false);
-
-
-        // Update validation
-        validation.hasCanonical = !!scanData?.scan_full?.canonical_report;
-        validation.hasPdfPayload = !!scanData?.scan_full?.canonical_report?.pdfPayload;
-        validation.issuesCount = derivedFlags.length;
-        validation.clausesTotal = resolvedLedger.length;
-        validation.riskScore = pdfPayload?.risk_score || scanData?.risk_score || 0;
-        logStep("MATERIALIZE_RESOLVE_COMPLETE", validation);
-
-
         if (!cancelled) setDbValidation(validation);
-
+        if (!cancelled) {
+          setUser(userRes);
+          setLease(leaseData);
+          setScan(scanData);
+          setReportData(scanFull);
+          setLoading(false);
+          logStep('RENDER_SUCCESS', { totalElapsed: Date.now() - startTime });
+        }
+        return;
 
         // STEP 6: Build normalized report object for rendering (keep rest of file unchanged)
         logStep("BUILD_REPORT_START");
@@ -957,5 +859,3 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
     </div>
   );
 }
-
-
