@@ -1,3 +1,5 @@
+// components/shared/cloudflareScanClient.js
+
 export const CLOUDFLARE_URL = "https://lease-scan-worker-01.steve-l.workers.dev";
 
 export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
@@ -15,16 +17,18 @@ export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
       }),
     });
 
+    // Always attempt JSON; if not JSON, capture body text
+    const text = await res.text().catch(() => "");
     try {
-      return await res.json();
-    } catch (e) {
+      return JSON.parse(text);
+    } catch {
       return {
         ok: false,
         step: "CLOUDFLARE_CALL",
-        error_code: "CLOUDFLARE_UNREACHABLE",
-        message: "Cloudflare scan failed",
-        retryable: true,
-        debugLog: { cause: String(e) },
+        error_code: "CLOUDFLARE_BAD_RESPONSE",
+        message: `Cloudflare returned non-JSON (HTTP ${res.status})`,
+        retryable: res.status >= 500 || res.status === 429,
+        debugLog: { status: res.status, bodyPreview: text.slice(0, 500) },
       };
     }
   } catch (err) {
@@ -34,7 +38,7 @@ export async function scanViaCloudflare({ leaseId, fileUrl, language, jwt }) {
       error_code: "CLOUDFLARE_UNREACHABLE",
       message: "Cloudflare scan failed",
       retryable: true,
-      debugLog: { cause: String(err) },
+      debugLog: { cause: String(err?.message || err) },
     };
   }
 }
