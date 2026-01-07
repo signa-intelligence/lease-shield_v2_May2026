@@ -35,7 +35,7 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
       });
       const out = resp?.data ?? resp;
       if (out?.ok !== true) {
-        alert(`${out.step || 'STUB'}: ${out.message || 'Error'}`);
+        alert(`[${out.step || 'ERROR'}][${out.error_code || 'UNKNOWN'}] ${out.message || 'Error'}`);
         setRetrying(false);
         return;
       }
