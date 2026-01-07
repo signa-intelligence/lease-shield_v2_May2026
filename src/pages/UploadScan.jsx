@@ -1932,11 +1932,13 @@ function UploadScanPageContent() {
                 {typeof error === 'object' && error.scanId && (
                     <p className="text-red-500 text-xs font-mono">Scan ID: {error.scanId}</p>
                 )}
-                <div className="mt-4 flex flex-wrap gap-2">
+                {typeof error === 'object' && error.retryable && (
+                  <div className="mt-4 flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" onClick={handleRetry} className="border-red-300 text-red-700 hover:bg-red-100">
-                        Try Again
+                      Try Again
                     </Button>
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
