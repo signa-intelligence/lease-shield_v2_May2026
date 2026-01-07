@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 
       // Validation: worker ok:true but empty analysis
       if (cfJson.ok === true) {
-        if ((clausesArr.length === 0) || (topRisksLen === 0) || (nonNoneRiskCount === 0)) {
+        if ((clausesArr.length === 0) || (topRisksLen === 0) || (nonNoneRiskCount === 0) || !(meta.text_length > 0)) {
           const debugLog = {
             worker_url: workerUrl,
             worker_body_preview: preview,
