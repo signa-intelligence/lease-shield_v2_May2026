@@ -45,14 +45,7 @@ Deno.serve(async (req) => {
 
     // Persist scan_full EXACTLY as returned by Cloudflare (no enrichment)
     if (cfJson && typeof cfJson === 'object') {
-      try {
-        await base44.entities.LeaseScan.update(targetScan.id, {
-          scan_full: cfJson.scan_full ?? cfJson, // prefer cfJson.scan_full if Worker wraps; else store entire cfJson
-          status: cfJson.ok === false ? 'failed' : 'ok'
-        });
-      } catch (persistErr) {
-        console.error('SCAN_CF_PERSIST_ERROR', String(persistErr));
-      }
+      // Defer persistence until validation passes
 
       // Metrics logging (never log full text)
       const scanFull = (cfJson.scan_full || cfJson) || {};
@@ -78,34 +71,30 @@ Deno.serve(async (req) => {
         warnings
       });
 
-      // Validation: worker ok:true but empty analysis
+      // Contract validation: ok:true must include scan_full with minimum content
       if (cfJson.ok === true) {
-        if ((clausesArr.length === 0) || (topRisksLen === 0) || (nonNoneRiskCount === 0) || !(meta.text_length > 0)) {
+        const scanFullForCheck = (cfJson.scan_full || cfJson) || {};
+        const textLenCheck = Number(scanFullForCheck?.meta?.text_length || 0);
+        const clausesLenCheck = Array.isArray(scanFullForCheck?.clauses) ? scanFullForCheck.clauses.length : 0;
+        if (!(textLenCheck >= 500 && clausesLenCheck >= 5)) {
           const debugLog = {
             worker_url: workerUrl,
-            worker_body_preview: preview,
-            metrics: {
-              status: cfRes.status,
-              leaseId,
-              scanId: targetScan.id,
-              text_length: meta.text_length ?? null,
-              chunks: meta.chunks ?? null,
-              clauses: clausesArr.length,
-              nonNoneRiskCount,
-              top_risks: topRisksLen,
-              risk_score: riskScore ?? null,
-              warnings
-            }
+            status: cfRes.status,
+            body_preview: preview,
+            scan_full_keys: Object.keys(scanFullForCheck || {}),
+            meta: scanFullForCheck?.meta || null,
+            clauses_len: clausesLenCheck,
+            top_risks_len: Array.isArray(scanFullForCheck?.summary?.top_risks) ? scanFullForCheck.summary.top_risks.length : 0
           };
           return new Response(JSON.stringify({
             ok: false,
-            scanId: targetScan.id,
-            leaseId,
             step: 'VALIDATION',
             error_code: 'EMPTY_ANALYSIS',
-            message: 'Worker returned ok but no meaningful analysis',
+            message: 'Cloudflare returned ok but analysis payload is empty/invalid',
+            retryable: true,
             debugLog,
-            retryable: true
+            scanId: targetScan.id,
+            leaseId
           }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
       }
@@ -116,6 +105,16 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify({ ok: false, scanId: targetScan.id, leaseId, step, error_code, message }), {
           status: 200, headers: { 'Content-Type': 'application/json' }
         });
+      }
+
+      // Persist only after validation passes
+      try {
+        await base44.entities.LeaseScan.update(targetScan.id, {
+          scan_full: cfJson.scan_full ?? cfJson,
+          status: 'ok'
+        });
+      } catch (persistErr) {
+        console.error('SCAN_CF_PERSIST_ERROR', String(persistErr));
       }
 
       console.log('SCAN_CF_V1_DONE', { scanId: targetScan.id, leaseId });
