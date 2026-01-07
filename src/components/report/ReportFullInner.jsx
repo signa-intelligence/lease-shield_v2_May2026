@@ -687,6 +687,13 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
 
   const strings = t[language] || t.en;
 
+  // Cloudflare SSoT view model
+  const sf = reportData || {};
+  const meta = sf.meta || {};
+  const topRisks = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
+  const clauses = Array.isArray(sf.clauses) ? sf.clauses : [];
+  const textTooShort = (meta.text_length || 0) < 500;
+
 
   return (
     <div
@@ -829,6 +836,27 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
             </div>
           </CardHeader>
           <CardContent className="p-6">
+            {/* Error banner if extraction failed / empty */}
+            {(clauses.length === 0 || textTooShort) && (
+              <div className="mb-4 p-4 rounded-lg border-2" style={{ backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2', borderColor: '#EF4444' }}>
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                  <div>
+                    <p className="font-semibold" style={{ color: '#B91C1C' }}>Extraction failed / empty text</p>
+                    <p className="text-sm" style={{ color: colors.textSecondary }}>
+                      text_length={meta.text_length || 0}, chunks={meta.chunks || 0}
+                    </p>
+                    {Array.isArray(sf.debug?.warnings) && sf.debug.warnings.length > 0 && (
+                      <ul className="list-disc pl-6 mt-2 text-sm" style={{ color: colors.textSecondary }}>
+                        {sf.debug.warnings.map((w, i) => (<li key={i}>{String(w)}</li>))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Property */}
             {lease.property_address && (
               <div className="mb-4">
                 <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
@@ -839,13 +867,84 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 </p>
               </div>
             )}
-            <div className="mb-4">
+
+            {/* Executive summary */}
+            <div className="mb-6">
               <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
                 {strings.summary}:
               </span>
               <p className="mt-1" style={{ color: colors.textPrimary }}>
-                {reportData.summary || "No summary available."}
+                {sf.summary?.executive_summary || 'No summary available.'}
               </p>
+            </div>
+
+            {/* Top risks */}
+            {topRisks.length > 0 && (
+              <div className="mb-6">
+                <h3 className="font-bold mb-2" style={{ color: colors.textPrimary }}>Top Risks</h3>
+                <div className="grid gap-3">
+                  {topRisks.map((r, idx) => (
+                    <div key={idx} className="p-4 rounded-lg border" style={{ borderColor: colors.borderColor }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="font-semibold" style={{ color: colors.textPrimary }}>{r.title}</div>
+                        <span className="text-xs px-2 py-1 rounded-full" style={{
+                          backgroundColor: ({ low:'#E0F2FE', med:'#FEF3C7', high:'#FEE2E2', critical:'#FECACA' }[r.severity] || '#E5E7EB'),
+                          color: ({ low:'#0369A1', med:'#92400E', high:'#B91C1C', critical:'#991B1B' }[r.severity] || colors.textSecondary)
+                        }}>{r.severity}</span>
+                      </div>
+                      <div className="text-sm" style={{ color: colors.textSecondary }}>
+                        {r.why}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Clauses table */}
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="font-bold" style={{ color: colors.textPrimary }}>Clauses</h3>
+              <div className="text-sm" style={{ color: colors.textSecondary }}>
+                text_length: {meta.text_length || 0} • chunks: {meta.chunks || 0} • count: {clauses.length}
+              </div>
+            </div>
+            <div className="overflow-x-auto border rounded-lg" style={{ borderColor: colors.borderColor }}>
+              <table className="min-w-full text-sm">
+                <thead style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
+                  <tr>
+                    <th className="text-left p-3">Title</th>
+                    <th className="text-left p-3">Risk</th>
+                    <th className="text-left p-3">Plain English</th>
+                    <th className="text-left p-3">Recommendation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clauses.map((c, i) => (
+                    <tr key={c.clause_id || i} className="border-t" style={{ borderColor: colors.borderColor }}>
+                      <td className="align-top p-3" style={{ color: colors.textPrimary }}>
+                        <div className="font-semibold">{c.title || `Clause ${c.clause_id || i+1}`}</div>
+                      </td>
+                      <td className="align-top p-3">
+                        <span className="text-xs px-2 py-1 rounded-full" style={{
+                          backgroundColor: ({ none:'#E5E7EB', low:'#E0F2FE', med:'#FEF3C7', high:'#FEE2E2', critical:'#FECACA' }[c.risk_level] || '#E5E7EB'),
+                          color: ({ none:'#374151', low:'#0369A1', med:'#92400E', high:'#B91C1C', critical:'#991B1B' }[c.risk_level] || colors.textSecondary)
+                        }}>{c.risk_level || 'none'}</span>
+                      </td>
+                      <td className="align-top p-3" style={{ color: colors.textSecondary }}>
+                        {c.plain_english || c.risk_summary || '—'}
+                      </td>
+                      <td className="align-top p-3" style={{ color: colors.textSecondary }}>
+                        {c.recommendation?.fix || '—'}
+                      </td>
+                    </tr>
+                  ))}
+                  {clauses.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="p-4 text-center" style={{ color: colors.textSecondary }}>No clauses parsed.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
