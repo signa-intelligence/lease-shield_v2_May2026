@@ -1954,10 +1954,7 @@ function UploadScanPageContent() {
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-red-600 font-semibold mb-1">
-                  {typeof error === 'object' ? `[${error.code || 'FAIL'}] Scan failed at step: ${error.step || 'ANALYSIS'}` : 'Error Occurred'}
-                </p>
-                <p className="text-red-600 text-sm whitespace-pre-line mb-2">
-                  {typeof error === 'object' ? error.message : String(error)}
+                  {typeof error === 'object' ? `[${error.step}][${error.code}] ${error.message}` : String(error)}
                 </p>
                 {typeof error === 'object' && error.requestId && (
                     <p className="text-red-500 text-xs font-mono">Request ID: {error.requestId}</p>
