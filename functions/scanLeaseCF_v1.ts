@@ -75,17 +75,19 @@ Deno.serve(async (req) => {
         if ((clausesArr.length === 0) || (topRisksLen === 0) || (nonNoneRiskCount === 0)) {
           const debugLog = {
             worker_url: workerUrl,
-            status: cfRes.status,
-            body_preview: preview,
-            leaseId,
-            scanId: targetScan.id,
-            text_length: meta.text_length ?? null,
-            chunks: meta.chunks ?? null,
-            clauses: clausesArr.length,
-            nonNoneRiskCount,
-            top_risks: topRisksLen,
-            risk_score: riskScore ?? null,
-            warnings
+            worker_body_preview: preview,
+            metrics: {
+              status: cfRes.status,
+              leaseId,
+              scanId: targetScan.id,
+              text_length: meta.text_length ?? null,
+              chunks: meta.chunks ?? null,
+              clauses: clausesArr.length,
+              nonNoneRiskCount,
+              top_risks: topRisksLen,
+              risk_score: riskScore ?? null,
+              warnings
+            }
           };
           return new Response(JSON.stringify({
             ok: false,
@@ -94,7 +96,8 @@ Deno.serve(async (req) => {
             step: 'VALIDATION',
             error_code: 'EMPTY_ANALYSIS',
             message: 'Worker returned ok but no meaningful analysis',
-            debugLog
+            debugLog,
+            retryable: true
           }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
       }
@@ -107,6 +110,7 @@ Deno.serve(async (req) => {
         });
       }
 
+      console.log('SCAN_CF_V1_DONE', { scanId: targetScan.id, leaseId });
       return new Response(JSON.stringify({ ok: true, scanId: targetScan.id, leaseId, scan_full: cfJson.scan_full ?? cfJson }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
