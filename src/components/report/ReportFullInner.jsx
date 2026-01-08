@@ -693,7 +693,7 @@ const sf = reportData || {};
   const meta = sf.meta || {};
   const topRisks = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
   const clauses = Array.isArray(sf.clauses) ? sf.clauses : [];
-  const textTooShort = (meta.text_length || 0) < 500;
+ const textTooShort = meta.text_length !== null && (meta.text_length || 0) < 500;
 
 
   return (
