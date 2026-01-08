@@ -279,7 +279,7 @@ function issuesValidatedToFlags(issuesValidated, clauseLedger) {
 }
 
 
-export default function ReportFullInner({ scanId, leaseId, showDebug, forensicData }) {
+export default function ReportFullInner({ scanId, leaseId, showDebug, forensicData, passedScanFull }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dbValidation, setDbValidation] = useState(null);
@@ -379,32 +379,53 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         }
 
 
-        // STEP 5: MATERIALIZE - Cloudflare SSoT
-        logStep("MATERIALIZE_START", {});
+        // STEP 5: USE PASSED DATA OR FETCH FROM DB
+        logStep("MATERIALIZE_START", { hasPassedData: !!passedScanFull });
+
+        if (passedScanFull) {
+          // FAST PATH: Use data passed from upload flow (no DB lag)
+          logStep("USING_PASSED_DATA", { 
+            clausesCount: passedScanFull.clauses?.length || 0,
+            riskScore: passedScanFull.risk_score
+          });
+
+          validation.scanFullKeys = Object.keys(passedScanFull);
+          validation.dataSource = 'passed_from_upload';
+
+          if (!cancelled) {
+            setDbValidation(validation);
+            setUser(userRes);
+            setLease(leaseData);
+            setScan(scanData); // Keep original scan metadata
+            setReportData(passedScanFull);
+            setLoading(false);
+            logStep('RENDER_SUCCESS_DIRECT', { totalElapsed: Date.now() - startTime });
+          }
+          return;
+        }
+
+        // FALLBACK PATH: Fetch from DB (for page refreshes, direct links, etc.)
         if (!cancelled) setMaterializing(true);
-        
-        // Refetch scan with retry logic to handle DB propagation delay
         logStep("REFETCH_SCAN_FOR_LATEST");
-        
+
         let finalScanData = scanData;
         let scanFull = scanData?.scan_full ?? null;
-        
+
         // Retry up to 5 times with increasing delays to get fresh data
         const maxRetries = 5;
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          // Exponential backoff: 500ms, 1000ms, 1500ms, 2000ms, 2500ms
           const delay = attempt * 500;
           await new Promise(resolve => setTimeout(resolve, delay));
-          
+
           const scanArrRefresh = await base44.entities.LeaseScan.filter({ id: scanId });
           const scanDataRefresh = scanArrRefresh?.[0] || null;
-          
+
           const refreshedScanFull = scanDataRefresh?.scan_full ?? null;
           const hasNewFormat = refreshedScanFull && (
             Array.isArray(refreshedScanFull.clauses) && refreshedScanFull.clauses.length > 0 &&
             typeof refreshedScanFull.risk_score === 'number'
           );
-          
+
           logStep(`REFETCH_ATTEMPT_${attempt}`, {
             found: !!scanDataRefresh,
             hasNewFormat,
@@ -412,41 +433,40 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
             riskScore: refreshedScanFull?.risk_score,
             keys: refreshedScanFull ? Object.keys(refreshedScanFull) : []
           });
-          
+
           if (hasNewFormat) {
             finalScanData = scanDataRefresh;
             scanFull = refreshedScanFull;
             logStep("REFETCH_SUCCESS", { attempt, clausesCount: scanFull.clauses.length, riskScore: scanFull.risk_score });
             break;
           }
-          
+
           if (attempt === maxRetries) {
             logStep("REFETCH_EXHAUSTED", { 
               message: "Max retries reached, using whatever data we have",
               finalHasData: !!refreshedScanFull,
               finalClausesCount: refreshedScanFull?.clauses?.length || 0
             });
-            // Use whatever we got on last attempt
             if (scanDataRefresh) {
               finalScanData = scanDataRefresh;
               scanFull = refreshedScanFull;
             }
           }
         }
-        
+
         const scanFullKeys = scanFull ? Object.keys(scanFull) : [];
         console.log('[MATERIALIZE] scan_full keys:', scanFullKeys);
         validation.scanFullKeys = scanFullKeys;
-        
-        // Check if we got the NEW Cloudflare format (has 'clauses', 'risk_score', 'summary')
+        validation.dataSource = 'db_refetch';
+
         const hasNewFormat = scanFull && (
           Array.isArray(scanFull.clauses) || 
           typeof scanFull.risk_score === 'number' ||
           scanFull.summary?.top_risks
         );
-        
+
         logStep("FORMAT_CHECK", { hasNewFormat, scanFullKeys });
-        
+
         if (!scanFull) {
           const err = new Error('NO_SOURCE_DATA');
           err.code = 'NO_SOURCE_DATA';

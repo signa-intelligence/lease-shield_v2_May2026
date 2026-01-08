@@ -975,25 +975,23 @@ function UploadScanPageContent() {
           throw err;
         }
 
-        // Update scan status and navigate to report (ReportFull will materialize if needed)
-        try {
-          const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId: scan.id, requestId });
-          console.log(`[${requestId}] VERIFY_MULTI_PAGE:`, { 
-            hasPdfPayload: verifyStatus?.hasPdfPayload,
-            canMaterialize: verifyStatus?.diagnostics?.canMaterialize
-          });
-        } catch (verifyErr) {
-          console.log(`[${requestId}] VERIFY_ERROR (non-blocking):`, verifyErr.message);
-        }
-        
+        // Update scan status and navigate to report with fresh data
         await base44.entities.LeaseScan.update(scan.id, {
           status: 'ok',
-          risk_score: scanResponse?.result?.risk_score,
-          summary: scanResponse?.result?.summary
+          risk_score: scanResponse?.scan_full?.risk_score || 0,
+          summary: scanResponse?.scan_full?.summary?.executive_summary || ''
         });
+        
         if (!scan.id) throw new Error('BUG: scanId missing');
         if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
-        window.location.href = `/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`;
+        
+        // Pass scan_full directly via navigation state to avoid DB replication lag
+        navigate(`/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
+          state: { 
+            scan_full: scanResponse?.scan_full,
+            fromUpload: true 
+          }
+        });
         return;
 
 
@@ -1335,15 +1333,23 @@ function UploadScanPageContent() {
           flagsCount: scanResponse.result?.flags?.length
         });
 
-        // Update LeaseScan status and navigate to report
+        // Update LeaseScan status and navigate to report with fresh data
         await base44.entities.LeaseScan.update(scanId, {
           status: 'ok',
-          risk_score: scanResponse?.result?.risk_score,
-          summary: scanResponse?.result?.summary
+          risk_score: scanResponse?.scan_full?.risk_score || 0,
+          summary: scanResponse?.scan_full?.summary?.executive_summary || ''
         });
+        
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
-        navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`);
+        
+        // Pass scan_full directly via navigation state to avoid DB replication lag
+        navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
+          state: { 
+            scan_full: scanResponse?.scan_full,
+            fromUpload: true 
+          }
+        });
         return;
 
         const scanResult = scanResponse.result;
