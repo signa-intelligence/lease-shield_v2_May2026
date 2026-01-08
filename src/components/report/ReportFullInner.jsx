@@ -382,7 +382,12 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         // STEP 5: MATERIALIZE - Cloudflare SSoT
         logStep("MATERIALIZE_START", {});
         if (!cancelled) setMaterializing(true);
-        const scanFull = scanData?.scan_full ?? null;
+        
+        // Refetch scan to get latest data saved by Cloudflare worker
+        logStep("REFETCH_SCAN_FOR_LATEST");
+        const scanArrRefresh = await base44.entities.LeaseScan.filter({ id: scanId });
+        const scanDataRefresh = scanArrRefresh?.[0] || scanData;
+        const scanFull = scanDataRefresh?.scan_full ?? null;
         const scanFullKeys = scanFull ? Object.keys(scanFull) : [];
         console.log('[MATERIALIZE] scan_full keys:', scanFullKeys);
         validation.scanFullKeys = scanFullKeys;
