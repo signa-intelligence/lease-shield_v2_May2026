@@ -8,11 +8,12 @@ Deno.serve(async (req) => {
     let payload = {};
     try { payload = JSON.parse(bodyText || '{}'); } catch (_) { payload = {}; }
 
-    const { leaseId = null, fileUrl = null, language = null } = payload;
+    const { leaseId = null, fileUrl = null, language = null, scanId: inputScanId = null } = payload;
     const forwardPayload = payload?.debug_test === true ? payload : { leaseId, fileUrl, language };
     if (!leaseId || !fileUrl) {
       return new Response(JSON.stringify({ ok: false, step: 'INPUT_VALIDATION', error_code: 'MISSING_PARAMS', message: 'leaseId and fileUrl are required' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
+    console.log('SCAN_CF_V1_INPUT', { leaseId, inputScanId, fileUrl: fileUrl?.substring(0, 80) });
 
     // Forward to Cloudflare Worker
     const workerUrl = 'https://lease-scan-worker-01.steve-l.workers.dev';
