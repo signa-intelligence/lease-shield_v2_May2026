@@ -49,10 +49,21 @@ Deno.serve(async (req) => {
     } catch (_) {}
 
     // Determine or create the LeaseScan record we will persist to
-    let scans = await base44.entities.LeaseScan.filter({ lease_id: leaseId }, '-created_date');
-    let targetScan = scans?.[0] || null;
+    // PRIORITY: Use inputScanId if provided (from frontend), then fallback to existing scan for lease
+    let targetScan = null;
+    if (inputScanId) {
+      const scanArr = await base44.entities.LeaseScan.filter({ id: inputScanId });
+      targetScan = scanArr?.[0] || null;
+      console.log('SCAN_CF_V1_LOOKUP_BY_INPUT_ID', { inputScanId, found: !!targetScan });
+    }
+    if (!targetScan) {
+      const scans = await base44.entities.LeaseScan.filter({ lease_id: leaseId }, '-created_date');
+      targetScan = scans?.[0] || null;
+      console.log('SCAN_CF_V1_LOOKUP_BY_LEASE', { leaseId, found: !!targetScan, scanId: targetScan?.id });
+    }
     if (!targetScan) {
       targetScan = await base44.entities.LeaseScan.create({ lease_id: leaseId, status: 'initiated' });
+      console.log('SCAN_CF_V1_CREATED_NEW', { scanId: targetScan.id });
     }
 
     // Persist scan_full EXACTLY as returned by Cloudflare (no enrichment)
