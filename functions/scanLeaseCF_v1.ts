@@ -149,4 +149,26 @@ Deno.serve(async (req) => {
       headers: { 'Content-Type': 'application/json' }
     });
   }
+  
+  // After getting cfRes from worker
+if (cfRes.ok && cfRes.scan_full) {
+  const { risk_score, top_risks, clauses } = cfRes.scan_full;
+  
+  // Log what we actually got
+  console.log('SCAN_VALIDATION', {
+    risk_score,
+    top_risks_count: top_risks?.length || 0,
+    top_risks_type: typeof top_risks,
+    clauses_count: clauses?.length || 0,
+    has_risk_score: typeof risk_score === 'number'
+  });
+  
+  // Ensure arrays are properly formed
+  if (!Array.isArray(top_risks)) {
+    console.error('TOP_RISKS_NOT_ARRAY', { top_risks });
+  }
+  if (!Array.isArray(clauses)) {
+    console.error('CLAUSES_NOT_ARRAY', { clauses });
+  }
+}
 });
