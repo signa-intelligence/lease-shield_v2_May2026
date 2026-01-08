@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import AuthGuard from "../components/shared/AuthGuard";
 import MissingParams from "../components/report/MissingParams";
 import ReportFullInner from "../components/report/ReportFullInner";
 import PreviewHarness from "../components/report/PreviewHarness";
 
 export default function ReportFull() {
+  const location = useLocation();
+  
   // State for param resolution - starts false until useEffect runs
   const [paramsResolved, setParamsResolved] = useState(false);
   const [scanId, setScanId] = useState('');
@@ -12,6 +15,7 @@ export default function ReportFull() {
   const [showDebug, setShowDebug] = useState(false);
   const [isEditorPreview, setIsEditorPreview] = useState(false);
   const [forensicData, setForensicData] = useState(null);
+  const [passedScanFull, setPassedScanFull] = useState(null);
 
   // Parse params ONLY after mount (window-safe)
   useEffect(() => {
@@ -71,9 +75,18 @@ export default function ReportFull() {
     setIsEditorPreview(editorPreview);
     setForensicData(forensic);
     
+    // Check if we have scan_full passed via navigation state (from upload flow)
+    if (location.state?.scan_full) {
+      console.log('[REPORTFULL] Using passed scan_full data from upload flow', {
+        clausesCount: location.state.scan_full.clauses?.length || 0,
+        riskScore: location.state.scan_full.risk_score
+      });
+      setPassedScanFull(location.state.scan_full);
+    }
+    
     // Mark params as resolved - triggers render with actual content
     setParamsResolved(true);
-  }, []);
+  }, [location]);
 
   // LOADING SHELL: Render while params are being resolved (SSR-safe)
   if (!paramsResolved) {
@@ -100,7 +113,8 @@ export default function ReportFull() {
           scanId={scanId} 
           leaseId={leaseId} 
           showDebug={showDebug} 
-          forensicData={forensicData} 
+          forensicData={forensicData}
+          passedScanFull={passedScanFull}
         />
       ) : isEditorPreview ? (
         <PreviewHarness forensicData={forensicData} />
