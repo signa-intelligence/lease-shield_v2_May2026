@@ -690,6 +690,15 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
 
   // Cloudflare SSoT view model
 const sf = reportData || {};
+const sf = reportData || {};
+console.log('DEBUG_SF:', {
+  reportData_keys: Object.keys(reportData || {}),
+  sf_keys: Object.keys(sf),
+  has_summary: !!sf.summary,
+  has_clauses: !!sf.clauses,
+  clauses_length: sf.clauses?.length,
+  top_risks_length: sf.summary?.top_risks?.length
+});
   const meta = sf.meta || {};
   const topRisks = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
   const clauses = Array.isArray(sf.clauses) ? sf.clauses : [];
