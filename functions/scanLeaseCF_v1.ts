@@ -83,41 +83,51 @@ Deno.serve(async (req) => {
       });
 
       // REQUIRED MINIMUM validation for a real analysis
-      if (cfJson.ok === true) {
-        const scanFullForCheck = (cfJson.scan_full || cfJson) || {};
-        const textLenOk = typeof scanFullForCheck?.meta?.text_length === 'number' && scanFullForCheck.meta.text_length >= 300;
-        const clausesOk = Array.isArray(scanFullForCheck?.clauses) && scanFullForCheck.clauses.length >= 1;
-        const riskScoreOk = typeof scanFullForCheck?.risk_score === 'number';
-        const topRisksOk = Array.isArray(scanFullForCheck?.summary?.top_risks);
-        if (!(textLenOk && clausesOk && riskScoreOk && topRisksOk)) {
-          const debugLog = {
-            worker_status: cfRes.status,
-            worker_url: workerUrl,
-            cf_keys: Object.keys(cfJson || {}),
-            scan_full_keys: Object.keys(scanFullForCheck || {}),
-            scan_full_preview: JSON.stringify(scanFullForCheck).slice(0, 1500)
-          };
-          console.log('SCAN_CF_V1_EMPTY_ANALYSIS', debugLog);
-          return new Response(JSON.stringify({
-            ok: false,
-            step: 'VALIDATION',
-            error_code: 'EMPTY_ANALYSIS',
-            message: 'Cloudflare returned ok but analysis payload is empty/invalid',
-            retryable: true,
-            debugLog,
-            scanId: targetScan.id,
-            leaseId
-          }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-        }
-      }
-
+if (cfJson.ok === true) {
+  const scanFullForCheck = (cfJson.scan_full || cfJson) || {};
+  const clausesOk = Array.isArray(scanFullForCheck?.clauses) && scanFullForCheck.clauses.length >= 1;
+  const riskScoreOk = typeof scanFullForCheck?.risk_score === 'number';
+  const topRisksOk = Array.isArray(scanFullForCheck?.summary?.top_risks);
+  const hasTextLength = scanFullForCheck?.meta?.text_length != null;
+  const textLenOk = !hasTextLength || (typeof scanFullForCheck.meta.text_length === 'number' && scanFullForCheck.meta.text_length >= 300);
+  
+  if (!(clausesOk && riskScoreOk && topRisksOk && textLenOk)) {
+    const debugLog = {
+      worker_status: cfRes.status,
+      worker_url: workerUrl,
+      cf_keys: Object.keys(cfJson || {}),
+      scan_full_keys: Object.keys(scanFullForCheck || {}),
+      validation_checks: {
+        clausesOk,
+        clausesCount: scanFullForCheck?.clauses?.length || 0,
+        riskScoreOk,
+        riskScore: scanFullForCheck?.risk_score,
+        topRisksOk,
+        topRisksCount: scanFullForCheck?.summary?.top_risks?.length || 0,
+        textLenOk,
+        textLength: scanFullForCheck?.meta?.text_length
+      },
+      scan_full_preview: JSON.stringify(scanFullForCheck).slice(0, 1500)
+    };
+    console.log('SCAN_CF_V1_EMPTY_ANALYSIS', debugLog);
+    return new Response(JSON.stringify({
+      ok: false,
+      step: 'VALIDATION',
+      error_code: 'EMPTY_ANALYSIS',
+      message: 'Cloudflare returned ok but analysis payload is empty/invalid',
+      retryable: true,
+      debugLog,
+      scanId: targetScan.id,
+      leaseId
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
+}
       // Return normalized success/failure envelope
-    if (cfJson.ok === false) {
-            // Destructure debugLog from cfJson
-            const { step, error_code, message, debugLog } = cfJson; 
-            return new Response(JSON.stringify({ ok: false, scanId: targetScan.id, leaseId, step, error_code, message, debugLog }), {
-              status: 200, headers: { 'Content-Type': 'application/json' }
-            });
+      if (cfJson.ok === false) {
+        const { step, error_code, message } = cfJson;
+        return new Response(JSON.stringify({ ok: false, scanId: targetScan.id, leaseId, step, error_code, message }), {
+          status: 200, headers: { 'Content-Type': 'application/json' }
+        });
       }
 
       // Persist only after validation passes
@@ -149,26 +159,4 @@ Deno.serve(async (req) => {
       headers: { 'Content-Type': 'application/json' }
     });
   }
-  
-  // After getting cfRes from worker
-if (cfRes.ok && cfRes.scan_full) {
-  const { risk_score, top_risks, clauses } = cfRes.scan_full;
-  
-  // Log what we actually got
-  console.log('SCAN_VALIDATION', {
-    risk_score,
-    top_risks_count: top_risks?.length || 0,
-    top_risks_type: typeof top_risks,
-    clauses_count: clauses?.length || 0,
-    has_risk_score: typeof risk_score === 'number'
-  });
-  
-  // Ensure arrays are properly formed
-  if (!Array.isArray(top_risks)) {
-    console.error('TOP_RISKS_NOT_ARRAY', { top_risks });
-  }
-  if (!Array.isArray(clauses)) {
-    console.error('CLAUSES_NOT_ARRAY', { clauses });
-  }
-}
 });
