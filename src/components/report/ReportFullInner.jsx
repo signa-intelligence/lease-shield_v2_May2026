@@ -383,26 +383,57 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         logStep("MATERIALIZE_START", {});
         if (!cancelled) setMaterializing(true);
         
-        // Refetch scan to get latest data saved by Cloudflare worker
-        // CRITICAL: The initial fetch may have stale data if DB hasn't synced yet
+        // Refetch scan with retry logic to handle DB propagation delay
         logStep("REFETCH_SCAN_FOR_LATEST");
         
-        // Add small delay to allow DB propagation
-        await new Promise(resolve => setTimeout(resolve, 500));
+        let finalScanData = scanData;
+        let scanFull = scanData?.scan_full ?? null;
         
-        const scanArrRefresh = await base44.entities.LeaseScan.filter({ id: scanId });
-        const scanDataRefresh = scanArrRefresh?.[0] || null;
+        // Retry up to 5 times with increasing delays to get fresh data
+        const maxRetries = 5;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          // Exponential backoff: 500ms, 1000ms, 1500ms, 2000ms, 2500ms
+          const delay = attempt * 500;
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          const scanArrRefresh = await base44.entities.LeaseScan.filter({ id: scanId });
+          const scanDataRefresh = scanArrRefresh?.[0] || null;
+          
+          const refreshedScanFull = scanDataRefresh?.scan_full ?? null;
+          const hasNewFormat = refreshedScanFull && (
+            Array.isArray(refreshedScanFull.clauses) && refreshedScanFull.clauses.length > 0 &&
+            typeof refreshedScanFull.risk_score === 'number'
+          );
+          
+          logStep(`REFETCH_ATTEMPT_${attempt}`, {
+            found: !!scanDataRefresh,
+            hasNewFormat,
+            clausesCount: refreshedScanFull?.clauses?.length || 0,
+            riskScore: refreshedScanFull?.risk_score,
+            keys: refreshedScanFull ? Object.keys(refreshedScanFull) : []
+          });
+          
+          if (hasNewFormat) {
+            finalScanData = scanDataRefresh;
+            scanFull = refreshedScanFull;
+            logStep("REFETCH_SUCCESS", { attempt, clausesCount: scanFull.clauses.length, riskScore: scanFull.risk_score });
+            break;
+          }
+          
+          if (attempt === maxRetries) {
+            logStep("REFETCH_EXHAUSTED", { 
+              message: "Max retries reached, using whatever data we have",
+              finalHasData: !!refreshedScanFull,
+              finalClausesCount: refreshedScanFull?.clauses?.length || 0
+            });
+            // Use whatever we got on last attempt
+            if (scanDataRefresh) {
+              finalScanData = scanDataRefresh;
+              scanFull = refreshedScanFull;
+            }
+          }
+        }
         
-        logStep("REFETCH_RESULT", {
-          found: !!scanDataRefresh,
-          hasNewScanFull: !!scanDataRefresh?.scan_full,
-          newKeys: scanDataRefresh?.scan_full ? Object.keys(scanDataRefresh.scan_full) : [],
-          oldKeys: scanData?.scan_full ? Object.keys(scanData.scan_full) : []
-        });
-        
-        // Use refreshed data, fallback to original only if refresh failed
-        const finalScanData = scanDataRefresh || scanData;
-        const scanFull = finalScanData?.scan_full ?? null;
         const scanFullKeys = scanFull ? Object.keys(scanFull) : [];
         console.log('[MATERIALIZE] scan_full keys:', scanFullKeys);
         validation.scanFullKeys = scanFullKeys;
