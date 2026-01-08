@@ -686,23 +686,18 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
   };
 
 
-  const strings = t[language] || t.en;
+const strings = t[language] || t.en;
 
-  // Cloudflare SSoT view model
+// Cloudflare SSoT view model
 const sf = reportData || {};
-const sf = reportData || {};
-console.log('DEBUG_SF:', {
+console.log('DEBUG_REPORTDATA:', {
   reportData_keys: Object.keys(reportData || {}),
-  sf_keys: Object.keys(sf),
-  has_summary: !!sf.summary,
-  has_clauses: !!sf.clauses,
-  clauses_length: sf.clauses?.length,
-  top_risks_length: sf.summary?.top_risks?.length
+  reportData_preview: JSON.stringify(reportData).substring(0, 500)
 });
-  const meta = sf.meta || {};
-  const topRisks = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
-  const clauses = Array.isArray(sf.clauses) ? sf.clauses : [];
- const textTooShort = meta.text_length !== null && (meta.text_length || 0) < 500;
+const meta = sf.meta || {};
+const topRisks = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
+const clauses = Array.isArray(sf.clauses) ? sf.clauses : [];
+const textTooShort = meta.text_length !== null && (meta.text_length || 0) < 500;
 
 
   return (
