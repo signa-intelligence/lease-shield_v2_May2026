@@ -689,7 +689,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
   const strings = t[language] || t.en;
 
   // Cloudflare SSoT view model
- const sf = reportData?.scan_full || reportData || {};
+const sf = reportData || {};
   const meta = sf.meta || {};
   const topRisks = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
   const clauses = Array.isArray(sf.clauses) ? sf.clauses : [];
