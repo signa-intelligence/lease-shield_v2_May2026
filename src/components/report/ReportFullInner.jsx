@@ -384,13 +384,38 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         if (!cancelled) setMaterializing(true);
         
         // Refetch scan to get latest data saved by Cloudflare worker
+        // CRITICAL: The initial fetch may have stale data if DB hasn't synced yet
         logStep("REFETCH_SCAN_FOR_LATEST");
+        
+        // Add small delay to allow DB propagation
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         const scanArrRefresh = await base44.entities.LeaseScan.filter({ id: scanId });
-        const scanDataRefresh = scanArrRefresh?.[0] || scanData;
-        const scanFull = scanDataRefresh?.scan_full ?? null;
+        const scanDataRefresh = scanArrRefresh?.[0] || null;
+        
+        logStep("REFETCH_RESULT", {
+          found: !!scanDataRefresh,
+          hasNewScanFull: !!scanDataRefresh?.scan_full,
+          newKeys: scanDataRefresh?.scan_full ? Object.keys(scanDataRefresh.scan_full) : [],
+          oldKeys: scanData?.scan_full ? Object.keys(scanData.scan_full) : []
+        });
+        
+        // Use refreshed data, fallback to original only if refresh failed
+        const finalScanData = scanDataRefresh || scanData;
+        const scanFull = finalScanData?.scan_full ?? null;
         const scanFullKeys = scanFull ? Object.keys(scanFull) : [];
         console.log('[MATERIALIZE] scan_full keys:', scanFullKeys);
         validation.scanFullKeys = scanFullKeys;
+        
+        // Check if we got the NEW Cloudflare format (has 'clauses', 'risk_score', 'summary')
+        const hasNewFormat = scanFull && (
+          Array.isArray(scanFull.clauses) || 
+          typeof scanFull.risk_score === 'number' ||
+          scanFull.summary?.top_risks
+        );
+        
+        logStep("FORMAT_CHECK", { hasNewFormat, scanFullKeys });
+        
         if (!scanFull) {
           const err = new Error('NO_SOURCE_DATA');
           err.code = 'NO_SOURCE_DATA';
@@ -402,7 +427,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         if (!cancelled) {
           setUser(userRes);
           setLease(leaseData);
-          setScan(scanData);
+          setScan(finalScanData);
           setReportData(scanFull);
           setLoading(false);
           logStep('RENDER_SUCCESS', { totalElapsed: Date.now() - startTime });
