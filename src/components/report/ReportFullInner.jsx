@@ -776,8 +776,29 @@ console.log('DEBUG_REPORTDATA:', {
   reportData_preview: JSON.stringify(reportData).substring(0, 500)
 });
 const meta = sf.meta || {};
-const topRisks = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
-const clauses = Array.isArray(sf.clauses) ? sf.clauses : [];
+
+// Map top_risks to display format
+const topRisksRaw = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
+const topRisks = topRisksRaw.map((risk, idx) => {
+  if (typeof risk === 'string') {
+    return { title: risk, severity: 'high', why: 'Risk identified in lease' };
+  }
+  return risk;
+});
+
+// Map clauses to normalize field names
+const clausesRaw = Array.isArray(sf.clauses) ? sf.clauses : [];
+const clauses = clausesRaw.map((c, idx) => ({
+  clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
+  title: c.canonical_name || c.title || `Clause ${idx + 1}`,
+  risk_level: c.risk_level || 'none',
+  plain_english: c.explanation || c.plain_english || c.risk_summary || '—',
+  text: c.clause_text || c.text || c.full_text || '',
+  recommendation: {
+    fix: c.recommended_action || c.recommendation || '—'
+  }
+}));
+
 const textTooShort = meta.text_length !== null && (meta.text_length || 0) < 500;
 
 
@@ -1004,7 +1025,10 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 {strings.summary}:
               </span>
               <p className="mt-1" style={{ color: colors.textPrimary }}>
-                {sf.summary?.executive_summary || 'No summary available.'}
+                {sf.summary?.executive_summary || 
+                 (topRisks.length > 0 
+                   ? `This lease contains ${topRisks.length} significant risk areas that require attention: ${topRisks.slice(0, 3).map(r => r.title).join(', ')}.`
+                   : 'Analysis complete. Review clauses below for details.')}
               </p>
             </div>
 
@@ -1052,19 +1076,19 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                   {clauses.map((c, i) => (
                     <tr key={c.clause_id || i} className="border-t" style={{ borderColor: colors.borderColor }}>
                       <td className="align-top p-3" style={{ color: colors.textPrimary }}>
-                        <div className="font-semibold">{c.title || `Clause ${c.clause_id || i+1}`}</div>
+                        <div className="font-semibold">{c.title}</div>
                       </td>
                       <td className="align-top p-3">
                         <span className="text-xs px-2 py-1 rounded-full" style={{
-                          backgroundColor: ({ none:'#E5E7EB', low:'#E0F2FE', med:'#FEF3C7', high:'#FEE2E2', critical:'#FECACA' }[c.risk_level] || '#E5E7EB'),
-                          color: ({ none:'#374151', low:'#0369A1', med:'#92400E', high:'#B91C1C', critical:'#991B1B' }[c.risk_level] || colors.textSecondary)
-                        }}>{c.risk_level || 'none'}</span>
+                          backgroundColor: ({ none:'#E5E7EB', low:'#E0F2FE', medium:'#FEF3C7', high:'#FEE2E2', critical:'#FECACA' }[c.risk_level] || '#E5E7EB'),
+                          color: ({ none:'#374151', low:'#0369A1', medium:'#92400E', high:'#B91C1C', critical:'#991B1B' }[c.risk_level] || colors.textSecondary)
+                        }}>{c.risk_level}</span>
                       </td>
                       <td className="align-top p-3" style={{ color: colors.textSecondary }}>
-                        {c.plain_english || c.risk_summary || '—'}
+                        {c.plain_english}
                       </td>
                       <td className="align-top p-3" style={{ color: colors.textSecondary }}>
-                        {c.recommendation?.fix || '—'}
+                        {c.recommendation?.fix}
                       </td>
                     </tr>
                   ))}
