@@ -941,9 +941,10 @@ function UploadScanPageContent() {
         }
 
         // Trigger analysis with verified URL only
-        console.log('SCAN_INVOKE', { leaseId: lease.id, hasFileUrl: !!primaryUrl, language });
+        console.log('SCAN_INVOKE', { leaseId: lease.id, scanId: scan.id, hasFileUrl: !!primaryUrl, language });
         const resp = await base44.functions.invoke('scanLeaseCF_v1', {
           leaseId: lease.id,
+          scanId: scan.id,
           fileUrl: primaryUrl,
           language
         });
@@ -1253,9 +1254,10 @@ function UploadScanPageContent() {
         logStage('ANALYSIS_START', { fileUrls });
         const analysisStartTime = Date.now();
 
-        console.log('SCAN_INVOKE', { leaseId: lease.id, hasFileUrl: !!fileUrls?.[0], language });
+        console.log('SCAN_INVOKE', { leaseId: lease.id, scanId, hasFileUrl: !!fileUrls?.[0], language });
         const resp = await base44.functions.invoke('scanLeaseCF_v1', {
           leaseId: lease.id,
+          scanId: scanId,
           fileUrl: fileUrls[0],
           language
         });
