@@ -28,9 +28,21 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
 
       const fileUrls = lease.file_urls || [lease.file_url];
       
-      console.log("[RETRY] INVOKE_SCANLEASEEXTERNAL_START", { leaseId: lease.id, fileUrl: fileUrls?.[0] || lease.file_url, language });
+      // Find existing scan for this lease to pass scanId
+      let existingScanId = null;
+      try {
+        const existingScans = await base44.entities.LeaseScan.filter({ lease_id: lease.id });
+        if (existingScans.length > 0) {
+          existingScanId = existingScans[0].id;
+        }
+      } catch (e) {
+        console.log('[RETRY] Could not find existing scan:', e);
+      }
+      
+      console.log("[RETRY] INVOKE_SCANLEASEEXTERNAL_START", { leaseId: lease.id, scanId: existingScanId, fileUrl: fileUrls?.[0] || lease.file_url, language });
       const resp = await base44.functions.invoke("scanLeaseCF_v1", {
         leaseId: lease.id,
+        scanId: existingScanId,
         fileUrl: fileUrls?.[0] || lease.file_url,
         language
       });
