@@ -766,7 +766,7 @@ function DashboardContent() {
     const suggestions = [];
 
     // Lease uploaded/scanned: 30 points
-    const hasScannedLease = leases.some(l => l.status === 'scanned' || l.status === 'paid');
+    const hasScannedLease = leases.some(l => l.status === 'scanned' || l.status === 'ok' || l.status === 'paid');
     if (hasScannedLease) {
       actionScore += 30;
     } else {
