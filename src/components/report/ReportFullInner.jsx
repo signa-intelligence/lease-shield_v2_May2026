@@ -850,7 +850,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
     if (exportingPdf) return;
     setExportingPdf(true);
     try {
-      const response = await base44.functions.invoke("generateLeaseReportPDF", { scanId, language });
+      const response = await base44.functions.invoke("generateLeaseReportPDF", { scanId });
       if (response?.data?.pdf_url) window.open(response.data.pdf_url, "_blank");
       else alert("PDF generation failed.");
     } catch (err) {

@@ -210,7 +210,12 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { scanId, scanData, language = "en" } = body || {};
+    const { scanId } = body || {};
+
+    // Validate input
+    if (!scanId) {
+      return json(400, { error: 'MISSING_PARAMS', message: 'scanId is required' }, headers);
+    }
 
     // Premium gate removed - allow all users to export PDF
 
@@ -325,20 +330,20 @@ Deno.serve(async (req) => {
           };
         });
 
-        const clause_review = clause_ledger_rows.map((r) => ({
-          clause_id: r.clause_id,
+        const clause_review = clause_ledger_rows.map((r, idx) => ({
+          clause_id: r.clause_id || `clause-${idx+1}`,
           risk_level: String(r.risk_level || 'NO_RISK').toLowerCase().replace('no_risk','none'),
           risk_summary: r.rationale || '',
           recommended_change: Array.isArray(r.recommended_actions) ? r.recommended_actions[0] || '' : ''
         }));
 
-        const clause_ledger_display = clause_ledger_rows.map((r) => {
+        const clause_ledger_display = clause_ledger_rows.map((r, idx) => {
           const src = clauses_extracted_rows.find(c => c?.clause_id === r.clause_id);
           return {
-            clause_id: r.clause_id,
-            heading: src?.title || r.title || `Clause ${r.clause_number}`,
-            full_text: src?.text || '',
-            page: src?.page_number || 1
+            clause_id: r.clause_id || `clause-${idx+1}`,
+            heading: src?.title || r.title || `Clause ${r.clause_number || idx+1}`,
+            full_text: src?.text || r.full_text || '',
+            page: src?.page_number || r.page || 1
           };
         });
 
@@ -365,8 +370,8 @@ Deno.serve(async (req) => {
 
     if (!data) {
       return json(
-        200,
-        { success: false, error: "NO_SOURCE_DATA", message: "Scan data not saved. Please re-scan.", scanId, correlationId, debugRead },
+        400,
+        { error: "NO_SOURCE_DATA", message: "Scan data not saved. Please re-scan.", scanId, correlationId },
         headers
       );
     }
@@ -375,7 +380,7 @@ Deno.serve(async (req) => {
     const missing = [];
     if (!Array.isArray(data.clause_ledger) || data.clause_ledger.length === 0) missing.push("clause_ledger");
     if (!Array.isArray(data.flags)) data.flags = [];
-    if (!Array.isArray(data.clause_review) || data.clause_review.length !== data.clause_ledger.length) {
+    if (!Array.isArray(data.clause_review) || data.clause_review.length !== (data.clause_ledger?.length || 0)) {
       const flagsByClause = new Map();
       data.flags.forEach((f) => {
         if (!f?.clause_id) return;
@@ -383,21 +388,48 @@ Deno.serve(async (req) => {
         list.push(f);
         flagsByClause.set(f.clause_id, list);
       });
-      data.clause_review = data.clause_ledger.map((c) => {
-        const hit = (flagsByClause.get(c.clause_id) || [])[0];
-        if (hit) {
-          return {
-            clause_id: c.clause_id,
-            risk_level: hit.severity || "medium",
-            risk_summary: hit.description || hit.title || "Review required",
-            recommended_change: hit.recommendation || "",
-          };
-        }
-        return { clause_id: c.clause_id, risk_level: "none", risk_summary: "Accept as standard." };
-      });
+      if (Array.isArray(data.clause_ledger)) {
+        data.clause_review = data.clause_ledger.map((c) => {
+          const hit = (flagsByClause.get(c.clause_id) || [])[0];
+          if (hit) {
+            return {
+              clause_id: c.clause_id,
+              risk_level: hit.severity || "medium",
+              risk_summary: hit.description || hit.title || "Review required",
+              recommended_change: hit.recommendation || "",
+            };
+          }
+          return { clause_id: c.clause_id, risk_level: "none", risk_summary: "Accept as standard." };
+        });
+      }
     }
+
+    if (missing.includes('clause_ledger')) {
+      // Attempt fallback: build from raw scan_full.clauses if available
+      try {
+        const scans = await svc.entities.LeaseScan.filter({ id: scanId });
+        const scan = scans?.[0];
+        const sf = scan?.scan_full || {};
+        if (Array.isArray(sf.clauses) && sf.clauses.length > 0) {
+          data.clause_ledger = sf.clauses.map((c, idx) => ({
+            clause_id: c.clause_id || c.catalog_id || `clause-${idx + 1}`,
+            heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
+            full_text: c.clause_text || c.text || '',
+            page: c.page_number || 1
+          }));
+          // Clear missing after recovery
+          const ix = missing.indexOf('clause_ledger');
+          if (ix > -1) missing.splice(ix, 1);
+        }
+      } catch (_) { /* ignore */ }
+    }
+
     if (missing.length > 0) {
-      return json(200, { success: false, error: "MISSING_REPORT_DATA", message: "Scan data not saved. Please re-scan.", missing_fields: missing, scanId, correlationId, debugRead }, headers);
+      // Hard fail with 400 including gotKeys from stored record
+      const scans = await svc.entities.LeaseScan.filter({ id: scanId });
+      const scan = scans?.[0];
+      const gotKeys = Object.keys((scan?.scan_full || {}));
+      return json(400, { error: "MISSING_REPORT_DATA", missing_fields: missing, gotKeys, scanId, correlationId }, headers);
     }
 
     // -------- PDF generation --------
@@ -538,7 +570,7 @@ Deno.serve(async (req) => {
     const pdfFile = new File([pdfBytes], `LeaseShield-Report-${Date.now()}.pdf`, { type: "application/pdf" });
     const upload = await svc.integrations.Core.UploadFile({ file: pdfFile });
 
-    return json(200, { success: true, pdf_url: upload.file_url, correlationId, debugRead }, headers);
+    return json(200, { success: true, pdf_url: upload.file_url, correlationId }, headers);
   } catch (e) {
     console.error("[PDF_ERROR]", correlationId, e?.message || e, e?.stack);
     return json(200, { success: false, error: "PDF_FAILED", message: String(e?.message || "PDF generation failed"), correlationId }, headers);
