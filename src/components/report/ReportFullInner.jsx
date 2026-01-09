@@ -30,12 +30,130 @@ const SEVERITY_CONFIG = {
 };
 
 
-function defaultRecsFor(category) {
+function defaultRecsFor(category, riskLevel) {
+  const rl = String(riskLevel || 'medium').toLowerCase();
   const c = category || "clause";
-  return [
-    `Request to narrow or clarify ${c} terms to tenant-favorable language`,
-    `Add explicit safeguard for ${c} to prevent overbroad interpretation`
-  ];
+  
+  const defaults = {
+    critical: [
+      "Demand removal of this clause before signing",
+      "This clause may be legally unenforceable - seek legal advice",
+      "Document all communications about this clause in writing"
+    ],
+    high: [
+      "Negotiate removal or significant modification of this clause",
+      "Seek independent legal review before signing",
+      "Request written clarification of landlord's interpretation"
+    ],
+    medium: [
+      `Request clarification of ${c} terms in writing`,
+      "Propose mutual safeguards to balance both parties' interests",
+      "Set clear expectations and document agreements upfront"
+    ],
+    low: [
+      `Review this ${c} to ensure you understand your obligations`,
+      "Keep records of any related communications",
+      "Monitor for any issues during the tenancy"
+    ],
+    none: [
+      "Standard clause - no action required",
+      "Maintain documentation for reference",
+      "Review periodically during tenancy"
+    ]
+  };
+  
+  return defaults[rl] || defaults.medium;
+}
+
+// Parse recommendation string into array of 3 recommendations
+function parseRecommendations(recString, riskLevel, category) {
+  let recs = [];
+  
+  if (recString) {
+    recs = String(recString)
+      .split(/[\n•\-–]|\d+\.\s+/g)
+      .map(s => s.trim())
+      .filter(s => s.length > 5);
+  }
+  
+  const defaultRecs = defaultRecsFor(category, riskLevel);
+  
+  // Ensure exactly 3 recommendations
+  while (recs.length < 3) {
+    const nextDefault = defaultRecs[recs.length];
+    if (nextDefault && !recs.includes(nextDefault)) {
+      recs.push(nextDefault);
+    } else {
+      break;
+    }
+  }
+  
+  return recs.slice(0, 3);
+}
+
+// Build detailed executive summary
+function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, language) {
+  const score = riskScore || 0;
+  const riskyClausesCount = (clauses || []).filter(c => c.risk_level && c.risk_level !== 'none').length;
+  const criticalCount = (clauses || []).filter(c => c.risk_level === 'critical').length;
+  const highCount = (clauses || []).filter(c => c.risk_level === 'high').length;
+  
+  if (existingSummary && existingSummary.length > 100) {
+    return existingSummary;
+  }
+  
+  const isThaiLang = language === 'th';
+  let summary = '';
+  
+  if (score >= 70) {
+    if (isThaiLang) {
+      summary = `สัญญาเช่าความเสี่ยงสูง (คะแนน: ${score}/100)\n\n`;
+      summary += `สัญญาเช่านี้มีความเสี่ยงสูงและมี ${riskyClausesCount} ข้อที่ต้องพิจารณาอย่างรอบคอบก่อนลงนาม `;
+      if (criticalCount > 0) summary += `${criticalCount} ข้อถูกจัดอันดับเป็นความเสี่ยงวิกฤตและอาจมีปัญหาทางกฎหมาย `;
+      if (highCount > 0) summary += `${highCount} ข้อถูกจัดอันดับเป็นความเสี่ยงสูงและอาจส่งผลกระทบต่อสิทธิของคุณ `;
+      summary += `\n\nคำแนะนำ: อย่าลงนามในสัญญานี้ในรูปแบบปัจจุบัน เจรจาแก้ไขข้อที่มีความเสี่ยงสูงและพิจารณาขอคำปรึกษาทางกฎหมาย`;
+    } else {
+      summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+      summary += `This lease agreement is exceptionally HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
+      if (criticalCount > 0) {
+        summary += `${criticalCount} clause(s) are rated CRITICAL and may be legally problematic or heavily favor the landlord while stripping the tenant of basic protections. `;
+      }
+      if (highCount > 0) {
+        summary += `${highCount} clause(s) are rated HIGH RISK and could significantly impact your rights as a tenant. `;
+      }
+      if (topRisks && topRisks.length > 0) {
+        summary += `\n\nKey concerns include: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
+      }
+      summary += `\n\n⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. This document appears designed to be tenant-unfavorable. Negotiate removal or modification of high-risk clauses, and seek independent legal advice before proceeding.`;
+    }
+  } else if (score >= 40) {
+    if (isThaiLang) {
+      summary = `สัญญาเช่าความเสี่ยงปานกลาง (คะแนน: ${score}/100)\n\n`;
+      summary += `สัญญาเช่านี้มี ${riskyClausesCount} ข้อที่ควรตรวจสอบและอาจต้องเจรจา `;
+      summary += `\n\nคำแนะนำ: ตรวจสอบข้อที่ถูกทำเครื่องหมายอย่างละเอียดและพิจารณาเจรจาแก้ไขก่อนลงนาม`;
+    } else {
+      summary = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+      summary += `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. `;
+      summary += `While not immediately dangerous, several provisions could impact your rights during the tenancy. `;
+      if (topRisks && topRisks.length > 0) {
+        summary += `\n\nAreas requiring attention: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
+      }
+      summary += `\n\nRECOMMENDATION: Review the flagged clauses carefully and consider negotiating modifications before signing. Document all verbal agreements in writing.`;
+    }
+  } else {
+    if (isThaiLang) {
+      summary = `สัญญาเช่าความเสี่ยงต่ำ (คะแนน: ${score}/100)\n\n`;
+      summary += `สัญญาเช่านี้ค่อนข้างสมดุลโดยมี ${riskyClausesCount || 'ไม่กี่'} ข้อที่ต้องให้ความสนใจ `;
+      summary += `\n\nคำแนะนำ: ตรวจสอบทุกข้อเพื่อให้แน่ใจว่าคุณเข้าใจภาระผูกพันของคุณ`;
+    } else {
+      summary = `LOW RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+      summary += `This lease agreement appears to be relatively balanced with ${riskyClausesCount || 'few'} clauses requiring attention. `;
+      summary += `The terms are generally standard for rental agreements. `;
+      summary += `\n\nRECOMMENDATION: Review all clauses to ensure you understand your obligations. Keep a copy of all documents and maintain records throughout your tenancy.`;
+    }
+  }
+  
+  return summary;
 }
 
 
@@ -786,20 +904,33 @@ const topRisks = topRisksRaw.map((risk, idx) => {
   return risk;
 });
 
-// Map clauses to normalize field names
+// Map clauses to normalize field names with 3 recommendations each
 const clausesRaw = Array.isArray(sf.clauses) ? sf.clauses : [];
-const clauses = clausesRaw.map((c, idx) => ({
-  clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
-  title: c.canonical_name || c.title || `Clause ${idx + 1}`,
-  risk_level: c.risk_level || 'none',
-  plain_english: c.explanation || c.plain_english || c.risk_summary || '—',
-  text: c.clause_text || c.text || c.full_text || '',
-  recommendation: {
-    fix: c.recommended_action || c.recommendation || '—'
-  }
-}));
+const clauses = clausesRaw.map((c, idx) => {
+  const riskLevel = c.risk_level || 'none';
+  const category = c.canonical_name || c.title || 'clause';
+  const recs = parseRecommendations(c.recommended_action || c.recommendation, riskLevel, category);
+  
+  return {
+    clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
+    title: c.canonical_name || c.title || `Clause ${idx + 1}`,
+    risk_level: riskLevel,
+    plain_english: c.explanation || c.plain_english || c.risk_summary || '—',
+    text: c.clause_text || c.text || c.full_text || '',
+    recommendations: recs
+  };
+});
 
 const textTooShort = meta.text_length !== null && (meta.text_length || 0) < 500;
+
+// Build detailed executive summary
+const detailedSummary = buildExecutiveSummary(
+  sf.risk_score, 
+  topRisks, 
+  clausesRaw, 
+  sf.summary?.executive_summary,
+  language
+);
 
 
   return (
@@ -1019,17 +1150,27 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               </div>
             )}
 
-            {/* Executive summary */}
+            {/* Executive summary - Detailed multi-paragraph */}
             <div className="mb-6">
               <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
                 {strings.summary}:
               </span>
-              <p className="mt-1" style={{ color: colors.textPrimary }}>
-                {sf.summary?.executive_summary || 
-                 (topRisks.length > 0 
-                   ? `This lease contains ${topRisks.length} significant risk areas that require attention: ${topRisks.slice(0, 3).map(r => r.title).join(', ')}.`
-                   : 'Analysis complete. Review clauses below for details.')}
-              </p>
+              <div className="mt-2 p-4 rounded-lg" style={{ 
+                backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC',
+                border: `1px solid ${colors.borderColor}`
+              }}>
+                {detailedSummary.split('\n').map((paragraph, idx) => (
+                  <p key={idx} className={idx > 0 ? 'mt-3' : ''} style={{ 
+                    color: paragraph.includes('RECOMMENDATION') || paragraph.includes('คำแนะนำ') || paragraph.includes('⚠️')
+                      ? (sf.risk_score >= 70 ? '#B91C1C' : sf.risk_score >= 40 ? '#92400E' : '#065F46')
+                      : colors.textPrimary,
+                    fontWeight: paragraph.includes('RECOMMENDATION') || paragraph.includes('คำแนะนำ') || paragraph.includes('HIGH RISK') || paragraph.includes('ความเสี่ยงสูง') ? '600' : '400',
+                    lineHeight: '1.6'
+                  }}>
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
             </div>
 
             {/* Top risks */}
@@ -1077,50 +1218,94 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               </div>
             </div>
 
-            {/* Clauses table */}
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="font-bold" style={{ color: colors.textPrimary }}>Clauses</h3>
-              <div className="text-sm" style={{ color: colors.textSecondary }}>
-                text_length: {meta.text_length || 0} • chunks: {meta.chunks || 0} • count: {clauses.length}
+            {/* Clauses - Card-based layout with 3 recommendations */}
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'การวิเคราะห์ทีละข้อ' : 'Clause-by-Clause Analysis'}
+              </h3>
+              <div className="text-xs" style={{ color: colors.textSecondary }}>
+                {clauses.length} {language === 'th' ? 'ข้อ' : 'clauses'}
               </div>
             </div>
-            <div className="overflow-x-auto border rounded-lg" style={{ borderColor: colors.borderColor }}>
-              <table className="min-w-full text-sm">
-                <thead style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
-                  <tr>
-                    <th className="text-left p-3">Title</th>
-                    <th className="text-left p-3">Risk</th>
-                    <th className="text-left p-3">Plain English</th>
-                    <th className="text-left p-3">Recommendation</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clauses.map((c, i) => (
-                    <tr key={c.clause_id || i} className="border-t" style={{ borderColor: colors.borderColor }}>
-                      <td className="align-top p-3" style={{ color: colors.textPrimary }}>
-                        <div className="font-semibold">{c.title}</div>
-                      </td>
-                      <td className="align-top p-3">
-                        <span className="text-xs px-2 py-1 rounded-full" style={{
-                          backgroundColor: ({ none:'#E5E7EB', low:'#E0F2FE', medium:'#FEF3C7', high:'#FEE2E2', critical:'#FECACA' }[c.risk_level] || '#E5E7EB'),
-                          color: ({ none:'#374151', low:'#0369A1', medium:'#92400E', high:'#B91C1C', critical:'#991B1B' }[c.risk_level] || colors.textSecondary)
-                        }}>{c.risk_level}</span>
-                      </td>
-                      <td className="align-top p-3" style={{ color: colors.textSecondary }}>
+            
+            <div className="space-y-4">
+              {clauses.map((c, i) => {
+                const riskColors = {
+                  none: { bg: isDarkMode ? '#1F2937' : '#F9FAFB', border: '#D1D5DB', text: '#6B7280' },
+                  low: { bg: isDarkMode ? '#1E3A5F' : '#EFF6FF', border: '#3B82F6', text: '#1D4ED8' },
+                  medium: { bg: isDarkMode ? '#3A2F1C' : '#FFFBEB', border: '#F59E0B', text: '#B45309' },
+                  high: { bg: isDarkMode ? '#3A1F1F' : '#FEF2F2', border: '#EF4444', text: '#B91C1C' },
+                  critical: { bg: isDarkMode ? '#4A1F1F' : '#FEE2E2', border: '#DC2626', text: '#991B1B' }
+                };
+                const colorSet = riskColors[c.risk_level] || riskColors.none;
+                
+                return (
+                  <div 
+                    key={c.clause_id || i} 
+                    className="rounded-lg overflow-hidden"
+                    style={{ 
+                      backgroundColor: colorSet.bg,
+                      border: `2px solid ${colorSet.border}`,
+                    }}
+                  >
+                    {/* Header */}
+                    <div className="p-4 flex items-start justify-between gap-3" style={{ borderBottom: `1px solid ${colorSet.border}` }}>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded" style={{
+                            backgroundColor: colorSet.border,
+                            color: '#FFFFFF'
+                          }}>
+                            {c.risk_level.toUpperCase()}
+                          </span>
+                          <span className="text-xs" style={{ color: colors.textSecondary }}>#{i + 1}</span>
+                        </div>
+                        <h4 className="font-bold" style={{ color: colors.textPrimary }}>{c.title}</h4>
+                      </div>
+                    </div>
+                    
+                    {/* Plain English Explanation */}
+                    <div className="p-4" style={{ borderBottom: `1px solid ${colorSet.border}` }}>
+                      <div className="text-xs font-semibold mb-1" style={{ color: colorSet.text }}>
+                        {language === 'th' ? 'ความหมาย' : 'What This Means'}
+                      </div>
+                      <p className="text-sm" style={{ color: colors.textPrimary, lineHeight: '1.5' }}>
                         {c.plain_english}
-                      </td>
-                      <td className="align-top p-3" style={{ color: colors.textSecondary }}>
-                        {c.recommendation?.fix}
-                      </td>
-                    </tr>
-                  ))}
-                  {clauses.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="p-4 text-center" style={{ color: colors.textSecondary }}>No clauses parsed.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                      </p>
+                    </div>
+                    
+                    {/* 3 Recommendations */}
+                    <div className="p-4">
+                      <div className="text-xs font-semibold mb-2" style={{ color: colorSet.text }}>
+                        {language === 'th' ? 'คำแนะนำ' : 'Recommendations'}
+                      </div>
+                      <ul className="space-y-2">
+                        {c.recommendations.map((rec, recIdx) => (
+                          <li key={recIdx} className="flex items-start gap-2">
+                            <span className="text-xs font-bold mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{
+                              backgroundColor: colorSet.border,
+                              color: '#FFFFFF'
+                            }}>
+                              {recIdx + 1}
+                            </span>
+                            <span className="text-sm" style={{ color: colors.textPrimary, lineHeight: '1.4' }}>
+                              {rec}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {clauses.length === 0 && (
+                <div className="p-8 text-center rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F9FAFB' }}>
+                  <p style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'ไม่พบข้อสัญญา' : 'No clauses parsed.'}
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
