@@ -230,13 +230,16 @@ Deno.serve(async (req) => {
 
     // Auth required
     if (!scanId) {
-      console.error('PDF_EXPORT_ERROR', {
+      console.log('PDF_EXPORT_ERROR', {
         error_code: 'BAD_REQUEST',
         missing_fields: ['scanId'],
         reportData_keys: reportData ? Object.keys(reportData) : null,
         full_reportData: JSON.stringify(reportData)
       });
-      return json(400, { error: "BAD_REQUEST", message: "scanId is required" }, headers);
+      {
+        const payload = { error: "BAD_REQUEST", message: "scanId is required", ...(debug ? { debug_trace: debugTrace } : {}) };
+        return json(debug ? 200 : 400, payload, headers);
+      }
     }
 
     // Premium gate removed - allow all users to export PDF
@@ -268,29 +271,35 @@ Deno.serve(async (req) => {
       debugTrace.record.keys = Object.keys(scan || {});
 
       if (!scan) {
-        console.error('PDF_EXPORT_ERROR', {
+        console.log('PDF_EXPORT_ERROR', {
           error_code: 'SCAN_NOT_FOUND',
           missing_fields: [],
           reportData_keys: reportData ? Object.keys(reportData) : null,
           full_reportData: JSON.stringify(reportData)
         });
-        console.error('PDF_EXPORT_ERROR', {
+        console.log('PDF_EXPORT_ERROR', {
           error_code: 'SCAN_NOT_FOUND',
           missing_fields: [],
           reportData_keys: reportData ? Object.keys(reportData) : null,
           full_reportData: JSON.stringify(reportData)
         });
-        return json(404, { error: "SCAN_NOT_FOUND", message: `No LeaseScan found for ${scanId}`, ...(debug ? { debug_trace: debugTrace } : {}) }, headers);
+        {
+          const payload = { error: "SCAN_NOT_FOUND", message: `No LeaseScan found for ${scanId}`, ...(debug ? { debug_trace: debugTrace } : {}) };
+          return json(debug ? 200 : 404, payload, headers);
+        }
       }
 
       if (scan.id !== scanId) {
-        console.error('PDF_EXPORT_ERROR', {
+        console.log('PDF_EXPORT_ERROR', {
           error_code: 'BAD_REQUEST_ID_MISMATCH',
           missing_fields: [],
           reportData_keys: reportData ? Object.keys(reportData) : null,
           full_reportData: JSON.stringify(reportData)
         });
-        return json(400, { error: "BAD_REQUEST", message: "Requested scanId does not match record id", ...(debug ? { debug_trace: debugTrace } : {}) }, headers);
+        {
+          const payload = { error: "BAD_REQUEST", message: "Requested scanId does not match record id", ...(debug ? { debug_trace: debugTrace } : {}) };
+          return json(debug ? 200 : 400, payload, headers);
+        }
       }
 
       // Ownership check (403 if user does not own and not admin-like)
@@ -298,13 +307,16 @@ Deno.serve(async (req) => {
       const isAdminLike = ['admin', 'super_admin', 'va'].includes(userRole);
       if (!isAdminLike && scan.created_by && scan.created_by !== user.email) {
         debugTrace.ownership = { checked: true, allowed: false };
-        console.error('PDF_EXPORT_ERROR', {
+        console.log('PDF_EXPORT_ERROR', {
           error_code: 'FORBIDDEN',
           missing_fields: [],
           reportData_keys: reportData ? Object.keys(reportData) : null,
           full_reportData: JSON.stringify(reportData)
         });
-        return json(403, { error: "FORBIDDEN", message: "You do not have access to this scan" }, headers);
+        {
+          const payload = { error: "FORBIDDEN", message: "You do not have access to this scan" };
+          return json(debug ? 200 : 403, debug ? { ...payload, debug_trace: debugTrace } : payload, headers);
+        }
       }
 
       let sf = scan?.scan_full ?? {};
@@ -474,7 +486,7 @@ Deno.serve(async (req) => {
     reportData = data;
 
     if (!data) {
-      console.error('PDF_EXPORT_ERROR', {
+      console.log('PDF_EXPORT_ERROR', {
         error_code: 'MISSING_REPORT_DATA',
         missing_fields: ['clause_ledger'],
         reportData_keys: reportData ? Object.keys(reportData) : null,
@@ -530,7 +542,7 @@ Deno.serve(async (req) => {
       });
     }
     if (missing.length > 0) {
-      console.error('PDF_EXPORT_ERROR', {
+      console.log('PDF_EXPORT_ERROR', {
         error_code: 'MISSING_REPORT_DATA',
         missing_fields: missing,
         reportData_keys: reportData ? Object.keys(reportData) : null,
@@ -538,7 +550,10 @@ Deno.serve(async (req) => {
       });
       const gotKeys = Object.keys(data || {});
       debugTrace.validation.finalMissing = missing;
-      return json(400, { error: "MISSING_REPORT_DATA", missing_fields: missing, gotKeys, scanId, correlationId, ...(debug ? { debug_trace: debugTrace } : {}) }, headers);
+      {
+        const payload = { error: "MISSING_REPORT_DATA", missing_fields: missing, gotKeys, scanId, correlationId, ...(debug ? { debug_trace: debugTrace } : {}) };
+        return json(debug ? 200 : 400, payload, headers);
+      }
     }
 
     // -------- PDF generation --------
