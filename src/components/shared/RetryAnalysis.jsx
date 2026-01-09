@@ -1,13 +1,75 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RefreshCw, Loader2, AlertCircle } from "lucide-react";
 import { haptic } from "./HapticFeedback";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
-export default function RetryAnalysis({ lease, onSuccess, language = 'en', colors = {}, onStatusChange }) {
+export default function RetryAnalysis({ lease, onSuccess, language = 'en', colors = {}, onStatusChange, user, leases = [] }) {
   const [retrying, setRetrying] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const navigate = useNavigate();
 
-  const handleRetry = async () => {
+  const getScanLimits = () => {
+    const userTier = user?.plan_tier || 'free';
+    switch(userTier) {
+      case 'free': return { limit: 1, period: 'lifetime', unlimited: false };
+      case 'lite': return { limit: 6, period: 'year', unlimited: false };
+      case 'protect': return { limit: 12, period: 'year', unlimited: false };
+      case 'secure': return { limit: 999, period: 'year', unlimited: true };
+      default: return { limit: 1, period: 'lifetime', unlimited: false };
+    }
+  };
+
+  const canRetry = () => {
+    const limits = getScanLimits();
+    if (limits.unlimited) return { allowed: true, remaining: 999 };
+
+    let scannedCount = 0;
+    if (limits.period === 'lifetime') {
+      scannedCount = leases.filter(l => l.status === 'scanned' || l.status === 'ok' || l.status === 'paid').length;
+    } else if (limits.period === 'year') {
+      const thisYear = new Date().getFullYear();
+      scannedCount = leases.filter(l => {
+        if (!l.created_date) return false;
+        const leaseYear = new Date(l.created_date).getFullYear();
+        return leaseYear === thisYear && (l.status === 'scanned' || l.status === 'ok' || l.status === 'paid');
+      }).length;
+    }
+
+    return {
+      allowed: scannedCount < limits.limit,
+      remaining: Math.max(0, limits.limit - scannedCount)
+    };
+  };
+
+  const handleRetryClick = () => {
+    const scanStatus = canRetry();
+    
+    if (!scanStatus.allowed) {
+      // Show upgrade prompt
+      const periodText = getScanLimits().period === 'year'
+        ? (language === 'th' ? 'ปีนี้' : 'this year')
+        : (language === 'th' ? 'ตลอดชีพ' : 'lifetime');
+      
+      if (window.confirm(
+        language === 'th'
+          ? `คุณใช้ครบโควต้าการสแกนแล้ว\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
+          : `You've used all your scans ${periodText}.\n\nUpgrade your plan for more scans.`
+      )) {
+        navigate(createPageUrl("Account"));
+      }
+      return;
+    }
+
+    // Show confirmation dialog
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmRetry = async () => {
+    setShowConfirmDialog(false);
     haptic.medium();
     setRetrying(true);
 
@@ -124,33 +186,117 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
     }
   };
 
+  const t = {
+    en: {
+      retryConfirmTitle: 'Retry Analysis?',
+      retryConfirmMessage: '1 lease scan will be deducted from your account.',
+      scansRemaining: 'scans remaining',
+      cancel: 'Cancel',
+      confirm: 'Yes, Retry',
+      retrying: 'Retrying...',
+      retryButton: 'Retry Analysis'
+    },
+    th: {
+      retryConfirmTitle: 'ลองวิเคราะห์อีกครั้ง?',
+      retryConfirmMessage: 'จะหัก 1 การสแกนสัญญาเช่าจากบัญชีของคุณ',
+      scansRemaining: 'การสแกนที่เหลือ',
+      cancel: 'ยกเลิก',
+      confirm: 'ใช่ ลองใหม่',
+      retrying: 'กำลังลองใหม่...',
+      retryButton: 'ลองอีกครั้ง'
+    },
+    ru: {
+      retryConfirmTitle: 'Повторить анализ?',
+      retryConfirmMessage: '1 сканирование будет вычтено из вашего счета.',
+      scansRemaining: 'сканирований осталось',
+      cancel: 'Отмена',
+      confirm: 'Да, повторить',
+      retrying: 'Повтор...',
+      retryButton: 'Повторить'
+    }
+  };
+
+  const strings = t[language] || t.en;
+  const scanStatus = canRetry();
+
   return (
-    <Button
-      onClick={(e) => {
-        e.stopPropagation(); // Prevent card click
-        handleRetry();
-      }}
-      disabled={retrying}
-      size="sm"
-      variant="outline"
-      className="flex items-center gap-2"
-      style={{
-        borderColor: retrying ? colors?.borderColor : '#3B82F6',
-        color: retrying ? colors?.textSecondary : '#3B82F6',
-        minHeight: '32px'
-      }}
-    >
-      {retrying ? (
-        <>
-          <Loader2 className="w-3 h-3 animate-spin" />
-          {language === 'th' ? 'กำลังลองใหม่...' : language === 'ru' ? 'Повтор...' : 'Retrying...'}
-        </>
-      ) : (
-        <>
-          <RefreshCw className="w-3 h-3" />
-          {language === 'th' ? 'ลองอีกครั้ง' : language === 'ru' ? 'Повторить' : 'Retry Analysis'}
-        </>
-      )}
-    </Button>
+    <>
+      <Button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleRetryClick();
+        }}
+        disabled={retrying}
+        size="sm"
+        variant="outline"
+        className="flex items-center gap-2"
+        style={{
+          borderColor: retrying ? colors?.borderColor : '#3B82F6',
+          color: retrying ? colors?.textSecondary : '#3B82F6',
+          minHeight: '32px'
+        }}
+      >
+        {retrying ? (
+          <>
+            <Loader2 className="w-3 h-3 animate-spin" />
+            {strings.retrying}
+          </>
+        ) : (
+          <>
+            <RefreshCw className="w-3 h-3" />
+            {strings.retryButton}
+          </>
+        )}
+      </Button>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent
+          className="max-w-sm w-[90vw]"
+          style={{ backgroundColor: colors?.cardBg || '#FFFFFF', borderColor: colors?.borderColor }}
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2" style={{ color: colors?.textPrimary }}>
+              <AlertCircle className="w-5 h-5 text-blue-600" />
+              {strings.retryConfirmTitle}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm" style={{ color: colors?.textSecondary }}>
+              {strings.retryConfirmMessage}
+            </p>
+            {!getScanLimits().unlimited && (
+              <div className="p-3 rounded-lg" style={{
+                backgroundColor: colors?.fieldBg || '#F8FAFC',
+                border: `1px solid ${colors?.borderColor}`
+              }}>
+                <p className="text-xs font-semibold" style={{ color: colors?.textSecondary }}>
+                  {scanStatus.remaining - 1} {strings.scansRemaining}
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  haptic.light();
+                  setShowConfirmDialog(false);
+                }}
+                className="flex-1"
+              >
+                {strings.cancel}
+              </Button>
+              <Button
+                onClick={handleConfirmRetry}
+                className="flex-1"
+                style={{ backgroundColor: '#3B82F6', color: '#FFFFFF' }}
+              >
+                {strings.confirm}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

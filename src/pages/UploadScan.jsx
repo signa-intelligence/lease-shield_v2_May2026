@@ -3028,6 +3028,8 @@ function UploadScanPageContent() {
                                 lease={lease} 
                                 language={language}
                                 colors={colors}
+                                user={user}
+                                leases={leases}
                                 onSuccess={() => queryClient.invalidateQueries({ queryKey: ['leases', 'allScans'] })}
                               />
                             </div>
