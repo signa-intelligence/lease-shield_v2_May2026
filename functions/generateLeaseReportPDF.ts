@@ -196,6 +196,8 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json(405, { error: "METHOD_NOT_ALLOWED" }, headers);
 
   const correlationId = `pdf-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+  let reportData = null;
+  console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
 
   try {
     const base44 = createClientFromRequest(req);
@@ -494,11 +496,8 @@ Deno.serve(async (req) => {
       });
       const gotKeys = Object.keys((typeof debugRead === 'object' ? (await (async()=>{ try { return (await (await svc.entities.LeaseScan.filter({ id: scanId })))[0]?.scan_full || {}; } catch { return {}; } })()) : {}) || {});
       debugTrace.validation.finalMissing = ["clause_ledger"];
-      return json(
-        400,
-        { error: "MISSING_REPORT_DATA", missing_fields: ["clause_ledger"], gotKeys, scanId, correlationId, ...(debug ? { debug_trace: debugTrace } : {}) },
-        headers
-      );
+      const payload = { error: "MISSING_REPORT_DATA", missing_fields: ["clause_ledger"], gotKeys, scanId, correlationId, ...(debug ? { debug_trace: debugTrace } : {}) };
+      return json(debug ? 200 : 400, payload, headers);
     }
 
     // Generate clause_ledger from clauses if missing (compat with new Cloudflare)
