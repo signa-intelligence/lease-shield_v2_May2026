@@ -407,6 +407,8 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
   const [scan, setScan] = useState(null);
   const [reportData, setReportData] = useState(null);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [debugTraceModalOpen, setDebugTraceModalOpen] = useState(false);
+  const [debugTraceData, setDebugTraceData] = useState(null);
   const [materializing, setMaterializing] = useState(false);
   const materializeAttempted = useRef(false);
   const [showSelfTest, setShowSelfTest] = useState(false);
@@ -841,6 +843,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
   }
 
 
+  const adminLike = ['admin','super_admin','va'].includes((user?.role || user?.access_level || '').toLowerCase());
   const riskLevel = getRiskLevel(reportData.risk_score);
   const totalClauses = (reportData.clause_ledger || []).length;
   const risksCount = (reportData.clause_review || []).filter((r) => r?.risk_level && r.risk_level !== "none").length;
@@ -858,7 +861,28 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
     } finally {
       setExportingPdf(false);
     }
-  };
+    };
+
+    const handleExportPdfDebug = async () => {
+    if (exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const response = await base44.functions.invoke("generateLeaseReportPDF", { scanId, debug: true });
+      const data = response?.data ?? {};
+      if (data?.debug_trace) {
+        setDebugTraceData(data.debug_trace);
+        setDebugTraceModalOpen(true);
+      }
+      // Optionally open PDF if provided
+      if (data?.pdf_url) {
+        window.open(data.pdf_url, "_blank");
+      }
+    } catch (err) {
+      alert("Debug export failed: " + (err?.message || "Unknown error"));
+    } finally {
+      setExportingPdf(false);
+    }
+    };
 
 
   const t = {
@@ -1077,21 +1101,42 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button onClick={handleExportPdf} disabled={exportingPdf} style={{ backgroundColor: "#0C3B2E", color: "#fff" }}>
-            {exportingPdf ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4 mr-2" />
-                {strings.exportPdf}
-              </>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleExportPdf} disabled={exportingPdf} style={{ backgroundColor: "#0C3B2E", color: "#fff" }}>
+              {exportingPdf ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  {strings.exportPdf}
+                </>
+              )}
+            </Button>
+            {adminLike && (
+              <Button variant="outline" onClick={handleExportPdfDebug} disabled={exportingPdf}>
+                Debug Export
+              </Button>
             )}
-          </Button>
+          </div>
         </div>
 
+
+        {debugTraceModalOpen && debugTraceData && (
+          <Card className="mb-4" style={{ backgroundColor: colors.cardBg }}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold" style={{ color: colors.textPrimary }}>PDF Export Debug Trace</h3>
+                <Button variant="outline" size="sm" onClick={() => setDebugTraceModalOpen(false)}>Close</Button>
+              </div>
+              <pre className="text-xs overflow-auto max-h-72 p-3 rounded" style={{ backgroundColor: isDarkMode ? '#111827' : '#F3F4F6', color: colors.textPrimary }}>
+        {JSON.stringify(debugTraceData, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border-none shadow-xl mb-6 overflow-hidden" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader
