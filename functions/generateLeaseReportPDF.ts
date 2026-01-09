@@ -200,6 +200,8 @@ Deno.serve(async (req) => {
   console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
   let reportData = null;
   console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
+  let reportData = null;
+  console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
 
   try {
     const base44 = createClientFromRequest(req);
@@ -234,7 +236,7 @@ Deno.serve(async (req) => {
 
     // Auth required
     if (!scanId) {
-      console.log('PDF_EXPORT_ERROR', {
+      console.error('PDF_EXPORT_ERROR', {
         error_code: 'BAD_REQUEST',
         missing_fields: ['scanId'],
         reportData_keys: reportData ? Object.keys(reportData) : null,
@@ -275,13 +277,13 @@ Deno.serve(async (req) => {
       debugTrace.record.keys = Object.keys(scan || {});
 
       if (!scan) {
-        console.log('PDF_EXPORT_ERROR', {
+        console.error('PDF_EXPORT_ERROR', {
           error_code: 'SCAN_NOT_FOUND',
           missing_fields: [],
           reportData_keys: reportData ? Object.keys(reportData) : null,
           full_reportData: JSON.stringify(reportData)
         });
-        console.log('PDF_EXPORT_ERROR', {
+        console.error('PDF_EXPORT_ERROR', {
           error_code: 'SCAN_NOT_FOUND',
           missing_fields: [],
           reportData_keys: reportData ? Object.keys(reportData) : null,
@@ -294,7 +296,7 @@ Deno.serve(async (req) => {
       }
 
       if (scan.id !== scanId) {
-        console.log('PDF_EXPORT_ERROR', {
+        console.error('PDF_EXPORT_ERROR', {
           error_code: 'BAD_REQUEST_ID_MISMATCH',
           missing_fields: [],
           reportData_keys: reportData ? Object.keys(reportData) : null,
@@ -311,7 +313,7 @@ Deno.serve(async (req) => {
       const isAdminLike = ['admin', 'super_admin', 'va'].includes(userRole);
       if (!isAdminLike && scan.created_by && scan.created_by !== user.email) {
         debugTrace.ownership = { checked: true, allowed: false };
-        console.log('PDF_EXPORT_ERROR', {
+        console.error('PDF_EXPORT_ERROR', {
           error_code: 'FORBIDDEN',
           missing_fields: [],
           reportData_keys: reportData ? Object.keys(reportData) : null,
@@ -490,7 +492,7 @@ Deno.serve(async (req) => {
     reportData = data;
 
     if (!data) {
-      console.log('PDF_EXPORT_ERROR', {
+      console.error('PDF_EXPORT_ERROR', {
         error_code: 'MISSING_REPORT_DATA',
         missing_fields: ['clause_ledger'],
         reportData_keys: reportData ? Object.keys(reportData) : null,
@@ -543,7 +545,7 @@ Deno.serve(async (req) => {
       });
     }
     if (missing.length > 0) {
-      console.log('PDF_EXPORT_ERROR', {
+      console.error('PDF_EXPORT_ERROR', {
         error_code: 'MISSING_REPORT_DATA',
         missing_fields: missing,
         reportData_keys: reportData ? Object.keys(reportData) : null,
