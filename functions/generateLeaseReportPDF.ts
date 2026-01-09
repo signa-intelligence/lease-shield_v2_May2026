@@ -108,11 +108,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { scanId, scanData, language = "en" } = body || {};
 
-    // (Optional) premium gate — keep simple; remove if it blocks you during testing
-    const plan = String(user?.plan_tier || "free").toLowerCase();
-    if (plan === "free") {
-      return json(403, { error: "UPGRADE_REQUIRED", message: "Upgrade required to generate PDF" }, headers);
-    }
+    // Premium gate removed - allow all users to export PDF
 
     // Resolve scanData if only scanId is provided
     let data = scanData;

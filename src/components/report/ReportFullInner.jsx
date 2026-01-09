@@ -1055,6 +1055,28 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               </div>
             )}
 
+            {/* Document Templates Link */}
+            <div className="mb-6 p-4 rounded-lg border" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? 'เทมเพลตเอกสาร' : 'Document Templates'}
+                  </h4>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'เข้าถึงเทมเพลตจดหมายและเอกสารสำเร็จรูป' : 'Access ready-made letter and document templates'}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = '/templates'}
+                  style={{ borderColor: '#0C3B2E', color: '#0C3B2E' }}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  {language === 'th' ? 'ดูเทมเพลต' : 'View Templates'}
+                </Button>
+              </div>
+            </div>
+
             {/* Clauses table */}
             <div className="mb-2 flex items-center justify-between">
               <h3 className="font-bold" style={{ color: colors.textPrimary }}>Clauses</h3>

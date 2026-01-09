@@ -893,11 +893,15 @@ function UploadScanPageContent() {
         setUploadProgress(40);
 
         // Create ONE lease with all file URLs
+        // Extract original filename from first file
+        const originalFilename = selectedFiles[0]?.name || 'Lease Document';
+
         const lease = await base44.entities.Lease.create({
           file_url: uploadedUrls[0], // Primary file
           file_urls: uploadedUrls, // All pages
           status: 'queued',
-          created_by: user?.email
+          created_by: user?.email,
+          original_filename: originalFilename
         });
         createdLeaseId = lease.id;
 
@@ -1224,11 +1228,15 @@ function UploadScanPageContent() {
         setAnalysisStage('creating');
         setUploadProgress(40);
 
+        // Extract original filename from first file
+        const originalFilename = normalizedFiles[0]?.name || selectedFiles[0]?.name || 'Lease Document';
+        
         const lease = await base44.entities.Lease.create({
           file_url: fileUrls[0],
           file_urls: fileUrls,
           status: 'uploaded',
-          created_by: user?.email // Ensure created_by is set
+          created_by: user?.email,
+          original_filename: originalFilename
         });
         createdLeaseId = lease.id;
         setUploadProgress(50);
@@ -2929,7 +2937,7 @@ function UploadScanPageContent() {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis'
                       }}>
-                        {strings.uploadAll}
+                        {language === 'th' ? 'อัปโหลดและสแกน' : language === 'ru' ? 'Загрузить и сканировать' : 'Upload & Scan'}
                       </span>
                     </button>
                   </div>
@@ -2972,7 +2980,7 @@ function UploadScanPageContent() {
                             wordBreak: 'break-word',
                             lineHeight: '1.4'
                           }}>
-                            {lease.property_address || (language === 'th' ? 'สัญญาเช่า' : language === 'ru' ? 'Договор аренды' : 'Lease Agreement')}
+                            {lease.original_filename || lease.property_address || (language === 'th' ? 'สัญญาเช่า' : language === 'ru' ? 'Договор аренды' : 'Lease Agreement')}
                           </h3>
                           <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
                             {strings.scanDate}: {format(new Date(lease.created_date), 'dd MMM yyyy')}
@@ -2990,10 +2998,9 @@ function UploadScanPageContent() {
                               {language === 'th' ? 'วิเคราะห์แล้ว' : language === 'ru' ? 'Проанализировано' : 'Analysed'}
                             </Badge>
                           )}
-                          {lease.status === 'uploaded' && (
-                            <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs">
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                              {language === 'th' ? 'รอ' : language === 'ru' ? 'Ожидание' : 'Pending'}
+                          {(lease.status === 'uploaded' || lease.status === 'ok') && (
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                              {language === 'th' ? 'วิเคราะห์แล้ว' : language === 'ru' ? 'Проанализировано' : 'Analysed'}
                             </Badge>
                           )}
                           {lease.status === 'queued' && (
