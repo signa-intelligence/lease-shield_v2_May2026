@@ -436,6 +436,21 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Generate clause_ledger from clauses if missing (compat with new Cloudflare)
+    if ((!data?.clause_ledger || (Array.isArray(data.clause_ledger) && data.clause_ledger.length === 0)) && Array.isArray(data?.clauses)) {
+      data.clause_ledger = data.clauses.map((c, idx) => ({
+        clause_id: c.clause_id || `clause-${idx + 1}`,
+        clause_number: idx + 1,
+        heading: c.canonical_name || c.heading || c.title || `Clause ${idx + 1}`,
+        text: c.clause_text || c.text || '',
+        full_text: c.clause_text || c.full_text || c.text || '',
+        risk_level: String(c.risk_level || 'none').toLowerCase(),
+        risk_summary: c.explanation || c.risk_summary || '',
+        recommended_actions: c.recommended_action ? [c.recommended_action] : (Array.isArray(c.recommended_actions) ? c.recommended_actions : []),
+        mapped_catalog_ids: c.canonical_name ? [c.canonical_name] : (Array.isArray(c.mapped_catalog_ids) ? c.mapped_catalog_ids : [])
+      }));
+    }
+
     // Validate minimum structure and softly repair
     const missing = [];
     if (!Array.isArray(data.clause_ledger) || data.clause_ledger.length === 0) missing.push("clause_ledger");
