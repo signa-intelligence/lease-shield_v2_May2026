@@ -149,10 +149,11 @@ if (cfJson.ok === true) {
         if (!Array.isArray(scanFullPersist.clause_ledger) || scanFullPersist.clause_ledger.length === 0) {
           if (Array.isArray(scanFullPersist.clauses) && scanFullPersist.clauses.length > 0) {
             scanFullPersist.clause_ledger = scanFullPersist.clauses.map((c, idx) => ({
-              id: c.clause_id || c.catalog_id || `clause-${idx + 1}`,
+              clause_id: c.clause_id || c.catalog_id || `clause-${idx + 1}`,
               title: c.canonical_name || c.title || `Clause ${idx + 1}`,
-              text: c.clause_text || c.text || '',
-              risk_tags: Array.isArray(c.risk_tags) ? c.risk_tags : []
+              full_text: c.clause_text || c.text || '',
+              page_number: c.page_number || 1,
+              risk_tags: Array.isArray(c.risk_tags) ? c.risk_tags : (c.risk_level ? [String(c.risk_level).toLowerCase()] : [])
             }));
           }
         }

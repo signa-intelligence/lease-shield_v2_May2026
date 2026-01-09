@@ -210,7 +210,23 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { scanId, scanData, language = "en" } = body || {};
+    const { scanId, scanData, language = "en", debug = false } = body || {};
+
+    // Build initial debug trace (no sensitive clause content)
+    const debugTrace = {
+      requestId: correlationId,
+      timestamp: new Date().toISOString(),
+      userId: user?.id || null,
+      scanIdReceived: scanId,
+      ownership: { checked: false, allowed: false },
+      dbFetch: { table: 'LeaseScan', fieldPath: 'LeaseScan.scan_full', found: null },
+      record: { keys: [], scan_full: { exists: false, type: null, keys: [], parsed: false } },
+      existence: { clause_ledger: false, clauses: false, meta: false },
+      size: { scan_full_bytes: null, clause_ledger_len: 0, clauses_len: 0 },
+      fallback: { attempted: false, source: null, builtCount: 0, error: null },
+      validation: { finalMissing: [] },
+      exceptions: []
+    };
 
     // Auth required
     if (!scanId) {
@@ -221,38 +237,73 @@ Deno.serve(async (req) => {
 
     // Resolve scanData if only scanId is provided
     let data = scanData;
-    let debugRead = {};
+    // debugTrace initialized above
 
     if (!data && scanId) {
       const scans = await svc.entities.LeaseScan.filter({ id: scanId });
       const scan = scans?.[0];
 
-      debugRead = {
-        scanIdRequested: scanId,
-        scanIdReturned: scan?.id || null,
-        leaseIdFromRecord: scan?.lease_id || null,
-        scanFullKeys: Object.keys(scan?.scan_full || {})
-      };
+      debugTrace.dbFetch.found = !!scan;
+      debugTrace.record.keys = Object.keys(scan || {});
 
       if (!scan) {
-        return json(404, { error: "SCAN_NOT_FOUND", message: `No LeaseScan found for ${scanId}`, debugRead }, headers);
+        return json(404, { error: "SCAN_NOT_FOUND", message: `No LeaseScan found for ${scanId}`, ...(debug ? { debug_trace: debugTrace } : {}) }, headers);
       }
 
       if (scan.id !== scanId) {
-        return json(400, { error: "BAD_REQUEST", message: "Requested scanId does not match record id", debugRead }, headers);
+        return json(400, { error: "BAD_REQUEST", message: "Requested scanId does not match record id", ...(debug ? { debug_trace: debugTrace } : {}) }, headers);
       }
 
       // Ownership check (403 if user does not own and not admin-like)
       const userRole = (user?.role || user?.access_level || '').toLowerCase();
       const isAdminLike = ['admin', 'super_admin', 'va'].includes(userRole);
       if (!isAdminLike && scan.created_by && scan.created_by !== user.email) {
+        debugTrace.ownership = { checked: true, allowed: false };
         return json(403, { error: "FORBIDDEN", message: "You do not have access to this scan" }, headers);
       }
 
-      const sf = scan?.scan_full || {};
+      let sf = scan?.scan_full ?? {};
+      debugTrace.record.scan_full.exists = !!(scan?.scan_full);
+      debugTrace.record.scan_full.type = typeof (scan?.scan_full);
+      if (typeof sf === 'string') {
+        try {
+          sf = JSON.parse(sf);
+          debugTrace.record.scan_full.parsed = true;
+        } catch (e) {
+          debugTrace.record.scan_full.parsed = false;
+        }
+      }
+      if (sf && typeof sf === 'object') {
+        try { debugTrace.record.scan_full.keys = Object.keys(sf); } catch(_) {}
+      }
+      try {
+        debugTrace.size.scan_full_bytes = typeof scan?.scan_full === 'string' ? scan.scan_full.length : JSON.stringify(sf).length;
+      } catch(_) { debugTrace.size.scan_full_bytes = null; }
+      debugTrace.existence.clause_ledger = Array.isArray(sf?.clause_ledger);
+      debugTrace.existence.clauses = Array.isArray(sf?.clauses);
+      debugTrace.existence.meta = !!sf?.meta;
+      debugTrace.size.clause_ledger_len = Array.isArray(sf?.clause_ledger) ? sf.clause_ledger.length : 0;
+      debugTrace.size.clauses_len = Array.isArray(sf?.clauses) ? sf.clauses.length : 0;
       
       // NEW FORMAT: Cloudflare worker returns { risk_score, summary, clauses, meta }
       const hasNewFormat = Array.isArray(sf.clauses) && typeof sf.risk_score === 'number';
+      // Fallback: build clause_ledger from clauses when missing
+      if ((!Array.isArray(sf.clause_ledger) || sf.clause_ledger.length === 0) && Array.isArray(sf.clauses)) {
+        try {
+          debugTrace.fallback.attempted = true;
+          debugTrace.fallback.source = 'clauses→clause_ledger';
+          sf.clause_ledger = sf.clauses.map((c, idx) => ({
+            clause_id: c.clause_id || c.catalog_id || `clause-${idx + 1}`,
+            title: c.canonical_name || c.title || `Clause ${idx + 1}`,
+            full_text: c.clause_text || c.text || '',
+            page_number: c.page_number || 1,
+            risk_tags: Array.isArray(c.risk_tags) ? c.risk_tags : (c.risk_level ? [String(c.risk_level).toLowerCase()] : [])
+          }));
+          debugTrace.fallback.builtCount = sf.clause_ledger.length;
+        } catch (e) {
+          debugTrace.fallback.error = String(e?.message || e);
+        }
+      }
       
       if (hasNewFormat) {
         // Process new Cloudflare format
@@ -377,9 +428,10 @@ Deno.serve(async (req) => {
 
     if (!data) {
       const gotKeys = Object.keys((typeof debugRead === 'object' ? (await (async()=>{ try { return (await (await svc.entities.LeaseScan.filter({ id: scanId })))[0]?.scan_full || {}; } catch { return {}; } })()) : {}) || {});
+      debugTrace.validation.finalMissing = ["clause_ledger"];
       return json(
         400,
-        { error: "MISSING_REPORT_DATA", missing_fields: ["clause_ledger"], gotKeys, scanId, correlationId },
+        { error: "MISSING_REPORT_DATA", missing_fields: ["clause_ledger"], gotKeys, scanId, correlationId, ...(debug ? { debug_trace: debugTrace } : {}) },
         headers
       );
     }
@@ -411,7 +463,8 @@ Deno.serve(async (req) => {
     }
     if (missing.length > 0) {
       const gotKeys = Object.keys(data || {});
-      return json(400, { error: "MISSING_REPORT_DATA", missing_fields: missing, gotKeys, scanId, correlationId }, headers);
+      debugTrace.validation.finalMissing = missing;
+      return json(400, { error: "MISSING_REPORT_DATA", missing_fields: missing, gotKeys, scanId, correlationId, ...(debug ? { debug_trace: debugTrace } : {}) }, headers);
     }
 
     // -------- PDF generation --------
@@ -552,7 +605,7 @@ Deno.serve(async (req) => {
     const pdfFile = new File([pdfBytes], `LeaseShield-Report-${Date.now()}.pdf`, { type: "application/pdf" });
     const upload = await svc.integrations.Core.UploadFile({ file: pdfFile });
 
-    return json(200, { success: true, pdf_url: upload.file_url, correlationId, debugRead }, headers);
+    return json(200, debug ? { ok: true, pdf_url: upload.file_url, correlationId, debug_trace: debugTrace } : { success: true, pdf_url: upload.file_url, correlationId }, headers);
   } catch (e) {
     console.error("[PDF_ERROR]", correlationId, e?.message || e, e?.stack);
     return json(500, { error: "PDF_FAILED", message: String(e?.message || "PDF generation failed"), correlationId }, headers);

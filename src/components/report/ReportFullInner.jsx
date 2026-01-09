@@ -1117,7 +1117,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
             </Button>
             {adminLike && (
               <Button variant="outline" onClick={handleExportPdfDebug} disabled={exportingPdf}>
-                Debug Export
+                Export PDF (Debug)
               </Button>
             )}
           </div>
