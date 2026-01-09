@@ -198,12 +198,6 @@ Deno.serve(async (req) => {
   const correlationId = `pdf-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
   let reportData = null;
   console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
-  let reportData = null;
-  console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
-  let reportData = null;
-  console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
-  let reportData = null;
-  console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
 
   try {
     const base44 = createClientFromRequest(req);
@@ -279,12 +273,6 @@ Deno.serve(async (req) => {
       debugTrace.record.keys = Object.keys(scan || {});
 
       if (!scan) {
-        console.error('PDF_EXPORT_ERROR', {
-          error_code: 'SCAN_NOT_FOUND',
-          missing_fields: [],
-          reportData_keys: reportData ? Object.keys(reportData) : null,
-          full_reportData: JSON.stringify(reportData)
-        });
         console.error('PDF_EXPORT_ERROR', {
           error_code: 'SCAN_NOT_FOUND',
           missing_fields: [],
