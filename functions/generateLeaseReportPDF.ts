@@ -202,6 +202,8 @@ Deno.serve(async (req) => {
   console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
   let reportData = null;
   console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
+  let reportData = null;
+  console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
 
   try {
     const base44 = createClientFromRequest(req);
