@@ -198,6 +198,8 @@ Deno.serve(async (req) => {
   const correlationId = `pdf-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
   let reportData = null;
   console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
+  let reportData = null;
+  console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
 
   try {
     const base44 = createClientFromRequest(req);
