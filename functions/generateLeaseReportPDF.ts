@@ -254,6 +254,18 @@ Deno.serve(async (req) => {
       debugTrace.record.keys = Object.keys(scan || {});
 
       if (!scan) {
+        console.error('PDF_EXPORT_ERROR', {
+          error_code: 'SCAN_NOT_FOUND',
+          missing_fields: [],
+          reportData_keys: reportData ? Object.keys(reportData) : null,
+          full_reportData: JSON.stringify(reportData)
+        });
+        console.error('PDF_EXPORT_ERROR', {
+          error_code: 'SCAN_NOT_FOUND',
+          missing_fields: [],
+          reportData_keys: reportData ? Object.keys(reportData) : null,
+          full_reportData: JSON.stringify(reportData)
+        });
         return json(404, { error: "SCAN_NOT_FOUND", message: `No LeaseScan found for ${scanId}`, ...(debug ? { debug_trace: debugTrace } : {}) }, headers);
       }
 
@@ -272,6 +284,12 @@ Deno.serve(async (req) => {
       const isAdminLike = ['admin', 'super_admin', 'va'].includes(userRole);
       if (!isAdminLike && scan.created_by && scan.created_by !== user.email) {
         debugTrace.ownership = { checked: true, allowed: false };
+        console.error('PDF_EXPORT_ERROR', {
+          error_code: 'FORBIDDEN',
+          missing_fields: [],
+          reportData_keys: reportData ? Object.keys(reportData) : null,
+          full_reportData: JSON.stringify(reportData)
+        });
         return json(403, { error: "FORBIDDEN", message: "You do not have access to this scan" }, headers);
       }
 
