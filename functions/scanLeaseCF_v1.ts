@@ -142,20 +142,22 @@ if (cfJson.ok === true) {
         });
       }
 
-      // Persist only after validation passes (ensure clause_ledger exists)
+      // Persist only after validation passes
       try {
-        const toSave = { ...(cfJson.scan_full ?? cfJson) };
-        if ((!Array.isArray(toSave.clause_ledger) || toSave.clause_ledger.length === 0) && Array.isArray(toSave.clauses)) {
-          toSave.clause_ledger = toSave.clauses.map((c, idx) => ({
-            clause_id: c.clause_id || c.catalog_id || `clause-${idx + 1}`,
-            heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
-            full_text: c.clause_text || c.text || '',
-            page: c.page_number || 1,
-            risk_tags: c.risk_level ? [String(c.risk_level).toLowerCase()] : []
-          }));
+        const scanFullPersist = (cfJson.scan_full ?? cfJson) || {};
+        // Ensure clause_ledger exists going forward
+        if (!Array.isArray(scanFullPersist.clause_ledger) || scanFullPersist.clause_ledger.length === 0) {
+          if (Array.isArray(scanFullPersist.clauses) && scanFullPersist.clauses.length > 0) {
+            scanFullPersist.clause_ledger = scanFullPersist.clauses.map((c, idx) => ({
+              id: c.clause_id || c.catalog_id || `clause-${idx + 1}`,
+              title: c.canonical_name || c.title || `Clause ${idx + 1}`,
+              text: c.clause_text || c.text || '',
+              risk_tags: Array.isArray(c.risk_tags) ? c.risk_tags : []
+            }));
+          }
         }
         await base44.entities.LeaseScan.update(targetScan.id, {
-          scan_full: toSave,
+          scan_full: scanFullPersist,
           status: 'ok'
         });
       } catch (persistErr) {
