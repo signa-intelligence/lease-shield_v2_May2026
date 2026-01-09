@@ -84,6 +84,110 @@ async function ensureThaiFont(doc){
   } catch(_) { return false; }
 }
 
+// Parse recommendation string into array of 3 recommendations
+function parseRecommendations(recString, riskLevel) {
+  const rl = String(riskLevel || 'medium').toLowerCase();
+  let recs = [];
+  
+  if (recString) {
+    // Split by newlines, bullets, or numbered items
+    recs = String(recString)
+      .split(/[\n•\-–]|\d+\.\s+/g)
+      .map(s => s.trim())
+      .filter(s => s.length > 5);
+  }
+  
+  // Default recommendations by risk level
+  const defaults = {
+    critical: [
+      "Demand removal of this clause before signing",
+      "This clause may be legally unenforceable - seek legal advice",
+      "Document all communications about this clause in writing"
+    ],
+    high: [
+      "Negotiate removal or significant modification of this clause",
+      "Seek independent legal review before signing",
+      "Request written clarification of landlord's interpretation"
+    ],
+    medium: [
+      "Request clarification of this clause in writing",
+      "Propose mutual safeguards to balance both parties' interests",
+      "Set clear expectations and document agreements upfront"
+    ],
+    low: [
+      "Review this clause to ensure you understand your obligations",
+      "Keep records of any related communications",
+      "Monitor for any issues during the tenancy"
+    ],
+    none: [
+      "Standard clause - no action required",
+      "Maintain documentation for reference",
+      "Review periodically during tenancy"
+    ]
+  };
+  
+  const defaultRecs = defaults[rl] || defaults.medium;
+  
+  // Ensure exactly 3 recommendations
+  while (recs.length < 3) {
+    const nextDefault = defaultRecs[recs.length];
+    if (nextDefault && !recs.includes(nextDefault)) {
+      recs.push(nextDefault);
+    } else {
+      break;
+    }
+  }
+  
+  return recs.slice(0, 3);
+}
+
+// Build detailed executive summary
+function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
+  const score = riskScore || 0;
+  const riskyClausesCount = (clauses || []).filter(c => c.risk_level && c.risk_level !== 'none').length;
+  const criticalCount = (clauses || []).filter(c => c.risk_level === 'critical').length;
+  const highCount = (clauses || []).filter(c => c.risk_level === 'high').length;
+  
+  // If we have an existing good summary, use it
+  if (existingSummary && existingSummary.length > 100) {
+    return existingSummary;
+  }
+  
+  // Build comprehensive summary based on risk level
+  let summary = '';
+  
+  if (score >= 70) {
+    summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+    summary += `This lease agreement is HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
+    if (criticalCount > 0) {
+      summary += `${criticalCount} clause(s) are rated CRITICAL and may be legally problematic or heavily favor the landlord. `;
+    }
+    if (highCount > 0) {
+      summary += `${highCount} clause(s) are rated HIGH RISK and could significantly impact your rights as a tenant. `;
+    }
+    summary += `\n\nKey concerns include: `;
+    if (topRisks && topRisks.length > 0) {
+      summary += topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ') + '. ';
+    }
+    summary += `\n\nRECOMMENDATION: Do NOT sign this lease in its current form. Negotiate removal or modification of high-risk clauses, and consider seeking independent legal advice before proceeding.`;
+  } else if (score >= 40) {
+    summary = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+    summary += `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. `;
+    summary += `While not immediately dangerous, several provisions could impact your rights during the tenancy. `;
+    if (topRisks && topRisks.length > 0) {
+      summary += `\n\nAreas requiring attention: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
+    }
+    summary += `\n\nRECOMMENDATION: Review the flagged clauses carefully and consider negotiating modifications before signing. Document all verbal agreements in writing.`;
+  } else {
+    summary = `LOW RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+    summary += `This lease agreement appears to be relatively balanced with ${riskyClausesCount || 'few'} clauses requiring attention. `;
+    summary += `The terms are generally standard for rental agreements in this market. `;
+    summary += `\n\nRECOMMENDATION: Review all clauses to ensure you understand your obligations. Keep a copy of all documents and maintain records throughout your tenancy.`;
+  }
+  
+  return summary;
+}
+
 Deno.serve(async (req) => {
   const { allowed, headers } = corsHeaders(req);
 
@@ -112,12 +216,13 @@ Deno.serve(async (req) => {
 
     // Resolve scanData if only scanId is provided
     let data = scanData;
+    let debugRead = {};
 
     if (!data && scanId) {
       const scans = await svc.entities.LeaseScan.filter({ id: scanId });
       const scan = scans?.[0];
 
-      const debugRead = {
+      debugRead = {
         scanIdRequested: scanId,
         scanIdReturned: scan?.id || null,
         leaseIdFromRecord: scan?.lease_id || null,
@@ -132,66 +237,130 @@ Deno.serve(async (req) => {
         return json(200, { success: false, error: "ScanIdMismatch", message: "Requested scanId does not match record id", debugRead }, headers);
       }
 
-      // Ledger-first source of truth
-      const clause_ledger_rows = Array.isArray(scan?.scan_full?.clause_ledger) ? scan.scan_full.clause_ledger : [];
-      const issues_validated_rows = Array.isArray(scan?.scan_full?.issues_validated)
-        ? scan.scan_full.issues_validated
-        : clause_ledger_rows.filter((r) => r?.risk_level && r.risk_level !== 'NO_RISK');
-      const clauses_extracted_rows = Array.isArray(scan?.scan_full?.clauses_extracted) ? scan.scan_full.clauses_extracted : [];
+      const sf = scan?.scan_full || {};
+      
+      // NEW FORMAT: Cloudflare worker returns { risk_score, summary, clauses, meta }
+      const hasNewFormat = Array.isArray(sf.clauses) && typeof sf.risk_score === 'number';
+      
+      if (hasNewFormat) {
+        // Process new Cloudflare format
+        const clausesRaw = sf.clauses || [];
+        const topRisks = sf.summary?.top_risks || [];
+        
+        // Build flags from clauses with risk
+        const flags = clausesRaw
+          .filter(c => c.risk_level && c.risk_level !== 'none')
+          .map((c, idx) => {
+            const recs = parseRecommendations(c.recommended_action || c.recommendation, c.risk_level);
+            return {
+              clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
+              severity: String(c.risk_level || 'medium').toLowerCase(),
+              category: c.canonical_name || 'Clause Review',
+              title: c.canonical_name || c.title || `Clause ${idx + 1}`,
+              description: c.explanation || c.risk_summary || '',
+              explanation: c.explanation || '',
+              recommendation: recs.join("\n"),
+              evidence: (c.clause_text || c.text || '').slice(0, 240)
+            };
+          });
 
-      // Build flags (for visual styling) from issues_validated
-      const flags = issues_validated_rows.map((r) => {
-        const src = clauses_extracted_rows.find(c => c?.clause_id === r.clause_id);
-        return {
-          clause_id: r.clause_id,
-          severity: String(r.risk_level || 'LOW').toLowerCase(),
-          category: r.taxonomy_code || 'Unclassified',
-          title: r.title || (src?.title) || `Clause ${r.clause_number}`,
-          description: r.rationale || '',
-          explanation: r.rationale || '',
-          recommendation: Array.isArray(r.recommended_actions) ? r.recommended_actions.join("\n") : '',
-          evidence: (src?.text || '').slice(0, 240)
+        // Build clause review for all clauses
+        const clause_review = clausesRaw.map((c, idx) => ({
+          clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
+          risk_level: String(c.risk_level || 'none').toLowerCase(),
+          risk_summary: c.explanation || c.risk_summary || '',
+          recommended_change: c.recommended_action || c.recommendation || ''
+        }));
+
+        // Build clause ledger display
+        const clause_ledger_display = clausesRaw.map((c, idx) => ({
+          clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
+          heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
+          full_text: c.clause_text || c.text || '',
+          page: 1
+        }));
+
+        // Build detailed executive summary
+        const execSummary = buildExecutiveSummary(sf.risk_score, topRisks, clausesRaw, sf.summary?.executive_summary);
+
+        data = {
+          lease_address: sf.key_terms?.property_address || "Lease Agreement",
+          generated_date: new Date().toISOString(),
+          risk_score: sf.risk_score || 0,
+          summary: execSummary,
+          key_terms: sf.key_terms || {},
+          flags,
+          clause_review,
+          clause_ledger: clause_ledger_display,
+          coverage_summary: {
+            total_clauses: clausesRaw.length,
+            clauses_reviewed: clause_review.length,
+            clauses_flagged: flags.length,
+          },
         };
-      });
+      } else {
+        // LEGACY FORMAT: Old pipeline with clause_ledger, issues_validated, etc.
+        const clause_ledger_rows = Array.isArray(sf.clause_ledger) ? sf.clause_ledger : [];
+        const issues_validated_rows = Array.isArray(sf.issues_validated)
+          ? sf.issues_validated
+          : clause_ledger_rows.filter((r) => r?.risk_level && r.risk_level !== 'NO_RISK');
+        const clauses_extracted_rows = Array.isArray(sf.clauses_extracted) ? sf.clauses_extracted : [];
 
-      // Clause review for appendix
-      const clause_review = clause_ledger_rows.map((r) => ({
-        clause_id: r.clause_id,
-        risk_level: String(r.risk_level || 'NO_RISK').toLowerCase().replace('no_risk','none'),
-        risk_summary: r.rationale || '',
-        recommended_change: Array.isArray(r.recommended_actions) ? r.recommended_actions[0] || '' : ''
-      }));
+        // Build flags from issues_validated
+        const flags = issues_validated_rows.map((r) => {
+          const src = clauses_extracted_rows.find(c => c?.clause_id === r.clause_id);
+          const recs = parseRecommendations(
+            Array.isArray(r.recommended_actions) ? r.recommended_actions.join("\n") : '',
+            r.risk_level
+          );
+          return {
+            clause_id: r.clause_id,
+            severity: String(r.risk_level || 'LOW').toLowerCase(),
+            category: r.taxonomy_code || 'Unclassified',
+            title: r.title || (src?.title) || `Clause ${r.clause_number}`,
+            description: r.rationale || '',
+            explanation: r.rationale || '',
+            recommendation: recs.join("\n"),
+            evidence: (src?.text || '').slice(0, 240)
+          };
+        });
 
-      // Build display ledger with text from clauses_extracted
-      const clause_ledger_display = clause_ledger_rows.map((r) => {
-        const src = clauses_extracted_rows.find(c => c?.clause_id === r.clause_id);
-        return {
+        const clause_review = clause_ledger_rows.map((r) => ({
           clause_id: r.clause_id,
-          heading: src?.title || r.title || `Clause ${r.clause_number}`,
-          full_text: src?.text || '',
-          page: src?.page_number || 1
+          risk_level: String(r.risk_level || 'NO_RISK').toLowerCase().replace('no_risk','none'),
+          risk_summary: r.rationale || '',
+          recommended_change: Array.isArray(r.recommended_actions) ? r.recommended_actions[0] || '' : ''
+        }));
+
+        const clause_ledger_display = clause_ledger_rows.map((r) => {
+          const src = clauses_extracted_rows.find(c => c?.clause_id === r.clause_id);
+          return {
+            clause_id: r.clause_id,
+            heading: src?.title || r.title || `Clause ${r.clause_number}`,
+            full_text: src?.text || '',
+            page: src?.page_number || 1
+          };
+        });
+
+        const score = Math.min(100, issues_validated_rows.reduce((acc, row) => acc + (row.risk_level === 'CRITICAL' ? 25 : row.risk_level === 'HIGH' ? 18 : row.risk_level === 'MEDIUM' ? 10 : 6), 0));
+        const summary = issues_validated_rows.length > 0 ? `${issues_validated_rows.length} issues found. Review recommendations before signing.` : 'No major issues detected.';
+
+        data = {
+          lease_address: sf.key_terms?.property_address || "Lease Agreement",
+          generated_date: new Date().toISOString(),
+          risk_score: score,
+          summary,
+          key_terms: sf.key_terms || {},
+          flags,
+          clause_review,
+          clause_ledger: clause_ledger_display,
+          coverage_summary: {
+            total_clauses: clause_ledger_rows.length,
+            clauses_reviewed: clause_review.length,
+            clauses_flagged: issues_validated_rows.length,
+          },
         };
-      });
-
-      // Risk score derived from issues
-      const score = Math.min(100, issues_validated_rows.reduce((acc, row) => acc + (row.risk_level === 'CRITICAL' ? 25 : row.risk_level === 'HIGH' ? 18 : row.risk_level === 'MEDIUM' ? 10 : 6), 0));
-      const summary = issues_validated_rows.length > 0 ? `${issues_validated_rows.length} issues found. Review recommendations before signing.` : 'No major issues detected.';
-
-      data = {
-        lease_address: scan?.scan_full?.key_terms?.property_address || "Lease Agreement",
-        generated_date: new Date().toISOString(),
-        risk_score: score,
-        summary,
-        key_terms: scan?.scan_full?.key_terms || {},
-        flags,
-        clause_review,
-        clause_ledger: clause_ledger_display,
-        coverage_summary: {
-          total_clauses: clause_ledger_rows.length,
-          clauses_reviewed: clause_review.length,
-          clauses_flagged: issues_validated_rows.length,
-        },
-      };
+      }
     }
 
     if (!data) {
