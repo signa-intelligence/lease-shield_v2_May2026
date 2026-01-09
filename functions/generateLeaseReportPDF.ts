@@ -230,6 +230,12 @@ Deno.serve(async (req) => {
 
     // Auth required
     if (!scanId) {
+      console.error('PDF_EXPORT_ERROR', {
+        error_code: 'BAD_REQUEST',
+        missing_fields: ['scanId'],
+        reportData_keys: reportData ? Object.keys(reportData) : null,
+        full_reportData: JSON.stringify(reportData)
+      });
       return json(400, { error: "BAD_REQUEST", message: "scanId is required" }, headers);
     }
 
@@ -237,6 +243,7 @@ Deno.serve(async (req) => {
 
     // Resolve scanData if only scanId is provided
     let data = scanData;
+    reportData = data;
     // debugTrace initialized above
 
     if (!data && scanId) {
@@ -251,6 +258,12 @@ Deno.serve(async (req) => {
       }
 
       if (scan.id !== scanId) {
+        console.error('PDF_EXPORT_ERROR', {
+          error_code: 'BAD_REQUEST_ID_MISMATCH',
+          missing_fields: [],
+          reportData_keys: reportData ? Object.keys(reportData) : null,
+          full_reportData: JSON.stringify(reportData)
+        });
         return json(400, { error: "BAD_REQUEST", message: "Requested scanId does not match record id", ...(debug ? { debug_trace: debugTrace } : {}) }, headers);
       }
 
@@ -426,7 +439,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    reportData = data;
+
     if (!data) {
+      console.error('PDF_EXPORT_ERROR', {
+        error_code: 'MISSING_REPORT_DATA',
+        missing_fields: ['clause_ledger'],
+        reportData_keys: reportData ? Object.keys(reportData) : null,
+        full_reportData: JSON.stringify(reportData)
+      });
       const gotKeys = Object.keys((typeof debugRead === 'object' ? (await (async()=>{ try { return (await (await svc.entities.LeaseScan.filter({ id: scanId })))[0]?.scan_full || {}; } catch { return {}; } })()) : {}) || {});
       debugTrace.validation.finalMissing = ["clause_ledger"];
       return json(
@@ -477,6 +498,12 @@ Deno.serve(async (req) => {
       });
     }
     if (missing.length > 0) {
+      console.error('PDF_EXPORT_ERROR', {
+        error_code: 'MISSING_REPORT_DATA',
+        missing_fields: missing,
+        reportData_keys: reportData ? Object.keys(reportData) : null,
+        full_reportData: JSON.stringify(reportData)
+      });
       const gotKeys = Object.keys(data || {});
       debugTrace.validation.finalMissing = missing;
       return json(400, { error: "MISSING_REPORT_DATA", missing_fields: missing, gotKeys, scanId, correlationId, ...(debug ? { debug_trace: debugTrace } : {}) }, headers);
