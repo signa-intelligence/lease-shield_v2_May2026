@@ -244,6 +244,20 @@ Deno.serve(async (req) => {
     // Resolve scanData if only scanId is provided
     let data = scanData;
     reportData = data;
+    console.log('PDF_EXPORT_DEBUG_DATA', {
+      correlationId,
+      timestamp: new Date().toISOString(),
+      has_reportData: !!reportData,
+      reportData_type: typeof reportData,
+      reportData_keys: reportData ? Object.keys(reportData) : null,
+      has_clause_ledger: reportData?.clause_ledger !== undefined,
+      clause_ledger_type: typeof (reportData?.clause_ledger),
+      clause_ledger_length: Array.isArray(reportData?.clause_ledger) ? reportData.clause_ledger.length : null,
+      has_clauses: reportData?.clauses !== undefined,
+      clauses_type: typeof (reportData?.clauses),
+      clauses_length: Array.isArray(reportData?.clauses) ? reportData.clauses.length : null,
+      reportData_preview: reportData ? JSON.stringify(reportData).substring(0, 500) : null
+    });
     // debugTrace initialized above
 
     if (!data && scanId) {
