@@ -1,6 +1,34 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 import { jsPDF } from "npm:jspdf@2.5.2";
-import { severityPalette } from "./severityPalette.js";
+
+// Severity palette for risk level color coding (inlined)
+const severityPalette = {
+  critical: {
+    bg: [254, 242, 242],
+    border: [239, 68, 68],
+    text: [127, 29, 29]
+  },
+  high: {
+    bg: [255, 247, 237],
+    border: [249, 115, 22],
+    text: [124, 45, 18]
+  },
+  medium: {
+    bg: [254, 252, 232],
+    border: [245, 158, 11],
+    text: [120, 53, 15]
+  },
+  low: {
+    bg: [240, 253, 244],
+    border: [34, 197, 94],
+    text: [20, 83, 45]
+  },
+  none: {
+    bg: [249, 250, 251],
+    border: [156, 163, 175],
+    text: [55, 65, 81]
+  }
+};
 
 /**
  * Self-contained CORS + JSON helpers (no local imports)
@@ -188,6 +216,79 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
   return summary;
 }
 
+// Transform new Cloudflare format to expected PDF format
+function transformCloudflareData(rawData) {
+  console.log('TRANSFORM_START', {
+    has_clauses: Array.isArray(rawData?.clauses),
+    clauses_count: rawData?.clauses?.length || 0,
+    has_risk_score: typeof rawData?.risk_score === 'number',
+    risk_score: rawData?.risk_score
+  });
+
+  const clausesRaw = rawData.clauses || [];
+  const topRisks = rawData.summary?.top_risks || [];
+  
+  // Build flags from clauses with risk
+  const flags = clausesRaw
+    .filter(c => c.risk_level && c.risk_level !== 'none')
+    .map((c, idx) => {
+      const recs = parseRecommendations(c.recommended_action || c.recommendation, c.risk_level);
+      return {
+        clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
+        severity: String(c.risk_level || 'medium').toLowerCase(),
+        category: c.canonical_name || 'Clause Review',
+        title: c.canonical_name || c.title || `Clause ${idx + 1}`,
+        description: c.explanation || c.risk_summary || '',
+        explanation: c.explanation || '',
+        recommendation: recs.join("\n"),
+        evidence: (c.clause_text || c.text || '').slice(0, 240)
+      };
+    });
+
+  // Build clause review for all clauses
+  const clause_review = clausesRaw.map((c, idx) => ({
+    clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
+    risk_level: String(c.risk_level || 'none').toLowerCase(),
+    risk_summary: c.explanation || c.risk_summary || '',
+    recommended_change: c.recommended_action || c.recommendation || ''
+  }));
+
+  // Build clause ledger display
+  const clause_ledger_display = clausesRaw.map((c, idx) => ({
+    clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
+    heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
+    full_text: c.clause_text || c.text || '',
+    page: 1
+  }));
+
+  // Build detailed executive summary
+  const execSummary = buildExecutiveSummary(rawData.risk_score, topRisks, clausesRaw, rawData.summary?.executive_summary);
+
+  const transformed = {
+    lease_address: rawData.key_terms?.property_address || rawData.lease_address || "Lease Agreement",
+    generated_date: new Date().toISOString(),
+    risk_score: rawData.risk_score || 0,
+    summary: execSummary,
+    key_terms: rawData.key_terms || {},
+    flags,
+    clause_review,
+    clause_ledger: clause_ledger_display,
+    coverage_summary: {
+      total_clauses: clausesRaw.length,
+      clauses_reviewed: clause_review.length,
+      clauses_flagged: flags.length,
+    },
+  };
+
+  console.log('TRANSFORM_COMPLETE', {
+    clause_ledger_length: transformed.clause_ledger.length,
+    flags_count: flags.length,
+    risk_score: transformed.risk_score
+  });
+
+  return transformed;
+}
+
 Deno.serve(async (req) => {
   const { allowed, headers } = corsHeaders(req);
 
@@ -246,8 +347,39 @@ Deno.serve(async (req) => {
 
     // Premium gate removed - allow all users to export PDF
 
-    // Resolve scanData if only scanId is provided
-    let data = scanData;
+    // Resolve scanData - TRANSFORM IMMEDIATELY if provided
+    let data = null;
+    
+    if (scanData) {
+      console.log('PDF_EXPORT_USING_PROVIDED_SCANDATA', {
+        correlationId,
+        has_clauses: Array.isArray(scanData?.clauses),
+        has_clause_ledger: Array.isArray(scanData?.clause_ledger),
+        clauses_count: scanData?.clauses?.length || 0,
+        clause_ledger_count: scanData?.clause_ledger?.length || 0
+      });
+      
+      // Check if scanData has new Cloudflare format (clauses array)
+      if (Array.isArray(scanData.clauses) && !Array.isArray(scanData.clause_ledger)) {
+        console.log('TRANSFORMING_CLOUDFLARE_FORMAT', { correlationId });
+        data = transformCloudflareData(scanData);
+      } else if (Array.isArray(scanData.clause_ledger)) {
+        // Already in expected format
+        data = scanData;
+      } else {
+        console.error('PDF_EXPORT_ERROR: INVALID_SCANDATA_FORMAT', {
+          correlationId,
+          has_clauses: Array.isArray(scanData?.clauses),
+          has_clause_ledger: Array.isArray(scanData?.clause_ledger)
+        });
+        return json(400, { 
+          error: "INVALID_SCANDATA_FORMAT", 
+          message: "scanData must have either 'clauses' or 'clause_ledger' array",
+          correlationId 
+        }, headers);
+      }
+    }
+    
     reportData = data;
     console.log('PDF_EXPORT_DEBUG_DATA', {
       correlationId,
@@ -359,61 +491,8 @@ Deno.serve(async (req) => {
       }
       
       if (hasNewFormat) {
-        // Process new Cloudflare format
-        const clausesRaw = sf.clauses || [];
-        const topRisks = sf.summary?.top_risks || [];
-        
-        // Build flags from clauses with risk
-        const flags = clausesRaw
-          .filter(c => c.risk_level && c.risk_level !== 'none')
-          .map((c, idx) => {
-            const recs = parseRecommendations(c.recommended_action || c.recommendation, c.risk_level);
-            return {
-              clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
-              severity: String(c.risk_level || 'medium').toLowerCase(),
-              category: c.canonical_name || 'Clause Review',
-              title: c.canonical_name || c.title || `Clause ${idx + 1}`,
-              description: c.explanation || c.risk_summary || '',
-              explanation: c.explanation || '',
-              recommendation: recs.join("\n"),
-              evidence: (c.clause_text || c.text || '').slice(0, 240)
-            };
-          });
-
-        // Build clause review for all clauses
-        const clause_review = clausesRaw.map((c, idx) => ({
-          clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
-          risk_level: String(c.risk_level || 'none').toLowerCase(),
-          risk_summary: c.explanation || c.risk_summary || '',
-          recommended_change: c.recommended_action || c.recommendation || ''
-        }));
-
-        // Build clause ledger display
-        const clause_ledger_display = clausesRaw.map((c, idx) => ({
-          clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
-          heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
-          full_text: c.clause_text || c.text || '',
-          page: 1
-        }));
-
-        // Build detailed executive summary
-        const execSummary = buildExecutiveSummary(sf.risk_score, topRisks, clausesRaw, sf.summary?.executive_summary);
-
-        data = {
-          lease_address: sf.key_terms?.property_address || "Lease Agreement",
-          generated_date: new Date().toISOString(),
-          risk_score: sf.risk_score || 0,
-          summary: execSummary,
-          key_terms: sf.key_terms || {},
-          flags,
-          clause_review,
-          clause_ledger: clause_ledger_display,
-          coverage_summary: {
-            total_clauses: clausesRaw.length,
-            clauses_reviewed: clause_review.length,
-            clauses_flagged: flags.length,
-          },
-        };
+        console.log('TRANSFORMING_DB_CLOUDFLARE_FORMAT', { correlationId, clauses_count: sf.clauses.length });
+        data = transformCloudflareData(sf);
       } else {
         // LEGACY FORMAT: Old pipeline with clause_ledger, issues_validated, etc.
         const clause_ledger_rows = Array.isArray(sf.clause_ledger) ? sf.clause_ledger : [];
@@ -481,6 +560,15 @@ Deno.serve(async (req) => {
 
     reportData = data;
 
+    console.log('PDF_EXPORT_FINAL_DATA_CHECK', {
+      correlationId,
+      has_data: !!data,
+      has_clause_ledger: Array.isArray(data?.clause_ledger),
+      clause_ledger_length: data?.clause_ledger?.length || 0,
+      has_flags: Array.isArray(data?.flags),
+      flags_length: data?.flags?.length || 0
+    });
+
     if (!data) {
       console.error('PDF_EXPORT_ERROR', {
         error_code: 'MISSING_REPORT_DATA',
@@ -492,21 +580,6 @@ Deno.serve(async (req) => {
       debugTrace.validation.finalMissing = ["clause_ledger"];
       const payload = { error: "MISSING_REPORT_DATA", missing_fields: ["clause_ledger"], gotKeys, scanId, correlationId, ...(debug ? { debug_trace: debugTrace } : {}) };
       return json(debug ? 200 : 400, payload, headers);
-    }
-
-    // Generate clause_ledger from clauses if missing (compat with new Cloudflare)
-    if ((!data?.clause_ledger || (Array.isArray(data.clause_ledger) && data.clause_ledger.length === 0)) && Array.isArray(data?.clauses)) {
-      data.clause_ledger = data.clauses.map((c, idx) => ({
-        clause_id: c.clause_id || `clause-${idx + 1}`,
-        clause_number: idx + 1,
-        heading: c.canonical_name || c.heading || c.title || `Clause ${idx + 1}`,
-        text: c.clause_text || c.text || '',
-        full_text: c.clause_text || c.full_text || c.text || '',
-        risk_level: String(c.risk_level || 'none').toLowerCase(),
-        risk_summary: c.explanation || c.risk_summary || '',
-        recommended_actions: c.recommended_action ? [c.recommended_action] : (Array.isArray(c.recommended_actions) ? c.recommended_actions : []),
-        mapped_catalog_ids: c.canonical_name ? [c.canonical_name] : (Array.isArray(c.mapped_catalog_ids) ? c.mapped_catalog_ids : [])
-      }));
     }
 
     // Validate minimum structure and softly repair
