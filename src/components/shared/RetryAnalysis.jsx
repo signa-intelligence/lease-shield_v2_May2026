@@ -123,39 +123,45 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
         setRetrying(false);
         return;
       }
-      const scanResponse = resp.data;
-
-      if (scanResponse?.success) {
-        const scanResult = scanResponse.result;
+      // Handle the response from scanLeaseCF_v1
+      if (out?.ok === true && out?.scan_full) {
+        const scanFull = out.scan_full;
+        
+        // Extract key terms from scan_full
+        const keyTerms = scanFull.key_terms || {};
         
         await base44.entities.Lease.update(lease.id, {
           status: 'scanned',
-          property_address: scanResult.property_address || null,
-          start_date: scanResult.start_date || null,
-          end_date: scanResult.end_date || null,
-          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
-          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
-          language_detected: scanResult.language_detected || 'en'
+          property_address: keyTerms.property_address || null,
+          start_date: keyTerms.start_date || null,
+          end_date: keyTerms.end_date || null,
+          rent_amount: keyTerms.rent_amount > 0 ? keyTerms.rent_amount : null,
+          deposit_amount: keyTerms.deposit_amount > 0 ? keyTerms.deposit_amount : null,
+          language_detected: language || 'en'
         });
 
-        // Check if scan already exists
-        const existingScans = await base44.entities.LeaseScan.filter({ lease_id: lease.id });
-        
-        if (existingScans.length > 0) {
-          await base44.entities.LeaseScan.update(existingScans[0].id, {
-            risk_score: scanResult.risk_score,
-            flags: scanResult.flags || [],
-            summary: scanResult.summary,
-            scan_full: scanResult,
+        // Update or create scan record
+        if (existingScanId) {
+          await base44.entities.LeaseScan.update(existingScanId, {
+            risk_score: scanFull.risk_score || 0,
+            flags: (scanFull.clauses || []).filter(c => c.risk_level !== 'none').map(c => ({
+              severity: c.risk_level,
+              description: c.explanation
+            })),
+            summary: scanFull.summary?.executive_summary || '',
+            scan_full: scanFull,
             version: '1.0'
           });
         } else {
           await base44.entities.LeaseScan.create({
             lease_id: lease.id,
-            risk_score: scanResult.risk_score,
-            flags: scanResult.flags || [],
-            summary: scanResult.summary,
-            scan_full: scanResult,
+            risk_score: scanFull.risk_score || 0,
+            flags: (scanFull.clauses || []).filter(c => c.risk_level !== 'none').map(c => ({
+              severity: c.risk_level,
+              description: c.explanation
+            })),
+            summary: scanFull.summary?.executive_summary || '',
+            scan_full: scanFull,
             version: '1.0'
           });
         }
@@ -167,7 +173,7 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
           onSuccess();
         }
       } else {
-        throw new Error(scanResponse?.error || 'Analysis failed');
+        throw new Error(out?.message || 'Analysis failed');
       }
     } catch (error) {
       console.error('[RETRY] Analysis failed:', error);
