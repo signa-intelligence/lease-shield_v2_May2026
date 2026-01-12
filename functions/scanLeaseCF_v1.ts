@@ -44,14 +44,23 @@ Deno.serve(async (req) => {
       console.log('SCAN_CF_V1_CREATED_NEW', { scanId: targetScan.id });
     }
 
-    console.log('SCAN_CF_V1_CALLING_ANALYZELEASE', { scanId: targetScan.id });
-
-    // Call analyzeLease with the target scanId
+    // Pass the scanId so analyzeLease updates the RIGHT record
+    console.log('SCAN_CF_V1_CALLING_ANALYZELEASE', { 
+      scanId: targetScan.id,
+      leaseId, 
+      fileUrl: fileUrl?.substring(0, 80) 
+    });
+    
     const analyzeResult = await base44.functions.invoke('analyzeLease', {
       fileUrl: fileUrl,
       leaseId: leaseId,
       scanId: targetScan.id,
       language: language || 'en'
+    });
+
+    console.log('SCAN_CF_V1_ANALYZELEASE_RETURNED', {
+      ok: analyzeResult?.data?.ok,
+      scanId: analyzeResult?.data?.scanId
     });
 
     const result = analyzeResult?.data;

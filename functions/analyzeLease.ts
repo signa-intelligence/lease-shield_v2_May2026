@@ -463,64 +463,72 @@ IMPORTANT: Extract EVERY clause you find. A typical lease has 30-60 clauses. If 
       riskScore: analysisResult.risk_score
     });
     
-    // Create or update scan record
+    // Create or update scan record - FIXED to use provided scanId
     const svc = base44.asServiceRole || base44;
+
+    // Get scanId from request body if provided
+    const providedScanId = body.scanId || null;
+
+    console.log('[ANALYZE_LEASE_DB_UPDATE_START]', { 
+      correlationId, 
+      providedScanId,
+      leaseId
+    });
 
     let scan;
     try {
-      // If scanId was provided (from frontend), update that specific record
-      if (scanId) {
-        console.log('[ANALYZE_LEASE_UPDATING_PROVIDED_SCAN]', { 
+      if (providedScanId) {
+        // Update the specific scan that was provided
+        console.log('[ANALYZE_LEASE_UPDATING_SPECIFIC_SCAN]', { 
           correlationId, 
-          scanId: scanId 
+          scanId: providedScanId 
         });
 
-        scan = await svc.entities.LeaseScan.update(scanId, {
+        scan = await svc.entities.LeaseScan.update(providedScanId, {
           scan_full: analysisResult,
           risk_score: analysisResult.risk_score,
           status: 'completed'
         });
 
-        console.log('[ANALYZE_LEASE_SCAN_UPDATED]', { 
+        console.log('[ANALYZE_LEASE_SCAN_UPDATED_SUCCESS]', { 
           correlationId, 
-          scanId: scan.id 
+          scanId: scan.id,
+          clausesCount: analysisResult.clauses.length
         });
 
       } else {
-        // No scanId provided - check if scan exists for this lease
-        const existingScans = await svc.entities.LeaseScan.filter({ lease_id: leaseId });
+        // No scanId provided - this shouldn't happen, but handle it
+        console.warn('[ANALYZE_LEASE_NO_SCANID_PROVIDED]', { correlationId });
 
-        if (existingScans.length > 0) {
-          // Update the most recent scan
-          const sortedScans = existingScans.sort((a, b) => 
-            new Date(b.created_date) - new Date(a.created_date)
-          );
+        // Create new scan
+        scan = await svc.entities.LeaseScan.create({
+          lease_id: leaseId,
+          scan_full: analysisResult,
+          risk_score: analysisResult.risk_score,
+          status: 'completed'
+        });
 
-          scan = await svc.entities.LeaseScan.update(sortedScans[0].id, {
-            scan_full: analysisResult,
-            risk_score: analysisResult.risk_score,
-            status: 'completed'
-          });
-
-          console.log('[ANALYZE_LEASE_SCAN_UPDATED]', { 
-            correlationId, 
-            scanId: scan.id 
-          });
-        } else {
-          // Create new scan
-          scan = await svc.entities.LeaseScan.create({
-            lease_id: leaseId,
-            scan_full: analysisResult,
-            risk_score: analysisResult.risk_score,
-            status: 'completed'
-          });
-
-          console.log('[ANALYZE_LEASE_SCAN_CREATED]', { 
-            correlationId, 
-            scanId: scan.id 
-          });
-        }
+        console.log('[ANALYZE_LEASE_SCAN_CREATED]', { 
+          correlationId, 
+          scanId: scan.id 
+        });
       }
+    } catch (e) {
+      console.error('[ANALYZE_LEASE_DB_ERROR]', { 
+        correlationId,
+        scanId: providedScanId,
+        error: e.message,
+        stack: e.stack
+      });
+
+      return json(500, {
+        ok: false,
+        step: 'DATABASE',
+        error_code: 'DB_UPDATE_FAILED',
+        message: `Failed to update scan: ${e.message}`,
+        correlationId
+      }, headers);
+    }
     } catch (e) {
       console.error('[ANALYZE_LEASE_DB_ERROR]', { 
         correlationId, 
