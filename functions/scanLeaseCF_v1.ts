@@ -22,9 +22,31 @@ Deno.serve(async (req) => {
       });
     }
     
-    console.log('SCAN_CF_V1_REDIRECT_TO_ANALYZELEASE', { leaseId, fileUrl: fileUrl?.substring(0, 80) });
+    console.log('SCAN_CF_V1_INPUT', { leaseId, inputScanId, fileUrl: fileUrl?.substring(0, 80) });
 
-    // Call the new analyzeLease function instead of Cloudflare worker
+    // Find or create scan record FIRST
+    let targetScan = null;
+    if (inputScanId) {
+      const scanArr = await base44.entities.LeaseScan.filter({ id: inputScanId });
+      targetScan = scanArr?.[0] || null;
+      console.log('SCAN_CF_V1_LOOKUP_BY_INPUT_ID', { inputScanId, found: !!targetScan });
+    }
+    if (!targetScan) {
+      const scans = await base44.entities.LeaseScan.filter({ lease_id: leaseId }, '-created_date');
+      targetScan = scans?.[0] || null;
+      console.log('SCAN_CF_V1_LOOKUP_BY_LEASE', { leaseId, found: !!targetScan, scanId: targetScan?.id });
+    }
+    if (!targetScan) {
+      targetScan = await base44.entities.LeaseScan.create({ 
+        lease_id: leaseId, 
+        status: 'initiated' 
+      });
+      console.log('SCAN_CF_V1_CREATED_NEW', { scanId: targetScan.id });
+    }
+
+    console.log('SCAN_CF_V1_CALLING_ANALYZELEASE', { scanId: targetScan.id });
+
+    // Call analyzeLease
     const analyzeResult = await base44.functions.invoke('analyzeLease', {
       fileUrl: fileUrl,
       leaseId: leaseId,
@@ -32,10 +54,18 @@ Deno.serve(async (req) => {
     });
 
     const result = analyzeResult?.data;
+    
+    console.log('SCAN_CF_V1_ANALYZELEASE_RESPONSE', {
+      ok: result?.ok,
+      has_scan_full: !!result?.scan_full,
+      clauses_count: result?.scan_full?.clauses?.length || 0
+    });
 
     if (!result) {
       return new Response(JSON.stringify({
         ok: false,
+        scanId: targetScan.id,
+        leaseId,
         step: 'ANALYZE_LEASE',
         error_code: 'NO_RESPONSE',
         message: 'analyzeLease returned no data'
@@ -49,8 +79,8 @@ Deno.serve(async (req) => {
     if (result.ok === false) {
       return new Response(JSON.stringify({
         ok: false,
-        scanId: result.scanId,
-        leaseId: result.leaseId,
+        scanId: targetScan.id,
+        leaseId: leaseId,
         step: result.step,
         error_code: result.error_code,
         message: result.message
@@ -60,7 +90,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Success - transform data to expected format
+    // SUCCESS - Transform and save the data
     const scanFull = result.scan_full || {};
     
     // Ensure all required fields exist
@@ -101,17 +131,57 @@ Deno.serve(async (req) => {
       scanFull.key_terms = {};
     }
 
+    console.log('SCAN_CF_V1_BEFORE_UPDATE', { 
+      scanId: targetScan.id,
+      clausesCount: clausesArray.length,
+      clause_ledger_count: scanFull.clause_ledger.length,
+      text_length: scanFull.meta.text_length,
+      risk_score: scanFull.risk_score
+    });
+
+    // UPDATE THE DATABASE WITH TRANSFORMED DATA
+    try {
+      await base44.entities.LeaseScan.update(targetScan.id, {
+        scan_full: scanFull,
+        status: 'completed',
+        risk_score: scanFull.risk_score || 0,
+        clauses_count: clausesArray.length
+      });
+      
+      console.log('SCAN_CF_V1_DATABASE_UPDATED_SUCCESS', { 
+        scanId: targetScan.id 
+      });
+    } catch (updateError) {
+      console.error('SCAN_CF_V1_DATABASE_UPDATE_FAILED', {
+        scanId: targetScan.id,
+        error: String(updateError)
+      });
+      
+      return new Response(JSON.stringify({
+        ok: false,
+        scanId: targetScan.id,
+        leaseId,
+        step: 'DATABASE_UPDATE',
+        error_code: 'UPDATE_FAILED',
+        message: `Failed to update database: ${updateError.message}`
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     console.log('SCAN_CF_V1_SUCCESS', { 
-      scanId: result.scanId, 
+      scanId: targetScan.id, 
       clausesCount: clausesArray.length,
       clause_ledger_count: scanFull.clause_ledger.length,
       text_length: scanFull.meta.text_length
     });
 
+    // Return the transformed data
     return new Response(JSON.stringify({
       ok: true,
-      scanId: result.scanId,
-      leaseId: result.leaseId,
+      scanId: targetScan.id,
+      leaseId: leaseId,
       scan_full: scanFull
     }), {
       status: 200,
