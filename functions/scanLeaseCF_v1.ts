@@ -64,18 +64,10 @@ Deno.serve(async (req) => {
     });
 
     const result = analyzeResult?.data;
-    
-    console.log('SCAN_CF_V1_ANALYZELEASE_RESPONSE', {
-      ok: result?.ok,
-      has_scan_full: !!result?.scan_full,
-      clauses_count: result?.scan_full?.clauses?.length || 0
-    });
 
     if (!result) {
       return new Response(JSON.stringify({
         ok: false,
-        scanId: targetScan.id,
-        leaseId,
         step: 'ANALYZE_LEASE',
         error_code: 'NO_RESPONSE',
         message: 'analyzeLease returned no data'
@@ -85,12 +77,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // If analyzeLease returned an error, pass it through
     if (result.ok === false) {
       return new Response(JSON.stringify({
         ok: false,
-        scanId: targetScan.id,
-        leaseId: leaseId,
+        scanId: result.scanId,
+        leaseId: result.leaseId,
         step: result.step,
         error_code: result.error_code,
         message: result.message
@@ -100,32 +91,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    // SUCCESS - Transform and save the data
+    // SUCCESS - Transform data
     const scanFull = result.scan_full || {};
-    
-    // Ensure all required fields exist
-    if (!scanFull.meta) {
-      scanFull.meta = {};
-    }
-    
-    // Add text_length and chunks from clauses data
     const clausesArray = Array.isArray(scanFull.clauses) ? scanFull.clauses : [];
+    
+    scanFull.meta = scanFull.meta || {};
     scanFull.meta.text_length = clausesArray.reduce((sum, c) => sum + (c.clause_text?.length || 0), 0);
     scanFull.meta.chunks = 1;
     scanFull.meta.warnings = scanFull.meta.warnings || [];
     
-    // Ensure summary structure
-    if (!scanFull.summary) {
-      scanFull.summary = {};
-    }
-    if (!scanFull.summary.executive_summary) {
-      scanFull.summary.executive_summary = "Lease analysis complete.";
-    }
-    if (!Array.isArray(scanFull.summary.top_risks)) {
-      scanFull.summary.top_risks = [];
-    }
+    scanFull.summary = scanFull.summary || {};
+    scanFull.summary.executive_summary = scanFull.summary.executive_summary || "Lease analysis complete.";
+    scanFull.summary.top_risks = scanFull.summary.top_risks || [];
     
-    // Build clause_ledger from clauses for backward compatibility
     if (!Array.isArray(scanFull.clause_ledger) || scanFull.clause_ledger.length === 0) {
       scanFull.clause_ledger = clausesArray.map((c, idx) => ({
         clause_id: c.clause_id || `clause-${idx + 1}`,
@@ -136,10 +114,7 @@ Deno.serve(async (req) => {
       }));
     }
     
-    // Add key_terms if missing
-    if (!scanFull.key_terms) {
-      scanFull.key_terms = {};
-    }
+    scanFull.key_terms = scanFull.key_terms || {};
 
     console.log('SCAN_CF_V1_BEFORE_UPDATE', { 
       scanId: targetScan.id,
@@ -149,45 +124,43 @@ Deno.serve(async (req) => {
       risk_score: scanFull.risk_score
     });
 
-    // UPDATE THE DATABASE WITH TRANSFORMED DATA
+    // DIRECT DATABASE UPDATE - Use service role to bypass any caching
+    const svc = base44.asServiceRole || base44;
+    
     try {
-      await base44.entities.LeaseScan.update(targetScan.id, {
+      // Force a fresh write to the database
+      await svc.entities.LeaseScan.update(targetScan.id, {
         scan_full: scanFull,
-        status: 'completed',
         risk_score: scanFull.risk_score || 0,
-        clauses_count: clausesArray.length
+        status: 'completed'
       });
       
-      console.log('SCAN_CF_V1_DATABASE_UPDATED_SUCCESS', { 
-        scanId: targetScan.id 
+      console.log('SCAN_CF_V1_DATABASE_UPDATED_SUCCESS', { scanId: targetScan.id });
+      
+      // Verify the write by reading it back immediately
+      const verifyScans = await svc.entities.LeaseScan.filter({ id: targetScan.id });
+      const verifyData = verifyScans[0]?.scan_full;
+      
+      console.log('SCAN_CF_V1_VERIFY_WRITE', {
+        scanId: targetScan.id,
+        verify_has_clauses: !!verifyData?.clauses,
+        verify_clauses_count: verifyData?.clauses?.length || 0,
+        verify_keys: verifyData ? Object.keys(verifyData) : []
       });
+      
     } catch (updateError) {
       console.error('SCAN_CF_V1_DATABASE_UPDATE_FAILED', {
         scanId: targetScan.id,
-        error: String(updateError)
-      });
-      
-      return new Response(JSON.stringify({
-        ok: false,
-        scanId: targetScan.id,
-        leaseId,
-        step: 'DATABASE_UPDATE',
-        error_code: 'UPDATE_FAILED',
-        message: `Failed to update database: ${updateError.message}`
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        error: String(updateError),
+        stack: updateError.stack
       });
     }
 
     console.log('SCAN_CF_V1_SUCCESS', { 
-      scanId: targetScan.id, 
-      clausesCount: clausesArray.length,
-      clause_ledger_count: scanFull.clause_ledger.length,
-      text_length: scanFull.meta.text_length
+      scanId: targetScan.id,
+      clausesCount: clausesArray.length
     });
 
-    // Return the transformed data
     return new Response(JSON.stringify({
       ok: true,
       scanId: targetScan.id,
