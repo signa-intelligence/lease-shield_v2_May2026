@@ -584,7 +584,16 @@ Deno.serve(async (req) => {
 
     // Validate minimum structure and softly repair
     const missing = [];
-    if (!Array.isArray(data.clause_ledger) || data.clause_ledger.length === 0) missing.push("clause_ledger");
+    if (!Array.isArray(data.clause_ledger)) {
+      missing.push("clause_ledger");
+    } else if (data.clause_ledger.length === 0) {
+      console.error('PDF_EXPORT_ERROR_NO_CLAUSES', { correlationId, scanId });
+      return json(400, {
+        error: "NO_CLAUSES_IN_SCAN",
+        message: "This scan contains no clauses. The lease document may not have been properly analyzed. Please try scanning again.",
+        correlationId
+      }, headers);
+    }
     if (!Array.isArray(data.flags)) data.flags = [];
     if (!Array.isArray(data.clause_review) || data.clause_review.length !== data.clause_ledger.length) {
       const flagsByClause = new Map();
