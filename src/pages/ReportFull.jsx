@@ -75,15 +75,6 @@ export default function ReportFull() {
     setIsEditorPreview(editorPreview);
     setForensicData(forensic);
     
-    // Check if we have scan_full passed via navigation state (from upload flow)
-    if (location.state?.scan_full) {
-      console.log('[REPORTFULL] Using passed scan_full data from upload flow', {
-        clausesCount: location.state.scan_full.clauses?.length || 0,
-        riskScore: location.state.scan_full.risk_score
-      });
-      setPassedScanFull(location.state.scan_full);
-    }
-    
     // Mark params as resolved - triggers render with actual content
     setParamsResolved(true);
   }, [location]);
@@ -114,7 +105,6 @@ export default function ReportFull() {
           leaseId={leaseId} 
           showDebug={showDebug} 
           forensicData={forensicData}
-          passedScanFull={passedScanFull}
         />
       ) : isEditorPreview ? (
         <PreviewHarness forensicData={forensicData} />
