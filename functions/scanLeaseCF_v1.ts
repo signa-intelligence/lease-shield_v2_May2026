@@ -46,10 +46,11 @@ Deno.serve(async (req) => {
 
     console.log('SCAN_CF_V1_CALLING_ANALYZELEASE', { scanId: targetScan.id });
 
-    // Call analyzeLease
+    // Call analyzeLease with the target scanId
     const analyzeResult = await base44.functions.invoke('analyzeLease', {
       fileUrl: fileUrl,
       leaseId: leaseId,
+      scanId: targetScan.id,
       language: language || 'en'
     });
 

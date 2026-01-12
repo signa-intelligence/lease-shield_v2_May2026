@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
     
     // Parse request body
     const body = await req.json().catch(() => ({}));
-    const { fileUrl, leaseId, language = "en" } = body || {};
+    const { fileUrl, leaseId, scanId, language = "en" } = body || {};
     
     console.log('[ANALYZE_LEASE_PARAMS]', { correlationId, leaseId, language, hasFileUrl: !!fileUrl });
     
@@ -465,35 +465,61 @@ IMPORTANT: Extract EVERY clause you find. A typical lease has 30-60 clauses. If 
     
     // Create or update scan record
     const svc = base44.asServiceRole || base44;
-    
+
     let scan;
     try {
-      // Check if scan already exists for this lease
-      const existingScans = await svc.entities.LeaseScan.filter({ lease_id: leaseId });
-      
-      if (existingScans.length > 0) {
-        // Update existing scan
-        scan = await svc.entities.LeaseScan.update(existingScans[0].id, {
-          scan_full: analysisResult,
-          risk_score: analysisResult.risk_score
+      // If scanId was provided (from frontend), update that specific record
+      if (scanId) {
+        console.log('[ANALYZE_LEASE_UPDATING_PROVIDED_SCAN]', { 
+          correlationId, 
+          scanId: scanId 
         });
-        
+
+        scan = await svc.entities.LeaseScan.update(scanId, {
+          scan_full: analysisResult,
+          risk_score: analysisResult.risk_score,
+          status: 'completed'
+        });
+
         console.log('[ANALYZE_LEASE_SCAN_UPDATED]', { 
           correlationId, 
           scanId: scan.id 
         });
+
       } else {
-        // Create new scan
-        scan = await svc.entities.LeaseScan.create({
-          lease_id: leaseId,
-          scan_full: analysisResult,
-          risk_score: analysisResult.risk_score
-        });
-        
-        console.log('[ANALYZE_LEASE_SCAN_CREATED]', { 
-          correlationId, 
-          scanId: scan.id 
-        });
+        // No scanId provided - check if scan exists for this lease
+        const existingScans = await svc.entities.LeaseScan.filter({ lease_id: leaseId });
+
+        if (existingScans.length > 0) {
+          // Update the most recent scan
+          const sortedScans = existingScans.sort((a, b) => 
+            new Date(b.created_date) - new Date(a.created_date)
+          );
+
+          scan = await svc.entities.LeaseScan.update(sortedScans[0].id, {
+            scan_full: analysisResult,
+            risk_score: analysisResult.risk_score,
+            status: 'completed'
+          });
+
+          console.log('[ANALYZE_LEASE_SCAN_UPDATED]', { 
+            correlationId, 
+            scanId: scan.id 
+          });
+        } else {
+          // Create new scan
+          scan = await svc.entities.LeaseScan.create({
+            lease_id: leaseId,
+            scan_full: analysisResult,
+            risk_score: analysisResult.risk_score,
+            status: 'completed'
+          });
+
+          console.log('[ANALYZE_LEASE_SCAN_CREATED]', { 
+            correlationId, 
+            scanId: scan.id 
+          });
+        }
       }
     } catch (e) {
       console.error('[ANALYZE_LEASE_DB_ERROR]', { 
