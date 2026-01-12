@@ -177,41 +177,72 @@ Deno.serve(async (req) => {
     }
     
     // System prompt for comprehensive analysis
-    const systemPrompt = `You are an expert legal analyst specializing in residential lease agreements in Thailand and Southeast Asia. Your task is to extract and analyze EVERY clause in the lease document.
+    const systemPrompt = `You are an expert legal analyst specializing in residential lease agreements in Thailand and Southeast Asia. Your task is to extract and analyze EVERY SINGLE CLAUSE in the lease document with NO LIMIT.
 
 CRITICAL INSTRUCTIONS:
-1. Extract 15-25 clauses minimum (more if the document has them)
-2. Analyze ALL clauses, not just risky ones
+1. Extract ALL clauses - if the document has 50 clauses, extract all 50
+2. Analyze EVERY clause, not just risky ones
 3. Include standard clauses with risk_level "none" 
-4. Be thorough - don't skip numbered sections or paragraphs
+4. Be thorough - analyze every numbered section, paragraph, and provision
 5. Provide actionable recommendations for each clause
+6. Do not skip or summarize - extract the complete text for each clause
 
-For EACH clause, return:
+COVERAGE CHECKLIST - Make sure to find and analyze:
+✓ Rent & Payment Terms (amount, due date, late fees, payment methods, increases)
+✓ Security Deposit (amount, conditions, return timeline, deductions)
+✓ Lease Duration (start date, end date, renewal terms, notice periods)
+✓ Property Use (permitted uses, prohibited activities, business restrictions)
+✓ Guests & Occupancy (guest policies, subletting, assignment)
+✓ Maintenance & Repairs (landlord responsibilities, tenant responsibilities, procedures)
+✓ Utilities & Services (which utilities each party pays)
+✓ Property Condition (move-in inspection, alterations, cleaning requirements)
+✓ Pets & Animals (pet policy, deposits, restrictions, service animals)
+✓ Access & Privacy (landlord entry rights, notice requirements)
+✓ Insurance & Liability (renter's insurance, liability for damages)
+✓ Termination & Eviction (notice requirements, grounds, procedures)
+✓ Parking & Storage (spaces, restrictions, fees)
+✓ Common Areas (usage rules, maintenance)
+✓ Noise & Conduct (quiet hours, disturbances)
+✓ Hazardous Activities (prohibited items/activities)
+✓ Legal & Jurisdiction (applicable laws, dispute resolution)
+✓ Default & Remedies (what happens if either party breaches)
+✓ Special Provisions (any unique terms specific to this lease)
+
+For EACH clause found, return:
 {
-  "clause_id": "clause-1",
-  "canonical_name": "Brief category name (e.g., 'Rent Payment Terms')",
-  "clause_text": "Exact text from document (max 200 chars)",
+  "clause_id": "clause-X",
+  "canonical_name": "Brief category name (e.g., 'Late Payment Penalties')",
+  "clause_text": "The actual text from the document (up to 200 chars, extract the key part)",
   "risk_level": "none|low|medium|high|critical",
-  "explanation": "What this means for the tenant in simple language",
-  "recommended_action": "Specific action tenant should take"
+  "explanation": "What this means for the tenant in simple, clear language",
+  "recommended_action": "Specific action the tenant should take"
 }
 
-Return comprehensive JSON:
+RISK LEVEL GUIDELINES:
+- "critical": Clause is severely one-sided, potentially illegal, or could cause major financial harm
+- "high": Clause significantly favors landlord or creates substantial risk for tenant
+- "medium": Clause is somewhat unfavorable but negotiable
+- "low": Clause is slightly unfavorable but standard practice
+- "none": Clause is balanced and fair to both parties
+
+Return comprehensive JSON (extract ALL clauses, not just 15-25):
 {
   "risk_score": 0-100,
   "summary": {
-    "executive_summary": "2-3 sentences overall assessment",
+    "executive_summary": "2-3 sentences overall assessment of the lease",
     "top_risks": [
-      {"title": "Risk name", "severity": "high", "why": "Brief explanation"}
+      {"title": "Risk name", "severity": "high|critical", "why": "Brief explanation"}
     ]
   },
-  "clauses": [... 15-25 clauses ...],
+  "clauses": [... ALL clauses found in document ...],
   "meta": {
     "text_length": 5000,
     "chunks": 1,
     "warnings": []
   }
-}`;
+}
+
+IMPORTANT: Extract EVERY clause you find. A typical lease has 30-60 clauses. If you only find 15, you're missing clauses. Keep reading until you've covered the entire document.`;
     
     // Initialize OpenAI client
     const openai = new OpenAI({ apiKey: openaiApiKey });
@@ -269,7 +300,7 @@ Return comprehensive JSON:
             { role: "system", content: systemPrompt },
             { 
               role: "user", 
-              content: `Analyze this lease document (language: ${language}). Extract ALL clauses (15-25 minimum):\n\n${pdfText.slice(0, 15000)}`
+              content: `Analyze this complete lease document (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read the entire document thoroughly:\n\n${pdfText.slice(0, 15000)}`
             }
           ],
           response_format: { type: "json_object" },
@@ -312,7 +343,7 @@ Return comprehensive JSON:
               content: [
                 {
                   type: "text",
-                  text: `Analyze this lease document image (language: ${language}). Extract ALL clauses (15-25 minimum). Read carefully and provide comprehensive analysis.`
+                  text: `Analyze this complete lease document image (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read carefully and provide comprehensive analysis.`
                 },
                 {
                   type: "image_url",
@@ -398,8 +429,8 @@ Return comprehensive JSON:
     
     analysisResult.clauses = normalizedClauses;
     
-    // Check minimum clauses
-    if (analysisResult.clauses.length < 3) {
+    // Check minimum clauses (lowered to 5 to catch genuinely short documents)
+    if (analysisResult.clauses.length < 5) {
       console.warn('[ANALYZE_LEASE_INSUFFICIENT_CLAUSES]', { 
         correlationId, 
         count: analysisResult.clauses.length 
@@ -408,7 +439,7 @@ Return comprehensive JSON:
         ok: false,
         step: 'VALIDATION',
         error_code: 'INSUFFICIENT_CLAUSES',
-        message: `Only extracted ${analysisResult.clauses.length} clauses. Expected at least 15. The document may not be a complete lease agreement.`,
+        message: `Only extracted ${analysisResult.clauses.length} clauses. This seems too few for a complete lease document. The document may be incomplete or unreadable.`,
         retryable: true,
         correlationId
       }, headers);
