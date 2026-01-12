@@ -144,17 +144,20 @@ Deno.serve(async (req) => {
         status: 'completed'
       });
       
+      const newScanId = newScan.id;
+      
       console.log('SCAN_CF_V1_NEW_SCAN_CREATED', { 
-        scanId: newScan.id,
+        oldScanId: targetScan.id,
+        newScanId: newScanId,
         clausesCount: scanFull.clauses?.length || 0
       });
       
-      // Verify the new scan
-      const verifyScans = await svc.entities.LeaseScan.filter({ id: targetScan.id });
+      // Verify the NEW scan (not the old one)
+      const verifyScans = await svc.entities.LeaseScan.filter({ id: newScanId });
       const verifyData = verifyScans[0]?.scan_full;
       
       console.log('SCAN_CF_V1_VERIFY_NEW_SCAN', {
-        scanId: targetScan.id,
+        scanId: newScanId,
         found: verifyScans.length > 0,
         verify_has_clauses: !!verifyData?.clauses,
         verify_clauses_count: verifyData?.clauses?.length || 0,
@@ -180,13 +183,14 @@ Deno.serve(async (req) => {
     }
 
     console.log('SCAN_CF_V1_SUCCESS', { 
-      scanId: targetScan.id,
+      newScanId: newScan.id,
       clausesCount: clausesArray.length
     });
 
+    // Return the NEW scan ID (not the old one)
     return new Response(JSON.stringify({
       ok: true,
-      scanId: targetScan.id,
+      scanId: newScan.id,
       leaseId: leaseId,
       scan_full: scanFull
     }), {
