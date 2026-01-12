@@ -582,20 +582,46 @@ Deno.serve(async (req) => {
       return json(debug ? 200 : 400, payload, headers);
     }
 
-    // Validate minimum structure and softly repair
+    // Validate minimum structure with better error handling
+    console.log('PDF_EXPORT_VALIDATION_CHECK', {
+      correlationId,
+      has_data: !!data,
+      data_keys: data ? Object.keys(data) : [],
+      has_clause_ledger: Array.isArray(data?.clause_ledger),
+      clause_ledger_length: data?.clause_ledger?.length || 0,
+      has_clauses: Array.isArray(data?.clauses),
+      clauses_length: data?.clauses?.length || 0,
+      has_flags: Array.isArray(data?.flags),
+      flags_length: data?.flags?.length || 0
+    });
+
     const missing = [];
-    if (!Array.isArray(data.clause_ledger)) {
-      missing.push("clause_ledger");
-    } else if (data.clause_ledger.length === 0) {
-      console.error('PDF_EXPORT_ERROR_NO_CLAUSES', { correlationId, scanId });
-      return json(400, {
-        error: "NO_CLAUSES_IN_SCAN",
-        message: "This scan contains no clauses. The lease document may not have been properly analyzed. Please try scanning again.",
-        correlationId
-      }, headers);
+    
+    // Check if we have clause_ledger OR clauses
+    if (!Array.isArray(data.clause_ledger) || data.clause_ledger.length === 0) {
+      // Try to build clause_ledger from clauses if missing
+      if (Array.isArray(data.clauses) && data.clauses.length > 0) {
+        console.log('PDF_EXPORT_BUILDING_CLAUSE_LEDGER', { 
+          correlationId,
+          clauses_count: data.clauses.length 
+        });
+        
+        data.clause_ledger = data.clauses.map((c, idx) => ({
+          clause_id: c.clause_id || `clause-${idx + 1}`,
+          heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
+          full_text: c.clause_text || c.text || '',
+          page: c.page_number || 1
+        }));
+      } else {
+        missing.push("clause_ledger");
+      }
     }
+    
+    // Ensure flags array exists
     if (!Array.isArray(data.flags)) data.flags = [];
-    if (!Array.isArray(data.clause_review) || data.clause_review.length !== data.clause_ledger.length) {
+    
+    // Build or repair clause_review
+    if (!Array.isArray(data.clause_review) || data.clause_review.length !== data.clause_ledger?.length) {
       const flagsByClause = new Map();
       data.flags.forEach((f) => {
         if (!f?.clause_id) return;
@@ -603,7 +629,7 @@ Deno.serve(async (req) => {
         list.push(f);
         flagsByClause.set(f.clause_id, list);
       });
-      data.clause_review = data.clause_ledger.map((c) => {
+      data.clause_review = (data.clause_ledger || []).map((c) => {
         const hit = (flagsByClause.get(c.clause_id) || [])[0];
         if (hit) {
           return {
@@ -616,19 +642,36 @@ Deno.serve(async (req) => {
         return { clause_id: c.clause_id, risk_level: "none", risk_summary: "Accept as standard." };
       });
     }
+    
     if (missing.length > 0) {
-      console.error('PDF_EXPORT_ERROR', {
-        error_code: 'MISSING_REPORT_DATA',
+      console.error('PDF_EXPORT_VALIDATION_FAILED', {
+        correlationId,
         missing_fields: missing,
-        reportData_keys: reportData ? Object.keys(reportData) : null,
-        full_reportData: JSON.stringify(reportData)
+        data_structure: {
+          has_clause_ledger: !!data?.clause_ledger,
+          clause_ledger_length: data?.clause_ledger?.length || 0,
+          has_clauses: !!data?.clauses,
+          clauses_length: data?.clauses?.length || 0,
+          data_keys: Object.keys(data || {})
+        }
       });
+      
       const gotKeys = Object.keys(data || {});
       debugTrace.validation.finalMissing = missing;
-      {
-        const payload = { error: "MISSING_REPORT_DATA", missing_fields: missing, gotKeys, scanId, correlationId, ...(debug ? { debug_trace: debugTrace } : {}) };
-        return json(debug ? 200 : 400, payload, headers);
-      }
+      const payload = { 
+        error: "MISSING_REPORT_DATA", 
+        missing_fields: missing, 
+        gotKeys, 
+        scanId, 
+        correlationId,
+        debug_info: {
+          clause_ledger_exists: !!data?.clause_ledger,
+          clauses_exists: !!data?.clauses,
+          suggestion: "Check if scan data has 'clauses' or 'clause_ledger' array"
+        },
+        ...(debug ? { debug_trace: debugTrace } : {}) 
+      };
+      return json(debug ? 200 : 400, payload, headers);
     }
 
     // -------- PDF generation --------
