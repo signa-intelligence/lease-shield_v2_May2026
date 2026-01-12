@@ -60,17 +60,59 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Success - return the result
+    // Success - transform data to expected format
+    const scanFull = result.scan_full || {};
+    
+    // Ensure all required fields exist
+    if (!scanFull.meta) {
+      scanFull.meta = {};
+    }
+    
+    // Add text_length and chunks from clauses data
+    const clausesArray = Array.isArray(scanFull.clauses) ? scanFull.clauses : [];
+    scanFull.meta.text_length = clausesArray.reduce((sum, c) => sum + (c.clause_text?.length || 0), 0);
+    scanFull.meta.chunks = 1;
+    scanFull.meta.warnings = scanFull.meta.warnings || [];
+    
+    // Ensure summary structure
+    if (!scanFull.summary) {
+      scanFull.summary = {};
+    }
+    if (!scanFull.summary.executive_summary) {
+      scanFull.summary.executive_summary = "Lease analysis complete.";
+    }
+    if (!Array.isArray(scanFull.summary.top_risks)) {
+      scanFull.summary.top_risks = [];
+    }
+    
+    // Build clause_ledger from clauses for backward compatibility
+    if (!Array.isArray(scanFull.clause_ledger) || scanFull.clause_ledger.length === 0) {
+      scanFull.clause_ledger = clausesArray.map((c, idx) => ({
+        clause_id: c.clause_id || `clause-${idx + 1}`,
+        title: c.canonical_name || `Clause ${idx + 1}`,
+        full_text: c.clause_text || '',
+        page_number: c.page_number || 1,
+        risk_tags: c.risk_level ? [c.risk_level] : []
+      }));
+    }
+    
+    // Add key_terms if missing
+    if (!scanFull.key_terms) {
+      scanFull.key_terms = {};
+    }
+
     console.log('SCAN_CF_V1_SUCCESS', { 
       scanId: result.scanId, 
-      clausesCount: result.scan_full?.clauses?.length 
+      clausesCount: clausesArray.length,
+      clause_ledger_count: scanFull.clause_ledger.length,
+      text_length: scanFull.meta.text_length
     });
 
     return new Response(JSON.stringify({
       ok: true,
       scanId: result.scanId,
       leaseId: result.leaseId,
-      scan_full: result.scan_full
+      scan_full: scanFull
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
