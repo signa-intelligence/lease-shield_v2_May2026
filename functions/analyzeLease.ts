@@ -529,19 +529,6 @@ IMPORTANT: Extract EVERY clause you find. A typical lease has 30-60 clauses. If 
         correlationId
       }, headers);
     }
-    } catch (e) {
-      console.error('[ANALYZE_LEASE_DB_ERROR]', { 
-        correlationId, 
-        error: e.message 
-      });
-      return json(500, {
-        ok: false,
-        step: 'DATABASE',
-        error_code: 'DB_ERROR',
-        message: `Failed to save scan: ${e.message}`,
-        correlationId
-      }, headers);
-    }
     
     console.log('[ANALYZE_LEASE_SUCCESS]', { 
       correlationId, 
