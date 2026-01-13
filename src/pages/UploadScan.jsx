@@ -916,7 +916,13 @@ function UploadScanPageContent() {
         setAnalyzing(true);
         setUploading(false);
         setAnalysisStage('scanning');
-        setUploadProgress(60);
+        
+        // Start fake progress animation during AI analysis (30-85%)
+        let fakeProgress = 30;
+        const progressInterval = setInterval(() => {
+          fakeProgress = Math.min(85, fakeProgress + 2.5);
+          setUploadProgress(Math.round(fakeProgress));
+        }, 2000);
 
         // Trigger analysis with all pages
         // Create LeaseScan record before analysis
@@ -986,12 +992,21 @@ function UploadScanPageContent() {
           throw err;
         }
 
+        // Stop fake progress
+        clearInterval(progressInterval);
+        setUploadProgress(85);
+        
         // Update scan status and navigate to report with fresh data
+        setAnalysisStage('finalizing');
+        setUploadProgress(95);
+        
         await base44.entities.LeaseScan.update(scan.id, {
           status: 'ok',
           risk_score: scanResponse?.scan_full?.risk_score || 0,
           summary: scanResponse?.scan_full?.summary?.executive_summary || ''
         });
+        
+        setUploadProgress(100);
         
         if (!scan.id) throw new Error('BUG: scanId missing');
         if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
@@ -1066,6 +1081,9 @@ function UploadScanPageContent() {
 
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
+        
+        // Stop fake progress on error
+        if (progressInterval) clearInterval(progressInterval);
 
         if (createdLeaseId) {
           try {
@@ -1251,7 +1269,13 @@ function UploadScanPageContent() {
         setAnalyzing(true);
         setUploading(false);
         setAnalysisStage('scanning');
-        setUploadProgress(60);
+        
+        // Start fake progress animation during AI analysis (30-85%)
+        let fakeProgress = 30;
+        const progressInterval = setInterval(() => {
+          fakeProgress = Math.min(85, fakeProgress + 2.5);
+          setUploadProgress(Math.round(fakeProgress));
+        }, 2000);
 
         // Create LeaseScan FIRST and capture id
         const scan = await base44.entities.LeaseScan.create({
@@ -1341,7 +1365,9 @@ function UploadScanPageContent() {
           logStage('VERIFICATION_ERROR', { error: verifyErr.message });
         }
         
-        setUploadProgress(90);
+        // Stop fake progress
+        clearInterval(progressInterval);
+        setUploadProgress(85);
         
         logStage('ANALYSIS_SUCCESS', {
           riskScore: scanResponse.result?.risk_score,
@@ -1349,11 +1375,16 @@ function UploadScanPageContent() {
         });
 
         // Update LeaseScan status and navigate to report with fresh data
+        setAnalysisStage('finalizing');
+        setUploadProgress(95);
+        
         await base44.entities.LeaseScan.update(scanId, {
           status: 'ok',
           risk_score: scanResponse?.scan_full?.risk_score || 0,
           summary: scanResponse?.scan_full?.summary?.executive_summary || ''
         });
+        
+        setUploadProgress(100);
         
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
@@ -1442,6 +1473,9 @@ function UploadScanPageContent() {
           const formattedError = formatErrorForUser(err, requestId, language, {
             uploadStage: analysisStage
           });
+          // Stop fake progress on error
+          if (progressInterval) clearInterval(progressInterval);
+          
           formattedError.scanId = scanId || null;
           const debugData = createDebugLog(requestId, stages, deviceContext, networkLog);
           

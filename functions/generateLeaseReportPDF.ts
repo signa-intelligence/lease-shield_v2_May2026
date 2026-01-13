@@ -1,30 +1,30 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 import { jsPDF } from "npm:jspdf@2.5.2";
 
-// PDF Color System - Match exported PDF design exactly
+// STANDARD COLOR SYSTEM - Used everywhere for consistency
 const severityPalette = {
   critical: {
-    bg: [220, 38, 38],      // #DC2626 - Red background
-    border: [220, 38, 38],   
+    bg: [153, 27, 27],       // #991B1B - Dark Red
+    border: [153, 27, 27],   
     text: [255, 255, 255]    // White text
   },
   high: {
-    bg: [153, 27, 27],       // #991B1B - Dark red/burgundy background
-    border: [153, 27, 27],
+    bg: [220, 38, 38],       // #DC2626 - Red
+    border: [220, 38, 38],
     text: [255, 255, 255]    // White text
   },
   medium: {
-    bg: [245, 158, 11],      // #F59E0B - Amber/orange background
-    border: [245, 158, 11],
+    bg: [249, 115, 22],      // #F97316 - Orange
+    border: [249, 115, 22],
     text: [26, 29, 31]       // Dark text
   },
   low: {
-    bg: [59, 130, 246],      // #3B82F6 - Blue background
+    bg: [59, 130, 246],      // #3B82F6 - Blue
     border: [59, 130, 246],
     text: [255, 255, 255]    // White text
   },
   none: {
-    bg: [16, 185, 129],      // #10B981 - Green background
+    bg: [16, 185, 129],      // #10B981 - Green
     border: [16, 185, 129],
     text: [255, 255, 255]    // White text
   }
@@ -752,8 +752,14 @@ Deno.serve(async (req) => {
       doc.text("No issues flagged.", 14, y);
       y += 8;
     } else {
-      const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-      const sorted = [...flags].sort((a, b) => (severityOrder[a?.severity] ?? 3) - (severityOrder[b?.severity] ?? 3));
+      // Sort by severity: CRITICAL > HIGH > MEDIUM > LOW, then alphabetically within each level
+      const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
+      const sorted = [...flags].sort((a, b) => {
+        const severityDiff = (severityOrder[a?.severity] ?? 4) - (severityOrder[b?.severity] ?? 4);
+        if (severityDiff !== 0) return severityDiff;
+        // Within same severity, sort alphabetically by title
+        return (a?.title || '').localeCompare(b?.title || '');
+      });
 
       sorted.slice(0, 50).forEach((f, i) => {
         if (y > pageHeight - 30) { doc.addPage(); y = 20; }

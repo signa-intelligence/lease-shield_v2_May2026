@@ -1013,7 +1013,7 @@ const topRisks = topRisksRaw.map((risk, idx) => {
 
 // Map clauses to normalize field names with 3 recommendations each
 const clausesRaw = Array.isArray(sf.clauses) ? sf.clauses : [];
-const clauses = clausesRaw.map((c, idx) => {
+const clausesUnsorted = clausesRaw.map((c, idx) => {
   const riskLevel = c.risk_level || 'none';
   const category = c.canonical_name || c.title || 'clause';
   const recs = parseRecommendations(c.recommended_action || c.recommendation, riskLevel, category);
@@ -1026,6 +1026,14 @@ const clauses = clausesRaw.map((c, idx) => {
     text: c.clause_text || c.text || c.full_text || '',
     recommendations: recs
   };
+});
+
+// Sort by severity: CRITICAL > HIGH > MEDIUM > LOW > NONE, then alphabetically
+const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
+const clauses = clausesUnsorted.sort((a, b) => {
+  const severityDiff = (severityOrder[a.risk_level] ?? 4) - (severityOrder[b.risk_level] ?? 4);
+  if (severityDiff !== 0) return severityDiff;
+  return (a.title || '').localeCompare(b.title || '');
 });
 
 const textTooShort = meta.text_length !== null && (meta.text_length || 0) < 500;
@@ -1357,13 +1365,13 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
             
             <div className="space-y-4">
               {clauses.map((c, i) => {
-                // Match PDF color system exactly
+                // STANDARD COLOR SYSTEM - exact match with PDF
                 const riskColors = {
-                  none: { bg: '#10B981', border: '#10B981', text: '#FFFFFF', badgeText: '✓ BALANCED' },
+                  critical: { bg: '#991B1B', border: '#991B1B', text: '#FFFFFF', badgeText: 'CRITICAL' },
+                  high: { bg: '#DC2626', border: '#DC2626', text: '#FFFFFF', badgeText: 'HIGH' },
+                  medium: { bg: '#F97316', border: '#F97316', text: '#1A1D1F', badgeText: 'MEDIUM' },
                   low: { bg: '#3B82F6', border: '#3B82F6', text: '#FFFFFF', badgeText: 'LOW' },
-                  medium: { bg: '#F59E0B', border: '#F59E0B', text: '#1A1D1F', badgeText: 'MEDIUM' },
-                  high: { bg: '#991B1B', border: '#991B1B', text: '#FFFFFF', badgeText: 'HIGH' },
-                  critical: { bg: '#DC2626', border: '#DC2626', text: '#FFFFFF', badgeText: 'CRITICAL' }
+                  none: { bg: '#10B981', border: '#10B981', text: '#FFFFFF', badgeText: '✓ BALANCED' }
                 };
                 const colorSet = riskColors[c.risk_level] || riskColors.none;
                 
