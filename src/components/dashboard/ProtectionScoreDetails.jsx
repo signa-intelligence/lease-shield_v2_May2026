@@ -1,5 +1,6 @@
 import React from "react";
-import { X, Shield, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { X, Shield, ArrowRight, CheckCircle2, AlertCircle, Crown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { haptic } from "../shared/HapticFeedback";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -358,43 +359,65 @@ export default function ProtectionScoreDetails({
                 {strings.howToImprove}
               </h3>
               <div className="space-y-3">
-                {suggestions.map((suggestion, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="cursor-pointer card-interactive"
-                    style={{
-                      padding: '16px',
-                      backgroundColor: colors.fieldBg,
-                      borderRadius: '12px',
-                      border: `2px solid ${colors.borderColor}`,
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#10B981';
-                      e.currentTarget.style.transform = 'translateX(4px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = colors.borderColor;
-                      e.currentTarget.style.transform = 'translateX(0)';
-                    }}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <AlertCircle className="w-4 h-4 text-amber-600" />
-                          <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                            {suggestion.action}
+                {suggestions.map((suggestion, idx) => {
+                  const isCompleted = suggestion.completed === true;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => !isCompleted && handleSuggestionClick(suggestion)}
+                      className={isCompleted ? '' : 'cursor-pointer card-interactive'}
+                      style={{
+                        padding: '16px',
+                        backgroundColor: isCompleted ? (isDarkMode ? '#1E3A2E' : '#F0FDF4') : colors.fieldBg,
+                        borderRadius: '12px',
+                        border: `2px solid ${isCompleted ? '#10B981' : colors.borderColor}`,
+                        transition: 'all 0.2s',
+                        opacity: isCompleted ? 0.7 : 1
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isCompleted) {
+                          e.currentTarget.style.borderColor = '#10B981';
+                          e.currentTarget.style.transform = 'translateX(4px)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isCompleted) {
+                          e.currentTarget.style.borderColor = colors.borderColor;
+                          e.currentTarget.style.transform = 'translateX(0)';
+                        }
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            {isCompleted ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            ) : (
+                              <AlertCircle className="w-4 h-4 text-amber-600" />
+                            )}
+                            <p className="text-sm font-semibold" style={{ color: isCompleted ? '#10B981' : colors.textPrimary }}>
+                              {suggestion.action}
+                            </p>
+                            {suggestion.points && (
+                              <Badge className="text-xs font-bold" style={{
+                                backgroundColor: isCompleted ? '#10B981' : '#F59E0B',
+                                color: '#FFFFFF'
+                              }}>
+                                +{suggestion.points}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
+                            {suggestion.benefit}
                           </p>
                         </div>
-                        <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
-                          {suggestion.benefit}
-                        </p>
+                        {!isCompleted && (
+                          <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: '#10B981' }} />
+                        )}
                       </div>
-                      <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: '#10B981' }} />
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 {/* Final Secure-only task */}
                 {userTier !== 'secure' && (
