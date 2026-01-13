@@ -2856,70 +2856,92 @@ function UploadScanPageContent() {
                   </p>
 
                   <div className="flex justify-center">
-                    <label className="inline-block">
-                      <input
-                        type="file"
-                        multiple
-                        accept=".pdf,.png,.jpg,.jpeg,image/*,application/pdf,image/png,image/jpeg"
-                        onChange={(e) => {
-                          handleFileSelect(e);
-                          // Auto-trigger upload after file selection
-                          if (e.target.files && e.target.files.length > 0 && scanStatus.allowed) {
-                            setTimeout(() => handleUploadAll(), 100);
-                          }
-                        }}
-                        className="hidden"
-                        disabled={!scanStatus.allowed}
-                      />
-                      <span
-                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                        style={{
-                          backgroundColor: '#0C3B2E',
-                          color: '#FFFFFF'
-                        }}
-                      >
-                        <Upload className="w-5 h-5" />
-                        {language === 'th' ? 'อัปโหลดและสแกน' : language === 'ru' ? 'Загрузить и сканировать' : 'Upload & Scan'}
-                      </span>
-                    </label>
+                   <label className="inline-block">
+                     <input
+                       type="file"
+                       multiple
+                       accept=".pdf,.png,.jpg,.jpeg,image/*,application/pdf,image/png,image/jpeg"
+                       onChange={handleFileSelect}
+                       className="hidden"
+                       disabled={!scanStatus.allowed}
+                     />
+                     <span
+                       className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                       style={{
+                         backgroundColor: '#0C3B2E',
+                         color: '#FFFFFF'
+                       }}
+                     >
+                       <Upload className="w-5 h-5" />
+                       {language === 'th' ? 'อัปโหลดและสแกน' : language === 'ru' ? 'Загрузить и сканировать' : 'Upload & Scan'}
+                     </span>
+                   </label>
                   </div>
-                </div>
+                  </div>
 
-                {selectedFiles.length > 0 && (
+                  {selectedFiles.length > 0 && (
                   <div className="mt-6">
-                    <h4 className="font-semibold mb-3" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? 'ไฟล์ที่เลือก' : language === 'ru' ? 'Выбранные файлы' : 'Selected Files'} ({selectedFiles.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {selectedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center gap-3 p-3 rounded-lg" style={{
-                          backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6'
-                        }}>
-                          <FileText className="w-5 h-5 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p className="font-medium" style={{ 
-                              color: colors.textPrimary,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {file.name}
-                            </p>
-                            <p className="text-sm" style={{ color: colors.textSecondary }}>
-                              {(file.size / 1024 / 1024).toFixed(2)} MB
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => handleRemoveFile(index)}
-                            className="p-2 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0"
-                          >
-                            <X className="w-5 h-5 text-red-600" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                   <h4 className="font-semibold mb-3" style={{ color: colors.textPrimary }}>
+                     {language === 'th' ? 'ไฟล์ที่เลือก' : language === 'ru' ? 'Выбранные файлы' : 'Selected Files'} ({selectedFiles.length})
+                   </h4>
+                   <div className="space-y-2 mb-4">
+                     {selectedFiles.map((file, index) => (
+                       <div key={index} className="flex items-center gap-3 p-3 rounded-lg" style={{
+                         backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6'
+                       }}>
+                         <FileText className="w-5 h-5 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                         <div style={{ flex: 1, minWidth: 0 }}>
+                           <p className="font-medium" style={{ 
+                             color: colors.textPrimary,
+                             overflow: 'hidden',
+                             textOverflow: 'ellipsis',
+                             whiteSpace: 'nowrap'
+                           }}>
+                             {file.name}
+                           </p>
+                           <p className="text-sm" style={{ color: colors.textSecondary }}>
+                             {(file.size / 1024 / 1024).toFixed(2)} MB
+                           </p>
+                         </div>
+                         <button
+                           onClick={() => handleRemoveFile(index)}
+                           className="p-2 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0"
+                         >
+                           <X className="w-5 h-5 text-red-600" />
+                         </button>
+                       </div>
+                     ))}
+                   </div>
+                   <button
+                     onClick={() => {
+                       haptic.medium();
+                       handleUploadAll();
+                     }}
+                     disabled={uploading || !scanStatus.allowed}
+                     className={`w-full py-4 rounded-lg font-bold ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                     style={{
+                       backgroundColor: '#0C3B2E',
+                       color: '#FFFFFF',
+                       display: 'flex',
+                       alignItems: 'center',
+                       justifyContent: 'center',
+                       gap: '10px',
+                       minHeight: '56px',
+                       fontSize: '16px',
+                       padding: '12px 24px'
+                     }}
+                   >
+                     <Upload className="w-5 h-5 flex-shrink-0" />
+                     <span style={{ 
+                       whiteSpace: 'nowrap',
+                       overflow: 'hidden',
+                       textOverflow: 'ellipsis'
+                     }}>
+                       {language === 'th' ? 'อัปโหลดและสแกน' : language === 'ru' ? 'Загрузить и сканировать' : 'Upload & Scan'}
+                     </span>
+                   </button>
                   </div>
-                )}
+                  )}
               </>
             )}
           </div>
