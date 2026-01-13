@@ -790,7 +790,7 @@ function UploadScanPageContent() {
     }
   });
 
-  const handleAcceptDisclaimerAndProceed = async () => {
+  const handleAcceptDisclaimerAndProceed = async (filesToUpload) => {
     if (!disclaimerCheckboxTicked) return;
     
     haptic.medium();
@@ -802,12 +802,22 @@ function UploadScanPageContent() {
     queryClient.invalidateQueries({ queryKey: ['user'] });
     
     // Immediately proceed with upload
-    proceedWithUpload();
+    proceedWithUpload(filesToUpload);
   };
 
-  const proceedWithUpload = async () => {
+  const proceedWithUpload = async (filesToUpload) => {
     // Reset post-scan hint at the start of a new upload attempt
     setShowPostScanHint(false);
+    
+    // Validate files
+    if (!filesToUpload || filesToUpload.length === 0) {
+      setError(language === 'th' ? 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์' : 'Please select at least one file');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    
+    // Update state for UI display
+    setSelectedFiles(filesToUpload);
     
     // Generate unique request ID for tracking
     const requestId = generateRequestId();
@@ -847,16 +857,10 @@ function UploadScanPageContent() {
       return;
     }
 
-    if (selectedFiles.length === 0) {
-      setError(language === 'th' ? 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์' : 'Please select at least one file');
-      setTimeout(() => setError(null), 3000);
-      return;
-    }
-
     haptic.medium();
 
     // MULTI-FILE MODE: Upload ALL files as ONE lease (pages of the same document)
-    if (selectedFiles.length > 1) {
+    if (filesToUpload.length > 1) {
       setUploading(true);
       setAnalyzing(false);
       setError(null);
@@ -869,11 +873,11 @@ function UploadScanPageContent() {
         // Upload all files first
         const uploadedUrls = [];
         
-        for (let i = 0; i < selectedFiles.length; i++) {
-          const file = selectedFiles[i];
+        for (let i = 0; i < filesToUpload.length; i++) {
+          const file = filesToUpload[i];
           
-          setAnalysisStage(language === 'th' ? `กำลังอัปโหลดหน้า ${i + 1}/${selectedFiles.length}` : `Uploading page ${i + 1}/${selectedFiles.length}`);
-          setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 30));
+          setAnalysisStage(language === 'th' ? `กำลังอัปโหลดหน้า ${i + 1}/${filesToUpload.length}` : `Uploading page ${i + 1}/${filesToUpload.length}`);
+          setUploadProgress(Math.round(((i + 1) / filesToUpload.length) * 30));
 
           console.log('UPLOAD_START', { filename: file?.name, size: file?.size });
           const uploadResp = await base44.integrations.Core.UploadFile({ file });
@@ -894,7 +898,7 @@ function UploadScanPageContent() {
 
         // Create ONE lease with all file URLs
         // Extract original filename from first file
-        const originalFilename = selectedFiles[0]?.name || 'Lease Document';
+        const originalFilename = filesToUpload[0]?.name || 'Lease Document';
 
         const lease = await base44.entities.Lease.create({
           file_url: uploadedUrls[0], // Primary file
@@ -1117,8 +1121,8 @@ function UploadScanPageContent() {
 
         // STEP 1: Normalize files (critical for Google Drive PDFs on Android)
         logStage('FILE_NORMALIZATION_START', {
-          filesCount: selectedFiles.length,
-          fileDetails: selectedFiles.map(f => ({
+          filesCount: filesToUpload.length,
+          fileDetails: filesToUpload.map(f => ({
             name: f.name,
             size: f.size,
             type: f.type,
@@ -1126,7 +1130,7 @@ function UploadScanPageContent() {
           }))
         });
 
-        const normalizedResults = await normalizeFiles(selectedFiles, requestId);
+        const normalizedResults = await normalizeFiles(filesToUpload, requestId);
         
         const failedFiles = normalizedResults.filter(r => !r.success);
         if (failedFiles.length > 0) {
@@ -1229,7 +1233,7 @@ function UploadScanPageContent() {
         setUploadProgress(40);
 
         // Extract original filename from first file
-        const originalFilename = normalizedFiles[0]?.name || selectedFiles[0]?.name || 'Lease Document';
+        const originalFilename = normalizedFiles[0]?.name || filesToUpload[0]?.name || 'Lease Document';
         
         const lease = await base44.entities.Lease.create({
           file_url: fileUrls[0],
@@ -1490,8 +1494,8 @@ function UploadScanPageContent() {
       return;
     }
     
-    // If already accepted, proceed directly
-    proceedWithUpload();
+    // If already accepted, proceed directly with the files
+    proceedWithUpload(filesToUse);
   };
 
   const handleConfirmLeaseDetails = async () => {
@@ -2757,7 +2761,7 @@ function UploadScanPageContent() {
                   {strings.disclaimerCancel}
                 </Button>
                 <Button
-                  onClick={handleAcceptDisclaimerAndProceed}
+                  onClick={() => handleAcceptDisclaimerAndProceed(selectedFiles)}
                   disabled={!disclaimerCheckboxTicked}
                   className="flex-1"
                   style={{
