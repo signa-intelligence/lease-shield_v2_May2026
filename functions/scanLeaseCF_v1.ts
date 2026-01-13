@@ -1,3 +1,6 @@
+// PRODUCTION CODE - DO NOT MODIFY WITHOUT EXPLICIT APPROVAL
+// Last verified working: 2026-01-13
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
