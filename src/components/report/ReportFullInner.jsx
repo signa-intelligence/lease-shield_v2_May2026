@@ -36,7 +36,7 @@ function defaultRecsFor(category, riskLevel) {
   
   const defaults = {
     critical: [
-      "Use LeaseShield's negotiation letter templates to address this clause",
+      "Use Lease Shield's negotiation letter templates to address this clause",
       "Draft a negotiation request using our Letter Templates",
       "Document all communications about this clause in writing"
     ],
@@ -1304,30 +1304,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               </div>
             </div>
 
-            {/* Top risks */}
-            {topRisks.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-bold mb-2" style={{ color: colors.textPrimary }}>Top Risks</h3>
-                <div className="grid gap-3">
-                  {topRisks.map((r, idx) => (
-                    <div key={idx} className="p-4 rounded-lg border" style={{ borderColor: colors.borderColor }}>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="font-semibold" style={{ color: colors.textPrimary }}>{r.title}</div>
-                        <span className="text-xs px-2 py-1 rounded-full" style={{
-                          backgroundColor: ({ low:'#E0F2FE', med:'#FEF3C7', high:'#FEE2E2', critical:'#FECACA' }[r.severity] || '#E5E7EB'),
-                          color: ({ low:'#0369A1', med:'#92400E', high:'#B91C1C', critical:'#991B1B' }[r.severity] || colors.textSecondary)
-                        }}>{r.severity}</span>
-                      </div>
-                      <div className="text-sm" style={{ color: colors.textSecondary }}>
-                        {r.why}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Document Templates Link - Moved after next steps */}
+            {/* Document Templates Link */}
             <div className="mb-6 p-4 rounded-lg border" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
               <div className="flex items-center justify-between">
                 <div>

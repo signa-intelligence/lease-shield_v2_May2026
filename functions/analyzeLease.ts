@@ -223,10 +223,10 @@ For EACH clause found, return:
 
 RECOMMENDATION GUIDELINES - CRITICAL:
 - NEVER suggest "seek legal advice", "consult a lawyer", or "legal consultation"
-- ALWAYS direct users to LeaseShield's Letter Templates for negotiation
-- For CRITICAL/HIGH risks: "Use LeaseShield's negotiation letter templates to address this clause"
+- ALWAYS direct users to Lease Shield's Letter Templates for negotiation
+- For CRITICAL/HIGH risks: "Use Lease Shield's negotiation letter templates to address this clause"
 - For actionable steps: "Draft a negotiation request using our Letter Templates"
-- Focus on negotiation strategies, documentation, and using LeaseShield tools
+- Focus on negotiation strategies, documentation, and using Lease Shield tools
 - Only mention lawyers in the context of escalation if negotiation completely fails
 
 RISK LEVEL GUIDELINES:

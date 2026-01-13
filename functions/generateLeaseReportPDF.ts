@@ -128,7 +128,7 @@ function parseRecommendations(recString, riskLevel) {
   // Default recommendations by risk level
   const defaults = {
     critical: [
-      "Use LeaseShield's negotiation letter templates to address this clause",
+      "Use Lease Shield's negotiation letter templates to address this clause",
       "Draft a negotiation request using our Letter Templates",
       "Document all communications about this clause in writing"
     ],
@@ -197,7 +197,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
     if (topRisks && topRisks.length > 0) {
       summary += topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ') + '. ';
     }
-    summary += `\n\nRECOMMENDATION: Do NOT sign this lease in its current form. Use LeaseShield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
+    summary += `\n\nRECOMMENDATION: Do NOT sign this lease in its current form. Use Lease Shield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
   } else if (score >= 40) {
     summary = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
     summary += `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. `;
@@ -830,12 +830,12 @@ Deno.serve(async (req) => {
       propertyIdentifier = scanId.substring(0, 8);
     }
     
-    const filename = `LeaseShield_Report_${propertyIdentifier}_${today}.pdf`;
+    const filename = `Lease_Shield_Report_${propertyIdentifier}_${today}.pdf`;
     
     const pdfFile = new File([pdfBytes], filename, { type: "application/pdf" });
     const upload = await svc.integrations.Core.UploadFile({ file: pdfFile });
 
-    return json(200, debug ? { ok: true, pdf_url: upload.file_url, correlationId, debug_trace: debugTrace } : { success: true, pdf_url: upload.file_url, correlationId }, headers);
+    return json(200, debug ? { ok: true, pdf_url: upload.file_url, filename, correlationId, debug_trace: debugTrace } : { success: true, pdf_url: upload.file_url, filename, correlationId }, headers);
   } catch (e) {
     console.error("[PDF_ERROR]", correlationId, e?.message || e, e?.stack);
     return json(500, { error: "PDF_FAILED", message: String(e?.message || "PDF generation failed"), correlationId }, headers);
