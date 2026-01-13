@@ -128,13 +128,13 @@ function parseRecommendations(recString, riskLevel) {
   // Default recommendations by risk level
   const defaults = {
     critical: [
-      "Demand removal of this clause before signing",
-      "This clause may be legally unenforceable - seek legal advice",
+      "Use LeaseShield's negotiation letter templates to address this clause",
+      "Draft a negotiation request using our Letter Templates",
       "Document all communications about this clause in writing"
     ],
     high: [
-      "Negotiate removal or significant modification of this clause",
-      "Seek independent legal review before signing",
+      "Negotiate this clause - view our recommended letter templates",
+      "Use our Letter Templates to request modifications",
       "Request written clarification of landlord's interpretation"
     ],
     medium: [

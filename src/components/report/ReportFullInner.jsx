@@ -36,13 +36,13 @@ function defaultRecsFor(category, riskLevel) {
   
   const defaults = {
     critical: [
-      "Demand removal of this clause before signing",
-      "This clause may be legally unenforceable - seek legal advice",
+      "Use LeaseShield's negotiation letter templates to address this clause",
+      "Draft a negotiation request using our Letter Templates",
       "Document all communications about this clause in writing"
     ],
     high: [
-      "Negotiate removal or significant modification of this clause",
-      "Seek independent legal review before signing",
+      "Negotiate this clause - view our recommended letter templates",
+      "Use our Letter Templates to request modifications",
       "Request written clarification of landlord's interpretation"
     ],
     medium: [
@@ -119,10 +119,10 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       
       summary += `ไทม์ไลน์:\n`;
       summary += `• ภายใน 24 ชั่วโมง: ทบทวนข้อวิกฤตและข้อเสี่ยงสูงทั้งหมด\n`;
-      summary += `• ภายใน 48 ชั่วโมง: ปรึกษาทนายความและเตรียมข้อเสนอการแก้ไข\n`;
+      summary += `• ภายใน 48 ชั่วโมง: ใช้ Letter Templates เพื่อร่างข้อเสนอการแก้ไข\n`;
       summary += `• ภายใน 72 ชั่วโมง: นัดหมายเจรจากับเจ้าของบ้านหรือพิจารณาทางเลือกอื่น\n\n`;
       
-      summary += `⚠️ คำแนะนำสำคัญ: อย่าลงนามในสัญญานี้ในรูปแบบปัจจุบัน เจรจาแก้ไขข้อที่มีความเสี่ยงสูงและพิจารณาขอคำปรึกษาทางกฎหมาย`;
+      summary += `⚠️ คำแนะนำสำคัญ: อย่าลงนามในสัญญานี้ในรูปแบบปัจจุบัน ใช้ Letter Templates ของเราเพื่อเจรจาแก้ไขข้อที่มีความเสี่ยงสูง`;
     } else {
       summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
       summary += `This lease agreement is exceptionally HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
@@ -146,10 +146,10 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       
       summary += `Timeline Recommendations:\n`;
       summary += `• Within 24 hours: Review all critical and high-risk clauses in detail\n`;
-      summary += `• Within 48 hours: Consult legal counsel and prepare amendment proposals\n`;
+      summary += `• Within 48 hours: Use our Letter Templates to draft negotiation proposals\n`;
       summary += `• Within 72 hours: Schedule negotiation meeting with landlord or consider alternatives\n\n`;
       
-      summary += `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Negotiate removal or modification of high-risk clauses, and seek independent legal advice before proceeding.`;
+      summary += `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Use LeaseShield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
     }
   } else if (score >= 40) {
     if (isThaiLang) {
