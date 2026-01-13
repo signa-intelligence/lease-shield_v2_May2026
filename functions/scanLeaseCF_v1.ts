@@ -124,44 +124,22 @@ Deno.serve(async (req) => {
       risk_score: scanFull.risk_score
     });
 
-    // NUCLEAR OPTION: Delete and recreate the scan record
+    // Update the existing scan record
     const svc = base44.asServiceRole || base44;
     
     try {
-      console.log('SCAN_CF_V1_DELETING_OLD_SCAN', { scanId: targetScan.id });
+      console.log('SCAN_CF_V1_UPDATING_SCAN', { scanId: targetScan.id });
       
-      // Delete the old scan record
-      await svc.entities.LeaseScan.delete(targetScan.id);
-      
-      console.log('SCAN_CF_V1_OLD_SCAN_DELETED');
-      
-      // Create a brand new scan with the correct data
-      const newScan = await svc.entities.LeaseScan.create({
-        id: targetScan.id,  // Keep the same ID so frontend URLs still work
-        lease_id: leaseId,
+      await svc.entities.LeaseScan.update(targetScan.id, {
         scan_full: scanFull,
         risk_score: scanFull.risk_score || 0,
+        summary: scanFull.summary?.executive_summary || "Lease analysis complete.",
         status: 'completed'
       });
       
-      const newScanId = newScan.id;
-      
-      console.log('SCAN_CF_V1_NEW_SCAN_CREATED', { 
-        oldScanId: targetScan.id,
-        newScanId: newScanId,
+      console.log('SCAN_CF_V1_SCAN_UPDATED', { 
+        scanId: targetScan.id,
         clausesCount: scanFull.clauses?.length || 0
-      });
-      
-      // Verify the NEW scan (not the old one)
-      const verifyScans = await svc.entities.LeaseScan.filter({ id: newScanId });
-      const verifyData = verifyScans[0]?.scan_full;
-      
-      console.log('SCAN_CF_V1_VERIFY_NEW_SCAN', {
-        scanId: newScanId,
-        found: verifyScans.length > 0,
-        verify_has_clauses: !!verifyData?.clauses,
-        verify_clauses_count: verifyData?.clauses?.length || 0,
-        verify_keys: verifyData ? Object.keys(verifyData) : []
       });
       
     } catch (dbError) {
