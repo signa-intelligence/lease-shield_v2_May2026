@@ -136,7 +136,18 @@ Deno.serve(async (req) => {
         summary: scanFull.summary?.executive_summary || "Lease analysis complete.",
         status: 'completed'
       });
-      
+       await svc.entities.LeaseScan.update(targetScan.id, {
+        scan_full: scanFull,
+        risk_score: scanFull.risk_score || 0,
+        summary: scanFull.summary?.executive_summary || "Lease analysis complete.",
+        status: 'completed'
+      });
+
+      // Verify the scan exists
+      const verifiedScan = await svc.entities.LeaseScan.get(targetScan.id);
+      if (!verifiedScan) {
+        throw new Error('Scan update succeeded but record not found');
+      }
       console.log('SCAN_CF_V1_SCAN_UPDATED', { 
         scanId: targetScan.id,
         clausesCount: scanFull.clauses?.length || 0
