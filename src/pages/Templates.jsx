@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, ShoppingCart, Eye, Loader2, CheckSquare, Mail, AlertTriangle, Clipboard, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, ShoppingCart, Eye, Loader2, CheckSquare, Mail, AlertTriangle, Clipboard, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import { haptic } from "../components/shared/HapticFeedback";
@@ -332,9 +332,31 @@ function TemplatesContent() {
     );
   }
 
+  // Check for return URL in sessionStorage
+  const returnUrl = typeof window !== 'undefined' ? sessionStorage.getItem('reportReturnUrl') : null;
+
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg, paddingBottom: '100px' }}>
       <div className="max-w-6xl mx-auto">
+        {/* Back to Report Button */}
+        {returnUrl && (
+          <div className="mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                haptic.light();
+                sessionStorage.removeItem('reportReturnUrl');
+                window.location.href = returnUrl;
+              }}
+              className="flex items-center gap-2"
+              style={{ color: colors.textPrimary }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {language === 'th' ? '← กลับไปที่รายงาน' : language === 'ru' ? '← Вернуться к отчету' : '← Back to Report'}
+            </Button>
+          </div>
+        )}
+        
         <PageHeader
           title={strings.title}
           subtitle={strings.subtitle}

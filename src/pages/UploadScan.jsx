@@ -2612,11 +2612,11 @@ function UploadScanPageContent() {
                   haptic.medium();
                   setShowDocumentModal(false);
                   
-                  // Navigate to document viewer page for multi-page, or open single page
+                  // Open document in new tab
                   if (documentToView?.file_urls && documentToView.file_urls.length > 1) {
                     navigate(createPageUrl("LeaseViewer") + `?leaseId=${documentToView.id}`);
                   } else {
-                    window.open(documentToView?.file_url, '_blank');
+                    window.open(documentToView?.file_url, '_blank', 'noopener,noreferrer');
                   }
                 }}
                 className="w-full py-4"
@@ -2861,7 +2861,13 @@ function UploadScanPageContent() {
                         type="file"
                         multiple
                         accept=".pdf,.png,.jpg,.jpeg,image/*,application/pdf,image/png,image/jpeg"
-                        onChange={handleFileSelect}
+                        onChange={(e) => {
+                          handleFileSelect(e);
+                          // Auto-trigger upload after file selection
+                          if (e.target.files && e.target.files.length > 0 && scanStatus.allowed) {
+                            setTimeout(() => handleUploadAll(), 100);
+                          }
+                        }}
                         className="hidden"
                         disabled={!scanStatus.allowed}
                       />
@@ -2872,8 +2878,8 @@ function UploadScanPageContent() {
                           color: '#FFFFFF'
                         }}
                       >
-                        <FileText className="w-5 h-5" />
-                        {strings.browseDocuments}
+                        <Upload className="w-5 h-5" />
+                        {language === 'th' ? 'อัปโหลดและสแกน' : language === 'ru' ? 'Загрузить и сканировать' : 'Upload & Scan'}
                       </span>
                     </label>
                   </div>
@@ -2912,34 +2918,6 @@ function UploadScanPageContent() {
                         </div>
                       ))}
                     </div>
-                    <button
-                      onClick={() => {
-                        haptic.medium();
-                        handleUploadAll();
-                      }}
-                      disabled={uploading || !scanStatus.allowed}
-                      className={`w-full mt-4 py-4 rounded-lg font-bold ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      style={{
-                        backgroundColor: '#0C3B2E',
-                        color: '#FFFFFF',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '10px',
-                        minHeight: '56px',
-                        fontSize: '16px',
-                        padding: '12px 24px'
-                      }}
-                    >
-                      <Upload className="w-5 h-5 flex-shrink-0" />
-                      <span style={{ 
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}>
-                        {language === 'th' ? 'อัปโหลดและสแกน' : language === 'ru' ? 'Загрузить и сканировать' : 'Upload & Scan'}
-                      </span>
-                    </button>
                   </div>
                 )}
               </>

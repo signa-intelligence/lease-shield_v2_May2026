@@ -91,16 +91,13 @@ function parseRecommendations(recString, riskLevel, category) {
   return recs.slice(0, 3);
 }
 
-// Build detailed executive summary
+// Build detailed executive summary with next steps and timeline
 function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, language) {
   const score = riskScore || 0;
   const riskyClausesCount = (clauses || []).filter(c => c.risk_level && c.risk_level !== 'none').length;
   const criticalCount = (clauses || []).filter(c => c.risk_level === 'critical').length;
   const highCount = (clauses || []).filter(c => c.risk_level === 'high').length;
-  
-  if (existingSummary && existingSummary.length > 100) {
-    return existingSummary;
-  }
+  const mediumCount = (clauses || []).filter(c => c.risk_level === 'medium').length;
   
   const isThaiLang = language === 'th';
   let summary = '';
@@ -111,7 +108,21 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       summary += `สัญญาเช่านี้มีความเสี่ยงสูงและมี ${riskyClausesCount} ข้อที่ต้องพิจารณาอย่างรอบคอบก่อนลงนาม `;
       if (criticalCount > 0) summary += `${criticalCount} ข้อถูกจัดอันดับเป็นความเสี่ยงวิกฤตและอาจมีปัญหาทางกฎหมาย `;
       if (highCount > 0) summary += `${highCount} ข้อถูกจัดอันดับเป็นความเสี่ยงสูงและอาจส่งผลกระทบต่อสิทธิของคุณ `;
-      summary += `\n\nคำแนะนำ: อย่าลงนามในสัญญานี้ในรูปแบบปัจจุบัน เจรจาแก้ไขข้อที่มีความเสี่ยงสูงและพิจารณาขอคำปรึกษาทางกฎหมาย`;
+      
+      summary += `\n\nการวิเคราะห์โดยละเอียด:\nสัญญานี้มีข้อกำหนดหลายข้อที่เอื้อประโยชน์ต่อเจ้าของบ้านอย่างชัดเจน โดยลดการปกป้องสิทธิพื้นฐานของผู้เช่า ข้อวิกฤตอาจรวมถึงข้อจำกัดการใช้ทรัพย์สิน เงื่อนไขการคืนเงินมัดจำที่เข้มงวด หรือการระงับข้อพิพาทที่ไม่เป็นธรรม ข้อเหล่านี้อาจไม่สอดคล้องกับกฎหมายคุ้มครองผู้บริโภคหรือหลักความยุติธรรมพื้นฐาน\n\n`;
+      
+      summary += `ขั้นตอนถัดไปที่แนะนำ:\n`;
+      summary += `1. ระบุข้อที่มีปัญหาทั้งหมดและบันทึกหลักฐานไว้\n`;
+      summary += `2. ติดต่อทนายความเพื่อตรวจสอบข้อสัญญาก่อนลงนาม\n`;
+      summary += `3. เตรียมเอกสารเพื่อเจรจาแก้ไขข้อที่มีความเสี่ยงสูง\n`;
+      summary += `4. พิจารณาหาทรัพย์สินทางเลือกหากเจ้าของบ้านไม่ยอมแก้ไข\n\n`;
+      
+      summary += `ไทม์ไลน์:\n`;
+      summary += `• ภายใน 24 ชั่วโมง: ทบทวนข้อวิกฤตและข้อเสี่ยงสูงทั้งหมด\n`;
+      summary += `• ภายใน 48 ชั่วโมง: ปรึกษาทนายความและเตรียมข้อเสนอการแก้ไข\n`;
+      summary += `• ภายใน 72 ชั่วโมง: นัดหมายเจรจากับเจ้าของบ้านหรือพิจารณาทางเลือกอื่น\n\n`;
+      
+      summary += `⚠️ คำแนะนำสำคัญ: อย่าลงนามในสัญญานี้ในรูปแบบปัจจุบัน เจรจาแก้ไขข้อที่มีความเสี่ยงสูงและพิจารณาขอคำปรึกษาทางกฎหมาย`;
     } else {
       summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
       summary += `This lease agreement is exceptionally HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
@@ -124,13 +135,42 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       if (topRisks && topRisks.length > 0) {
         summary += `\n\nKey concerns include: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
       }
-      summary += `\n\n⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. This document appears designed to be tenant-unfavorable. Negotiate removal or modification of high-risk clauses, and seek independent legal advice before proceeding.`;
+      
+      summary += `\n\nDetailed Analysis:\nThis lease contains several provisions that significantly favor the landlord, reducing fundamental tenant protections. Critical issues may include excessive property use restrictions, harsh deposit return conditions, or unfair dispute resolution clauses. These terms may not align with consumer protection laws or basic fairness principles.\n\n`;
+      
+      summary += `Recommended Next Steps:\n`;
+      summary += `1. Identify all problematic clauses and document your concerns\n`;
+      summary += `2. Consult with a qualified attorney before signing\n`;
+      summary += `3. Prepare documentation to negotiate modifications to high-risk clauses\n`;
+      summary += `4. Consider alternative properties if landlord refuses to negotiate\n\n`;
+      
+      summary += `Timeline Recommendations:\n`;
+      summary += `• Within 24 hours: Review all critical and high-risk clauses in detail\n`;
+      summary += `• Within 48 hours: Consult legal counsel and prepare amendment proposals\n`;
+      summary += `• Within 72 hours: Schedule negotiation meeting with landlord or consider alternatives\n\n`;
+      
+      summary += `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Negotiate removal or modification of high-risk clauses, and seek independent legal advice before proceeding.`;
     }
   } else if (score >= 40) {
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงปานกลาง (คะแนน: ${score}/100)\n\n`;
       summary += `สัญญาเช่านี้มี ${riskyClausesCount} ข้อที่ควรตรวจสอบและอาจต้องเจรจา `;
-      summary += `\n\nคำแนะนำ: ตรวจสอบข้อที่ถูกทำเครื่องหมายอย่างละเอียดและพิจารณาเจรจาแก้ไขก่อนลงนาม`;
+      summary += `แม้ว่าจะไม่ถึงกับอันตรายในทันที แต่บางข้อกำหนดอาจส่งผลกระทบต่อสิทธิของคุณระหว่างการเช่า `;
+      
+      summary += `\n\nการวิเคราะห์เพิ่มเติม:\nสัญญานี้มีความสมดุลในระดับหนึ่ง แต่มีข้อที่อาจก่อให้เกิดปัญหาในอนาคต โดยเฉพาะในเรื่องการบำรุงรักษา ค่าธรรมเนียมเพิ่มเติม หรือเงื่อนไขการยกเลิกสัญญา การทำความเข้าใจข้อเหล่านี้อย่างละเอียดจะช่วยป้องกันข้อขัดแย้งในภายหลัง\n\n`;
+      
+      summary += `ขั้นตอนถัดไปที่แนะนำ:\n`;
+      summary += `1. ทบทวนข้อที่ถูกทำเครื่องหมายทั้งหมดอย่างละเอียด\n`;
+      summary += `2. ขอคำชี้แจงเป็นลายลักษณ์อักษรสำหรับข้อที่ไม่ชัดเจน\n`;
+      summary += `3. พิจารณาเจรจาแก้ไขข้อที่เสี่ยงปานกลางถึงสูง\n`;
+      summary += `4. บันทึกข้อตกลงทางวาจาทั้งหมดเป็นลายลักษณ์อักษร\n\n`;
+      
+      summary += `ไทม์ไลน์:\n`;
+      summary += `• ภายใน 48 ชั่วโมง: ทบทวนข้อที่มีความเสี่ยงปานกลางถึงสูง\n`;
+      summary += `• ภายใน 72 ชั่วโมง: ขอคำชี้แจงจากเจ้าของบ้านเป็นลายลักษณ์อักษร\n`;
+      summary += `• ก่อนลงนาม: ทำข้อตกลงเป็นลายลักษณ์อักษรและบันทึกไว้\n\n`;
+      
+      summary += `คำแนะนำ: ตรวจสอบข้อที่ถูกทำเครื่องหมายอย่างละเอียดและพิจารณาเจรจาแก้ไขก่อนลงนาม บันทึกข้อตกลงทางวาจาทั้งหมดเป็นลายลักษณ์อักษร`;
     } else {
       summary = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
       summary += `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. `;
@@ -138,18 +178,61 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       if (topRisks && topRisks.length > 0) {
         summary += `\n\nAreas requiring attention: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
       }
-      summary += `\n\nRECOMMENDATION: Review the flagged clauses carefully and consider negotiating modifications before signing. Document all verbal agreements in writing.`;
+      
+      summary += `\n\nDetailed Analysis:\nThis lease shows moderate balance but includes provisions that may cause future issues, particularly regarding maintenance responsibilities, additional fees, or termination conditions. Understanding these clauses thoroughly will help prevent disputes later in the tenancy.\n\n`;
+      
+      summary += `Recommended Next Steps:\n`;
+      summary += `1. Review all flagged clauses in detail\n`;
+      summary += `2. Request written clarification for any unclear terms\n`;
+      summary += `3. Consider negotiating modifications to medium and high-risk clauses\n`;
+      summary += `4. Document all verbal agreements in writing\n\n`;
+      
+      summary += `Timeline Recommendations:\n`;
+      summary += `• Within 48 hours: Review all medium and high-risk clauses\n`;
+      summary += `• Within 72 hours: Request written clarifications from landlord\n`;
+      summary += `• Before signing: Ensure all agreements are documented in writing\n\n`;
+      
+      summary += `RECOMMENDATION: Review the flagged clauses carefully and consider negotiating modifications before signing. Document all verbal agreements in writing.`;
     }
   } else {
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงต่ำ (คะแนน: ${score}/100)\n\n`;
       summary += `สัญญาเช่านี้ค่อนข้างสมดุลโดยมี ${riskyClausesCount || 'ไม่กี่'} ข้อที่ต้องให้ความสนใจ `;
-      summary += `\n\nคำแนะนำ: ตรวจสอบทุกข้อเพื่อให้แน่ใจว่าคุณเข้าใจภาระผูกพันของคุณ`;
+      summary += `ข้อกำหนดโดยทั่วไปเป็นมาตรฐานสำหรับสัญญาเช่า `;
+      
+      summary += `\n\nการวิเคราะห์เพิ่มเติม:\nสัญญานี้แสดงให้เห็นถึงความสมดุลที่ดีระหว่างสิทธิของผู้เช่าและเจ้าของบ้าน ข้อกำหนดส่วนใหญ่เป็นไปตามแนวทางปฏิบัติมาตรฐานในอุตสาหกรรม อย่างไรก็ตาม ยังคงสำคัญที่จะต้องทำความเข้าใจภาระผูกพันของคุณอย่างครบถ้วน\n\n`;
+      
+      summary += `ขั้นตอนถัดไปที่แนะนำ:\n`;
+      summary += `1. อ่านสัญญาทั้งหมดอย่างละเอียดเพื่อให้แน่ใจว่าคุณเข้าใจทุกข้อ\n`;
+      summary += `2. บันทึกภาพหรือสำเนาเอกสารทั้งหมดไว้เป็นหลักฐาน\n`;
+      summary += `3. ตรวจสอบสภาพทรัพย์สินและจัดทำรายการตรวจสอบก่อนเข้าอยู่\n`;
+      summary += `4. เก็บบันทึกการสื่อสารทั้งหมดกับเจ้าของบ้านตลอดการเช่า\n\n`;
+      
+      summary += `ไทม์ไลน์:\n`;
+      summary += `• ก่อนลงนาม: อ่านสัญญาทั้งหมดอย่างละเอียด\n`;
+      summary += `• วันเข้าอยู่: ตรวจสอบสภาพและถ่ายรูปทุกห้อง\n`;
+      summary += `• สัปดาห์แรก: ยืนยันรายการตรวจสอบกับเจ้าของบ้าน\n\n`;
+      
+      summary += `คำแนะนำ: ตรวจสอบทุกข้อเพื่อให้แน่ใจว่าคุณเข้าใจภาระผูกพันของคุณ เก็บสำเนาเอกสารทั้งหมดและบันทึกตลอดการเช่า`;
     } else {
       summary = `LOW RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
       summary += `This lease agreement appears to be relatively balanced with ${riskyClausesCount || 'few'} clauses requiring attention. `;
       summary += `The terms are generally standard for rental agreements. `;
-      summary += `\n\nRECOMMENDATION: Review all clauses to ensure you understand your obligations. Keep a copy of all documents and maintain records throughout your tenancy.`;
+      
+      summary += `\n\nDetailed Analysis:\nThis lease demonstrates good balance between tenant and landlord rights. Most terms follow industry-standard practices. However, it remains important to fully understand your obligations and ensure all agreed-upon terms are documented in writing.\n\n`;
+      
+      summary += `Recommended Next Steps:\n`;
+      summary += `1. Read through the entire lease carefully to ensure you understand all terms\n`;
+      summary += `2. Take photos or copies of all documents for your records\n`;
+      summary += `3. Conduct move-in inspection and create detailed condition checklist\n`;
+      summary += `4. Maintain records of all communications with landlord throughout tenancy\n\n`;
+      
+      summary += `Timeline Recommendations:\n`;
+      summary += `• Before signing: Read entire lease thoroughly\n`;
+      summary += `• Move-in day: Document property condition with photos of every room\n`;
+      summary += `• First week: Confirm condition checklist with landlord\n\n`;
+      
+      summary += `RECOMMENDATION: Review all clauses to ensure you understand your obligations. Keep a copy of all documents and maintain records throughout your tenancy.`;
     }
   }
   
@@ -1111,15 +1194,10 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               ) : (
                 <>
                   <Download className="w-4 h-4 mr-2" />
-                  {strings.exportPdf}
+                  {language === 'th' ? 'ส่งออกรายงาน' : 'Export Report'}
                 </>
               )}
             </Button>
-            {adminLike && (
-              <Button variant="outline" onClick={handleExportPdfDebug} disabled={exportingPdf}>
-                Export PDF (Debug)
-              </Button>
-            )}
           </div>
         </div>
 
@@ -1241,7 +1319,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               </div>
             )}
 
-            {/* Document Templates Link */}
+            {/* Document Templates Link - Moved after next steps */}
             <div className="mb-6 p-4 rounded-lg border" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
               <div className="flex items-center justify-between">
                 <div>
@@ -1254,7 +1332,11 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => window.location.href = '/templates'}
+                  onClick={() => {
+                    const currentUrl = window.location.href;
+                    sessionStorage.setItem('reportReturnUrl', currentUrl);
+                    window.location.href = '/templates';
+                  }}
                   style={{ borderColor: '#0C3B2E', color: '#0C3B2E' }}
                 >
                   <FileText className="w-4 h-4 mr-2" />
