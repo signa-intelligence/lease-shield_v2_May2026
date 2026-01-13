@@ -1,32 +1,32 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 import { jsPDF } from "npm:jspdf@2.5.2";
 
-// Severity palette for risk level color coding (inlined)
+// PDF Color System - Match exported PDF design exactly
 const severityPalette = {
   critical: {
-    bg: [254, 242, 242],
-    border: [239, 68, 68],
-    text: [127, 29, 29]
+    bg: [220, 38, 38],      // #DC2626 - Red background
+    border: [220, 38, 38],   
+    text: [255, 255, 255]    // White text
   },
   high: {
-    bg: [255, 247, 237],
-    border: [249, 115, 22],
-    text: [124, 45, 18]
+    bg: [153, 27, 27],       // #991B1B - Dark red/burgundy background
+    border: [153, 27, 27],
+    text: [255, 255, 255]    // White text
   },
   medium: {
-    bg: [254, 252, 232],
+    bg: [245, 158, 11],      // #F59E0B - Amber/orange background
     border: [245, 158, 11],
-    text: [120, 53, 15]
+    text: [26, 29, 31]       // Dark text
   },
   low: {
-    bg: [240, 253, 244],
-    border: [34, 197, 94],
-    text: [20, 83, 45]
+    bg: [59, 130, 246],      // #3B82F6 - Blue background
+    border: [59, 130, 246],
+    text: [255, 255, 255]    // White text
   },
   none: {
-    bg: [249, 250, 251],
-    border: [156, 163, 175],
-    text: [55, 65, 81]
+    bg: [16, 185, 129],      // #10B981 - Green background
+    border: [16, 185, 129],
+    text: [255, 255, 255]    // White text
   }
 };
 
@@ -809,7 +809,24 @@ Deno.serve(async (req) => {
     }
 
     const pdfBytes = doc.output("arraybuffer");
-    const pdfFile = new File([pdfBytes], `LeaseShield-Report-${Date.now()}.pdf`, { type: "application/pdf" });
+    
+    // Generate professional filename
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    let propertyIdentifier = 'Report';
+    
+    if (data.lease_address && data.lease_address !== 'Lease Agreement') {
+      // Clean property address for filename
+      propertyIdentifier = data.lease_address
+        .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special chars
+        .replace(/\s+/g, '_') // Replace spaces with underscores
+        .substring(0, 30); // Limit length
+    } else if (scanId) {
+      propertyIdentifier = scanId.substring(0, 8);
+    }
+    
+    const filename = `LeaseShield_Report_${propertyIdentifier}_${today}.pdf`;
+    
+    const pdfFile = new File([pdfBytes], filename, { type: "application/pdf" });
     const upload = await svc.integrations.Core.UploadFile({ file: pdfFile });
 
     return json(200, debug ? { ok: true, pdf_url: upload.file_url, correlationId, debug_trace: debugTrace } : { success: true, pdf_url: upload.file_url, correlationId }, headers);

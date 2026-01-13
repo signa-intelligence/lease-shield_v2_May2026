@@ -1357,12 +1357,13 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
             
             <div className="space-y-4">
               {clauses.map((c, i) => {
+                // Match PDF color system exactly
                 const riskColors = {
-                  none: { bg: isDarkMode ? '#1F2937' : '#F9FAFB', border: '#D1D5DB', text: '#6B7280' },
-                  low: { bg: isDarkMode ? '#1E3A5F' : '#EFF6FF', border: '#3B82F6', text: '#1D4ED8' },
-                  medium: { bg: isDarkMode ? '#3A2F1C' : '#FFFBEB', border: '#F59E0B', text: '#B45309' },
-                  high: { bg: isDarkMode ? '#3A1F1F' : '#FEF2F2', border: '#EF4444', text: '#B91C1C' },
-                  critical: { bg: isDarkMode ? '#4A1F1F' : '#FEE2E2', border: '#DC2626', text: '#991B1B' }
+                  none: { bg: '#10B981', border: '#10B981', text: '#FFFFFF', badgeText: '✓ BALANCED' },
+                  low: { bg: '#3B82F6', border: '#3B82F6', text: '#FFFFFF', badgeText: 'LOW' },
+                  medium: { bg: '#F59E0B', border: '#F59E0B', text: '#1A1D1F', badgeText: 'MEDIUM' },
+                  high: { bg: '#991B1B', border: '#991B1B', text: '#FFFFFF', badgeText: 'HIGH' },
+                  critical: { bg: '#DC2626', border: '#DC2626', text: '#FFFFFF', badgeText: 'CRITICAL' }
                 };
                 const colorSet = riskColors[c.risk_level] || riskColors.none;
                 
@@ -1375,53 +1376,64 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                       border: `2px solid ${colorSet.border}`,
                     }}
                   >
-                    {/* Header */}
-                    <div className="p-4 flex items-start justify-between gap-3" style={{ borderBottom: `1px solid ${colorSet.border}` }}>
+                    {/* Header with colored background - match PDF */}
+                    <div className="p-4 flex items-start justify-between gap-3" style={{ 
+                      backgroundColor: colorSet.bg,
+                      color: colorSet.text
+                    }}>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-bold">#{i + 1}</span>
                           <span className="text-xs font-bold px-2 py-0.5 rounded" style={{
-                            backgroundColor: colorSet.border,
-                            color: '#FFFFFF'
+                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                            color: colorSet.text
                           }}>
-                            {c.risk_level.toUpperCase()}
+                            {colorSet.badgeText}
                           </span>
-                          <span className="text-xs" style={{ color: colors.textSecondary }}>#{i + 1}</span>
                         </div>
-                        <h4 className="font-bold" style={{ color: colors.textPrimary }}>{c.title}</h4>
+                        <h4 className="font-bold" style={{ color: colorSet.text }}>{c.title}</h4>
                       </div>
                     </div>
                     
                     {/* Plain English Explanation */}
-                    <div className="p-4" style={{ borderBottom: `1px solid ${colorSet.border}` }}>
-                      <div className="text-xs font-semibold mb-1" style={{ color: colorSet.text }}>
+                    <div className="p-4" style={{ 
+                      backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
+                      borderTop: `2px solid ${colorSet.border}`
+                    }}>
+                      <div className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
                         {language === 'th' ? 'ความหมาย' : 'What This Means'}
                       </div>
-                      <p className="text-sm" style={{ color: colors.textPrimary, lineHeight: '1.5' }}>
+                      <p className="text-sm" style={{ color: colors.textPrimary, lineHeight: '1.6' }}>
                         {c.plain_english}
                       </p>
                     </div>
                     
                     {/* 3 Recommendations */}
-                    <div className="p-4">
-                      <div className="text-xs font-semibold mb-2" style={{ color: colorSet.text }}>
-                        {language === 'th' ? 'คำแนะนำ' : 'Recommendations'}
+                    {c.risk_level !== 'none' && (
+                      <div className="p-4" style={{ 
+                        backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
+                        borderTop: `1px solid ${colors.borderColor}`
+                      }}>
+                        <div className="text-xs font-semibold mb-3" style={{ color: colors.textSecondary }}>
+                          {language === 'th' ? 'คำแนะนำ' : 'Recommendations'}
+                        </div>
+                        <ul className="space-y-2">
+                          {c.recommendations.map((rec, recIdx) => (
+                            <li key={recIdx} className="flex items-start gap-2">
+                              <span className="text-xs font-bold mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{
+                                backgroundColor: colorSet.bg,
+                                color: colorSet.text
+                              }}>
+                                {recIdx + 1}
+                              </span>
+                              <span className="text-sm" style={{ color: colors.textPrimary, lineHeight: '1.5' }}>
+                                {rec}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                      <ul className="space-y-2">
-                        {c.recommendations.map((rec, recIdx) => (
-                          <li key={recIdx} className="flex items-start gap-2">
-                            <span className="text-xs font-bold mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{
-                              backgroundColor: colorSet.border,
-                              color: '#FFFFFF'
-                            }}>
-                              {recIdx + 1}
-                            </span>
-                            <span className="text-sm" style={{ color: colors.textPrimary, lineHeight: '1.4' }}>
-                              {rec}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    )}
                   </div>
                 );
               })}
