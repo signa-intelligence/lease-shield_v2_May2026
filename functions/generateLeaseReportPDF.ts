@@ -197,7 +197,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
     if (topRisks && topRisks.length > 0) {
       summary += topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ') + '. ';
     }
-    summary += `\n\nRECOMMENDATION: Do NOT sign this lease in its current form. Negotiate removal or modification of high-risk clauses, and consider seeking independent legal advice before proceeding.`;
+    summary += `\n\nRECOMMENDATION: Do NOT sign this lease in its current form. Use LeaseShield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
   } else if (score >= 40) {
     summary = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
     summary += `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. `;
