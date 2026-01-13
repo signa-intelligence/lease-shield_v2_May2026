@@ -92,6 +92,9 @@ function UploadScanPageContent() {
   const [reviewData, setReviewData] = useState(null);
   const [savingConfirmedData, setSavingConfirmedData] = useState(false);
 
+  // File input ref
+  const fileInputRef = React.useRef(null);
+
   const queryClient = useQueryClient();
 
   // Upload URL validation & preflight helpers
@@ -2873,63 +2876,76 @@ function UploadScanPageContent() {
                         : '⚠️ If selecting from Google Drive on Android fails, download to device first'}
                   </p>
 
+                  {/* Hidden file input */}
+                  <input
+                   ref={fileInputRef}
+                   type="file"
+                   multiple
+                   accept=".pdf,.png,.jpg,.jpeg,image/*,application/pdf,image/png,image/jpeg"
+                   onChange={(e) => {
+                     if (!scanStatus.allowed) return;
+
+                     const files = Array.from(e.target.files || []);
+
+                     if (files.length === 0) return;
+
+                     // Validate file types
+                     const validFiles = [];
+                     const invalidFiles = [];
+
+                     files.forEach(file => {
+                       const ext = file.name.toLowerCase().split('.').pop();
+                       const validExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
+                       const validMimeTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+
+                       if (validExtensions.includes(ext) || validMimeTypes.includes(file.type)) {
+                         validFiles.push(file);
+                       } else {
+                         invalidFiles.push(file.name);
+                       }
+                     });
+
+                     if (invalidFiles.length > 0) {
+                       const errorMsg = language === 'th'
+                         ? `รองรับเฉพาะ PDF, PNG และ JPG\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
+                         : language === 'ru'
+                           ? `Поддерживаются только PDF, PNG и JPG\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
+                           : `Only PDF, PNG, and JPG files are supported.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
+
+                       setError(errorMsg);
+                       setTimeout(() => setError(null), 5000);
+                     }
+
+                     if (validFiles.length > 0) {
+                       // Auto-trigger upload immediately with validated files
+                       handleUploadAll(validFiles);
+                     }
+
+                     // Reset input value to allow selecting the same file again
+                     e.target.value = '';
+                   }}
+                   className="hidden"
+                   disabled={!scanStatus.allowed}
+                  />
+
                   <div className="flex justify-center">
-                   <label className="inline-block">
-                     <input
-                       type="file"
-                       multiple
-                       accept=".pdf,.png,.jpg,.jpeg,image/*,application/pdf,image/png,image/jpeg"
-                       onChange={(e) => {
-                         if (!scanStatus.allowed) return;
-
-                         const files = Array.from(e.target.files || []);
-
-                         // Validate file types
-                         const validFiles = [];
-                         const invalidFiles = [];
-
-                         files.forEach(file => {
-                           const ext = file.name.toLowerCase().split('.').pop();
-                           const validExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
-                           const validMimeTypes = ['application/pdf', 'image/png', 'image/jpeg'];
-
-                           if (validExtensions.includes(ext) || validMimeTypes.includes(file.type)) {
-                             validFiles.push(file);
-                           } else {
-                             invalidFiles.push(file.name);
-                           }
-                         });
-
-                         if (invalidFiles.length > 0) {
-                           const errorMsg = language === 'th'
-                             ? `รองรับเฉพาะ PDF, PNG และ JPG\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
-                             : language === 'ru'
-                               ? `Поддерживаются только PDF, PNG и JPG\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
-                               : `Only PDF, PNG, and JPG files are supported.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
-
-                           setError(errorMsg);
-                           setTimeout(() => setError(null), 5000);
-                         }
-
-                         if (validFiles.length > 0) {
-                           // Auto-trigger upload immediately with validated files
-                           handleUploadAll(validFiles);
-                         }
-                       }}
-                       className="hidden"
-                       disabled={!scanStatus.allowed}
-                     />
-                     <span
-                       className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                       style={{
-                         backgroundColor: '#0C3B2E',
-                         color: '#FFFFFF'
-                       }}
-                     >
-                       <Upload className="w-5 h-5" />
-                       {language === 'th' ? 'อัปโหลดและสแกน' : language === 'ru' ? 'Загрузить и сканировать' : 'Upload & Scan'}
-                     </span>
-                   </label>
+                   <button
+                     onClick={() => {
+                       if (!scanStatus.allowed) return;
+                       haptic.light();
+                       fileInputRef.current?.click();
+                     }}
+                     disabled={!scanStatus.allowed}
+                     className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                     style={{
+                       backgroundColor: '#0C3B2E',
+                       color: '#FFFFFF',
+                       border: 'none'
+                     }}
+                   >
+                     <Upload className="w-5 h-5" />
+                     {language === 'th' ? 'อัปโหลดและสแกน' : language === 'ru' ? 'Загрузить и сканировать' : 'Upload & Scan'}
+                   </button>
                   </div>
                   </div>
               </>
