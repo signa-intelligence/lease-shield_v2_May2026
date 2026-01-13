@@ -179,6 +179,28 @@ Deno.serve(async (req) => {
       clausesCount: clausesArray.length
     });
 
+    // Auto-populate Property Tracker and Timeline from scan data
+    try {
+      console.log('SCAN_CF_V1_AUTO_POPULATE_START', { scanId: targetScan.id, leaseId });
+      
+      const populateResponse = await base44.functions.invoke('populateFromScan', {
+        scanId: targetScan.id,
+        leaseId: leaseId,
+        scan_full: scanFull
+      });
+      
+      console.log('SCAN_CF_V1_AUTO_POPULATE_COMPLETE', {
+        ok: populateResponse?.data?.ok,
+        populated: populateResponse?.data?.populated
+      });
+    } catch (populateError) {
+      // Non-critical - log but don't fail the scan
+      console.error('SCAN_CF_V1_AUTO_POPULATE_FAILED', {
+        error: String(populateError),
+        scanId: targetScan.id
+      });
+    }
+
     return new Response(JSON.stringify({
       ok: true,
       scanId: targetScan.id,
