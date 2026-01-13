@@ -1469,7 +1469,21 @@ function UploadScanPageContent() {
     await attemptUpload();
   };
 
-  const handleUploadAll = async () => {
+  const handleUploadAll = async (filesToUpload = null) => {
+    // Use provided files or fall back to state
+    const filesToUse = filesToUpload || selectedFiles;
+    
+    if (filesToUse.length === 0) {
+      setError(language === 'th' ? 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์' : 'Please select at least one file');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    
+    // Update state with files if provided
+    if (filesToUpload) {
+      setSelectedFiles(filesToUpload);
+    }
+    
     // Check if user needs to see disclaimer first
     if (!user?.scan_disclaimer_accepted) {
       setShowDisclaimerModal(true);
@@ -2862,10 +2876,40 @@ function UploadScanPageContent() {
                        multiple
                        accept=".pdf,.png,.jpg,.jpeg,image/*,application/pdf,image/png,image/jpeg"
                        onChange={(e) => {
-                         handleFileSelect(e);
-                         // Auto-trigger upload after file selection
-                         if (e.target.files && e.target.files.length > 0 && scanStatus.allowed) {
-                           setTimeout(() => handleUploadAll(), 100);
+                         if (!scanStatus.allowed) return;
+
+                         const files = Array.from(e.target.files || []);
+
+                         // Validate file types
+                         const validFiles = [];
+                         const invalidFiles = [];
+
+                         files.forEach(file => {
+                           const ext = file.name.toLowerCase().split('.').pop();
+                           const validExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
+                           const validMimeTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+
+                           if (validExtensions.includes(ext) || validMimeTypes.includes(file.type)) {
+                             validFiles.push(file);
+                           } else {
+                             invalidFiles.push(file.name);
+                           }
+                         });
+
+                         if (invalidFiles.length > 0) {
+                           const errorMsg = language === 'th'
+                             ? `รองรับเฉพาะ PDF, PNG และ JPG\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
+                             : language === 'ru'
+                               ? `Поддерживаются только PDF, PNG и JPG\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
+                               : `Only PDF, PNG, and JPG files are supported.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
+
+                           setError(errorMsg);
+                           setTimeout(() => setError(null), 5000);
+                         }
+
+                         if (validFiles.length > 0) {
+                           // Auto-trigger upload immediately with validated files
+                           handleUploadAll(validFiles);
                          }
                        }}
                        className="hidden"
