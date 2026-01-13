@@ -183,14 +183,13 @@ Deno.serve(async (req) => {
     }
 
     console.log('SCAN_CF_V1_SUCCESS', { 
-      newScanId: newScan.id,
+      scanId: targetScan.id,
       clausesCount: clausesArray.length
     });
 
-    // Return the NEW scan ID (not the old one)
     return new Response(JSON.stringify({
       ok: true,
-      scanId: newScan.id,
+      scanId: targetScan.id,
       leaseId: leaseId,
       scan_full: scanFull
     }), {
