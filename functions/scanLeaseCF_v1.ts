@@ -181,7 +181,15 @@ Deno.serve(async (req) => {
 
     // Auto-populate Property Tracker and Timeline from scan data
     try {
-      console.log('SCAN_CF_V1_AUTO_POPULATE_START', { scanId: targetScan.id, leaseId });
+      console.log('[SCAN_CF_V1_AUTO_POPULATE_START] ========================================', { 
+        scanId: targetScan.id, 
+        leaseId,
+        hasScanFull: !!scanFull,
+        scanFullKeys: Object.keys(scanFull || {}),
+        hasKeyTerms: !!scanFull?.key_terms,
+        keyTermsKeys: Object.keys(scanFull?.key_terms || {}),
+        clausesCount: scanFull?.clauses?.length || 0
+      });
       
       const populateResponse = await base44.functions.invoke('populateFromScan', {
         scanId: targetScan.id,
@@ -189,15 +197,31 @@ Deno.serve(async (req) => {
         scan_full: scanFull
       });
       
-      console.log('SCAN_CF_V1_AUTO_POPULATE_COMPLETE', {
+      console.log('[SCAN_CF_V1_AUTO_POPULATE_RESPONSE]', {
+        responseReceived: !!populateResponse,
+        responseData: populateResponse?.data,
         ok: populateResponse?.data?.ok,
-        populated: populateResponse?.data?.populated
+        populated: populateResponse?.data?.populated,
+        results: populateResponse?.data?.results
       });
+      
+      if (populateResponse?.data?.ok) {
+        console.log('[SCAN_CF_V1_AUTO_POPULATE_SUCCESS] ========================================', {
+          depositCreated: populateResponse.data.populated?.deposit,
+          leaseUpdated: populateResponse.data.populated?.lease,
+          timelineCreated: populateResponse.data.populated?.timeline
+        });
+      } else {
+        console.error('[SCAN_CF_V1_AUTO_POPULATE_RETURNED_NOT_OK]', populateResponse?.data);
+      }
     } catch (populateError) {
       // Non-critical - log but don't fail the scan
-      console.error('SCAN_CF_V1_AUTO_POPULATE_FAILED', {
+      console.error('[SCAN_CF_V1_AUTO_POPULATE_EXCEPTION] ========================================', {
         error: String(populateError),
-        scanId: targetScan.id
+        message: populateError.message,
+        stack: populateError.stack,
+        scanId: targetScan.id,
+        leaseId
       });
     }
 

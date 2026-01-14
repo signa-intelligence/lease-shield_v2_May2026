@@ -68,13 +68,23 @@ function findClauseByName(clauses, names) {
 
 Deno.serve(async (req) => {
   try {
+    console.log('[POPULATE_FUNCTION_INVOKED] ========================================');
+    
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole || base44;
     
     const body = await req.json().catch(() => ({}));
     const { scanId, leaseId, scan_full } = body;
     
+    console.log('[POPULATE_INPUT_PARAMS]', {
+      scanId,
+      leaseId,
+      hasScanFull: !!scan_full,
+      scanFullKeys: scan_full ? Object.keys(scan_full) : []
+    });
+    
     if (!scanId || !leaseId || !scan_full) {
+      console.error('[POPULATE_MISSING_PARAMS]', { scanId, leaseId, hasScanFull: !!scan_full });
       return Response.json({
         ok: false,
         error: 'BAD_REQUEST',
@@ -85,11 +95,13 @@ Deno.serve(async (req) => {
     const clauses = Array.isArray(scan_full.clauses) ? scan_full.clauses : [];
     const keyTerms = scan_full.key_terms || {};
     
-    console.log('[POPULATE_FROM_SCAN]', {
+    console.log('[POPULATE_DATA_AVAILABLE]', {
       scanId,
       leaseId,
       clausesCount: clauses.length,
-      hasKeyTerms: !!keyTerms
+      hasKeyTerms: !!keyTerms,
+      keyTermsKeys: Object.keys(keyTerms),
+      keyTermsValues: keyTerms
     });
     
     // ENHANCED: Extract from key_terms first (most reliable), then from clause text
@@ -107,25 +119,46 @@ Deno.serve(async (req) => {
     
     // Extract DEPOSIT AMOUNT (multi-source)
     let depositAmount = keyTerms.deposit_amount || keyTerms.security_deposit;
+    console.log('[EXTRACTING_DEPOSIT_AMOUNT]', {
+      fromKeyTerms: depositAmount,
+      hasDepositClause: !!findClauseByName(clauses, ['security deposit', 'deposit', 'advance payment', 'เงินมัดจำ'])
+    });
+    
     if (!depositAmount) {
       const depositClause = findClauseByName(clauses, ['security deposit', 'deposit', 'advance payment', 'เงินมัดจำ']);
       if (depositClause) {
+        console.log('[DEPOSIT_CLAUSE_FOUND]', {
+          clauseTitle: depositClause.canonical_name,
+          clauseTextPreview: depositClause.clause_text?.substring(0, 200)
+        });
         const amounts = extractAllNumericValues(depositClause.clause_text);
+        console.log('[EXTRACTED_AMOUNTS]', amounts);
         // Take largest number (likely the deposit amount)
         depositAmount = amounts.length > 0 ? Math.max(...amounts) : null;
+      } else {
+        console.log('[DEPOSIT_CLAUSE_NOT_FOUND]', { availableClauses: clauses.map(c => c.canonical_name) });
       }
     }
+    console.log('[DEPOSIT_AMOUNT_FINAL]', depositAmount);
     
     // Extract RENT AMOUNT (multi-source)
     let rentAmount = keyTerms.rent_amount || keyTerms.monthly_rent;
+    console.log('[EXTRACTING_RENT_AMOUNT]', { fromKeyTerms: rentAmount });
+    
     if (!rentAmount) {
       const rentClause = findClauseByName(clauses, ['rent', 'monthly rent', 'rental payment', 'ค่าเช่า']);
       if (rentClause) {
+        console.log('[RENT_CLAUSE_FOUND]', {
+          clauseTitle: rentClause.canonical_name,
+          clauseTextPreview: rentClause.clause_text?.substring(0, 200)
+        });
         const amounts = extractAllNumericValues(rentClause.clause_text);
+        console.log('[RENT_AMOUNTS_EXTRACTED]', amounts);
         // Take first substantial amount (likely the rent)
         rentAmount = amounts.find(a => a >= 1000) || amounts[0];
       }
     }
+    console.log('[RENT_AMOUNT_FINAL]', rentAmount);
     
     // Extract RENT DUE DAY
     let rentDueDay = keyTerms.rent_due_day;
@@ -139,20 +172,28 @@ Deno.serve(async (req) => {
     // Extract LEASE DATES
     let startDate = keyTerms.start_date || keyTerms.lease_start;
     let endDate = keyTerms.end_date || keyTerms.lease_end;
+    console.log('[EXTRACTING_DATES]', { startFromKeyTerms: startDate, endFromKeyTerms: endDate });
+    
     if (!startDate || !endDate) {
       const termClause = findClauseByName(clauses, ['term of lease', 'lease duration', 'lease period', 'ระยะเวลา']);
       if (termClause) {
+        console.log('[TERM_CLAUSE_FOUND]', {
+          clauseTitle: termClause.canonical_name,
+          clauseTextPreview: termClause.clause_text?.substring(0, 200)
+        });
         const dates = termClause.clause_text.match(/\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/g);
+        console.log('[DATES_EXTRACTED_FROM_TEXT]', dates);
         if (dates && dates.length >= 2) {
           try {
             if (!startDate) startDate = new Date(dates[0]).toISOString().split('T')[0];
             if (!endDate) endDate = new Date(dates[1]).toISOString().split('T')[0];
           } catch (e) {
-            console.log('[EXTRACTION] Date parsing failed:', e.message);
+            console.log('[DATE_PARSING_ERROR]', e.message);
           }
         }
       }
     }
+    console.log('[DATES_FINAL]', { startDate, endDate });
     
     // Extract NOTICE PERIOD
     let noticePeriodDays = keyTerms.notice_period_days;
@@ -177,6 +218,7 @@ Deno.serve(async (req) => {
     
     // Build deposit data with REQUIRED FIELDS
     if (depositAmount) {
+      console.log('[BUILDING_DEPOSIT_DATA] depositAmount found:', depositAmount);
       updates.deposit.deposit_amount = depositAmount;
       updates.deposit.auto_populated = true;
       updates.deposit.source_scan_id = scanId;
@@ -199,6 +241,9 @@ Deno.serve(async (req) => {
         updates.deposit.expected_return_date = returnDate.toISOString().split('T')[0];
         updates.deposit.expected_return_date_is_estimated = true;
       }
+      console.log('[DEPOSIT_DATA_BUILT]', updates.deposit);
+    } else {
+      console.log('[NO_DEPOSIT_AMOUNT_FOUND] Skipping deposit data build');
     }
     
     // Add rent data to deposit record (rent is tracked on DepositTracker)
@@ -239,22 +284,32 @@ Deno.serve(async (req) => {
     }
     
     // Create or update deposit tracker
+    console.log('[CHECKING_DEPOSIT_UPDATE_CONDITIONS]', {
+      hasDepositData: !!updates.deposit,
+      depositKeysCount: Object.keys(updates.deposit || {}).length,
+      depositData: updates.deposit
+    });
+    
     if (updates.deposit && Object.keys(updates.deposit).length > 3) {
       const depositData = {
         ...updates.deposit,
         lease_id: leaseId
       };
       
+      console.log('[DEPOSIT_DATA_PREPARED_FOR_DB]', depositData);
+      
       // Validate required fields before creating
       if (!depositData.deposit_amount || !depositData.deposit_paid_date || !depositData.expected_return_date) {
-        console.log('[POPULATE_DEPOSIT_SKIPPED]', {
+        console.error('[POPULATE_DEPOSIT_SKIPPED]', {
           reason: 'Missing required fields',
           has_amount: !!depositData.deposit_amount,
           has_paid_date: !!depositData.deposit_paid_date,
-          has_return_date: !!depositData.expected_return_date
+          has_return_date: !!depositData.expected_return_date,
+          depositData
         });
       } else {
         if (depositTracker) {
+          console.log('[EXISTING_DEPOSIT_FOUND]', { depositId: depositTracker.id });
           // Update existing - only populate empty fields
           const updateData = {};
           Object.keys(depositData).forEach(key => {
@@ -264,26 +319,52 @@ Deno.serve(async (req) => {
           });
           
           if (Object.keys(updateData).length > 0) {
-            console.log('[POPULATE_DEPOSIT_UPDATE]', { depositId: depositTracker.id, fields: Object.keys(updateData) });
-            results.deposit = await svc.entities.DepositTracker.update(depositTracker.id, updateData);
+            console.log('[UPDATING_DEPOSIT_RECORD]', { depositId: depositTracker.id, updateData });
+            try {
+              results.deposit = await svc.entities.DepositTracker.update(depositTracker.id, updateData);
+              console.log('[DEPOSIT_UPDATE_SUCCESS]', { depositId: depositTracker.id });
+            } catch (updateErr) {
+              console.error('[DEPOSIT_UPDATE_FAILED]', { error: updateErr.message, stack: updateErr.stack });
+              throw updateErr;
+            }
           }
         } else {
-          // Create new
-          console.log('[POPULATE_DEPOSIT_CREATE]', { 
-            depositAmount: depositData.deposit_amount,
-            rentAmount: depositData.rent_amount,
-            hasRentDueDay: !!depositData.rent_due_day
-          });
-          results.deposit = await svc.entities.DepositTracker.create(depositData);
+          console.log('[CREATING_NEW_DEPOSIT_RECORD]', depositData);
+          try {
+            results.deposit = await svc.entities.DepositTracker.create(depositData);
+            console.log('[DEPOSIT_CREATE_SUCCESS]', { depositId: results.deposit?.id, createdData: results.deposit });
+          } catch (createErr) {
+            console.error('[DEPOSIT_CREATE_FAILED]', { error: createErr.message, stack: createErr.stack, depositData });
+            throw createErr;
+          }
         }
       }
+    } else {
+      console.log('[DEPOSIT_UPDATE_SKIPPED]', {
+        reason: 'Insufficient deposit data',
+        keysCount: Object.keys(updates.deposit || {}).length,
+        depositData: updates.deposit
+      });
     }
     
     // Update lease record
+    console.log('[CHECKING_LEASE_UPDATE_CONDITIONS]', {
+      hasLeaseData: !!updates.lease,
+      leaseKeysCount: Object.keys(updates.lease || {}).length,
+      leaseData: updates.lease
+    });
+    
     if (updates.lease && Object.keys(updates.lease).length > 0) {
+      console.log('[FETCHING_EXISTING_LEASE]', { leaseId });
       const existingLease = await svc.entities.Lease.filter({ id: leaseId });
       if (existingLease && existingLease.length > 0) {
         const lease = existingLease[0];
+        console.log('[EXISTING_LEASE_FOUND]', {
+          leaseId: lease.id,
+          hasStartDate: !!lease.start_date,
+          hasEndDate: !!lease.end_date,
+          hasNoticeDeadline: !!lease.notice_deadline
+        });
         
         // Only populate empty fields
         const updateData = {};
@@ -293,10 +374,25 @@ Deno.serve(async (req) => {
           }
         });
         
+        console.log('[LEASE_UPDATE_DATA]', updateData);
+        
         if (Object.keys(updateData).length > 0) {
-          results.lease = await svc.entities.Lease.update(leaseId, updateData);
+          console.log('[UPDATING_LEASE_RECORD]', { leaseId, updateData });
+          try {
+            results.lease = await svc.entities.Lease.update(leaseId, updateData);
+            console.log('[LEASE_UPDATE_SUCCESS]', { leaseId });
+          } catch (leaseErr) {
+            console.error('[LEASE_UPDATE_FAILED]', { error: leaseErr.message, stack: leaseErr.stack });
+            throw leaseErr;
+          }
+        } else {
+          console.log('[LEASE_UPDATE_SKIPPED]', { reason: 'No empty fields to update' });
         }
+      } else {
+        console.error('[LEASE_NOT_FOUND]', { leaseId });
       }
+    } else {
+      console.log('[LEASE_UPDATE_SKIPPED]', { reason: 'No lease data to update' });
     }
     
     // Create timeline events
@@ -309,12 +405,14 @@ Deno.serve(async (req) => {
       results.timeline = timelineResponse.data;
     }
     
-    console.log('[POPULATE_FROM_SCAN_SUCCESS]', {
+    console.log('[POPULATE_FROM_SCAN_SUCCESS] ========================================', {
       scanId,
       leaseId,
       depositCreated: !!results.deposit,
+      depositId: results.deposit?.id,
       leaseUpdated: !!results.lease,
-      timelineCreated: !!results.timeline
+      timelineCreated: !!results.timeline,
+      finalResults: results
     });
     
     return Response.json({
