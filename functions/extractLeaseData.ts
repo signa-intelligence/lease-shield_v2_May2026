@@ -51,24 +51,81 @@ Deno.serve(async (req) => {
           }
         }
         
-        // Find rent
-        if (!rentAmount && name.includes('Rent')) {
-          const match = text.match(/(?:THB|฿)\s*([\d,]+)/);
-          if (match) {
-            rentAmount = parseInt(match[1].replace(/,/g, ''));
+        // Find rent - check multiple clause names
+        if (!rentAmount && (name.includes('Rent') || name.toLowerCase().includes('monthly'))) {
+          // Try multiple patterns for rent amount
+          const rentPatterns = [
+            /monthly rent[:\s]+(?:THB|฿)\s*([\d,]+)/i,
+            /rent[:\s]+(?:THB|฿)\s*([\d,]+)/i,
+            /(?:THB|฿)\s*([\d,]+)\s*per month/i,
+          ];
+          
+          for (const pattern of rentPatterns) {
+            const match = text.match(pattern);
+            if (match) {
+              rentAmount = parseInt(match[1].replace(/,/g, ''));
+              console.log('[EXTRACT_RENT_FOUND]', { raw: match[0], amount: rentAmount });
+              break;
+            }
           }
         }
         
-        // Find dates
-        if (name.includes('Term') || name.includes('Duration')) {
-          // Look for "12 months" or "one year"
-          const monthMatch = text.match(/(\d+)\s*months?/i);
-          if (monthMatch) {
-            const months = parseInt(monthMatch[1]);
-            startDate = new Date().toISOString().split('T')[0];
-            const end = new Date();
-            end.setMonth(end.getMonth() + months);
-            endDate = end.toISOString().split('T')[0];
+        // Find dates - look for explicit dates in Term of Lease clause
+        if (!startDate && (name.includes('Term') || name.includes('Duration') || name.includes('Lease'))) {
+          console.log('[EXTRACT_CHECKING_DATES_CLAUSE]', { name, text: text.substring(0, 200) });
+          
+          // Try to find explicit dates first (e.g., "1 February 2026", "31 January 2027")
+          const datePatterns = [
+            /commencement date[:\s]+(\d{1,2})\s+(\w+)\s+(\d{4})/i,
+            /start date[:\s]+(\d{1,2})\s+(\w+)\s+(\d{4})/i,
+            /expiration date[:\s]+(\d{1,2})\s+(\w+)\s+(\d{4})/i,
+            /end date[:\s]+(\d{1,2})\s+(\w+)\s+(\d{4})/i,
+          ];
+          
+          let foundStart = null;
+          let foundEnd = null;
+          
+          // Check commencement/start date
+          for (const pattern of [datePatterns[0], datePatterns[1]]) {
+            const match = text.match(pattern);
+            if (match) {
+              const [_, day, month, year] = match;
+              const monthNum = new Date(`${month} 1, 2000`).getMonth() + 1;
+              foundStart = `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              console.log('[EXTRACT_START_DATE_FOUND]', { raw: match[0], parsed: foundStart });
+              break;
+            }
+          }
+          
+          // Check expiration/end date
+          for (const pattern of [datePatterns[2], datePatterns[3]]) {
+            const match = text.match(pattern);
+            if (match) {
+              const [_, day, month, year] = match;
+              const monthNum = new Date(`${month} 1, 2000`).getMonth() + 1;
+              foundEnd = `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              console.log('[EXTRACT_END_DATE_FOUND]', { raw: match[0], parsed: foundEnd });
+              break;
+            }
+          }
+          
+          if (foundStart && foundEnd) {
+            startDate = foundStart;
+            endDate = foundEnd;
+            console.log('[EXTRACT_DATES_PARSED]', { startDate, endDate });
+          } else {
+            // Fallback: calculate from duration
+            const monthMatch = text.match(/(\d+)\s*months?/i);
+            const yearMatch = text.match(/one\s+year|1\s+year/i);
+            
+            if (monthMatch || yearMatch) {
+              const months = monthMatch ? parseInt(monthMatch[1]) : 12;
+              startDate = new Date().toISOString().split('T')[0];
+              const end = new Date();
+              end.setMonth(end.getMonth() + months);
+              endDate = end.toISOString().split('T')[0];
+              console.log('[EXTRACT_DATES_CALCULATED]', { months, startDate, endDate });
+            }
           }
         }
       }
