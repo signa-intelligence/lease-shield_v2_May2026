@@ -1269,17 +1269,21 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               </div>
             )}
 
-            {/* Property */}
-            {lease.property_address && (
-              <div className="mb-4">
-                <span className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
-                  {strings.property}:
-                </span>
-                <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                  {lease.property_address}
-                </p>
-              </div>
-            )}
+            {/* Property Address - Prominently displayed */}
+            <div className="mb-6 p-4 rounded-lg border-2" style={{ 
+              backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+              borderColor: '#3B82F6'
+            }}>
+              <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: colors.textSecondary }}>
+                {strings.property}
+              </span>
+              <p className="text-xl font-bold mt-2" style={{ 
+                color: colors.textPrimary,
+                lineHeight: '1.5'
+              }}>
+                {lease.property_address || reportData.lease_address || reportData.key_terms?.property_address || 'Property address not specified'}
+              </p>
+            </div>
 
             {/* Executive summary - Detailed multi-paragraph */}
             <div className="mb-6">
