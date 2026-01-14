@@ -90,9 +90,17 @@ Deno.serve(async (req) => {
     
     // Create deposit record
     if (depositAmount) {
+      // Calculate dates
+      const today = new Date().toISOString().split('T')[0];
+      const oneYearLater = new Date();
+      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+      const returnDate = oneYearLater.toISOString().split('T')[0];
+      
       results.deposit = await svc.entities.DepositTracker.create({
         lease_id: leaseId,
         deposit_amount: depositAmount,
+        deposit_paid_date: today,
+        expected_return_date: returnDate,
         status: 'tracking'
       });
       console.log('[EXTRACT_DEPOSIT_CREATED]', { id: results.deposit.id });
