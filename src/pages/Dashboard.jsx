@@ -83,6 +83,8 @@ function DashboardContent() {
     queryKey: ['deposits'],
     queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
+    refetchOnMount: 'always',
+    staleTime: 0
   });
 
   const { data: cases = [] } = useQuery({
@@ -765,6 +767,8 @@ function DashboardContent() {
     queryKey: ['allScans'],
     queryFn: () => base44.entities.LeaseScan.list(),
     enabled: !!user,
+    refetchOnMount: 'always',
+    staleTime: 0
   });
 
   const calculateProtectionScore = () => {
