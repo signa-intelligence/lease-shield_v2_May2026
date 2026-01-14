@@ -359,7 +359,25 @@ function PropertyTrackerContent() {
     queryKey: ['deposits'],
     queryFn: async () => {
       const allDeposits = await base44.entities.DepositTracker.filter({}, '-created_date');
-      return allDeposits.filter(d => !d.is_archived);
+      
+      // Fetch lease data for each deposit
+      const depositsWithLeases = await Promise.all(
+        allDeposits
+          .filter(d => !d.is_archived)
+          .map(async (deposit) => {
+            if (!deposit.lease_id) return { ...deposit, lease: null };
+            
+            try {
+              const lease = await base44.entities.Lease.get(deposit.lease_id);
+              return { ...deposit, lease };
+            } catch (err) {
+              console.error(`Failed to fetch lease ${deposit.lease_id}:`, err);
+              return { ...deposit, lease: null };
+            }
+          })
+      );
+      
+      return depositsWithLeases;
     },
     enabled: !!user,
   });
@@ -2014,6 +2032,11 @@ function PropertyTrackerContent() {
                   </div>
                   <div>
                     <div className="text-lg font-bold">{strings.depositSection}</div>
+                    {deposit?.lease?.property_address && (
+                      <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
+                        {deposit.lease.property_address}
+                      </p>
+                    )}
                     {deposit && deposit.deposit_amount > 0 && (
                       <div className="text-sm font-normal flex items-center gap-2 mt-1">
                         <Badge className={isOverdue ? 'bg-red-100 text-red-800' : isUrgent ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}>
@@ -2334,6 +2357,11 @@ function PropertyTrackerContent() {
                   </div>
                   <div>
                     <div className="text-lg font-bold">{strings.rentSection}</div>
+                    {deposit?.lease?.property_address && (
+                      <p className="text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
+                        {deposit.lease.property_address}
+                      </p>
+                    )}
                     {deposit?.rent_amount && deposit?.rent_due_day && (
                      <div className="text-sm font-normal mt-1">
                        <Badge style={{ backgroundColor: isDarkMode ? 'rgba(16,185,129,0.2)' : '#ECFDF5', color: '#0C3B2E', border: '1px solid #0C3B2E', fontWeight: '600' }}>

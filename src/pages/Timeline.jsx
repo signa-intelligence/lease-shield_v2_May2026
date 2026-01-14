@@ -87,6 +87,19 @@ function TimelineContent() {
     enabled: !!user,
   });
 
+  // DEBUG: Log timeline events
+  React.useEffect(() => {
+    console.log('[TIMELINE_DEBUG]', {
+      totalEvents: timelineEvents.length,
+      events: timelineEvents.map(e => ({
+        id: e.id,
+        type: e.event_type,
+        date: e.event_date,
+        title: e.title
+      }))
+    });
+  }, [timelineEvents]);
+
   const isLoading = leasesLoading || depositsLoading || casesLoading || maintenanceLoading;
 
   const language = user?.language || 'en';
@@ -486,12 +499,26 @@ function TimelineContent() {
 
   const upcomingEvents = useMemo(() => {
     const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    
     const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    thirtyDaysFromNow.setDate(now.getDate() + 30);
+    thirtyDaysFromNow.setHours(23, 59, 59, 999);
 
-    return filteredEvents
-      .filter(event => isAfter(event.date, now) && isBefore(event.date, thirtyDaysFromNow))
-      .slice(0, 10);
+    const upcoming = filteredEvents.filter(event => {
+      const eventDate = new Date(event.date);
+      eventDate.setHours(0, 0, 0, 0);
+      
+      return eventDate >= now && eventDate <= thirtyDaysFromNow;
+    }).slice(0, 10);
+
+    console.log('[TIMELINE_UPCOMING]', {
+      total: filteredEvents.length,
+      upcoming: upcoming.length,
+      filtered: upcoming.map(e => ({ date: e.date, title: e.title }))
+    });
+
+    return upcoming;
   }, [filteredEvents]);
 
   const pastEvents = useMemo(() => {
