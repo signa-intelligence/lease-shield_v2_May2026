@@ -81,7 +81,7 @@ function DashboardContent() {
 
   const { data: deposits = [], isLoading: depositsLoading } = useQuery({
     queryKey: ['deposits'],
-    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: () => base44.entities.DepositTracker.filter({}, '-created_date'),
     enabled: !!user,
     refetchOnMount: 'always',
     staleTime: 0
