@@ -236,7 +236,7 @@ RISK LEVEL GUIDELINES:
 - "low": Clause is slightly unfavorable but standard practice
 - "none": Clause is balanced and fair to both parties
 
-Return comprehensive JSON (extract ALL clauses, not just 15-25):
+Return comprehensive JSON with ALL extracted data:
 {
   "risk_score": 0-100,
   "summary": {
@@ -250,8 +250,17 @@ Return comprehensive JSON (extract ALL clauses, not just 15-25):
     "text_length": 5000,
     "chunks": 1,
     "warnings": []
+  },
+  "key_terms": {
+    "lease_start_date": "YYYY-MM-DD (e.g., 2025-03-01)",
+    "lease_end_date": "YYYY-MM-DD (e.g., 2026-02-28)",
+    "monthly_rent": 38000,
+    "security_deposit": 114000,
+    "rent_due_day": 1,
+    "notice_period_days": 30
   }
 }
+CRITICAL: Extract lease_start_date and lease_end_date from clauses like "Commencement Date:" and "Expiry Date:" or "Expiration Date:". Format as YYYY-MM-DD.
 
 IMPORTANT: Extract EVERY clause you find. A typical lease has 30-60 clauses. If you only find 15, you're missing clauses. Keep reading until you've covered the entire document.`;
     
