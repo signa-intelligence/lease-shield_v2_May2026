@@ -51,6 +51,7 @@ function UploadScanPageContent() {
   const [error, setError] = useState(null);
   const [debugLog, setDebugLog] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [cumulativeProgress, setCumulativeProgress] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [leaseDetails, setLeaseDetails] = useState(null);
@@ -822,6 +823,9 @@ function UploadScanPageContent() {
     // Update state for UI display
     setSelectedFiles(filesToUpload);
     
+    // Reset cumulative progress for new upload
+    setCumulativeProgress(0);
+    
     // Generate unique request ID for tracking
     const requestId = generateRequestId();
     const deviceContext = getDeviceContext();
@@ -868,6 +872,7 @@ function UploadScanPageContent() {
       setAnalyzing(false);
       setError(null);
       setUploadProgress(0);
+      setCumulativeProgress(0);
       setCurrentStep(1);
       
       let createdLeaseId = null;
@@ -880,7 +885,9 @@ function UploadScanPageContent() {
           const file = filesToUpload[i];
           
           setAnalysisStage(language === 'th' ? `กำลังอัปโหลดหน้า ${i + 1}/${filesToUpload.length}` : `Uploading page ${i + 1}/${filesToUpload.length}`);
-          setUploadProgress(Math.round(((i + 1) / filesToUpload.length) * 30));
+          const newProgress = Math.round(((i + 1) / filesToUpload.length) * 20);
+          setCumulativeProgress(prev => Math.max(prev, newProgress));
+          setUploadProgress(newProgress);
 
           console.log('UPLOAD_START', { filename: file?.name, size: file?.size });
           const uploadResp = await base44.integrations.Core.UploadFile({ file });
@@ -897,7 +904,9 @@ function UploadScanPageContent() {
         }
 
         setAnalysisStage('creating');
-        setUploadProgress(40);
+        const creatingProgress = 30;
+        setCumulativeProgress(prev => Math.max(prev, creatingProgress));
+        setUploadProgress(creatingProgress);
 
         // Create ONE lease with all file URLs
         // Extract original filename from first file
@@ -912,16 +921,20 @@ function UploadScanPageContent() {
         });
         createdLeaseId = lease.id;
 
-        setUploadProgress(50);
+        const createdProgress = 40;
+        setCumulativeProgress(prev => Math.max(prev, createdProgress));
+        setUploadProgress(createdProgress);
         setAnalyzing(true);
         setUploading(false);
         setAnalysisStage('scanning');
         
-        // Start fake progress animation during AI analysis (30-85%)
-        let fakeProgress = 30;
+        // Start monotonic progress animation during AI analysis (40-85%)
         const progressInterval = setInterval(() => {
-          fakeProgress = Math.min(85, fakeProgress + 2.5);
-          setUploadProgress(Math.round(fakeProgress));
+          setCumulativeProgress(prev => {
+            const next = Math.min(85, prev + 2.5);
+            setUploadProgress(Math.round(next));
+            return next;
+          });
         }, 2000);
 
         // Trigger analysis with all pages
@@ -994,11 +1007,15 @@ function UploadScanPageContent() {
 
         // Stop fake progress
         clearInterval(progressInterval);
-        setUploadProgress(85);
+        const savingProgress = 85;
+        setCumulativeProgress(prev => Math.max(prev, savingProgress));
+        setUploadProgress(savingProgress);
         
         // Update scan status and navigate to report with fresh data
         setAnalysisStage('finalizing');
-        setUploadProgress(95);
+        const finalizingProgress = 95;
+        setCumulativeProgress(prev => Math.max(prev, finalizingProgress));
+        setUploadProgress(finalizingProgress);
         
         await base44.entities.LeaseScan.update(scan.id, {
           status: 'ok',
@@ -1110,6 +1127,7 @@ function UploadScanPageContent() {
     setError(null);
     setDebugLog(null);
     setUploadProgress(0);
+    setCumulativeProgress(0);
     setRetryCount(0);
     setAnalysisStage('uploading');
     setCurrentStep(1); // Move to analyzing
@@ -1169,7 +1187,9 @@ function UploadScanPageContent() {
         });
 
         setAnalysisStage('uploading');
-        setUploadProgress(10);
+        const uploadingProgress = 10;
+        setCumulativeProgress(prev => Math.max(prev, uploadingProgress));
+        setUploadProgress(uploadingProgress);
 
         // STEP 2: Upload normalized files using mobile-proof uploader
         const uploadTimeoutMs = getUploadTimeout();
@@ -1194,7 +1214,11 @@ function UploadScanPageContent() {
           requestId,
           (fileIndex, progress) => {
             const overallProgress = 10 + (fileIndex / normalizedFiles.length * 20) + (progress / 100 * (20 / normalizedFiles.length));
-            setUploadProgress(Math.round(overallProgress));
+            setCumulativeProgress(prev => {
+              const next = Math.max(prev, overallProgress);
+              setUploadProgress(Math.round(next));
+              return next;
+            });
           }
         );
 
@@ -1248,10 +1272,14 @@ function UploadScanPageContent() {
           urls: fileUrls.map(url => url.substring(0, 100) + '...')
         });
         
-        setUploadProgress(30);
+        const uploadedProgress = 30;
+        setCumulativeProgress(prev => Math.max(prev, uploadedProgress));
+        setUploadProgress(uploadedProgress);
 
         setAnalysisStage('creating');
-        setUploadProgress(40);
+        const creatingProgressSingle = 40;
+        setCumulativeProgress(prev => Math.max(prev, creatingProgressSingle));
+        setUploadProgress(creatingProgressSingle);
 
         // Extract original filename from first file
         const originalFilename = normalizedFiles[0]?.name || filesToUpload[0]?.name || 'Lease Document';
@@ -1264,17 +1292,21 @@ function UploadScanPageContent() {
           original_filename: originalFilename
         });
         createdLeaseId = lease.id;
-        setUploadProgress(50);
+        const createdProgressSingle = 50;
+        setCumulativeProgress(prev => Math.max(prev, createdProgressSingle));
+        setUploadProgress(createdProgressSingle);
 
         setAnalyzing(true);
         setUploading(false);
         setAnalysisStage('scanning');
         
-        // Start fake progress animation during AI analysis (30-85%)
-        let fakeProgress = 30;
+        // Start monotonic progress animation during AI analysis (50-85%)
         const progressInterval = setInterval(() => {
-          fakeProgress = Math.min(85, fakeProgress + 2.5);
-          setUploadProgress(Math.round(fakeProgress));
+          setCumulativeProgress(prev => {
+            const next = Math.min(85, prev + 2.5);
+            setUploadProgress(Math.round(next));
+            return next;
+          });
         }, 2000);
 
         // Create LeaseScan FIRST and capture id
@@ -1365,9 +1397,11 @@ function UploadScanPageContent() {
           logStage('VERIFICATION_ERROR', { error: verifyErr.message });
         }
         
-        // Stop fake progress
+        // Stop progress
         clearInterval(progressInterval);
-        setUploadProgress(85);
+        const savingProgressSingle = 85;
+        setCumulativeProgress(prev => Math.max(prev, savingProgressSingle));
+        setUploadProgress(savingProgressSingle);
         
         logStage('ANALYSIS_SUCCESS', {
           riskScore: scanResponse.result?.risk_score,
@@ -1376,7 +1410,9 @@ function UploadScanPageContent() {
 
         // Update LeaseScan status and navigate to report with fresh data
         setAnalysisStage('finalizing');
-        setUploadProgress(95);
+        const finalizingProgressSingle = 95;
+        setCumulativeProgress(prev => Math.max(prev, finalizingProgressSingle));
+        setUploadProgress(finalizingProgressSingle);
         
         await base44.entities.LeaseScan.update(scanId, {
           status: 'ok',
@@ -1384,7 +1420,9 @@ function UploadScanPageContent() {
           summary: scanResponse?.scan_full?.summary?.executive_summary || ''
         });
         
-        setUploadProgress(100);
+        const completeProgressSingle = 100;
+        setCumulativeProgress(prev => Math.max(prev, completeProgressSingle));
+        setUploadProgress(completeProgressSingle);
         
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
@@ -1473,7 +1511,7 @@ function UploadScanPageContent() {
           const formattedError = formatErrorForUser(err, requestId, language, {
             uploadStage: analysisStage
           });
-          // Stop fake progress on error
+          // Stop progress on error
           if (progressInterval) clearInterval(progressInterval);
           
           formattedError.scanId = scanId || null;
