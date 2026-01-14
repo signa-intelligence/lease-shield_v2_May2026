@@ -1099,7 +1099,7 @@ function UploadScanPageContent() {
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
         
-        // Stop fake progress on error
+        // Stop progress on error
         if (progressInterval) clearInterval(progressInterval);
 
         if (createdLeaseId) {
@@ -1116,6 +1116,7 @@ function UploadScanPageContent() {
         setUploading(false);
         setAnalyzing(false);
         setUploadProgress(0);
+        setCumulativeProgress(0);
         setAnalysisStage('');
       }
       
@@ -1134,6 +1135,7 @@ function UploadScanPageContent() {
 
     let currentRetry = 0;
     let createdLeaseId = null;
+    let progressInterval = null;
     const maxRetries = 0; // Disable auto-retry to show errors immediately
 
     const attemptUpload = async () => {
@@ -1301,7 +1303,7 @@ function UploadScanPageContent() {
         setAnalysisStage('scanning');
         
         // Start monotonic progress animation during AI analysis (50-85%)
-        const progressInterval = setInterval(() => {
+        progressInterval = setInterval(() => {
           setCumulativeProgress(prev => {
             const next = Math.min(85, prev + 2.5);
             setUploadProgress(Math.round(next));

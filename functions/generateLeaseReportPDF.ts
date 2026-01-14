@@ -738,71 +738,104 @@ Deno.serve(async (req) => {
       y += 6;
     }
 
-    // Flags
-    const flags = Array.isArray(data.flags) ? data.flags : [];
+    // Document Templates Section
+    if (y > pageHeight - 30) { doc.addPage(); y = 20; }
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text(`Issues (${flags.length})`, 14, y);
-    y += 7;
-
+    doc.text("Document Templates", 14, y);
+    y += 6;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
+    doc.setTextColor(70, 70, 70);
+    addText("Visit app.leaseshield.asia/templates to access negotiation letter templates", 14, 9);
+    y += 10;
 
-    if (flags.length === 0) {
-      doc.text("No issues flagged.", 14, y);
-      y += 8;
-    } else {
-      // Sort by severity: CRITICAL > HIGH > MEDIUM > LOW, then alphabetically within each level
-      const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
-      const sorted = [...flags].sort((a, b) => {
-        const severityDiff = (severityOrder[a?.severity] ?? 4) - (severityOrder[b?.severity] ?? 4);
-        if (severityDiff !== 0) return severityDiff;
-        // Within same severity, sort alphabetically by title
-        return (a?.title || '').localeCompare(b?.title || '');
-      });
-
-      sorted.slice(0, 50).forEach((f, i) => {
-        if (y > pageHeight - 30) { doc.addPage(); y = 20; }
-        // Left color bar by severity
-        const pp = severityPalette[f.severity] || severityPalette.none;
-        const [rr,gg,bb] = pp.border || [12,59,46];
-        doc.setFillColor(rr,gg,bb);
-        doc.rect(12, y-2, 2, 20, 'F');
-        const title = normalizeBullet(f.title || f.description || `Issue ${i + 1}`);
-        addText(`${i + 1}. [${String(f.severity || "medium").toUpperCase()}] ${title}`, 16, 9, thaiOk ? 'normal' : "bold");
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
-        const rec = normalizeBullet(f.recommendation || "");
-        if (rec) addText(`Recommendation: ${rec}`, 16, 8);
-        let ev = f.evidence || "";
-        if (ev) addText(`Evidence: ${normalizeBullet(String(ev).slice(0, 240))}`, 16, 8);
-        y += 3;
-      });
-    }
-
-    // Clause-by-clause (first N to keep PDF size sane)
+    // Clause-by-Clause Analysis (ALL clauses sorted by severity)
     const ledger = data.clause_ledger;
     const review = data.clause_review;
+
+    // Create combined array with risk levels for sorting
+    const clausesWithRisk = ledger.map((c, idx) => ({
+      ledger: c,
+      review: review[idx] || {},
+      originalIndex: idx
+    }));
+
+    // Sort by severity: CRITICAL > HIGH > MEDIUM > LOW > NONE
+    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
+    const sortedClauses = clausesWithRisk.sort((a, b) => {
+      const aSev = String(a.review.risk_level || 'none').toLowerCase();
+      const bSev = String(b.review.risk_level || 'none').toLowerCase();
+      const severityDiff = (severityOrder[aSev] ?? 4) - (severityOrder[bSev] ?? 4);
+      if (severityDiff !== 0) return severityDiff;
+      // Within same severity, maintain original order
+      return a.originalIndex - b.originalIndex;
+    });
 
     if (y > pageHeight - 30) { doc.addPage(); y = 20; }
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text(`Clause-by-Clause (${ledger.length})`, 14, y);
+    doc.text(`Clause-by-Clause Analysis (${ledger.length})`, 14, y);
     y += 7;
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
 
-    for (let i = 0; i < Math.min(ledger.length, 120); i++) {
-      const c = ledger[i];
-      const r = review[i] || {};
-      if (y > pageHeight - 24) { doc.addPage(); y = 20; }
+    sortedClauses.slice(0, 120).forEach((item, displayIdx) => {
+      const c = item.ledger;
+      const r = item.review;
+      
+      if (y > pageHeight - 30) { doc.addPage(); y = 20; }
 
-      addText(`${i + 1}. ${c.heading || c.clause_id || "Clause"}`, 14, 8, "bold");
-      addText(`Risk: ${String(r.risk_level || "none").toUpperCase()} — ${r.risk_summary || ""}`, 16, 8);
-      const snippet = normalizeBullet(String(c.full_text || "").slice(0, 220));
-      if (snippet) addText(`Snippet: ${snippet}`, 16, 8);
-      y += 2;
-    }
+      // Risk level badge with color
+      const sev = String(r.risk_level || 'none').toLowerCase();
+      const pal = severityPalette[sev] || severityPalette.none;
+      const [rr, gg, bb] = pal.bg;
+      const [tr, tg, tb] = pal.text;
+      
+      doc.setFillColor(rr, gg, bb);
+      doc.roundedRect(14, y - 2, 28, 6, 1, 1, "F");
+      doc.setTextColor(tr, tg, tb);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.text(sev.toUpperCase(), 15, y + 2);
+      
+      // Clause title
+      doc.setTextColor(0, 0, 0);
+      doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
+      doc.setFontSize(9);
+      y += 8;
+      addText(`${displayIdx + 1}. ${c.heading || c.clause_id || "Clause"}`, 14, 9, "bold");
+      
+      // Explanation
+      if (r.risk_summary) {
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(60, 60, 60);
+        addText(r.risk_summary, 16, 8);
+      }
+      
+      // Recommendations (parse from clause data)
+      const flag = data.flags?.find(f => f.clause_id === c.clause_id);
+      if (flag?.recommendation) {
+        const recs = parseRecommendations(flag.recommendation, sev);
+        if (recs.length > 0) {
+          doc.setTextColor(40, 40, 40);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7);
+          doc.text("RECOMMENDATIONS:", 16, y);
+          y += 4;
+          doc.setFont("helvetica", "normal");
+          recs.forEach((rec, recIdx) => {
+            if (y > pageHeight - 20) { doc.addPage(); y = 20; }
+            const recText = normalizeBullet(rec);
+            addText(`  • ${recText}`, 16, 7);
+          });
+        }
+      }
+      
+      y += 4;
+    });
 
     // Footer disclaimer
     const disclaimer = "Automated review, not legal advice.";
