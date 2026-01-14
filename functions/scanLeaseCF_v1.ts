@@ -179,13 +179,30 @@ Deno.serve(async (req) => {
       clausesCount: clausesArray.length
     });
 
-    // AUTO-POPULATE FEATURE DISABLED DUE TO PERSISTENT 500 ERRORS
-    // This feature will be rebuilt properly in a separate implementation
-    console.log('[SCAN_CF_V1_AUTO_POPULATE_DISABLED]', { 
-      scanId: targetScan.id,
-      leaseId: leaseId,
-      reason: 'Feature temporarily disabled - will be rebuilt'
+    // Call new extractLeaseData function
+    console.log('[SCAN_CF_V1_CALLING_EXTRACT]', { 
+      scanId: targetScan.id, 
+      leaseId: leaseId 
     });
+
+    try {
+      const extractResult = await base44.functions.invoke('extractLeaseData', {
+        scanId: targetScan.id,
+        leaseId: leaseId
+      });
+      
+      console.log('[SCAN_CF_V1_EXTRACT_RESULT]', {
+        ok: extractResult?.data?.ok,
+        extracted: extractResult?.data?.extracted,
+        created: extractResult?.data?.created
+      });
+      
+    } catch (extractError) {
+      console.error('[SCAN_CF_V1_EXTRACT_ERROR]', {
+        error: extractError.message
+      });
+      // Don't fail the whole scan if extraction fails
+    }
 
     return new Response(JSON.stringify({
       ok: true,
