@@ -96,14 +96,26 @@ Deno.serve(async (req) => {
       oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
       const returnDate = oneYearLater.toISOString().split('T')[0];
       
-      results.deposit = await svc.entities.DepositTracker.create({
-        lease_id: leaseId,
-        deposit_amount: depositAmount,
-        deposit_paid_date: today,
-        expected_return_date: returnDate,
-        status: 'tracking'
-      });
-      console.log('[EXTRACT_DEPOSIT_CREATED]', { id: results.deposit.id });
+      try {
+        results.deposit = await svc.entities.DepositTracker.create({
+          lease_id: leaseId,
+          deposit_amount: depositAmount,
+          deposit_paid_date: today,
+          expected_return_date: returnDate,
+          status: 'tracking'
+        });
+        console.log('[EXTRACT_DEPOSIT_CREATED]', { 
+          success: true,
+          id: results.deposit?.id 
+        });
+      } catch (depositError) {
+        console.error('[EXTRACT_DEPOSIT_CREATE_FAILED]', {
+          error: depositError.message,
+          stack: depositError.stack,
+          data: { lease_id: leaseId, deposit_amount: depositAmount }
+        });
+        results.deposit = null;
+      }
     }
     
     // Update lease dates
