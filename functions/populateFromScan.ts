@@ -169,20 +169,23 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Extract LEASE DATES
+    // Extract LEASE DATES with enhanced fallback logic
     let startDate = keyTerms.start_date || keyTerms.lease_start;
     let endDate = keyTerms.end_date || keyTerms.lease_end;
     console.log('[EXTRACTING_DATES]', { startFromKeyTerms: startDate, endFromKeyTerms: endDate });
     
     if (!startDate || !endDate) {
-      const termClause = findClauseByName(clauses, ['term of lease', 'lease duration', 'lease period', 'ระยะเวลา']);
+      const termClause = findClauseByName(clauses, ['term of lease', 'lease duration', 'lease period', 'ระยะเวลา', 'term', 'duration']);
       if (termClause) {
         console.log('[TERM_CLAUSE_FOUND]', {
           clauseTitle: termClause.canonical_name,
           clauseTextPreview: termClause.clause_text?.substring(0, 200)
         });
+        
+        // Try multiple date patterns
         const dates = termClause.clause_text.match(/\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/g);
         console.log('[DATES_EXTRACTED_FROM_TEXT]', dates);
+        
         if (dates && dates.length >= 2) {
           try {
             if (!startDate) startDate = new Date(dates[0]).toISOString().split('T')[0];
@@ -191,8 +194,54 @@ Deno.serve(async (req) => {
             console.log('[DATE_PARSING_ERROR]', e.message);
           }
         }
+        
+        // Fallback: Look for duration in months/years
+        if (!startDate || !endDate) {
+          const durationMatch = termClause.clause_text.match(/(\d+)\s*(month|year|เดือน|ปี)/i);
+          if (durationMatch) {
+            const duration = parseInt(durationMatch[1]);
+            const unit = durationMatch[2].toLowerCase();
+            
+            console.log('[DURATION_FOUND]', { duration, unit });
+            
+            // If we have start date, calculate end date
+            if (startDate && !endDate) {
+              const start = new Date(startDate);
+              if (unit.includes('year') || unit.includes('ปี')) {
+                start.setFullYear(start.getFullYear() + duration);
+              } else {
+                start.setMonth(start.getMonth() + duration);
+              }
+              endDate = start.toISOString().split('T')[0];
+            }
+            // If we have neither, estimate both from today
+            if (!startDate && !endDate) {
+              startDate = new Date().toISOString().split('T')[0];
+              const calculatedEnd = new Date();
+              if (unit.includes('year') || unit.includes('ปี')) {
+                calculatedEnd.setFullYear(calculatedEnd.getFullYear() + duration);
+              } else {
+                calculatedEnd.setMonth(calculatedEnd.getMonth() + duration);
+              }
+              endDate = calculatedEnd.toISOString().split('T')[0];
+              console.log('[DATES_CALCULATED_FROM_DURATION]', { startDate, endDate, duration, unit });
+            }
+          }
+        }
       }
     }
+    
+    // Final fallback: If still no dates, use today + 12 months
+    if (!startDate || !endDate) {
+      console.log('[DATES_FALLBACK_TRIGGERED] Using default 12-month lease');
+      if (!startDate) startDate = new Date().toISOString().split('T')[0];
+      if (!endDate) {
+        const defaultEnd = new Date(startDate);
+        defaultEnd.setFullYear(defaultEnd.getFullYear() + 1);
+        endDate = defaultEnd.toISOString().split('T')[0];
+      }
+    }
+    
     console.log('[DATES_FINAL]', { startDate, endDate });
     
     // Extract NOTICE PERIOD
@@ -256,17 +305,60 @@ Deno.serve(async (req) => {
       updates.deposit.rent_alert_days_before = 3;
     }
     
-    // Build lease updates
-    if (startDate) updates.lease.start_date = startDate;
-    if (endDate) updates.lease.end_date = endDate;
-    if (noticePeriodDays) {
-      updates.lease.notice_period_days = noticePeriodDays;
-      if (endDate) {
-        const noticeDeadline = new Date(endDate);
-        noticeDeadline.setDate(noticeDeadline.getDate() - noticePeriodDays);
-        updates.lease.notice_deadline = noticeDeadline.toISOString().split('T')[0];
-        updates.lease.notice_alerts_enabled = true;
-      }
+    // Build lease updates - ALWAYS update if we have dates
+    if (startDate) {
+      updates.lease.start_date = startDate;
+      console.log('[LEASE_UPDATE_ADD] start_date:', startDate);
+    }
+    if (endDate) {
+      updates.lease.end_date = endDate;
+      console.log('[LEASE_UPDATE_ADD] end_date:', endDate);
+    }
+    
+    // Calculate notice deadline if we have end date
+    const finalNoticePeriodDays = noticePeriodDays || 30; // Default to 30 days
+    if (endDate) {
+      const noticeDeadline = new Date(endDate);
+      noticeDeadline.setDate(noticeDeadline.getDate() - finalNoticePeriodDays);
+      updates.lease.notice_period_days = finalNoticePeriodDays;
+      updates.lease.notice_deadline = noticeDeadline.toISOString().split('T')[0];
+      updates.lease.notice_alerts_enabled = true;
+      console.log('[LEASE_UPDATE_ADD] notice_deadline:', updates.lease.notice_deadline);
+      
+      // Add timeline event for notice deadline
+      updates.timeline.push({
+        event_type: 'notice_deadline',
+        event_date: noticeDeadline.toISOString(),
+        title: 'Notice Deadline',
+        description: `Last day to notify landlord before lease ends`,
+        source: 'lease_scan',
+        source_scan_id: scanId,
+        lease_id: leaseId
+      });
+      
+      // Add timeline event for lease end
+      updates.timeline.push({
+        event_type: 'lease_end',
+        event_date: new Date(endDate).toISOString(),
+        title: 'Lease End Date',
+        description: `Lease agreement ends`,
+        source: 'lease_scan',
+        source_scan_id: scanId,
+        lease_id: leaseId
+      });
+    }
+    
+    if (startDate) {
+      // Add timeline event for lease start
+      updates.timeline.push({
+        event_type: 'lease_start',
+        event_date: new Date(startDate).toISOString(),
+        title: 'Lease Start Date',
+        description: `Lease agreement begins`,
+        source: 'lease_scan',
+        source_scan_id: scanId,
+        lease_id: leaseId
+      });
     }
     
     // Apply updates to database
@@ -347,7 +439,7 @@ Deno.serve(async (req) => {
       });
     }
     
-    // Update lease record
+    // Update lease record - FORCE UPDATE even if fields exist (scan data is authoritative)
     console.log('[CHECKING_LEASE_UPDATE_CONDITIONS]', {
       hasLeaseData: !!updates.lease,
       leaseKeysCount: Object.keys(updates.lease || {}).length,
@@ -355,54 +447,63 @@ Deno.serve(async (req) => {
     });
     
     if (updates.lease && Object.keys(updates.lease).length > 0) {
-      console.log('[FETCHING_EXISTING_LEASE]', { leaseId });
-      const existingLease = await svc.entities.Lease.filter({ id: leaseId });
-      if (existingLease && existingLease.length > 0) {
-        const lease = existingLease[0];
-        console.log('[EXISTING_LEASE_FOUND]', {
-          leaseId: lease.id,
-          hasStartDate: !!lease.start_date,
-          hasEndDate: !!lease.end_date,
-          hasNoticeDeadline: !!lease.notice_deadline
+      console.log('[UPDATING_LEASE_RECORD_FORCED]', { leaseId, updateData: updates.lease });
+      try {
+        // FORCE UPDATE: Scan data is authoritative, override existing values
+        results.lease = await svc.entities.Lease.update(leaseId, updates.lease);
+        console.log('[LEASE_UPDATE_SUCCESS]', { 
+          leaseId, 
+          updatedFields: Object.keys(updates.lease),
+          resultHasStartDate: !!results.lease?.start_date,
+          resultHasEndDate: !!results.lease?.end_date,
+          resultHasNoticeDeadline: !!results.lease?.notice_deadline
         });
-        
-        // Only populate empty fields
-        const updateData = {};
-        Object.keys(updates.lease).forEach(key => {
-          if (!lease[key]) {
-            updateData[key] = updates.lease[key];
-          }
+      } catch (leaseErr) {
+        console.error('[LEASE_UPDATE_FAILED]', { 
+          error: leaseErr.message, 
+          stack: leaseErr.stack,
+          updateData: updates.lease
         });
-        
-        console.log('[LEASE_UPDATE_DATA]', updateData);
-        
-        if (Object.keys(updateData).length > 0) {
-          console.log('[UPDATING_LEASE_RECORD]', { leaseId, updateData });
-          try {
-            results.lease = await svc.entities.Lease.update(leaseId, updateData);
-            console.log('[LEASE_UPDATE_SUCCESS]', { leaseId });
-          } catch (leaseErr) {
-            console.error('[LEASE_UPDATE_FAILED]', { error: leaseErr.message, stack: leaseErr.stack });
-            throw leaseErr;
-          }
-        } else {
-          console.log('[LEASE_UPDATE_SKIPPED]', { reason: 'No empty fields to update' });
-        }
-      } else {
-        console.error('[LEASE_NOT_FOUND]', { leaseId });
+        throw leaseErr;
       }
     } else {
       console.log('[LEASE_UPDATE_SKIPPED]', { reason: 'No lease data to update' });
     }
     
-    // Create timeline events
+    // Create timeline events directly
+    console.log('[CHECKING_TIMELINE_CONDITIONS]', {
+      hasTimelineEvents: updates.timeline.length > 0,
+      eventsCount: updates.timeline.length,
+      events: updates.timeline
+    });
+    
     if (updates.timeline && updates.timeline.length > 0) {
-      const timelineResponse = await base44.functions.invoke('createTimelineEvents', {
-        entityType: 'lease',
-        entityId: leaseId,
-        entityData: results.lease || {}
-      });
-      results.timeline = timelineResponse.data;
+      console.log('[CREATING_TIMELINE_EVENTS]', { eventsCount: updates.timeline.length });
+      const createdEvents = [];
+      
+      for (const event of updates.timeline) {
+        try {
+          console.log('[CREATING_TIMELINE_EVENT]', event);
+          const created = await svc.entities.TimelineEvent.create({
+            ...event,
+            needs_review: false,
+            is_estimated: false
+          });
+          createdEvents.push(created);
+          console.log('[TIMELINE_EVENT_CREATED]', { eventId: created.id, eventType: event.event_type });
+        } catch (timelineErr) {
+          console.error('[TIMELINE_EVENT_CREATE_FAILED]', { 
+            error: timelineErr.message, 
+            event 
+          });
+          // Continue creating other events even if one fails
+        }
+      }
+      
+      results.timeline = createdEvents;
+      console.log('[TIMELINE_EVENTS_CREATED]', { count: createdEvents.length });
+    } else {
+      console.log('[TIMELINE_EVENTS_SKIPPED]', { reason: 'No timeline events to create' });
     }
     
     console.log('[POPULATE_FROM_SCAN_SUCCESS] ========================================', {
