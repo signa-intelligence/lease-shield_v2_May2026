@@ -21,6 +21,30 @@ Deno.serve(async (req) => {
     
     console.log('[EXTRACT_CLAUSES_FOUND]', { count: clauses.length });
     
+    // FIRST: Try to extract from key_terms (most reliable)
+    if (scanFull.key_terms) {
+      console.log('[EXTRACT_CHECKING_KEY_TERMS]', { 
+        hasKeyTerms: true,
+        keys: Object.keys(scanFull.key_terms)
+      });
+      
+      // Check for lease_start_date, lease_end_date in key_terms
+      if (scanFull.key_terms.lease_start_date) {
+        startDate = scanFull.key_terms.lease_start_date;
+        console.log('[EXTRACT_START_FROM_KEY_TERMS]', { startDate });
+      }
+      
+      if (scanFull.key_terms.lease_end_date) {
+        endDate = scanFull.key_terms.lease_end_date;
+        console.log('[EXTRACT_END_FROM_KEY_TERMS]', { endDate });
+      }
+      
+      // Also check rent_due_day
+      if (scanFull.key_terms.rent_due_day && !rentAmount) {
+        // Already extracted rent, just log
+      }
+    }
+    
     // Extract deposit amount - look in multiple places
     let depositAmount = null;
     let rentAmount = null;
