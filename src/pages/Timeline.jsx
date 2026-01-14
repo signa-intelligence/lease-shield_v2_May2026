@@ -59,13 +59,13 @@ function TimelineContent() {
 
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
     queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: () => base44.entities.Lease.filter({}, '-created_date'),
     enabled: !!user,
   });
 
   const { data: deposits = [], isLoading: depositsLoading } = useQuery({
     queryKey: ['deposits'],
-    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: () => base44.entities.DepositTracker.filter({}, '-created_date'),
     enabled: !!user,
   });
 
@@ -77,13 +77,13 @@ function TimelineContent() {
 
   const { data: maintenance = [], isLoading: maintenanceLoading } = useQuery({
     queryKey: ['maintenance'],
-    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: () => base44.entities.MaintenanceRequest.filter({}, '-created_date'),
     enabled: !!user,
   });
 
   const { data: timelineEvents = [] } = useQuery({
     queryKey: ['timelineEvents'],
-    queryFn: () => base44.entities.TimelineEvent.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: () => base44.entities.TimelineEvent.filter({}, '-created_date'),
     enabled: !!user,
   });
 

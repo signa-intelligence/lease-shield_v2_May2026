@@ -358,7 +358,7 @@ function PropertyTrackerContent() {
   const { data: deposits = [] } = useQuery({
     queryKey: ['deposits'],
     queryFn: async () => {
-      const allDeposits = await base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date');
+      const allDeposits = await base44.entities.DepositTracker.filter({}, '-created_date');
       return allDeposits.filter(d => !d.is_archived);
     },
     enabled: !!user,
