@@ -254,13 +254,16 @@ Return comprehensive JSON with ALL extracted data:
   "key_terms": {
     "lease_start_date": "YYYY-MM-DD (e.g., 2025-03-01)",
     "lease_end_date": "YYYY-MM-DD (e.g., 2026-02-28)",
+    "property_address": "Full property address from Leased Property clause",
     "monthly_rent": 38000,
     "security_deposit": 114000,
     "rent_due_day": 1,
     "notice_period_days": 30
   }
 }
-CRITICAL: Extract lease_start_date and lease_end_date from clauses like "Commencement Date:" and "Expiry Date:" or "Expiration Date:". Format as YYYY-MM-DD.
+CRITICAL: 
+- Extract lease_start_date and lease_end_date from clauses like "Commencement Date:" and "Expiry Date:" or "Expiration Date:". Format as YYYY-MM-DD.
+- Extract property_address from "Leased Property" or similar clause containing the full unit address.
 
 IMPORTANT: Extract EVERY clause you find. A typical lease has 30-60 clauses. If you only find 15, you're missing clauses. Keep reading until you've covered the entire document.`;
     

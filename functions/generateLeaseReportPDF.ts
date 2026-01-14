@@ -706,12 +706,27 @@ Deno.serve(async (req) => {
     y = 42;
     doc.setTextColor(0, 0, 0);
 
-    addText(data.lease_address || "Lease Agreement", 14, 14, "bold");
+    addText("Lease Agreement", 14, 14, "bold");
     y += 2;
     doc.setFontSize(9);
     doc.setTextColor(90, 90, 90);
     doc.text(`Generated: ${new Date(data.generated_date || Date.now()).toLocaleString()}`, 14, y);
-    y += 10;
+    y += 6;
+    
+    // Property Address
+    if (data.lease_address && data.lease_address !== "Lease Agreement") {
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text("Property Address:", 14, y);
+      y += 4;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+      addText(data.lease_address, 14, 9);
+      y += 4;
+    }
+    y += 4;
 
     // Risk banner uses highest severity across flags
     const highest = highestSeverity(data.flags);

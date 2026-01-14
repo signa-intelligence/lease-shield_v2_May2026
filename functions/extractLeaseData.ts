@@ -50,6 +50,7 @@ Deno.serve(async (req) => {
     let rentAmount = null;
     let startDate = null;
     let endDate = null;
+    let propertyAddress = null;
     
     // Method 1: Check key_terms first
     if (scanFull.key_terms) {
@@ -59,6 +60,11 @@ Deno.serve(async (req) => {
       rentAmount = scanFull.key_terms.monthly_rent ||
                   scanFull.key_terms.rent_amount ||
                   null;
+      
+      if (scanFull.key_terms.property_address) {
+        propertyAddress = scanFull.key_terms.property_address;
+        console.log('[EXTRACT_PROPERTY_ADDRESS]', { propertyAddress });
+      }
     }
     
     // Method 2: Parse from clauses if not in key_terms
@@ -184,6 +190,7 @@ Deno.serve(async (req) => {
           deposit_amount: depositAmount,
           deposit_paid_date: today,
           expected_return_date: returnDate,
+          property_address: propertyAddress || 'N/A',
           status: 'tracking'
         });
         console.log('[EXTRACT_DEPOSIT_CREATED]', { 
@@ -208,18 +215,47 @@ Deno.serve(async (req) => {
           rent_due_day: 1 // From lease: "on or before the 1st day of each month"
         });
         console.log('[EXTRACT_RENT_UPDATED]', { rentAmount, rent_due_day: 1 });
+        
+        // Create timeline event for first rent payment
+        if (startDate) {
+          try {
+            const firstRentDate = new Date(startDate);
+            firstRentDate.setDate(1); // Rent due on 1st
+            
+            await svc.entities.TimelineEvent.create({
+              lease_id: leaseId,
+              event_type: 'rent_due',
+              event_date: firstRentDate.toISOString().split('T')[0],
+              title: 'First Rent Payment Due',
+              description: `Monthly rent of ฿${rentAmount.toLocaleString()} due`,
+              property_address: propertyAddress || 'N/A'
+            });
+            console.log('[EXTRACT_RENT_TIMELINE_CREATED]');
+          } catch (timelineError) {
+            console.error('[EXTRACT_RENT_TIMELINE_FAILED]', { error: timelineError.message });
+          }
+        }
       } catch (rentError) {
         console.error('[EXTRACT_RENT_UPDATE_FAILED]', { error: rentError.message });
       }
     }
     
-    // Update lease dates
+    // Update lease with all extracted data
+    const updateData = {};
+    
     if (startDate && endDate) {
-      results.lease = await svc.entities.Lease.update(leaseId, {
-        start_date: startDate,
-        end_date: endDate
-      });
-      console.log('[EXTRACT_LEASE_UPDATED]');
+      updateData.start_date = startDate;
+      updateData.end_date = endDate;
+    }
+    
+    if (propertyAddress) {
+      updateData.property_address = propertyAddress;
+    }
+    
+    if (Object.keys(updateData).length > 0) {
+      results.lease = await svc.entities.Lease.update(leaseId, updateData);
+      console.log('[EXTRACT_LEASE_UPDATED]', updateData);
+      results.leaseUpdated = true;
     }
     
     // Create notification
