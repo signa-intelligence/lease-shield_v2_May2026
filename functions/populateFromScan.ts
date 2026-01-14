@@ -597,11 +597,17 @@ Deno.serve(async (req) => {
     });
     
   } catch (e) {
-    console.error('[POPULATE_FROM_SCAN_ERROR]', e.message, e.stack);
+    console.error('[POPULATE_FROM_SCAN_CRITICAL_ERROR] ========================================', {
+      error: e.message,
+      stack: e.stack,
+      name: e.name,
+      fullError: String(e)
+    });
     return Response.json({
       ok: false,
       error: 'SERVER_ERROR',
-      message: e.message
+      message: e.message,
+      stack: e.stack
     }, { status: 500 });
   }
 });
