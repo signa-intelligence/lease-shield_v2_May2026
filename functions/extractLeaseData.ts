@@ -70,11 +70,18 @@ Deno.serve(async (req) => {
           }
         }
         
-        // Find dates - look for explicit dates in Term of Lease clause
+        // Find dates - SEARCH FULL TEXT, NOT TRUNCATED
         if (!startDate && (name.includes('Term') || name.includes('Duration') || name.includes('Lease'))) {
-          console.log('[EXTRACT_CHECKING_DATES_CLAUSE]', { name, text: text.substring(0, 200) });
+          console.log('[EXTRACT_CHECKING_DATES_CLAUSE]', { 
+            name, 
+            textLength: text.length,
+            textPreview: text.substring(0, 300) 
+          });
           
-          // Try to find explicit dates - CASE INSENSITIVE
+          // Search patterns in FULL TEXT
+          const fullText = text; // Don't truncate!
+          
+          // Try to find explicit dates
           const datePatterns = [
             /Commencement Date:\s*(\d{1,2})\s+(\w+)\s+(\d{4})/i,
             /Start Date:\s*(\d{1,2})\s+(\w+)\s+(\d{4})/i,
@@ -85,9 +92,9 @@ Deno.serve(async (req) => {
           let foundStart = null;
           let foundEnd = null;
           
-          // Check commencement/start date
+          // Check start date
           for (const pattern of [datePatterns[0], datePatterns[1]]) {
-            const match = text.match(pattern);
+            const match = fullText.match(pattern);
             if (match) {
               const [_, day, month, year] = match;
               const monthNum = new Date(`${month} 1, 2000`).getMonth() + 1;
@@ -97,9 +104,9 @@ Deno.serve(async (req) => {
             }
           }
           
-          // Check expiration/end date
+          // Check end date
           for (const pattern of [datePatterns[2], datePatterns[3]]) {
-            const match = text.match(pattern);
+            const match = fullText.match(pattern);
             if (match) {
               const [_, day, month, year] = match;
               const monthNum = new Date(`${month} 1, 2000`).getMonth() + 1;
@@ -112,20 +119,6 @@ Deno.serve(async (req) => {
           if (foundStart && foundEnd) {
             startDate = foundStart;
             endDate = foundEnd;
-            console.log('[EXTRACT_DATES_PARSED]', { startDate, endDate });
-          } else {
-            // Fallback: calculate from duration
-            const monthMatch = text.match(/(\d+)\s*months?/i);
-            const yearMatch = text.match(/one\s+year|1\s+year/i);
-            
-            if (monthMatch || yearMatch) {
-              const months = monthMatch ? parseInt(monthMatch[1]) : 12;
-              startDate = new Date().toISOString().split('T')[0];
-              const end = new Date();
-              end.setMonth(end.getMonth() + months);
-              endDate = end.toISOString().split('T')[0];
-              console.log('[EXTRACT_DATES_CALCULATED]', { months, startDate, endDate });
-            }
           }
         }
       }
@@ -180,6 +173,19 @@ Deno.serve(async (req) => {
           data: { lease_id: leaseId, deposit_amount: depositAmount }
         });
         results.deposit = null;
+      }
+    }
+    
+    // Create rent schedule record if rent amount found
+    if (rentAmount && results.deposit) {
+      try {
+        results.rent = await svc.entities.DepositTracker.update(results.deposit.id, {
+          rent_amount: rentAmount,
+          rent_due_day: 1 // From lease: "on or before the 1st day of each month"
+        });
+        console.log('[EXTRACT_RENT_UPDATED]', { rentAmount, rent_due_day: 1 });
+      } catch (rentError) {
+        console.error('[EXTRACT_RENT_UPDATE_FAILED]', { error: rentError.message });
       }
     }
     
