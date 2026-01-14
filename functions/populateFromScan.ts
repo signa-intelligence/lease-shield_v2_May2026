@@ -284,13 +284,6 @@ Deno.serve(async (req) => {
       }
     }
     
-    console.log('[POPULATE_EXTRACTED_DATES] ========================================', { 
-      startDate, 
-      endDate,
-      noticePeriodDays,
-      allDatesValid: !!(startDate && endDate)
-    });
-    
     // Extract NOTICE PERIOD
     let noticePeriodDays = keyTerms.notice_period_days;
     if (!noticePeriodDays) {
@@ -302,6 +295,13 @@ Deno.serve(async (req) => {
         }
       }
     }
+    
+    console.log('[POPULATE_EXTRACTED_DATES] ========================================', { 
+      startDate, 
+      endDate,
+      noticePeriodDays,
+      allDatesValid: !!(startDate && endDate)
+    });
     
     console.log('[EXTRACTION_RESULTS]', {
       depositAmount,
