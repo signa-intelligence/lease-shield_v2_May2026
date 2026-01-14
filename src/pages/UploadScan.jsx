@@ -149,6 +149,8 @@ function UploadScanPageContent() {
     queryKey: ['allScans'],
     queryFn: () => base44.entities.LeaseScan.list(),
     enabled: !!user,
+    refetchOnMount: 'always',
+    staleTime: 0
   });
 
   const language = user?.language || 'en';
@@ -1428,6 +1430,11 @@ function UploadScanPageContent() {
         
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        
+        // Invalidate all queries to refresh Protection Score and data
+        await queryClient.invalidateQueries({ queryKey: ['allScans'] });
+        await queryClient.invalidateQueries({ queryKey: ['deposits'] });
+        await queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
         navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
