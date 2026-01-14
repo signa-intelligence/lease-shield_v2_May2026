@@ -170,39 +170,74 @@ Deno.serve(async (req) => {
     }
     
     // Extract LEASE DATES with enhanced fallback logic
+    console.log('[POPULATE_LEASE_DATES_START] ========================================', { 
+      leaseId, 
+      clausesCount: clauses.length,
+      allClauseTitles: clauses.map(c => c.canonical_name || c.title)
+    });
+    
     let startDate = keyTerms.start_date || keyTerms.lease_start;
     let endDate = keyTerms.end_date || keyTerms.lease_end;
-    console.log('[EXTRACTING_DATES]', { startFromKeyTerms: startDate, endFromKeyTerms: endDate });
+    console.log('[EXTRACTING_DATES_FROM_KEY_TERMS]', { 
+      startFromKeyTerms: startDate, 
+      endFromKeyTerms: endDate,
+      allKeyTermsAvailable: keyTerms
+    });
     
     if (!startDate || !endDate) {
+      console.log('[SEARCHING_FOR_TERM_CLAUSE]', {
+        searchingFor: ['term of lease', 'lease duration', 'lease period', 'ระยะเวลา', 'term', 'duration']
+      });
+      
       const termClause = findClauseByName(clauses, ['term of lease', 'lease duration', 'lease period', 'ระยะเวลา', 'term', 'duration']);
+      console.log('[POPULATE_TERM_CLAUSE_SEARCH_RESULT]', { 
+        found: !!termClause,
+        clauseTitle: termClause?.canonical_name || termClause?.title,
+        fullClauseText: termClause?.clause_text || 'NOT FOUND'
+      });
+      
       if (termClause) {
-        console.log('[TERM_CLAUSE_FOUND]', {
-          clauseTitle: termClause.canonical_name,
-          clauseTextPreview: termClause.clause_text?.substring(0, 200)
+        console.log('[POPULATE_PARSING_DATES_FROM_CLAUSE]', {
+          clauseText: termClause.clause_text,
+          regexPatterns: ['\\d{1,2}[-\\/]\\d{1,2}[-\\/]\\d{2,4}', '(\\d+)\\s*(month|year|เดือน|ปี)']
         });
         
         // Try multiple date patterns
         const dates = termClause.clause_text.match(/\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/g);
-        console.log('[DATES_EXTRACTED_FROM_TEXT]', dates);
+        console.log('[DATES_REGEX_MATCH_RESULT]', { 
+          matchedDates: dates,
+          datesCount: dates?.length || 0
+        });
         
         if (dates && dates.length >= 2) {
+          console.log('[PARSING_DATES_FROM_MATCHES]', { date0: dates[0], date1: dates[1] });
           try {
-            if (!startDate) startDate = new Date(dates[0]).toISOString().split('T')[0];
-            if (!endDate) endDate = new Date(dates[1]).toISOString().split('T')[0];
+            if (!startDate) {
+              startDate = new Date(dates[0]).toISOString().split('T')[0];
+              console.log('[START_DATE_PARSED]', startDate);
+            }
+            if (!endDate) {
+              endDate = new Date(dates[1]).toISOString().split('T')[0];
+              console.log('[END_DATE_PARSED]', endDate);
+            }
           } catch (e) {
-            console.log('[DATE_PARSING_ERROR]', e.message);
+            console.error('[DATE_PARSING_ERROR]', { error: e.message, dates });
           }
+        } else {
+          console.log('[INSUFFICIENT_DATE_MATCHES]', { foundCount: dates?.length || 0, needed: 2 });
         }
         
         // Fallback: Look for duration in months/years
         if (!startDate || !endDate) {
+          console.log('[TRYING_DURATION_EXTRACTION]', { missingStart: !startDate, missingEnd: !endDate });
           const durationMatch = termClause.clause_text.match(/(\d+)\s*(month|year|เดือน|ปี)/i);
+          console.log('[DURATION_REGEX_RESULT]', { match: durationMatch });
+          
           if (durationMatch) {
             const duration = parseInt(durationMatch[1]);
             const unit = durationMatch[2].toLowerCase();
             
-            console.log('[DURATION_FOUND]', { duration, unit });
+            console.log('[DURATION_FOUND]', { duration, unit, willCalculateDates: true });
             
             // If we have start date, calculate end date
             if (startDate && !endDate) {
@@ -233,16 +268,28 @@ Deno.serve(async (req) => {
     
     // Final fallback: If still no dates, use today + 12 months
     if (!startDate || !endDate) {
-      console.log('[DATES_FALLBACK_TRIGGERED] Using default 12-month lease');
-      if (!startDate) startDate = new Date().toISOString().split('T')[0];
+      console.log('[DATES_FALLBACK_TRIGGERED]', { 
+        reason: 'No dates extracted from clause or key_terms',
+        willUseDefault: true
+      });
+      if (!startDate) {
+        startDate = new Date().toISOString().split('T')[0];
+        console.log('[START_DATE_DEFAULTED_TO_TODAY]', startDate);
+      }
       if (!endDate) {
         const defaultEnd = new Date(startDate);
         defaultEnd.setFullYear(defaultEnd.getFullYear() + 1);
         endDate = defaultEnd.toISOString().split('T')[0];
+        console.log('[END_DATE_CALCULATED_AS_START_PLUS_1_YEAR]', endDate);
       }
     }
     
-    console.log('[DATES_FINAL]', { startDate, endDate });
+    console.log('[POPULATE_EXTRACTED_DATES] ========================================', { 
+      startDate, 
+      endDate,
+      noticePeriodDays,
+      allDatesValid: !!(startDate && endDate)
+    });
     
     // Extract NOTICE PERIOD
     let noticePeriodDays = keyTerms.notice_period_days;
@@ -306,24 +353,35 @@ Deno.serve(async (req) => {
     }
     
     // Build lease updates - ALWAYS update if we have dates
+    console.log('[BUILDING_LEASE_UPDATES]', { hasStartDate: !!startDate, hasEndDate: !!endDate });
+    
     if (startDate) {
       updates.lease.start_date = startDate;
-      console.log('[LEASE_UPDATE_ADD] start_date:', startDate);
+      console.log('[LEASE_UPDATE_ADD_START_DATE]', startDate);
     }
     if (endDate) {
       updates.lease.end_date = endDate;
-      console.log('[LEASE_UPDATE_ADD] end_date:', endDate);
+      console.log('[LEASE_UPDATE_ADD_END_DATE]', endDate);
     }
     
     // Calculate notice deadline if we have end date
     const finalNoticePeriodDays = noticePeriodDays || 30; // Default to 30 days
+    console.log('[CALCULATING_NOTICE_DEADLINE]', { 
+      hasEndDate: !!endDate, 
+      noticePeriodDays: finalNoticePeriodDays 
+    });
+    
     if (endDate) {
       const noticeDeadline = new Date(endDate);
       noticeDeadline.setDate(noticeDeadline.getDate() - finalNoticePeriodDays);
       updates.lease.notice_period_days = finalNoticePeriodDays;
       updates.lease.notice_deadline = noticeDeadline.toISOString().split('T')[0];
       updates.lease.notice_alerts_enabled = true;
-      console.log('[LEASE_UPDATE_ADD] notice_deadline:', updates.lease.notice_deadline);
+      console.log('[NOTICE_DEADLINE_CALCULATED]', { 
+        endDate, 
+        noticePeriodDays: finalNoticePeriodDays,
+        noticeDeadline: updates.lease.notice_deadline
+      });
       
       // Add timeline event for notice deadline
       updates.timeline.push({
@@ -447,27 +505,39 @@ Deno.serve(async (req) => {
     });
     
     if (updates.lease && Object.keys(updates.lease).length > 0) {
-      console.log('[UPDATING_LEASE_RECORD_FORCED]', { leaseId, updateData: updates.lease });
+      console.log('[POPULATE_UPDATING_LEASE] ========================================', { 
+        leaseId, 
+        updateData: updates.lease,
+        fieldsToUpdate: Object.keys(updates.lease)
+      });
       try {
         // FORCE UPDATE: Scan data is authoritative, override existing values
         results.lease = await svc.entities.Lease.update(leaseId, updates.lease);
-        console.log('[LEASE_UPDATE_SUCCESS]', { 
+        console.log('[POPULATE_LEASE_UPDATED] ========================================', { 
+          success: true,
           leaseId, 
           updatedFields: Object.keys(updates.lease),
           resultHasStartDate: !!results.lease?.start_date,
           resultHasEndDate: !!results.lease?.end_date,
-          resultHasNoticeDeadline: !!results.lease?.notice_deadline
+          resultHasNoticeDeadline: !!results.lease?.notice_deadline,
+          fullResult: results.lease
         });
       } catch (leaseErr) {
-        console.error('[LEASE_UPDATE_FAILED]', { 
+        console.error('[POPULATE_LEASE_UPDATE_ERROR] ========================================', { 
           error: leaseErr.message, 
           stack: leaseErr.stack,
-          updateData: updates.lease
+          updateData: updates.lease,
+          leaseId
         });
         throw leaseErr;
       }
     } else {
-      console.log('[LEASE_UPDATE_SKIPPED]', { reason: 'No lease data to update' });
+      console.log('[LEASE_UPDATE_SKIPPED] ========================================', { 
+        reason: 'No lease data to update',
+        hasLeaseData: !!updates.lease,
+        keysCount: Object.keys(updates.lease || {}).length,
+        leaseData: updates.lease
+      });
     }
     
     // Create timeline events directly
