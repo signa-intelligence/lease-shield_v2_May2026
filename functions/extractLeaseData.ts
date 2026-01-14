@@ -74,12 +74,12 @@ Deno.serve(async (req) => {
         if (!startDate && (name.includes('Term') || name.includes('Duration') || name.includes('Lease'))) {
           console.log('[EXTRACT_CHECKING_DATES_CLAUSE]', { name, text: text.substring(0, 200) });
           
-          // Try to find explicit dates first (e.g., "1 February 2026", "31 January 2027")
+          // Try to find explicit dates - CASE INSENSITIVE
           const datePatterns = [
-            /commencement date[:\s]+(\d{1,2})\s+(\w+)\s+(\d{4})/i,
-            /start date[:\s]+(\d{1,2})\s+(\w+)\s+(\d{4})/i,
-            /expiration date[:\s]+(\d{1,2})\s+(\w+)\s+(\d{4})/i,
-            /end date[:\s]+(\d{1,2})\s+(\w+)\s+(\d{4})/i,
+            /Commencement Date:\s*(\d{1,2})\s+(\w+)\s+(\d{4})/i,
+            /Start Date:\s*(\d{1,2})\s+(\w+)\s+(\d{4})/i,
+            /Expiration Date:\s*(\d{1,2})\s+(\w+)\s+(\d{4})/i,
+            /End Date:\s*(\d{1,2})\s+(\w+)\s+(\d{4})/i,
           ];
           
           let foundStart = null;
@@ -129,6 +129,14 @@ Deno.serve(async (req) => {
           }
         }
       }
+      
+      // Log final extraction status
+      console.log('[EXTRACT_DATES_FINAL]', { 
+        startDate, 
+        endDate,
+        foundFromClauses: !!(startDate && endDate),
+        willCalculate: !(startDate && endDate)
+      });
     }
     
     console.log('[EXTRACT_RESULTS]', { 
