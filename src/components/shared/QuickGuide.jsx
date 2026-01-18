@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Shield, Home, Wallet, FileText, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Shield, Home, Wallet, Camera, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -9,6 +9,15 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
   const [currentStep, setCurrentStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const navigate = useNavigate();
+
+  // Listen for manual open events from Info button
+  useEffect(() => {
+    const handleOpenGuide = () => {
+      setCurrentStep(0);
+    };
+    window.addEventListener('openQuickGuide', handleOpenGuide);
+    return () => window.removeEventListener('openQuickGuide', handleOpenGuide);
+  }, []);
 
   if (!isOpen) return null;
 
