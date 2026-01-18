@@ -81,7 +81,20 @@ function DashboardContent() {
 
   const { data: deposits = [], isLoading: depositsLoading } = useQuery({
     queryKey: ['deposits'],
-    queryFn: () => base44.entities.DepositTracker.filter({}, '-created_date'),
+    queryFn: async () => {
+      const allDeposits = await base44.entities.DepositTracker.filter({}, '-created_date');
+      console.log('[DASHBOARD_DEPOSITS]', { 
+        count: allDeposits.length,
+        deposits: allDeposits.map(d => ({
+          id: d.id,
+          deposit_amount: d.deposit_amount,
+          rent_amount: d.rent_amount,
+          lease_id: d.lease_id,
+          property_address: d.property_address
+        }))
+      });
+      return allDeposits;
+    },
     enabled: !!user,
     refetchOnMount: 'always',
     staleTime: 0
