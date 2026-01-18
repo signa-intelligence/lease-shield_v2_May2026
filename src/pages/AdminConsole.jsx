@@ -1216,10 +1216,10 @@ function AdminConsoleContent() {
           backgroundColor: colors.cardBg,
           borderLeft: '6px solid #3B82F6'
         }}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div style={{
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex-shrink-0" style={{
                   width: '48px',
                   height: '48px',
                   backgroundColor: '#3B82F6',
@@ -1230,19 +1230,20 @@ function AdminConsoleContent() {
                 }}>
                   <Settings className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="font-bold" style={{ color: colors.textPrimary }}>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
                     {strings.opsConsole}
                   </h3>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                  <p className="text-sm hidden sm:block" style={{ color: colors.textSecondary }}>
                     {strings.opsConsoleDesc}
                   </p>
                 </div>
               </div>
-              <Link to={createPageUrl("OpsConsole")}>
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  <Scale className="w-4 h-4 mr-2" />
-                  {strings.goToOps}
+              <Link to={createPageUrl("OpsConsole")} className="flex-shrink-0">
+                <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto min-h-[44px] px-4">
+                  <Scale className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">{strings.goToOps}</span>
+                  <span className="sm:hidden">Ops</span>
                 </Button>
               </Link>
             </div>
