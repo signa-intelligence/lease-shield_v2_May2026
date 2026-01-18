@@ -873,6 +873,15 @@ function DashboardContent() {
     const displayedScore = Math.min(actionScore, tierCap);
     const isLocked = actionScore >= 85 && userTier !== 'secure';
 
+    console.log('[PROTECTION_SCORE_FINAL]', {
+      actionScore,
+      tierCap,
+      displayedScore,
+      isLocked,
+      userTier,
+      suggestionsCount: suggestions.length
+    });
+
     return { 
       score: displayedScore, 
       actionScore,
