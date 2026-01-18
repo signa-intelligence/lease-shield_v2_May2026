@@ -83,7 +83,27 @@ function TimelineContent() {
 
   const { data: timelineEvents = [] } = useQuery({
     queryKey: ['timelineEvents'],
-    queryFn: () => base44.entities.TimelineEvent.filter({}, '-created_date'),
+    queryFn: async () => {
+      // Get all timeline events
+      const allEvents = await base44.entities.TimelineEvent.filter({}, '-created_date');
+      
+      // Get all valid lease IDs
+      const allLeases = await base44.entities.Lease.filter({});
+      const validLeaseIds = new Set(allLeases.map(l => l.id));
+      
+      // Filter out orphaned events (events with lease_id that no longer exists)
+      const validEvents = allEvents.filter(event => 
+        !event.lease_id || validLeaseIds.has(event.lease_id)
+      );
+      
+      console.log('[TIMELINE_FILTERED]', {
+        total: allEvents.length,
+        valid: validEvents.length,
+        orphaned: allEvents.length - validEvents.length
+      });
+      
+      return validEvents;
+    },
     enabled: !!user,
   });
 
