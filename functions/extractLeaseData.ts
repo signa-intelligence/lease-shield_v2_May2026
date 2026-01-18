@@ -68,16 +68,19 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Method 1: Check key_terms first
+    // Method 1: Check key_terms first (already done above, but fill any gaps)
     if (scanFull.key_terms) {
-      depositAmount = scanFull.key_terms.security_deposit || 
-                     scanFull.key_terms.deposit_amount ||
-                     null;
-      rentAmount = scanFull.key_terms.monthly_rent ||
-                  scanFull.key_terms.rent_amount ||
-                  null;
-      
-      if (scanFull.key_terms.property_address) {
+      if (!depositAmount) {
+        depositAmount = scanFull.key_terms.security_deposit || 
+                       scanFull.key_terms.deposit_amount ||
+                       null;
+      }
+      if (!rentAmount) {
+        rentAmount = scanFull.key_terms.monthly_rent ||
+                    scanFull.key_terms.rent_amount ||
+                    null;
+      }
+      if (!propertyAddress && scanFull.key_terms.property_address) {
         propertyAddress = scanFull.key_terms.property_address;
         console.log('[EXTRACT_PROPERTY_ADDRESS]', { propertyAddress });
       }
