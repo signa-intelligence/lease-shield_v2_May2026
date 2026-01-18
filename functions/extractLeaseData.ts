@@ -197,30 +197,49 @@ Deno.serve(async (req) => {
     
     // Create deposit record
     if (depositAmount) {
-      // Calculate dates
+      // Calculate dates - use lease end date if available, otherwise 1 year
       const today = new Date().toISOString().split('T')[0];
-      const oneYearLater = new Date();
-      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-      const returnDate = oneYearLater.toISOString().split('T')[0];
+      let returnDate;
+      if (endDate) {
+        // Use lease end date + 30 days as expected return
+        const endDateObj = new Date(endDate);
+        endDateObj.setDate(endDateObj.getDate() + 30);
+        returnDate = endDateObj.toISOString().split('T')[0];
+      } else {
+        const oneYearLater = new Date();
+        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+        returnDate = oneYearLater.toISOString().split('T')[0];
+      }
+      
+      const depositData = {
+        lease_id: leaseId,
+        deposit_amount: depositAmount,
+        deposit_paid_date: startDate || today,
+        expected_return_date: returnDate,
+        property_address: propertyAddress || 'N/A',
+        status: 'tracking',
+        rent_amount: rentAmount || 0,
+        rent_due_day: 1,
+        lease_start_date: startDate || null,
+        lease_end_date: endDate || null
+      };
+      
+      console.log('[EXTRACT_DEPOSIT_DATA]', depositData);
       
       try {
-        results.deposit = await svc.entities.DepositTracker.create({
-          lease_id: leaseId,
-          deposit_amount: depositAmount,
-          deposit_paid_date: today,
-          expected_return_date: returnDate,
-          property_address: propertyAddress || 'N/A',
-          status: 'tracking'
-        });
+        results.deposit = await svc.entities.DepositTracker.create(depositData);
         console.log('[EXTRACT_DEPOSIT_CREATED]', { 
           success: true,
-          id: results.deposit?.id 
+          id: results.deposit?.id,
+          deposit_amount: results.deposit?.deposit_amount,
+          rent_amount: results.deposit?.rent_amount,
+          property_address: results.deposit?.property_address
         });
       } catch (depositError) {
         console.error('[EXTRACT_DEPOSIT_CREATE_FAILED]', {
           error: depositError.message,
           stack: depositError.stack,
-          data: { lease_id: leaseId, deposit_amount: depositAmount }
+          data: depositData
         });
         results.deposit = null;
       }
