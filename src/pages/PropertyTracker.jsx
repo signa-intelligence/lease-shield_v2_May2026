@@ -291,11 +291,17 @@ function MaintenanceRequestCard({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMaintenanceAction(request, 'archive'); }}>
+                  <DropdownMenuItem onClick={(e) => { 
+                    e.stopPropagation(); 
+                    handleCloseMaintenance(request);
+                  }}>
                     <Archive className="w-4 h-4 mr-2" />
                     {language === 'th' ? 'เก็บไว้' : 'Archive'}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMaintenanceAction(request, 'delete'); }} className="text-red-600">
+                  <DropdownMenuItem onClick={(e) => { 
+                    e.stopPropagation(); 
+                    handleDeleteMaintenance(request); 
+                  }} className="text-red-600">
                     <Trash2 className="w-4 h-4 mr-2" />
                     {language === 'th' ? 'ลบอย่างถาวร' : 'Delete'}
                   </DropdownMenuItem>
