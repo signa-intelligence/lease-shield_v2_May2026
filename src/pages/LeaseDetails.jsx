@@ -20,7 +20,8 @@ import {
   Shield,
   Eye,
   ExternalLink,
-  Loader2 
+  Loader2,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import AuthGuard from "../components/shared/AuthGuard";
@@ -932,12 +933,56 @@ function LeaseDetailsContent() {
                   <div className="font-semibold">{strings.generateLetter}</div>
                   <div className="text-xs" style={{ color: colors.textSecondary }}>
                     {language === 'th' ? 'สร้างจดหมายอย่างเป็นทางการ' : 'Create formal letters'}
-                    </div>
                   </div>
-                  </Button>
+                </div>
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  if (!confirm(language === 'th' 
+                    ? 'ลบสัญญาเช่านี้?\n\n⚠️ จะลบถาวร:\n• สัญญาเช่าและการวิเคราะห์\n• บันทึกการติดตามเงินมัดจำ\n• ตารางค่าเช่า\n• เหตุการณ์ไทม์ไลน์\n• ข้อมูลที่เกี่ยวข้องทั้งหมด\n\nไม่สามารถยกเลิกได้'
+                    : 'Delete this lease?\n\n⚠️ This will permanently remove:\n• Lease agreement and analysis\n• Deposit tracking records\n• Rent schedules\n• Timeline events\n• All related data\n\nThis action cannot be undone.')) {
+                    return;
+                  }
+                  
+                  haptic.heavy();
+                  
+                  try {
+                    const response = await base44.functions.invoke('deleteLease', { leaseId: lease.id });
+                    
+                    if (response?.data?.success) {
+                      console.log('[DELETE_SUCCESS]', response.data);
+                      
+                      // Invalidate all queries
+                      await queryClient.invalidateQueries({ queryKey: ['leases'] });
+                      await queryClient.invalidateQueries({ queryKey: ['deposits'] });
+                      await queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+                      await queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+                      await queryClient.invalidateQueries({ queryKey: ['allScans'] });
+                      
+                      haptic.success();
+                      navigate(createPageUrl("Dashboard"));
+                    }
+                  } catch (error) {
+                    console.error('[DELETE_ERROR]', error);
+                    haptic.error();
+                    alert(language === 'th' ? 'ไม่สามารถลบสัญญาเช่าได้' : 'Failed to delete lease');
+                  }
+                }}
+                className="justify-start h-auto py-4 border-red-600 text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="w-5 h-5 mr-3" />
+                <div className="text-left">
+                  <div className="font-semibold">{language === 'th' ? 'ลบสัญญาเช่านี้' : 'Delete This Lease'}</div>
+                  <div className="text-xs" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? 'ลบอย่างถาวร' : 'Permanently delete'}
                   </div>
-                  </CardContent>
-                  </Card>
+                </div>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
                   {/* Build marker for verification */}
                   <div className="mt-6 text-center p-4 bg-yellow-100 border-2 border-yellow-500 rounded">

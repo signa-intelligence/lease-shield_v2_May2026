@@ -1839,17 +1839,30 @@ function UploadScanPageContent() {
 
   const deleteLeaseWithScanMutation = useMutation({
     mutationFn: async (leaseId) => {
-      const associatedScans = await base44.entities.LeaseScan.filter({ lease_id: leaseId });
-      for (const scan of associatedScans) {
-        await base44.entities.LeaseScan.delete(scan.id);
-      }
-      await base44.entities.Lease.delete(leaseId);
+      // Call the deleteLease backend function which handles cascade deletion
+      const response = await base44.functions.invoke('deleteLease', { leaseId });
+      return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log('[DELETE_SUCCESS]', result);
+      
+      // CRITICAL: Invalidate ALL related queries to refresh UI
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       queryClient.invalidateQueries({ queryKey: ['allScans'] });
+      queryClient.invalidateQueries({ queryKey: ['deposits'] });
+      queryClient.invalidateQueries({ queryKey: ['depositTrackers'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['maintenanceRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+      
       setSelectedLease(null);
+      haptic.success();
     },
+    onError: (error) => {
+      console.error('[DELETE_ERROR]', error);
+      haptic.error();
+      alert(language === 'th' ? 'ไม่สามารถลบสัญญาเช่าได้' : 'Failed to delete lease');
+    }
   });
 
   const handleSwipeDelete = (leaseId) => {
