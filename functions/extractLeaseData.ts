@@ -282,18 +282,33 @@ Deno.serve(async (req) => {
     // Update lease with all extracted data
     const updateData = {};
     
-    if (startDate && endDate) {
+    if (startDate) {
       updateData.start_date = startDate;
+    }
+    if (endDate) {
       updateData.end_date = endDate;
     }
-    
     if (propertyAddress) {
       updateData.property_address = propertyAddress;
     }
+    if (rentAmount) {
+      updateData.rent_amount = rentAmount;
+    }
+    if (depositAmount) {
+      updateData.deposit_amount = depositAmount;
+    }
+    
+    console.log('[EXTRACT_LEASE_UPDATE_DATA]', updateData);
     
     if (Object.keys(updateData).length > 0) {
       results.lease = await svc.entities.Lease.update(leaseId, updateData);
-      console.log('[EXTRACT_LEASE_UPDATED]', updateData);
+      console.log('[EXTRACT_LEASE_UPDATED]', {
+        leaseId,
+        updatedFields: Object.keys(updateData),
+        property_address: results.lease?.property_address,
+        rent_amount: results.lease?.rent_amount,
+        deposit_amount: results.lease?.deposit_amount
+      });
       results.leaseUpdated = true;
     }
     
