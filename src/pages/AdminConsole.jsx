@@ -1301,10 +1301,10 @@ function AdminConsoleContent() {
           backgroundColor: colors.cardBg,
           borderLeft: '6px solid #8B5CF6'
         }}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div style={{
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex-shrink-0" style={{
                   width: '48px',
                   height: '48px',
                   backgroundColor: '#8B5CF6',
@@ -1315,19 +1315,27 @@ function AdminConsoleContent() {
                 }}>
                   <BookOpen className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="font-bold" style={{ color: colors.textPrimary }}>
-                    Canonical Clause Ledger
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                    Clause Reference
                   </h3>
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    View and export the 83-category Thailand lease clause taxonomy
+                  <p className="text-sm" style={{ 
+                    color: colors.textSecondary,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical'
+                  }}>
+                    Browse 83 standard lease clause categories
                   </p>
                 </div>
               </div>
-              <Link to={createPageUrl("AdminCanonicalLedger")}>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <Database className="w-4 h-4 mr-2" />
-                  View Ledger
+              <Link to={createPageUrl("AdminCanonicalLedger")} className="flex-shrink-0">
+                <Button className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto min-h-[44px] px-4">
+                  <BookOpen className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">View Ledger</span>
+                  <span className="sm:hidden">View</span>
                 </Button>
               </Link>
             </div>
