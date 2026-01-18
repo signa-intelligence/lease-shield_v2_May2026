@@ -1653,8 +1653,53 @@ ja: {
 
 
 
-                  {false && isAdmin && (
+                  {isAdmin && (
                   <>
+                  <button
+                    onClick={async () => {
+                      haptic.medium();
+                      try {
+                        const response = await base44.functions.invoke('cleanupOrphanedRecords');
+                        console.log('[CLEANUP_RESULT]', response.data);
+                        const { cleaned, totalCleaned } = response.data;
+                        toast.success(
+                          language === 'th'
+                            ? `ลบข้อมูลที่ไม่มีเจ้าของ ${totalCleaned} รายการ`
+                            : `Cleaned up ${totalCleaned} orphaned records`
+                        );
+                        alert(
+                          `✅ CLEANUP COMPLETE\n\n` +
+                          `Timeline Events: ${cleaned.timelineEvents}\n` +
+                          `Deposit Trackers: ${cleaned.depositTrackers}\n` +
+                          `Maintenance Requests: ${cleaned.maintenanceRequests}\n` +
+                          `Lease Scans: ${cleaned.leaseScans}\n\n` +
+                          `Total: ${totalCleaned} orphaned records removed`
+                        );
+                        queryClient.invalidateQueries();
+                      } catch (error) {
+                        console.error('[CLEANUP_ERROR]', error);
+                        toast.error(language === 'th' ? 'ล้างข้อมูลล้มเหลว' : 'Cleanup failed');
+                      }
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      backgroundColor: '#DC2626',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <AlertCircle className="w-3 h-3" />
+                    Cleanup Orphans
+                  </button>
                   <button
                     onClick={() => {
                       haptic.medium();
