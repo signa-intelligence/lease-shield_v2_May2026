@@ -539,7 +539,7 @@ function LeaseDetailsContent() {
                   overflowWrap: 'break-word',
                   lineHeight: '1.5'
                 }}>
-                  {lease.property_address || 'N/A'}
+                  {propertyAddress}
                 </p>
               </div>
 
