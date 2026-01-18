@@ -386,11 +386,11 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
               <div
                 key={idx}
                 style={{
-                  width: '8px',
+                  width: idx === currentStep ? '24px' : '8px',
                   height: '8px',
-                  borderRadius: '50%',
+                  borderRadius: idx === currentStep ? '4px' : '50%',
                   backgroundColor: idx === currentStep ? (isDarkMode ? '#C7A338' : '#063F2C') : (isDarkMode ? '#4B5563' : '#D7D7D7'),
-                  transition: 'background-color 0.2s ease'
+                  transition: 'all 0.3s ease'
                 }}
               />
             ))}
