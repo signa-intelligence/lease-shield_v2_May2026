@@ -788,9 +788,26 @@ function DashboardContent() {
     let actionScore = 15; // Base score for having an account
     const suggestions = [];
 
-    // Check for completed LeaseScan (status = 'completed')
-    const hasCompletedScan = allScans.some(s => s.status === 'completed' || s.status === 'ok');
-    if (hasCompletedScan) {
+    // Check for completed LeaseScan (status = 'completed' or has scan_full data)
+    const hasCompletedScan = allScans.some(s => 
+      s.status === 'completed' || 
+      s.status === 'ok' || 
+      s.scan_full !== null
+    );
+    
+    // Also check if we have any leases (scanned or not)
+    const hasAnyLease = leases.length > 0;
+    
+    console.log('[PROTECTION_SCORE_DEBUG]', {
+      hasCompletedScan,
+      hasAnyLease,
+      scansCount: allScans.length,
+      leasesCount: leases.length,
+      depositsCount: deposits.length,
+      depositsWithRent: deposits.filter(d => d.rent_amount && d.rent_amount > 0).length
+    });
+    
+    if (hasCompletedScan || hasAnyLease) {
       actionScore += 25; // +25 for lease upload & scan
     } else {
       suggestions.push({
