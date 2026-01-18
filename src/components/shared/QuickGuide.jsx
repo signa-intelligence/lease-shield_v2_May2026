@@ -168,16 +168,16 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
       route: createPageUrl('PropertyTracker') + '#deposit'
     },
     {
-      icon: FileText,
+      icon: Camera,
       title: strings.step4,
       description: strings.step4Desc,
       route: createPageUrl('EvidenceVault')
     },
     {
-      icon: HelpCircle,
+      icon: FileText,
       title: strings.step5,
       description: strings.step5Desc,
-      route: createPageUrl('Dashboard')
+      route: createPageUrl('Templates')
     }
   ];
 
