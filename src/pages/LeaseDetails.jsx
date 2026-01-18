@@ -67,10 +67,23 @@ function LeaseDetailsContent() {
     queryKey: ['scan', lease?.id],
     queryFn: async () => {
       const scans = await base44.entities.LeaseScan.list();
-      return scans.find(s => s.lease_id === lease.id);
+      const matchingScan = scans.find(s => s.lease_id === lease.id);
+      if (matchingScan) {
+        console.log('[LEASE_SCAN_DATA]', {
+          scan_id: matchingScan.id,
+          has_scan_full: !!matchingScan.scan_full,
+          key_terms: matchingScan.scan_full?.key_terms
+        });
+      }
+      return matchingScan;
     },
     enabled: !!lease?.id,
   });
+  
+  // Derive property address from scan if not on lease
+  const propertyAddress = lease?.property_address || 
+    scan?.scan_full?.key_terms?.property_address || 
+    'N/A';
 
   const updateLeaseMutation = useMutation({
     mutationFn: (data) => base44.entities.Lease.update(leaseId, data),
