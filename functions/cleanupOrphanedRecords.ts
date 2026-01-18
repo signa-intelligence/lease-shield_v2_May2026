@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
       leaseScans: 0
     };
     
-    // Clean TimelineEvents
+    // Clean TimelineEvents (orphans)
     const timelineEvents = await svc.entities.TimelineEvent.filter({ created_by: user.email });
     for (const event of timelineEvents) {
       if (event.lease_id && !validLeaseIds.has(event.lease_id)) {
@@ -42,6 +42,54 @@ Deno.serve(async (req) => {
         console.log(`[${correlationId}] Deleted orphaned TimelineEvent:`, event.id);
       }
     }
+    
+    // Clean duplicate maintenance timeline events
+    console.log(`[${correlationId}] 🔍 Checking maintenance timeline duplicates...`);
+    const maintenanceEvents = timelineEvents.filter(e => 
+      e.event_type && (
+        e.event_type.includes('maintenance') || 
+        e.event_type === 'maintenance_reported' ||
+        e.event_type === 'maintenance_followup_due' ||
+        e.event_type === 'maintenance_closed'
+      )
+    );
+    
+    // Group by: lease_id + title + event_date (date part only)
+    const duplicateGroups = {};
+    for (const event of maintenanceEvents) {
+      const dateKey = event.event_date ? event.event_date.split('T')[0] : 'no-date';
+      const key = `${event.lease_id || 'no-lease'}|${event.title || 'no-title'}|${dateKey}`;
+      if (!duplicateGroups[key]) {
+        duplicateGroups[key] = [];
+      }
+      duplicateGroups[key].push(event);
+    }
+    
+    console.log(`[${correlationId}] Found groups:`, Object.keys(duplicateGroups).length);
+    
+    // Find and delete duplicates (keep oldest by created_date)
+    const idsToDelete = [];
+    for (const key of Object.keys(duplicateGroups)) {
+      const group = duplicateGroups[key];
+      if (group.length > 1) {
+        // Sort by created_date ascending, keep first (oldest)
+        group.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+        // Delete all except the first one
+        for (let i = 1; i < group.length; i++) {
+          idsToDelete.push(group[i].id);
+        }
+      }
+    }
+    
+    console.log(`[${correlationId}] Deleting duplicate IDs:`, idsToDelete);
+    
+    for (const id of idsToDelete) {
+      await svc.entities.TimelineEvent.delete(id);
+      cleaned.timelineEvents++;
+      console.log(`[${correlationId}] Deleted duplicate maintenance TimelineEvent:`, id);
+    }
+    
+    console.log(`[${correlationId}] ✅ Removed ${idsToDelete.length} duplicate maintenance events`);
     
     // Clean DepositTrackers
     const deposits = await svc.entities.DepositTracker.filter({ created_by: user.email });
