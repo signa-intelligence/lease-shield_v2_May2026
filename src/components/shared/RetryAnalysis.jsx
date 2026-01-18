@@ -78,12 +78,24 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
       
       console.log(`[RETRY] Starting analysis retry for lease ${lease.id}`);
       
-      // Update status to processing (not queued, since we're actively processing)
+      // Update status to queued first (triggers progress bar on UploadScan page)
+      await base44.entities.Lease.update(lease.id, {
+        status: 'queued'
+      });
+
+      // Notify parent to update UI immediately
+      if (onStatusChange) {
+        onStatusChange(lease.id, 'queued');
+      }
+      
+      // Brief delay to ensure UI updates
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Then set to processing
       await base44.entities.Lease.update(lease.id, {
         status: 'processing'
       });
 
-      // Notify parent to update UI immediately
       if (onStatusChange) {
         onStatusChange(lease.id, 'processing');
       }
@@ -130,14 +142,21 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
         // Extract key terms from scan_full
         const keyTerms = scanFull.key_terms || {};
         
+        // Update lease with all extracted data including property_address
         await base44.entities.Lease.update(lease.id, {
           status: 'scanned',
-          property_address: keyTerms.property_address || null,
-          start_date: keyTerms.start_date || null,
-          end_date: keyTerms.end_date || null,
-          rent_amount: keyTerms.rent_amount > 0 ? keyTerms.rent_amount : null,
-          deposit_amount: keyTerms.deposit_amount > 0 ? keyTerms.deposit_amount : null,
+          property_address: keyTerms.property_address || scanFull.property_address || null,
+          start_date: keyTerms.lease_start_date || keyTerms.start_date || null,
+          end_date: keyTerms.lease_end_date || keyTerms.end_date || null,
+          rent_amount: keyTerms.monthly_rent || keyTerms.rent_amount || null,
+          deposit_amount: keyTerms.security_deposit || keyTerms.deposit_amount || null,
           language_detected: language || 'en'
+        });
+        
+        console.log('[RETRY] Lease updated with extracted data:', {
+          property_address: keyTerms.property_address || scanFull.property_address,
+          start_date: keyTerms.lease_start_date || keyTerms.start_date,
+          end_date: keyTerms.lease_end_date || keyTerms.end_date
         });
 
         // Update or create scan record
