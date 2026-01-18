@@ -21,11 +21,21 @@ Deno.serve(async (req) => {
     
     console.log('[EXTRACT_CLAUSES_FOUND]', { count: clauses.length });
     
+    // DECLARE VARIABLES FIRST
+    let depositAmount = null;
+    let rentAmount = null;
+    let startDate = null;
+    let endDate = null;
+    let propertyAddress = null;
+    
     // FIRST: Try to extract from key_terms (most reliable)
     if (scanFull.key_terms) {
       console.log('[EXTRACT_CHECKING_KEY_TERMS]', { 
         hasKeyTerms: true,
-        keys: Object.keys(scanFull.key_terms)
+        keys: Object.keys(scanFull.key_terms),
+        property_address: scanFull.key_terms.property_address,
+        security_deposit: scanFull.key_terms.security_deposit,
+        monthly_rent: scanFull.key_terms.monthly_rent
       });
       
       // Check for lease_start_date, lease_end_date in key_terms
@@ -39,18 +49,24 @@ Deno.serve(async (req) => {
         console.log('[EXTRACT_END_FROM_KEY_TERMS]', { endDate });
       }
       
-      // Also check rent_due_day
-      if (scanFull.key_terms.rent_due_day && !rentAmount) {
-        // Already extracted rent, just log
+      // Extract property address
+      if (scanFull.key_terms.property_address) {
+        propertyAddress = scanFull.key_terms.property_address;
+        console.log('[EXTRACT_PROPERTY_ADDRESS_KEY_TERMS]', { propertyAddress });
+      }
+      
+      // Extract deposit
+      if (scanFull.key_terms.security_deposit) {
+        depositAmount = scanFull.key_terms.security_deposit;
+        console.log('[EXTRACT_DEPOSIT_KEY_TERMS]', { depositAmount });
+      }
+      
+      // Extract rent
+      if (scanFull.key_terms.monthly_rent) {
+        rentAmount = scanFull.key_terms.monthly_rent;
+        console.log('[EXTRACT_RENT_KEY_TERMS]', { rentAmount });
       }
     }
-    
-    // Extract deposit amount - look in multiple places
-    let depositAmount = null;
-    let rentAmount = null;
-    let startDate = null;
-    let endDate = null;
-    let propertyAddress = null;
     
     // Method 1: Check key_terms first
     if (scanFull.key_terms) {
