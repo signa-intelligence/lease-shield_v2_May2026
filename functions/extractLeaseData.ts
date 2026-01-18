@@ -245,12 +245,13 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Create rent schedule record if rent amount found
-    if (rentAmount && results.deposit) {
+    // Create rent schedule record if rent amount found (already included in deposit creation above)
+    // This section updates if rent was NOT included initially
+    if (rentAmount && results.deposit && !results.deposit.rent_amount) {
       try {
         results.rent = await svc.entities.DepositTracker.update(results.deposit.id, {
           rent_amount: rentAmount,
-          rent_due_day: 1 // From lease: "on or before the 1st day of each month"
+          rent_due_day: 1
         });
         console.log('[EXTRACT_RENT_UPDATED]', { rentAmount, rent_due_day: 1 });
         
