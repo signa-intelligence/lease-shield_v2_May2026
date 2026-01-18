@@ -385,7 +385,18 @@ function PropertyTrackerContent() {
   const { data: maintenanceRequests = [] } = useQuery({
     queryKey: ['maintenance'],
     queryFn: async () => {
-      const allRequests = await base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date');
+      const allRequests = await base44.entities.MaintenanceRequest.filter({}, '-created_date');
+      
+      console.log('[MAINTENANCE_DEBUG]', {
+        total: allRequests.length,
+        requests: allRequests.map(r => ({ 
+          id: r.id, 
+          title: r.issue_title, 
+          created_by: r.created_by,
+          is_archived: r.is_archived 
+        }))
+      });
+      
       return allRequests.filter(r => !r.is_archived);
     },
     enabled: !!user,

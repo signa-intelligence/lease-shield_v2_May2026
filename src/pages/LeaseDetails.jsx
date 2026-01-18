@@ -51,8 +51,13 @@ function LeaseDetailsContent() {
   const { data: lease, isLoading: leaseLoading } = useQuery({
     queryKey: ['lease', leaseId],
     queryFn: async () => {
-      const leases = await base44.entities.Lease.list();
-      return leases.find(l => l.id === leaseId);
+      const leaseData = await base44.entities.Lease.get(leaseId);
+      console.log('[LEASE_MODAL_DATA]', {
+        id: leaseData?.id,
+        property_address: leaseData?.property_address,
+        allFields: Object.keys(leaseData || {})
+      });
+      return leaseData;
     },
     enabled: !!leaseId,
   });

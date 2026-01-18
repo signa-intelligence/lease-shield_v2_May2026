@@ -937,8 +937,19 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
     setExportingPdf(true);
     try {
       const response = await base44.functions.invoke("generateLeaseReportPDF", { scanId });
-      if (response?.data?.pdf_url) window.open(response.data.pdf_url, "_blank");
-      else alert("PDF generation failed.");
+      if (response?.data?.pdf_url) {
+        // Mobile-friendly download
+        const pdfUrl = response.data.pdf_url;
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = `Lease_Shield_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert("PDF generation failed.");
+      }
     } catch (err) {
       alert("PDF export failed: " + (err?.message || "Unknown error"));
     } finally {
@@ -1142,10 +1153,10 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
         )}
 
 
-        {/* Admin/Dev Debug Accordion (visible to admin/dev) */}
+        {/* Admin/Dev Debug Accordion (visible to admin/dev ONLY) */}
         {(() => {
           const role = (user?.role || user?.access_level || '').toLowerCase();
-          const isAdminLike = ['admin','super_admin','va'].includes(role) || showDebug;
+          const isAdminLike = ['admin','super_admin','va'].includes(role);
           if (!isAdminLike) return null;
           const nonNoneRiskCount = clauses.filter(c => (c?.risk_level || 'none') !== 'none').length;
           return (
