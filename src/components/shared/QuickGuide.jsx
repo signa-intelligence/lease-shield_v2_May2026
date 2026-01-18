@@ -284,31 +284,6 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           <button
             onClick={handleSkip}
             style={{
-              background: isDarkMode ? '#374151' : '#F3F4F6',
-              border: `1px solid ${isDarkMode ? '#4B5563' : '#D1D5DB'}`,
-              borderRadius: '8px',
-              color: isDarkMode ? '#D1D5DB' : '#6B7280',
-              cursor: 'pointer',
-              padding: '6px 12px',
-              fontFamily: 'Inter',
-              fontWeight: '500',
-              fontSize: '12px',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = isDarkMode ? '#4B5563' : '#E5E7EB';
-              e.currentTarget.style.color = isDarkMode ? '#F9FAFB' : '#374151';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
-              e.currentTarget.style.color = isDarkMode ? '#D1D5DB' : '#6B7280';
-            }}
-          >
-            {strings.skipTour}
-          </button>
-          <button
-            onClick={handleSkip}
-            style={{
               background: 'none',
               border: 'none',
               color: isDarkMode ? '#A8ABAD' : '#6B7280',
