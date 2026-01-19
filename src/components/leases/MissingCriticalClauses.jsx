@@ -95,11 +95,12 @@ export default function MissingCriticalClauses({
         border: `2px solid ${colors.successBorder}`,
         borderRadius: '12px',
         padding: '16px',
-        marginTop: '16px',
+        marginTop: '24px',
+        marginBottom: '24px',
         textAlign: 'center'
       }}>
         <span style={{ fontSize: '24px' }}>✅</span>
-        <p style={{ margin: '8px 0 0 0', color: colors.successText, fontWeight: 'bold' }}>
+        <p style={{ margin: '8px 0 0 0', color: colors.successText, fontWeight: 'bold', fontSize: '16px' }}>
           {strings.allPresent}
         </p>
       </div>
@@ -113,7 +114,8 @@ export default function MissingCriticalClauses({
       border: `2px solid ${colors.warningBorder}`,
       borderRadius: '12px',
       padding: '16px',
-      marginTop: '16px'
+      marginTop: '24px',
+      marginBottom: '24px'
     }}>
       {/* Collapsible Header */}
       <div 
@@ -126,36 +128,37 @@ export default function MissingCriticalClauses({
           userSelect: 'none'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '20px' }}>⚠️</span>
-          <h3 style={{ 
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: '20px', flexShrink: 0 }}>⚠️</span>
+          <h3 className="missing-clause-title" style={{ 
             margin: 0, 
             color: colors.warningText,
-            fontSize: '15px',
-            fontWeight: '700'
+            fontSize: '18px',
+            fontWeight: 'bold'
           }}>
             {strings.missingTitle} ({missingCount} {strings.of} {totalCount})
           </h3>
         </div>
-        <ChevronDown 
-          style={{ 
-            width: '20px',
-            height: '20px',
-            color: colors.warningText,
-            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease'
-          }}
-        />
+        <span className="missing-clause-arrow" style={{ 
+          fontSize: '20px', 
+          color: colors.warningText,
+          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+          transition: 'transform 0.2s ease',
+          flexShrink: 0,
+          marginLeft: '8px'
+        }}>
+          ▼
+        </span>
       </div>
       
       {/* Expandable Content - ONLY MISSING CLAUSES */}
       {isExpanded && (
         <div style={{ 
           marginTop: '16px',
-          animation: 'fadeIn 0.2s ease'
+          animation: 'fadeInMissing 0.2s ease'
         }}>
           {missingClauses.map(clause => (
-            <div key={clause.id} style={{
+            <div key={clause.id} className="missing-clause-item" style={{
               padding: '12px',
               backgroundColor: colors.cardBg,
               borderRadius: '8px',
@@ -167,17 +170,17 @@ export default function MissingCriticalClauses({
                 alignItems: 'center', 
                 marginBottom: '4px' 
               }}>
-                <span style={{ marginRight: '8px' }}>❌</span>
+                <span style={{ marginRight: '8px', fontSize: '16px' }}>❌</span>
                 <strong style={{ 
                   color: colors.textPrimary,
-                  fontSize: '14px'
+                  fontSize: '15px'
                 }}>
                   {clause.name.replace(/^CAT-\d+:\s*/i, '')}
                 </strong>
               </div>
               <p style={{ 
                 margin: '4px 0 0 28px', 
-                fontSize: '13px', 
+                fontSize: '14px', 
                 color: colors.textSecondary,
                 lineHeight: '1.4'
               }}>
@@ -188,9 +191,11 @@ export default function MissingCriticalClauses({
           
           <p style={{
             marginTop: '12px',
+            marginBottom: '4px',
             fontSize: '13px',
             color: colors.warningText,
-            fontStyle: 'italic'
+            fontStyle: 'italic',
+            textAlign: 'center'
           }}>
             💡 {strings.tip}
           </p>
@@ -198,9 +203,31 @@ export default function MissingCriticalClauses({
       )}
       
       <style>{`
-        @keyframes fadeIn {
+        @keyframes fadeInMissing {
           from { opacity: 0; transform: translateY(-8px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 640px) {
+          .missing-clause-title {
+            font-size: 15px !important;
+          }
+          
+          .missing-clause-arrow {
+            font-size: 18px !important;
+          }
+          
+          .missing-clause-item {
+            padding: 10px !important;
+          }
+          
+          .missing-clause-item strong {
+            font-size: 14px !important;
+          }
+          
+          .missing-clause-item p {
+            font-size: 13px !important;
+          }
         }
       `}</style>
     </div>
