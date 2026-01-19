@@ -12,7 +12,6 @@ import LanguageSelector from "./components/shared/LanguageSelector";
 import QuickGuide from "./components/shared/QuickGuide";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import GlobalErrorBoundary from "./components/shared/GlobalErrorBoundary";
-import NotificationBell from "./components/notifications/NotificationBell";
 
 
 // Animation utilities inlined
@@ -765,10 +764,6 @@ export default function Layout({ children, currentPageName }) {
               backgroundColor: colors.borderColor,
               opacity: 0.5
             }} />
-            {/* Notification Bell - Desktop */}
-            {user?.email && (
-              <NotificationBell userEmail={user.email} isDarkMode={isDarkMode} />
-            )}
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}

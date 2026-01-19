@@ -9,23 +9,6 @@ import { createDepositReminderFlex, createLeaseNoticeFlex, createRentReminderFle
  * Respects: User preferences, quiet hours, timezone
  */
 
-// Helper function to get timeline title for notification type
-function getTimelineTitleForNotificationType(type) {
-  const titles = {
-    '30d_deposit': 'Deposit Return - 30 Day Reminder',
-    '7d_deposit': 'Deposit Return - 7 Day Warning',
-    '3d_deposit': 'Deposit Return - 3 Day Urgent',
-    'overdue_deposit': 'Deposit Return - OVERDUE',
-    '30d_notice': 'Lease Notice - 30 Day Reminder',
-    '7d_notice': 'Lease Notice - 7 Day Warning',
-    '3d_notice': 'Lease Notice - 3 Day Final',
-    '0d_notice': 'Lease Notice - Deadline TODAY',
-    'rent_reminder': 'Rent Payment Reminder',
-    'maintenance_update': 'Maintenance Request Notification'
-  };
-  return titles[type] || 'Notification Sent';
-}
-
 Deno.serve(async (req) => {
   const diagnostics = {
     deposits_checked: 0,
@@ -205,9 +188,8 @@ Deno.serve(async (req) => {
       }
 
       // Log notification attempt
-      let notificationLogEntry = null;
       try {
-        notificationLogEntry = await base44.asServiceRole.entities.NotificationLog.create({
+        await base44.asServiceRole.entities.NotificationLog.create({
           user_email: user.email,
           notification_type: notificationType,
           channel: channel || 'None',
@@ -215,37 +197,11 @@ Deno.serve(async (req) => {
           related_entity_type: relatedEntityType,
           related_entity_id: relatedEntityId,
           message_preview: messageText.substring(0, 200),
-          error_message: success ? null : errorMsg,
-          is_read: false,
-          is_dismissed: false
+          error_message: success ? null : errorMsg
         });
       } catch (logError) {
         console.error('Failed to log notification:', logError);
         diagnostics.errors.push(`Failed to log: ${logError.message}`);
-      }
-
-      // Create corresponding TimelineEvent if notification was successful
-      if (success && notificationLogEntry) {
-        try {
-          const timelineEvent = await base44.asServiceRole.entities.TimelineEvent.create({
-            lease_id: relatedEntityId,
-            event_type: notificationType,
-            event_date: new Date().toISOString(),
-            title: getTimelineTitleForNotificationType(notificationType),
-            description: messageText.substring(0, 200),
-            source: 'system'
-          });
-
-          // Update NotificationLog with timeline_event_id
-          await base44.asServiceRole.entities.NotificationLog.update(notificationLogEntry.id, {
-            timeline_event_id: timelineEvent.id
-          });
-
-          console.log(`✅ Timeline event created and linked: ${timelineEvent.id}`);
-        } catch (timelineError) {
-          console.error('⚠️ Failed to create timeline event:', timelineError);
-          // Don't fail the notification if timeline creation fails
-        }
       }
 
       if (success) {

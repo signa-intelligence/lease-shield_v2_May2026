@@ -1,43 +1,22 @@
 import React from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Bell, MessageCircle, Mail, CheckCircle2, Clock, AlertCircle, Eye, X } from 'lucide-react';
+import { Bell, MessageCircle, Mail, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { differenceInHours } from 'date-fns';
 
 export default function NotificationSummary({ language = 'en', isDarkMode = false }) {
-  const queryClient = useQueryClient();
-
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: myLogs = [], refetch: refetchLogs } = useQuery({
+  const { data: myLogs = [] } = useQuery({
     queryKey: ['myNotificationLogs'],
-    queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email, is_dismissed: { $ne: true } }, '-created_date', 10),
+    queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
     enabled: !!user,
   });
-
-  const handleMarkAsRead = async (notificationId) => {
-    try {
-      await base44.entities.NotificationLog.update(notificationId, { is_read: true });
-      refetchLogs();
-    } catch (error) {
-      console.error('Failed to mark as read:', error);
-    }
-  };
-
-  const handleDismiss = async (notificationId) => {
-    try {
-      await base44.entities.NotificationLog.update(notificationId, { is_dismissed: true });
-      refetchLogs();
-    } catch (error) {
-      console.error('Failed to dismiss:', error);
-    }
-  };
 
   const strings = {
     en: {
@@ -237,29 +216,6 @@ export default function NotificationSummary({ language = 'en', isDarkMode = fals
                           <Clock className="w-3 h-3" />
                           {getTimeAgo(log.created_date)}
                         </span>
-                      </div>
-                      {/* Mark as Read / Dismiss buttons */}
-                      <div className="flex items-center gap-2 mt-2">
-                        {!log.is_read && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleMarkAsRead(log.id)}
-                            className="h-7 px-2 text-xs"
-                          >
-                            <Eye className="w-3 h-3 mr-1" />
-                            Mark read
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDismiss(log.id)}
-                          className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <X className="w-3 h-3 mr-1" />
-                          Dismiss
-                        </Button>
                       </div>
                     </div>
                   </div>
