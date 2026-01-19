@@ -271,7 +271,7 @@ IMPORTANT: Extract EVERY clause you find. A typical lease has 30-60 clauses. If 
 CRITICAL REQUIREMENT: Missing Critical Clauses Detection (MANDATORY)
 ═══════════════════════════════════════════════════════════════════════════
 
-You MUST analyze these 5 clauses and include missingCriticalClauses array in your JSON response with EXACTLY 5 objects.
+You MUST analyze these 15 clauses and include missingCriticalClauses array in your JSON response with EXACTLY 15 objects.
 
 For each clause ID below, determine if it's PRESENT or MISSING:
 
@@ -290,10 +290,40 @@ How does tenant report repairs? Look for: process, timeline, contact method
 CAT-033 (Utility Disconnection Rights):
 Can landlord cut utilities? Look for: disconnection rights, service suspension
 
-For EACH of the 5 clauses above, you MUST return:
+CAT-010 (Early Termination by Tenant):
+Does the lease allow tenant to terminate early (break clause)? Look for: early termination rights, break clause, tenant exit option
+
+CAT-127 (Early Termination Penalty Formula):
+What's the specific penalty/fee for breaking the lease early? Look for: penalty calculation, exit fee, months of rent forfeiture
+
+CAT-025 (Deposit Return Timeline):
+When must landlord return the deposit after move-out? Look for: "within X days", deposit return deadline, timeline
+
+CAT-121 (Grace Period Definition):
+How many days after rent due date before late fees apply? Look for: grace period, late payment buffer, days before penalty
+
+CAT-039 (Emergency Repairs):
+How are urgent/emergency repairs handled? Look for: emergency repair process, urgent maintenance, immediate issues
+
+CAT-122 (Rent Suspension Conditions):
+Can tenant stop/reduce rent if unit becomes uninhabitable? Look for: rent abatement, suspension, habitability clause
+
+CAT-125 (Quiet Enjoyment Covenant):
+Does lease guarantee tenant's peaceful possession without interference? Look for: "quiet enjoyment", peaceful possession, non-interference
+
+CAT-041 (Restoration at End of Lease):
+What condition must the property be in at move-out? Look for: move-out condition, restoration requirements, return state
+
+CAT-124 (Wear and Tear Safe Harbour):
+Does lease explicitly exclude normal wear/tear from deposit deductions? Look for: "normal wear excluded", fair wear, depreciation allowance
+
+CAT-080 (Move-Out Procedure):
+What are the specific steps/requirements when vacating? Look for: move-out procedure, handover process, exit requirements
+
+For EACH of the 15 clauses above, you MUST return:
 {
-  "id": "CAT-023" (use exact IDs: CAT-023, CAT-027, CAT-028, CAT-037, CAT-033),
-  "name": "Deposit Holding" (use descriptive name),
+  "id": "CAT-XXX" (use exact IDs: CAT-023, CAT-027, CAT-028, CAT-037, CAT-033, CAT-010, CAT-127, CAT-025, CAT-121, CAT-039, CAT-122, CAT-125, CAT-041, CAT-124, CAT-080),
+  "name": "Descriptive Clause Name",
   "status": "PRESENT" or "MISSING",
   "confidence": "HIGH" or "LOW",
   "evidence": "Quote from lease" OR "Not mentioned in lease"
@@ -510,7 +540,7 @@ For EACH of the 5 clauses above, you MUST return:
     
     if (Array.isArray(analysisResult.missingCriticalClauses)) {
       const normalizedMissing = [];
-      const validIds = ['CAT-023', 'CAT-027', 'CAT-028', 'CAT-037', 'CAT-033'];
+      const validIds = ['CAT-023', 'CAT-027', 'CAT-028', 'CAT-037', 'CAT-033', 'CAT-010', 'CAT-127', 'CAT-025', 'CAT-121', 'CAT-039', 'CAT-122', 'CAT-125', 'CAT-041', 'CAT-124', 'CAT-080'];
       
       for (const mc of analysisResult.missingCriticalClauses) {
         if (!mc || typeof mc !== 'object') continue;
