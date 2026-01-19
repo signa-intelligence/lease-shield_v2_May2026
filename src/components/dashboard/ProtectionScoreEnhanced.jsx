@@ -31,10 +31,10 @@ const ProtectionScoreEnhanced = ({
   );
 
   const getScoreColor = (score) => {
-    if (score >= 85) return '#10B981';
-    if (score >= 70) return '#EAB308';
-    if (score >= 50) return '#F59E0B';
-    return '#EF4444';
+    // Match popup thresholds: 90+ green, 75+ teal, 50+ orange, 25+ orange-red, else red
+    if (score >= 80) return '#10B981'; // Green
+    if (score >= 60) return '#F59E0B'; // Orange (matches popup "Improving")
+    return '#EF4444'; // Red
   };
 
   const t = {
@@ -163,9 +163,10 @@ const ProtectionScoreEnhanced = ({
   const strings = t[language] || t.en;
 
   const getScoreGrade = (score) => {
-    if (score >= 85) return { grade: 'A+', label: strings.excellent };
-    if (score >= 70) return { grade: 'B+', label: strings.good };
-    if (score >= 50) return { grade: 'C', label: strings.fair };
+    // Match popup thresholds
+    if (score >= 80) return { grade: 'A+', label: strings.excellent };
+    if (score >= 60) return { grade: 'B+', label: strings.good };
+    if (score >= 40) return { grade: 'C', label: strings.fair };
     return { grade: 'D', label: strings.needsWork };
   };
 
