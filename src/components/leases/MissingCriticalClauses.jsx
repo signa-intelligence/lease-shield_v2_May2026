@@ -147,7 +147,7 @@ export default function MissingCriticalClauses({
                 color: colors.textPrimary,
                 fontSize: '13px'
               }}>
-                {clause.id}: {clause.name}
+                {clause.name.replace(/^CAT-\d+:\s*/i, '')}
               </strong>
               {clause.confidence === 'LOW' && (
                 <span style={{

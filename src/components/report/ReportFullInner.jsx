@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import ErrorPanel from "./ErrorPanel";
 import { severityPalette, highestSeverity } from "../shared/severityPalette";
+import MissingCriticalClauses from "../leases/MissingCriticalClauses";
 
 
 const SEVERITY_CONFIG = {
@@ -1260,6 +1261,16 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
             </div>
           </CardHeader>
           <CardContent className="p-6">
+            {/* Missing Critical Clauses - Phase 1 */}
+            {reportData.missingCriticalClauses && reportData.missingCriticalClauses.length > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <MissingCriticalClauses
+                  missingCriticalClauses={reportData.missingCriticalClauses}
+                  language={language}
+                  isDarkMode={isDarkMode}
+                />
+              </div>
+            )}
             {/* Error banner if extraction failed / empty */}
             {(clauses.length === 0 || textTooShort) && (
               <div className="mb-4 p-4 rounded-lg border-2" style={{ backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2', borderColor: '#EF4444' }}>
