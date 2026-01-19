@@ -591,6 +591,7 @@ Deno.serve(async (req) => {
 
     // Send to user (tenant) - confirmation copy using built-in email
     console.log('📤 Attempting to send tenant confirmation email...');
+    let tenantEmailSent = false;
     if (user.email_notifications !== false && user.email) {
       try {
         await base44.integrations.Core.SendEmail({
@@ -600,6 +601,7 @@ Deno.serve(async (req) => {
         });
         console.log('✅ Tenant email sent successfully to:', user.email);
         notifications.push({ recipient: 'tenant', method: 'email', status: 'sent', to: user.email });
+        tenantEmailSent = true;
       } catch (error) {
         console.error('❌ Failed to send tenant email:', error.message);
         notifications.push({ recipient: 'tenant', method: 'email', status: 'failed', error: error.message, to: user.email });
@@ -607,6 +609,11 @@ Deno.serve(async (req) => {
     } else {
       console.log('⚠️ Tenant email notifications disabled or no email');
       notifications.push({ recipient: 'tenant', method: 'email', status: 'skipped', reason: 'notifications_disabled' });
+    }
+    
+    // Create timeline event for tenant notification
+    if (tenantEmailSent) {
+      await createMaintenanceTimelineEvent(base44, maintenanceRequest, user, 'maintenance_update', tenantSubject);
     }
 
     // Send to tenant via LINE (confirmation)
