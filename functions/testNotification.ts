@@ -173,12 +173,49 @@ Deno.serve(async (req) => {
       throw new Error('No notification channels enabled');
     }
 
+    // Create NotificationLog entry
+    const notificationLog = await base44.asServiceRole.entities.NotificationLog.create({
+      user_email: userEmail,
+      notification_type: notificationType.replace('lease_', '').replace('deposit_', ''),
+      channel: channel,
+      status: 'sent',
+      related_entity_type: notificationType.startsWith('rent_') ? 'deposit' : notificationType.startsWith('lease_') ? 'lease' : 'deposit',
+      related_entity_id: null,
+      message_preview: messageText.substring(0, 200),
+      error_message: null
+    });
+
+    console.log('✅ NotificationLog created:', notificationLog.id);
+
+    // Create corresponding TimelineEvent
+    try {
+      const timelineEvent = await base44.asServiceRole.entities.TimelineEvent.create({
+        lease_id: null,
+        event_type: `notification_${notificationType.replace('lease_', '').replace('deposit_', '')}`,
+        event_date: new Date().toISOString(),
+        title: `Test ${subject}`,
+        description: 'Test notification sent from Admin Console',
+        source: 'notification',
+        notification_log_id: notificationLog.id
+      });
+      
+      // Link timeline event to notification
+      await base44.asServiceRole.entities.NotificationLog.update(notificationLog.id, {
+        timeline_event_id: timelineEvent.id
+      });
+      
+      console.log('✅ Timeline event created and linked:', timelineEvent.id);
+    } catch (timelineError) {
+      console.error('⚠️ Timeline creation failed:', timelineError);
+    }
+
     return Response.json({ 
       success: true,
       channel: channel,
       userEmail: user.email,
       notificationType: notificationType,
-      sentAt: new Date().toISOString()
+      sentAt: new Date().toISOString(),
+      notificationLogId: notificationLog.id
     });
 
   } catch (error) {
