@@ -428,7 +428,7 @@ export const createLeaseNoticeFlex = (data, language = 'en') => {
             action: {
               type: 'uri',
               label: str.action,
-              uri: 'https://app.leaseshield.asia/Templates'
+              uri: 'https://app.leaseshield.asia/propertytracker'
             },
             style: 'primary',
             color: '#0C3B2E',
@@ -628,7 +628,7 @@ export const createRentReminderFlex = (data, language = 'en') => {
             action: {
               type: 'uri',
               label: str.action,
-              uri: 'https://app.leaseshield.asia/DepositTracker'
+              uri: 'https://app.leaseshield.asia/propertytracker'
             },
             style: 'primary',
             color: '#C7A338',
