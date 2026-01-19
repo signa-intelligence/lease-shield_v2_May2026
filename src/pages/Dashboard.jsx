@@ -17,7 +17,6 @@ import RecentLeases from "../components/dashboard/RecentLeases";
 import ProtectionScoreEnhanced from "../components/dashboard/ProtectionScoreEnhanced";
 import NotificationSummary from "../components/dashboard/NotificationSummary";
 import ProtectionScoreDetails from "../components/dashboard/ProtectionScoreDetails";
-import ProtectionScoreBadge from "../components/dashboard/ProtectionScoreBadge";
 import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
@@ -2543,6 +2542,7 @@ ja: {
                         return { main: '#EF4444', light: '#DC2626', shadow: 'rgba(239,68,68,0.3)', border: 'rgba(239,68,68,0.2)' };
                       };
                       const scoreColors = getScoreBadgeColor(protectionScore);
+                      console.log('🎨 Protection Score:', protectionScore, 'Color:', scoreColors.main);
                       return (
                     <Card className="border-none shadow-md bg-white dark:bg-gray-800" style={{
                       background: isDarkMode 
@@ -2553,16 +2553,18 @@ ja: {
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <ProtectionScoreBadge
-                              score={protectionScore}
-                              previousScore={user?.previous_protection_score}
-                              lastScoreUpdate={user?.last_score_update}
-                              tierCap={tierCap}
-                              size="default"
-                              showTrend={true}
-                              showPulse={true}
-                              isDarkMode={isDarkMode}
-                            />
+                            <div style={{
+                              width: '48px',
+                              height: '48px',
+                              borderRadius: '12px',
+                              background: `linear-gradient(135deg, ${scoreColors.main} 0%, ${scoreColors.light} 100%)`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: `0 4px 8px ${scoreColors.shadow}`
+                            }}>
+                              <Shield className="w-6 h-6 text-white" />
+                            </div>
                             <div>
                               <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
                                 {language === 'th' ? 'คะแนนการป้องกัน' : language === 'zh' ? '保护分数' : language === 'ja' ? '保護スコア' : language === 'ko' ? '보호 점수' : language === 'ru' ? 'Уровень защиты' : 'Protection Score'}
@@ -2578,7 +2580,6 @@ ja: {
                                 )}
                               </div>
                             </div>
-                          </div>
                           </div>
                           <button
                             onClick={() => {

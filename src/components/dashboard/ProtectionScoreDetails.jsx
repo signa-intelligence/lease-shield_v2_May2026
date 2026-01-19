@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { haptic } from "../shared/HapticFeedback";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import ProtectionScoreBadge from "./ProtectionScoreBadge";
 
 export default function ProtectionScoreDetails({ 
   isOpen, 
@@ -267,17 +266,10 @@ export default function ProtectionScoreDetails({
           {/* Fuel Gauge */}
           <div className="mb-6">
           <div className="text-center mb-4">
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <ProtectionScoreBadge
-                score={score}
-                previousScore={null}
-                lastScoreUpdate={null}
-                tierCap={100}
-                size="large"
-                showTrend={false}
-                showPulse={false}
-                isDarkMode={isDarkMode}
-              />
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="text-5xl font-bold" style={{ color: status.color }}>
+                {score}/100
+              </div>
               {isLocked && userTier !== 'secure' && (
                 <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7A338" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -286,9 +278,6 @@ export default function ProtectionScoreDetails({
                   </svg>
                 </div>
               )}
-            </div>
-            <div className="text-3xl font-bold mb-2" style={{ color: status.color }}>
-              {score}/100
             </div>
             <div 
               className="inline-block px-4 py-2 rounded-full text-sm font-bold"
