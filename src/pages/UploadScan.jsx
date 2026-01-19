@@ -41,6 +41,7 @@ import { getDeviceContext } from "../components/shared/DeviceContext";
 import { uploadFileWithSession, uploadMultipleFiles, getUploadTimeout } from "../components/shared/MobileUploader";
 import RetryAnalysis from "../components/shared/RetryAnalysis";
 import ScanReviewConfirmation from "../components/scan/ScanReviewConfirmation";
+import MissingCriticalClauses from "../components/leases/MissingCriticalClauses";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
@@ -2437,6 +2438,15 @@ function UploadScanPageContent() {
                           </p>
                         )}
                       </div>
+
+                      {/* Missing Critical Clauses Detection - Phase 1 */}
+                      {selectedScan.scan_full?.missingCriticalClauses && (
+                        <MissingCriticalClauses
+                          missingCriticalClauses={selectedScan.scan_full.missingCriticalClauses}
+                          language={language}
+                          isDarkMode={isDarkMode}
+                        />
+                      )}
 
                       {/* Primary Action: View Full Report */}
                       <Button
