@@ -219,8 +219,9 @@ Deno.serve(async (req) => {
       }
 
       // Log notification attempt
+      let logEntry = null;
       try {
-        await base44.asServiceRole.entities.NotificationLog.create({
+        logEntry = await base44.asServiceRole.entities.NotificationLog.create({
           user_email: user.email,
           notification_type: notificationType,
           channel: channel || 'None',
@@ -233,6 +234,31 @@ Deno.serve(async (req) => {
       } catch (logError) {
         console.error('Failed to log notification:', logError);
         diagnostics.errors.push(`Failed to log: ${logError.message}`);
+      }
+
+      // Create timeline event for successful notifications
+      if (success && logEntry) {
+        try {
+          const timelineEvent = await base44.asServiceRole.entities.TimelineEvent.create({
+            lease_id: relatedEntityId,
+            property_address: user.property_address || null,
+            event_type: `notification_${notificationType}`,
+            event_date: new Date().toISOString(),
+            title: getTimelineTitleForNotificationType(notificationType, user.language || 'en'),
+            description: messageText.substring(0, 200),
+            source: 'notification',
+            notification_log_id: logEntry.id
+          });
+          
+          // Link timeline event back to notification log
+          await base44.asServiceRole.entities.NotificationLog.update(logEntry.id, {
+            timeline_event_id: timelineEvent.id
+          });
+          console.log(`📅 Timeline event created: ${timelineEvent.id}`);
+        } catch (timelineError) {
+          console.error('Failed to create timeline event:', timelineError);
+          diagnostics.errors.push(`Timeline creation failed: ${timelineError.message}`);
+        }
       }
 
       if (success) {
