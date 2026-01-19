@@ -44,6 +44,7 @@ function AdminConsoleContent() {
   const [userManagementExpanded, setUserManagementExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
+  const [selectedTestUser, setSelectedTestUser] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -2093,6 +2094,91 @@ function AdminConsoleContent() {
             </div>
             <p className="text-xs mt-3" style={{ color: colors.textSecondary }}>
               Use these tools to clean up duplicate records. "Clean Duplicate Trackers" removes duplicate deposit trackers per lease (keeps oldest).
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* TEST NOTIFICATIONS */}
+        <Card className="mb-6 border-none shadow-lg" style={{ 
+          backgroundColor: colors.cardBg,
+          borderLeft: '6px solid #8B5CF6'
+        }}>
+          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
+            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <TestTube className="w-5 h-5 text-purple-600" />
+              Test Notifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="flex flex-wrap items-center gap-4">
+              <select 
+                value={selectedTestUser}
+                onChange={(e) => setSelectedTestUser(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: `1px solid ${colors.borderColor}`,
+                  backgroundColor: colors.cardBg,
+                  color: colors.textPrimary,
+                  minWidth: '200px'
+                }}
+              >
+                <option value="">Select user...</option>
+                {users.map(u => (
+                  <option key={u.email} value={u.email}>
+                    {u.full_name} ({u.email})
+                  </option>
+                ))}
+              </select>
+              
+              <button
+                onClick={async () => {
+                  if (!selectedTestUser) {
+                    alert('Please select a user first');
+                    return;
+                  }
+                  try {
+                    const response = await base44.functions.invoke('testNotification', {
+                      userEmail: selectedTestUser,
+                      notificationType: 'rent_reminder',
+                      testData: {
+                        propertyAddress: 'Test Property, Bangkok',
+                        rentAmount: 38000,
+                        rentDueDay: 1
+                      }
+                    });
+                    
+                    if (response.data?.success) {
+                      alert('✅ Test notification sent! Check the notification bell.');
+                    } else {
+                      alert('❌ Failed: ' + response.data?.error);
+                    }
+                  } catch (error) {
+                    console.error('Test notification error:', error);
+                    alert('❌ Error: ' + error.message);
+                  }
+                }}
+                disabled={!selectedTestUser}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: selectedTestUser ? '#8B5CF6' : '#9CA3AF',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: selectedTestUser ? 'pointer' : 'not-allowed',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <TestTube className="w-4 h-4" />
+                🧪 Send Test Notification
+              </button>
+            </div>
+            <p className="text-xs mt-3" style={{ color: colors.textSecondary }}>
+              Send a test rent reminder notification to check NotificationLog creation and notification bell display.
             </p>
           </CardContent>
         </Card>
