@@ -10,7 +10,6 @@ import Analytics from './pages/Analytics';
 import CaseDetails from './pages/CaseDetails';
 import Cases from './pages/Cases';
 import CookieSync from './pages/CookieSync';
-import Dashboard from './pages/Dashboard';
 import DepositTracker from './pages/DepositTracker';
 import DocumentVault from './pages/DocumentVault';
 import Documents from './pages/Documents';
@@ -43,6 +42,7 @@ import Timeline from './pages/Timeline';
 import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
+import Dashboard from './pages/Dashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -59,7 +59,6 @@ export const PAGES = {
     "CaseDetails": CaseDetails,
     "Cases": Cases,
     "CookieSync": CookieSync,
-    "Dashboard": Dashboard,
     "DepositTracker": DepositTracker,
     "DocumentVault": DocumentVault,
     "Documents": Documents,
@@ -92,6 +91,7 @@ export const PAGES = {
     "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
+    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {

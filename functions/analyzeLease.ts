@@ -497,6 +497,63 @@ Add this to your JSON response:
     
     analysisResult.clauses = normalizedClauses;
     
+    // Normalize missingCriticalClauses (PHASE 1 - additive, failure-safe)
+    console.log('[ANALYZE_LEASE_MISSING_CLAUSES_RAW]', { 
+      correlationId, 
+      hasMissingClauses: !!analysisResult.missingCriticalClauses,
+      count: analysisResult.missingCriticalClauses?.length || 0
+    });
+    
+    if (Array.isArray(analysisResult.missingCriticalClauses)) {
+      const normalizedMissing = [];
+      const validIds = ['CAT-023', 'CAT-027', 'CAT-028', 'CAT-037', 'CAT-033'];
+      
+      for (const mc of analysisResult.missingCriticalClauses) {
+        if (!mc || typeof mc !== 'object') continue;
+        
+        const normalizedMC = {
+          id: String(mc.id || '').toUpperCase(),
+          name: String(mc.name || 'Unknown'),
+          status: String(mc.status || 'MISSING').toUpperCase(),
+          confidence: String(mc.confidence || 'LOW').toUpperCase(),
+          evidence: String(mc.evidence || 'Not found in lease').slice(0, 300)
+        };
+        
+        // Validate status
+        if (!['PRESENT', 'MISSING'].includes(normalizedMC.status)) {
+          normalizedMC.status = 'MISSING';
+        }
+        
+        // Validate confidence
+        if (!['HIGH', 'LOW'].includes(normalizedMC.confidence)) {
+          normalizedMC.confidence = 'LOW';
+        }
+        
+        normalizedMissing.push(normalizedMC);
+      }
+      
+      analysisResult.missingCriticalClauses = normalizedMissing;
+      
+      // Calculate missing count (HIGH confidence only)
+      const missingCount = normalizedMissing.filter(
+        mc => mc.status === 'MISSING' && mc.confidence === 'HIGH'
+      ).length;
+      
+      analysisResult.missingClauseCount = missingCount;
+      
+      console.log('[ANALYZE_LEASE_MISSING_CLAUSES_NORMALIZED]', { 
+        correlationId, 
+        count: normalizedMissing.length,
+        missingHighConfidence: missingCount
+      });
+    } else {
+      // If OpenAI didn't return missingCriticalClauses, set empty defaults
+      // This ensures scan still succeeds even if this new feature fails
+      console.warn('[ANALYZE_LEASE_MISSING_CLAUSES_NOT_RETURNED]', { correlationId });
+      analysisResult.missingCriticalClauses = [];
+      analysisResult.missingClauseCount = 0;
+    }
+    
     // Check minimum clauses (lowered to 5 to catch genuinely short documents)
     if (analysisResult.clauses.length < 5) {
       console.warn('[ANALYZE_LEASE_INSUFFICIENT_CLAUSES]', { 

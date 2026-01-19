@@ -30,6 +30,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
 import PageHeader from "../components/shared/PageHeader";
+import MissingCriticalClauses from "../components/leases/MissingCriticalClauses";
 
 function LeaseDetailsContent() {
   const navigate = useNavigate();
@@ -804,6 +805,15 @@ function LeaseDetailsContent() {
                     )}
                   </div>
                 </div>
+              )}
+
+              {/* Missing Critical Clauses Detection - Phase 1 */}
+              {scan.scan_full?.missingCriticalClauses && (
+                <MissingCriticalClauses
+                  missingCriticalClauses={scan.scan_full.missingCriticalClauses}
+                  language={language}
+                  isDarkMode={isDarkMode}
+                />
               )}
             </CardContent>
           </Card>
