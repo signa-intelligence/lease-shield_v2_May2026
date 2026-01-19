@@ -1,7 +1,6 @@
 import Account from './pages/Account';
 import Acknowledge from './pages/Acknowledge';
 import AcknowledgeMaintenance from './pages/AcknowledgeMaintenance';
-import AdminCanonicalLedger from './pages/AdminCanonicalLedger';
 import AdminConsole from './pages/AdminConsole';
 import AdminCredits from './pages/AdminCredits';
 import AdminSupport from './pages/AdminSupport';
@@ -50,7 +49,6 @@ export const PAGES = {
     "Account": Account,
     "Acknowledge": Acknowledge,
     "AcknowledgeMaintenance": AcknowledgeMaintenance,
-    "AdminCanonicalLedger": AdminCanonicalLedger,
     "AdminConsole": AdminConsole,
     "AdminCredits": AdminCredits,
     "AdminSupport": AdminSupport,
