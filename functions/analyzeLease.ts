@@ -189,6 +189,8 @@ CRITICAL INSTRUCTIONS:
 4. Be thorough - analyze every numbered section, paragraph, and provision
 5. Provide actionable recommendations for each clause
 6. Do not skip or summarize - extract the complete text for each clause
+7. PRESERVE ORIGINAL CLAUSE ORDER - Analyze clauses in the EXACT ORDER they appear in the document
+8. DO NOT re-sort by risk severity - maintain document structure
 
 COVERAGE CHECKLIST - Make sure to find and analyze:
 ✓ Rent & Payment Terms (amount, due date, late fees, payment methods, increases)
@@ -211,9 +213,11 @@ COVERAGE CHECKLIST - Make sure to find and analyze:
 ✓ Default & Remedies (what happens if either party breaches)
 ✓ Special Provisions (any unique terms specific to this lease)
 
-For EACH clause found, return:
+For EACH clause found, return (IN DOCUMENT ORDER, NOT SORTED BY RISK):
 {
   "clause_id": "clause-X",
+  "clause_number": "4" or "Section 4" (EXACT numbering from original lease),
+  "original_title": "RENT" or "Utilities" (EXACT title from lease document),
   "canonical_name": "Brief category name (e.g., 'Late Payment Penalties')",
   "clause_text": "The actual text from the document (up to 200 chars, extract the key part)",
   "risk_level": "none|low|medium|high|critical",
@@ -229,9 +233,32 @@ RECOMMENDATION GUIDELINES - CRITICAL:
 - Focus on negotiation strategies, documentation, and using Lease Shield tools
 - Only mention lawyers in the context of escalation if negotiation completely fails
 
+UTILITY RATE ANALYSIS (THAILAND-SPECIFIC):
+When analyzing utility/service charges, compare against standard Thailand rates:
+
+ELECTRICITY:
+- Government rate (MEA/PEA): 4-6 THB/unit (2026 standard)
+- If lease charges >7 THB/unit → FLAG as HIGH RISK (overcharging)
+- If lease charges >10 THB/unit → FLAG as CRITICAL RISK (excessive overcharging)
+- Include actual rate and benchmark in explanation
+
+WATER:
+- Government rate (PWA): 8-15 THB/unit (2026 standard)
+- If lease charges >20 THB/unit → FLAG as HIGH RISK (overcharging)
+- If lease charges >40 THB/unit → FLAG as CRITICAL RISK (excessive overcharging)
+
+INTERNET/CABLE:
+- Market rate: 500-800 THB/month
+- If lease charges >1,000 THB/month → FLAG as MEDIUM RISK
+
+For ANY utility overcharging detected:
+- risk_level: "high" or "critical"
+- explanation: "Landlord charges [X] THB/unit for electricity, which is [Y]x higher than government rate ([Z] THB/unit). This is excessive markup."
+- recommended_action: "Use Lease Shield's negotiation letter templates to request utility rates match government/building standard rates"
+
 RISK LEVEL GUIDELINES:
-- "critical": Clause is severely one-sided, potentially illegal, or could cause major financial harm
-- "high": Clause significantly favors landlord or creates substantial risk for tenant
+- "critical": Clause is severely one-sided, potentially illegal, or could cause major financial harm (includes utility overcharging >50% above market)
+- "high": Clause significantly favors landlord or creates substantial risk for tenant (includes utility overcharging 20-50% above market)
 - "medium": Clause is somewhat unfavorable but negotiable
 - "low": Clause is slightly unfavorable but standard practice
 - "none": Clause is balanced and fair to both parties
@@ -513,6 +540,8 @@ For EACH of the 15 clauses above, you MUST return:
       
       const normalized = {
         clause_id: clause.clause_id || `clause-${idx + 1}`,
+        clause_number: clause.clause_number || String(idx + 1),
+        original_title: clause.original_title || clause.canonical_name || `Clause ${idx + 1}`,
         canonical_name: clause.canonical_name || `Clause ${idx + 1}`,
         clause_text: String(clause.clause_text || '').slice(0, 200),
         risk_level: String(clause.risk_level || 'none').toLowerCase(),
@@ -698,6 +727,85 @@ For EACH of the 15 clauses above, you MUST return:
       scanId: scan.id,
       clausesCount: analysisResult.clauses.length
     });
+    
+    // AUTO-POPULATION: Create trackers from extracted data
+    console.log('[AUTO_POPULATE_START]', { correlationId });
+    
+    const monthlyRent = analysisResult.key_terms?.monthly_rent || analysisResult.key_terms?.monthlyRent;
+    const securityDeposit = analysisResult.key_terms?.security_deposit || analysisResult.key_terms?.securityDeposit;
+    const leaseStartDate = analysisResult.key_terms?.lease_start_date || analysisResult.key_terms?.leaseStartDate;
+    const leaseEndDate = analysisResult.key_terms?.lease_end_date || analysisResult.key_terms?.leaseEndDate;
+    const propertyAddress = analysisResult.key_terms?.property_address || analysisResult.key_terms?.propertyAddress;
+    const rentDueDay = analysisResult.key_terms?.rent_due_day || analysisResult.key_terms?.rentDueDay || 1;
+    
+    console.log('[AUTO_POPULATE_EXTRACTED_DATA]', {
+      correlationId,
+      monthlyRent,
+      securityDeposit,
+      leaseStartDate,
+      leaseEndDate,
+      propertyAddress,
+      rentDueDay
+    });
+    
+    // Validate extracted data
+    const isValidRent = monthlyRent && monthlyRent > 0 && monthlyRent < 1000000;
+    const isValidDeposit = securityDeposit && securityDeposit > 0 && securityDeposit < 10000000;
+    const isValidDates = leaseStartDate && leaseEndDate && new Date(leaseStartDate) < new Date(leaseEndDate);
+    
+    console.log('[AUTO_POPULATE_VALIDATION]', {
+      correlationId,
+      isValidRent,
+      isValidDeposit,
+      isValidDates
+    });
+    
+    // AUTO-CREATE DEPOSIT TRACKER
+    if (isValidDeposit && isValidDates) {
+      try {
+        console.log('[AUTO_POPULATE_DEPOSIT_TRACKER_START]', { correlationId });
+        
+        const depositDueDate = new Date(leaseStartDate);
+        const expectedReturnDate = new Date(leaseEndDate);
+        expectedReturnDate.setDate(expectedReturnDate.getDate() + 30);
+        
+        await svc.entities.DepositTracker.create({
+          lease_id: leaseId,
+          deposit_amount: securityDeposit,
+          property_address: propertyAddress || 'Not specified',
+          rent_amount: monthlyRent || 0,
+          rent_due_day: rentDueDay,
+          deposit_paid_date: leaseStartDate,
+          deposit_due_date: depositDueDate.toISOString().split('T')[0],
+          expected_return_date: expectedReturnDate.toISOString().split('T')[0],
+          lease_start_date: leaseStartDate,
+          lease_end_date: leaseEndDate,
+          status: 'tracking',
+          auto_populated: true,
+          source_scan_id: scan.id,
+          deposit_due_date_is_estimated: true,
+          expected_return_date_is_estimated: true
+        });
+        
+        console.log('[AUTO_POPULATE_DEPOSIT_TRACKER_SUCCESS]', { 
+          correlationId,
+          amount: securityDeposit,
+          returnDate: expectedReturnDate.toISOString().split('T')[0]
+        });
+      } catch (depositErr) {
+        console.error('[AUTO_POPULATE_DEPOSIT_TRACKER_FAILED]', {
+          correlationId,
+          error: depositErr.message
+        });
+      }
+    } else {
+      console.warn('[AUTO_POPULATE_DEPOSIT_TRACKER_SKIPPED]', {
+        correlationId,
+        reason: !isValidDeposit ? 'Invalid deposit' : 'Invalid dates'
+      });
+    }
+    
+    console.log('[AUTO_POPULATE_COMPLETE]', { correlationId });
     
     return json(200, {
       ok: true,
