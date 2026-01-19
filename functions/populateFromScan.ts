@@ -426,21 +426,29 @@ Deno.serve(async (req) => {
       timeline: null
     };
     
-    // Get existing deposit for this lease
-    let depositTracker = null;
-    const existingDeposits = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
-    if (existingDeposits && existingDeposits.length > 0) {
-      depositTracker = existingDeposits[0];
-    }
+    // ═══════════════════════════════════════════════════════════════════════
+    // DEPOSIT TRACKER - CHECK FOR EXISTING BEFORE ANY ACTION
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log('[POPULATE_DEPOSIT_CHECK] Checking for existing deposit trackers');
+    console.log('LeaseId:', leaseId);
+    console.log('═══════════════════════════════════════════════════════════════');
     
-    // Create or update deposit tracker
-    console.log('[CHECKING_DEPOSIT_UPDATE_CONDITIONS]', {
-      hasDepositData: !!updates.deposit,
-      depositKeysCount: Object.keys(updates.deposit || {}).length,
-      depositData: updates.deposit
+    // Get ALL existing deposits for this lease (not just one)
+    const existingDeposits = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
+    
+    console.log('[POPULATE_EXISTING_DEPOSITS_FOUND]', {
+      count: existingDeposits?.length || 0,
+      ids: existingDeposits?.map(d => d.id) || []
     });
     
-    if (updates.deposit && Object.keys(updates.deposit).length > 3) {
+    // If ANY deposit exists, DO NOT CREATE - only update if needed
+    if (existingDeposits && existingDeposits.length > 0) {
+      console.log('⛔ [POPULATE_DEPOSIT_EXISTS] Deposit tracker already exists - SKIPPING CREATION');
+      console.log('Existing deposit ID:', existingDeposits[0].id);
+      results.deposit = existingDeposits[0]; // Return existing
+    } else if (updates.deposit && Object.keys(updates.deposit).length > 3) {
+      // Only create if NO deposit exists
       const depositData = {
         ...updates.deposit,
         lease_id: leaseId
@@ -458,35 +466,13 @@ Deno.serve(async (req) => {
           depositData
         });
       } else {
-        if (depositTracker) {
-          console.log('[EXISTING_DEPOSIT_FOUND]', { depositId: depositTracker.id });
-          // Update existing - only populate empty fields
-          const updateData = {};
-          Object.keys(depositData).forEach(key => {
-            if (!depositTracker[key] || depositTracker[key] === 0) {
-              updateData[key] = depositData[key];
-            }
-          });
-          
-          if (Object.keys(updateData).length > 0) {
-            console.log('[UPDATING_DEPOSIT_RECORD]', { depositId: depositTracker.id, updateData });
-            try {
-              results.deposit = await svc.entities.DepositTracker.update(depositTracker.id, updateData);
-              console.log('[DEPOSIT_UPDATE_SUCCESS]', { depositId: depositTracker.id });
-            } catch (updateErr) {
-              console.error('[DEPOSIT_UPDATE_FAILED]', { error: updateErr.message, stack: updateErr.stack });
-              throw updateErr;
-            }
-          }
-        } else {
-          console.log('[CREATING_NEW_DEPOSIT_RECORD]', depositData);
-          try {
-            results.deposit = await svc.entities.DepositTracker.create(depositData);
-            console.log('[DEPOSIT_CREATE_SUCCESS]', { depositId: results.deposit?.id, createdData: results.deposit });
-          } catch (createErr) {
-            console.error('[DEPOSIT_CREATE_FAILED]', { error: createErr.message, stack: createErr.stack, depositData });
-            throw createErr;
-          }
+        console.log('✅ [POPULATE_CREATING_NEW_DEPOSIT] No existing deposit found - creating new');
+        try {
+          results.deposit = await svc.entities.DepositTracker.create(depositData);
+          console.log('✅ [DEPOSIT_CREATE_SUCCESS]', { depositId: results.deposit?.id });
+        } catch (createErr) {
+          console.error('[DEPOSIT_CREATE_FAILED]', { error: createErr.message, stack: createErr.stack, depositData });
+          throw createErr;
         }
       }
     } else {
@@ -496,6 +482,10 @@ Deno.serve(async (req) => {
         depositData: updates.deposit
       });
     }
+    
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log('[POPULATE_DEPOSIT_CHECK_COMPLETE]');
+    console.log('═══════════════════════════════════════════════════════════════');
     
     // Update lease record - FORCE UPDATE even if fields exist (scan data is authoritative)
     console.log('[CHECKING_LEASE_UPDATE_CONDITIONS]', {
