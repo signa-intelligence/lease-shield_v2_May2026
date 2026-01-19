@@ -563,7 +563,7 @@ Deno.serve(async (req) => {
                 action: {
                   type: "uri",
                   label: language === 'th' ? "ดูรายละเอียด" : "View Details",
-                  uri: `https://app.leaseshield.asia/deposit-tracker`
+                  uri: `https://app.leaseshield.asia/propertytracker`
                 },
                 height: "sm"
               }
