@@ -194,7 +194,7 @@ export const createDepositReminderFlex = (data, language = 'en') => {
             action: {
               type: 'uri',
               label: str.action,
-              uri: 'https://app.leaseshield.asia/DepositTracker'
+              uri: 'https://app.leaseshield.asia/propertytracker'
             },
             style: 'primary',
             color: '#0C3B2E',
