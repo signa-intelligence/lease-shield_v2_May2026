@@ -2579,6 +2579,7 @@ ja: {
                               </div>
                             </div>
                           </div>
+                          </div>
                           <button
                             onClick={() => {
                               haptic.light();
