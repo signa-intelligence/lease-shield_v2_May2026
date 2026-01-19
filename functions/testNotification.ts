@@ -137,12 +137,9 @@ Deno.serve(async (req) => {
 
     let channel = '';
     let success = false;
-    let sendError = null;
 
-    // Try LINE first if user has token and notifications enabled
-    if (user.line_messaging_token && flexMessage) {
+    if (user.line_messaging_token && user.line_notifications && flexMessage) {
       try {
-        console.log(`📤 Attempting LINE send to ${user.email} (token: ${user.line_messaging_token?.substring(0, 10)}...)`);
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
           userId: user.line_messaging_token,
           flexMessage: flexMessage
@@ -151,17 +148,12 @@ Deno.serve(async (req) => {
         success = true;
         console.log(`✅ Test LINE Flex sent to ${user.email}`);
       } catch (lineError) {
-        console.error(`❌ LINE send failed for ${user.email}:`, lineError);
-        sendError = lineError.message;
+        console.error(`❌ LINE failed:`, lineError);
       }
-    } else {
-      console.log(`⚠️ Skipping LINE: token=${!!user.line_messaging_token}, flexMessage=${!!flexMessage}`);
     }
 
-    // Fallback to email if LINE failed or unavailable
-    if (!success) {
+    if (!success && user.email_notifications) {
       try {
-        console.log(`📧 Attempting email send to ${user.email}`);
         await base44.asServiceRole.integrations.Core.SendEmail({
           from_name: 'Lease Shield',
           to: user.email,
@@ -172,47 +164,13 @@ Deno.serve(async (req) => {
         success = true;
         console.log(`✅ Test email sent to ${user.email}`);
       } catch (emailError) {
-        console.error(`❌ Email send failed for ${user.email}:`, emailError);
-        throw new Error(`All channels failed. LINE: ${sendError || 'N/A'}, Email: ${emailError.message}`);
+        console.error(`❌ Email failed:`, emailError);
+        throw new Error('Both LINE and Email failed');
       }
     }
 
-    // Create NotificationLog entry
-    const notificationLog = await base44.asServiceRole.entities.NotificationLog.create({
-      user_email: userEmail,
-      notification_type: notificationType.replace('lease_', '').replace('deposit_', ''),
-      channel: channel,
-      status: 'sent',
-      related_entity_type: notificationType.startsWith('rent_') ? 'deposit' : notificationType.startsWith('lease_') ? 'lease' : 'deposit',
-      related_entity_id: null,
-      message_preview: messageText.substring(0, 200),
-      error_message: null,
-      is_read: false,
-      is_dismissed: false
-    });
-
-    console.log('✅ NotificationLog created:', notificationLog.id);
-
-    // Create corresponding TimelineEvent
-    try {
-      const timelineEvent = await base44.asServiceRole.entities.TimelineEvent.create({
-        lease_id: null,
-        event_type: `notification_${notificationType.replace('lease_', '').replace('deposit_', '')}`,
-        event_date: new Date().toISOString(),
-        title: `Test ${subject}`,
-        description: 'Test notification sent from Admin Console',
-        source: 'notification',
-        notification_log_id: notificationLog.id
-      });
-      
-      // Link timeline event to notification
-      await base44.asServiceRole.entities.NotificationLog.update(notificationLog.id, {
-        timeline_event_id: timelineEvent.id
-      });
-      
-      console.log('✅ Timeline event created and linked:', timelineEvent.id);
-    } catch (timelineError) {
-      console.error('⚠️ Timeline creation failed:', timelineError);
+    if (!success) {
+      throw new Error('No notification channels enabled');
     }
 
     return Response.json({ 
@@ -220,8 +178,7 @@ Deno.serve(async (req) => {
       channel: channel,
       userEmail: user.email,
       notificationType: notificationType,
-      sentAt: new Date().toISOString(),
-      notificationLogId: notificationLog.id
+      sentAt: new Date().toISOString()
     });
 
   } catch (error) {
