@@ -6,8 +6,39 @@ import { createDepositReminderFlex, createLeaseNoticeFlex, createRentReminderFle
  * Checks: deposits, leases, rent payments
  * Sends: LINE Flex Messages (primary) with email fallback
  * Logs: All notifications to NotificationLog entity
+ * Creates: TimelineEvent entries for each notification
  * Respects: User preferences, quiet hours, timezone
  */
+
+// Helper to get timeline title for notification type
+function getTimelineTitleForNotificationType(type, language = 'en') {
+  const titles = {
+    en: {
+      '30d_deposit': 'Deposit Return - 30 Day Reminder',
+      '7d_deposit': 'Deposit Return - 7 Day Warning',
+      '3d_deposit': 'Deposit Return - 3 Day Urgent',
+      'overdue_deposit': 'Deposit Return - OVERDUE',
+      '30d_notice': 'Lease Notice - 30 Day Reminder',
+      '7d_notice': 'Lease Notice - 7 Day Warning',
+      '3d_notice': 'Lease Notice - 3 Day Final',
+      '0d_notice': 'Lease Notice - Deadline TODAY',
+      'rent_reminder': 'Rent Payment Reminder'
+    },
+    th: {
+      '30d_deposit': 'คืนเงินมัดจำ - เตือน 30 วัน',
+      '7d_deposit': 'คืนเงินมัดจำ - เตือน 7 วัน',
+      '3d_deposit': 'คืนเงินมัดจำ - เร่งด่วน 3 วัน',
+      'overdue_deposit': 'คืนเงินมัดจำ - เกินกำหนด',
+      '30d_notice': 'แจ้งสัญญา - เตือน 30 วัน',
+      '7d_notice': 'แจ้งสัญญา - เตือน 7 วัน',
+      '3d_notice': 'แจ้งสัญญา - สุดท้าย 3 วัน',
+      '0d_notice': 'แจ้งสัญญา - วันนี้',
+      'rent_reminder': 'เตือนชำระค่าเช่า'
+    }
+  };
+  const lang = titles[language] || titles.en;
+  return lang[type] || titles.en[type] || 'Notification Sent';
+}
 
 Deno.serve(async (req) => {
   const diagnostics = {
