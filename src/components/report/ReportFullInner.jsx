@@ -1024,15 +1024,18 @@ const topRisks = topRisksRaw.map((risk, idx) => {
 });
 
 // Map clauses to normalize field names with 3 recommendations each
+// IMPORTANT: Preserve original document order - DO NOT sort by risk
 const clausesRaw = Array.isArray(sf.clauses) ? sf.clauses : [];
-const clausesUnsorted = clausesRaw.map((c, idx) => {
+const clauses = clausesRaw.map((c, idx) => {
   const riskLevel = c.risk_level || 'none';
-  const category = c.canonical_name || c.title || 'clause';
+  const category = c.canonical_name || c.original_clause_title || c.title || 'clause';
   const recs = parseRecommendations(c.recommended_action || c.recommendation, riskLevel, category);
   
   return {
     clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
-    title: c.canonical_name || c.title || `Clause ${idx + 1}`,
+    original_clause_number: c.original_clause_number || String(idx + 1),
+    original_clause_title: c.original_clause_title || c.canonical_name || c.title || `Clause ${idx + 1}`,
+    title: c.original_clause_title || c.canonical_name || c.title || `Clause ${idx + 1}`,
     risk_level: riskLevel,
     plain_english: c.explanation || c.plain_english || c.risk_summary || '—',
     text: c.clause_text || c.text || c.full_text || '',
@@ -1040,13 +1043,8 @@ const clausesUnsorted = clausesRaw.map((c, idx) => {
   };
 });
 
-// Sort by severity: CRITICAL > HIGH > MEDIUM > LOW > NONE, then alphabetically
-const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
-const clauses = clausesUnsorted.sort((a, b) => {
-  const severityDiff = (severityOrder[a.risk_level] ?? 4) - (severityOrder[b.risk_level] ?? 4);
-  if (severityDiff !== 0) return severityDiff;
-  return (a.title || '').localeCompare(b.title || '');
-});
+// NOTE: Clauses are kept in DOCUMENT ORDER (not sorted by risk)
+// This preserves the original clause numbering from the lease
 
 const textTooShort = meta.text_length !== null && (meta.text_length || 0) < 500;
 
@@ -1394,7 +1392,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                     }}>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-bold">#{i + 1}</span>
+                          <span className="text-xs font-bold">#{c.original_clause_number}</span>
                           <span className="text-xs font-bold px-2 py-0.5 rounded" style={{
                             backgroundColor: 'rgba(255, 255, 255, 0.2)',
                             color: colorSet.text
@@ -1402,7 +1400,9 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                             {colorSet.badgeText}
                           </span>
                         </div>
-                        <h4 className="font-bold" style={{ color: colorSet.text }}>{c.title}</h4>
+                        <h4 className="font-bold" style={{ color: colorSet.text }}>
+                          {c.original_clause_title || c.title}
+                        </h4>
                       </div>
                     </div>
                     
