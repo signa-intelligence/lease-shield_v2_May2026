@@ -265,7 +265,52 @@ CRITICAL:
 - Extract lease_start_date and lease_end_date from clauses like "Commencement Date:" and "Expiry Date:" or "Expiration Date:". Format as YYYY-MM-DD.
 - Extract property_address from "Leased Property" or similar clause containing the full unit address.
 
-IMPORTANT: Extract EVERY clause you find. A typical lease has 30-60 clauses. If you only find 15, you're missing clauses. Keep reading until you've covered the entire document.`;
+IMPORTANT: Extract EVERY clause you find. A typical lease has 30-60 clauses. If you only find 15, you're missing clauses. Keep reading until you've covered the entire document.
+
+═══════════════════════════════════════════════════════════════════════════
+ADDITIONAL TASK: Missing Critical Clauses Detection
+═══════════════════════════════════════════════════════════════════════════
+
+After extracting all clauses, review the lease document and determine if these 5 CRITICAL clauses are present or missing.
+
+For each clause below, analyze if it's clearly addressed in the lease:
+
+1. CAT-023 Deposit Holding
+   Question: Does the lease specify WHERE and HOW the security deposit will be held during tenancy? (escrow account, bank name, account details, holding conditions)
+   Look for: Bank account details, escrow terms, deposit custody clause
+
+2. CAT-027 Deposit Forfeiture Conditions
+   Question: Does the lease clearly define the SPECIFIC circumstances when landlord can forfeit (keep) all or part of the deposit?
+   Look for: List of forfeiture conditions, damage examples, breach scenarios
+
+3. CAT-028 Wear and Tear Definition
+   Question: Does the lease distinguish between normal wear/tear vs tenant damage for deposit deductions?
+   Look for: "Normal wear and tear", "ordinary use", damage vs deterioration
+
+4. CAT-037 Repair Request Procedure
+   Question: Does the lease specify HOW tenant should report maintenance issues? (format, timeline, contact method, response time)
+   Look for: Repair request process, notification requirements, contact info
+
+5. CAT-033 Utility Disconnection Rights
+   Question: Does the lease state whether landlord CAN or CANNOT disconnect utilities for non-payment or other reasons?
+   Look for: Utility cutoff rights, disconnection terms, service suspension
+
+For each clause, respond with:
+- status: "PRESENT" or "MISSING"
+- confidence: "HIGH" or "LOW" 
+- evidence: Quote 1-2 sentences from lease if PRESENT, or state "Not found in lease" if MISSING
+
+Add this to your JSON response:
+"missingCriticalClauses": [
+  {
+    "id": "CAT-023",
+    "name": "Deposit Holding",
+    "status": "MISSING" or "PRESENT",
+    "confidence": "HIGH" or "LOW",
+    "evidence": "Quote from lease or 'Not found in lease'"
+  },
+  // ...repeat for CAT-027, CAT-028, CAT-037, CAT-033
+]`;
     
     // Initialize OpenAI client
     const openai = new OpenAI({ apiKey: openaiApiKey });
