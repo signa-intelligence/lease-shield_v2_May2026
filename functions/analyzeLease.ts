@@ -182,15 +182,62 @@ Deno.serve(async (req) => {
     // System prompt for comprehensive analysis
     const systemPrompt = `You are LeaseShield's AI analyst specializing in residential lease agreements in Thailand and Southeast Asia. Your task is to extract and analyze EVERY SINGLE CLAUSE in the lease document with NO LIMIT.
 
-CRITICAL INSTRUCTIONS:
+═══════════════════════════════════════════════════════════════════════════
+CRITICAL INSTRUCTION - CLAUSE NUMBERING (HIGHEST PRIORITY):
+═══════════════════════════════════════════════════════════════════════════
+
+You MUST analyze the lease clause-by-clause in SEQUENTIAL ORDER as they 
+appear in the document. DO NOT re-arrange by risk level.
+
+PROCESS:
+1. Read clause #1 from the lease
+2. Extract: original_clause_number="1", original_clause_title="PARTIES", risk_level, analysis
+3. Read clause #2 from the lease
+4. Extract: original_clause_number="2", original_clause_title="LEASED PROPERTY", risk_level, analysis
+5. Continue for ALL clauses in document order
+6. Return clauses array in the SAME order you read them
+
+EXAMPLE OUTPUT FORMAT:
+{
+  "clauses": [
+    {
+      "original_clause_number": "1",
+      "original_clause_title": "PARTIES",
+      "risk_level": "none",
+      "explanation": "Identifies landlord and tenant..."
+    },
+    {
+      "original_clause_number": "2",
+      "original_clause_title": "LEASED PROPERTY",
+      "risk_level": "none",
+      "explanation": "Describes the unit being leased..."
+    },
+    {
+      "original_clause_number": "3",
+      "original_clause_title": "TERM OF LEASE",
+      "risk_level": "medium",
+      "explanation": "12-month term with automatic renewal..."
+    }
+  ]
+}
+
+VALIDATION RULES:
+✅ Clause numbers MUST be sequential: 1, 2, 3, 4, 5, 6...
+✅ Clause titles MUST match the lease document EXACTLY (in ALL CAPS if that's how they appear)
+✅ Array order MUST match document reading order
+❌ DO NOT skip clause numbers
+❌ DO NOT sort by risk_level
+❌ DO NOT group similar clauses together
+
+═══════════════════════════════════════════════════════════════════════════
+
+ADDITIONAL INSTRUCTIONS:
 1. Extract ALL clauses - if the document has 50 clauses, extract all 50
 2. Analyze EVERY clause, not just risky ones
 3. Include standard clauses with risk_level "none" 
 4. Be thorough - analyze every numbered section, paragraph, and provision
 5. Provide actionable recommendations for each clause
 6. Do not skip or summarize - extract the complete text for each clause
-7. PRESERVE ORIGINAL CLAUSE ORDER - Analyze clauses in the EXACT ORDER they appear in the document
-8. DO NOT re-sort by risk severity - maintain document structure
 
 COVERAGE CHECKLIST - Make sure to find and analyze:
 ✓ Rent & Payment Terms (amount, due date, late fees, payment methods, increases)
@@ -213,12 +260,10 @@ COVERAGE CHECKLIST - Make sure to find and analyze:
 ✓ Default & Remedies (what happens if either party breaches)
 ✓ Special Provisions (any unique terms specific to this lease)
 
-For EACH clause found, return (IN DOCUMENT ORDER, NOT SORTED BY RISK):
+For EACH clause found, return (IN DOCUMENT ORDER - clauses[0] = first clause in document):
 {
-  "clause_id": "clause-X",
-  "clause_number": "4" or "Section 4" (EXACT numbering from original lease),
-  "original_title": "RENT" or "Utilities" (EXACT title from lease document),
-  "canonical_name": "Brief category name (e.g., 'Late Payment Penalties')",
+  "original_clause_number": "1" (EXACT number from lease - must be sequential: 1, 2, 3, 4...),
+  "original_clause_title": "PARTIES" (EXACT title from lease document in original casing),
   "clause_text": "The actual text from the document (up to 200 chars, extract the key part)",
   "risk_level": "none|low|medium|high|critical",
   "explanation": "What this means for the tenant in simple, clear language",
@@ -540,9 +585,9 @@ For EACH of the 15 clauses above, you MUST return:
       
       const normalized = {
         clause_id: clause.clause_id || `clause-${idx + 1}`,
-        clause_number: clause.clause_number || String(idx + 1),
-        original_title: clause.original_title || clause.canonical_name || `Clause ${idx + 1}`,
-        canonical_name: clause.canonical_name || `Clause ${idx + 1}`,
+        original_clause_number: clause.original_clause_number || clause.clause_number || String(idx + 1),
+        original_clause_title: clause.original_clause_title || clause.original_title || clause.canonical_name || `Clause ${idx + 1}`,
+        canonical_name: clause.canonical_name || clause.original_clause_title || `Clause ${idx + 1}`,
         clause_text: String(clause.clause_text || '').slice(0, 200),
         risk_level: String(clause.risk_level || 'none').toLowerCase(),
         explanation: clause.explanation || 'Review required',
@@ -558,6 +603,36 @@ For EACH of the 15 clauses above, you MUST return:
     }
     
     analysisResult.clauses = normalizedClauses;
+    
+    // Validate clause numbering is sequential
+    console.log('[ANALYZE_LEASE_VALIDATE_CLAUSE_NUMBERING]', { correlationId });
+    
+    const clauseNumbers = normalizedClauses.map(c => c.original_clause_number);
+    const isSequential = normalizedClauses.every((clause, index) => {
+      const expectedNumber = String(index + 1);
+      const actualNumber = String(clause.original_clause_number);
+      return actualNumber === expectedNumber;
+    });
+    
+    if (!isSequential) {
+      console.warn('[ANALYZE_LEASE_CLAUSE_NUMBERING_NOT_SEQUENTIAL]', {
+        correlationId,
+        expected: normalizedClauses.map((_, i) => String(i + 1)),
+        actual: clauseNumbers,
+        message: 'Clause numbering was not sequential - using fallback numbering'
+      });
+      
+      // Fix numbering to be sequential if AI didn't follow instructions
+      normalizedClauses.forEach((clause, index) => {
+        clause.original_clause_number = String(index + 1);
+      });
+    } else {
+      console.log('[ANALYZE_LEASE_CLAUSE_NUMBERING_VALID]', { 
+        correlationId, 
+        count: normalizedClauses.length,
+        range: `1-${normalizedClauses.length}`
+      });
+    }
     
     // Normalize missingCriticalClauses (PHASE 1 - additive, failure-safe)
     console.log('[ANALYZE_LEASE_MISSING_CLAUSES_RAW]', { 
