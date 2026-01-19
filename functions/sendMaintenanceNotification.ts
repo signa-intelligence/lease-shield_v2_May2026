@@ -8,6 +8,34 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { createMaintenanceRequestFlex } from './lineFlexTemplates.js';
 
 /**
+ * Helper to create timeline event for maintenance notifications
+ */
+async function createMaintenanceTimelineEvent(base44, maintenanceRequest, user, notificationType, messagePreview) {
+  try {
+    const title = user.language === 'th' 
+      ? 'แจ้งซ่อม - ส่งแจ้งเตือนแล้ว'
+      : 'Maintenance - Notification Sent';
+    
+    const timelineEvent = await base44.asServiceRole.entities.TimelineEvent.create({
+      lease_id: maintenanceRequest.lease_id || null,
+      property_address: maintenanceRequest.property_address || null,
+      event_type: 'notification_maintenance_update',
+      event_date: new Date().toISOString(),
+      title: title,
+      description: messagePreview || maintenanceRequest.issue_title,
+      source: 'notification',
+      source_id: maintenanceRequest.id
+    });
+    
+    console.log(`📅 Maintenance timeline event created: ${timelineEvent.id}`);
+    return timelineEvent;
+  } catch (error) {
+    console.error('Failed to create maintenance timeline event:', error);
+    return null;
+  }
+}
+
+/**
  * Build notification language for recipient
  */
 function buildNotificationLanguage(context) {
