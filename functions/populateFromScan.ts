@@ -66,15 +66,81 @@ function findClauseByName(clauses, names) {
   return null;
 }
 
-Deno.serve(async (req) => {
+// ═══════════════════════════════════════════════════════════════════════
+// ATOMIC LOCK - Prevents race condition when function is called twice
+// ═══════════════════════════════════════════════════════════════════════
+const creationLocks = new Map();
+
+async function createDepositTrackerWithLock(svc, leaseId, depositData, executionId) {
+  const lockKey = `deposit_${leaseId}`;
+  
+  console.log(`[${executionId}] 🔒 Attempting to acquire lock for ${lockKey}`);
+  
+  // Check if already being created by another execution
+  if (creationLocks.has(lockKey)) {
+    console.log(`[${executionId}] ⏳ Lock exists - another execution is creating tracker`);
+    
+    // Wait for other execution to finish (max 10 seconds)
+    let waitCount = 0;
+    while (creationLocks.has(lockKey) && waitCount < 100) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      waitCount++;
+    }
+    
+    // Return existing tracker
+    const existing = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
+    if (existing && existing.length > 0) {
+      console.log(`[${executionId}] ✅ Returning tracker created by other execution: ${existing[0].id}`);
+      return { created: false, tracker: existing[0] };
+    }
+  }
+  
+  // Acquire lock
+  creationLocks.set(lockKey, Date.now());
+  console.log(`[${executionId}] 🔒 Lock acquired for ${lockKey}`);
+  
   try {
-    console.log('[POPULATE_FUNCTION_INVOKED] ========================================');
+    // CRITICAL: Double-check AFTER acquiring lock
+    console.log(`[${executionId}] 🔍 Double-checking for existing trackers...`);
+    const existingAfterLock = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
+    
+    if (existingAfterLock && existingAfterLock.length > 0) {
+      console.log(`[${executionId}] ⛔ ABORT - Tracker found after lock: ${existingAfterLock[0].id}`);
+      return { created: false, tracker: existingAfterLock[0] };
+    }
+    
+    // Create new tracker
+    console.log(`[${executionId}] ✅ No tracker exists - creating new one...`);
+    const created = await svc.entities.DepositTracker.create(depositData);
+    console.log(`[${executionId}] ✅ CREATED deposit tracker: ${created.id}`);
+    
+    return { created: true, tracker: created };
+    
+  } finally {
+    // Release lock
+    creationLocks.delete(lockKey);
+    console.log(`[${executionId}] 🔓 Lock released for ${lockKey}`);
+  }
+}
+
+Deno.serve(async (req) => {
+  // Generate unique execution ID for tracing
+  const executionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  try {
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log(`🔍 EXECUTION START [${executionId}]`);
+    console.log('Function: populateFromScan.js');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('═══════════════════════════════════════════════════════════════');
     
     const base44 = createClientFromRequest(req);
     const svc = base44.asServiceRole || base44;
     
     const body = await req.json().catch(() => ({}));
     const { scanId, leaseId, scan_full } = body;
+    
+    console.log(`[${executionId}] Input params:`, { scanId, leaseId, hasScanFull: !!scan_full });
     
     console.log('[POPULATE_INPUT_PARAMS]', {
       scanId,
@@ -427,65 +493,40 @@ Deno.serve(async (req) => {
     };
     
     // ═══════════════════════════════════════════════════════════════════════
-    // DEPOSIT TRACKER - CHECK FOR EXISTING BEFORE ANY ACTION
+    // DEPOSIT TRACKER - USE ATOMIC LOCK TO PREVENT RACE CONDITION
     // ═══════════════════════════════════════════════════════════════════════
-    console.log('═══════════════════════════════════════════════════════════════');
-    console.log('[POPULATE_DEPOSIT_CHECK] Checking for existing deposit trackers');
-    console.log('LeaseId:', leaseId);
-    console.log('═══════════════════════════════════════════════════════════════');
+    console.log(`[${executionId}] ═══════════════════════════════════════════════`);
+    console.log(`[${executionId}] DEPOSIT TRACKER CREATION WITH LOCK`);
+    console.log(`[${executionId}] LeaseId: ${leaseId}`);
+    console.log(`[${executionId}] ═══════════════════════════════════════════════`);
     
-    // Get ALL existing deposits for this lease (not just one)
-    const existingDeposits = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
-    
-    console.log('[POPULATE_EXISTING_DEPOSITS_FOUND]', {
-      count: existingDeposits?.length || 0,
-      ids: existingDeposits?.map(d => d.id) || []
-    });
-    
-    // If ANY deposit exists, DO NOT CREATE - only update if needed
-    if (existingDeposits && existingDeposits.length > 0) {
-      console.log('⛔ [POPULATE_DEPOSIT_EXISTS] Deposit tracker already exists - SKIPPING CREATION');
-      console.log('Existing deposit ID:', existingDeposits[0].id);
-      results.deposit = existingDeposits[0]; // Return existing
-    } else if (updates.deposit && Object.keys(updates.deposit).length > 3) {
-      // Only create if NO deposit exists
+    if (updates.deposit && Object.keys(updates.deposit).length > 3) {
       const depositData = {
         ...updates.deposit,
         lease_id: leaseId
       };
       
-      console.log('[DEPOSIT_DATA_PREPARED_FOR_DB]', depositData);
-      
-      // Validate required fields before creating
+      // Validate required fields
       if (!depositData.deposit_amount || !depositData.deposit_paid_date || !depositData.expected_return_date) {
-        console.error('[POPULATE_DEPOSIT_SKIPPED]', {
-          reason: 'Missing required fields',
-          has_amount: !!depositData.deposit_amount,
-          has_paid_date: !!depositData.deposit_paid_date,
-          has_return_date: !!depositData.expected_return_date,
-          depositData
-        });
+        console.log(`[${executionId}] ⚠️ Missing required fields - skipping deposit creation`);
       } else {
-        console.log('✅ [POPULATE_CREATING_NEW_DEPOSIT] No existing deposit found - creating new');
-        try {
-          results.deposit = await svc.entities.DepositTracker.create(depositData);
-          console.log('✅ [DEPOSIT_CREATE_SUCCESS]', { depositId: results.deposit?.id });
-        } catch (createErr) {
-          console.error('[DEPOSIT_CREATE_FAILED]', { error: createErr.message, stack: createErr.stack, depositData });
-          throw createErr;
+        // Use atomic lock mechanism
+        const lockResult = await createDepositTrackerWithLock(svc, leaseId, depositData, executionId);
+        results.deposit = lockResult.tracker;
+        
+        if (lockResult.created) {
+          console.log(`[${executionId}] ✅ NEW deposit tracker created`);
+        } else {
+          console.log(`[${executionId}] ℹ️ Used existing deposit tracker`);
         }
       }
     } else {
-      console.log('[DEPOSIT_UPDATE_SKIPPED]', {
-        reason: 'Insufficient deposit data',
-        keysCount: Object.keys(updates.deposit || {}).length,
-        depositData: updates.deposit
-      });
+      console.log(`[${executionId}] ⚠️ Insufficient deposit data - skipping`);
     }
     
-    console.log('═══════════════════════════════════════════════════════════════');
-    console.log('[POPULATE_DEPOSIT_CHECK_COMPLETE]');
-    console.log('═══════════════════════════════════════════════════════════════');
+    console.log(`[${executionId}] ═══════════════════════════════════════════════`);
+    console.log(`[${executionId}] DEPOSIT TRACKER SECTION COMPLETE`);
+    console.log(`[${executionId}] ═══════════════════════════════════════════════`);
     
     // Update lease record - FORCE UPDATE even if fields exist (scan data is authoritative)
     console.log('[CHECKING_LEASE_UPDATE_CONDITIONS]', {

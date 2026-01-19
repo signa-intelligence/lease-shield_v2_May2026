@@ -803,96 +803,15 @@ For EACH of the 15 clauses above, you MUST return:
       clausesCount: analysisResult.clauses.length
     });
     
-    // AUTO-POPULATION: Create trackers from extracted data (with duplicate prevention)
-    console.log('[AUTO_POPULATE_START]', { correlationId });
-    
-    const monthlyRent = analysisResult.key_terms?.monthly_rent || analysisResult.key_terms?.monthlyRent;
-    const securityDeposit = analysisResult.key_terms?.security_deposit || analysisResult.key_terms?.securityDeposit;
-    const leaseStartDate = analysisResult.key_terms?.lease_start_date || analysisResult.key_terms?.leaseStartDate;
-    const leaseEndDate = analysisResult.key_terms?.lease_end_date || analysisResult.key_terms?.leaseEndDate;
-    const propertyAddress = analysisResult.key_terms?.property_address || analysisResult.key_terms?.propertyAddress;
-    const rentDueDay = analysisResult.key_terms?.rent_due_day || analysisResult.key_terms?.rentDueDay || 1;
-    
-    console.log('[AUTO_POPULATE_EXTRACTED_DATA]', {
+    // ═══════════════════════════════════════════════════════════════════════
+    // AUTO-POPULATION DISABLED IN analyzeLease.js
+    // Tracker creation is handled ONLY by populateFromScan.js to prevent duplicates
+    // ═══════════════════════════════════════════════════════════════════════
+    console.log('[AUTO_POPULATE_DISABLED]', { 
       correlationId,
-      monthlyRent,
-      securityDeposit,
-      leaseStartDate,
-      leaseEndDate,
-      propertyAddress,
-      rentDueDay
+      leaseId,
+      reason: 'Tracker creation consolidated to populateFromScan.js only'
     });
-    
-    // Validate extracted data
-    const isValidRent = monthlyRent && monthlyRent > 0 && monthlyRent < 1000000;
-    const isValidDeposit = securityDeposit && securityDeposit > 0 && securityDeposit < 10000000;
-    const isValidDates = leaseStartDate && leaseEndDate && new Date(leaseStartDate) < new Date(leaseEndDate);
-    
-    console.log('[AUTO_POPULATE_VALIDATION]', {
-      correlationId,
-      isValidRent,
-      isValidDeposit,
-      isValidDates
-    });
-    
-    // CHECK FOR EXISTING DEPOSIT TRACKER - PREVENT DUPLICATES
-    if (isValidDeposit && isValidDates) {
-      try {
-        console.log('[AUTO_POPULATE_DEPOSIT_CHECK_EXISTING]', { correlationId, leaseId });
-        
-        const existingDeposits = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
-        
-        if (existingDeposits && existingDeposits.length > 0) {
-          console.log('[AUTO_POPULATE_DEPOSIT_TRACKER_EXISTS]', { 
-            correlationId,
-            existingCount: existingDeposits.length,
-            message: 'Skipping creation - tracker already exists for this lease'
-          });
-        } else {
-          console.log('[AUTO_POPULATE_DEPOSIT_TRACKER_CREATE]', { correlationId });
-          
-          const depositDueDate = new Date(leaseStartDate);
-          const expectedReturnDate = new Date(leaseEndDate);
-          expectedReturnDate.setDate(expectedReturnDate.getDate() + 30);
-          
-          await svc.entities.DepositTracker.create({
-            lease_id: leaseId,
-            deposit_amount: securityDeposit,
-            property_address: propertyAddress || 'Not specified',
-            rent_amount: monthlyRent || 0,
-            rent_due_day: rentDueDay,
-            deposit_paid_date: leaseStartDate,
-            deposit_due_date: depositDueDate.toISOString().split('T')[0],
-            expected_return_date: expectedReturnDate.toISOString().split('T')[0],
-            lease_start_date: leaseStartDate,
-            lease_end_date: leaseEndDate,
-            status: 'tracking',
-            auto_populated: true,
-            source_scan_id: scan.id,
-            deposit_due_date_is_estimated: true,
-            expected_return_date_is_estimated: true
-          });
-          
-          console.log('[AUTO_POPULATE_DEPOSIT_TRACKER_SUCCESS]', { 
-            correlationId,
-            amount: securityDeposit,
-            returnDate: expectedReturnDate.toISOString().split('T')[0]
-          });
-        }
-      } catch (depositErr) {
-        console.error('[AUTO_POPULATE_DEPOSIT_TRACKER_FAILED]', {
-          correlationId,
-          error: depositErr.message
-        });
-      }
-    } else {
-      console.warn('[AUTO_POPULATE_DEPOSIT_TRACKER_SKIPPED]', {
-        correlationId,
-        reason: !isValidDeposit ? 'Invalid deposit' : 'Invalid dates'
-      });
-    }
-    
-    console.log('[AUTO_POPULATE_COMPLETE]', { correlationId });
     
     return json(200, {
       ok: true,
