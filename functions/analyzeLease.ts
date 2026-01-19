@@ -268,49 +268,36 @@ CRITICAL:
 IMPORTANT: Extract EVERY clause you find. A typical lease has 30-60 clauses. If you only find 15, you're missing clauses. Keep reading until you've covered the entire document.
 
 ═══════════════════════════════════════════════════════════════════════════
-ADDITIONAL TASK: Missing Critical Clauses Detection
+CRITICAL REQUIREMENT: Missing Critical Clauses Detection (MANDATORY)
 ═══════════════════════════════════════════════════════════════════════════
 
-After extracting all clauses, review the lease document and determine if these 5 CRITICAL clauses are present or missing.
+You MUST analyze these 5 clauses and include missingCriticalClauses array in your JSON response with EXACTLY 5 objects.
 
-For each clause below, analyze if it's clearly addressed in the lease:
+For each clause ID below, determine if it's PRESENT or MISSING:
 
-1. CAT-023 Deposit Holding
-   Question: Does the lease specify WHERE and HOW the security deposit will be held during tenancy? (escrow account, bank name, account details, holding conditions)
-   Look for: Bank account details, escrow terms, deposit custody clause
+CAT-023 (Deposit Holding):
+Where/how is the deposit held? Look for: bank account, escrow, holding terms
 
-2. CAT-027 Deposit Forfeiture Conditions
-   Question: Does the lease clearly define the SPECIFIC circumstances when landlord can forfeit (keep) all or part of the deposit?
-   Look for: List of forfeiture conditions, damage examples, breach scenarios
+CAT-027 (Deposit Forfeiture Conditions):
+What specific conditions allow forfeiture? Look for: damage list, breach terms
 
-3. CAT-028 Wear and Tear Definition
-   Question: Does the lease distinguish between normal wear/tear vs tenant damage for deposit deductions?
-   Look for: "Normal wear and tear", "ordinary use", damage vs deterioration
+CAT-028 (Wear and Tear Definition):
+Is normal wear distinguished from damage? Look for: "normal wear", "ordinary use"
 
-4. CAT-037 Repair Request Procedure
-   Question: Does the lease specify HOW tenant should report maintenance issues? (format, timeline, contact method, response time)
-   Look for: Repair request process, notification requirements, contact info
+CAT-037 (Repair Request Procedure):
+How does tenant report repairs? Look for: process, timeline, contact method
 
-5. CAT-033 Utility Disconnection Rights
-   Question: Does the lease state whether landlord CAN or CANNOT disconnect utilities for non-payment or other reasons?
-   Look for: Utility cutoff rights, disconnection terms, service suspension
+CAT-033 (Utility Disconnection Rights):
+Can landlord cut utilities? Look for: disconnection rights, service suspension
 
-For each clause, respond with:
-- status: "PRESENT" or "MISSING"
-- confidence: "HIGH" or "LOW" 
-- evidence: Quote 1-2 sentences from lease if PRESENT, or state "Not found in lease" if MISSING
-
-Add this to your JSON response:
-"missingCriticalClauses": [
-  {
-    "id": "CAT-023",
-    "name": "Deposit Holding",
-    "status": "MISSING" or "PRESENT",
-    "confidence": "HIGH" or "LOW",
-    "evidence": "Quote from lease or 'Not found in lease'"
-  },
-  // ...repeat for CAT-027, CAT-028, CAT-037, CAT-033
-]`;
+For EACH of the 5 clauses above, you MUST return:
+{
+  "id": "CAT-023" (use exact IDs: CAT-023, CAT-027, CAT-028, CAT-037, CAT-033),
+  "name": "Deposit Holding" (use descriptive name),
+  "status": "PRESENT" or "MISSING",
+  "confidence": "HIGH" or "LOW",
+  "evidence": "Quote from lease" OR "Not mentioned in lease"
+}`;
     
     // Initialize OpenAI client
     const openai = new OpenAI({ apiKey: openaiApiKey });
@@ -376,12 +363,20 @@ Add this to your JSON response:
           temperature: 0.2
         });
         
-        analysisResult = JSON.parse(completion.choices[0].message.content);
+        const rawContent = completion.choices[0].message.content;
+        console.log('[ANALYZE_LEASE_OPENAI_RAW_RESPONSE]', { 
+          correlationId, 
+          preview: rawContent?.slice(0, 500) 
+        });
+        
+        analysisResult = JSON.parse(rawContent);
         
         console.log('[ANALYZE_LEASE_OPENAI_COMPLETE]', { 
           correlationId, 
           clausesCount: analysisResult.clauses?.length || 0,
-          riskScore: analysisResult.risk_score
+          riskScore: analysisResult.risk_score,
+          hasMissingClauses: !!analysisResult.missingCriticalClauses,
+          missingClausesCount: analysisResult.missingCriticalClauses?.length || 0
         });
       } catch (e) {
         console.error('[ANALYZE_LEASE_OPENAI_FAILED]', { correlationId, error: e.message });
@@ -428,12 +423,20 @@ Add this to your JSON response:
           temperature: 0.2
         });
         
-        analysisResult = JSON.parse(completion.choices[0].message.content);
+        const rawContentVision = completion.choices[0].message.content;
+        console.log('[ANALYZE_LEASE_VISION_RAW_RESPONSE]', { 
+          correlationId, 
+          preview: rawContentVision?.slice(0, 500) 
+        });
+        
+        analysisResult = JSON.parse(rawContentVision);
         
         console.log('[ANALYZE_LEASE_VISION_COMPLETE]', { 
           correlationId, 
           clausesCount: analysisResult.clauses?.length || 0,
-          riskScore: analysisResult.risk_score
+          riskScore: analysisResult.risk_score,
+          hasMissingClauses: !!analysisResult.missingCriticalClauses,
+          missingClausesCount: analysisResult.missingCriticalClauses?.length || 0
         });
       } catch (e) {
         console.error('[ANALYZE_LEASE_VISION_FAILED]', { correlationId, error: e.message });
@@ -501,6 +504,7 @@ Add this to your JSON response:
     console.log('[ANALYZE_LEASE_MISSING_CLAUSES_RAW]', { 
       correlationId, 
       hasMissingClauses: !!analysisResult.missingCriticalClauses,
+      rawData: JSON.stringify(analysisResult.missingCriticalClauses || null),
       count: analysisResult.missingCriticalClauses?.length || 0
     });
     
@@ -544,12 +548,16 @@ Add this to your JSON response:
       console.log('[ANALYZE_LEASE_MISSING_CLAUSES_NORMALIZED]', { 
         correlationId, 
         count: normalizedMissing.length,
-        missingHighConfidence: missingCount
+        missingHighConfidence: missingCount,
+        details: normalizedMissing
       });
     } else {
       // If OpenAI didn't return missingCriticalClauses, set empty defaults
       // This ensures scan still succeeds even if this new feature fails
-      console.warn('[ANALYZE_LEASE_MISSING_CLAUSES_NOT_RETURNED]', { correlationId });
+      console.warn('[ANALYZE_LEASE_MISSING_CLAUSES_NOT_RETURNED]', { 
+        correlationId,
+        receivedKeys: Object.keys(analysisResult || {})
+      });
       analysisResult.missingCriticalClauses = [];
       analysisResult.missingClauseCount = 0;
     }
