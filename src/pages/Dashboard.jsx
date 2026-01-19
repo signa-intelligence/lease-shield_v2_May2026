@@ -2534,11 +2534,21 @@ ja: {
                 <>
                   {/* Compact Protection Score Summary */}
                   <div className="mb-6" style={{ animation: 'slideDown 0.3s ease-out' }}>
+                    {/* Get score color to match popup thresholds: 80+ green, 60-79 orange, <60 red */}
+                    {(() => {
+                      const getScoreBadgeColor = (score) => {
+                        if (score >= 80) return { main: '#10B981', light: '#059669', shadow: 'rgba(16,185,129,0.3)', border: 'rgba(16,185,129,0.2)' };
+                        if (score >= 60) return { main: '#F59E0B', light: '#D97706', shadow: 'rgba(245,158,11,0.3)', border: 'rgba(245,158,11,0.2)' };
+                        return { main: '#EF4444', light: '#DC2626', shadow: 'rgba(239,68,68,0.3)', border: 'rgba(239,68,68,0.2)' };
+                      };
+                      const scoreColors = getScoreBadgeColor(protectionScore);
+                      console.log('🎨 Protection Score:', protectionScore, 'Color:', scoreColors.main);
+                      return (
                     <Card className="border-none shadow-md bg-white dark:bg-gray-800" style={{
                       background: isDarkMode 
                         ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
                         : 'linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%)',
-                      border: `2px solid ${isDarkMode ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.15)'}`
+                      border: `2px solid ${isDarkMode ? scoreColors.border : scoreColors.border}`
                     }}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
@@ -2547,11 +2557,11 @@ ja: {
                               width: '48px',
                               height: '48px',
                               borderRadius: '12px',
-                              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                              background: `linear-gradient(135deg, ${scoreColors.main} 0%, ${scoreColors.light} 100%)`,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              boxShadow: '0 4px 8px rgba(16,185,129,0.3)'
+                              boxShadow: `0 4px 8px ${scoreColors.shadow}`
                             }}>
                               <Shield className="w-6 h-6 text-white" />
                             </div>
@@ -2601,6 +2611,8 @@ ja: {
                         </div>
                       </CardContent>
                     </Card>
+                      );
+                    })()}
                   </div>
 
                   {/* Six Feature Cards - Consistent 3-column grid */}
