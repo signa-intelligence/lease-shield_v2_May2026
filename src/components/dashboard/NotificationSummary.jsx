@@ -12,11 +12,29 @@ export default function NotificationSummary({ language = 'en', isDarkMode = fals
     queryFn: () => base44.auth.me(),
   });
 
-  const { data: myLogs = [] } = useQuery({
+  const { data: myLogs = [], refetch: fetchNotifications } = useQuery({
     queryKey: ['myNotificationLogs'],
     queryFn: () => base44.entities.NotificationLog.filter({ user_email: user?.email }, '-created_date', 10),
     enabled: !!user,
   });
+
+  async function handleMarkAsRead(notificationId) {
+    try {
+      await base44.entities.NotificationLog.update(notificationId, { is_read: true });
+      fetchNotifications();
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
+  }
+
+  async function handleDismiss(notificationId) {
+    try {
+      await base44.entities.NotificationLog.update(notificationId, { is_dismissed: true });
+      fetchNotifications();
+    } catch (error) {
+      console.error('Failed to dismiss:', error);
+    }
+  }
 
   const strings = {
     en: {
@@ -219,6 +237,28 @@ export default function NotificationSummary({ language = 'en', isDarkMode = fals
                       </div>
                     </div>
                   </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  {!log.is_read && (
+                    <button
+                      onClick={() => handleMarkAsRead(log.id)}
+                      style={{
+                        padding: '4px 12px', fontSize: '12px', backgroundColor: '#3B82F6',
+                        color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer'
+                      }}
+                    >
+                      Mark as read
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDismiss(log.id)}
+                    style={{
+                      padding: '4px 12px', fontSize: '12px', backgroundColor: '#EF4444',
+                      color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer'
+                    }}
+                  >
+                    Dismiss
+                  </button>
                 </div>
               </div>
             ))}

@@ -12,6 +12,7 @@ import LanguageSelector from "./components/shared/LanguageSelector";
 import QuickGuide from "./components/shared/QuickGuide";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import GlobalErrorBoundary from "./components/shared/GlobalErrorBoundary";
+import NotificationBell from "./components/notifications/NotificationBell";
 
 
 // Animation utilities inlined
@@ -623,8 +624,9 @@ export default function Layout({ children, currentPageName }) {
               </span>
             )}
           </div>
-          {/* Mobile: Search + Quick Guide + Menu */}
+          {/* Mobile: Search + Quick Guide + Notification Bell + Menu */}
           <div className="flex items-center gap-2 flex-shrink-0 md:hidden">
+            {user && <NotificationBell base44={base44} userEmail={user.email} />}
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
@@ -758,6 +760,7 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Desktop/Tablet: Keep all icons */}
           <div className="hidden md:flex items-center gap-2 flex-shrink-0" style={{ marginRight: '4px' }}>
+            {user && <NotificationBell base44={base44} userEmail={user.email} />}
             <div style={{
               width: '1px',
               height: '24px',
