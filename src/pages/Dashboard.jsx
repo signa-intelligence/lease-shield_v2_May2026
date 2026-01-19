@@ -2563,7 +2563,6 @@ ja: {
                               showPulse={true}
                               isDarkMode={isDarkMode}
                             />
-                            </div>
                             <div>
                               <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
                                 {language === 'th' ? 'คะแนนการป้องกัน' : language === 'zh' ? '保护分数' : language === 'ja' ? '保護スコア' : language === 'ko' ? '보호 점수' : language === 'ru' ? 'Уровень защиты' : 'Protection Score'}
