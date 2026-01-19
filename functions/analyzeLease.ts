@@ -803,7 +803,7 @@ For EACH of the 15 clauses above, you MUST return:
       clausesCount: analysisResult.clauses.length
     });
     
-    // AUTO-POPULATION: Create trackers from extracted data
+    // AUTO-POPULATION: Create trackers from extracted data (with duplicate prevention)
     console.log('[AUTO_POPULATE_START]', { correlationId });
     
     const monthlyRent = analysisResult.key_terms?.monthly_rent || analysisResult.key_terms?.monthlyRent;
@@ -835,38 +835,50 @@ For EACH of the 15 clauses above, you MUST return:
       isValidDates
     });
     
-    // AUTO-CREATE DEPOSIT TRACKER
+    // CHECK FOR EXISTING DEPOSIT TRACKER - PREVENT DUPLICATES
     if (isValidDeposit && isValidDates) {
       try {
-        console.log('[AUTO_POPULATE_DEPOSIT_TRACKER_START]', { correlationId });
+        console.log('[AUTO_POPULATE_DEPOSIT_CHECK_EXISTING]', { correlationId, leaseId });
         
-        const depositDueDate = new Date(leaseStartDate);
-        const expectedReturnDate = new Date(leaseEndDate);
-        expectedReturnDate.setDate(expectedReturnDate.getDate() + 30);
+        const existingDeposits = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
         
-        await svc.entities.DepositTracker.create({
-          lease_id: leaseId,
-          deposit_amount: securityDeposit,
-          property_address: propertyAddress || 'Not specified',
-          rent_amount: monthlyRent || 0,
-          rent_due_day: rentDueDay,
-          deposit_paid_date: leaseStartDate,
-          deposit_due_date: depositDueDate.toISOString().split('T')[0],
-          expected_return_date: expectedReturnDate.toISOString().split('T')[0],
-          lease_start_date: leaseStartDate,
-          lease_end_date: leaseEndDate,
-          status: 'tracking',
-          auto_populated: true,
-          source_scan_id: scan.id,
-          deposit_due_date_is_estimated: true,
-          expected_return_date_is_estimated: true
-        });
-        
-        console.log('[AUTO_POPULATE_DEPOSIT_TRACKER_SUCCESS]', { 
-          correlationId,
-          amount: securityDeposit,
-          returnDate: expectedReturnDate.toISOString().split('T')[0]
-        });
+        if (existingDeposits && existingDeposits.length > 0) {
+          console.log('[AUTO_POPULATE_DEPOSIT_TRACKER_EXISTS]', { 
+            correlationId,
+            existingCount: existingDeposits.length,
+            message: 'Skipping creation - tracker already exists for this lease'
+          });
+        } else {
+          console.log('[AUTO_POPULATE_DEPOSIT_TRACKER_CREATE]', { correlationId });
+          
+          const depositDueDate = new Date(leaseStartDate);
+          const expectedReturnDate = new Date(leaseEndDate);
+          expectedReturnDate.setDate(expectedReturnDate.getDate() + 30);
+          
+          await svc.entities.DepositTracker.create({
+            lease_id: leaseId,
+            deposit_amount: securityDeposit,
+            property_address: propertyAddress || 'Not specified',
+            rent_amount: monthlyRent || 0,
+            rent_due_day: rentDueDay,
+            deposit_paid_date: leaseStartDate,
+            deposit_due_date: depositDueDate.toISOString().split('T')[0],
+            expected_return_date: expectedReturnDate.toISOString().split('T')[0],
+            lease_start_date: leaseStartDate,
+            lease_end_date: leaseEndDate,
+            status: 'tracking',
+            auto_populated: true,
+            source_scan_id: scan.id,
+            deposit_due_date_is_estimated: true,
+            expected_return_date_is_estimated: true
+          });
+          
+          console.log('[AUTO_POPULATE_DEPOSIT_TRACKER_SUCCESS]', { 
+            correlationId,
+            amount: securityDeposit,
+            returnDate: expectedReturnDate.toISOString().split('T')[0]
+          });
+        }
       } catch (depositErr) {
         console.error('[AUTO_POPULATE_DEPOSIT_TRACKER_FAILED]', {
           correlationId,
