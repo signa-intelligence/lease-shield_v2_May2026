@@ -137,9 +137,12 @@ Deno.serve(async (req) => {
 
     let channel = '';
     let success = false;
+    let sendError = null;
 
-    if (user.line_messaging_token && user.line_notifications && flexMessage) {
+    // Try LINE first if user has token and notifications enabled
+    if (user.line_messaging_token && flexMessage) {
       try {
+        console.log(`📤 Attempting LINE send to ${user.email} (token: ${user.line_messaging_token?.substring(0, 10)}...)`);
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
           userId: user.line_messaging_token,
           flexMessage: flexMessage
@@ -148,12 +151,17 @@ Deno.serve(async (req) => {
         success = true;
         console.log(`✅ Test LINE Flex sent to ${user.email}`);
       } catch (lineError) {
-        console.error(`❌ LINE failed:`, lineError);
+        console.error(`❌ LINE send failed for ${user.email}:`, lineError);
+        sendError = lineError.message;
       }
+    } else {
+      console.log(`⚠️ Skipping LINE: token=${!!user.line_messaging_token}, flexMessage=${!!flexMessage}`);
     }
 
-    if (!success && user.email_notifications) {
+    // Fallback to email if LINE failed or unavailable
+    if (!success) {
       try {
+        console.log(`📧 Attempting email send to ${user.email}`);
         await base44.asServiceRole.integrations.Core.SendEmail({
           from_name: 'Lease Shield',
           to: user.email,
@@ -164,13 +172,9 @@ Deno.serve(async (req) => {
         success = true;
         console.log(`✅ Test email sent to ${user.email}`);
       } catch (emailError) {
-        console.error(`❌ Email failed:`, emailError);
-        throw new Error('Both LINE and Email failed');
+        console.error(`❌ Email send failed for ${user.email}:`, emailError);
+        throw new Error(`All channels failed. LINE: ${sendError || 'N/A'}, Email: ${emailError.message}`);
       }
-    }
-
-    if (!success) {
-      throw new Error('No notification channels enabled');
     }
 
     // Create NotificationLog entry
@@ -182,7 +186,9 @@ Deno.serve(async (req) => {
       related_entity_type: notificationType.startsWith('rent_') ? 'deposit' : notificationType.startsWith('lease_') ? 'lease' : 'deposit',
       related_entity_id: null,
       message_preview: messageText.substring(0, 200),
-      error_message: null
+      error_message: null,
+      is_read: false,
+      is_dismissed: false
     });
 
     console.log('✅ NotificationLog created:', notificationLog.id);
