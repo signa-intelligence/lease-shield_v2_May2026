@@ -45,6 +45,7 @@ function AdminSupportContent() {
     queryKey: ['adminTickets'],
     queryFn: async () => {
       const result = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
+      console.log('🎫 Admin query result:', result?.length || 0, 'tickets');
       return Array.isArray(result) ? result : [];
     },
     enabled: isAuthorized,
