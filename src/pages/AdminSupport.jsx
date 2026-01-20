@@ -69,7 +69,7 @@ function AdminSupportContent() {
   }, [allTickets]);
 
   const updateTicketMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.asServiceRole.entities.SupportTicket.update(id, data),
+    mutationFn: ({ id, data }) => base44.entities.SupportTicket.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminTickets'] });
     }
@@ -136,7 +136,7 @@ function AdminSupportContent() {
         toast.success('Reply sent to user');
         haptic.success();
         
-        const updated = await base44.asServiceRole.entities.SupportTicket.filter({ id: selectedTicket.id });
+        const updated = await base44.entities.SupportTicket.filter({ id: selectedTicket.id });
         setSelectedTicket(updated[0]);
       }
     } catch (error) {
@@ -170,7 +170,7 @@ function AdminSupportContent() {
       data: updateData
     });
 
-    const updated = await base44.asServiceRole.entities.SupportTicket.filter({ id: selectedTicket.id });
+    const updated = await base44.entities.SupportTicket.filter({ id: selectedTicket.id });
     setSelectedTicket(updated[0]);
     toast.success('Status updated');
   };
@@ -194,7 +194,7 @@ function AdminSupportContent() {
       data: { assigned_to: user.email }
     });
 
-    const updated = await base44.asServiceRole.entities.SupportTicket.filter({ id: selectedTicket.id });
+    const updated = await base44.entities.SupportTicket.filter({ id: selectedTicket.id });
     setSelectedTicket(updated[0]);
     toast.success('Assigned to you');
   };
