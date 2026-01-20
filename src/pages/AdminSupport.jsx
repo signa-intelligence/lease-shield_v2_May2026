@@ -46,7 +46,7 @@ function AdminSupportContent() {
     queryFn: async () => {
       try {
         console.log('🎫 QUERY STARTED');
-        const result = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
+        const result = await base44.entities.SupportTicket.list('-created_date');
         console.log('🎫 RAW RESULT:', result);
         console.log('🎫 LENGTH:', result?.length || 0);
         return result || [];
