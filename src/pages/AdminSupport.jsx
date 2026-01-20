@@ -41,20 +41,32 @@ function AdminSupportContent() {
     ['admin', 'super_admin', 'va'].includes(user?.role)
   );
 
-  const { data: allTickets = [], isLoading } = useQuery({
+  const { data: allTickets = [], isLoading, error } = useQuery({
     queryKey: ['adminTickets'],
     queryFn: async () => {
-      console.log('🎫 QUERY STARTED - isAuthorized:', isAuthorized);
-      const result = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
-      console.log('🎫 RAW RESULT:', result);
-      console.log('🎫 RESULT TYPE:', typeof result, 'isArray:', Array.isArray(result));
-      console.log('🎫 RESULT LENGTH:', result?.length);
-      const tickets = Array.isArray(result) ? result : [];
-      console.log('🎫 RETURNING:', tickets.length, 'tickets');
-      return tickets;
+      try {
+        console.log('🎫 QUERY STARTED');
+        const result = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
+        console.log('🎫 RAW RESULT:', result);
+        console.log('🎫 LENGTH:', result?.length || 0);
+        return result || [];
+      } catch (err) {
+        console.error('🎫 QUERY ERROR:', err);
+        throw err;
+      }
     },
     enabled: isAuthorized,
   });
+
+  React.useEffect(() => {
+    if (error) {
+      console.error('🎫 REACT QUERY ERROR:', error);
+    }
+  }, [error]);
+
+  React.useEffect(() => {
+    console.log('🎫 ALL TICKETS STATE:', allTickets?.length || 0, allTickets);
+  }, [allTickets]);
 
   const updateTicketMutation = useMutation({
     mutationFn: ({ id, data }) => base44.asServiceRole.entities.SupportTicket.update(id, data),
