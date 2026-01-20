@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     };
 
     // Create ticket
-    const ticket = await base44.entities.SupportTicket.create({
+    const ticket = await base44.asServiceRole.entities.SupportTicket.create({
       ticket_number: ticketNumber,
       subject: subject,
       description: description,
