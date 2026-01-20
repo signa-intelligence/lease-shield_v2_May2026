@@ -36,13 +36,18 @@ function AdminSupportContent() {
     queryFn: () => base44.auth.me(),
   });
 
+  const isAuthorized = user && (
+    ['admin', 'super_admin', 'va'].includes(user?.access_level) ||
+    ['admin', 'super_admin', 'va'].includes(user?.role)
+  );
+
   const { data: allTickets = [], isLoading } = useQuery({
     queryKey: ['adminTickets'],
     queryFn: async () => {
       const result = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
       return Array.isArray(result) ? result : [];
     },
-    enabled: !!user && (['admin', 'super_admin', 'va'].includes(user.access_level) || ['admin', 'super_admin', 'va'].includes(user.role)),
+    enabled: isAuthorized,
   });
 
   const updateTicketMutation = useMutation({
@@ -54,11 +59,6 @@ function AdminSupportContent() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-
-  const isAuthorized = user && (
-    ['admin', 'super_admin', 'va'].includes(user.access_level) ||
-    ['admin', 'super_admin', 'va'].includes(user.role)
-  );
 
   const colors = {
     bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
@@ -167,11 +167,13 @@ function AdminSupportContent() {
 
   // Check for ticketId in URL
   React.useEffect(() => {
+    if (!allTickets || allTickets.length === 0) return;
+    
     const urlParams = new URLSearchParams(window.location.search);
     const ticketIdFromUrl = urlParams.get('ticketId');
 
-    if (ticketIdFromUrl && allTickets.length > 0) {
-      const ticketToOpen = allTickets.find(t => t.id === ticketIdFromUrl);
+    if (ticketIdFromUrl) {
+      const ticketToOpen = allTickets.find(t => t && t.id === ticketIdFromUrl);
       if (ticketToOpen) {
         setSelectedTicket(ticketToOpen);
         setAdminNotes(ticketToOpen.admin_notes || '');
