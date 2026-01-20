@@ -60,6 +60,22 @@ function AdminSupportContent() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
 
+  // Check for ticketId in URL - MUST be before early return
+  React.useEffect(() => {
+    if (!allTickets || allTickets.length === 0) return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const ticketIdFromUrl = urlParams.get('ticketId');
+
+    if (ticketIdFromUrl) {
+      const ticketToOpen = allTickets.find(t => t && t.id === ticketIdFromUrl);
+      if (ticketToOpen) {
+        setSelectedTicket(ticketToOpen);
+        setAdminNotes(ticketToOpen.admin_notes || '');
+      }
+    }
+  }, [allTickets]);
+
   const colors = {
     bg: isDarkMode ? '#1A1D1F' : '#F8FAFC',
     cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
@@ -164,22 +180,6 @@ function AdminSupportContent() {
     setSelectedTicket(updated[0]);
     toast.success('Assigned to you');
   };
-
-  // Check for ticketId in URL
-  React.useEffect(() => {
-    if (!allTickets || allTickets.length === 0) return;
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const ticketIdFromUrl = urlParams.get('ticketId');
-
-    if (ticketIdFromUrl) {
-      const ticketToOpen = allTickets.find(t => t && t.id === ticketIdFromUrl);
-      if (ticketToOpen) {
-        setSelectedTicket(ticketToOpen);
-        setAdminNotes(ticketToOpen.admin_notes || '');
-      }
-    }
-  }, [allTickets]);
 
   const filteredTickets = filterStatus === 'all' 
     ? allTickets 
