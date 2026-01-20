@@ -65,7 +65,7 @@ function SupportContent() {
   } = useFormValidation(
     {
       description: '',
-      category: 'billing',
+      category: 'technical',
       attachments: []
     },
     validationSchema
@@ -484,8 +484,11 @@ function SupportContent() {
                     >
                       <option value="billing">Billing & Subscription</option>
                       <option value="account">Account & Access</option>
+                      <option value="deposit">Deposit Issues</option>
+                      <option value="scan">Lease Scan Issues</option>
                       <option value="templates">Templates & Letters</option>
                       <option value="cases">Cases</option>
+                      <option value="technical">Technical Issues</option>
                       <option value="bug">Bug Report</option>
                       <option value="other">Other</option>
                     </select>
