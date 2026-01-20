@@ -38,7 +38,10 @@ function AdminSupportContent() {
 
   const { data: allTickets = [], isLoading } = useQuery({
     queryKey: ['adminTickets'],
-    queryFn: () => base44.asServiceRole.entities.SupportTicket.list('-created_date'),
+    queryFn: async () => {
+      const result = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
+      return Array.isArray(result) ? result : [];
+    },
     enabled: !!user && (['admin', 'super_admin', 'va'].includes(user.access_level) || ['admin', 'super_admin', 'va'].includes(user.role)),
   });
 
@@ -178,11 +181,11 @@ function AdminSupportContent() {
 
   const filteredTickets = filterStatus === 'all' 
     ? allTickets 
-    : allTickets.filter(t => t.status === filterStatus);
+    : (allTickets || []).filter(t => t && t.status === filterStatus);
 
-  const openTickets = allTickets.filter(t => t.status === 'open');
-  const inProgressTickets = allTickets.filter(t => t.status === 'in_progress');
-  const waitingUserTickets = allTickets.filter(t => t.status === 'waiting_user');
+  const openTickets = (allTickets || []).filter(t => t && t.status === 'open');
+  const inProgressTickets = (allTickets || []).filter(t => t && t.status === 'in_progress');
+  const waitingUserTickets = (allTickets || []).filter(t => t && t.status === 'waiting_user');
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ backgroundColor: colors.bg }}>
@@ -240,7 +243,7 @@ function AdminSupportContent() {
               <div className="flex items-center justify-between mb-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 <span className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                  {allTickets.filter(t => t.status === 'resolved' || t.status === 'closed').length}
+                  {(allTickets || []).filter(t => t && (t.status === 'resolved' || t.status === 'closed')).length}
                 </span>
               </div>
               <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>Resolved</p>
@@ -277,9 +280,10 @@ function AdminSupportContent() {
           />
         ) : (
           <div className="grid gap-4">
-            {filteredTickets.map((ticket) => {
-              const statusConfig = STATUS_CONFIG[ticket.status];
-              const StatusIcon = statusConfig.icon;
+            {(filteredTickets || []).map((ticket) => {
+              if (!ticket) return null;
+              const statusConfig = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.open;
+              const StatusIcon = statusConfig?.icon || Clock;
               const messageCount = ticket.messages?.length || 0;
               const lastMessage = ticket.messages?.[messageCount - 1];
 
