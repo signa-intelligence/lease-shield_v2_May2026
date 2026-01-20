@@ -44,9 +44,14 @@ function AdminSupportContent() {
   const { data: allTickets = [], isLoading } = useQuery({
     queryKey: ['adminTickets'],
     queryFn: async () => {
+      console.log('🎫 QUERY STARTED - isAuthorized:', isAuthorized);
       const result = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
-      console.log('🎫 Admin query result:', result?.length || 0, 'tickets');
-      return Array.isArray(result) ? result : [];
+      console.log('🎫 RAW RESULT:', result);
+      console.log('🎫 RESULT TYPE:', typeof result, 'isArray:', Array.isArray(result));
+      console.log('🎫 RESULT LENGTH:', result?.length);
+      const tickets = Array.isArray(result) ? result : [];
+      console.log('🎫 RETURNING:', tickets.length, 'tickets');
+      return tickets;
     },
     enabled: isAuthorized,
   });
