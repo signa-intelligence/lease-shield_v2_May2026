@@ -27,8 +27,8 @@ function AdminSupportContent() {
     queryKey: ['adminTickets', statusFilter],
     queryFn: async () => {
       try {
-        // Fetch all tickets using regular API (RLS allows admin access)
-        const allTickets = await base44.entities.SupportTicket.list();
+        // Admin must use service role to bypass RLS and see ALL tickets
+        const allTickets = await base44.asServiceRole.entities.SupportTicket.list();
         
         console.log('🎫 Admin fetched tickets:', allTickets?.length || 0, 'tickets');
         
