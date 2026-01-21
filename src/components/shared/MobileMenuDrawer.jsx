@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, User, HelpCircle, Globe, Users, TrendingUp, LogOut, ChevronRight, BarChart3 } from 'lucide-react';
+import { X, User, HelpCircle, Globe, Users, TrendingUp, LogOut, ChevronRight, BarChart3, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -11,6 +11,8 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       menu: 'Menu',
       accountSettings: 'Account & Settings',
       helpFAQ: 'Help & FAQ',
+      support: 'Help & Support',
+      adminSupport: 'Admin Support',
       languageOption: 'Language',
       referralProgram: 'Referral Program',
       upgradePlan: 'Upgrade Plan',
@@ -21,6 +23,8 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       menu: 'เมนู',
       accountSettings: 'บัญชีและการตั้งค่า',
       helpFAQ: 'ช่วยเหลือและคำถาม',
+      support: 'ความช่วยเหลือ',
+      adminSupport: 'การสนับสนุนผู้ดูแลระบบ',
       languageOption: 'ภาษา',
       referralProgram: 'โปรแกรมแนะนำเพื่อน',
       upgradePlan: 'อัปเกรดแผน',
@@ -31,6 +35,8 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       menu: '菜单',
       accountSettings: '账户与设置',
       helpFAQ: '帮助与常见问题',
+      support: '帮助与支持',
+      adminSupport: '管理员支持',
       languageOption: '语言',
       referralProgram: '推荐计划',
       upgradePlan: '升级计划',
@@ -41,6 +47,8 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       menu: 'メニュー',
       accountSettings: 'アカウントと設定',
       helpFAQ: 'ヘルプとFAQ',
+      support: 'ヘルプとサポート',
+      adminSupport: '管理者サポート',
       languageOption: '言語',
       referralProgram: '紹介プログラム',
       upgradePlan: 'プランをアップグレード',
@@ -51,6 +59,8 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       menu: '메뉴',
       accountSettings: '계정 및 설정',
       helpFAQ: '도움말 및 FAQ',
+      support: '도움말 및 지원',
+      adminSupport: '관리자 지원',
       languageOption: '언어',
       referralProgram: '추천 프로그램',
       upgradePlan: '플랜 업그레이드',
@@ -61,6 +71,8 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       menu: 'Меню',
       accountSettings: 'Аккаунт и настройки',
       helpFAQ: 'Помощь и FAQ',
+      support: 'Помощь и поддержка',
+      adminSupport: 'Поддержка администратора',
       languageOption: 'Язык',
       referralProgram: 'Реферальная программа',
       upgradePlan: 'Повысить план',
@@ -107,16 +119,28 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       color: '#063F2C'
     },
     {
+      icon: MessageCircle,
+      label: strings.support,
+      route: createPageUrl('Support'),
+      color: '#3B82F6'
+    },
+    ...(isAdminOrVA ? [{
+      icon: MessageCircle,
+      label: strings.adminSupport,
+      route: createPageUrl('AdminSupport'),
+      color: '#EF4444'
+    }] : []),
+    {
       icon: HelpCircle,
       label: strings.helpFAQ,
       route: createPageUrl('FAQ'),
-      color: '#3B82F6'
+      color: '#8B5CF6'
     },
     {
       icon: Globe,
       label: strings.languageOption,
       action: 'language',
-      color: '#8B5CF6'
+      color: '#6366F1'
     },
     {
       icon: Users,
