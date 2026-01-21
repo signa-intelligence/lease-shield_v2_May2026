@@ -5,7 +5,7 @@ import AuthGuard from '../components/shared/AuthGuard';
 import PageHeader from '../components/shared/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { MessageCircle, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { MessageCircle, Clock, CheckCircle, XCircle, AlertCircle, Paperclip } from 'lucide-react';
 import { useToast } from '../components/ui/use-toast';
 
 const STATUS_CONFIG = {
@@ -23,24 +23,30 @@ function AdminSupportContent() {
   const [replyMessage, setReplyMessage] = useState('');
   
   // Fetch all tickets
-  const { data: tickets = [], isLoading } = useQuery({
+  const { data: tickets = [], isLoading, error } = useQuery({
     queryKey: ['adminTickets', statusFilter],
     queryFn: async () => {
-      console.log('🔍 Admin fetching tickets, filter:', statusFilter);
-      
-      const allTickets = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
-      console.log('📊 Total tickets in DB:', allTickets?.length);
-      console.log('📋 Tickets:', allTickets);
-      
-      if (statusFilter === 'all') {
-        return allTickets || [];
+      try {
+        // Fetch ALL tickets
+        const result = await base44.asServiceRole.entities.SupportTicket.list({
+          sort: [{ field: 'created_date', direction: 'desc' }],
+          limit: 500
+        });
+        
+        // Filter by status
+        const allTickets = result.items || [];
+        const filteredTickets = statusFilter === 'all' 
+          ? allTickets
+          : allTickets.filter(ticket => ticket.status === statusFilter);
+        
+        return filteredTickets;
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+        return [];
       }
-      
-      const filtered = (allTickets || []).filter(t => t.status === statusFilter);
-      console.log('✅ Filtered tickets:', filtered?.length);
-      
-      return filtered;
-    }
+    },
+    retry: false,
+    refetchOnWindowFocus: false
   });
   
   // Reply mutation
@@ -166,6 +172,12 @@ function AdminSupportContent() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
+        
+        {error && (
+          <div className="p-4 bg-red-50 text-red-800 rounded mb-4">
+            Error loading tickets: {error.message}
           </div>
         )}
         

@@ -27,22 +27,32 @@ export default function Support() {
   const [replyMessage, setReplyMessage] = useState('');
   
   // Fetch user's tickets
-  const { data: tickets = [], isLoading } = useQuery({
+  const { data: tickets = [], isLoading, error } = useQuery({
     queryKey: ['userTickets'],
     queryFn: async () => {
-      const user = await base44.auth.me();
-      console.log('🔍 Fetching tickets for user:', user.email);
-      
-      // Get ALL tickets first (filter in JS to avoid query issues)
-      const allTickets = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
-      console.log('📊 Total tickets in DB:', allTickets?.length);
-      
-      // Filter to user's tickets in JavaScript
-      const userTickets = (allTickets || []).filter(t => t.user_email === user.email);
-      console.log('✅ User tickets found:', userTickets?.length);
-      
-      return userTickets;
-    }
+      try {
+        const user = await base44.auth.me();
+        
+        // Fetch ALL tickets
+        const result = await base44.asServiceRole.entities.SupportTicket.list({
+          sort: [{ field: 'created_date', direction: 'desc' }],
+          limit: 100
+        });
+        
+        // Filter user's tickets
+        const allTickets = result.items || [];
+        const userTickets = allTickets.filter(ticket => 
+          ticket.user_email === user.email
+        );
+        
+        return userTickets;
+      } catch (error) {
+        console.error('Error fetching tickets:', error);
+        return [];
+      }
+    },
+    retry: false,
+    refetchOnWindowFocus: false
   });
   
   // Submit ticket mutation
@@ -172,6 +182,12 @@ export default function Support() {
       />
       
       <div className="max-w-4xl mx-auto p-4 space-y-6">
+        {error && (
+          <div className="p-4 bg-red-50 text-red-800 rounded">
+            Error loading tickets: {error.message}
+          </div>
+        )}
+        
         {/* Submit Form */}
         {!selectedTicket && (
           <Card>
