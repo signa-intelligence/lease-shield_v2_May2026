@@ -196,23 +196,33 @@ Deno.serve(async (req) => {
         console.log(`⏭️ Skipping LINE (token: ${user.line_messaging_token ? 'SET' : 'NOT SET'}, notifications: ${user.line_notifications}, flexMessage: ${flexMessage ? 'YES' : 'NO'})`);
       }
 
-      // Fallback to email
+      // Fallback to email - CHECK CRITICAL EMAIL PREFERENCES
       if (!success && user.email_notifications) {
         console.log(`📧 Attempting email send to ${user.email}...`);
-        try {
-          await base44.asServiceRole.integrations.Core.SendEmail({
-            from_name: 'Lease Shield',
-            to: user.email,
-            subject: subject,
-            body: messageText
-          });
-          channel = 'Email';
-          success = true;
-          console.log(`✅ Email sent to ${user.email}`);
-        } catch (emailError) {
-          console.error(`❌ Email failed for ${user.email}:`, emailError);
-          errorMsg = errorMsg ? `${errorMsg}; Email: ${emailError.message}` : emailError.message;
-          diagnostics.errors.push(`Email failed for ${user.email}: ${emailError.message}`);
+        
+        // Check email_preferences for notification emails (CRITICAL notifications like rent/deposit)
+        const fullUser = await base44.asServiceRole.auth.admin.getUserByEmail(user.email);
+        const emailPrefs = fullUser?.user_metadata?.email_preferences;
+        
+        if (emailPrefs?.notification_emails === false) {
+          console.log(`⏭️ User ${user.email} opted out of critical notification emails. Respecting preference.`);
+          diagnostics.skipped_reasons.push(`${user.email}: opted out of notification emails`);
+        } else {
+          try {
+            await base44.asServiceRole.integrations.Core.SendEmail({
+              from_name: 'Lease Shield',
+              to: user.email,
+              subject: subject,
+              body: messageText
+            });
+            channel = 'Email';
+            success = true;
+            console.log(`✅ Email sent to ${user.email}`);
+          } catch (emailError) {
+            console.error(`❌ Email failed for ${user.email}:`, emailError);
+            errorMsg = errorMsg ? `${errorMsg}; Email: ${emailError.message}` : emailError.message;
+            diagnostics.errors.push(`Email failed for ${user.email}: ${emailError.message}`);
+          }
         }
       } else if (!success) {
         console.log(`⏭️ Skipping email (email_notifications: ${user.email_notifications})`);
