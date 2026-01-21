@@ -599,7 +599,23 @@ function FAQContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
   const [expandedQuestions, setExpandedQuestions] = useState({});
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [captchaQuestion, setCaptchaQuestion] = useState(() => {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    return { question: `What is ${num1} + ${num2}?`, answer: num1 + num2 };
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  const generateCaptcha = () => {
+    const num1 = Math.floor(Math.random() * 10) + 1;
+    const num2 = Math.floor(Math.random() * 10) + 1;
+    return {
+      question: `What is ${num1} + ${num2}?`,
+      answer: num1 + num2
+    };
+  };
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -839,6 +855,182 @@ function FAQContent() {
               </Card>
             );
           })}
+        </div>
+
+        {/* Contact Support Form */}
+        <div className="mt-12 border-t pt-8" style={{ borderColor: colors.borderColor }}>
+          <h2 className="text-2xl font-bold mb-4" style={{ color: colors.textPrimary }}>
+            {language === 'th' ? 'ยังต้องการความช่วยเหลือ?' : language === 'zh' ? '仍需要帮助？' : language === 'ja' ? 'まだヘルプが必要ですか？' : language === 'ko' ? '여전히 도움이 필요하신가요?' : language === 'ru' ? 'Нужна дополнительная помощь?' : 'Still Need Help?'}
+          </h2>
+          <p className="mb-6" style={{ color: colors.textSecondary }}>
+            {language === 'th' ? 'ไม่พบสิ่งที่คุณกำลังมองหา? ส่งข้อความถึงเรา เราจะตอบกลับภายใน 24-48 ชั่วโมง' : language === 'zh' ? '找不到您要找的内容？给我们发送消息，我们将在24-48小时内回复' : language === 'ja' ? 'お探しのものが見つかりませんか？メッセージをお送りください。24〜48時間以内に返信いたします' : language === 'ko' ? '찾고 있는 내용을 찾을 수 없나요? 메시지를 보내주시면 24-48시간 이내에 답변드리겠습니다' : language === 'ru' ? 'Не нашли то, что искали? Отправьте нам сообщение, и мы ответим в течение 24-48 часов' : "Can't find what you're looking for? Send us a message and we'll get back to you within 24-48 hours."}
+          </p>
+          
+          <form 
+            className="space-y-4 max-w-2xl"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              
+              if (parseInt(captchaAnswer) !== captchaQuestion.answer) {
+                alert(language === 'th' ? 'คำตอบไม่ถูกต้อง กรุณาลองอีกครั้ง' : 'Incorrect answer. Please try again.');
+                setCaptchaQuestion(generateCaptcha());
+                setCaptchaAnswer('');
+                return;
+              }
+              
+              const formData = new FormData(e.target);
+              setIsSubmitting(true);
+              
+              try {
+                const currentUser = await base44.auth.me();
+                
+                await base44.integrations.Core.SendEmail({
+                  to: 'support@leaseshield.asia',
+                  subject: `Support Request: ${formData.get('subject')}`,
+                  body: `
+<h3>New Support Request</h3>
+<p><strong>From:</strong> ${formData.get('name')} (${formData.get('email')})</p>
+<p><strong>User Account:</strong> ${currentUser.email}</p>
+<p><strong>Plan:</strong> ${currentUser.plan_tier || 'free'}</p>
+<p><strong>Subject:</strong> ${formData.get('subject')}</p>
+<p><strong>Message:</strong></p>
+<p style="white-space: pre-wrap;">${formData.get('message').replace(/\n/g, '<br>')}</p>
+                  `
+                });
+                
+                alert(language === 'th' ? 'ส่งข้อความสำเร็จ! เราจะตอบกลับภายใน 24-48 ชั่วโมง' : language === 'zh' ? '消息发送成功！我们将在24-48小时内回复' : language === 'ja' ? 'メッセージが正常に送信されました！24〜48時間以内に返信いたします' : language === 'ko' ? '메시지가 성공적으로 전송되었습니다! 24-48시간 이내에 답변드리겠습니다' : language === 'ru' ? 'Сообщение отправлено успешно! Мы ответим в течение 24-48 часов' : "Message sent successfully! We'll respond within 24-48 hours.");
+                e.target.reset();
+                setCaptchaAnswer('');
+                setCaptchaQuestion(generateCaptcha());
+              } catch (error) {
+                console.error('Send failed:', error);
+                alert(language === 'th' ? 'ส่งข้อความไม่สำเร็จ กรุณาส่งอีเมลโดยตรงไปที่ support@leaseshield.asia' : 'Failed to send message. Please email us directly at support@leaseshield.asia');
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+          >
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'ชื่อของคุณ *' : language === 'zh' ? '您的姓名 *' : language === 'ja' ? 'お名前 *' : language === 'ko' ? '이름 *' : language === 'ru' ? 'Ваше имя *' : 'Your Name *'}
+              </label>
+              <input
+                type="text"
+                name="name"
+                required
+                minLength={2}
+                maxLength={100}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0C3B2E] focus:border-transparent"
+                style={{
+                  backgroundColor: colors.fieldBg,
+                  borderColor: colors.borderColor,
+                  color: colors.textPrimary
+                }}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'อีเมล *' : language === 'zh' ? '电子邮件地址 *' : language === 'ja' ? 'メールアドレス *' : language === 'ko' ? '이메일 주소 *' : language === 'ru' ? 'Email адрес *' : 'Email Address *'}
+              </label>
+              <input
+                type="email"
+                name="email"
+                required
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0C3B2E] focus:border-transparent"
+                style={{
+                  backgroundColor: colors.fieldBg,
+                  borderColor: colors.borderColor,
+                  color: colors.textPrimary
+                }}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'หัวข้อ *' : language === 'zh' ? '主题 *' : language === 'ja' ? '件名 *' : language === 'ko' ? '제목 *' : language === 'ru' ? 'Тема *' : 'Subject *'}
+              </label>
+              <input
+                type="text"
+                name="subject"
+                required
+                minLength={5}
+                maxLength={200}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0C3B2E] focus:border-transparent"
+                style={{
+                  backgroundColor: colors.fieldBg,
+                  borderColor: colors.borderColor,
+                  color: colors.textPrimary
+                }}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'ข้อความ *' : language === 'zh' ? '消息 *' : language === 'ja' ? 'メッセージ *' : language === 'ko' ? '메시지 *' : language === 'ru' ? 'Сообщение *' : 'Message *'}
+              </label>
+              <textarea
+                name="message"
+                required
+                minLength={20}
+                maxLength={2000}
+                rows={5}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0C3B2E] focus:border-transparent"
+                style={{
+                  backgroundColor: colors.fieldBg,
+                  borderColor: colors.borderColor,
+                  color: colors.textPrimary
+                }}
+              />
+              <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
+                {language === 'th' ? 'ขั้นต่ำ 20 ตัวอักษร' : language === 'zh' ? '至少20个字符' : language === 'ja' ? '最低20文字' : language === 'ko' ? '최소 20자' : language === 'ru' ? 'Минимум 20 символов' : 'Minimum 20 characters'}
+              </p>
+            </div>
+            
+            <div className="p-4 rounded-lg border" style={{
+              backgroundColor: isDarkMode ? '#374151' : '#F9FAFB',
+              borderColor: colors.borderColor
+            }}>
+              <label className="block text-sm font-medium mb-2" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'ตรวจสอบความปลอดภัย: ' : language === 'zh' ? '安全检查: ' : language === 'ja' ? 'セキュリティチェック: ' : language === 'ko' ? '보안 확인: ' : language === 'ru' ? 'Проверка безопасности: ' : 'Security Check: '}{captchaQuestion.question} *
+              </label>
+              <input
+                type="number"
+                value={captchaAnswer}
+                onChange={(e) => setCaptchaAnswer(e.target.value)}
+                required
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#0C3B2E] focus:border-transparent"
+                placeholder={language === 'th' ? 'ใส่คำตอบของคุณ' : language === 'zh' ? '输入答案' : language === 'ja' ? '答えを入力' : language === 'ko' ? '답변 입력' : language === 'ru' ? 'Введите ответ' : 'Enter your answer'}
+                style={{
+                  backgroundColor: colors.fieldBg,
+                  borderColor: colors.borderColor,
+                  color: colors.textPrimary
+                }}
+              />
+            </div>
+            
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: isSubmitting ? '#9CA3AF' : '#0C3B2E',
+                color: '#FFFFFF'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) e.target.style.backgroundColor = '#084D38';
+              }}
+              onMouseLeave={(e) => {
+                if (!isSubmitting) e.target.style.backgroundColor = '#0C3B2E';
+              }}
+            >
+              {isSubmitting ? (language === 'th' ? 'กำลังส่ง...' : language === 'zh' ? '发送中...' : language === 'ja' ? '送信中...' : language === 'ko' ? '전송 중...' : language === 'ru' ? 'Отправка...' : 'Sending...') : (language === 'th' ? 'ส่งข้อความ' : language === 'zh' ? '发送消息' : language === 'ja' ? 'メッセージを送信' : language === 'ko' ? '메시지 보내기' : language === 'ru' ? 'Отправить сообщение' : 'Send Message')}
+            </button>
+          </form>
+          
+          <p className="text-sm mt-4" style={{ color: colors.textSecondary }}>
+            {language === 'th' ? 'หรือส่งอีเมลโดยตรงไปที่: ' : language === 'zh' ? '或直接发送电子邮件至: ' : language === 'ja' ? 'または直接メールを送信: ' : language === 'ko' ? '또는 직접 이메일 보내기: ' : language === 'ru' ? 'Или напишите нам напрямую: ' : 'Or email us directly at: '}<a href="mailto:support@leaseshield.asia" className="font-medium" style={{ color: '#0C3B2E' }}>support@leaseshield.asia</a>
+          </p>
         </div>
       </div>
     </div>
