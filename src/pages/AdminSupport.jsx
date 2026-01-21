@@ -307,6 +307,23 @@ function AdminSupportContent() {
                       </span>
                     </div>
                     <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                    {msg.attachments?.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        {msg.attachments.map((file, fileIdx) => (
+                          <a
+                            key={fileIdx}
+                            href={typeof file === 'string' ? file : file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+                          >
+                            <Paperclip className="w-3 h-3" />
+                            <span>{typeof file === 'string' ? 'Attachment' : file.name}</span>
+                            {file.size && <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>}
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

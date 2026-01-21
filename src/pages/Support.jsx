@@ -22,6 +22,7 @@ export default function Support() {
     description: ''
   });
   const [attachments, setAttachments] = useState([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [replyMessage, setReplyMessage] = useState('');
   
@@ -100,15 +101,55 @@ export default function Support() {
     submitMutation.mutate({ ...formData, attachments });
   };
   
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     
     if (files.length > 3) {
       toast({ title: 'Error', description: 'Maximum 3 files allowed', variant: 'destructive' });
+      e.target.value = '';
       return;
     }
     
-    setAttachments(files.map(f => f.name));
+    const maxSize = 5 * 1024 * 1024;
+    const oversizedFiles = files.filter(f => f.size > maxSize);
+    if (oversizedFiles.length > 0) {
+      toast({ title: 'Error', description: `Files must be under 5MB. ${oversizedFiles[0].name} is too large.`, variant: 'destructive' });
+      e.target.value = '';
+      return;
+    }
+    
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const invalidFiles = files.filter(f => !allowedTypes.includes(f.type));
+    if (invalidFiles.length > 0) {
+      toast({ title: 'Error', description: `Invalid file type: ${invalidFiles[0].name}`, variant: 'destructive' });
+      e.target.value = '';
+      return;
+    }
+    
+    setUploadingFiles(true);
+    
+    try {
+      const uploadedAttachments = [];
+      
+      for (const file of files) {
+        const { data } = await base44.integrations.Core.UploadFile({ file });
+        uploadedAttachments.push({
+          name: file.name,
+          url: data.file_url,
+          size: file.size,
+          type: file.type
+        });
+      }
+      
+      setAttachments(uploadedAttachments);
+      toast({ title: 'Success', description: `${uploadedAttachments.length} file(s) uploaded` });
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({ title: 'Error', description: 'Failed to upload files', variant: 'destructive' });
+      e.target.value = '';
+    } finally {
+      setUploadingFiles(false);
+    }
   };
   
   const handleReply = () => {
@@ -177,18 +218,57 @@ export default function Support() {
                   </div>
                 </div>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                  <p className="text-sm text-blue-800">
-                    💡 <strong>Note:</strong> File attachments coming soon. For now, please include all details in your description.
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Attachments (Optional, max 3 files, 5MB each)
+                  </label>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Accepted: Images (JPG, PNG, GIF), PDF, Word documents
                   </p>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileUpload}
+                    className="w-full p-2 border rounded"
+                    accept="image/*,.pdf,.doc,.docx"
+                    disabled={uploadingFiles || submitMutation.isPending}
+                  />
+                  {uploadingFiles && (
+                    <div className="mt-2 text-sm text-blue-600">
+                      <span className="inline-block animate-spin mr-2">⏳</span>
+                      Uploading files...
+                    </div>
+                  )}
+                  {attachments.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {attachments.map((file, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <div className="flex items-center gap-2">
+                            <Paperclip className="w-4 h-4 text-gray-600" />
+                            <span className="text-sm">{file.name}</span>
+                            <span className="text-xs text-gray-500">
+                              ({(file.size / 1024).toFixed(1)} KB)
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))}
+                            className="text-red-500 text-sm hover:text-red-700"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 <Button 
                   type="submit" 
-                  disabled={submitMutation.isPending}
+                  disabled={submitMutation.isPending || uploadingFiles}
                   className="w-full bg-[#0F4229] hover:bg-[#0F4229]/90"
                 >
-                  {submitMutation.isPending ? 'Submitting...' : 'Submit Ticket'}
+                  {submitMutation.isPending ? 'Submitting...' : uploadingFiles ? 'Uploading files...' : 'Submit Ticket'}
                 </Button>
               </form>
             </CardContent>
@@ -296,9 +376,20 @@ export default function Support() {
                     </div>
                     <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                     {msg.attachments?.length > 0 && (
-                      <div className="mt-2 text-xs text-gray-600">
-                        <Paperclip className="inline w-3 h-3 mr-1" />
-                        {msg.attachments.length} attachment(s)
+                      <div className="mt-3 space-y-1">
+                        {msg.attachments.map((file, fileIdx) => (
+                          <a
+                            key={fileIdx}
+                            href={typeof file === 'string' ? file : file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+                          >
+                            <Paperclip className="w-3 h-3" />
+                            <span>{typeof file === 'string' ? 'Attachment' : file.name}</span>
+                            {file.size && <span className="text-xs text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>}
+                          </a>
+                        ))}
                       </div>
                     )}
                   </div>

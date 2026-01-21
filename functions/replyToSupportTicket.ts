@@ -70,53 +70,98 @@ Deno.serve(async (req) => {
     // Send email notification
     if (is_admin) {
       // Admin replied, notify user
-      const userEmailBody = `
-Your support ticket has been updated.
-
-Ticket Number: ${ticket.ticket_number}
-Subject: ${ticket.subject}
-Status: ${updateData.status || ticket.status}
-
-Support Team Reply:
-${message}
-
-View your ticket:
-https://app.leaseshield.asia/support
-
-Best regards,
-Lease Shield Support Team
+      const userEmailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <tr><td style="background-color: #0F4229; padding: 25px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 22px;">💬 Support Team Response</h1>
+        </td></tr>
+        <tr><td style="padding: 30px;">
+          <p style="color: #333; line-height: 1.6; margin: 0 0 20px 0; font-size: 16px;">Your support ticket has been updated.</p>
+          <table width="100%" cellpadding="12" cellspacing="0" style="background-color: #f8f8f8; border-radius: 6px; margin: 20px 0;">
+            <tr><td>
+              <p style="margin: 5px 0; color: #555;"><strong style="color: #0F4229;">Ticket:</strong> ${ticket.ticket_number}</p>
+              <p style="margin: 5px 0; color: #555;"><strong style="color: #0F4229;">Subject:</strong> ${ticket.subject}</p>
+              <p style="margin: 5px 0; color: #555;"><strong style="color: #0F4229;">Status:</strong> ${updateData.status || ticket.status}</p>
+            </td></tr>
+          </table>
+          <h3 style="color: #0F4229; margin: 20px 0 10px 0;">Support Team Reply:</h3>
+          <div style="background-color: #e8f5e9; border-left: 4px solid #0F4229; padding: 15px; border-radius: 4px;">
+            <p style="color: #333; line-height: 1.6; margin: 0; white-space: pre-wrap;">${message}</p>
+          </div>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+            <tr><td align="center">
+              <a href="https://app.leaseshield.asia/support" style="display: inline-block; background-color: #0F4229; color: #ffffff; text-decoration: none; padding: 14px 30px; border-radius: 6px; font-weight: bold;">View Ticket & Reply</a>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="background-color: #f8f8f8; padding: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
+          <p style="color: #999; font-size: 12px; margin: 0;">Best regards,<br><strong style="color: #0F4229;">Lease Shield Support Team</strong></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
       `.trim();
       
       try {
         await base44.asServiceRole.integrations.Core.SendEmail({
           to: ticket.user_email,
           subject: `[${ticket.ticket_number}] Support Team Response`,
-          body: userEmailBody
+          body: userEmailHtml
         });
       } catch (emailError) {
         console.error('User notification email failed:', emailError);
       }
     } else {
       // User replied, notify admin
-      const adminEmailBody = `
-User has replied to support ticket.
-
-Ticket Number: ${ticket.ticket_number}
-From: ${user.email}
-Subject: ${ticket.subject}
-
-User Reply:
-${message}
-
-View and respond:
-https://app.leaseshield.asia/adminsupport
+      const adminEmailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <tr><td style="background-color: #1976d2; padding: 20px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 20px;">↩️ User Reply</h1>
+        </td></tr>
+        <tr><td style="padding: 25px;">
+          <p style="color: #333; margin: 0 0 15px 0;">User has replied to ticket <strong>${ticket.ticket_number}</strong></p>
+          <table width="100%" cellpadding="10" cellspacing="0" style="background-color: #f8f8f8; border-radius: 6px; margin: 15px 0;">
+            <tr><td>
+              <p style="margin: 3px 0; color: #555; font-size: 14px;"><strong>From:</strong> ${user.email}</p>
+              <p style="margin: 3px 0; color: #555; font-size: 14px;"><strong>Subject:</strong> ${ticket.subject}</p>
+            </td></tr>
+          </table>
+          <h4 style="color: #0F4229; margin: 15px 0 8px 0;">User Reply:</h4>
+          <div style="background-color: #ffffff; border: 1px solid #ddd; border-radius: 4px; padding: 12px;">
+            <p style="color: #333; line-height: 1.5; margin: 0; white-space: pre-wrap; font-size: 14px;">${message}</p>
+          </div>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin: 25px 0 0 0;">
+            <tr><td align="center">
+              <a href="https://app.leaseshield.asia/adminsupport" style="display: inline-block; background-color: #0F4229; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 6px; font-weight: bold; font-size: 14px;">View & Respond</a>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
       `.trim();
       
       try {
         await base44.asServiceRole.integrations.Core.SendEmail({
           to: 'support@leaseshield.asia',
           subject: `[REPLY] ${ticket.ticket_number}: ${ticket.subject}`,
-          body: adminEmailBody
+          body: adminEmailHtml
         });
       } catch (emailError) {
         console.error('Admin notification email failed:', emailError);
