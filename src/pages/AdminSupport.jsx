@@ -27,21 +27,22 @@ function AdminSupportContent() {
     queryKey: ['adminTickets', statusFilter],
     queryFn: async () => {
       try {
-        // Fetch ALL tickets
-        const result = await base44.asServiceRole.entities.SupportTicket.list({
+        // Fetch ALL tickets - list() returns array directly
+        const allTickets = await base44.asServiceRole.entities.SupportTicket.list({
           sort: [{ field: 'created_date', direction: 'desc' }],
           limit: 500
         });
         
+        console.log('🎫 Admin fetched tickets:', allTickets?.length || 0, 'tickets');
+        
         // Filter by status
-        const allTickets = result.items || [];
         const filteredTickets = statusFilter === 'all' 
           ? allTickets
           : allTickets.filter(ticket => ticket.status === statusFilter);
         
         return filteredTickets;
       } catch (error) {
-        console.error('Error fetching tickets:', error);
+        console.error('❌ Error fetching tickets:', error);
         return [];
       }
     },

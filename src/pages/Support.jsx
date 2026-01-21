@@ -33,21 +33,24 @@ export default function Support() {
       try {
         const user = await base44.auth.me();
         
-        // Fetch ALL tickets
-        const result = await base44.asServiceRole.entities.SupportTicket.list({
+        // Fetch ALL tickets - list() returns array directly
+        const allTickets = await base44.asServiceRole.entities.SupportTicket.list({
           sort: [{ field: 'created_date', direction: 'desc' }],
           limit: 100
         });
         
+        console.log('🎫 User fetched tickets:', allTickets?.length || 0, 'total, filtering for', user.email);
+        
         // Filter user's tickets
-        const allTickets = result.items || [];
         const userTickets = allTickets.filter(ticket => 
           ticket.user_email === user.email
         );
         
+        console.log('✅ User tickets after filter:', userTickets.length);
+        
         return userTickets;
       } catch (error) {
-        console.error('Error fetching tickets:', error);
+        console.error('❌ Error fetching tickets:', error);
         return [];
       }
     },
