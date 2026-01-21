@@ -95,6 +95,15 @@ https://app.leaseshield.asia${Deno.env.get('BASE44_APP_DOMAIN') || ''}/admin-sup
 
     // Send confirmation email to user
     try {
+      // CHECK EMAIL PREFERENCES
+      const fullUser = await base44.asServiceRole.auth.admin.getUserByEmail(user.email);
+      const emailPrefs = fullUser?.user_metadata?.email_preferences;
+      
+      if (!emailPrefs?.support_emails) {
+        console.log(`[${requestId}] 📧 User opted out of support emails. Skipping confirmation.`);
+        return Response.json({ success: true, ticket: ticket, skipped_email: true });
+      }
+
       const userLanguage = user.language || 'en';
       
       const confirmationMessages = {

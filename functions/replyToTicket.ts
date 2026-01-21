@@ -75,10 +75,16 @@ Deno.serve(async (req) => {
     // Send email notification
     try {
       if (senderType === 'admin') {
-        // Notify user
-        const userLanguage = existingTicket.messages?.[0]?.sender_email 
-          ? (await base44.asServiceRole.entities.User.filter({ email: existingTicket.created_by }))[0]?.language || 'en'
-          : 'en';
+        // Notify user - CHECK EMAIL PREFERENCES
+        const recipientUser = await base44.asServiceRole.auth.admin.getUserByEmail(existingTicket.created_by);
+        const emailPrefs = recipientUser?.user_metadata?.email_preferences;
+        
+        if (!emailPrefs?.support_emails) {
+          console.log(`[${requestId}] 📧 User opted out of support emails. Skipping notification.`);
+          return Response.json({ success: true, skipped_email: true });
+        }
+
+        const userLanguage = recipientUser?.user_metadata?.language || 'en';
 
         const emailBody = userLanguage === 'th'
           ? `
