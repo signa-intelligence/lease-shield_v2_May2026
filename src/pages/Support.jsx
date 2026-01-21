@@ -30,8 +30,17 @@ export default function Support() {
     queryKey: ['userTickets'],
     queryFn: async () => {
       const user = await base44.auth.me();
-      const result = await base44.asServiceRole.entities.SupportTicket.filter({ user_email: user.email }, '-created_date');
-      return result || [];
+      console.log('🔍 Fetching tickets for user:', user.email);
+      
+      // Get ALL tickets first (filter in JS to avoid query issues)
+      const allTickets = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
+      console.log('📊 Total tickets in DB:', allTickets?.length);
+      
+      // Filter to user's tickets in JavaScript
+      const userTickets = (allTickets || []).filter(t => t.user_email === user.email);
+      console.log('✅ User tickets found:', userTickets?.length);
+      
+      return userTickets;
     }
   });
   
@@ -117,8 +126,8 @@ export default function Support() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <PageHeader 
-        title="Help & Support"
-        subtitle="We're here to help you protect your rights"
+        title="Support"
+        subtitle="We're here to help"
       />
       
       <div className="max-w-4xl mx-auto p-4 space-y-6">
@@ -168,23 +177,10 @@ export default function Support() {
                   </div>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Attachments (Optional, max 3 files)
-                  </label>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="w-full p-2 border rounded"
-                    accept="image/*,.pdf,.doc,.docx"
-                  />
-                  {attachments.length > 0 && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      <Paperclip className="inline w-4 h-4 mr-1" />
-                      {attachments.length} file(s) attached
-                    </div>
-                  )}
+                <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Note:</strong> File attachments coming soon. For now, please include all details in your description.
+                  </p>
                 </div>
                 
                 <Button 

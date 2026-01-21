@@ -3,6 +3,7 @@ import Acknowledge from './pages/Acknowledge';
 import AcknowledgeMaintenance from './pages/AcknowledgeMaintenance';
 import AdminConsole from './pages/AdminConsole';
 import AdminCredits from './pages/AdminCredits';
+import AdminSupport from './pages/AdminSupport';
 import AdminTemplates from './pages/AdminTemplates';
 import Analytics from './pages/Analytics';
 import CaseDetails from './pages/CaseDetails';
@@ -35,13 +36,12 @@ import RevenueAnalytics from './pages/RevenueAnalytics';
 import RiskFeedbackAdmin from './pages/RiskFeedbackAdmin';
 import ScanPreview from './pages/ScanPreview';
 import Search from './pages/Search';
+import Support from './pages/Support';
 import Templates from './pages/Templates';
 import Timeline from './pages/Timeline';
 import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
-import Support from './pages/Support';
-import AdminSupport from './pages/AdminSupport';
 import __Layout from './Layout.jsx';
 
 
@@ -51,6 +51,7 @@ export const PAGES = {
     "AcknowledgeMaintenance": AcknowledgeMaintenance,
     "AdminConsole": AdminConsole,
     "AdminCredits": AdminCredits,
+    "AdminSupport": AdminSupport,
     "AdminTemplates": AdminTemplates,
     "Analytics": Analytics,
     "CaseDetails": CaseDetails,
@@ -83,13 +84,12 @@ export const PAGES = {
     "RiskFeedbackAdmin": RiskFeedbackAdmin,
     "ScanPreview": ScanPreview,
     "Search": Search,
+    "Support": Support,
     "Templates": Templates,
     "Timeline": Timeline,
     "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
-    "Support": Support,
-    "AdminSupport": AdminSupport,
 }
 
 export const pagesConfig = {

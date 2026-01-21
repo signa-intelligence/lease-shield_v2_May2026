@@ -26,13 +26,20 @@ function AdminSupportContent() {
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ['adminTickets', statusFilter],
     queryFn: async () => {
+      console.log('🔍 Admin fetching tickets, filter:', statusFilter);
+      
       const allTickets = await base44.asServiceRole.entities.SupportTicket.list('-created_date');
+      console.log('📊 Total tickets in DB:', allTickets?.length);
+      console.log('📋 Tickets:', allTickets);
       
       if (statusFilter === 'all') {
         return allTickets || [];
       }
       
-      return (allTickets || []).filter(t => t.status === statusFilter);
+      const filtered = (allTickets || []).filter(t => t.status === statusFilter);
+      console.log('✅ Filtered tickets:', filtered?.length);
+      
+      return filtered;
     }
   });
   
@@ -104,8 +111,8 @@ function AdminSupportContent() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <PageHeader 
-        title="Support Tickets"
-        subtitle="Manage user support requests and inquiries"
+        title="Support"
+        subtitle="Manage user requests"
       />
       
       <div className="max-w-7xl mx-auto p-4 space-y-6">

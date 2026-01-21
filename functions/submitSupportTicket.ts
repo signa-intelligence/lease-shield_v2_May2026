@@ -87,28 +87,46 @@ Deno.serve(async (req) => {
     };
     const responseTime = responseTimeMap[planTier.toLowerCase()] || '48 hours';
     
-    const userEmailBody = `
-Thank you for contacting Lease Shield Support.
-
-Ticket Number: ${ticketNumber}
-Subject: ${subject}
-Status: Open
-Priority: ${priority === 'high' ? 'High' : 'Normal'}
-
-We've received your support request and will respond within ${responseTime}.
-
-You can view your ticket by logging into your account at:
-https://app.leaseshield.asia/support
-
-Best regards,
-Lease Shield Support Team
+    const userEmailHtml = `
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="text-align: center; margin-bottom: 30px;">
+    <h2 style="color: #0F4229; margin: 0;">Thank You for Contacting Lease Shield Support</h2>
+  </div>
+  
+  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #0F4229;">
+    <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #0F4229;">Ticket Number:</strong> ${ticketNumber}</p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #0F4229;">Subject:</strong> ${subject}</p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #0F4229;">Status:</strong> Open</p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong style="color: #0F4229;">Priority:</strong> ${priority === 'high' ? '🔴 High' : 'Normal'}</p>
+  </div>
+  
+  <p style="font-size: 15px; line-height: 1.6; color: #333;">
+    We've received your support request and will respond within <strong style="color: #0F4229;">${responseTime}</strong>.
+  </p>
+  
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="https://app.leaseshield.asia/support" 
+       style="display: inline-block; background-color: #0F4229; color: white; padding: 12px 30px; 
+              text-decoration: none; border-radius: 6px; font-weight: 600;">
+      View Your Ticket
+    </a>
+  </div>
+  
+  <hr style="margin: 30px 0; border: none; border-top: 1px solid #e0e0e0;">
+  
+  <p style="color: #666; font-size: 13px; line-height: 1.5;">
+    Best regards,<br>
+    <strong>Lease Shield Support Team</strong><br>
+    <span style="font-size: 12px;">Protecting your tenant rights in Thailand</span>
+  </p>
+</div>
     `.trim();
     
     try {
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: user.email,
         subject: `[${ticketNumber}] Support Request Received`,
-        body: userEmailBody
+        body: userEmailHtml
       });
     } catch (emailError) {
       console.error('User email failed:', emailError);
@@ -116,33 +134,51 @@ Lease Shield Support Team
     
     // Send admin alert email
     const priorityLabel = priority === 'high' ? '🔴 HIGH PRIORITY' : 'Normal';
-    const adminEmailBody = `
-${priorityLabel} - New Support Ticket
-
-Ticket Number: ${ticketNumber}
-From: ${user.full_name || user.email} (${user.email})
-Plan: ${user.plan_tier || 'free'}
-Category: ${category}
-Priority: ${priority}
-
-Subject: ${subject}
-
-Description:
-${description}
-
-${attachments.length > 0 ? `Attachments: ${attachments.length} file(s)` : 'No attachments'}
-
-View and respond:
-https://app.leaseshield.asia/adminsupport
-
-Expected response time: ${responseTime}
+    const adminEmailHtml = `
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: ${priority === 'high' ? '#fee2e2' : '#f3f4f6'}; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${priority === 'high' ? '#dc2626' : '#6b7280'};">
+    <h3 style="margin: 0; color: ${priority === 'high' ? '#991b1b' : '#374151'};">
+      ${priorityLabel} - New Support Ticket
+    </h3>
+  </div>
+  
+  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <p style="margin: 8px 0; font-size: 14px;"><strong>Ticket Number:</strong> ${ticketNumber}</p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong>From:</strong> ${user.full_name || user.email} (${user.email})</p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong>Plan:</strong> ${user.plan_tier || 'free'}</p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong>Category:</strong> ${category}</p>
+    <p style="margin: 8px 0; font-size: 14px;"><strong>Priority:</strong> ${priority}</p>
+  </div>
+  
+  <div style="margin: 20px 0;">
+    <p style="margin: 5px 0; font-size: 14px; font-weight: 600;">Subject:</p>
+    <p style="margin: 5px 0 15px 0; font-size: 14px;">${subject}</p>
+    
+    <p style="margin: 5px 0; font-size: 14px; font-weight: 600;">Description:</p>
+    <p style="margin: 5px 0; font-size: 14px; white-space: pre-wrap; background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #e0e0e0;">${description}</p>
+  </div>
+  
+  ${attachments.length > 0 ? `<p style="font-size: 13px; color: #666;">📎 Attachments: ${attachments.length} file(s)</p>` : ''}
+  
+  <div style="text-align: center; margin: 30px 0;">
+    <a href="https://app.leaseshield.asia/adminsupport" 
+       style="display: inline-block; background-color: #0F4229; color: white; padding: 12px 30px; 
+              text-decoration: none; border-radius: 6px; font-weight: 600;">
+      View and Respond
+    </a>
+  </div>
+  
+  <p style="font-size: 13px; color: #666; text-align: center;">
+    Expected response time: <strong>${responseTime}</strong>
+  </p>
+</div>
     `.trim();
     
     try {
       await base44.asServiceRole.integrations.Core.SendEmail({
         to: 'support@leaseshield.asia',
         subject: `[${priority === 'high' ? 'HIGH' : 'NEW'}] ${ticketNumber}: ${subject}`,
-        body: adminEmailBody
+        body: adminEmailHtml
       });
     } catch (adminEmailError) {
       console.error('Admin email failed:', adminEmailError);
