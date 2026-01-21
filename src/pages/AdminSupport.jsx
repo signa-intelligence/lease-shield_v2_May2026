@@ -27,11 +27,8 @@ function AdminSupportContent() {
     queryKey: ['adminTickets', statusFilter],
     queryFn: async () => {
       try {
-        // Fetch ALL tickets - list() returns array directly
-        const allTickets = await base44.asServiceRole.entities.SupportTicket.list({
-          sort: [{ field: 'created_date', direction: 'desc' }],
-          limit: 500
-        });
+        // Fetch all tickets using regular API (RLS allows admin access)
+        const allTickets = await base44.entities.SupportTicket.list();
         
         console.log('🎫 Admin fetched tickets:', allTickets?.length || 0, 'tickets');
         

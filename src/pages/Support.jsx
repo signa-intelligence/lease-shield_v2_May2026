@@ -133,10 +133,16 @@ export default function Support() {
       const uploadedAttachments = [];
       
       for (const file of files) {
-        const { data } = await base44.integrations.Core.UploadFile({ file });
+        const response = await base44.integrations.Core.UploadFile({ file });
+        const fileUrl = response.data?.file_url || response.file_url;
+        
+        if (!fileUrl) {
+          throw new Error('Upload failed - no file URL returned');
+        }
+        
         uploadedAttachments.push({
           name: file.name,
-          url: data.file_url,
+          url: fileUrl,
           size: file.size,
           type: file.type
         });
@@ -146,7 +152,11 @@ export default function Support() {
       toast({ title: 'Success', description: `${uploadedAttachments.length} file(s) uploaded` });
     } catch (error) {
       console.error('File upload error:', error);
-      toast({ title: 'Error', description: 'Failed to upload files', variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to upload files', 
+        variant: 'destructive' 
+      });
       e.target.value = '';
     } finally {
       setUploadingFiles(false);
