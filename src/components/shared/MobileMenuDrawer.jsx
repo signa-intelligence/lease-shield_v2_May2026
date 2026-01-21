@@ -119,12 +119,6 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       color: '#063F2C'
     },
     {
-      icon: MessageCircle,
-      label: strings.support,
-      route: createPageUrl('Cases'),
-      color: '#3B82F6'
-    },
-    {
       icon: HelpCircle,
       label: strings.helpFAQ,
       route: createPageUrl('FAQ'),
