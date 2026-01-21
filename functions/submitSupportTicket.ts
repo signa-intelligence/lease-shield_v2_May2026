@@ -139,7 +139,9 @@ Deno.serve(async (req) => {
     }
     
     // Send admin alert email
-    const priorityLabel = priority === 'high' ? '🔴 HIGH PRIORITY' : 'Normal';
+    const priorityLabel = priority === 'high' ? '🔴 HIGH PRIORITY' : '⚪ Normal Priority';
+    const priorityColor = priority === 'high' ? '#dc2626' : '#6b7280';
+    
     const adminEmailHtml = `
 <!DOCTYPE html>
 <html>
