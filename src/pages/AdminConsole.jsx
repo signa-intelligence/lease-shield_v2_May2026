@@ -28,6 +28,7 @@ import ReminderControl from "../components/admin/ReminderControl";
 import NotificationHistory from "../components/admin/NotificationHistory";
 import CaseKanban from "../components/admin/CaseKanban";
 import UserImpersonation from "../components/admin/UserImpersonation";
+import DataCleanupSection from "../components/admin/DataCleanupSection";
 import AuthGuard from "../components/shared/AuthGuard";
 
 function AdminConsoleContent() {
@@ -1901,26 +1902,39 @@ function AdminConsoleContent() {
               {leases.slice(0, 5).map((lease) => (
                 <div
                   key={lease.id}
-                  className="flex justify-between items-center p-3 rounded-lg"
+                  className="p-3 rounded-lg"
                   style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}
                 >
-                  <div>
+                  <div className="flex justify-between items-start mb-2">
                     <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
                       {lease.property_address || 'No address'}
                     </p>
                     <p className="text-xs" style={{ color: colors.textSecondary }}>
-                      {strings.uploadedBy}: {lease.created_by}
+                      {format(new Date(lease.created_date), 'MMM d, yyyy')}
                     </p>
                   </div>
-                  <p className="text-xs" style={{ color: colors.textSecondary }}>
-                    {format(new Date(lease.created_date), 'MMM d, yyyy')}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-blue-100 text-blue-800 text-xs">
+                      {lease.created_by}
+                    </Badge>
+                    <p className="text-xs" style={{ color: colors.textSecondary }}>
+                      {lease.status || 'uploaded'}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
 
+        {/* DATA CLEANUP SECTION */}
+        {isSuperAdmin && (
+          <DataCleanupSection 
+            language={language} 
+            colors={colors} 
+            isDarkMode={isDarkMode}
+          />
+        )}
 
       </div>
     </div>
