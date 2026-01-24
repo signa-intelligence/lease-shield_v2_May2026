@@ -52,7 +52,7 @@ export function getMembershipInfo(user, now = new Date()) {
     };
   }
 
-  const plan = user.plan_tier || 'free';
+  const plan = (user.plan_tier || 'free').toLowerCase();
   const isPaidPlan = ['lite', 'protect', 'secure'].includes(plan);
 
   // Calculate membership duration
@@ -67,7 +67,7 @@ export function getMembershipInfo(user, now = new Date()) {
   let reason = '';
   let daysUntilMemberBenefits = null;
 
-  if (plan === 'secure' || plan.toLowerCase() === 'secure') {
+  if (plan === 'secure') {
     // SECURE: Immediate member benefits (no wait) - applies to BOTH monthly and annual Secure
     qualifiesForMemberBenefits = true;
     reason = 'secure_immediate';
