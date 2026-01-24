@@ -822,7 +822,7 @@ function CasesContent() {
             background: isDarkMode 
               ? 'linear-gradient(135deg, #0C3B2E 0%, #084D38 100%)'
               : 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-            border: isDarkMode ? '1px solid rgba(199,163,56,0.2)' : 'none'
+            border: isDarkMode ? '1px solid rgba(199, 163, 56, 0.15)' : 'none'
           }}>
             <CardContent className="p-4 md:p-6">
               <div className="flex items-start gap-3">
@@ -862,7 +862,7 @@ function CasesContent() {
                 className="mb-6 p-4 rounded-xl border-2"
                 style={{
                   backgroundColor: isDarkMode ? '#2A1F1F' : '#FFFBEB',
-                  borderColor: isDarkMode ? '#EF444450' : '#FDE047',
+                  borderColor: isDarkMode ? 'rgba(199, 163, 56, 0.15)' : '#FDE047',
                   boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.2)' : '0 2px 8px rgba(239,68,68,0.08)'
                 }}
               >
@@ -977,7 +977,8 @@ function CasesContent() {
           ) : visibleCases.length === 0 ? (
             <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ 
               borderColor: isDarkMode ? '#EF4444' : '#FCA5A5', 
-              backgroundColor: isDarkMode ? '#2A2020' : '#FEF2F2' 
+              backgroundColor: isDarkMode ? '#2A2020' : '#FEF2F2',
+              border: isDarkMode ? '1px solid rgba(199, 163, 56, 0.15)' : '1px dashed #FCA5A5'
             }}>
               <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>{strings.noCasesCreatedYet}</h3>
               <p className="text-xs sm:text-sm mb-3" style={{ color: colors.textSecondary }}>

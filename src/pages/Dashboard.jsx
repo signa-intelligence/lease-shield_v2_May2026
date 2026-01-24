@@ -2442,7 +2442,7 @@ ja: {
                   borderRadius: '18px',
                   padding: '14px 16px',
                   boxShadow: isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(199,163,56,0.12)',
-                  border: `2px solid ${isDarkMode ? 'rgba(199,163,56,0.3)' : '#C7A338'}`,
+                  border: `2px solid #C7A338`,
                   transition: 'all 0.2s'
                 }}
                 onClick={handleStartResolve}
@@ -2458,18 +2458,18 @@ ja: {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{
-                      backgroundColor: isDarkMode ? 'rgba(199,163,56,0.2)' : '#FEF3C7'
+                      backgroundColor: isDarkMode ? 'rgba(199,163,56,0.2)' : '#FDE68A'
                     }}>
-                      <Scale className="w-5 h-5" style={{ color: isDarkMode ? '#C7A338' : '#92400E' }} />
+                      <Scale className="w-5 h-5" style={{ color: isDarkMode ? '#C7A338' : '#0F4229' }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FDE68A' : '#92400E' }}>
+                      <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FDE68A' : '#0F4229' }}>
                         {awaitingCase 
                           ? strings.continueYourCase
                           : strings.resolveDispute
                         }
                       </h4>
-                      <p className="text-xs" style={{ color: isDarkMode ? '#FCD34D' : '#78350F' }}>
+                      <p className="text-xs" style={{ color: isDarkMode ? '#FCD34D' : '#0F4229' }}>
                         {awaitingCase ? strings.completeCaseSubmission : pricingMessage}
                       </p>
                     </div>

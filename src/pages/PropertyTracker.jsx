@@ -2023,7 +2023,11 @@ function PropertyTrackerContent() {
             </button>
           </div>
 
-          <Card id="deposit-section" ref={depositRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.depositAccent}` }}>
+          <Card id="deposit-section" ref={depositRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ 
+            backgroundColor: colors.cardBg, 
+            borderLeft: `6px solid ${colors.depositAccent}`,
+            border: isDarkMode ? '1px solid rgba(199, 163, 56, 0.15)' : 'none'
+          }}>
             <CardHeader
               className="cursor-pointer"
               onClick={() => toggleSection('deposit')}
@@ -2348,7 +2352,11 @@ function PropertyTrackerContent() {
             )}
           </Card>
 
-          <Card id="rent-schedule-section" ref={rentRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: '6px solid #0C3B2E' }}>
+          <Card id="rent-schedule-section" ref={rentRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ 
+            backgroundColor: colors.cardBg, 
+            borderLeft: '6px solid #0C3B2E',
+            border: isDarkMode ? '1px solid rgba(199, 163, 56, 0.15)' : 'none'
+          }}>
             <CardHeader
               className="cursor-pointer"
               onClick={() => toggleSection('rent')}
@@ -2608,7 +2616,11 @@ function PropertyTrackerContent() {
             )}
           </Card>
 
-          <Card id="maintenance-section" ref={maintenanceRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ backgroundColor: colors.cardBg, borderLeft: `6px solid ${colors.maintenanceAccent}` }}>
+          <Card id="maintenance-section" ref={maintenanceRef} className="mb-8 border-none shadow-xl overflow-hidden" style={{ 
+            backgroundColor: colors.cardBg, 
+            borderLeft: `6px solid ${colors.maintenanceAccent}`,
+            border: isDarkMode ? '1px solid rgba(199, 163, 56, 0.15)' : 'none'
+          }}>
             <CardHeader
               className="cursor-pointer"
               onClick={() => toggleSection('maintenance')}
