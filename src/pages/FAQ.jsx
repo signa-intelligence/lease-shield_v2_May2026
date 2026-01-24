@@ -762,14 +762,14 @@ function FAQContent() {
                       <div style={{
                         width: '56px',
                         height: '56px',
-                        background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}CC 100%)`,
+                        background: '#E8F3EF',
                         borderRadius: '14px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: `0 4px 12px ${category.color}30`
+                        boxShadow: '0 4px 12px rgba(15, 66, 41, 0.15)'
                       }}>
-                        <Icon className="w-7 h-7 text-white" />
+                        <Icon className="w-7 h-7" style={{ color: '#0F4229' }} />
                       </div>
                       <CardTitle className="text-lg" style={{ color: colors.textPrimary }}>
                         {getLocalizedText(category, 'title')}

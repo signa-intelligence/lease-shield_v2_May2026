@@ -1660,7 +1660,7 @@ ja: {
 
 
 
-                  {isAdmin && (
+                  {(user?.role === 'admin' || ['admin', 'super_admin'].includes(user?.access_level)) && (
                   <>
                   <button
                     onClick={async () => {
@@ -2629,6 +2629,7 @@ ja: {
                         miniStats: [],
                         route: createPageUrl("uploadscan"),
                         label: strings.scanNewLease,
+                        primaryAction: true,
                         compactTitle: language === 'ru'
                       },
                       {
@@ -2642,6 +2643,7 @@ ja: {
                         ],
                         route: createPageUrl("PropertyTracker") + "#deposit",
                         label: strings.trackDeposit,
+                        primaryAction: true,
                         compactTitle: language === 'ru',
                         onClick: () => {
                           haptic.light();
@@ -2657,6 +2659,7 @@ ja: {
                         miniStats: [],
                         route: createPageUrl("cases"),
                         label: strings.cases,
+                        primaryAction: true,
                         onClick: () => {
                           haptic.light();
                           navigate(createPageUrl("cases"));
