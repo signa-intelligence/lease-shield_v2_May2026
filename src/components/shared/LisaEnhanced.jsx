@@ -278,8 +278,11 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
   // Load conversation history when conversation loads
   useEffect(() => {
     if (conversation && conversation.messages) {
-      // Load previous conversation history (last 10 messages)
-      loadPreviousHistory(conversation);
+      // Only load from database if localStorage is empty
+      const stored = localStorage.getItem('lisa_chat_history');
+      if (!stored || stored === '[]') {
+        loadPreviousHistory(conversation);
+      }
     }
   }, [conversation]);
 
@@ -291,20 +294,22 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     }
   }, [messages]);
 
-  // Load chat history from localStorage on mount
+  // Load chat history from localStorage when chat opens
   useEffect(() => {
-    const stored = localStorage.getItem('lisa_chat_history');
-    if (stored && messages.length === 0) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setMessages(parsed);
+    if (isOpen && messages.length === 0) {
+      const stored = localStorage.getItem('lisa_chat_history');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+          }
+        } catch (e) {
+          console.error('Failed to load chat history:', e);
         }
-      } catch (e) {
-        console.error('Failed to load chat history:', e);
       }
     }
-  }, []);
+  }, [isOpen]);
 
   const loadPreviousHistory = async (currentConv) => {
     try {
