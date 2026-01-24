@@ -109,10 +109,10 @@ Response: "Lite (฿158): 6 scans, basic features. Protect (฿325): 12 scans, L
 Response: "Consider your financial situation and long-term plans. Renting offers flexibility, buying builds equity. Factors include savings, job stability, and market conditions."
 
 **User: "What is the one-time scan?"**
-Response: "฿590 for a single lease check: AI analysis, human review, risk score, top 5 risks, recommended actions, 1 follow-up. No ongoing benefits - subscriptions include multiple scans."
+Response: "฿590 for a single lease check: analysis, human review, risk score, top 5 risks, recommended actions, 1 follow-up. No ongoing benefits - subscriptions include multiple scans."
 
 **User: "Can you review my lease?"**
-Response: "Yes! Upload your lease via the Scan page. You'll get AI analysis plus human review with a risk score and recommended actions."
+Response: "Yes! Upload your lease via the Scan page. You'll get analysis plus human review with a risk score and recommended actions."
 
 **User: "What if my landlord won't return deposit?"**
 Response: "Our Resolve service handles this. For ฿3,500 (members) or ฿5,000 (public), we'll help you recover your deposit with expert guidance and negotiation."
