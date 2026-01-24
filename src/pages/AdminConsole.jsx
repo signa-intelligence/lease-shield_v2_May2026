@@ -111,14 +111,7 @@ function AdminConsoleContent() {
     ),
   });
 
-  const { data: supportTickets = [] } = useQuery({
-    queryKey: ['adminSupportTickets'],
-    queryFn: () => base44.entities.SupportTicket.list('-created_date'),
-    enabled: !!user && (
-      ['admin', 'super_admin', 'va'].includes(user.access_level) ||
-      ['admin', 'super_admin', 'va'].includes(user.role)
-    ),
-  });
+
 
   // Fetch credits for all users
   const { data: userCreditsMap = {} } = useQuery({
@@ -522,11 +515,7 @@ function AdminConsoleContent() {
       opsConsole: "Operations Console",
       opsConsoleDesc: "Manage cases and operations",
       goToOps: "Go to Ops Console",
-      supportTickets: "Support Tickets",
-      supportTicketsDesc: "Manage user support requests",
-      goToSupport: "Manage Support",
-      openTickets: "Open",
-      awaitingReply: "Awaiting Reply",
+
       editCredits: "Edit Credits",
       letterCredits: "Letter Credits",
       currentBalance: "Current Balance",
@@ -611,11 +600,7 @@ function AdminConsoleContent() {
       opsConsole: "คอนโซลปฏิบัติการ",
       opsConsoleDesc: "จัดการคดีและการดำเนินงาน",
       goToOps: "ไปที่คอนโซลปฏิบัติการ",
-      supportTickets: "คำขอสนับสนุน",
-      supportTicketsDesc: "จัดการคำขอสนับสนุนจากผู้ใช้",
-      goToSupport: "จัดการคำขอสนับสนุน",
-      openTickets: "เปิด",
-      awaitingReply: "รอตอบกลับ",
+
       editCredits: "แก้ไขเครดิต",
       letterCredits: "เครดิตจดหมาย",
       currentBalance: "ยอดคงเหลือปัจจุบัน",
@@ -1227,55 +1212,6 @@ function AdminConsoleContent() {
             </div>
           </CardContent>
         </Card>
-
-        {/* 2. SUPPORT TICKETS */}
-        <Card className="mb-6 border-none shadow-lg" style={{ 
-          backgroundColor: colors.cardBg,
-          borderLeft: '6px solid #10B981'
-        }}>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="flex-shrink-0" style={{
-                  width: '48px',
-                  height: '48px',
-                  backgroundColor: '#10B981',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <MessageCircle className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
-                    {strings.supportTickets}
-                  </h3>
-                  <p className="text-sm hidden sm:block" style={{ color: colors.textSecondary }}>
-                    {strings.supportTicketsDesc}
-                  </p>
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    <Badge className="bg-blue-100 text-blue-800 text-xs">
-                      {supportTickets.filter(t => t.status === 'open').length} {strings.openTickets}
-                    </Badge>
-                    <Badge className="bg-purple-100 text-purple-800 text-xs">
-                      {supportTickets.filter(t => t.status === 'waiting_user').length} {strings.awaitingReply}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              <Link to={createPageUrl("AdminSupport")} className="flex-shrink-0">
-                <Button className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto min-h-[44px] px-4">
-                  <MessageCircle className="w-4 h-4 sm:mr-2" />
-                  <span className="hidden sm:inline">{strings.goToSupport}</span>
-                  <span className="sm:hidden">Support</span>
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-
 
         <AdminDashboardStats stats={adminStats} language={language} colors={colors} />
 
