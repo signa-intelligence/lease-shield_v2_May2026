@@ -2438,38 +2438,38 @@ ja: {
               <div 
                 className="mb-6 cursor-pointer card-interactive"
                 style={{
-                  background: isDarkMode ? '#2A1F1F' : '#FFE8E8',
+                  background: isDarkMode ? '#2A2520' : '#FEF3C7',
                   borderRadius: '18px',
                   padding: '14px 16px',
-                  boxShadow: isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(239,68,68,0.12)',
-                  border: `1px solid ${isDarkMode ? '#EF444440' : '#FECACA'}`,
+                  boxShadow: isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(199,163,56,0.12)',
+                  border: `2px solid ${isDarkMode ? 'rgba(199,163,56,0.3)' : '#C7A338'}`,
                   transition: 'all 0.2s'
                 }}
                 onClick={handleStartResolve}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = isDarkMode ? '0 6px 16px rgba(0,0,0,0.4)' : '0 6px 16px rgba(239,68,68,0.18)';
+                  e.currentTarget.style.boxShadow = isDarkMode ? '0 6px 16px rgba(0,0,0,0.4)' : '0 6px 16px rgba(199,163,56,0.18)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(239,68,68,0.12)';
+                  e.currentTarget.style.boxShadow = isDarkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(199,163,56,0.12)';
                 }}
               >
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{
-                      backgroundColor: isDarkMode ? '#EF444430' : '#FEE2E2'
+                      backgroundColor: isDarkMode ? 'rgba(199,163,56,0.2)' : '#FEF3C7'
                     }}>
-                      <Scale className="w-5 h-5" style={{ color: '#EF4444' }} />
+                      <Scale className="w-5 h-5" style={{ color: isDarkMode ? '#C7A338' : '#92400E' }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                      <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FDE68A' : '#92400E' }}>
                         {awaitingCase 
                           ? strings.continueYourCase
                           : strings.resolveDispute
                         }
                       </h4>
-                      <p className="text-xs" style={{ color: isDarkMode ? '#F87171' : '#B91C1C' }}>
+                      <p className="text-xs" style={{ color: isDarkMode ? '#FCD34D' : '#78350F' }}>
                         {awaitingCase ? strings.completeCaseSubmission : pricingMessage}
                       </p>
                     </div>
@@ -2677,6 +2677,7 @@ ja: {
                         ],
                         route: createPageUrl("PropertyTracker") + "#rent-schedule",
                         label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'ru' ? 'Управление' : 'จัดการ') : strings.setupRent,
+                        primaryAction: true,
                         compactTitle: language === 'ru',
                         onClick: () => {
                           haptic.light();
@@ -2692,6 +2693,7 @@ ja: {
                         miniStats: [],
                         route: createPageUrl("timeline"),
                         label: strings.viewTimeline,
+                        primaryAction: true,
                         compactTitle: language === 'ru'
                       },
                       {
@@ -2705,6 +2707,7 @@ ja: {
                         ],
                         route: createPageUrl("evidencevault"),
                         label: strings.manageEvidence,
+                        primaryAction: true,
                         compactTitle: language === 'ru'
                       }
                     ].map((card, index) => (

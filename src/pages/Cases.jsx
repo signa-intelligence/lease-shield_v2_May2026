@@ -900,9 +900,9 @@ function CasesContent() {
                     style={{
                       padding: '10px 18px',
                       borderRadius: '8px',
-                      backgroundColor: 'transparent',
-                      color: '#EF4444',
-                      border: '2px solid #EF4444',
+                      backgroundColor: '#0F4229',
+                      color: '#FFFFFF',
+                      border: 'none',
                       fontWeight: '600',
                       fontSize: '14px',
                       cursor: 'pointer',
@@ -910,12 +910,12 @@ function CasesContent() {
                       whiteSpace: 'nowrap'
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#EF4444';
-                      e.target.style.color = '#FFFFFF';
+                      e.target.style.backgroundColor = '#0a2f1e';
+                      e.target.style.transform = 'translateY(-1px)';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = 'transparent';
-                      e.target.style.color = '#EF4444';
+                      e.target.style.backgroundColor = '#0F4229';
+                      e.target.style.transform = 'translateY(0)';
                     }}
                   >
                     {language === 'th' ? `ส่งคดี – ฿${displayPrice.toLocaleString()} ราคา${showMemberRate ? 'สมาชิก' : 'ทั่วไป'}` :

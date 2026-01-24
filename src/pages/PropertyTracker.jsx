@@ -1906,7 +1906,7 @@ function PropertyTrackerContent() {
   };
 
   const baseCtaStyle = {
-    backgroundColor: CTA_COLOR,
+    backgroundColor: "#0F4229",
     color: "#FFFFFF",
     borderRadius: "9999px",
     border: "none",
@@ -1918,7 +1918,7 @@ function PropertyTrackerContent() {
     alignItems: "center",
     justifyContent: "center",
     gap: "6px",
-    boxShadow: "0 10px 18px rgba(12,59,46,0.35)",
+    boxShadow: "0 10px 18px rgba(15,66,41,0.35)",
     transition: "transform 0.12s ease, box-shadow 0.12s ease, opacity 0.15s ease",
   };
 
@@ -1951,11 +1951,11 @@ function PropertyTrackerContent() {
               className="md:w-auto"
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
+                e.currentTarget.style.boxShadow = "0 14px 24px rgba(15,66,41,0.45)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "";
-                e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
+                e.currentTarget.style.boxShadow = "0 10px 18px rgba(15,66,41,0.35)";
               }}
             >
               <Wallet className="w-4 h-4" />
@@ -1974,11 +1974,11 @@ function PropertyTrackerContent() {
               className="md:w-auto"
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
+                e.currentTarget.style.boxShadow = "0 14px 24px rgba(15,66,41,0.45)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "";
-                e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
+                e.currentTarget.style.boxShadow = "0 10px 18px rgba(15,66,41,0.35)";
               }}
             >
               <Calendar className="w-4 h-4" />
@@ -2011,11 +2011,11 @@ function PropertyTrackerContent() {
               className="md:w-auto"
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = "translateY(-1px)";
-                e.currentTarget.style.boxShadow = "0 14px 24px rgba(12,59,46,0.45)";
+                e.currentTarget.style.boxShadow = "0 14px 24px rgba(15,66,41,0.45)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = "";
-                e.currentTarget.style.boxShadow = "0 10px 18px rgba(12,59,46,0.35)";
+                e.currentTarget.style.boxShadow = "0 10px 18px rgba(15,66,41,0.35)";
               }}
             >
               <Wrench className="w-4 h-4" />
