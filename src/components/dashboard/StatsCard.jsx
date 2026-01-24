@@ -17,7 +17,8 @@ export default function StatsCard({
   gradient,
   scoreColor,
   compactTitle = false,
-  language = 'en'
+  language = 'en',
+  primaryAction = false
 }) {
   const cardBg = isDarkMode ? '#2A2D30' : '#FFFFFF';
   const textPrimary = isDarkMode ? '#F9FAFB' : '#1A1D1F';
@@ -135,7 +136,7 @@ export default function StatsCard({
             onClick={handleCardClick}
             className="btn-interaction"
             style={{
-              backgroundColor: cardStyles.buttonBg,
+              backgroundColor: primaryAction ? '#0F4229' : cardStyles.buttonBg,
               color: cardStyles.buttonText,
               width: "100%",
               padding: "10px 14px",
