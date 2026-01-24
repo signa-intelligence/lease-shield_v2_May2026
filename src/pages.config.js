@@ -21,6 +21,7 @@ import LeaseLetters from './pages/LeaseLetters';
 import LeaseViewer from './pages/LeaseViewer';
 import Leases from './pages/Leases';
 import LetterReview from './pages/LetterReview';
+import LisaAnalytics from './pages/LisaAnalytics';
 import MaintenanceTracker from './pages/MaintenanceTracker';
 import OpsConsole from './pages/OpsConsole';
 import PaymentSuccess from './pages/PaymentSuccess';
@@ -40,7 +41,6 @@ import Timeline from './pages/Timeline';
 import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
-import LisaAnalytics from './pages/LisaAnalytics';
 import __Layout from './Layout.jsx';
 
 
@@ -68,6 +68,7 @@ export const PAGES = {
     "LeaseViewer": LeaseViewer,
     "Leases": Leases,
     "LetterReview": LetterReview,
+    "LisaAnalytics": LisaAnalytics,
     "MaintenanceTracker": MaintenanceTracker,
     "OpsConsole": OpsConsole,
     "PaymentSuccess": PaymentSuccess,
@@ -87,7 +88,6 @@ export const PAGES = {
     "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
-    "LisaAnalytics": LisaAnalytics,
 }
 
 export const pagesConfig = {

@@ -154,6 +154,12 @@ function DashboardContent() {
     enabled: !!user,
   });
 
+  const { data: timelineEvents = [] } = useQuery({
+    queryKey: ['timelineEvents'],
+    queryFn: () => base44.entities.TimelineEvent.filter({ created_by: user?.email }),
+    enabled: !!user,
+  });
+
   const language = user?.language || 'en';
   const accessLevel = user?.access_level || 'user';
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
@@ -785,17 +791,16 @@ function DashboardContent() {
   });
 
   const calculateProtectionScore = () => {
-    let actionScore = 15; // Base score for having an account
+    let actionScore = 0; // Start from 0 - no base score
     const suggestions = [];
 
-    // Check for completed LeaseScan (status = 'completed' or has scan_full data)
+    // Check for completed LeaseScan or any lease uploaded
     const hasCompletedScan = allScans.some(s => 
       s.status === 'completed' || 
       s.status === 'ok' || 
       s.scan_full !== null
     );
     
-    // Also check if we have any leases (scanned or not)
     const hasAnyLease = leases.length > 0;
     
     console.log('[PROTECTION_SCORE_DEBUG]', {
@@ -804,50 +809,38 @@ function DashboardContent() {
       scansCount: allScans.length,
       leasesCount: leases.length,
       depositsCount: deposits.length,
-      depositsWithRent: deposits.filter(d => d.rent_amount && d.rent_amount > 0).length
+      timelineEventsCount: timelineEvents.length,
+      documentsCount: documents.length
     });
     
+    // Lease uploaded - 30 points (most important)
     if (hasCompletedScan || hasAnyLease) {
-      actionScore += 25; // +25 for lease upload & scan
+      actionScore += 30;
     } else {
       suggestions.push({
         action: language === 'th' ? 'อัปโหลดสัญญาเช่าเพื่อสแกนเต็มรูปแบบ' : language === 'zh' ? '上传租约进行完整扫描' : language === 'ja' ? 'リースをアップロードしてフルスキャン' : language === 'ko' ? '전체 스캔을 위해 임대 계약 업로드' : language === 'ru' ? 'Загрузите договор для полного сканирования' : 'Upload your lease for a full scan',
         benefit: language === 'th' ? 'ระบุความเสี่ยงและข้อกำหนดที่ซ่อนอยู่ในสัญญา' : language === 'zh' ? '识别合同中的隐藏风险和条款' : language === 'ja' ? '契約内の隠れたリスクと条項を特定' : language === 'ko' ? '계약의 숨겨진 위험과 조항 식별' : language === 'ru' ? 'Выявите скрытые риски и условия в договоре' : 'Identify hidden risks and terms in your contract',
         route: createPageUrl("UploadScan"),
-        points: 25,
+        points: 30,
         completed: false
       });
     }
 
-    // Deposit tracker completed: 20 points
+    // Deposits tracked - 25 points
     const hasDeposit = deposits.some(d => d.deposit_amount && d.expected_return_date);
     if (hasDeposit) {
-      actionScore += 20;
+      actionScore += 25;
     } else {
       suggestions.push({
         action: language === 'th' ? 'เพิ่มรายละเอียดเงินมัดจำของคุณ' : language === 'zh' ? '添加押金详细信息' : language === 'ja' ? '敷金詳細を追加' : language === 'ko' ? '보증금 세부 정보 추가' : language === 'ru' ? 'Добавьте данные депозита' : 'Add your deposit details',
         benefit: language === 'th' ? 'ติดตามกำหนดคืนเงินและรับการแจ้งเตือนอัตโนมัติ' : language === 'zh' ? '跟踪退款截止日期并接收自动提醒' : language === 'ja' ? '返金期限を追跡し、自動リマインダーを受信' : language === 'ko' ? '환불 마감일 추적 및 자동 알림 수신' : language === 'ru' ? 'Отслеживайте сроки возврата и получайте напоминания' : 'Track refund deadlines and receive automated alerts',
         route: createPageUrl("PropertyTracker") + "#deposit",
-        points: 20,
+        points: 25,
         completed: hasDeposit
       });
     }
 
-    // Key dates completed: 15 points (start_date, end_date, notice_deadline)
-    const hasKeyDates = leases.some(l => l.start_date && l.end_date && l.notice_deadline);
-    if (hasKeyDates) {
-      actionScore += 15;
-    } else {
-      suggestions.push({
-        action: language === 'th' ? 'เพิ่มวันที่สำคัญของสัญญาเช่า (เริ่ม/สิ้นสุด/แจ้ง)' : language === 'zh' ? '添加关键租约日期（开始/结束/通知）' : language === 'ja' ? '重要なリース日付を追加（開始/終了/通知）' : language === 'ko' ? '주요 임대 날짜 추가（시작/종료/통지）' : language === 'ru' ? 'Добавьте ключевые даты договора（начало/конец/уведомление）' : 'Add key lease dates (start/end/notice)',
-        benefit: language === 'th' ? 'ไม่พลาดกำหนดแจ้งล่วงหน้าและหลีกเลี่ยงค่าปรับ' : language === 'zh' ? '不错过通知截止日期，避免罚款' : language === 'ja' ? '通知期限を逃さず、罰金を回避' : language === 'ko' ? '통지 마감일을 놓치지 않고 벌금 회피' : language === 'ru' ? 'Не пропустите сроки уведомлений и избежите штрафов' : 'Never miss notice deadlines and avoid penalties',
-        route: createPageUrl("PropertyTracker"),
-        points: 15,
-        completed: hasKeyDates
-      });
-    }
-
-    // Evidence uploaded: 25 points
+    // Evidence uploaded - 25 points
     if (documents.length > 0) {
       actionScore += 25;
     } else {
@@ -860,35 +853,49 @@ function DashboardContent() {
       });
     }
 
-    // TIER-BASED CAPS (hard limits)
-    const tierCaps = {
-      free: 40,
-      lite: 60,
-      protect: 85,
-      secure: 100
-    };
-    
-    const userTier = user?.plan_tier || 'free';
-    const tierCap = tierCaps[userTier] || 40;
-    const displayedScore = Math.min(actionScore, tierCap);
-    const isLocked = actionScore >= 85 && userTier !== 'secure';
+    // Timeline events - 20 points
+    if (timelineEvents.length > 0) {
+      actionScore += 20;
+    } else {
+      suggestions.push({
+        action: language === 'th' ? 'สร้างเหตุการณ์ไทม์ไลน์ของคุณ' : language === 'zh' ? '创建时间线事件' : language === 'ja' ? 'タイムラインイベントを作成' : language === 'ko' ? '타임라인 이벤트 생성' : language === 'ru' ? 'Создайте события на хронологии' : 'Create timeline events',
+        benefit: language === 'th' ? 'จัดระเบียบกำหนดสำคัญและการดำเนินการ' : language === 'zh' ? '组织重要日期和行动' : language === 'ja' ? '重要な日付と行動を整理' : language === 'ko' ? '중요한 날짜와 조치 정리' : language === 'ru' ? 'Организуйте важные даты и действия' : 'Organize critical dates and actions',
+        route: createPageUrl("Timeline"),
+        points: 20,
+        completed: timelineEvents.length > 0
+      });
+    }
+
+    // NO tier caps - score is purely based on actions (0-100)
+    const maxScore = 100;
+    const displayedScore = actionScore; // No capping
 
     console.log('[PROTECTION_SCORE_FINAL]', {
       actionScore,
-      tierCap,
       displayedScore,
-      isLocked,
-      userTier,
+      maxScore,
+      breakdown: {
+        lease: hasCompletedScan || hasAnyLease ? 30 : 0,
+        deposits: hasDeposit ? 25 : 0,
+        evidence: documents.length > 0 ? 25 : 0,
+        timeline: timelineEvents.length > 0 ? 20 : 0
+      },
       suggestionsCount: suggestions.length
     });
 
     return { 
       score: displayedScore, 
       actionScore,
-      tierCap,
-      isLocked,
-      userTier,
-      suggestions: suggestions.slice(0, 5) 
+      tierCap: 100, // Always 100, no tier restrictions
+      isLocked: false, // Never locked by tier
+      userTier: user?.plan_tier || 'free',
+      suggestions: suggestions.slice(0, 5),
+      breakdown: {
+        lease: hasCompletedScan || hasAnyLease ? 30 : 0,
+        deposits: hasDeposit ? 25 : 0,
+        evidence: documents.length > 0 ? 25 : 0,
+        timeline: timelineEvents.length > 0 ? 20 : 0
+      }
     };
   };
 
@@ -2571,13 +2578,8 @@ ja: {
                               </p>
                               <div className="flex items-center gap-2">
                                 <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                                  {protectionScore}/{tierCap}
+                                  {protectionScore}/100
                                 </p>
-                                {isLocked && (
-                                  <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
-                                    <Crown className="w-4 h-4 text-amber-600" />
-                                  </div>
-                                )}
                               </div>
                             </div>
                           </div>
