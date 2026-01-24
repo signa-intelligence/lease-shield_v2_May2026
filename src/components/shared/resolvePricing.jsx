@@ -67,8 +67,8 @@ export function getMembershipInfo(user, now = new Date()) {
   let reason = '';
   let daysUntilMemberBenefits = null;
 
-  if (plan === 'secure') {
-    // SECURE: Immediate member benefits (no wait)
+  if (plan === 'secure' || plan.toLowerCase() === 'secure') {
+    // SECURE: Immediate member benefits (no wait) - applies to BOTH monthly and annual Secure
     qualifiesForMemberBenefits = true;
     reason = 'secure_immediate';
   } else if (plan === 'lite' || plan === 'protect') {
