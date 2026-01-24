@@ -13,6 +13,23 @@ You are a professional, calm, trust-first advisor who guides users to the correc
 You answer clearly, concisely, and concretely.
 You do not repeat generic language or redirect users without first answering fully.
 
+🎯 TEMPLATE QUESTIONS (CRITICAL):
+When user asks about templates, letters, documents, or forms:
+
+ALWAYS provide this structure:
+"We offer several template categories:
+
+📋 Checklists: Pre-signing inspection, move-in/out documentation
+📝 Pre-Signing: Contract negotiation letters, clause amendments
+✉️ Initial Resolution: Deposit return requests, maintenance requests, early termination
+⚖️ Professional: Legal escalation letters, formal dispute notices
+🏁 Final Notices: Last warning, small claims preparation
+
+All templates can be browsed on the Templates page. Each template costs 1 credit to download in Word format."
+
+DO NOT say "I don't have information about templates"
+DO NOT push upgrades unless explicitly asked about pricing
+
 🧠 PROTECTION & COVERAGE RULES (CRITICAL):
 When explaining protection:
 • Never mention points, scoring math, or numeric task values
@@ -688,35 +705,53 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
 
   const getSuggestedActions = (messageContent) => {
     const content = messageContent.toLowerCase();
+    const currentPath = window.location.pathname;
     
-    if (content.includes('price') || content.includes('plan') || content.includes('upgrade') || content.includes('cost')) {
-      return ['pricing', 'upgrade'];
+    // Template-related questions - highest priority
+    if (content.includes('template') || content.includes('letter') || content.includes('document') || content.includes('form')) {
+      return ['templates', 'evidence'];
     }
     
-    if (content.includes('dispute') || content.includes('resolve') || content.includes('deposit')) {
-      return ['resolve', 'evidence', 'support'];
+    // On Resolve Case page or dispute questions
+    if (currentPath.includes('resolvecase') || content.includes('dispute') || content.includes('case')) {
+      return ['evidence', 'templates', 'resolve'];
     }
     
-    if (content.includes('scan') || content.includes('lease')) {
-      return ['scan', 'pricing'];
+    // Price/plan questions - show pricing options
+    if (content.includes('price') || content.includes('cost') || content.includes('how much') || content.includes('plan') || content.includes('upgrade')) {
+      return ['pricing', 'compare'];
     }
-
+    
+    // Lease scanning questions
+    if (content.includes('scan') || content.includes('upload') || content.includes('lease')) {
+      return ['scan', 'templates'];
+    }
+    
+    // Deposit questions
+    if (content.includes('deposit') || content.includes('refund') || content.includes('money back')) {
+      return ['property', 'evidence'];
+    }
+    
+    // Support/help questions
     if (content.includes('support') || content.includes('help') || content.includes('contact')) {
-      return ['support', 'faq'];
+      return ['faq', 'support'];
     }
     
-    return ['scan', 'pricing', 'support'];
+    // Default: Show most useful general actions
+    return ['scan', 'templates', 'faq'];
   };
 
   const QuickActionButtons = ({ suggestedIds, onActionClick }) => {
     const allActions = [
-      { id: 'upgrade', label: language === 'th' ? '⬆️ อัปเกรดแผน' : language === 'zh' ? '⬆️ 升级计划' : language === 'ja' ? '⬆️ プランをアップグレード' : language === 'ko' ? '⬆️ 플랜 업그레이드' : language === 'ru' ? '⬆️ Обновить план' : '⬆️ Upgrade Plan', route: createPageUrl('Account') },
-      { id: 'pricing', label: language === 'th' ? '💰 ดูราคา' : language === 'zh' ? '💰 查看价格' : language === 'ja' ? '💰 料金を見る' : language === 'ko' ? '💰 가격 보기' : language === 'ru' ? '💰 Смотреть цены' : '💰 View Pricing', route: createPageUrl('Account') + '#plans' },
-      { id: 'scan', label: language === 'th' ? '📄 สแกนสัญญา' : language === 'zh' ? '📄 扫描租约' : language === 'ja' ? '📄 リースをスキャン' : language === 'ko' ? '📄 리스 스캔' : language === 'ru' ? '📄 Сканировать договор' : '📄 Scan Lease', route: createPageUrl('PropertyTracker') },
-      { id: 'support', label: language === 'th' ? '💬 ติดต่อฝ่ายสนับสนุน' : language === 'zh' ? '💬 联系支持' : language === 'ja' ? '💬 サポートに連絡' : language === 'ko' ? '💬 지원 문의' : language === 'ru' ? '💬 Связаться с поддержкой' : '💬 Contact Support', route: createPageUrl('FAQ') },
-      { id: 'resolve', label: language === 'th' ? '⚖️ เปิด Resolve' : language === 'zh' ? '⚖️ 打开Resolve' : language === 'ja' ? '⚖️ Resolveを開く' : language === 'ko' ? '⚖️ Resolve 열기' : language === 'ru' ? '⚖️ Открыть Resolve' : '⚖️ Open Resolve', route: createPageUrl('ResolveCase') },
-      { id: 'evidence', label: language === 'th' ? '📁 คลังหลักฐาน' : language === 'zh' ? '📁 证据库' : language === 'ja' ? '📁 証拠保管庫' : language === 'ko' ? '📁 증거 보관함' : language === 'ru' ? '📁 Хранилище доказательств' : '📁 Evidence Vault', route: createPageUrl('EvidenceVault') },
-      { id: 'faq', label: language === 'th' ? '❓ ความช่วยเหลือและคำถามที่พบบ่อย' : language === 'zh' ? '❓ 帮助与常见问题' : language === 'ja' ? '❓ ヘルプとFAQ' : language === 'ko' ? '❓ 도움말 및 FAQ' : language === 'ru' ? '❓ Помощь и FAQ' : '❓ Help & FAQ', route: createPageUrl('FAQ') }
+      { id: 'templates', label: language === 'th' ? '📄 ดูเทมเพลต' : language === 'zh' ? '📄 查看模板' : language === 'ja' ? '📄 テンプレートを表示' : language === 'ko' ? '📄 템플릿 보기' : language === 'ru' ? '📄 Шаблоны' : '📄 View Templates', route: createPageUrl('Templates') },
+      { id: 'evidence', label: language === 'th' ? '📁 คลังหลักฐาน' : language === 'zh' ? '📁 证据库' : language === 'ja' ? '📁 証拠保管庫' : language === 'ko' ? '📁 증거 보관함' : language === 'ru' ? '📁 Доказательства' : '📁 Evidence Vault', route: createPageUrl('EvidenceVault') },
+      { id: 'scan', label: language === 'th' ? '📷 สแกนสัญญา' : language === 'zh' ? '📷 扫描租约' : language === 'ja' ? '📷 スキャン' : language === 'ko' ? '📷 스캔' : language === 'ru' ? '📷 Сканировать' : '📷 Scan Lease', route: createPageUrl('UploadScan') },
+      { id: 'property', label: language === 'th' ? '🏠 ทรัพย์สิน' : language === 'zh' ? '🏠 房产' : language === 'ja' ? '🏠 物件' : language === 'ko' ? '🏠 부동산' : language === 'ru' ? '🏠 Недвижимость' : '🏠 Property', route: createPageUrl('PropertyTracker') },
+      { id: 'resolve', label: language === 'th' ? '⚖️ เปิด Resolve' : language === 'zh' ? '⚖️ Resolve' : language === 'ja' ? '⚖️ Resolve' : language === 'ko' ? '⚖️ Resolve' : language === 'ru' ? '⚖️ Resolve' : '⚖️ Open Resolve', route: createPageUrl('ResolveCase') },
+      { id: 'pricing', label: language === 'th' ? '💰 ราคา' : language === 'zh' ? '💰 价格' : language === 'ja' ? '💰 料金' : language === 'ko' ? '💰 가격' : language === 'ru' ? '💰 Цены' : '💰 Pricing', route: createPageUrl('Account') + '?showPlans=true' },
+      { id: 'compare', label: language === 'th' ? '📊 เปรียบเทียบแผน' : language === 'zh' ? '📊 比较计划' : language === 'ja' ? '📊 プラン比較' : language === 'ko' ? '📊 플랜 비교' : language === 'ru' ? '📊 Сравнить' : '📊 Compare Plans', route: createPageUrl('Account') + '?showPlans=true' },
+      { id: 'faq', label: language === 'th' ? '❓ FAQ' : language === 'zh' ? '❓ FAQ' : language === 'ja' ? '❓ FAQ' : language === 'ko' ? '❓ FAQ' : language === 'ru' ? '❓ FAQ' : '❓ FAQ', route: createPageUrl('FAQ') },
+      { id: 'support', label: language === 'th' ? '💬 ติดต่อ' : language === 'zh' ? '💬 联系' : language === 'ja' ? '💬 連絡' : language === 'ko' ? '💬 문의' : language === 'ru' ? '💬 Контакт' : '💬 Contact', route: createPageUrl('FAQ') }
     ];
     
     const actions = suggestedIds 
