@@ -76,14 +76,11 @@ export default function DataCleanupSection({ language = 'en', colors, isDarkMode
       return;
     }
     
-    if (!window.confirm(strings.warningFinal)) {
-      setShowConfirm(false);
-      return;
-    }
+    const message = language === 'th'
+      ? '⚠️ คำเตือนสุดท้าย: การดำเนินการนี้จะลบเนื้อหาผู้ใช้ทั้งหมด (สัญญา เงินมัดจำ คดี หลักฐาน ฯลฯ) บัญชีผู้ใช้จะถูกรักษาไว้แต่จะถูกล้างข้อมูล ไม่สามารถยกเลิกได้ คุณแน่ใจหรือไม่?'
+      : '⚠️ FINAL WARNING: This will delete ALL user content (leases, deposits, cases, evidence, etc.). User accounts will be preserved but emptied. This cannot be undone. Are you sure?';
     
-    const confirmation = window.prompt(strings.typeDelete);
-    if (confirmation !== 'DELETE') {
-      alert(strings.confirmationFailed);
+    if (!window.confirm(message)) {
       setShowConfirm(false);
       return;
     }
@@ -106,10 +103,9 @@ export default function DataCleanupSection({ language = 'en', colors, isDarkMode
           `- ${result.deleted.notifications || 0} notifications\n` +
           `- ${result.deleted.lisaConversations || 0} Lisa conversations\n` +
           `- ${result.deleted.lisaAnalytics || 0} Lisa analytics\n` +
-          `- ${result.deleted.recycleBin || 0} recycle bin items\n` +
-          `- ${result.deleted.users || 0} test user accounts\n\n` +
-          `${language === 'th' ? 'ทั้งหมด' : 'Total'}: ${result.total_items_deleted} ${language === 'th' ? 'รายการ' : 'items deleted'}\n\n` +
-          `${strings.protectedAccounts2} ${result.protected_accounts_preserved?.length || 0} ${strings.accountsPreserved}`;
+          `- ${result.deleted.recycleBin || 0} recycle bin items\n\n` +
+          `${language === 'th' ? 'ทั้งหมด' : 'Total'}: ${result.total_items_deleted} ${language === 'th' ? 'รายการลบแล้ว' : 'items deleted'}\n\n` +
+          `✅ ${language === 'th' ? 'บัญชีผู้ใช้ทั้งหมดถูกเก็บรักษาไว้' : 'All user accounts preserved'}`;
         alert(summary);
         window.location.reload();
       } else {
@@ -134,34 +130,29 @@ export default function DataCleanupSection({ language = 'en', colors, isDarkMode
           <h3 className="text-lg font-bold text-red-900 dark:text-red-300">{strings.dangerZone}</h3>
         </div>
         
-        <div className="p-4 rounded-lg mb-4" style={{
-          backgroundColor: isDarkMode ? '#422006' : '#FFFBEB',
-          border: '1px solid #F59E0B'
-        }}>
-          <p className="text-sm font-semibold mb-2" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
-            ⚠️ {strings.protectedAccounts}
-          </p>
-          <ul className="text-xs space-y-1" style={{ color: isDarkMode ? '#FDE68A' : '#78350F' }}>
-            <li>• steve.l@signa-consultants.com</li>
-            <li>• steve.d.lockhart@gmail.com</li>
-            <li>• shortyroc36@gmail.com</li>
-            <li>• tamirbe@base44.com</li>
-            <li>• dom.sources@gmail.com</li>
-            <li>• support@leaseshield.asia</li>
-            <li>• privacy@leaseshield.asia</li>
-          </ul>
-        </div>
-        
         <p className="text-sm mb-4" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
-          {strings.deleteAllTestData}
+          Delete all test content before launch. This removes all user data while preserving user accounts and payment history:
         </p>
         <ul className="text-sm mb-4 space-y-1" style={{ color: isDarkMode ? '#F87171' : '#B91C1C' }}>
           <li>• All leases, properties, deposits, cases, evidence</li>
           <li>• All timeline events, maintenance requests, notifications</li>
           <li>• All Lisa conversations and analytics</li>
           <li>• All recycle bin items</li>
-          <li>• <strong>ALL user accounts EXCEPT the 7 protected accounts above</strong></li>
         </ul>
+        <div className="p-3 rounded-lg mb-4" style={{
+          backgroundColor: isDarkMode ? '#064E3B' : '#D1FAE5',
+          border: '1px solid #10B981'
+        }}>
+          <p className="text-sm font-semibold flex items-center gap-2" style={{ color: isDarkMode ? '#6EE7B7' : '#065F46' }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            User accounts are PRESERVED (including payment history)
+          </p>
+          <p className="text-xs mt-1" style={{ color: isDarkMode ? '#A7F3D0' : '#047857' }}>
+            Accounts remain intact to preserve Stripe payment records, subscription data, and audit trails. Users will have clean empty accounts ready for real data.
+          </p>
+        </div>
         
         <div className="flex gap-2 flex-wrap">
           <Button
@@ -248,11 +239,18 @@ export default function DataCleanupSection({ language = 'en', colors, isDarkMode
                 <li>• {previewData.would_delete.lisaConversations || 0} Lisa conversations</li>
                 <li>• {previewData.would_delete.lisaAnalytics || 0} Lisa analytics</li>
                 <li>• {previewData.would_delete.recycleBin || 0} recycle bin items</li>
-                <li>• <strong className="text-red-700 dark:text-red-400">{previewData.would_delete.users || 0} test user accounts</strong></li>
               </ul>
-              <p className="mt-2 font-semibold" style={{ color: '#10B981' }}>
-                {strings.protectedAccounts2} {previewData.protected_found?.length || 0} {strings.accountsPreserved}
-              </p>
+              <div className="mt-3 p-2 rounded" style={{ backgroundColor: isDarkMode ? '#064E3B' : '#D1FAE5' }}>
+                <p className="font-semibold flex items-center gap-2" style={{ color: '#10B981' }}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  All user accounts will be preserved
+                </p>
+                <p className="text-xs mt-1" style={{ color: isDarkMode ? '#A7F3D0' : '#047857' }}>
+                  Accounts remain to preserve payment history and Stripe records
+                </p>
+              </div>
             </div>
           </div>
         )}
