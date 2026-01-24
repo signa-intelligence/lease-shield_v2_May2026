@@ -333,6 +333,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
   const [conversationId, setConversationId] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [navigationError, setNavigationError] = useState(false);
+  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -369,10 +370,50 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
   // Load conversation history when conversation loads
   useEffect(() => {
     if (conversation && conversation.messages) {
-      setMessages(conversation.messages);
-      setConversationId(conversation.id);
+      // Load previous conversation history (last 10 messages)
+      loadPreviousHistory(conversation);
     }
   }, [conversation]);
+
+  const loadPreviousHistory = async (currentConv) => {
+    try {
+      const user = await base44.auth.me();
+      if (!user) return;
+
+      // If current conversation has messages, just use them
+      if (currentConv && currentConv.messages && currentConv.messages.length > 0) {
+        const recentMessages = currentConv.messages.slice(-10);
+        
+        setMessages([
+          {
+            role: 'assistant',
+            content: language === 'th' 
+              ? '💬 ดำเนินการสนทนาของเราต่อ...'
+              : language === 'zh'
+                ? '💬 继续我们的对话...'
+                : language === 'ja'
+                  ? '💬 会話を続けます...'
+                  : language === 'ko'
+                    ? '💬 대화를 계속합니다...'
+                    : language === 'ru'
+                      ? '💬 Продолжаем нашу беседу...'
+                      : '💬 Continuing our conversation...',
+            timestamp: new Date().toISOString(),
+            isSystemMessage: true
+          },
+          ...recentMessages
+        ]);
+        setConversationId(currentConv.id);
+      } else {
+        // No current conversation, show welcome
+        setMessages([]);
+        setConversationId(currentConv ? currentConv.id : null);
+      }
+    } catch (error) {
+      console.error('Failed to load conversation history:', error);
+      setMessages([]);
+    }
+  };
 
   // Save conversation mutation
   const saveConversationMutation = useMutation({
@@ -428,10 +469,54 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const categorizeQuestion = (question) => {
+    const q = question.toLowerCase();
+    
+    if (q.includes('price') || q.includes('cost') || q.includes('plan')) return 'pricing';
+    if (q.includes('scan') || q.includes('lease')) return 'lease_scanning';
+    if (q.includes('deposit')) return 'deposits';
+    if (q.includes('dispute') || q.includes('resolve')) return 'disputes';
+    if (q.includes('support') || q.includes('help')) return 'support';
+    if (q.includes('evidence') || q.includes('proof')) return 'evidence';
+    if (q.includes('upgrade') || q.includes('payment')) return 'billing';
+    
+    return 'general';
+  };
+
+  const trackLisaInteraction = async (data) => {
+    try {
+      const user = await base44.auth.me();
+      if (!user) return;
+
+      await base44.entities.LisaAnalytics.create({
+        user_email: user.email,
+        question: data.question,
+        response: data.response,
+        session_id: sessionId,
+        action_taken: data.action,
+        user_plan_tier: user.plan_tier || 'free',
+        response_time_ms: data.responseTime,
+        category: categorizeQuestion(data.question)
+      });
+    } catch (error) {
+      console.error('Analytics tracking failed:', error);
+    }
+  };
+
+  const trackQuickAction = (actionId) => {
+    trackLisaInteraction({
+      question: 'Quick action clicked',
+      response: `User clicked: ${actionId}`,
+      action: `quick_action_${actionId}`,
+      responseTime: 0
+    });
+  };
+
   const handleSend = async (messageText = null) => {
     const textToSend = messageText || inputValue.trim();
     if (!textToSend || isLoading || textToSend.length > MAX_CHARS) return;
 
+    const startTime = Date.now();
     setInputValue('');
     const userMessage = { 
       role: 'user', 
@@ -481,6 +566,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
         add_context_from_internet: false
       });
 
+      const responseTime = Date.now() - startTime;
       const assistantMessage = { 
         role: 'assistant', 
         content: response || 'I apologize, I encountered an error. Please try again or contact support@leaseshield.asia',
@@ -490,6 +576,14 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
 
       const updatedMessages = [...messages, userMessage, assistantMessage];
       setMessages(updatedMessages);
+
+      // Track the interaction
+      trackLisaInteraction({
+        question: textToSend,
+        response: response,
+        action: 'message_sent',
+        responseTime: responseTime
+      });
 
       // Save to database (non-blocking)
       saveConversationMutation.mutate(updatedMessages);
@@ -590,6 +684,97 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     const mentionsUpgrade = /upgrade|paid plan|member|subscription/i.test(content);
     
     return mentionsResolve && mentionsUpgrade;
+  };
+
+  const getSuggestedActions = (messageContent) => {
+    const content = messageContent.toLowerCase();
+    
+    if (content.includes('price') || content.includes('plan') || content.includes('upgrade') || content.includes('cost')) {
+      return ['pricing', 'upgrade'];
+    }
+    
+    if (content.includes('dispute') || content.includes('resolve') || content.includes('deposit')) {
+      return ['resolve', 'evidence', 'support'];
+    }
+    
+    if (content.includes('scan') || content.includes('lease')) {
+      return ['scan', 'pricing'];
+    }
+
+    if (content.includes('support') || content.includes('help') || content.includes('contact')) {
+      return ['support', 'faq'];
+    }
+    
+    return ['scan', 'pricing', 'support'];
+  };
+
+  const QuickActionButtons = ({ suggestedIds, onActionClick }) => {
+    const allActions = [
+      { id: 'upgrade', label: language === 'th' ? '⬆️ อัปเกรดแผน' : language === 'zh' ? '⬆️ 升级计划' : language === 'ja' ? '⬆️ プランをアップグレード' : language === 'ko' ? '⬆️ 플랜 업그레이드' : language === 'ru' ? '⬆️ Обновить план' : '⬆️ Upgrade Plan', route: createPageUrl('Account') },
+      { id: 'pricing', label: language === 'th' ? '💰 ดูราคา' : language === 'zh' ? '💰 查看价格' : language === 'ja' ? '💰 料金を見る' : language === 'ko' ? '💰 가격 보기' : language === 'ru' ? '💰 Смотреть цены' : '💰 View Pricing', route: createPageUrl('Account') + '#plans' },
+      { id: 'scan', label: language === 'th' ? '📄 สแกนสัญญา' : language === 'zh' ? '📄 扫描租约' : language === 'ja' ? '📄 リースをスキャン' : language === 'ko' ? '📄 리스 스캔' : language === 'ru' ? '📄 Сканировать договор' : '📄 Scan Lease', route: createPageUrl('PropertyTracker') },
+      { id: 'support', label: language === 'th' ? '💬 ติดต่อฝ่ายสนับสนุน' : language === 'zh' ? '💬 联系支持' : language === 'ja' ? '💬 サポートに連絡' : language === 'ko' ? '💬 지원 문의' : language === 'ru' ? '💬 Связаться с поддержкой' : '💬 Contact Support', route: createPageUrl('FAQ') },
+      { id: 'resolve', label: language === 'th' ? '⚖️ เปิด Resolve' : language === 'zh' ? '⚖️ 打开Resolve' : language === 'ja' ? '⚖️ Resolveを開く' : language === 'ko' ? '⚖️ Resolve 열기' : language === 'ru' ? '⚖️ Открыть Resolve' : '⚖️ Open Resolve', route: createPageUrl('ResolveCase') },
+      { id: 'evidence', label: language === 'th' ? '📁 คลังหลักฐาน' : language === 'zh' ? '📁 证据库' : language === 'ja' ? '📁 証拠保管庫' : language === 'ko' ? '📁 증거 보관함' : language === 'ru' ? '📁 Хранилище доказательств' : '📁 Evidence Vault', route: createPageUrl('EvidenceVault') },
+      { id: 'faq', label: language === 'th' ? '❓ ความช่วยเหลือและคำถามที่พบบ่อย' : language === 'zh' ? '❓ 帮助与常见问题' : language === 'ja' ? '❓ ヘルプとFAQ' : language === 'ko' ? '❓ 도움말 및 FAQ' : language === 'ru' ? '❓ Помощь и FAQ' : '❓ Help & FAQ', route: createPageUrl('FAQ') }
+    ];
+    
+    const actions = suggestedIds 
+      ? allActions.filter(a => suggestedIds.includes(a.id))
+      : allActions.slice(0, 4);
+    
+    return (
+      <div style={{
+        marginTop: '12px',
+        padding: '12px',
+        backgroundColor: isDarkMode ? '#374151' : '#F8F9FA',
+        borderRadius: '8px'
+      }}>
+        <div style={{
+          fontSize: '0.85em',
+          fontWeight: '600',
+          color: isDarkMode ? '#D1D5DB' : '#0C3B2E',
+          marginBottom: '8px'
+        }}>
+          {language === 'th' ? 'การดำเนินการด่วน:' : language === 'zh' ? '快速操作：' : language === 'ja' ? 'クイックアクション：' : language === 'ko' ? '빠른 작업：' : language === 'ru' ? 'Быстрые действия：' : 'Quick Actions:'}
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '8px'
+        }}>
+          {actions.map(action => (
+            <button
+              key={action.id}
+              onClick={() => onActionClick(action)}
+              style={{
+                padding: '10px 12px',
+                background: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#DDD'}`,
+                borderRadius: '6px',
+                fontSize: '0.85em',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                textAlign: 'left',
+                color: colors.textPrimary
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#0C3B2E';
+                e.currentTarget.style.color = '#FFFFFF';
+                e.currentTarget.style.borderColor = '#0C3B2E';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = isDarkMode ? '#2A2D30' : '#FFFFFF';
+                e.currentTarget.style.color = colors.textPrimary;
+                e.currentTarget.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : '#DDD';
+              }}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const stripMarkdownLinks = (text) => {
@@ -909,11 +1094,30 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
                       lineHeight: '1.6',
                       whiteSpace: 'pre-line',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                      borderLeft: msg.role === 'assistant' ? '3px solid #10B981' : 'none'
+                      borderLeft: msg.role === 'assistant' ? '3px solid #10B981' : 'none',
+                      opacity: msg.isSystemMessage ? 0.7 : 1,
+                      fontStyle: msg.isSystemMessage ? 'italic' : 'normal'
                     }}
                   >
                     {cleanContent}
                   </div>
+                  
+                  {/* Quick Action Buttons - Show after last assistant message */}
+                  {msg.role === 'assistant' && idx === messages.length - 1 && !isLoading && !msg.isSystemMessage && (
+                    <QuickActionButtons 
+                      suggestedIds={getSuggestedActions(msg.content)}
+                      onActionClick={(action) => {
+                        trackQuickAction(action.id);
+                        navigate(action.route);
+                        trackLisaInteraction({
+                          question: 'Navigation from quick action',
+                          response: `Navigated to: ${action.route}`,
+                          action: `navigate_${action.id}`,
+                          responseTime: 0
+                        });
+                      }}
+                    />
+                  )}
                   
                   {shouldShowActions && !navigationError && (
                     <div style={{
