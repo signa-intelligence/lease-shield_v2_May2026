@@ -275,41 +275,38 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Load conversation history when conversation loads
+  // CRITICAL: Load from localStorage FIRST when chat opens
   useEffect(() => {
-    if (conversation && conversation.messages) {
-      // Only load from database if localStorage is empty
-      const stored = localStorage.getItem('lisa_chat_history');
-      if (!stored || stored === '[]') {
-        loadPreviousHistory(conversation);
-      }
-    }
-  }, [conversation]);
-
-  // Persist chat history to localStorage
-  useEffect(() => {
-    if (messages.length > 0) {
-      const last10 = messages.slice(-10);
-      localStorage.setItem('lisa_chat_history', JSON.stringify(last10));
-    }
-  }, [messages]);
-
-  // Load chat history from localStorage when chat opens
-  useEffect(() => {
-    if (isOpen && messages.length === 0) {
+    if (isOpen) {
       const stored = localStorage.getItem('lisa_chat_history');
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
+            console.log('[LISA] Restored chat history from localStorage:', parsed.length, 'messages');
             setMessages(parsed);
+            return; // Skip database load
           }
         } catch (e) {
           console.error('Failed to load chat history:', e);
         }
       }
+      
+      // Only load from database if localStorage is empty
+      if (conversation && conversation.messages && conversation.messages.length > 0) {
+        loadPreviousHistory(conversation);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, conversation]);
+
+  // CRITICAL: Save to localStorage after EVERY message change
+  useEffect(() => {
+    if (messages.length > 0) {
+      const last10 = messages.slice(-10);
+      localStorage.setItem('lisa_chat_history', JSON.stringify(last10));
+      console.log('[LISA] Saved', last10.length, 'messages to localStorage');
+    }
+  }, [messages]);
 
   const loadPreviousHistory = async (currentConv) => {
     try {
