@@ -485,7 +485,7 @@ function AccountContent() {
       document.documentElement.classList.remove('dark');
     }
     
-    if (showPlans === 'true' || highlight === 'plans' || hash === '#plans' || hash === '#plans-section') {
+    if (showPlans === 'true' || highlight === 'plans' || hash === '#plans' || hash === '#plans-section' || hash === '#pricing') {
       setTimeout(() => {
         const el = document.getElementById('plan-selector');
         if (el) {

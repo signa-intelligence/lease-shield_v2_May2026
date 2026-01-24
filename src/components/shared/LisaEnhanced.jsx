@@ -951,7 +951,10 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
                       flexWrap: 'wrap'
                     }}>
                       <button
-                        onClick={() => handleNavigate('Account')}
+                        onClick={() => { 
+                          navigate(createPageUrl('Account') + '#pricing'); 
+                          handleClose(); 
+                        }}
                         style={{
                           padding: '8px 14px',
                           borderRadius: '8px',
