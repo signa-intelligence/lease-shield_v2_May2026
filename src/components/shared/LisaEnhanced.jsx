@@ -56,11 +56,12 @@ const LISA_SYSTEM_PROMPT = `You are Lisa, the LeaseShield Assistant. You help us
 - Dispute forms: Evidence submission templates
 
 **Resolve Service** (Professional dispute resolution)
-- Member rate: ฿3,500 per case (Save ฿1,500 vs ฿5,000 public rate)
-- Expert guidance to negotiate with landlord
-- Help with deposit recovery, maintenance disputes, lease issues
-- Available on Protect and Secure plans after 30 days active membership
-- Includes letter templates, evidence review, negotiation support
+- Public rate: ฿5,000 per case (available to anyone, no subscription required)
+- Member rate: ฿3,500 per case (available to Protect/Secure subscribers after 30 days active membership)
+- On-demand service - you do NOT need a subscription to purchase Resolve
+- Provides expert guidance to negotiate with landlord
+- Includes deposit recovery, maintenance disputes, lease issues
+- Letter templates, evidence review, negotiation support included
 - Not a law firm - does not provide legal representation
 
 ## Thai Rental Context
@@ -281,6 +282,29 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
       loadPreviousHistory(conversation);
     }
   }, [conversation]);
+
+  // Persist chat history to localStorage
+  useEffect(() => {
+    if (messages.length > 0) {
+      const last10 = messages.slice(-10);
+      localStorage.setItem('lisa_chat_history', JSON.stringify(last10));
+    }
+  }, [messages]);
+
+  // Load chat history from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('lisa_chat_history');
+    if (stored && messages.length === 0) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed);
+        }
+      } catch (e) {
+        console.error('Failed to load chat history:', e);
+      }
+    }
+  }, []);
 
   const loadPreviousHistory = async (currentConv) => {
     try {
@@ -535,6 +559,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     setIsOpen(false);
     setIsMinimized(false);
     setInputValue('');
+    localStorage.removeItem('lisa_chat_history');
     if (onClose) onClose();
   };
 
@@ -591,136 +616,6 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     const mentionsUpgrade = /upgrade|paid plan|member|subscription/i.test(content);
     
     return mentionsResolve && mentionsUpgrade;
-  };
-
-  const getSuggestedActions = (messageContent) => {
-    const content = messageContent.toLowerCase();
-    const currentPath = window.location.pathname;
-    const userMessage = messages.length > 0 ? messages[messages.length - 1]?.content?.toLowerCase() : '';
-    
-    // Template/document questions
-    if (content.includes('template') || content.includes('letter') || content.includes('document') || content.includes('form')) {
-      return ['templates'];
-    }
-    
-    // Dispute/landlord issue questions
-    if (content.includes('dispute') || content.includes('landlord') || content.includes('negotiate') || content.includes('sue') || content.includes('legal') || content.includes('conflict')) {
-      return ['resolve', 'evidence'];
-    }
-    
-    // Noisy neighbors, maintenance, property issues
-    if (content.includes('noisy') || content.includes('neighbor') || content.includes('maintenance') || content.includes('repair') || content.includes('broken') || content.includes('damage')) {
-      return ['evidence', 'resolve'];
-    }
-    
-    // Deposit recovery
-    if (content.includes('deposit') && (content.includes('return') || content.includes('back') || content.includes('refund') || content.includes('recover'))) {
-      return ['resolve', 'evidence'];
-    }
-    
-    // Deposit tracking
-    if (content.includes('deposit') && (content.includes('track') || content.includes('monitor') || content.includes('due'))) {
-      return ['property'];
-    }
-    
-    // Pricing questions
-    if (content.includes('price') || content.includes('cost') || content.includes('how much') || content.includes('plan') || content.includes('upgrade') || content.includes('subscription')) {
-      return ['pricing', 'compare'];
-    }
-    
-    // Lease scanning
-    if (content.includes('scan') || content.includes('upload lease') || content.includes('review lease') || content.includes('check lease')) {
-      return ['scan'];
-    }
-    
-    // Evidence/documentation
-    if (content.includes('evidence') || content.includes('proof') || content.includes('document') || content.includes('photo') || content.includes('record')) {
-      return ['evidence'];
-    }
-    
-    // Support/help (only if explicitly asking for support)
-    if (content.includes('support') || content.includes('contact') || content.includes('help page')) {
-      return ['faq'];
-    }
-    
-    // General rental advice (noisy neighbors, should I rent, etc.) - NO Quick Actions
-    if (userMessage.includes('should i') || userMessage.includes('advice') || userMessage.includes('recommend') || content.includes('should i')) {
-      return null; // No Quick Actions for general advice
-    }
-    
-    // Default: NO Quick Actions unless contextually relevant
-    return null;
-  };
-
-  const QuickActionButtons = ({ suggestedIds, onActionClick }) => {
-    const allActions = [
-      { id: 'templates', label: language === 'th' ? '📄 ดูเทมเพลต' : language === 'zh' ? '📄 查看模板' : language === 'ja' ? '📄 テンプレートを表示' : language === 'ko' ? '📄 템플릿 보기' : language === 'ru' ? '📄 Шаблоны' : '📄 View Templates', route: createPageUrl('Templates') },
-      { id: 'evidence', label: language === 'th' ? '📁 คลังหลักฐาน' : language === 'zh' ? '📁 证据库' : language === 'ja' ? '📁 証拠保管庫' : language === 'ko' ? '📁 증거 보관함' : language === 'ru' ? '📁 Доказательства' : '📁 Evidence Vault', route: createPageUrl('EvidenceVault') },
-      { id: 'scan', label: language === 'th' ? '📷 สแกนสัญญา' : language === 'zh' ? '📷 扫描租约' : language === 'ja' ? '📷 スキャン' : language === 'ko' ? '📷 스캔' : language === 'ru' ? '📷 Сканировать' : '📷 Scan Lease', route: createPageUrl('UploadScan') },
-      { id: 'property', label: language === 'th' ? '🏠 ทรัพย์สิน' : language === 'zh' ? '🏠 房产' : language === 'ja' ? '🏠 物件' : language === 'ko' ? '🏠 부동산' : language === 'ru' ? '🏠 Недвижимость' : '🏠 Property', route: createPageUrl('PropertyTracker') },
-      { id: 'resolve', label: language === 'th' ? '⚖️ เปิด Resolve' : language === 'zh' ? '⚖️ Resolve' : language === 'ja' ? '⚖️ Resolve' : language === 'ko' ? '⚖️ Resolve' : language === 'ru' ? '⚖️ Resolve' : '⚖️ Open Resolve', route: createPageUrl('ResolveCase') },
-      { id: 'pricing', label: language === 'th' ? '💰 ราคา' : language === 'zh' ? '💰 价格' : language === 'ja' ? '💰 料金' : language === 'ko' ? '💰 가격' : language === 'ru' ? '💰 Цены' : '💰 Pricing', route: createPageUrl('Account') + '?showPlans=true' },
-      { id: 'compare', label: language === 'th' ? '📊 เปรียบเทียบแผน' : language === 'zh' ? '📊 比较计划' : language === 'ja' ? '📊 プラン比較' : language === 'ko' ? '📊 플랜 비교' : language === 'ru' ? '📊 Сравнить' : '📊 Compare Plans', route: createPageUrl('Account') + '?showPlans=true' },
-      { id: 'faq', label: language === 'th' ? '❓ FAQ' : language === 'zh' ? '❓ FAQ' : language === 'ja' ? '❓ FAQ' : language === 'ko' ? '❓ FAQ' : language === 'ru' ? '❓ FAQ' : '❓ FAQ', route: createPageUrl('FAQ') },
-      { id: 'support', label: language === 'th' ? '💬 ติดต่อ' : language === 'zh' ? '💬 联系' : language === 'ja' ? '💬 連絡' : language === 'ko' ? '💬 문의' : language === 'ru' ? '💬 Контакт' : '💬 Contact', route: createPageUrl('FAQ') }
-    ];
-    
-    const actions = suggestedIds 
-      ? allActions.filter(a => suggestedIds.includes(a.id))
-      : allActions.slice(0, 4);
-    
-    return (
-      <div style={{
-        marginTop: '12px',
-        padding: '12px',
-        backgroundColor: isDarkMode ? '#374151' : '#F8F9FA',
-        borderRadius: '8px'
-      }}>
-        <div style={{
-          fontSize: '0.85em',
-          fontWeight: '600',
-          color: isDarkMode ? '#D1D5DB' : '#0C3B2E',
-          marginBottom: '8px'
-        }}>
-          {language === 'th' ? 'การดำเนินการด่วน:' : language === 'zh' ? '快速操作：' : language === 'ja' ? 'クイックアクション：' : language === 'ko' ? '빠른 작업：' : language === 'ru' ? 'Быстрые действия：' : 'Quick Actions:'}
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '8px'
-        }}>
-          {actions.map(action => (
-            <button
-              key={action.id}
-              onClick={() => onActionClick(action)}
-              style={{
-                padding: '10px 12px',
-                background: isDarkMode ? '#2A2D30' : '#FFFFFF',
-                border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#DDD'}`,
-                borderRadius: '6px',
-                fontSize: '0.85em',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                textAlign: 'left',
-                color: colors.textPrimary
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#0C3B2E';
-                e.currentTarget.style.color = '#FFFFFF';
-                e.currentTarget.style.borderColor = '#0C3B2E';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = isDarkMode ? '#2A2D30' : '#FFFFFF';
-                e.currentTarget.style.color = colors.textPrimary;
-                e.currentTarget.style.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : '#DDD';
-              }}
-            >
-              {action.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
   };
 
   const stripMarkdownLinks = (text) => {
@@ -1047,26 +942,6 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
                   >
                     {cleanContent}
                   </div>
-                  
-                  {/* Quick Action Buttons - Only show if contextually relevant */}
-                  {msg.role === 'assistant' && idx === messages.length - 1 && !isLoading && !msg.isSystemMessage && (() => {
-                    const suggestedActions = getSuggestedActions(msg.content);
-                    return suggestedActions && suggestedActions.length > 0 ? (
-                      <QuickActionButtons 
-                        suggestedIds={suggestedActions}
-                        onActionClick={(action) => {
-                          trackQuickAction(action.id);
-                          navigate(action.route);
-                          trackLisaInteraction({
-                            question: 'Navigation from quick action',
-                            response: `Navigated to: ${action.route}`,
-                            action: `navigate_${action.id}`,
-                            responseTime: 0
-                          });
-                        }}
-                      />
-                    ) : null;
-                  })()}
                   
                   {shouldShowActions && !navigationError && (
                     <div style={{
