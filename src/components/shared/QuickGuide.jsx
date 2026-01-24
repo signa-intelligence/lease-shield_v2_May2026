@@ -206,10 +206,11 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
 
   const handleFinish = () => {
     haptic.medium();
-    if (currentStepData.route) {
-      navigate(currentStepData.route);
-    }
     handleDismiss();
+    const dashboardPath = createPageUrl('Dashboard');
+    if (window.location.pathname !== dashboardPath) {
+      navigate(dashboardPath);
+    }
   };
 
   const Icon = currentStepData.icon;
