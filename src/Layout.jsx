@@ -12,6 +12,7 @@ import LanguageSelector from "./components/shared/LanguageSelector";
 import QuickGuide from "./components/shared/QuickGuide";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import GlobalErrorBoundary from "./components/shared/GlobalErrorBoundary";
+import NotificationPanel from "./components/notifications/NotificationPanel";
 
 
 // Animation utilities inlined
@@ -623,8 +624,9 @@ export default function Layout({ children, currentPageName }) {
               </span>
             )}
           </div>
-          {/* Mobile: Search + Quick Guide + Menu */}
+          {/* Mobile: Notifications + Search + Quick Guide + Menu */}
           <div className="flex items-center gap-2 flex-shrink-0 md:hidden">
+            <NotificationPanel language={language} isDarkMode={isDarkMode} />
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
@@ -756,7 +758,7 @@ export default function Layout({ children, currentPageName }) {
             </button>
           </div>
 
-          {/* Desktop/Tablet: Keep all icons */}
+          {/* Desktop/Tablet: Notifications + Search + Quick Guide + Menu */}
           <div className="hidden md:flex items-center gap-2 flex-shrink-0" style={{ marginRight: '4px' }}>
             <div style={{
               width: '1px',
@@ -764,6 +766,7 @@ export default function Layout({ children, currentPageName }) {
               backgroundColor: colors.borderColor,
               opacity: 0.5
             }} />
+            <NotificationPanel language={language} isDarkMode={isDarkMode} />
             <Link to={createPageUrl("Search")}>
               <button
                 aria-label={strings.search || "Search"}
