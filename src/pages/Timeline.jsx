@@ -169,7 +169,10 @@ function TimelineContent() {
       depositReturn: "Deposit Return",
       caseCreated: "Case Opened",
       maintenanceReported: "Maintenance Reported",
-      eventsOn: "Events on"
+      eventsOn: "Events on",
+      rentDue: "Rent Due",
+      upcoming: "Upcoming",
+      paid: "Paid"
     },
     th: {
       title: "ไทม์ไลน์",
