@@ -2625,7 +2625,7 @@ ja: {
                         value: leases.length,
                         icon: FileText,
                         gradient: 'from-blue-500 to-blue-700',
-                        scoreColor: FEATURE_COLORS.leases.accent,
+                        scoreColor: '#0F4229',
                         miniStats: [],
                         route: createPageUrl("uploadscan"),
                         label: strings.scanNewLease,
@@ -2637,7 +2637,7 @@ ja: {
                         value: deposits.length,
                         icon: Wallet,
                         gradient: 'from-emerald-500 to-emerald-700',
-                        scoreColor: FEATURE_COLORS.deposits.accent,
+                        scoreColor: '#0F4229',
                         miniStats: [
                           { label: strings.totalValue, value: `฿${totalDepositValue.toLocaleString()}` }
                         ],
@@ -2655,7 +2655,7 @@ ja: {
                         value: activeCases.length,
                         icon: Scale,
                         gradient: 'from-red-500 to-red-700',
-                        scoreColor: FEATURE_COLORS.cases.accent,
+                        scoreColor: '#DC2626',
                         miniStats: [],
                         route: createPageUrl("cases"),
                         label: strings.cases,
@@ -2671,7 +2671,7 @@ ja: {
                         value: rentTrackedCount,
                         icon: Calendar,
                         gradient: 'from-amber-500 to-amber-700',
-                        scoreColor: FEATURE_COLORS.rent.accent,
+                        scoreColor: '#C7A338',
                         miniStats: [
                           { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'Уведомления' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
                         ],
@@ -2689,7 +2689,7 @@ ja: {
                         value: unreadNotifications,
                         icon: Bell,
                         gradient: 'from-purple-500 to-purple-700',
-                        scoreColor: FEATURE_COLORS.notifications.accent,
+                        scoreColor: '#C7A338',
                         miniStats: [],
                         route: createPageUrl("timeline"),
                         label: strings.viewTimeline,
@@ -2701,7 +2701,7 @@ ja: {
                         value: documents.length,
                         icon: FileText,
                         gradient: 'from-indigo-500 to-indigo-700',
-                        scoreColor: FEATURE_COLORS.evidence.accent,
+                        scoreColor: '#0F4229',
                         miniStats: [
                           { label: strings.totalFiles, value: documents.length }
                         ],

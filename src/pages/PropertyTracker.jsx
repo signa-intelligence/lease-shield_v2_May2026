@@ -2434,9 +2434,9 @@ function PropertyTrackerContent() {
                         setEditingRent(true);
                       }}
                       className="text-white"
-                      style={{ minHeight: '44px', backgroundColor: colors.rentAccent }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                      style={{ minHeight: '44px', backgroundColor: '#0F4229' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0a2f1e'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0F4229'}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       {strings.addRent}
