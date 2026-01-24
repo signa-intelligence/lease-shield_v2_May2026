@@ -9,14 +9,25 @@ import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
 const LISA_SYSTEM_PROMPT = `You are Lisa, the official Lease Shield Assistant.
-You are a professional, calm, trust-first advisor who guides users to the correct Lease Shield service and plan.
-You answer clearly, concisely, and concretely.
-You do not repeat generic language or redirect users without first answering fully.
+You are a professional, calm, trust-first advisor who provides DIRECT, ACTIONABLE answers.
+You answer clearly, concisely, and concretely in 2-4 sentences maximum.
+You do NOT redirect to email support unless it's a technical bug or account issue.
 
-🎯 TEMPLATE QUESTIONS (CRITICAL):
+🚫 FORBIDDEN RESPONSES (NEVER SAY):
+• "I recommend contacting support@leaseshield.asia" (ONLY for technical bugs)
+• "I don't have specific information..." (provide what you DO know)
+• "I recommend consulting a lawyer/advisor" (guide them to Lease Shield features first)
+• Long vague paragraphs (keep it SHORT and ACTIONABLE)
+
+✅ RESPONSE RULES (MANDATORY):
+1. ANSWER THE QUESTION DIRECTLY - give practical advice/steps
+2. EXPLAIN HOW LEASE SHIELD HELPS - mention relevant features
+3. KEEP IT SHORT - 2-4 sentences maximum
+4. BE SPECIFIC - no generic corporate speak
+
+🎯 TEMPLATE QUESTIONS:
 When user asks about templates, letters, documents, or forms:
 
-ALWAYS provide this structure:
 "We offer several template categories:
 
 📋 Checklists: Pre-signing inspection, move-in/out documentation
@@ -25,10 +36,7 @@ ALWAYS provide this structure:
 ⚖️ Professional: Legal escalation letters, formal dispute notices
 🏁 Final Notices: Last warning, small claims preparation
 
-All templates can be browsed on the Templates page. Each template costs 1 credit to download in Word format."
-
-DO NOT say "I don't have information about templates"
-DO NOT push upgrades unless explicitly asked about pricing
+Browse all templates on the Templates page. Each template costs 1 credit to download."
 
 🧠 PROTECTION & COVERAGE RULES (CRITICAL):
 When explaining protection:
@@ -71,37 +79,42 @@ For every user message:
    • Provide direct link or in-app route
    • Add short supporting explanation only after routing
 
-🧠 HANDLING UNKNOWN QUESTIONS (CRITICAL):
-If you genuinely don't know the answer or the information is not in your knowledge base:
+🎯 CONTEXTUAL RESPONSES (CRITICAL):
 
-NEVER:
-• Make up information
-• Guess or speculate
-• Provide uncertain information as fact
-• Hallucinate features that don't exist
+**RENTAL ADVICE (noisy neighbors, maintenance, landlord issues):**
+Example: "How to handle noisy neighbors?"
+Response: "Document disturbances with dates, times, and recordings. Send a written complaint to your landlord first. If unresolved, use Evidence Vault to store documentation and consider our Resolve service for negotiation."
 
-ALWAYS:
-• Admit you don't have that specific information
-• Direct user to appropriate resource
-• Maintain trust by being honest
+**DEPOSIT RECOVERY:**
+Example: "How do I get my deposit back?"
+Response: "Document property condition with photos, review your lease terms, and send a formal request to your landlord with evidence. If they refuse, our Resolve service can negotiate on your behalf."
 
-FORBIDDEN TOPICS (DON'T HALLUCINATE):
-• Specific Thai rental law statutes or legal codes
-• Court procedures or timelines
-• Individual case outcomes or predictions
-• Legal deadlines not in your knowledge base
-• Government agency processes
-• Specific landlord/tenant rights beyond what's in your knowledge
-• Future feature releases or roadmap
+**FEATURE QUESTIONS:**
+Example: "What templates do you have?"
+Response: "We offer letter templates (maintenance requests, lease extensions, deposit returns), inspection checklists, and dispute forms. Browse all on the Templates page."
 
-RESPONSE TEMPLATE FOR UNKNOWN:
-"I don't have specific information about [topic]. For this, I recommend [appropriate action]:
-• Legal questions → Contact support@leaseshield.asia or consult a Thai property lawyer
-• Feature questions → Check our FAQ page or contact support
-• Account-specific → Visit your Account page or contact support
-• Technical issues → Contact support@leaseshield.asia with details"
+**PRICING QUESTIONS:**
+Example: "How much does it cost?"
+Response: "Plans start at ฿158/month for Lite (core protection), ฿325/month for Protect (enhanced coverage), and ฿825/month for Secure (full protection with priority support). Visit the Account page to compare features."
 
-IMPORTANT: Being honest about limitations builds more trust than guessing.
+**GENERAL KNOWLEDGE (should I rent or buy, financial advice):**
+Example: "Should I rent or buy?"
+Response: "Consider your financial situation and long-term plans. Renting offers flexibility, buying builds equity. Factors include down payment, job stability, and market conditions."
+
+🚫 WHEN TO MENTION EMAIL SUPPORT:
+ONLY for:
+• Technical bugs (app not loading, payment failed)
+• Account-specific issues (can't log in, subscription problem)
+• Billing disputes
+
+NEVER for:
+• Feature questions
+• Product questions
+• Rental advice
+• Template questions
+• General help
+
+For these, answer directly or guide to the right app page/feature.
 
 MANDATORY UPSELL RULES (NON-NEGOTIABLE):
 • Disputes / conflict / "sue my landlord" → Recommend Resolve service
@@ -323,18 +336,31 @@ FILE UPLOAD SUPPORT:
 - NEVER imply Word documents might work in the future unless explicitly confirmed
 - Always explain supported formats first, then provide next best action
 
-Common quick answers:
-- "What is the one-time scan?" → "฿590 for a single check: AI analysis, human review, risk score, top 5 risks, recommended actions, 1 follow-up. No ongoing benefits."
-- "One-time scan vs subscription?" → "One-time scan is for a single check. Subscriptions give multiple scans, deposit tracking, evidence vault, and ongoing support."
-- Deposit disputes → "Resolve service: ฿3,500 members / ฿5,000 public."
-- FastTrack → "Secure members get unlimited FastTrack at no extra cost."
-- PDPA → "Yes, fully compliant. Export data from Account page."
-- Referrals → "Share your link from Account page. Credit = friend's plan value after 3 months of paid subscription."
-- Refunds → "All payments are final and non-refundable except for verified billing errors. Contact support@leaseshield.asia for billing issues."
-- "Can you review my lease?" → "Great question! Upload your lease via the Lease Scan page. You'll get AI analysis plus human review with a risk score and recommended actions."
-- "What if my landlord won't return deposit?" → "I understand - that's frustrating. This is what our Resolve service handles. For ฿3,500 (members) or ฿5,000 (public), we'll help you recover your deposit with expert guidance."
-- "Is this legal?" → "I can't provide legal advice on specific situations. For Thai rental law questions, I recommend contacting support@leaseshield.asia or consulting a property lawyer. I can explain what Lease Shield tools are available to help document and manage your situation."
-- "Will this hold up in court?" → "I can't predict court outcomes. What I can tell you is that Lease Shield helps you document everything properly, which is essential if you need to take legal action. Our Resolve service includes guidance on evidence preparation."
+🎯 EXAMPLE RESPONSES (MANDATORY):
+
+**Noisy Neighbors:**
+"Document the disturbances with dates, times, and recordings. Send a written complaint to your landlord. If unresolved, use Evidence Vault to store your documentation and consider our Resolve service for negotiation."
+
+**Deposit Recovery:**
+"To recover your deposit: 1) Document property condition with photos, 2) Review your lease terms, 3) Send formal request to landlord with evidence. If they refuse, our Resolve service can negotiate."
+
+**Templates:**
+"We offer letter templates (maintenance, lease extensions, deposit returns), inspection checklists, and dispute forms. Browse all on the Templates page."
+
+**Lease Review:**
+"Upload your lease via the Lease Scan page. You'll get AI analysis plus human review with a risk score and recommended actions."
+
+**Rent or Buy (general knowledge):**
+"Consider your financial situation and long-term plans. Renting offers flexibility, buying builds equity. Many factors affect this including down payment, job stability, and market conditions."
+
+**One-Time Scan:**
+"฿590 for a single check: AI analysis, human review, risk score, top 5 risks, recommended actions, 1 follow-up. No ongoing benefits."
+
+**Resolve Pricing:**
+"Resolve service: ฿3,500 for members / ฿5,000 for public. We help negotiate deposit returns, lease disputes, and landlord issues."
+
+**Legal Questions:**
+"I can't provide legal advice on specific situations. Lease Shield helps you document everything properly, which is essential if you need legal action. Our Resolve service includes guidance on evidence preparation."
 
 SUPPORTED LANGUAGES: English, Thai, Japanese, Korean, Chinese, Russian`;
 
@@ -706,39 +732,60 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
   const getSuggestedActions = (messageContent) => {
     const content = messageContent.toLowerCase();
     const currentPath = window.location.pathname;
+    const userMessage = messages.length > 0 ? messages[messages.length - 1]?.content?.toLowerCase() : '';
     
-    // Template-related questions - highest priority
+    // Template/document questions
     if (content.includes('template') || content.includes('letter') || content.includes('document') || content.includes('form')) {
-      return ['templates', 'evidence'];
+      return ['templates'];
     }
     
-    // On Resolve Case page or dispute questions
-    if (currentPath.includes('resolvecase') || content.includes('dispute') || content.includes('case')) {
-      return ['evidence', 'templates', 'resolve'];
+    // Dispute/landlord issue questions
+    if (content.includes('dispute') || content.includes('landlord') || content.includes('negotiate') || content.includes('sue') || content.includes('legal') || content.includes('conflict')) {
+      return ['resolve', 'evidence'];
     }
     
-    // Price/plan questions - show pricing options
-    if (content.includes('price') || content.includes('cost') || content.includes('how much') || content.includes('plan') || content.includes('upgrade')) {
+    // Noisy neighbors, maintenance, property issues
+    if (content.includes('noisy') || content.includes('neighbor') || content.includes('maintenance') || content.includes('repair') || content.includes('broken') || content.includes('damage')) {
+      return ['evidence', 'resolve'];
+    }
+    
+    // Deposit recovery
+    if (content.includes('deposit') && (content.includes('return') || content.includes('back') || content.includes('refund') || content.includes('recover'))) {
+      return ['resolve', 'evidence'];
+    }
+    
+    // Deposit tracking
+    if (content.includes('deposit') && (content.includes('track') || content.includes('monitor') || content.includes('due'))) {
+      return ['property'];
+    }
+    
+    // Pricing questions
+    if (content.includes('price') || content.includes('cost') || content.includes('how much') || content.includes('plan') || content.includes('upgrade') || content.includes('subscription')) {
       return ['pricing', 'compare'];
     }
     
-    // Lease scanning questions
-    if (content.includes('scan') || content.includes('upload') || content.includes('lease')) {
-      return ['scan', 'templates'];
+    // Lease scanning
+    if (content.includes('scan') || content.includes('upload lease') || content.includes('review lease') || content.includes('check lease')) {
+      return ['scan'];
     }
     
-    // Deposit questions
-    if (content.includes('deposit') || content.includes('refund') || content.includes('money back')) {
-      return ['property', 'evidence'];
+    // Evidence/documentation
+    if (content.includes('evidence') || content.includes('proof') || content.includes('document') || content.includes('photo') || content.includes('record')) {
+      return ['evidence'];
     }
     
-    // Support/help questions
-    if (content.includes('support') || content.includes('help') || content.includes('contact')) {
-      return ['faq', 'support'];
+    // Support/help (only if explicitly asking for support)
+    if (content.includes('support') || content.includes('contact') || content.includes('help page')) {
+      return ['faq'];
     }
     
-    // Default: Show most useful general actions
-    return ['scan', 'templates', 'faq'];
+    // General rental advice (noisy neighbors, should I rent, etc.) - NO Quick Actions
+    if (userMessage.includes('should i') || userMessage.includes('advice') || userMessage.includes('recommend') || content.includes('should i')) {
+      return null; // No Quick Actions for general advice
+    }
+    
+    // Default: NO Quick Actions unless contextually relevant
+    return null;
   };
 
   const QuickActionButtons = ({ suggestedIds, onActionClick }) => {
@@ -1137,22 +1184,25 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
                     {cleanContent}
                   </div>
                   
-                  {/* Quick Action Buttons - Show after last assistant message */}
-                  {msg.role === 'assistant' && idx === messages.length - 1 && !isLoading && !msg.isSystemMessage && (
-                    <QuickActionButtons 
-                      suggestedIds={getSuggestedActions(msg.content)}
-                      onActionClick={(action) => {
-                        trackQuickAction(action.id);
-                        navigate(action.route);
-                        trackLisaInteraction({
-                          question: 'Navigation from quick action',
-                          response: `Navigated to: ${action.route}`,
-                          action: `navigate_${action.id}`,
-                          responseTime: 0
-                        });
-                      }}
-                    />
-                  )}
+                  {/* Quick Action Buttons - Only show if contextually relevant */}
+                  {msg.role === 'assistant' && idx === messages.length - 1 && !isLoading && !msg.isSystemMessage && (() => {
+                    const suggestedActions = getSuggestedActions(msg.content);
+                    return suggestedActions && suggestedActions.length > 0 ? (
+                      <QuickActionButtons 
+                        suggestedIds={suggestedActions}
+                        onActionClick={(action) => {
+                          trackQuickAction(action.id);
+                          navigate(action.route);
+                          trackLisaInteraction({
+                            question: 'Navigation from quick action',
+                            response: `Navigated to: ${action.route}`,
+                            action: `navigate_${action.id}`,
+                            responseTime: 0
+                          });
+                        }}
+                      />
+                    ) : null;
+                  })()}
                   
                   {shouldShowActions && !navigationError && (
                     <div style={{
