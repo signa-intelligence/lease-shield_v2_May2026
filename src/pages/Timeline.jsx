@@ -148,6 +148,7 @@ function TimelineContent() {
       allTypes: "All Types",
       leaseEvents: "Lease Events",
       depositEvents: "Deposit Returns",
+      rentPayments: "Rent Payments",
       caseEvents: "Cases",
       maintenanceEvents: "Maintenance",
       followups: "Follow-ups",
@@ -182,6 +183,7 @@ function TimelineContent() {
       allTypes: "ทุกประเภท",
       leaseEvents: "เหตุการณ์สัญญาเช่า",
       depositEvents: "การคืนเงินมัดจำ",
+      rentPayments: "การชำระค่าเช่า",
       caseEvents: "คดี",
       maintenanceEvents: "การซ่อมบำรุง",
       followups: "การติดตาม",
@@ -216,6 +218,7 @@ function TimelineContent() {
       allTypes: "所有类型",
       leaseEvents: "租约事件",
       depositEvents: "押金退还",
+      rentPayments: "租金支付",
       caseEvents: "案件",
       maintenanceEvents: "维护",
       followups: "跟进",
@@ -250,6 +253,7 @@ function TimelineContent() {
       allTypes: "すべてのタイプ",
       leaseEvents: "賃貸契約イベント",
       depositEvents: "敷金返還",
+      rentPayments: "家賃支払い",
       caseEvents: "ケース",
       maintenanceEvents: "メンテナンス",
       followups: "フォローアップ",
@@ -284,6 +288,7 @@ function TimelineContent() {
       allTypes: "모든 유형",
       leaseEvents: "임대 계약 이벤트",
       depositEvents: "보증금 반환",
+      rentPayments: "임대료 지불",
       caseEvents: "사례",
       maintenanceEvents: "유지보수",
       followups: "후속 조치",
@@ -317,6 +322,7 @@ function TimelineContent() {
       allTypes: "Все типы",
       leaseEvents: "События по договору",
       depositEvents: "Возврат депозита",
+      rentPayments: "Платежи за аренду",
       caseEvents: "Спорные дела",
       maintenanceEvents: "Обслуживание",
       followups: "Напоминания",
@@ -403,6 +409,53 @@ function TimelineContent() {
         isEstimated: event.is_estimated,
         isFollowup: isFollowup
       });
+    });
+
+    // Generate rent payment events from deposits with rent schedules
+    deposits.forEach(deposit => {
+      if (deposit.rent_amount && deposit.rent_due_day) {
+        const currentMonth = startOfMonth(currentDate);
+        const threeMonthsAgo = subMonths(currentMonth, 3);
+        const twelveMonthsAhead = addMonths(currentMonth, 12);
+
+        // Generate recurring rent events for next 12 months + past 3 months
+        for (let month = threeMonthsAgo; month <= twelveMonthsAhead; month = addMonths(month, 1)) {
+          const rentDate = new Date(month);
+          rentDate.setDate(deposit.rent_due_day);
+          rentDate.setHours(12, 0, 0, 0);
+
+          const rentLabel = language === 'th' 
+            ? `ค่าเช่า - ฿${deposit.rent_amount.toLocaleString()}`
+            : language === 'zh'
+              ? `租金 - ฿${deposit.rent_amount.toLocaleString()}`
+              : language === 'ja'
+                ? `家賃 - ฿${deposit.rent_amount.toLocaleString()}`
+                : language === 'ko'
+                  ? `임대료 - ฿${deposit.rent_amount.toLocaleString()}`
+                  : language === 'ru'
+                    ? `Аренда - ฿${deposit.rent_amount.toLocaleString()}`
+                    : `Rent Due - ฿${deposit.rent_amount.toLocaleString()}`;
+
+          const daysUntil = differenceInDays(rentDate, now);
+          const isOverdue = daysUntil < 0 && daysUntil > -7; // Only show overdue if within past week
+
+          events.push({
+            id: `rent-${deposit.id}-${format(rentDate, 'yyyy-MM')}`,
+            type: 'rent',
+            subtype: 'rent_due',
+            title: rentLabel,
+            description: deposit.property_address || '',
+            date: rentDate,
+            icon: CalendarIcon,
+            color: '#C7A338',
+            route: createPageUrl("PropertyTracker") + "#rent-schedule",
+            isPast: isBefore(rentDate, now),
+            urgent: daysUntil <= 7 && daysUntil >= 0,
+            isOverdue: isOverdue,
+            rentAmount: deposit.rent_amount
+          });
+        }
+      }
     });
 
     leases.forEach(lease => {
@@ -730,6 +783,7 @@ function TimelineContent() {
                 {[
                   { key: 'lease', label: strings.leaseEvents, color: FEATURE_COLORS.leases.accent },
                   { key: 'deposit', label: strings.depositEvents, color: FEATURE_COLORS.deposits.accent },
+                  { key: 'rent', label: strings.rentPayments, color: '#C7A338' },
                   { key: 'case', label: strings.caseEvents, color: FEATURE_COLORS.cases.accent },
                   { key: 'maintenance', label: strings.maintenanceEvents, color: FEATURE_COLORS.maintenance.accent },
                   { key: 'followup', label: strings.followups, color: '#8B5CF6' }
