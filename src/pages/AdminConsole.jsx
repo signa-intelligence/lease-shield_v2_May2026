@@ -28,7 +28,6 @@ import ReminderControl from "../components/admin/ReminderControl";
 import NotificationHistory from "../components/admin/NotificationHistory";
 import CaseKanban from "../components/admin/CaseKanban";
 import UserImpersonation from "../components/admin/UserImpersonation";
-import DataCleanupSection from "../components/admin/DataCleanupSection";
 import AuthGuard from "../components/shared/AuthGuard";
 
 function AdminConsoleContent() {
@@ -1926,15 +1925,6 @@ function AdminConsoleContent() {
             </div>
           </CardContent>
         </Card>
-
-        {/* DATA CLEANUP SECTION */}
-        {isSuperAdmin && (
-          <DataCleanupSection 
-            language={language} 
-            colors={colors} 
-            isDarkMode={isDarkMode}
-          />
-        )}
 
       </div>
     </div>
