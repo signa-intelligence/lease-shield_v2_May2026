@@ -1,3 +1,4 @@
+
 // ⚠️ LeaseShield: Dashboard overview is stabilised.
 // Do not modify card themes, layout, or handlers without explicit product approval.
 
@@ -79,18 +80,21 @@ function DashboardContent() {
     enabled: !!user,
   });
 
+  // 🔧 SECURITY FIX: Filter deposits by current user only
   const { data: deposits = [], isLoading: depositsLoading } = useQuery({
     queryKey: ['deposits'],
     queryFn: async () => {
-      const allDeposits = await base44.entities.DepositTracker.filter({}, '-created_date');
-      console.log('[DASHBOARD_DEPOSITS]', { 
+      const allDeposits = await base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date');
+      console.log('[DASHBOARD_DEPOSITS] ✅ USER-SCOPED QUERY', {
+        user: user?.email,
         count: allDeposits.length,
         deposits: allDeposits.map(d => ({
           id: d.id,
           deposit_amount: d.deposit_amount,
           rent_amount: d.rent_amount,
           lease_id: d.lease_id,
-          property_address: d.property_address
+          property_address: d.property_address,
+          created_by: d.created_by
         }))
       });
       return allDeposits;
@@ -111,7 +115,7 @@ function DashboardContent() {
       console.log('🔍 [DASHBOARD] Fetching cases for user:', user.email);
 
       // CRITICAL: RLS filters by user_email = {{user.email}}
-      const result = await base44.entities.Case.filter({ 
+      const result = await base44.entities.Case.filter({
         is_deleted: { $ne: true }
       });
 
@@ -782,9 +786,10 @@ function DashboardContent() {
     }
   };
 
+  // 🔧 SECURITY FIX: Filter LeaseScan by current user only
   const { data: allScans = [] } = useQuery({
     queryKey: ['allScans'],
-    queryFn: () => base44.entities.LeaseScan.list(),
+    queryFn: () => base44.entities.LeaseScan.filter({ created_by: user?.email }),
     enabled: !!user,
     refetchOnMount: 'always',
     staleTime: 0
@@ -795,15 +800,16 @@ function DashboardContent() {
     const suggestions = [];
 
     // Check for completed LeaseScan or any lease uploaded
-    const hasCompletedScan = allScans.some(s => 
-      s.status === 'completed' || 
-      s.status === 'ok' || 
+    const hasCompletedScan = allScans.some(s =>
+      s.status === 'completed' ||
+      s.status === 'ok' ||
       s.scan_full !== null
     );
-    
+
     const hasAnyLease = leases.length > 0;
-    
-    console.log('[PROTECTION_SCORE_DEBUG]', {
+
+    console.log('[PROTECTION_SCORE_DEBUG] ✅ USER-SCOPED CALCULATION', {
+      user_email: user?.email,
       hasCompletedScan,
       hasAnyLease,
       scansCount: allScans.length,
@@ -812,7 +818,7 @@ function DashboardContent() {
       timelineEventsCount: timelineEvents.length,
       documentsCount: documents.length
     });
-    
+
     // Lease uploaded - 30 points (most important)
     if (hasCompletedScan || hasAnyLease) {
       actionScore += 30;
@@ -870,7 +876,8 @@ function DashboardContent() {
     const maxScore = 100;
     const displayedScore = actionScore; // No capping
 
-    console.log('[PROTECTION_SCORE_FINAL]', {
+    console.log('[PROTECTION_SCORE_FINAL] ✅ USER-SCOPED SCORE', {
+      user_email: user?.email,
       actionScore,
       displayedScore,
       maxScore,
@@ -883,8 +890,8 @@ function DashboardContent() {
       suggestionsCount: suggestions.length
     });
 
-    return { 
-      score: displayedScore, 
+    return {
+      score: displayedScore,
       actionScore,
       tierCap: 100, // Always 100, no tier restrictions
       isLocked: false, // Never locked by tier
@@ -903,12 +910,12 @@ function DashboardContent() {
   const { score: protectionScore, actionScore, tierCap, isLocked, userTier, suggestions: protectionSuggestions } = protectionData;
 
   const activeDeposits = deposits.filter(d => d.status === 'tracking' || d.status === 'dispute');
-  
+
   // Active cases - same filter as Cases page for consistency
-  const ACTIVE_CASE_STATUSES = ['awaiting_payment', 'intake', 'pending_review', 'under_review', 'ready_drafts', 
+  const ACTIVE_CASE_STATUSES = ['awaiting_payment', 'intake', 'pending_review', 'under_review', 'ready_drafts',
                                 'client_review', 'awaiting_landlord', 'in_progress', 'resolved'];
   const activeCases = (cases || []).filter(c => ACTIVE_CASE_STATUSES.includes(c.status));
-  
+
   console.log('[RESOLVE_FLOW] Dashboard cases result:', {
     total: cases.length,
     active: activeCases.length,
@@ -1482,7 +1489,7 @@ ja: {
 
   // CANONICAL: Always use user.full_name from profile record
   const greetingName = user?.display_name?.split(' ')[0] || user?.full_name?.split(' ')[0] || strings.welcome.split(' ').pop();
-  
+
   // DEV VERIFICATION: Check for stale data
   React.useEffect(() => {
     if (user?.full_name && greetingName) {
@@ -1692,7 +1699,7 @@ ja: {
                   />
                   )}
 
-                  {urgentLeaseNotices.length > 0 && (
+          {urgentLeaseNotices.length > 0 && (
             <div className="mb-6">
               {urgentLeaseNotices.slice(0, 1).map((lease) => {
                 const daysUntil = differenceInDays(new Date(lease.notice_deadline), now);
@@ -1803,7 +1810,7 @@ ja: {
           )}
 
           {/* Quick Guide Modal */}
-          <QuickGuide 
+          <QuickGuide
             user={user}
             isOpen={showQuickGuide}
             onClose={() => {
@@ -2110,7 +2117,7 @@ ja: {
             const daysRemaining = membership.daysUntilMemberBenefits;
 
             // Check if user has an awaiting_details case already paid for
-            const awaitingCase = cases.find(c => 
+            const awaitingCase = cases.find(c =>
               c.status === 'intake' && c.stripe_session_id
             );
 
@@ -2126,10 +2133,10 @@ ja: {
               pricingMessage = language === 'ru' ? 'Завершите ваше дело' : 'Complete your case submission';
             } else if (qualifies) {
               // Qualified for member rate (Secure immediate, or Lite/Protect after 30 days)
-              const badge = membership.plan === 'secure' 
+              const badge = membership.plan === 'secure'
                 ? (language === 'th' ? '⚡ Secure' : '⚡ Secure')
                 : (language === 'th' ? '✓ สมาชิก' : '✓ Member');
-              pricingMessage = language === 'ru' 
+              pricingMessage = language === 'ru'
                 ? `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} за дело · ${strings.memberPrice} · ${strings.savingsVsPublic}`
                 : `฿${RESOLVE_PRICING.MEMBER_RATE.toLocaleString()} per case · ${strings.memberPrice} · ${strings.savingsVsPublic}`;
             } else if (daysRemaining > 0) {
@@ -2153,7 +2160,7 @@ ja: {
             }
 
             return (
-              <div 
+              <div
                 className="mb-6 cursor-pointer card-interactive"
                 style={{
                   background: isDarkMode ? '#2A2520' : '#FEF3C7',
@@ -2182,7 +2189,7 @@ ja: {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="text-sm font-bold mb-0.5" style={{ color: isDarkMode ? '#FDE68A' : '#0F4229' }}>
-                        {awaitingCase 
+                        {awaitingCase
                           ? strings.continueYourCase
                           : strings.resolveDispute
                         }
@@ -2270,7 +2277,7 @@ ja: {
                       console.log('🎨 Protection Score:', protectionScore, 'Color:', scoreColors.main);
                       return (
                     <Card className="border-none shadow-md bg-white dark:bg-gray-800" style={{
-                      background: isDarkMode 
+                      background: isDarkMode
                         ? 'linear-gradient(135deg, #1F2937 0%, #111827 100%)'
                         : 'linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%)',
                       border: `2px solid ${isDarkMode ? scoreColors.border : scoreColors.border}`
@@ -2451,14 +2458,14 @@ ja: {
             ) : (
               <>
                 {/* Recent Leases Section - Enhanced */}
-                <Card 
+                <Card
                   className="border-none shadow-lg overflow-hidden"
                   style={{
                     backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
                     border: `1px solid ${colors.borderColor}`
                   }}
                 >
-                  <div 
+                  <div
                     className="cursor-pointer p-5 flex items-center justify-between transition-colors hover:bg-opacity-50"
                     onClick={() => toggleSection('recentLeases')}
                     style={{
@@ -2513,14 +2520,14 @@ ja: {
                 </Card>
 
                 {/* Notifications Section - Enhanced */}
-                <Card 
+                <Card
                   className="border-none shadow-lg overflow-hidden"
                   style={{
                     backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
                     border: `1px solid ${colors.borderColor}`
                   }}
                 >
-                  <div 
+                  <div
                     className="cursor-pointer p-5 flex items-center justify-between transition-colors hover:bg-opacity-50"
                     onClick={() => toggleSection('notifications')}
                     style={{
@@ -2575,14 +2582,14 @@ ja: {
                 </Card>
 
                 {/* Deposit Alerts Section - Enhanced */}
-                <Card 
+                <Card
                   className="border-none shadow-lg overflow-hidden"
                   style={{
                     backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
                     border: `1px solid ${colors.borderColor}`
                   }}
                 >
-                  <div 
+                  <div
                     className="cursor-pointer p-5 flex items-center justify-between transition-colors hover:bg-opacity-50"
                     onClick={() => toggleSection('depositAlerts')}
                     style={{
@@ -2608,7 +2615,7 @@ ja: {
                           {strings.depositAlerts}
                         </h3>
                         <p className="text-xs font-medium" style={{ color: urgentDeposits > 0 ? '#EF4444' : '#10B981' }}>
-                          {urgentDeposits > 0 
+                          {urgentDeposits > 0
                             ? `${urgentDeposits} ${strings.alerts}`
                             : strings.allDepositsOnTrack
                           }
