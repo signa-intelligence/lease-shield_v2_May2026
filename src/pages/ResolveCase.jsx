@@ -942,6 +942,32 @@ function ResolveCaseContent() {
           </Card>
         )}
 
+        {!freeResolveEligible && eligibilityData?.reason === 'monthly_secure' && (
+          <Card className="border-none shadow-lg mb-6" style={{ 
+            backgroundColor: isDarkMode ? '#2A2D30' : '#F0FDF4',
+            borderLeft: '4px solid #10B981'
+          }}>
+            <CardContent className="p-4">
+              <p className="text-sm font-semibold mb-2" style={{ color: isDarkMode ? '#10B981' : '#047857' }}>
+                ✅ {language === 'th' ? 'คุณมีสมาชิก Secure - คุณมีสิทธิ์ใช้ราคาสมาชิก'
+                : language === 'zh' ? '您有Secure会员 - 您有会员价格'
+                : language === 'ja' ? 'Secure会員です - 会員価格が適用されます'
+                : language === 'ko' ? 'Secure 회원입니다 - 회원 가격 적용'
+                : language === 'ru' ? 'У вас Secure - применяется тариф участника'
+                : 'You have Secure membership - member rate applies'}
+              </p>
+              <p className="text-xs" style={{ color: colors.textSecondary }}>
+                {language === 'th' ? 'อัปเกรดเป็น Annual Secure เพื่อรับ 1 คดี Resolve ฟรีต่อปี'
+                : language === 'zh' ? '升级到Annual Secure以获得每年1个免费Resolve案件'
+                : language === 'ja' ? 'Annual Secureにアップグレードして年間1件の無料Resolveケースを獲得'
+                : language === 'ko' ? 'Annual Secure로 업그레이드하여 연간 1건의 무료 Resolve 케이스 받기'
+                : language === 'ru' ? 'Обновитесь до Annual Secure для получения 1 бесплатного дела в год'
+                : 'Upgrade to Annual Secure to get 1 free Resolve case per year'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {!freeResolveEligible && eligibilityData?.reason === 'not_annual_secure' && (
           <Card className="border-none shadow-lg mb-6" style={{ 
             backgroundColor: isDarkMode ? '#2A2020' : '#FEF3C7',
