@@ -765,27 +765,9 @@ Deno.serve(async (req) => {
     addText("Visit app.leaseshield.asia/templates to access negotiation letter templates", 14, 9);
     y += 10;
 
-    // Clause-by-Clause Analysis (ALL clauses sorted by severity)
+    // Clause-by-Clause Analysis (ALL clauses in original order)
     const ledger = data.clause_ledger;
     const review = data.clause_review;
-
-    // Create combined array with risk levels for sorting
-    const clausesWithRisk = ledger.map((c, idx) => ({
-      ledger: c,
-      review: review[idx] || {},
-      originalIndex: idx
-    }));
-
-    // Sort by severity: CRITICAL > HIGH > MEDIUM > LOW > NONE
-    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, none: 4 };
-    const sortedClauses = clausesWithRisk.sort((a, b) => {
-      const aSev = String(a.review.risk_level || 'none').toLowerCase();
-      const bSev = String(b.review.risk_level || 'none').toLowerCase();
-      const severityDiff = (severityOrder[aSev] ?? 4) - (severityOrder[bSev] ?? 4);
-      if (severityDiff !== 0) return severityDiff;
-      // Within same severity, maintain original order
-      return a.originalIndex - b.originalIndex;
-    });
 
     if (y > pageHeight - 30) { doc.addPage(); y = 20; }
     doc.setFont("helvetica", "bold");
@@ -796,9 +778,8 @@ Deno.serve(async (req) => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
 
-    sortedClauses.slice(0, 120).forEach((item, displayIdx) => {
-      const c = item.ledger;
-      const r = item.review;
+    ledger.slice(0, 120).forEach((c, displayIdx) => {
+      const r = review[displayIdx] || {};
       
       if (y > pageHeight - 30) { doc.addPage(); y = 20; }
 
