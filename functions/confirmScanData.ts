@@ -64,9 +64,33 @@ Deno.serve(async (req) => {
         console.log(`[${correlationId}] Updated existing deposit tracker`);
       } else {
         const { existingDepositId, ...dataToCreate } = depositToSave;
+        
+        // SECURITY FIX: Create deposit using user context (NOT service role)
+        // This ensures created_by is set to the authenticated user's email
         const created = await base44.entities.DepositTracker.create(dataToCreate);
         createdDepositId = created.id;
-        console.log(`[${correlationId}] Created new deposit tracker`);
+        
+        // CRITICAL VALIDATION: Verify deposit was created under correct user
+        if (created.created_by !== user.email) {
+          console.error(`[${correlationId}] 🚨 SECURITY BREACH DETECTED`, {
+            expected_user: user.email,
+            actual_created_by: created.created_by,
+            deposit_id: created.id,
+            is_service_account: created.created_by?.includes('service+')
+          });
+          
+          // Delete the incorrectly created deposit immediately
+          await base44.entities.DepositTracker.delete(created.id);
+          
+          throw new Error(`SECURITY: Deposit created under wrong account (${created.created_by}). Expected: ${user.email}. Operation aborted.`);
+        }
+        
+        console.log(`[${correlationId}] ✅ Created deposit tracker - ownership verified`, {
+          deposit_id: created.id,
+          created_by: created.created_by,
+          user_email: user.email,
+          ownership_match: true
+        });
       }
     } catch (error) {
       console.error(`[${correlationId}] Deposit save failed:`, error.message);
@@ -78,12 +102,23 @@ Deno.serve(async (req) => {
     
     try {
       if (timelineEvents && timelineEvents.length > 0) {
+        // SECURITY FIX: Create timeline events using user context
         const createPromises = timelineEvents.map(event => 
           base44.entities.TimelineEvent.create(event)
         );
         const createdEvents = await Promise.all(createPromises);
         createdEventIds = createdEvents.map(e => e.id);
-        console.log(`[${correlationId}] Created ${createdEventIds.length} timeline events`);
+        
+        // VALIDATION: Verify timeline events created under correct user
+        const wrongOwnership = createdEvents.filter(e => e.created_by !== user.email);
+        if (wrongOwnership.length > 0) {
+          console.error(`[${correlationId}] 🚨 Timeline events created under wrong user`, {
+            expected: user.email,
+            wrong_events: wrongOwnership.map(e => ({ id: e.id, created_by: e.created_by }))
+          });
+        } else {
+          console.log(`[${correlationId}] ✅ Created ${createdEventIds.length} timeline events - ownership verified`);
+        }
       }
     } catch (error) {
       console.error(`[${correlationId}] Timeline events creation failed:`, error.message);
