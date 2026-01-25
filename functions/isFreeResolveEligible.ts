@@ -1,7 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// HARDCODED ANNUAL SECURE PRICE ID - SOURCE OF TRUTH
+// HARDCODED SECURE PRICE IDs - SOURCE OF TRUTH
 const STRIPE_PRICE_SECURE_ANNUAL = 'price_1SbtaWQwol6NhlUxAfPLTDeE';
+const STRIPE_PRICE_SECURE_MONTHLY = 'price_1RG7oMQwol6NhlUxtV2nkGmL';
 
 // GRACE PERIOD - ANTI-ABUSE MEASURE
 const FREE_RESOLVE_GRACE_PERIOD_DAYS = 7;
@@ -63,11 +64,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Condition 2: Price ID must match ANNUAL SECURE
+    // Condition 2: Price ID must match ANNUAL SECURE (monthly Secure does NOT get free case)
     if (userData.stripe_price_id !== STRIPE_PRICE_SECURE_ANNUAL) {
       console.log('❌ [FREE_RESOLVE_CHECK] Not eligible: wrong price_id');
       console.log('Expected:', STRIPE_PRICE_SECURE_ANNUAL);
       console.log('Actual:', userData.stripe_price_id);
+      
+      // Special case: Monthly Secure users should see they need to upgrade to Annual for free case
+      if (userData.stripe_price_id === STRIPE_PRICE_SECURE_MONTHLY) {
+        return Response.json({
+          eligible: false,
+          reason: 'monthly_secure',
+          message: 'Free Resolve case is only included with Annual Secure. You have Monthly Secure which qualifies for member rate (฿3,500).'
+        });
+      }
+      
       return Response.json({
         eligible: false,
         reason: 'not_annual_secure',
