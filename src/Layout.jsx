@@ -410,7 +410,7 @@ export default function Layout({ children, currentPageName }) {
     hoverBg: '#3A3D40',
     fieldBg: '#374151'
   } : {
-    bg: '#F3F6F5',
+    bg: '#F7F6F4',
     cardBg: '#FFFFFF',
     borderColor: 'rgba(12,59,46,0.08)',
     textPrimary: '#0F172A',
