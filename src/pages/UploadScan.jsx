@@ -1098,6 +1098,8 @@ function UploadScanPageContent() {
         setSelectedFiles([]);
         queryClient.invalidateQueries({ queryKey: ['leases'] });
         queryClient.invalidateQueries({ queryKey: ['allScans'] });
+        queryClient.invalidateQueries({ queryKey: ['deposits'] });
+        queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
 
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
