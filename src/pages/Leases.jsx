@@ -9,12 +9,6 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 import LeaseUploadZone from "../components/leases/LeaseUploadZone";
 import LeaseAnalysisResults from "../components/leases/LeaseAnalysisResults";
@@ -334,15 +328,12 @@ export default function Leases() {
 
   const handleDeleteLease = (lease, e) => {
     e.stopPropagation();
-    
-    // Show confirmation warning before deletion
-    const message = language === 'th' 
-      ? `⚠️ การลบสัญญาเช่านี้จะลบ:\n\n• สัญญาเช่าและการสแกน\n• ข้อมูลเงินมัดจำและค่าเช่า\n• กิจกรรมทั้งหมดในไทม์ไลน์\n• การซ่อมบำรุงที่เกี่ยวข้อง\n\nข้อมูลจะถูกย้ายไปถังรีไซเคิล\n\nคุณแน่ใจหรือไม่?`
-      : `⚠️ Deleting this lease will remove:\n\n• Lease and scan results\n• Deposit and rent trackers\n• All timeline events\n• Related maintenance requests\n\nData will be moved to Recycle Bin.\n\nAre you sure?`;
-    
-    if (confirm(message)) {
-      deleteLeaseWithScanMutation.mutate(lease.id);
-    }
+    setDeletingLease(lease);
+  };
+
+  const confirmDeleteLease = () => {
+    if (!deletingLease) return;
+    deleteLeaseWithScanMutation.mutate(deletingLease.id);
   };
 
   const getStatusColor = (status) => {
@@ -526,7 +517,71 @@ export default function Leases() {
           <LeaseAnalysisResults scan={currentScan} onSave={handleSaveScan} />
         )}
 
-
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!deletingLease} onOpenChange={() => setDeletingLease(null)}>
+          <DialogContent
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              maxWidth: '500px'
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'ลบสัญญาเช่าและข้อมูลที่เกี่ยวข้อง?' : 'Delete lease and related data?'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="mt-4">
+              <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2', border: '1px solid #EF4444' }}>
+                <p className="text-sm font-semibold mb-2" style={{ color: '#DC2626' }}>
+                  {language === 'th' ? '⚠️ การดำเนินการนี้จะลบ:' : '⚠️ This will delete:'}
+                </p>
+                <ul className="text-sm space-y-1 ml-4" style={{ color: colors.textSecondary }}>
+                  <li>• {language === 'th' ? 'สัญญาเช่าและการสแกน' : 'Lease and scan results'}</li>
+                  <li>• {language === 'th' ? 'ข้อมูลเงินมัดจำและค่าเช่า' : 'Deposit and rent trackers'}</li>
+                  <li>• {language === 'th' ? 'กิจกรรมทั้งหมดในไทม์ไลน์' : 'All timeline events'}</li>
+                </ul>
+              </div>
+              <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
+                  ? 'ข้อมูลจะถูกย้ายไปถังรีไซเคิล คุณแน่ใจหรือไม่?'
+                  : 'Data will be moved to Recycle Bin. Are you sure?'}
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeletingLease(null)}
+                  className="flex-1"
+                  style={{ minHeight: '44px' }}
+                >
+                  {language === 'th' ? 'ยกเลิก' : 'No'}
+                </Button>
+                <Button
+                  onClick={confirmDeleteLease}
+                  disabled={deleteLeaseWithScanMutation.isPending}
+                  className="flex-1"
+                  style={{
+                    backgroundColor: '#DC2626',
+                    color: '#FFFFFF',
+                    minHeight: '44px'
+                  }}
+                >
+                  {deleteLeaseWithScanMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {language === 'th' ? 'กำลังลบ...' : 'Deleting...'}
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {language === 'th' ? 'ใช่ ลบทั้งหมด' : 'Yes, Delete All'}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
