@@ -854,7 +854,6 @@ function UploadScanPageContent() {
       setError(null);
       setUploadProgress(0);
       setCumulativeProgress(0);
-      setCurrentStep(1);
       
       let createdLeaseId = null;
 
@@ -1107,7 +1106,6 @@ function UploadScanPageContent() {
         }
 
         setError(typeof err === 'string' ? err : err.message);
-        setCurrentStep(0);
       } finally {
         setUploading(false);
         setAnalyzing(false);
@@ -1127,7 +1125,6 @@ function UploadScanPageContent() {
     setCumulativeProgress(0);
     setRetryCount(0);
     setAnalysisStage('uploading');
-    setCurrentStep(1); // Move to analyzing
 
     let currentRetry = 0;
     let createdLeaseId = null;
@@ -1552,7 +1549,6 @@ function UploadScanPageContent() {
               console.error('Failed final cleanup:', cleanupErr);
             }
           }
-          setCurrentStep(0); // Reset step on error
         }
       } finally {
         setUploading(false);
@@ -1608,12 +1604,10 @@ function UploadScanPageContent() {
 
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       setShowConfirmation(false);
-      setCurrentStep(3);
       haptic.success();
     } catch (err) {
       console.error('Failed to update lease details:', err);
       setShowConfirmation(false);
-      setCurrentStep(3);
       haptic.error();
     }
   };
@@ -1632,7 +1626,6 @@ function UploadScanPageContent() {
     haptic.light();
     setShowCompletionModal(false);
     setCompletedLeaseId(null);
-    setCurrentStep(0);
     if (userTier === 'free') {
       setShowPostScanHint(true);
     }
@@ -1698,7 +1691,6 @@ function UploadScanPageContent() {
   const handleSkipConfirmation = () => {
     haptic.light();
     setShowConfirmation(false);
-    setCurrentStep(2);
   };
 
   const handleAddPages = async () => {
@@ -2008,7 +2000,6 @@ function UploadScanPageContent() {
     setUploadProgress(0);
     setRetryCount(0);
     setAnalysisStage('');
-    setCurrentStep(0); // Reset step on retry
   };
 
 
