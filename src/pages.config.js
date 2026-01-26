@@ -38,9 +38,9 @@ import ScanPreview from './pages/ScanPreview';
 import Search from './pages/Search';
 import Templates from './pages/Templates';
 import Timeline from './pages/Timeline';
+import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
-import UploadScan from './pages/UploadScan';
 import __Layout from './Layout.jsx';
 
 
@@ -85,9 +85,9 @@ export const PAGES = {
     "Search": Search,
     "Templates": Templates,
     "Timeline": Timeline,
+    "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
-    "UploadScan": UploadScan,
 }
 
 export const pagesConfig = {

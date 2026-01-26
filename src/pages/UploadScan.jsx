@@ -931,17 +931,14 @@ function UploadScanPageContent() {
         setUploading(false);
         setAnalysisStage('scanning');
         
-        // Start smooth progress animation during AI analysis (40-98%)
+        // Start monotonic progress animation during AI analysis (40-85%)
         const progressInterval = setInterval(() => {
           setCumulativeProgress(prev => {
-            // Slow incremental progress that never reaches 100 until actual completion
-            if (prev >= 98) return 98; // Cap at 98%
-            const increment = prev < 85 ? 2.5 : prev < 90 ? 1.5 : 0.5; // Slower as we approach 98%
-            const next = Math.min(98, prev + increment);
+            const next = Math.min(85, prev + 2.5);
             setUploadProgress(Math.round(next));
             return next;
           });
-        }, 1500); // Update every 1.5 seconds for smooth progress
+        }, 2000);
 
         // Trigger analysis with all pages
         // Create LeaseScan record before analysis
@@ -1011,9 +1008,9 @@ function UploadScanPageContent() {
           throw err;
         }
 
-        // Stop smooth progress
+        // Stop fake progress
         clearInterval(progressInterval);
-        const savingProgress = 99;
+        const savingProgress = 85;
         setCumulativeProgress(prev => Math.max(prev, savingProgress));
         setUploadProgress(savingProgress);
         
@@ -1033,51 +1030,6 @@ function UploadScanPageContent() {
         
         if (!scan.id) throw new Error('BUG: scanId missing');
         if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
-        
-        // Auto-populate deposit and rent trackers from scan results
-        try {
-          console.log('[AUTO_POPULATE] Populating trackers from scan...');
-          const keyTerms = scanResponse?.scan_full?.key_terms || {};
-          const depositAmount = keyTerms.deposit_amount || 0;
-          const rentAmount = keyTerms.rent_amount || 0;
-          const leaseStart = keyTerms.lease_start_date || null;
-          const leaseEnd = keyTerms.lease_end_date || null;
-          const propertyAddr = keyTerms.property_address || lease.property_address || '';
-          
-          // Create deposit tracker if deposit amount exists
-          if (depositAmount > 0 && leaseStart && leaseEnd) {
-            console.log('[AUTO_POPULATE] Creating deposit tracker...', { depositAmount, propertyAddr });
-            const depositDueDate = new Date(leaseStart);
-            const expectedReturnDate = new Date(leaseEnd);
-            expectedReturnDate.setDate(expectedReturnDate.getDate() + 7);
-            
-            await base44.entities.DepositTracker.create({
-              deposit_amount: depositAmount,
-              deposit_paid_date: leaseStart,
-              expected_return_date: expectedReturnDate.toISOString().split('T')[0],
-              deposit_due_date: depositDueDate.toISOString().split('T')[0],
-              lease_start_date: leaseStart,
-              lease_end_date: leaseEnd,
-              property_address: propertyAddr,
-              rent_amount: rentAmount > 0 ? rentAmount : null,
-              status: 'tracking',
-              source_scan_id: scan.id,
-              auto_populated: true,
-              user_reviewed: false,
-              lease_id: lease.id
-            });
-            console.log('[AUTO_POPULATE] Deposit tracker created');
-          }
-        } catch (populateErr) {
-          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
-        }
-        
-        // Invalidate Dashboard queries so data updates immediately
-        queryClient.invalidateQueries(['deposits']);
-        queryClient.invalidateQueries(['rentPayments']);
-        queryClient.invalidateQueries(['leases']);
-        queryClient.invalidateQueries(['allScans']);
-        queryClient.invalidateQueries(['timeline']);
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
         navigate(`/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
@@ -1353,17 +1305,14 @@ function UploadScanPageContent() {
         setUploading(false);
         setAnalysisStage('scanning');
         
-        // Start smooth progress animation during AI analysis (50-98%)
+        // Start monotonic progress animation during AI analysis (50-85%)
         progressInterval = setInterval(() => {
           setCumulativeProgress(prev => {
-            // Slow incremental progress that never reaches 100 until actual completion
-            if (prev >= 98) return 98; // Cap at 98%
-            const increment = prev < 85 ? 2.5 : prev < 90 ? 1.5 : 0.5; // Slower as we approach 98%
-            const next = Math.min(98, prev + increment);
+            const next = Math.min(85, prev + 2.5);
             setUploadProgress(Math.round(next));
             return next;
           });
-        }, 1500); // Update every 1.5 seconds for smooth progress
+        }, 2000);
 
         // Create LeaseScan FIRST and capture id
         const scan = await base44.entities.LeaseScan.create({
@@ -1483,50 +1432,10 @@ function UploadScanPageContent() {
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
         
-        // Auto-populate deposit and rent trackers from scan results
-        try {
-          console.log('[AUTO_POPULATE] Populating trackers from scan...');
-          const keyTerms = scanResponse?.scan_full?.key_terms || {};
-          const depositAmount = keyTerms.deposit_amount || 0;
-          const rentAmount = keyTerms.rent_amount || 0;
-          const leaseStart = keyTerms.lease_start_date || null;
-          const leaseEnd = keyTerms.lease_end_date || null;
-          const propertyAddr = keyTerms.property_address || lease.property_address || '';
-          
-          // Create deposit tracker if deposit amount exists
-          if (depositAmount > 0 && leaseStart && leaseEnd) {
-            console.log('[AUTO_POPULATE] Creating deposit tracker...', { depositAmount, propertyAddr });
-            const depositDueDate = new Date(leaseStart);
-            const expectedReturnDate = new Date(leaseEnd);
-            expectedReturnDate.setDate(expectedReturnDate.getDate() + 7);
-            
-            await base44.entities.DepositTracker.create({
-              deposit_amount: depositAmount,
-              deposit_paid_date: leaseStart,
-              expected_return_date: expectedReturnDate.toISOString().split('T')[0],
-              deposit_due_date: depositDueDate.toISOString().split('T')[0],
-              lease_start_date: leaseStart,
-              lease_end_date: leaseEnd,
-              property_address: propertyAddr,
-              rent_amount: rentAmount > 0 ? rentAmount : null,
-              status: 'tracking',
-              source_scan_id: scanId,
-              auto_populated: true,
-              user_reviewed: false,
-              lease_id: lease.id
-            });
-            console.log('[AUTO_POPULATE] Deposit tracker created');
-          }
-        } catch (populateErr) {
-          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
-        }
-        
-        // Invalidate Dashboard queries so data updates immediately
-        queryClient.invalidateQueries(['deposits']);
-        queryClient.invalidateQueries(['rentPayments']);
-        queryClient.invalidateQueries(['leases']);
-        queryClient.invalidateQueries(['allScans']);
-        queryClient.invalidateQueries(['timeline']);
+        // Invalidate all queries to refresh Protection Score and data
+        await queryClient.invalidateQueries({ queryKey: ['allScans'] });
+        await queryClient.invalidateQueries({ queryKey: ['deposits'] });
+        await queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
         navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
@@ -1612,7 +1521,7 @@ function UploadScanPageContent() {
           const formattedError = formatErrorForUser(err, requestId, language, {
             uploadStage: analysisStage
           });
-          // Stop smooth progress on error
+          // Stop progress on error
           if (progressInterval) clearInterval(progressInterval);
           
           formattedError.scanId = scanId || null;
@@ -2188,7 +2097,17 @@ function UploadScanPageContent() {
         {/* Main upload UI (hidden when review screen is active) */}
         {!showReviewScreen && (
           <>
-
+        {/* NEW: Progress Breadcrumb */}
+        {(uploading || analyzing || selectedFiles.length > 0) && (
+          <div className="mb-6">
+            <ProgressBreadcrumb
+              steps={breadcrumbSteps}
+              currentStep={currentStep}
+              primaryColor="#0C3B2E"
+              secondaryColor="#C7A338"
+            />
+          </div>
+        )}
 
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>

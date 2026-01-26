@@ -142,7 +142,7 @@ export default function UploadProgress({
             <CheckCircle2 className="w-6 h-6 text-emerald-600" />
           </div>
         ) : (
-          <Loader2 className="w-12 h-12 animate-spin" style={{ color: '#0C3B2E' }} />
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
         )}
         <div className="text-left">
           <p className="text-lg font-bold" style={{ color: textColor }}>
@@ -167,7 +167,7 @@ export default function UploadProgress({
           <span className="text-sm font-semibold" style={{ color: secondaryTextColor }}>
             {progressText[language] || progressText.en}
           </span>
-          <span className="text-sm font-bold" style={{ color: '#0C3B2E' }}>
+          <span className="text-sm font-bold" style={{ color: '#3B82F6' }}>
             {progress}%
           </span>
         </div>
@@ -179,7 +179,7 @@ export default function UploadProgress({
               width: `${progress}%`,
               background: isComplete 
                 ? 'linear-gradient(90deg, #10B981 0%, #059669 100%)'
-                : 'linear-gradient(90deg, #0C3B2E 0%, #047857 100%)'
+                : 'linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)'
             }}
           />
         </div>

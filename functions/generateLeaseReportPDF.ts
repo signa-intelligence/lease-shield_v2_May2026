@@ -112,52 +112,52 @@ async function ensureThaiFont(doc){
   } catch(_) { return false; }
 }
 
-// Parse recommendation string into array of complete sentences
+// Parse recommendation string into array of 3 recommendations
 function parseRecommendations(recString, riskLevel) {
   const rl = String(riskLevel || 'medium').toLowerCase();
   let recs = [];
   
   if (recString) {
-    // Split by newlines or bullets, ensuring we keep complete sentences
+    // Split by newlines, bullets, or numbered items
     recs = String(recString)
-      .split(/\n+|(?:^|\n)\s*[•\-–]\s*/)
+      .split(/[\n•\-–]|\d+\.\s+/g)
       .map(s => s.trim())
-      .filter(s => s.length > 10);
+      .filter(s => s.length > 5);
   }
   
   // Default recommendations by risk level
   const defaults = {
     critical: [
-      "Use Lease Shield's negotiation letter templates to address this clause.",
-      "Draft a negotiation request using our Letter Templates.",
-      "Document all communications about this clause in writing."
+      "Use Lease Shield's negotiation letter templates to address this clause",
+      "Draft a negotiation request using our Letter Templates",
+      "Document all communications about this clause in writing"
     ],
     high: [
-      "Negotiate this clause - view our recommended letter templates.",
-      "Use our Letter Templates to request modifications.",
-      "Request written clarification of landlord's interpretation."
+      "Negotiate this clause - view our recommended letter templates",
+      "Use our Letter Templates to request modifications",
+      "Request written clarification of landlord's interpretation"
     ],
     medium: [
-      "Request clarification of this clause in writing.",
-      "Propose mutual safeguards to balance both parties' interests.",
-      "Set clear expectations and document agreements upfront."
+      "Request clarification of this clause in writing",
+      "Propose mutual safeguards to balance both parties' interests",
+      "Set clear expectations and document agreements upfront"
     ],
     low: [
-      "Review this clause to ensure you understand your obligations.",
-      "Keep records of any related communications.",
-      "Monitor for any issues during the tenancy."
+      "Review this clause to ensure you understand your obligations",
+      "Keep records of any related communications",
+      "Monitor for any issues during the tenancy"
     ],
     none: [
-      "Standard clause - no action required.",
-      "Maintain documentation for reference.",
-      "Review periodically during tenancy."
+      "Standard clause - no action required",
+      "Maintain documentation for reference",
+      "Review periodically during tenancy"
     ]
   };
   
   const defaultRecs = defaults[rl] || defaults.medium;
   
   // Ensure exactly 3 recommendations
-  while (recs.length < 3 && recs.length < defaultRecs.length) {
+  while (recs.length < 3) {
     const nextDefault = defaultRecs[recs.length];
     if (nextDefault && !recs.includes(nextDefault)) {
       recs.push(nextDefault);
@@ -169,88 +169,51 @@ function parseRecommendations(recString, riskLevel) {
   return recs.slice(0, 3);
 }
 
-// Build detailed executive summary - returns structured object
+// Build detailed executive summary
 function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
-  try {
-    const score = riskScore || 0;
-    const riskyClausesCount = (clauses || []).filter(c => c.risk_level && c.risk_level !== 'none').length;
-    const criticalCount = (clauses || []).filter(c => c.risk_level === 'critical').length;
-    const highCount = (clauses || []).filter(c => c.risk_level === 'high').length;
-    
-    // Build comprehensive summary object based on risk level
-    let summary = {};
+  const score = riskScore || 0;
+  const riskyClausesCount = (clauses || []).filter(c => c.risk_level && c.risk_level !== 'none').length;
+  const criticalCount = (clauses || []).filter(c => c.risk_level === 'critical').length;
+  const highCount = (clauses || []).filter(c => c.risk_level === 'high').length;
+  
+  // If we have an existing good summary, use it
+  if (existingSummary && existingSummary.length > 100) {
+    return existingSummary;
+  }
+  
+  // Build comprehensive summary based on risk level
+  let summary = '';
   
   if (score >= 70) {
-    summary.riskHeadline = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)`;
-    summary.introSummary = `This lease agreement is exceptionally HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
+    summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+    summary += `This lease agreement is HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
     if (criticalCount > 0) {
-      summary.introSummary += `${criticalCount} clause(s) are rated CRITICAL and may be legally problematic or heavily favor the landlord while stripping the tenant of basic protections. `;
+      summary += `${criticalCount} clause(s) are rated CRITICAL and may be legally problematic or heavily favor the landlord. `;
     }
     if (highCount > 0) {
-      summary.introSummary += `${highCount} clause(s) are rated HIGH RISK and could significantly impact your rights as a tenant. `;
+      summary += `${highCount} clause(s) are rated HIGH RISK and could significantly impact your rights as a tenant. `;
     }
-    summary.keyConcerns = `Key concerns include: ${topRisks && topRisks.length > 0 ? topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ') : 'N/A'}.`;
-    summary.detailedAnalysis = `This lease contains several provisions that significantly favor the landlord, reducing fundamental tenant protections. Critical issues may include excessive property use restrictions, harsh deposit return conditions, or unfair dispute resolution clauses. These terms may not align with consumer protection laws or basic fairness principles.`;
-    summary.recommendedNextSteps = [
-      "Identify all problematic clauses and document your concerns",
-      "Use LeaseShield's expert services to review and negotiate",
-      "Prepare documentation using LeaseShield's letter templates",
-      "Consider alternative properties if landlord refuses to negotiate"
-    ];
-    summary.timelineRecommendations = [
-      "Within 24 hours: Review all critical and high-risk clauses in detail",
-      "Within 48 hours: Use LeaseShield's Letter Templates to draft negotiation proposals",
-      "Within 72 hours: Contact LeaseShield for negotiation support or schedule meeting with landlord"
-    ];
-    summary.warningRecommendation = `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Contact LeaseShield for expert review and use our Letter Templates to negotiate removal or modification of high-risk clauses.`;
+    summary += `\n\nKey concerns include: `;
+    if (topRisks && topRisks.length > 0) {
+      summary += topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ') + '. ';
+    }
+    summary += `\n\nRECOMMENDATION: Do NOT sign this lease in its current form. Use Lease Shield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
   } else if (score >= 40) {
-    summary.riskHeadline = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)`;
-    summary.introSummary = `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. While not immediately dangerous, several provisions could impact your rights during the tenancy.`;
-    summary.keyConcerns = `Areas requiring attention: ${topRisks && topRisks.length > 0 ? topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ') : 'N/A'}.`;
-    summary.detailedAnalysis = `Review this lease thoroughly to understand potential areas of concern. Proactive communication and minor adjustments can prevent future disputes.`;
-    summary.recommendedNextSteps = [
-      "Request clarification of any ambiguous clauses in writing",
-      "Propose mutual safeguards to balance both parties' interests",
-      "Document all agreements and communications with the landlord"
-    ];
-    summary.timelineRecommendations = [
-      "Within 24 hours: Highlight clauses for clarification",
-      "Within 48 hours: Prepare questions for your landlord",
-      "Within 72 hours: Discuss potential modifications before signing"
-    ];
-    summary.warningRecommendation = `RECOMMENDATION: Carefully review and consider negotiating modifications before signing. Document all verbal agreements in writing.`;
+    summary = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+    summary += `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. `;
+    summary += `While not immediately dangerous, several provisions could impact your rights during the tenancy. `;
+    if (topRisks && topRisks.length > 0) {
+      summary += `\n\nAreas requiring attention: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
+    }
+    summary += `\n\nRECOMMENDATION: Review the flagged clauses carefully and consider negotiating modifications before signing. Document all verbal agreements in writing.`;
   } else {
-    summary.riskHeadline = `LOW RISK LEASE AGREEMENT (Score: ${score}/100)`;
-    summary.introSummary = `This lease agreement appears to be relatively balanced with ${riskyClausesCount || 'few'} clauses requiring attention. The terms are generally standard for rental agreements in this market.`;
-    summary.keyConcerns = `No major key concerns identified.`;
-    summary.detailedAnalysis = `This lease generally aligns with standard rental practices and provides a fair balance of tenant and landlord responsibilities. Minor clarifications may still be beneficial.`;
-    summary.recommendedNextSteps = [
-      "Review all clauses to ensure you understand your obligations",
-      "Keep a copy of all documents and maintain records throughout your tenancy",
-      "Monitor for any issues during the tenancy"
-    ];
-    summary.timelineRecommendations = [
-      "Prior to signing: Read the entire lease carefully",
-      "After signing: Store a digital and physical copy securely",
-      "Throughout tenancy: Refer back to the lease for rights and responsibilities"
-    ];
-    summary.warningRecommendation = `RECOMMENDATION: Review all clauses to ensure you understand your obligations. Keep a copy of all documents and maintain records throughout your tenancy.`;
+    summary = `LOW RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+    summary += `This lease agreement appears to be relatively balanced with ${riskyClausesCount || 'few'} clauses requiring attention. `;
+    summary += `The terms are generally standard for rental agreements in this market. `;
+    summary += `\n\nRECOMMENDATION: Review all clauses to ensure you understand your obligations. Keep a copy of all documents and maintain records throughout your tenancy.`;
   }
   
   return summary;
-  } catch (error) {
-    console.error('[buildExecutiveSummary_ERROR]', error);
-    // Return safe fallback to prevent 502
-    return {
-      riskHeadline: `Risk Score: ${riskScore || 0}/100`,
-      introSummary: 'Lease analysis completed. Review clauses carefully.',
-      keyConcerns: 'See detailed analysis below.',
-      detailedAnalysis: 'This lease requires careful review of all provisions.',
-      recommendedNextSteps: ['Review all clauses carefully', 'Consult with legal advisor if needed', 'Document all agreements in writing'],
-      timelineRecommendations: ['Before signing: Review entire lease', 'After signing: Keep copies of all documents'],
-      warningRecommendation: 'RECOMMENDATION: Review carefully before signing.'
-    };
-  }
 }
 
 // Transform new Cloudflare format to expected PDF format
@@ -335,15 +298,7 @@ Deno.serve(async (req) => {
 
   const correlationId = `pdf-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
   let reportData = null;
-  const startTime = Date.now();
-  console.log('[PDF_START]', { correlationId, ts: new Date().toISOString() });
-  
-  // Timeout handler to prevent indefinite hangs
-  const timeoutId = setTimeout(() => {
-    console.error('[PDF_TIMEOUT]', { correlationId, elapsed: Date.now() - startTime });
-  }, 25000); // 25 second timeout
-
-  try {
+  console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
 
   try {
     const base44 = createClientFromRequest(req);
@@ -358,13 +313,6 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    console.log('[PDF_BODY_RECEIVED]', { 
-      correlationId,
-      hasScanId: !!body?.scanId, 
-      hasScanData: !!body?.scanData,
-      scanDataType: typeof body?.scanData,
-      scanDataKeys: body?.scanData ? Object.keys(body.scanData).slice(0, 10) : null
-    });
     const { scanId, scanData, language = "en", debug = false } = body || {};
 
     // Build initial debug trace (no sensitive clause content)
@@ -590,14 +538,13 @@ Deno.serve(async (req) => {
         });
 
         const score = Math.min(100, issues_validated_rows.reduce((acc, row) => acc + (row.risk_level === 'CRITICAL' ? 25 : row.risk_level === 'HIGH' ? 18 : row.risk_level === 'MEDIUM' ? 10 : 6), 0));
-        const topRisksLegacy = issues_validated_rows.slice(0, 3).map(r => r.title || 'Issue');
-        const summaryObj = buildExecutiveSummary(score, topRisksLegacy, clause_ledger_rows, null);
+        const summary = issues_validated_rows.length > 0 ? `${issues_validated_rows.length} issues found. Review recommendations before signing.` : 'No major issues detected.';
 
         data = {
           lease_address: sf.key_terms?.property_address || "Lease Agreement",
           generated_date: new Date().toISOString(),
           risk_score: score,
-          summary: summaryObj,
+          summary,
           key_terms: sf.key_terms || {},
           flags,
           clause_review,
@@ -728,11 +675,8 @@ Deno.serve(async (req) => {
     }
 
     // -------- PDF generation --------
-    console.log('[PDF_GENERATION_START]', { correlationId, elapsed: Date.now() - startTime });
     const doc = new jsPDF();
-    console.log('[PDF_JSPDF_INITIALIZED]', { correlationId });
     const thaiOk = await ensureThaiFont(doc);
-    console.log('[PDF_FONT_LOADED]', { correlationId, thaiOk });
     if (thaiOk) { try { doc.setFont('NotoSansThai','normal'); } catch(_) {} }
     else { try { doc.setFont('helvetica', 'normal'); } catch(_) {} }
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -751,11 +695,9 @@ Deno.serve(async (req) => {
       return y;
     };
 
-    // Header with logo
+    // Header
     doc.setFillColor(12, 59, 46);
     doc.rect(0, 0, pageWidth, 30, "F");
-
-    // Text-only header (logo fetching removed to prevent CPU timeout)
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
@@ -800,103 +742,14 @@ Deno.serve(async (req) => {
     y += 26;
 
     doc.setTextColor(0, 0, 0);
-
-    // Render summary section
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("Summary", 14, y);
-    y += 6;
-
-    if (data.summary && typeof data.summary === 'object') {
-      // Summary is structured object from buildExecutiveSummary
-      const s = data.summary;
-      
-      // Risk headline (bold, larger)
-      if (s.riskHeadline) {
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
-        doc.setFontSize(10);
-        y = addText(s.riskHeadline, 14, 10, "bold");
-        y += 4;
-      }
-      
-      // Intro summary
-      if (s.introSummary) {
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
-        doc.setFontSize(9);
-        y = addText(s.introSummary, 14, 9);
-        y += 4;
-      }
-      
-      // Key concerns
-      if (s.keyConcerns) {
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
-        doc.setFontSize(9);
-        y = addText(s.keyConcerns, 14, 9);
-        y += 6;
-      }
-      
-      // Detailed Analysis
-      if (s.detailedAnalysis) {
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
-        doc.setFontSize(9);
-        y = addText("Detailed Analysis:", 14, 9, "bold");
-        y += 2;
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
-        y = addText(s.detailedAnalysis, 14, 9);
-        y += 8;
-      }
-      
-      // Recommended Next Steps
-      if (s.recommendedNextSteps && Array.isArray(s.recommendedNextSteps) && s.recommendedNextSteps.length > 0) {
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
-        y = addText("Recommended Next Steps:", 14, 9, "bold");
-        y += 3;
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
-        s.recommendedNextSteps.forEach((step, idx) => {
-          y = addText(`${idx + 1}. ${step}`, 16, 9);
-          y += 1;
-        });
-        y += 6;
-      }
-      
-      // Timeline Recommendations
-      if (s.timelineRecommendations && Array.isArray(s.timelineRecommendations) && s.timelineRecommendations.length > 0) {
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
-        y = addText("Timeline Recommendations:", 14, 9, "bold");
-        y += 3;
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
-        s.timelineRecommendations.forEach((item) => {
-          y = addText(`• ${item}`, 16, 9);
-          y += 1;
-        });
-        y += 6;
-      }
-      
-      // Warning box
-      if (s.warningRecommendation) {
-        if (y > pageHeight - 40) { doc.addPage(); y = 20; }
-        const warningPal = severityPalette.high;
-        const [wr, wg, wb] = warningPal.bg;
-        doc.setFillColor(wr, wg, wb);
-        const warningTextLines = doc.splitTextToSize(s.warningRecommendation, pageWidth - 32);
-        const warningBoxHeight = (warningTextLines.length * 9 * 0.55) + 10;
-        doc.roundedRect(14, y, pageWidth - 28, warningBoxHeight, 3, 3, "F");
-        doc.setTextColor(255, 255, 255);
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
-        doc.setFontSize(9);
-        let currentWarningY = y + 5;
-        for (const line of warningTextLines) {
-          doc.text(line, pageWidth / 2, currentWarningY, { align: "center" });
-          currentWarningY += 9 * 0.55;
-        }
-        doc.setTextColor(0, 0, 0);
-        y += warningBoxHeight + 10;
-      }
-    } else if (typeof data.summary === 'string') {
-      // Fallback for old string format
-      doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
+    if (data.summary) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("Summary", 14, y);
+      y += 6;
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
-      y = addText(data.summary, 14, 9);
+      addText(data.summary, 14, 9);
       y += 6;
     }
 
@@ -969,11 +822,10 @@ Deno.serve(async (req) => {
           doc.text("RECOMMENDATIONS:", 16, y);
           y += 4;
           doc.setFont("helvetica", "normal");
-          recs.forEach((rec) => {
-            if (y > pageHeight - 30) { doc.addPage(); y = 20; }
+          recs.forEach((rec, recIdx) => {
+            if (y > pageHeight - 20) { doc.addPage(); y = 20; }
             const recText = normalizeBullet(rec);
-            // Use full width for recommendations to prevent mid-sentence breaks
-            addText(`• ${recText}`, 18, 7, "normal", pageWidth - 46);
+            addText(`  • ${recText}`, 16, 7);
           });
         }
       }
@@ -991,9 +843,7 @@ Deno.serve(async (req) => {
       doc.text(disclaimer, pageWidth / 2, pageHeight - 8, { align: "center" });
     }
 
-    console.log('[PDF_CONTENT_RENDERED]', { correlationId, elapsed: Date.now() - startTime });
     const pdfBytes = doc.output("arraybuffer");
-    console.log('[PDF_BYTES_CREATED]', { correlationId, size: pdfBytes.byteLength, elapsed: Date.now() - startTime });
     
     // Generate professional filename
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -1012,23 +862,11 @@ Deno.serve(async (req) => {
     const filename = `Lease_Shield_Report_${propertyIdentifier}_${today}.pdf`;
     
     const pdfFile = new File([pdfBytes], filename, { type: "application/pdf" });
-    console.log('[PDF_UPLOADING]', { correlationId, filename, size: pdfBytes.byteLength });
     const upload = await svc.integrations.Core.UploadFile({ file: pdfFile });
-    console.log('[PDF_UPLOAD_COMPLETE]', { correlationId, url: upload?.file_url });
 
-    clearTimeout(timeoutId);
-    console.log('[PDF_SUCCESS]', { correlationId, elapsed: Date.now() - startTime, url: upload.file_url });
     return json(200, debug ? { ok: true, pdf_url: upload.file_url, filename, correlationId, debug_trace: debugTrace } : { success: true, pdf_url: upload.file_url, filename, correlationId }, headers);
   } catch (e) {
-    clearTimeout(timeoutId);
-    console.error("[PDF_FATAL_ERROR]", { 
-      correlationId, 
-      elapsed: Date.now() - startTime,
-      error: e?.message || e, 
-      stack: e?.stack,
-      line: e?.lineNumber,
-      name: e?.name
-    });
-    return json(500, { error: "PDF_FAILED", message: String(e?.message || "PDF generation failed"), correlationId, stack: e?.stack?.substring(0, 500) }, headers);
+    console.error("[PDF_ERROR]", correlationId, e?.message || e, e?.stack);
+    return json(500, { error: "PDF_FAILED", message: String(e?.message || "PDF generation failed"), correlationId }, headers);
   }
 });

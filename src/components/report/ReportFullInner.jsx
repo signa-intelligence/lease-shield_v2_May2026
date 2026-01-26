@@ -141,16 +141,16 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       
       summary += `Recommended Next Steps:\n`;
       summary += `1. Identify all problematic clauses and document your concerns\n`;
-      summary += `2. Use LeaseShield's expert services to review and negotiate\n`;
-      summary += `3. Prepare documentation using LeaseShield's letter templates\n`;
+      summary += `2. Consult with a qualified attorney before signing\n`;
+      summary += `3. Prepare documentation to negotiate modifications to high-risk clauses\n`;
       summary += `4. Consider alternative properties if landlord refuses to negotiate\n\n`;
       
       summary += `Timeline Recommendations:\n`;
       summary += `• Within 24 hours: Review all critical and high-risk clauses in detail\n`;
-      summary += `• Within 48 hours: Use LeaseShield's Letter Templates to draft negotiation proposals\n`;
-      summary += `• Within 72 hours: Contact LeaseShield for negotiation support or schedule meeting with landlord\n\n`;
+      summary += `• Within 48 hours: Use our Letter Templates to draft negotiation proposals\n`;
+      summary += `• Within 72 hours: Schedule negotiation meeting with landlord or consider alternatives\n\n`;
       
-      summary += `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Contact LeaseShield for expert review and use our Letter Templates to negotiate removal or modification of high-risk clauses.`;
+      summary += `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Use LeaseShield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
     }
   } else if (score >= 40) {
     if (isThaiLang) {
@@ -937,12 +937,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
     if (exportingPdf) return;
     setExportingPdf(true);
     try {
-      // CRITICAL FIX: Pass reportData directly to PDF function
-      // This ensures PDF uses fresh data instead of stale DB summary
-      const response = await base44.functions.invoke("generateLeaseReportPDF", { 
-        scanId,
-        scanData: reportData // Pass the live report data we're rendering
-      });
+      const response = await base44.functions.invoke("generateLeaseReportPDF", { scanId });
       if (response?.data?.pdf_url) {
         // Mobile-friendly download
         const pdfUrl = response.data.pdf_url;
@@ -1157,7 +1152,49 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
         )}
 
 
-
+        {/* Admin/Dev Debug Accordion (visible to admin/dev ONLY) */}
+        {(() => {
+          const role = (user?.role || user?.access_level || '').toLowerCase();
+          const isAdminLike = ['admin','super_admin','va'].includes(role);
+          if (!isAdminLike) return null;
+          const nonNoneRiskCount = clauses.filter(c => (c?.risk_level || 'none') !== 'none').length;
+          return (
+            <Card className="mb-4 border-2" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#14221c' : '#F0FDF4' }}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold" style={{ color: colors.textPrimary }}>Admin Debug</h3>
+                  <Button variant="outline" size="sm" onClick={() => setShowDebugAdmin(v => !v)}> {showDebugAdmin ? 'Hide' : 'Show'} </Button>
+                </div>
+                {showDebugAdmin && (
+                  <div className="mt-3 text-sm" style={{ color: colors.textPrimary }}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+                      <div>text_length: <strong>{meta.text_length || 0}</strong></div>
+                      <div>chunks: <strong>{meta.chunks || 0}</strong></div>
+                      <div>clauses.length: <strong>{clauses.length}</strong></div>
+                      <div>nonNoneRiskCount: <strong>{nonNoneRiskCount}</strong></div>
+                      <div>top_risks.length: <strong>{topRisks.length}</strong></div>
+                      <div>risk_score: <strong>{sf.risk_score ?? 0}</strong></div>
+                    </div>
+                    <div className="mb-3">
+                      <div className="font-semibold mb-1">Top Risks (first 2)</div>
+                      <ul className="list-disc pl-5">
+                        {topRisks.slice(0,2).map((r,i)=>(<li key={i}><strong>{r.title}</strong> — {r.severity}: {r.why}</li>))}
+                        {topRisks.length === 0 && <li>—</li>}
+                      </ul>
+                    </div>
+                    <div>
+                      <div className="font-semibold mb-1">Clauses (first 2)</div>
+                      <ul className="list-disc pl-5">
+                        {clauses.slice(0,2).map((c,i)=>(<li key={c.clause_id || i}><strong>{c.title || `Clause ${c.clause_id || i+1}`}</strong> — risk_level: {c.risk_level || 'none'}</li>))}
+                        {clauses.length === 0 && <li>—</li>}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
         {/* Existing JSX BELOW — unchanged */}
         <div className="flex items-center justify-between mb-6">
