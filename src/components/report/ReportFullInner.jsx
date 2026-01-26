@@ -937,7 +937,12 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
     if (exportingPdf) return;
     setExportingPdf(true);
     try {
-      const response = await base44.functions.invoke("generateLeaseReportPDF", { scanId });
+      // CRITICAL FIX: Pass reportData directly to PDF function
+      // This ensures PDF uses fresh data instead of stale DB summary
+      const response = await base44.functions.invoke("generateLeaseReportPDF", { 
+        scanId,
+        scanData: reportData // Pass the live report data we're rendering
+      });
       if (response?.data?.pdf_url) {
         // Mobile-friendly download
         const pdfUrl = response.data.pdf_url;
