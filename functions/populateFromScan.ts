@@ -135,6 +135,17 @@ Deno.serve(async (req) => {
     console.log('═══════════════════════════════════════════════════════════════');
     
     const base44 = createClientFromRequest(req);
+    
+    // CRITICAL: Get current user to bind deposit tracker correctly
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({
+        ok: false,
+        error: 'UNAUTHORIZED',
+        message: 'User not authenticated'
+      }, { status: 401 });
+    }
+    
     const svc = base44.asServiceRole || base44;
     
     const body = await req.json().catch(() => ({}));
@@ -517,7 +528,8 @@ Deno.serve(async (req) => {
     if (updates.deposit && Object.keys(updates.deposit).length > 3) {
       const depositData = {
         ...updates.deposit,
-        lease_id: leaseId
+        lease_id: leaseId,
+        created_by: user.email // CRITICAL FIX: Bind to actual user
       };
       
       // Validate required fields
@@ -602,7 +614,8 @@ Deno.serve(async (req) => {
           const created = await svc.entities.TimelineEvent.create({
             ...event,
             needs_review: false,
-            is_estimated: false
+            is_estimated: false,
+            created_by: user.email // CRITICAL FIX: Bind to actual user
           });
           createdEvents.push(created);
           console.log('[TIMELINE_EVENT_CREATED]', { eventId: created.id, eventType: event.event_type });
