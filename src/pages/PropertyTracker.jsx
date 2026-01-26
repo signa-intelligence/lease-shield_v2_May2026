@@ -1834,13 +1834,35 @@ function PropertyTrackerContent() {
       });
       haptic.success();
     } else if (action === 'delete') {
-      if (!confirm(language === 'th' ? 'ลบข้อมูลนี้ทั้งหมด (มัดจำ + ค่าเช่า) หรือไม่?' : 'Delete all data (deposit + rent)?')) return;
+      const confirmMessage = language === 'th' 
+        ? '⚠️ การลบข้อมูลนี้จะลบ:\n\n• เงินมัดจำ\n• ตารางชำระค่าเช่า\n• กิจกรรมไทม์ไลน์ที่เกี่ยวข้อง\n\nข้อมูลจะถูกย้ายไปถังรีไซเคิล\n\nคุณแน่ใจหรือไม่?'
+        : '⚠️ Deleting this will remove:\n\n• Deposit tracker\n• Rent schedule\n• Related timeline events\n\nData will be moved to Recycle Bin.\n\nAre you sure?';
+      
+      if (!confirm(confirmMessage)) return;
+      
       haptic.heavy();
-      await base44.entities.DepositTracker.delete(deposit.id);
-      queryClient.invalidateQueries({ queryKey: ['deposits'] });
-      queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
-      haptic.success();
-      toast.success(language === 'th' ? 'ลบสำเร็จ' : 'Deleted successfully');
+      
+      // Move to RecycleBin before deleting
+      try {
+        await base44.asServiceRole.entities.RecycleBin.create({
+          user_email: user.email,
+          item_type: 'deposit',
+          original_id: deposit.id,
+          item_snapshot: deposit,
+          item_label: `Deposit - ${deposit.property_address || 'Unknown'}`,
+          deleted_date: new Date().toISOString()
+        });
+        
+        await base44.entities.DepositTracker.delete(deposit.id);
+        queryClient.invalidateQueries({ queryKey: ['deposits'] });
+        queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+        haptic.success();
+        toast.success(language === 'th' ? 'ย้ายไปถังรีไซเคิลแล้ว' : 'Moved to Recycle Bin');
+      } catch (error) {
+        console.error('Failed to delete deposit:', error);
+        toast.error(language === 'th' ? 'ลบไม่สำเร็จ' : 'Delete failed');
+        haptic.error();
+      }
     }
   };
 
@@ -1864,20 +1886,32 @@ function PropertyTrackerContent() {
     }
   };
 
-  const handleDeleteMaintenance = (request) => {
-    setDeletingMaintenance(request);
-  };
-
-  const confirmDeleteMaintenance = async () => {
-    if (!deletingMaintenance) return;
-
+  const handleDeleteMaintenance = async (request) => {
+    const confirmMessage = language === 'th' 
+      ? '⚠️ ลบคำขอซ่อมบำรุงนี้?\n\nข้อมูลจะถูกย้ายไปถังรีไซเคิล\n\nคุณแน่ใจหรือไม่?'
+      : '⚠️ Delete this maintenance request?\n\nData will be moved to Recycle Bin.\n\nAre you sure?';
+    
+    if (!confirm(confirmMessage)) return;
+    
+    haptic.heavy();
+    
     try {
-      await deleteMaintenanceMutation.mutateAsync(deletingMaintenance.id);
-      setDeletingMaintenance(null);
+      // Move to RecycleBin before deleting
+      await base44.asServiceRole.entities.RecycleBin.create({
+        user_email: user.email,
+        item_type: 'maintenance',
+        original_id: request.id,
+        item_snapshot: request,
+        item_label: request.issue_title || `Maintenance ${request.id.slice(0, 8)}`,
+        deleted_date: new Date().toISOString()
+      });
+      
+      await deleteMaintenanceMutation.mutateAsync(request.id);
+      toast.success(language === 'th' ? 'ย้ายไปถังรีไซเคิลแล้ว' : 'Moved to Recycle Bin');
     } catch (error) {
       console.error('❌ Failed to delete maintenance request:', error);
       toast.error(strings.processingError);
-      setDeletingMaintenance(null);
+      haptic.error();
     }
   };
 
@@ -2603,12 +2637,33 @@ function PropertyTrackerContent() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={async () => {
-                            if (!confirm(language === 'th' ? 'ลบข้อมูลนี้ทั้งหมด (มัดจำ + ค่าเช่า) หรือไม่?' : 'Delete all data (deposit + rent)?')) return;
+                            const confirmMessage = language === 'th' 
+                              ? '⚠️ การลบข้อมูลนี้จะลบ:\n\n• เงินมัดจำ\n• ตารางชำระค่าเช่า\n• กิจกรรมไทม์ไลน์ที่เกี่ยวข้อง\n\nข้อมูลจะถูกย้ายไปถังรีไซเคิล\n\nคุณแน่ใจหรือไม่?'
+                              : '⚠️ Deleting this will remove:\n\n• Deposit tracker\n• Rent schedule\n• Related timeline events\n\nData will be moved to Recycle Bin.\n\nAre you sure?';
+                            
+                            if (!confirm(confirmMessage)) return;
+                            
                             haptic.heavy();
-                            await base44.entities.DepositTracker.delete(deposit.id);
-                            queryClient.invalidateQueries({ queryKey: ['deposits'] });
-                            queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
-                            toast.success(language === 'th' ? 'ลบสำเร็จ' : 'Deleted successfully');
+                            
+                            try {
+                              await base44.asServiceRole.entities.RecycleBin.create({
+                                user_email: user.email,
+                                item_type: 'deposit',
+                                original_id: deposit.id,
+                                item_snapshot: deposit,
+                                item_label: `Deposit - ${deposit.property_address || 'Unknown'}`,
+                                deleted_date: new Date().toISOString()
+                              });
+                              
+                              await base44.entities.DepositTracker.delete(deposit.id);
+                              queryClient.invalidateQueries({ queryKey: ['deposits'] });
+                              queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+                              toast.success(language === 'th' ? 'ย้ายไปถังรีไซเคิลแล้ว' : 'Moved to Recycle Bin');
+                            } catch (error) {
+                              console.error('Failed to delete deposit:', error);
+                              toast.error(language === 'th' ? 'ลบไม่สำเร็จ' : 'Delete failed');
+                              haptic.error();
+                            }
                           }} className="text-red-600">
                             <Trash2 className="w-4 h-4 mr-2" />
                             {language === 'th' ? 'ลบทั้งหมด (มัดจำ+ค่าเช่า)' : 'Delete All (Deposit+Rent)'}
@@ -3287,64 +3342,7 @@ function PropertyTrackerContent() {
             )}
           </Card>
 
-          {/* Delete Maintenance Confirmation Dialog */}
-          <Dialog open={!!deletingMaintenance} onOpenChange={() => setDeletingMaintenance(null)}>
-            <DialogContent
-              className="modal-enter"
-              style={{
-                backgroundColor: colors.cardBg,
-                borderColor: colors.borderColor,
-                maxWidth: '420px',
-                width: '95vw'
-              }}
-            >
-              <DialogHeader>
-                <DialogTitle style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'ลบคำขอซ่อมบำรุง?' : language === 'zh' ? '删除维护请求？' : language === 'ja' ? 'メンテナンスリクエストを削除？' : language === 'ko' ? '유지보수 요청 삭제?' : language === 'ru' ? 'Удалить запрос на обслуживание?' : 'Delete maintenance request?'}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="mt-4">
-                <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
-                  {language === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบคำขอซ่อมบำรุงนี้? การดำเนินการนี้ไม่สามารถยกเลิกได้' : language === 'zh' ? '您确定要删除此维护请求吗？此操作无法撤消。' : language === 'ja' ? 'このメンテナンスリクエストを削除してもよろしいですか？この操作は元に戻せません。' : language === 'ko' ? '이 유지보수 요청을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.' : language === 'ru' ? 'Вы уверены, что хотите удалить этот запрос на обслуживание? Это действие нельзя отменить.' : "Are you sure you want to delete this maintenance request? This action can't be undone."}
-                </p>
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      haptic.light();
-                      setDeletingMaintenance(null);
-                    }}
-                    className="flex-1"
-                    style={{ minHeight: '44px' }}
-                  >
-                    {strings.cancel}
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      haptic.heavy();
-                      confirmDeleteMaintenance();
-                    }}
-                    disabled={deleteMaintenanceMutation.isPending}
-                    className="flex-1"
-                    style={{
-                      backgroundColor: '#DC2626',
-                      color: '#FFFFFF',
-                      minHeight: '44px'
-                    }}
-                  >
-                    {deleteMaintenanceMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {language === 'th' ? 'กำลังลบ...' : language === 'zh' ? '删除中...' : language === 'ja' ? '削除中...' : language === 'ko' ? '삭제 중...' : language === 'ru' ? 'Удаление...' : 'Deleting...'}
-                      </>
-                    ) : (
-                      strings.delete
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+
 
           {/* Upgrade Modal */}
           <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
