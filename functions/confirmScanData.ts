@@ -97,13 +97,58 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    // Create timeline events
+    // Create timeline events + RENT EVENTS
     let createdEventIds = [];
     
     try {
-      if (timelineEvents && timelineEvents.length > 0) {
+      const eventsToCreate = [...(timelineEvents || [])];
+      
+      // ✅ BUG FIX #1: Generate rent due events ONLY from lease start date onwards
+      if (depositData?.rent_amount && depositData?.rent_due_day && depositData?.lease_start_date && depositData?.lease_end_date) {
+        const leaseStart = new Date(depositData.lease_start_date);
+        const leaseEnd = new Date(depositData.lease_end_date);
+        const rentDueDay = depositData.rent_due_day;
+        
+        console.log(`[${correlationId}] Generating rent events`, {
+          leaseStart: leaseStart.toISOString(),
+          leaseEnd: leaseEnd.toISOString(),
+          rentDueDay
+        });
+        
+        // Start from first month AFTER lease start
+        let currentDate = new Date(leaseStart);
+        currentDate.setDate(rentDueDay);
+        
+        // If rent due day is before lease start in the first month, move to next month
+        if (currentDate < leaseStart) {
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+        
+        // Generate rent events for each month until lease end
+        while (currentDate <= leaseEnd) {
+          eventsToCreate.push({
+            event_type: 'rent_due',
+            event_date: currentDate.toISOString(),
+            title: language === 'th' ? 'ครบกำหนดค่าเช่า' : 'Rent due',
+            description: `฿${depositData.rent_amount.toLocaleString()}`,
+            property_address: depositData.property_address,
+            lease_id: leaseId,
+            source: 'lease_scan',
+            source_scan_id: scanId,
+            is_estimated: false,
+            needs_review: false
+          });
+          
+          // Move to next month
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+        
+        console.log(`[${correlationId}] Generated ${eventsToCreate.filter(e => e.event_type === 'rent_due').length} rent events`);
+      }
+      
+      if (eventsToCreate.length > 0) {
         // SECURITY FIX: Create timeline events using user context
-        const createPromises = timelineEvents.map(event => 
+        const createPromises = eventsToCreate.map(event => 
           base44.entities.TimelineEvent.create(event)
         );
         const createdEvents = await Promise.all(createPromises);
