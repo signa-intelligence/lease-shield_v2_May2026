@@ -183,10 +183,16 @@ Deno.serve(async (req) => {
       timeline: []
     };
     
-    // Extract DEPOSIT AMOUNT (multi-source)
-    let depositAmount = keyTerms.deposit_amount || keyTerms.security_deposit;
+    // Extract DEPOSIT AMOUNT (multi-source with case normalization)
+    let depositAmount = 
+      keyTerms.deposit_amount || 
+      keyTerms.security_deposit || 
+      keyTerms.depositAmount ||
+      keyTerms.securityDeposit;
+    
     console.log('[EXTRACTING_DEPOSIT_AMOUNT]', {
       fromKeyTerms: depositAmount,
+      allKeyTerms: keyTerms,
       hasDepositClause: !!findClauseByName(clauses, ['security deposit', 'deposit', 'advance payment', 'เงินมัดจำ'])
     });
     
@@ -207,9 +213,17 @@ Deno.serve(async (req) => {
     }
     console.log('[DEPOSIT_AMOUNT_FINAL]', depositAmount);
     
-    // Extract RENT AMOUNT (multi-source)
-    let rentAmount = keyTerms.rent_amount || keyTerms.monthly_rent;
-    console.log('[EXTRACTING_RENT_AMOUNT]', { fromKeyTerms: rentAmount });
+    // Extract RENT AMOUNT (multi-source with case normalization)
+    let rentAmount = 
+      keyTerms.rent_amount || 
+      keyTerms.monthly_rent ||
+      keyTerms.rentAmount ||
+      keyTerms.monthlyRent;
+    
+    console.log('[EXTRACTING_RENT_AMOUNT]', { 
+      fromKeyTerms: rentAmount,
+      allKeyTerms: keyTerms
+    });
     
     if (!rentAmount) {
       const rentClause = findClauseByName(clauses, ['rent', 'monthly rent', 'rental payment', 'ค่าเช่า']);
