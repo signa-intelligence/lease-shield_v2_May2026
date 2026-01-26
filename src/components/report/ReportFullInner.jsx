@@ -114,8 +114,8 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       
       summary += `ขั้นตอนถัดไปที่แนะนำ:\n`;
       summary += `1. ระบุข้อที่มีปัญหาทั้งหมดและบันทึกหลักฐานไว้\n`;
-      summary += `2. ติดต่อทนายความเพื่อตรวจสอบข้อสัญญาก่อนลงนาม\n`;
-      summary += `3. เตรียมเอกสารเพื่อเจรจาแก้ไขข้อที่มีความเสี่ยงสูง\n`;
+      summary += `2. ใช้ Letter Templates ของ Lease Shield เพื่อเจรจาแก้ไขข้อที่มีปัญหา\n`;
+      summary += `3. บันทึกการสื่อสารทั้งหมดเป็นลายลักษณ์อักษร\n`;
       summary += `4. พิจารณาหาทรัพย์สินทางเลือกหากเจ้าของบ้านไม่ยอมแก้ไข\n\n`;
       
       summary += `ไทม์ไลน์:\n`;
@@ -123,7 +123,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       summary += `• ภายใน 48 ชั่วโมง: ใช้ Letter Templates เพื่อร่างข้อเสนอการแก้ไข\n`;
       summary += `• ภายใน 72 ชั่วโมง: นัดหมายเจรจากับเจ้าของบ้านหรือพิจารณาทางเลือกอื่น\n\n`;
       
-      summary += `⚠️ คำแนะนำสำคัญ: อย่าลงนามในสัญญานี้ในรูปแบบปัจจุบัน ใช้ Letter Templates ของเราเพื่อเจรจาแก้ไขข้อที่มีความเสี่ยงสูง`;
+      summary += `⚠️ คำแนะนำสำคัญ: อย่าลงนามในสัญญานี้ในรูปแบบปัจจุบัน ใช้ Letter Templates ของ Lease Shield เพื่อเจรจาแก้ไขข้อที่มีความเสี่ยงสูง`;
     } else {
       summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
       summary += `This lease agreement is exceptionally HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
@@ -141,8 +141,8 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       
       summary += `Recommended Next Steps:\n`;
       summary += `1. Identify all problematic clauses and document your concerns\n`;
-      summary += `2. Consult with a qualified attorney before signing\n`;
-      summary += `3. Prepare documentation to negotiate modifications to high-risk clauses\n`;
+      summary += `2. Use Lease Shield's Letter Templates to draft negotiation proposals\n`;
+      summary += `3. Request written modifications to high-risk clauses before signing\n`;
       summary += `4. Consider alternative properties if landlord refuses to negotiate\n\n`;
       
       summary += `Timeline Recommendations:\n`;
@@ -150,7 +150,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       summary += `• Within 48 hours: Use our Letter Templates to draft negotiation proposals\n`;
       summary += `• Within 72 hours: Schedule negotiation meeting with landlord or consider alternatives\n\n`;
       
-      summary += `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Use LeaseShield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
+      summary += `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Use Lease Shield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
     }
   } else if (score >= 40) {
     if (isThaiLang) {
@@ -1152,7 +1152,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
         )}
 
 
-        {/* Admin/Dev Debug Accordion (visible to admin/dev ONLY) */}
+        {/* Admin/Dev Debug Accordion (visible to admin/dev ONLY) - COLLAPSIBLE */}
         {(() => {
           const role = (user?.role || user?.access_level || '').toLowerCase();
           const isAdminLike = ['admin','super_admin','va'].includes(role);
@@ -1162,8 +1162,13 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
             <Card className="mb-4 border-2" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#14221c' : '#F0FDF4' }}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold" style={{ color: colors.textPrimary }}>Admin Debug</h3>
-                  <Button variant="outline" size="sm" onClick={() => setShowDebugAdmin(v => !v)}> {showDebugAdmin ? 'Hide' : 'Show'} </Button>
+                  <div className="flex items-center gap-2">
+                    <Wrench className="w-4 h-4" style={{ color: '#059669' }} />
+                    <h3 className="font-bold" style={{ color: colors.textPrimary }}>Admin Debug</h3>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setShowDebugAdmin(v => !v)}>
+                    {showDebugAdmin ? 'Hide' : 'Show'}
+                  </Button>
                 </div>
                 {showDebugAdmin && (
                   <div className="mt-3 text-sm" style={{ color: colors.textPrimary }}>

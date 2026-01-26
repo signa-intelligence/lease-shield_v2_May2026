@@ -909,14 +909,29 @@ function UploadScanPageContent() {
         setUploading(false);
         setAnalysisStage('scanning');
         
-        // Start monotonic progress animation during AI analysis (40-85%)
+        // Start smooth continuous progress animation during AI analysis (40-95%)
+        // Moves faster initially (40-70%), then slows down (70-95%)
+        let currentProgress = 40;
         const progressInterval = setInterval(() => {
           setCumulativeProgress(prev => {
-            const next = Math.min(85, prev + 2.5);
+            currentProgress = prev;
+            let increment;
+            
+            if (currentProgress < 70) {
+              increment = 2.5; // Fast progress during early analysis
+            } else if (currentProgress < 85) {
+              increment = 1; // Moderate progress
+            } else if (currentProgress < 95) {
+              increment = 0.5; // Slow but steady progress - never freeze
+            } else {
+              increment = 0; // Stop at 95% and wait for backend
+            }
+            
+            const next = Math.min(95, prev + increment);
             setUploadProgress(Math.round(next));
             return next;
           });
-        }, 2000);
+        }, 1500); // Check every 1.5 seconds for smooth animation
 
         // Trigger analysis with all pages
         // Create LeaseScan record before analysis
@@ -986,9 +1001,9 @@ function UploadScanPageContent() {
           throw err;
         }
 
-        // Stop fake progress
+        // Stop smooth progress animation
         clearInterval(progressInterval);
-        const savingProgress = 85;
+        const savingProgress = 96;
         setCumulativeProgress(prev => Math.max(prev, savingProgress));
         setUploadProgress(savingProgress);
         
@@ -1283,14 +1298,28 @@ function UploadScanPageContent() {
         setUploading(false);
         setAnalysisStage('scanning');
         
-        // Start monotonic progress animation during AI analysis (50-85%)
+        // Start smooth continuous progress animation during AI analysis (50-95%)
+        let currentProgress = 50;
         progressInterval = setInterval(() => {
           setCumulativeProgress(prev => {
-            const next = Math.min(85, prev + 2.5);
+            currentProgress = prev;
+            let increment;
+            
+            if (currentProgress < 70) {
+              increment = 2.5; // Fast progress during early analysis
+            } else if (currentProgress < 85) {
+              increment = 1; // Moderate progress
+            } else if (currentProgress < 95) {
+              increment = 0.5; // Slow but steady - never freeze
+            } else {
+              increment = 0; // Stop at 95% and wait for backend
+            }
+            
+            const next = Math.min(95, prev + increment);
             setUploadProgress(Math.round(next));
             return next;
           });
-        }, 2000);
+        }, 1500); // Check every 1.5 seconds
 
         // Create LeaseScan FIRST and capture id
         const scan = await base44.entities.LeaseScan.create({
@@ -1380,9 +1409,9 @@ function UploadScanPageContent() {
           logStage('VERIFICATION_ERROR', { error: verifyErr.message });
         }
         
-        // Stop progress
+        // Stop smooth progress animation
         clearInterval(progressInterval);
-        const savingProgressSingle = 85;
+        const savingProgressSingle = 96;
         setCumulativeProgress(prev => Math.max(prev, savingProgressSingle));
         setUploadProgress(savingProgressSingle);
         

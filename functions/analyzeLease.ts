@@ -6,10 +6,10 @@ import OpenAI from "npm:openai@4.28.0";
 
 /**
  * Analyze lease document (PDF or Image) using OpenAI GPT-4
- * Replaces Cloudflare worker + canonical ledger with single intelligent analysis
+ * Provides comprehensive lease analysis with clause extraction and risk assessment
  * 
  * @param {Object} body - { fileUrl, leaseId, language }
- * @returns Comprehensive lease analysis with 15-25 clauses
+ * @returns Comprehensive lease analysis with all clauses found in document
  */
 
 const ALLOWED_ORIGINS = [
@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
     }
     
     // System prompt for comprehensive analysis
-    const systemPrompt = `You are LeaseShield's AI analyst specializing in residential lease agreements in Thailand and Southeast Asia. Your task is to extract and analyze EVERY SINGLE CLAUSE in the lease document with NO LIMIT.
+    const systemPrompt = `You are Lease Shield's AI analyst specializing in residential lease agreements in Thailand and Southeast Asia. Your task is to extract and analyze EVERY SINGLE CLAUSE in the lease document with NO LIMIT.
 
 ═══════════════════════════════════════════════════════════════════════════
 CRITICAL INSTRUCTION - CLAUSE NUMBERING (HIGHEST PRIORITY):
@@ -271,12 +271,13 @@ For EACH clause found, return (IN DOCUMENT ORDER - clauses[0] = first clause in 
 }
 
 RECOMMENDATION GUIDELINES - CRITICAL:
-- NEVER suggest "seek legal advice", "consult a lawyer", or "legal consultation"
-- ALWAYS direct users to Lease Shield's Letter Templates for negotiation
+- NEVER suggest "seek legal advice", "consult a lawyer", "consult an attorney", "legal consultation", or any similar lawyer references
+- ALWAYS direct users to Lease Shield's tools and services
 - For CRITICAL/HIGH risks: "Use Lease Shield's negotiation letter templates to address this clause"
-- For actionable steps: "Draft a negotiation request using our Letter Templates"
-- Focus on negotiation strategies, documentation, and using Lease Shield tools
-- Only mention lawyers in the context of escalation if negotiation completely fails
+- For actionable steps: "Draft a negotiation request using Lease Shield's Letter Templates"
+- For escalation: "Contact Lease Shield for expert negotiation support" (NOT "consult a lawyer")
+- Focus on: negotiation strategies, documentation, Lease Shield templates, Lease Shield support
+- Lease Shield IS the expert advisor - we don't refer users elsewhere
 
 UTILITY RATE ANALYSIS (THAILAND-SPECIFIC):
 When analyzing utility/service charges, compare against standard Thailand rates:
