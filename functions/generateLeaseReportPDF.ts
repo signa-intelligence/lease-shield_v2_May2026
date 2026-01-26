@@ -800,105 +800,157 @@ Deno.serve(async (req) => {
     y += 26;
 
     doc.setTextColor(0, 0, 0);
+
+    console.log('[PDF_SUMMARY_START]', {
+      hasSummary: !!data.summary,
+      summaryType: typeof data.summary,
+      summaryPreview: typeof data.summary === 'string' ? data.summary.substring(0, 100) : 'object',
+      hasClauseLedger: !!data.clause_ledger,
+      clauseCount: (data.clause_ledger || []).length,
+      hasFlags: !!data.flags,
+      flagsCount: (data.flags || []).length,
+      riskScore: data.risk_score
+    });
+
     // CRITICAL: ALWAYS rebuild summary from clause data if string (legacy format)
     let summaryToRender = data.summary;
+
     if (typeof data.summary === 'string' || !data.summary) {
-      // Rebuild structured summary from clause data
+      console.log('[PDF_SUMMARY_REBUILDING]', {
+        summaryWasString: typeof data.summary === 'string',
+        summaryWasNull: !data.summary,
+        originalSummary: typeof data.summary === 'string' ? data.summary : null
+      });
+      
+      // Extract top risks from flags or clauses
       const topRisksFromFlags = (data.flags || []).slice(0, 3).map(f => f.title || f.category);
-      summaryToRender = buildExecutiveSummary(
+      
+      console.log('[PDF_REBUILD_INPUT]', {
+        riskScore: data.risk_score,
+        topRisks: topRisksFromFlags,
+        clauseCount: (data.clause_ledger || []).length,
+        flagsUsedForTopRisks: topRisksFromFlags.length
+      });
+      
+      // Build structured summary object
+      const summaryObject = buildExecutiveSummary(
         data.risk_score || 0,
         topRisksFromFlags,
         data.clause_ledger || [],
         null
       );
+      
+      console.log('[PDF_SUMMARY_OBJECT_BUILT]', {
+        objectType: typeof summaryObject,
+        hasRiskHeadline: !!summaryObject?.riskHeadline,
+        hasIntroSummary: !!summaryObject?.introSummary,
+        hasKeyConcerns: !!summaryObject?.keyConcerns,
+        hasDetailedAnalysis: !!summaryObject?.detailedAnalysis,
+        hasNextSteps: Array.isArray(summaryObject?.recommendedNextSteps),
+        nextStepsCount: (summaryObject?.recommendedNextSteps || []).length,
+        hasTimelineRecs: Array.isArray(summaryObject?.timelineRecommendations),
+        timelineRecsCount: (summaryObject?.timelineRecommendations || []).length,
+        hasWarning: !!summaryObject?.warningRecommendation
+      });
+      
+      // Convert object to formatted string (matching in-app report behavior)
+      if (summaryObject && typeof summaryObject === 'object' && summaryObject.riskHeadline) {
+        let formattedSummary = '';
+        
+        if (summaryObject.riskHeadline) {
+          formattedSummary += `${summaryObject.riskHeadline}\n\n`;
+        }
+        
+        if (summaryObject.introSummary) {
+          formattedSummary += `${summaryObject.introSummary}\n\n`;
+        }
+        
+        if (summaryObject.keyConcerns) {
+          formattedSummary += `${summaryObject.keyConcerns}\n\n`;
+        }
+        
+        if (summaryObject.detailedAnalysis) {
+          formattedSummary += `Detailed Analysis:\n${summaryObject.detailedAnalysis}\n\n`;
+        }
+        
+        if (summaryObject.recommendedNextSteps && summaryObject.recommendedNextSteps.length > 0) {
+          formattedSummary += `Recommended Next Steps:\n`;
+          summaryObject.recommendedNextSteps.forEach((step, idx) => {
+            formattedSummary += `${idx + 1}. ${step}\n`;
+          });
+          formattedSummary += `\n`;
+        }
+        
+        if (summaryObject.timelineRecommendations && summaryObject.timelineRecommendations.length > 0) {
+          formattedSummary += `Timeline Recommendations:\n`;
+          summaryObject.timelineRecommendations.forEach(item => {
+            formattedSummary += `• ${item}\n`;
+          });
+          formattedSummary += `\n`;
+        }
+        
+        if (summaryObject.warningRecommendation) {
+          formattedSummary += `${summaryObject.warningRecommendation}`;
+        }
+        
+        summaryToRender = formattedSummary;
+        
+        console.log('[PDF_SUMMARY_STRING_CREATED]', {
+          stringLength: formattedSummary.length,
+          wordCount: formattedSummary.split(/\s+/).length,
+          preview: formattedSummary.substring(0, 200)
+        });
+      } else {
+        console.error('[PDF_SUMMARY_OBJECT_INVALID]', { 
+          summaryObject,
+          type: typeof summaryObject 
+        });
+        summaryToRender = data.summary; // Fallback to original
+      }
     }
 
-    // Render comprehensive summary (ALWAYS structured now)
-    if (summaryToRender && typeof summaryToRender === 'object') {
+    console.log('[PDF_SUMMARY_FINAL]', {
+      type: typeof summaryToRender,
+      length: typeof summaryToRender === 'string' ? summaryToRender.length : 'N/A',
+      preview: typeof summaryToRender === 'string' ? summaryToRender.substring(0, 150) : 'not a string'
+    });
+
+    // Render summary as formatted string
+    if (summaryToRender && typeof summaryToRender === 'string') {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.text("Summary", 14, y);
       y += 6;
-
-      // Risk headline
-      if (summaryToRender.riskHeadline) {
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(10);
-        y = addText(summaryToRender.riskHeadline, 14, 10, "bold");
-        y += 4;
-      }
-
-      // Intro summary
-      if (summaryToRender.introSummary) {
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        y = addText(summaryToRender.introSummary, 14, 9);
-        y += 4;
-      }
-
-      // Key concerns
-      if (summaryToRender.keyConcerns) {
-        doc.setFont("helvetica", "bold");
-        y = addText(summaryToRender.keyConcerns, 14, 9, "bold");
-        y += 6;
-      }
-
-      // Detailed Analysis
-      if (summaryToRender.detailedAnalysis) {
-        doc.setFont("helvetica", "bold");
-        y = addText("Detailed Analysis:", 14, 9, "bold");
-        y += 2;
-        doc.setFont("helvetica", "normal");
-        y = addText(summaryToRender.detailedAnalysis, 14, 9);
-        y += 8;
-      }
-
-      // Recommended Next Steps
-      if (summaryToRender.recommendedNextSteps && Array.isArray(summaryToRender.recommendedNextSteps) && summaryToRender.recommendedNextSteps.length > 0) {
-        doc.setFont("helvetica", "bold");
-        y = addText("Recommended Next Steps:", 14, 9, "bold");
-        y += 3;
-        doc.setFont("helvetica", "normal");
-        summaryToRender.recommendedNextSteps.forEach((step, idx) => {
-          y = addText(`${idx + 1}. ${step}`, 16, 9);
-          y += 1;
-        });
-        y += 6;
-      }
-
-      // Timeline Recommendations
-      if (summaryToRender.timelineRecommendations && Array.isArray(summaryToRender.timelineRecommendations) && summaryToRender.timelineRecommendations.length > 0) {
-        doc.setFont("helvetica", "bold");
-        y = addText("Timeline Recommendations:", 14, 9, "bold");
-        y += 3;
-        doc.setFont("helvetica", "normal");
-        summaryToRender.timelineRecommendations.forEach((item) => {
-          y = addText(`• ${item}`, 16, 9);
-          y += 1;
-        });
-        y += 6;
-      }
-
-      // Warning Recommendation Box
-      if (summaryToRender.warningRecommendation) {
-        if (y > pageHeight - 40) { doc.addPage(); y = 20; }
-        const warningPal = severityPalette.high;
-        const [wr, wg, wb] = warningPal.bg;
-        doc.setFillColor(wr, wg, wb);
-        const warningTextLines = doc.splitTextToSize(summaryToRender.warningRecommendation, pageWidth - 32);
-        const warningBoxHeight = (warningTextLines.length * 9 * 0.55) + 10;
-        doc.roundedRect(14, y, pageWidth - 28, warningBoxHeight, 3, 3, "F"); 
-        doc.setTextColor(255, 255, 255);
-        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
-        doc.setFontSize(9);
-        let currentWarningY = y + 5;
-        for (const line of warningTextLines) {
-          doc.text(line, pageWidth / 2, currentWarningY, { align: "center" });
-          currentWarningY += 9 * 0.55;
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      
+      // Split by double newlines and render each section
+      const sections = summaryToRender.split('\n\n');
+      sections.forEach((section, idx) => {
+        if (section.trim()) {
+          // Check if this is a heading (ends with :)
+          const lines = section.split('\n');
+          lines.forEach((line, lineIdx) => {
+            if (line.endsWith(':') || line.includes('RECOMMENDATION') || line.includes('HIGH RISK') || line.includes('MEDIUM RISK') || line.includes('LOW RISK')) {
+              doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
+            } else {
+              doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
+            }
+            y = addText(line, 14, 9);
+            y += 1;
+          });
+          y += 3; // Extra space between sections
         }
-        doc.setTextColor(0, 0, 0);
-        y += warningBoxHeight + 10;
-      }
+      });
+      
+      y += 4;
+      console.log('[PDF_SUMMARY_RENDERED]', { finalY: y });
+    } else {
+      console.error('[PDF_SUMMARY_RENDER_FAILED]', {
+        summaryToRenderType: typeof summaryToRender,
+        summaryValue: summaryToRender
+      });
     }
 
     // Document Templates Section
