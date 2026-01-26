@@ -1834,10 +1834,13 @@ function PropertyTrackerContent() {
       });
       haptic.success();
     } else if (action === 'delete') {
-      if (!confirm(language === 'th' ? 'ลบเงินมัดจำนี้อย่างถาวรหรือไม่?' : 'Permanently delete this deposit?')) return;
+      if (!confirm(language === 'th' ? 'ลบข้อมูลนี้ทั้งหมด (มัดจำ + ค่าเช่า) หรือไม่?' : 'Delete all data (deposit + rent)?')) return;
+      haptic.heavy();
       await base44.entities.DepositTracker.delete(deposit.id);
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
+      queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
       haptic.success();
+      toast.success(language === 'th' ? 'ลบสำเร็จ' : 'Deleted successfully');
     }
   };
 
