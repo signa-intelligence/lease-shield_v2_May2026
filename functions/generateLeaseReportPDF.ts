@@ -801,81 +801,104 @@ Deno.serve(async (req) => {
 
     doc.setTextColor(0, 0, 0);
 
-    console.log('[PDF_SUMMARY_START]', {
-      hasSummary: !!data.summary,
-      summaryType: typeof data.summary,
-      summaryKeys: typeof data.summary === 'object' ? Object.keys(data.summary) : null,
-      riskScore: data.risk_score
-    });
-
-    // Convert summary object to formatted string for rendering
-    let summaryToRender = '';
-
-    if (data.summary && typeof data.summary === 'object') {
-      // Summary is already a structured object from buildExecutiveSummary (lines 302, 594)
-      console.log('[PDF_SUMMARY_OBJECT_TO_STRING]', {
-        hasRiskHeadline: !!data.summary.riskHeadline,
-        hasIntroSummary: !!data.summary.introSummary,
-        hasKeyConcerns: !!data.summary.keyConcerns
-      });
-      
-      const s = data.summary;
-      
-      if (s.riskHeadline) summaryToRender += `${s.riskHeadline}\n\n`;
-      if (s.introSummary) summaryToRender += `${s.introSummary}\n\n`;
-      if (s.keyConcerns) summaryToRender += `${s.keyConcerns}\n\n`;
-      if (s.detailedAnalysis) summaryToRender += `Detailed Analysis:\n${s.detailedAnalysis}\n\n`;
-      
-      if (s.recommendedNextSteps && s.recommendedNextSteps.length > 0) {
-        summaryToRender += `Recommended Next Steps:\n`;
-        s.recommendedNextSteps.forEach((step, idx) => {
-          summaryToRender += `${idx + 1}. ${step}\n`;
-        });
-        summaryToRender += `\n`;
-      }
-      
-      if (s.timelineRecommendations && s.timelineRecommendations.length > 0) {
-        summaryToRender += `Timeline Recommendations:\n`;
-        s.timelineRecommendations.forEach(item => {
-          summaryToRender += `• ${item}\n`;
-        });
-        summaryToRender += `\n`;
-      }
-      
-      if (s.warningRecommendation) summaryToRender += `${s.warningRecommendation}`;
-      
-      console.log('[PDF_SUMMARY_STRING_CREATED]', {
-        stringLength: summaryToRender.length,
-        wordCount: summaryToRender.split(/\s+/).length,
-        preview: summaryToRender.substring(0, 200)
-      });
-    } else if (typeof data.summary === 'string') {
-      // Fallback for old string format
-      console.log('[PDF_SUMMARY_WAS_STRING]', { originalLength: data.summary.length });
-      summaryToRender = data.summary;
-    } else {
-      console.error('[PDF_SUMMARY_MISSING]');
-      summaryToRender = 'Summary not available.';
-    }
-
-    console.log('[PDF_SUMMARY_FINAL]', {
-      type: typeof summaryToRender,
-      length: summaryToRender.length,
-      preview: summaryToRender.substring(0, 150)
-    });
-
-    // Render summary
+    // Render summary section
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.text("Summary", 14, y);
     y += 6;
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    y = addText(summaryToRender, 14, 9);
-    y += 10;
-    
-    console.log('[PDF_SUMMARY_RENDERED]', { finalY: y });
+
+    if (data.summary && typeof data.summary === 'object') {
+      // Summary is structured object from buildExecutiveSummary
+      const s = data.summary;
+      
+      // Risk headline (bold, larger)
+      if (s.riskHeadline) {
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
+        doc.setFontSize(10);
+        y = addText(s.riskHeadline, 14, 10, "bold");
+        y += 4;
+      }
+      
+      // Intro summary
+      if (s.introSummary) {
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
+        doc.setFontSize(9);
+        y = addText(s.introSummary, 14, 9);
+        y += 4;
+      }
+      
+      // Key concerns
+      if (s.keyConcerns) {
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
+        doc.setFontSize(9);
+        y = addText(s.keyConcerns, 14, 9);
+        y += 6;
+      }
+      
+      // Detailed Analysis
+      if (s.detailedAnalysis) {
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
+        doc.setFontSize(9);
+        y = addText("Detailed Analysis:", 14, 9, "bold");
+        y += 2;
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
+        y = addText(s.detailedAnalysis, 14, 9);
+        y += 8;
+      }
+      
+      // Recommended Next Steps
+      if (s.recommendedNextSteps && Array.isArray(s.recommendedNextSteps) && s.recommendedNextSteps.length > 0) {
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
+        y = addText("Recommended Next Steps:", 14, 9, "bold");
+        y += 3;
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
+        s.recommendedNextSteps.forEach((step, idx) => {
+          y = addText(`${idx + 1}. ${step}`, 16, 9);
+          y += 1;
+        });
+        y += 6;
+      }
+      
+      // Timeline Recommendations
+      if (s.timelineRecommendations && Array.isArray(s.timelineRecommendations) && s.timelineRecommendations.length > 0) {
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
+        y = addText("Timeline Recommendations:", 14, 9, "bold");
+        y += 3;
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
+        s.timelineRecommendations.forEach((item) => {
+          y = addText(`• ${item}`, 16, 9);
+          y += 1;
+        });
+        y += 6;
+      }
+      
+      // Warning box
+      if (s.warningRecommendation) {
+        if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+        const warningPal = severityPalette.high;
+        const [wr, wg, wb] = warningPal.bg;
+        doc.setFillColor(wr, wg, wb);
+        const warningTextLines = doc.splitTextToSize(s.warningRecommendation, pageWidth - 32);
+        const warningBoxHeight = (warningTextLines.length * 9 * 0.55) + 10;
+        doc.roundedRect(14, y, pageWidth - 28, warningBoxHeight, 3, 3, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
+        doc.setFontSize(9);
+        let currentWarningY = y + 5;
+        for (const line of warningTextLines) {
+          doc.text(line, pageWidth / 2, currentWarningY, { align: "center" });
+          currentWarningY += 9 * 0.55;
+        }
+        doc.setTextColor(0, 0, 0);
+        y += warningBoxHeight + 10;
+      }
+    } else if (typeof data.summary === 'string') {
+      // Fallback for old string format
+      doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
+      doc.setFontSize(9);
+      y = addText(data.summary, 14, 9);
+      y += 6;
+    }
 
     // Document Templates Section
     if (y > pageHeight - 30) { doc.addPage(); y = 20; }
