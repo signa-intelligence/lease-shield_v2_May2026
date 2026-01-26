@@ -1022,13 +1022,22 @@ function UploadScanPageContent() {
         
         if (!scan.id) throw new Error('BUG: scanId missing');
         if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        
+        // Pass scan_full directly via navigation state to avoid DB replication lag
+        navigate(`/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
+          state: { 
+            scan_full: scanResponse?.scan_full,
+            fromUpload: true 
+          }
+        });
+        return;
 
 
         
-        // Extract lease data from scan result
-        const scanResult = scanResponse?.scan_full || scanResponse?.result || {};
+        const scanResult = scanResponse.result;
         setAnalysisStage('extracting');
-        
+        setUploadProgress(70);
+
         await base44.entities.Lease.update(lease.id, {
           status: 'scanned',
           property_address: scanResult.property_address || null,
@@ -1038,8 +1047,11 @@ function UploadScanPageContent() {
           deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
           language_detected: scanResult.language_detected || 'en'
         });
+        setUploadProgress(90);
 
         setAnalysisStage('finalizing');
+        setUploadProgress(100);
+        setCurrentStep(2);
 
         // Prepare data for review (multi-page mode)
         try {
@@ -1054,26 +1066,25 @@ function UploadScanPageContent() {
             console.log('[AUTO_POPULATE] Review data prepared:', populateResponse);
             setReviewData(populateResponse);
             setShowReviewScreen(true);
-            setCompletedLeaseId(lease.id);
-            setPendingLeaseId(lease.id);
+            setCompletedLeaseId(createdLeaseId);
           } else {
-            // Fallback: navigate to report
-            navigate(`/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
-              state: { 
-                scan_full: scanResponse?.scan_full,
-                fromUpload: true 
-              }
-            });
+            // Fallback: show completion modal
+            setCompletedLeaseId(createdLeaseId);
+            setShowCompletionModal(true);
           }
         } catch (populateErr) {
           console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
-          // Navigate to report on error
-          navigate(`/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
-            state: { 
-              scan_full: scanResponse?.scan_full,
-              fromUpload: true 
-            }
+          // Show completion modal on error
+          setCompletedLeaseId(createdLeaseId);
+          setShowCompletionModal(true);
+        }
+        
+        if (scanResult.end_date) {
+          setLeaseDetails({
+            end_date: scanResult.end_date,
+            notice_period_days: scanResult.notice_period_days || 30
           });
+          setPendingLeaseId(createdLeaseId);
         }
 
         setSelectedFiles([]);
@@ -1425,10 +1436,24 @@ function UploadScanPageContent() {
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
         
-        // Extract lease data from scan result
-        const scanResult = scanResponse?.scan_full || scanResponse?.result || {};
-        setAnalysisStage('extracting');
+        // Invalidate all queries to refresh Protection Score and data
+        await queryClient.invalidateQueries({ queryKey: ['allScans'] });
+        await queryClient.invalidateQueries({ queryKey: ['deposits'] });
+        await queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
         
+        // Pass scan_full directly via navigation state to avoid DB replication lag
+        navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
+          state: { 
+            scan_full: scanResponse?.scan_full,
+            fromUpload: true 
+          }
+        });
+        return;
+
+        const scanResult = scanResponse.result;
+        setAnalysisStage('extracting');
+        setUploadProgress(70);
+
         await base44.entities.Lease.update(lease.id, {
           status: 'scanned',
           property_address: scanResult.property_address || null,
@@ -1438,42 +1463,44 @@ function UploadScanPageContent() {
           deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
           language_detected: scanResult.language_detected || 'en'
         });
+        setUploadProgress(80);
 
         setAnalysisStage('finalizing');
 
+
+        setUploadProgress(100);
+        setCurrentStep(2); // Move to results step
+
         // Auto-populate trackers and timeline
         try {
-          console.log('[AUTO_POPULATE] Preparing data for review...');
+          console.log('[AUTO_POPULATE] Starting auto-population...');
           const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
             scanResult,
             leaseId: lease.id,
-            scanId: scanId
+            scanId
           });
           
-          if (populateResponse?.success && populateResponse.review_mode) {
-            console.log('[AUTO_POPULATE] Review data prepared:', populateResponse);
-            setReviewData(populateResponse);
-            setShowReviewScreen(true);
-            setCompletedLeaseId(lease.id);
-            setPendingLeaseId(lease.id);
-          } else {
-            // Fallback: navigate to report
-            navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
-              state: { 
-                scan_full: scanResponse?.scan_full,
-                fromUpload: true 
-              }
-            });
+          if (populateResponse?.success) {
+            console.log('[AUTO_POPULATE] Success:', populateResponse);
+            // Invalidate relevant queries
+            queryClient.invalidateQueries({ queryKey: ['deposits'] });
+            queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
           }
         } catch (populateErr) {
           console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
-          // Navigate to report on error
-          navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
-            state: { 
-              scan_full: scanResponse?.scan_full,
-              fromUpload: true 
-            }
+          // Don't block user flow if auto-population fails
+        }
+
+        // Show completion modal
+        setCompletedLeaseId(createdLeaseId);
+        setShowCompletionModal(true);
+        
+        if (scanResult.end_date) {
+          setLeaseDetails({
+            end_date: scanResult.end_date,
+            notice_period_days: scanResult.notice_period_days || 30
           });
+          setPendingLeaseId(createdLeaseId);
         }
 
         setSelectedFiles([]);
@@ -1609,7 +1636,7 @@ function UploadScanPageContent() {
     haptic.medium();
 
     try {
-      console.log('[CONFIRM_SCAN_DATA] Saving confirmed data...', { editedData, reviewData });
+      console.log('[CONFIRM_SCAN_DATA] Saving confirmed data...');
       
       // Reconstruct deposit data from edited form
       const depositData = {
@@ -1622,42 +1649,26 @@ function UploadScanPageContent() {
         deposit_due_date: editedData.deposit_due_date || reviewData.data_prepared.deposit_tracker.deposit_due_date,
         lease_start_date: editedData.lease_start || reviewData.data_prepared.deposit_tracker.lease_start_date,
         lease_end_date: editedData.lease_end || reviewData.data_prepared.deposit_tracker.lease_end_date,
-        deposit_due_date_is_estimated: reviewData.data_prepared.deposit_tracker.deposit_due_date_is_estimated,
-        expected_return_date_is_estimated: reviewData.data_prepared.deposit_tracker.expected_return_date_is_estimated,
-        rent_due_day_needs_review: reviewData.data_prepared.deposit_tracker.rent_due_day_needs_review,
-        source_scan_id: reviewData.data_prepared.deposit_tracker.source_scan_id,
-        auto_populated: true,
-        field_metadata: reviewData.data_prepared.deposit_tracker.field_metadata,
+        ...reviewData.data_prepared.deposit_tracker,
         existingDepositId: reviewData.data_prepared.deposit_tracker.existingDepositId
       };
 
       const { data: confirmResponse } = await base44.functions.invoke('confirmScanData', {
         depositData,
         timelineEvents: reviewData.data_prepared.timeline_events,
-        scanId: pendingLeaseId,
-        leaseId: pendingLeaseId
+        scanId: completedLeaseId,
+        leaseId: completedLeaseId
       });
 
       if (confirmResponse?.success) {
         console.log('[CONFIRM_SCAN_DATA] Data saved successfully');
         
-        // Invalidate queries to refresh all pages
+        // Invalidate queries
         queryClient.invalidateQueries({ queryKey: ['deposits'] });
         queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
-        queryClient.invalidateQueries({ queryKey: ['allScans'] });
         
         setShowReviewScreen(false);
-        
-        // Navigate to report full
-        const scanToUse = allScans.find(s => s.lease_id === pendingLeaseId);
-        if (scanToUse) {
-          navigate(`/reportfull?scanId=${encodeURIComponent(scanToUse.id)}&leaseId=${encodeURIComponent(pendingLeaseId)}`, {
-            state: { 
-              fromUpload: true 
-            }
-          });
-        }
-        
+        setShowCompletionModal(true);
         haptic.success();
       } else {
         throw new Error('Failed to save confirmed data');
@@ -1674,16 +1685,7 @@ function UploadScanPageContent() {
   const handleCancelReview = () => {
     haptic.light();
     setShowReviewScreen(false);
-    
-    // Navigate to report without saving trackers
-    const scanToUse = allScans.find(s => s.lease_id === pendingLeaseId);
-    if (scanToUse && pendingLeaseId) {
-      navigate(`/reportfull?scanId=${encodeURIComponent(scanToUse.id)}&leaseId=${encodeURIComponent(pendingLeaseId)}`, {
-        state: { 
-          fromUpload: true 
-        }
-      });
-    }
+    setShowCompletionModal(true);
   };
 
   const handleSkipConfirmation = () => {
@@ -1865,14 +1867,9 @@ function UploadScanPageContent() {
 
   const handleSwipeDelete = (leaseId) => {
     haptic.heavy();
-    
-    // Find related lease data
-    const lease = leases.find(l => l.id === leaseId);
-    const leaseAddress = lease?.property_address || lease?.original_filename || 'this lease';
-    
     const confirmMessage = language === 'th'
-      ? `คุณแน่ใจหรือไม่ว่าต้องการลบสัญญาเช่านี้?\n\n${leaseAddress}\n\nการลบจะส่งผลต่อ:\n• สัญญาเช่า\n• การติดตามเงินมัดจำ\n• การติดตามค่าเช่า\n• ไทม์ไลน์เหตุการณ์\n• การติดตามทรัพย์สิน\n\nข้อมูลทั้งหมดจะถูกย้ายไปยังถังขยะและสามารถกู้คืนได้ในภายหลัง`
-      : `Are you sure you want to delete this lease?\n\n${leaseAddress}\n\nDeleting will affect:\n• Lease scan\n• Deposit tracking\n• Rent tracking\n• Timeline events\n• Property tracker\n\nAll data will be moved to Recycle Bin and can be restored later.`;
+      ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้'
+      : 'Are you sure you want to delete this scan?\n\nThis action cannot be undone.';
 
     const userConfirmed = window.confirm(confirmMessage);
 
@@ -1884,13 +1881,9 @@ function UploadScanPageContent() {
   const handleDeleteLease = (leaseId, e) => {
     e.stopPropagation();
 
-    // Find related lease data
-    const lease = leases.find(l => l.id === leaseId);
-    const leaseAddress = lease?.property_address || lease?.original_filename || 'this lease';
-    
     const confirmMessage = language === 'th'
-      ? `คุณแน่ใจหรือไม่ว่าต้องการลบสัญญาเช่านี้?\n\n${leaseAddress}\n\nการลบจะส่งผลต่อ:\n• สัญญาเช่า\n• การติดตามเงินมัดจำ\n• การติดตามค่าเช่า\n• ไทม์ไลน์เหตุการณ์\n• การติดตามทรัพย์สิน\n\nข้อมูลทั้งหมดจะถูกย้ายไปยังถังขยะและสามารถกู้คืนได้ในภายหลัง`
-      : `Are you sure you want to delete this lease?\n\n${leaseAddress}\n\nDeleting will affect:\n• Lease scan\n• Deposit tracking\n• Rent tracking\n• Timeline events\n• Property tracker\n\nAll data will be moved to Recycle Bin and can be restored later.`;
+      ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้'
+      : 'Are you sure you want to delete this scan?\n\nThis action cannot be undone.';
 
     const userConfirmed = window.confirm(confirmMessage);
 

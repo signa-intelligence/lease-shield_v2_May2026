@@ -1,3 +1,4 @@
+
 // ⚠️ LeaseShield: Dashboard overview is stabilised.
 // Do not modify card themes, layout, or handlers without explicit product approval.
 
@@ -2358,7 +2359,7 @@ ja: {
                       },
                       {
                         title: strings.depositsTracked,
-                        value: deposits.filter(d => d.deposit_amount && d.deposit_amount > 0).length,
+                        value: deposits.length,
                         icon: Wallet,
                         gradient: 'from-emerald-500 to-emerald-700',
                         scoreColor: '#0F4229',
@@ -2392,15 +2393,15 @@ ja: {
                       },
                       {
                         title: strings.rentTracked,
-                        value: deposits.filter(d => d.rent_amount && d.rent_amount > 0 && d.rent_due_day).length,
+                        value: rentTrackedCount,
                         icon: Calendar,
                         gradient: 'from-amber-500 to-amber-700',
                         scoreColor: '#C7A338',
                         miniStats: [
-                          { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'Уведомления' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled && d.rent_amount > 0).length }
+                          { label: language === 'en' ? 'Alerts' : language === 'zh' ? '提醒' : language === 'ja' ? 'アラート' : language === 'ko' ? '알림' : language === 'ru' ? 'Уведомления' : 'เตือน', value: deposits.filter(d => d.rent_alerts_enabled).length }
                         ],
                         route: createPageUrl("PropertyTracker") + "#rent-schedule",
-                        label: deposits.filter(d => d.rent_amount > 0 && d.rent_due_day).length > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'ru' ? 'Управление' : 'จัดการ') : strings.setupRent,
+                        label: rentTrackedCount > 0 ? (language === 'en' ? 'Manage' : language === 'zh' ? '管理' : language === 'ja' ? '管理' : language === 'ko' ? '관리' : language === 'ru' ? 'Управление' : 'จัดการ') : strings.setupRent,
                         primaryAction: true,
                         compactTitle: language === 'ru',
                         onClick: () => {

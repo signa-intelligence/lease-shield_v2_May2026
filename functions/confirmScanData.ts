@@ -97,68 +97,13 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    // Create timeline events + RENT EVENTS
+    // Create timeline events
     let createdEventIds = [];
     
     try {
-      const eventsToCreate = [...(timelineEvents || [])];
-      
-      // ✅ BUG FIX: Generate rent due events from lease start date onwards
-      if (depositData?.rent_amount && depositData?.rent_due_day && depositData?.lease_start_date && depositData?.lease_end_date) {
-        const leaseStart = new Date(depositData.lease_start_date);
-        const leaseEnd = new Date(depositData.lease_end_date);
-        const rentDueDay = parseInt(depositData.rent_due_day);
-        
-        console.log(`[${correlationId}] Generating rent events`, {
-          leaseStart: leaseStart.toISOString(),
-          leaseEnd: leaseEnd.toISOString(),
-          rentDueDay,
-          rentAmount: depositData.rent_amount
-        });
-        
-        // Start from lease start month
-        let currentDate = new Date(leaseStart.getFullYear(), leaseStart.getMonth(), rentDueDay);
-        
-        // If rent due day already passed in first month, start from next month
-        if (currentDate < leaseStart) {
-          currentDate.setMonth(currentDate.getMonth() + 1);
-        }
-        
-        // Generate rent events for each month until lease end
-        let rentEventCount = 0;
-        while (currentDate <= leaseEnd) {
-          eventsToCreate.push({
-            event_type: 'rent_due',
-            event_date: currentDate.toISOString(),
-            title: 'Rent due',
-            description: `฿${depositData.rent_amount.toLocaleString()}`,
-            property_address: depositData.property_address,
-            lease_id: leaseId,
-            source: 'lease_scan',
-            source_scan_id: scanId,
-            is_estimated: false,
-            needs_review: false
-          });
-          
-          rentEventCount++;
-          
-          // Move to next month
-          currentDate.setMonth(currentDate.getMonth() + 1);
-        }
-        
-        console.log(`[${correlationId}] ✅ Generated ${rentEventCount} rent due events from ${leaseStart.toISOString().split('T')[0]} to ${leaseEnd.toISOString().split('T')[0]}`);
-      } else {
-        console.log(`[${correlationId}] ⚠️ Skipping rent event generation - missing data:`, {
-          hasRentAmount: !!depositData?.rent_amount,
-          hasRentDueDay: !!depositData?.rent_due_day,
-          hasLeaseStart: !!depositData?.lease_start_date,
-          hasLeaseEnd: !!depositData?.lease_end_date
-        });
-      }
-      
-      if (eventsToCreate.length > 0) {
+      if (timelineEvents && timelineEvents.length > 0) {
         // SECURITY FIX: Create timeline events using user context
-        const createPromises = eventsToCreate.map(event => 
+        const createPromises = timelineEvents.map(event => 
           base44.entities.TimelineEvent.create(event)
         );
         const createdEvents = await Promise.all(createPromises);
