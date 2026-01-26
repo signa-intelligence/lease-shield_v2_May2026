@@ -48,12 +48,18 @@ Deno.serve(async (req) => {
       deleted_date: new Date().toISOString()
     });
 
-    // Get and move related deposit trackers
-    const deposits = await base44.entities.DepositTracker.filter({
-      lease_id: leaseId
-    });
+    // Get and move related deposit trackers (by lease_id AND property_address)
+    const depositsByLeaseId = await base44.entities.DepositTracker.filter({ lease_id: leaseId });
+    const depositsByAddress = lease.property_address 
+      ? await base44.entities.DepositTracker.filter({ property_address: lease.property_address })
+      : [];
     
-    for (const deposit of deposits) {
+    // Deduplicate deposits
+    const allDeposits = [...depositsByLeaseId, ...depositsByAddress].filter((v, i, a) => 
+      a.findIndex(t => t.id === v.id) === i
+    );
+    
+    for (const deposit of allDeposits) {
       await svc.entities.RecycleBin.create({
         user_email: user.email,
         item_type: 'deposit',
@@ -82,12 +88,18 @@ Deno.serve(async (req) => {
       await svc.entities.MaintenanceRequest.delete(request.id);
     }
 
-    // Delete related timeline events (no need to save to RecycleBin - auto-generated)
-    const timelineEvents = await base44.entities.TimelineEvent.filter({
-      lease_id: leaseId
-    });
+    // Delete related timeline events (by lease_id AND property_address)
+    const timelineByLeaseId = await base44.entities.TimelineEvent.filter({ lease_id: leaseId });
+    const timelineByAddress = lease.property_address
+      ? await base44.entities.TimelineEvent.filter({ property_address: lease.property_address })
+      : [];
     
-    for (const event of timelineEvents) {
+    // Deduplicate events
+    const allTimelineEvents = [...timelineByLeaseId, ...timelineByAddress].filter((v, i, a) => 
+      a.findIndex(t => t.id === v.id) === i
+    );
+    
+    for (const event of allTimelineEvents) {
       await svc.entities.TimelineEvent.delete(event.id);
     }
 
@@ -104,9 +116,9 @@ Deno.serve(async (req) => {
     await svc.entities.Lease.delete(leaseId);
 
     console.log(`[${correlationId}] Successfully moved lease to RecycleBin`, {
-      deposits: deposits.length,
+      deposits: allDeposits.length,
       maintenance: maintenanceRequests.length,
-      timeline: timelineEvents.length,
+      timeline: allTimelineEvents.length,
       scans: leaseScans.length
     });
 
@@ -114,9 +126,9 @@ Deno.serve(async (req) => {
       success: true,
       deleted: {
         lease: 1,
-        deposits: deposits.length,
+        deposits: allDeposits.length,
         maintenance: maintenanceRequests.length,
-        timeline: timelineEvents.length,
+        timeline: allTimelineEvents.length,
         scans: leaseScans.length
       },
       correlationId
