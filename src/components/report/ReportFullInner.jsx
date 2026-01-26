@@ -141,16 +141,16 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       
       summary += `Recommended Next Steps:\n`;
       summary += `1. Identify all problematic clauses and document your concerns\n`;
-      summary += `2. Consult with a qualified attorney before signing\n`;
-      summary += `3. Prepare documentation to negotiate modifications to high-risk clauses\n`;
+      summary += `2. Use LeaseShield's expert services to review and negotiate\n`;
+      summary += `3. Prepare documentation using LeaseShield's letter templates\n`;
       summary += `4. Consider alternative properties if landlord refuses to negotiate\n\n`;
       
       summary += `Timeline Recommendations:\n`;
       summary += `• Within 24 hours: Review all critical and high-risk clauses in detail\n`;
-      summary += `• Within 48 hours: Use our Letter Templates to draft negotiation proposals\n`;
-      summary += `• Within 72 hours: Schedule negotiation meeting with landlord or consider alternatives\n\n`;
+      summary += `• Within 48 hours: Use LeaseShield's Letter Templates to draft negotiation proposals\n`;
+      summary += `• Within 72 hours: Contact LeaseShield for negotiation support or schedule meeting with landlord\n\n`;
       
-      summary += `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Use LeaseShield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
+      summary += `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Contact LeaseShield for expert review and use our Letter Templates to negotiate removal or modification of high-risk clauses.`;
     }
   } else if (score >= 40) {
     if (isThaiLang) {
