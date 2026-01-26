@@ -931,14 +931,17 @@ function UploadScanPageContent() {
         setUploading(false);
         setAnalysisStage('scanning');
         
-        // Start monotonic progress animation during AI analysis (40-85%)
+        // Start smooth progress animation during AI analysis (40-98%)
         const progressInterval = setInterval(() => {
           setCumulativeProgress(prev => {
-            const next = Math.min(85, prev + 2.5);
+            // Slow incremental progress that never reaches 100 until actual completion
+            if (prev >= 98) return 98; // Cap at 98%
+            const increment = prev < 85 ? 2.5 : prev < 90 ? 1.5 : 0.5; // Slower as we approach 98%
+            const next = Math.min(98, prev + increment);
             setUploadProgress(Math.round(next));
             return next;
           });
-        }, 2000);
+        }, 1500); // Update every 1.5 seconds for smooth progress
 
         // Trigger analysis with all pages
         // Create LeaseScan record before analysis
@@ -1008,9 +1011,9 @@ function UploadScanPageContent() {
           throw err;
         }
 
-        // Stop fake progress
+        // Stop smooth progress
         clearInterval(progressInterval);
-        const savingProgress = 85;
+        const savingProgress = 99;
         setCumulativeProgress(prev => Math.max(prev, savingProgress));
         setUploadProgress(savingProgress);
         
@@ -1350,14 +1353,17 @@ function UploadScanPageContent() {
         setUploading(false);
         setAnalysisStage('scanning');
         
-        // Start monotonic progress animation during AI analysis (50-85%)
+        // Start smooth progress animation during AI analysis (50-98%)
         progressInterval = setInterval(() => {
           setCumulativeProgress(prev => {
-            const next = Math.min(85, prev + 2.5);
+            // Slow incremental progress that never reaches 100 until actual completion
+            if (prev >= 98) return 98; // Cap at 98%
+            const increment = prev < 85 ? 2.5 : prev < 90 ? 1.5 : 0.5; // Slower as we approach 98%
+            const next = Math.min(98, prev + increment);
             setUploadProgress(Math.round(next));
             return next;
           });
-        }, 2000);
+        }, 1500); // Update every 1.5 seconds for smooth progress
 
         // Create LeaseScan FIRST and capture id
         const scan = await base44.entities.LeaseScan.create({
@@ -1606,7 +1612,7 @@ function UploadScanPageContent() {
           const formattedError = formatErrorForUser(err, requestId, language, {
             uploadStage: analysisStage
           });
-          // Stop progress on error
+          // Stop smooth progress on error
           if (progressInterval) clearInterval(progressInterval);
           
           formattedError.scanId = scanId || null;

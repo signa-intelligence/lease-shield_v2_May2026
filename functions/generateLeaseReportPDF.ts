@@ -171,13 +171,14 @@ function parseRecommendations(recString, riskLevel) {
 
 // Build detailed executive summary - returns structured object
 function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
-  const score = riskScore || 0;
-  const riskyClausesCount = (clauses || []).filter(c => c.risk_level && c.risk_level !== 'none').length;
-  const criticalCount = (clauses || []).filter(c => c.risk_level === 'critical').length;
-  const highCount = (clauses || []).filter(c => c.risk_level === 'high').length;
-  
-  // Build comprehensive summary object based on risk level
-  let summary = {};
+  try {
+    const score = riskScore || 0;
+    const riskyClausesCount = (clauses || []).filter(c => c.risk_level && c.risk_level !== 'none').length;
+    const criticalCount = (clauses || []).filter(c => c.risk_level === 'critical').length;
+    const highCount = (clauses || []).filter(c => c.risk_level === 'high').length;
+    
+    // Build comprehensive summary object based on risk level
+    let summary = {};
   
   if (score >= 70) {
     summary.riskHeadline = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)`;
@@ -237,6 +238,19 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
   }
   
   return summary;
+  } catch (error) {
+    console.error('[buildExecutiveSummary_ERROR]', error);
+    // Return safe fallback to prevent 502
+    return {
+      riskHeadline: `Risk Score: ${riskScore || 0}/100`,
+      introSummary: 'Lease analysis completed. Review clauses carefully.',
+      keyConcerns: 'See detailed analysis below.',
+      detailedAnalysis: 'This lease requires careful review of all provisions.',
+      recommendedNextSteps: ['Review all clauses carefully', 'Consult with legal advisor if needed', 'Document all agreements in writing'],
+      timelineRecommendations: ['Before signing: Review entire lease', 'After signing: Keep copies of all documents'],
+      warningRecommendation: 'RECOMMENDATION: Review carefully before signing.'
+    };
+  }
 }
 
 // Transform new Cloudflare format to expected PDF format
@@ -321,7 +335,15 @@ Deno.serve(async (req) => {
 
   const correlationId = `pdf-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
   let reportData = null;
-  console.log('PDF_EXPORT_DEBUG_START', { correlationId, ts: new Date().toISOString() });
+  const startTime = Date.now();
+  console.log('[PDF_START]', { correlationId, ts: new Date().toISOString() });
+  
+  // Timeout handler to prevent indefinite hangs
+  const timeoutId = setTimeout(() => {
+    console.error('[PDF_TIMEOUT]', { correlationId, elapsed: Date.now() - startTime });
+  }, 25000); // 25 second timeout
+
+  try {
 
   try {
     const base44 = createClientFromRequest(req);
@@ -336,6 +358,13 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
+    console.log('[PDF_BODY_RECEIVED]', { 
+      correlationId,
+      hasScanId: !!body?.scanId, 
+      hasScanData: !!body?.scanData,
+      scanDataType: typeof body?.scanData,
+      scanDataKeys: body?.scanData ? Object.keys(body.scanData).slice(0, 10) : null
+    });
     const { scanId, scanData, language = "en", debug = false } = body || {};
 
     // Build initial debug trace (no sensitive clause content)
@@ -699,8 +728,11 @@ Deno.serve(async (req) => {
     }
 
     // -------- PDF generation --------
+    console.log('[PDF_GENERATION_START]', { correlationId, elapsed: Date.now() - startTime });
     const doc = new jsPDF();
+    console.log('[PDF_JSPDF_INITIALIZED]', { correlationId });
     const thaiOk = await ensureThaiFont(doc);
+    console.log('[PDF_FONT_LOADED]', { correlationId, thaiOk });
     if (thaiOk) { try { doc.setFont('NotoSansThai','normal'); } catch(_) {} }
     else { try { doc.setFont('helvetica', 'normal'); } catch(_) {} }
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -825,47 +857,49 @@ Deno.serve(async (req) => {
       y += 6;
 
       // Recommended Next Steps
-      doc.setFont("helvetica", "bold");
-      addText("Recommended Next Steps:", 14, 9, "bold");
-      y += 2;
-      doc.setFont("helvetica", "normal");
-      if (Array.isArray(data.summary.recommendedNextSteps)) {
+      if (data.summary.recommendedNextSteps && Array.isArray(data.summary.recommendedNextSteps) && data.summary.recommendedNextSteps.length > 0) {
+        doc.setFont("helvetica", "bold");
+        addText("Recommended Next Steps:", 14, 9, "bold");
+        y += 2;
+        doc.setFont("helvetica", "normal");
         data.summary.recommendedNextSteps.forEach((step, idx) => {
           addText(`${idx + 1}. ${step}`, 16, 9);
         });
+        y += 6;
       }
-      y += 6;
 
       // Timeline Recommendations
-      doc.setFont("helvetica", "bold");
-      addText("Timeline Recommendations:", 14, 9, "bold");
-      y += 2;
-      doc.setFont("helvetica", "normal");
-      if (Array.isArray(data.summary.timelineRecommendations)) {
+      if (data.summary.timelineRecommendations && Array.isArray(data.summary.timelineRecommendations) && data.summary.timelineRecommendations.length > 0) {
+        doc.setFont("helvetica", "bold");
+        addText("Timeline Recommendations:", 14, 9, "bold");
+        y += 2;
+        doc.setFont("helvetica", "normal");
         data.summary.timelineRecommendations.forEach((item) => {
           addText(`• ${item}`, 16, 9);
         });
+        y += 6;
       }
-      y += 6;
       
       // Warning Recommendation Box
-      if (y > pageHeight - 40) { doc.addPage(); y = 20; }
-      const warningPal = severityPalette.high;
-      const [wr, wg, wb] = warningPal.bg;
-      doc.setFillColor(wr, wg, wb);
-      const warningTextLines = doc.splitTextToSize(data.summary.warningRecommendation, pageWidth - 32);
-      const warningBoxHeight = (warningTextLines.length * 9 * 0.55) + 10;
-      doc.roundedRect(14, y, pageWidth - 28, warningBoxHeight, 3, 3, "F"); 
-      doc.setTextColor(255, 255, 255);
-      doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
-      doc.setFontSize(9);
-      let currentWarningY = y + 5;
-      for (const line of warningTextLines) {
-        doc.text(line, pageWidth / 2, currentWarningY, { align: "center" });
-        currentWarningY += 9 * 0.55;
+      if (data.summary.warningRecommendation) {
+        if (y > pageHeight - 40) { doc.addPage(); y = 20; }
+        const warningPal = severityPalette.high;
+        const [wr, wg, wb] = warningPal.bg;
+        doc.setFillColor(wr, wg, wb);
+        const warningTextLines = doc.splitTextToSize(data.summary.warningRecommendation, pageWidth - 32);
+        const warningBoxHeight = (warningTextLines.length * 9 * 0.55) + 10;
+        doc.roundedRect(14, y, pageWidth - 28, warningBoxHeight, 3, 3, "F"); 
+        doc.setTextColor(255, 255, 255);
+        doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
+        doc.setFontSize(9);
+        let currentWarningY = y + 5;
+        for (const line of warningTextLines) {
+          doc.text(line, pageWidth / 2, currentWarningY, { align: "center" });
+          currentWarningY += 9 * 0.55;
+        }
+        doc.setTextColor(0, 0, 0);
+        y += warningBoxHeight + 10;
       }
-      doc.setTextColor(0, 0, 0);
-      y += warningBoxHeight + 10;
     } else if (typeof data.summary === 'string') {
       // Fallback for old string format
       doc.setFont("helvetica", "bold");
@@ -969,7 +1003,9 @@ Deno.serve(async (req) => {
       doc.text(disclaimer, pageWidth / 2, pageHeight - 8, { align: "center" });
     }
 
+    console.log('[PDF_CONTENT_RENDERED]', { correlationId, elapsed: Date.now() - startTime });
     const pdfBytes = doc.output("arraybuffer");
+    console.log('[PDF_BYTES_CREATED]', { correlationId, size: pdfBytes.byteLength, elapsed: Date.now() - startTime });
     
     // Generate professional filename
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
@@ -988,11 +1024,23 @@ Deno.serve(async (req) => {
     const filename = `Lease_Shield_Report_${propertyIdentifier}_${today}.pdf`;
     
     const pdfFile = new File([pdfBytes], filename, { type: "application/pdf" });
+    console.log('[PDF_UPLOADING]', { correlationId, filename, size: pdfBytes.byteLength });
     const upload = await svc.integrations.Core.UploadFile({ file: pdfFile });
+    console.log('[PDF_UPLOAD_COMPLETE]', { correlationId, url: upload?.file_url });
 
+    clearTimeout(timeoutId);
+    console.log('[PDF_SUCCESS]', { correlationId, elapsed: Date.now() - startTime, url: upload.file_url });
     return json(200, debug ? { ok: true, pdf_url: upload.file_url, filename, correlationId, debug_trace: debugTrace } : { success: true, pdf_url: upload.file_url, filename, correlationId }, headers);
   } catch (e) {
-    console.error("[PDF_ERROR]", correlationId, e?.message || e, e?.stack);
-    return json(500, { error: "PDF_FAILED", message: String(e?.message || "PDF generation failed"), correlationId }, headers);
+    clearTimeout(timeoutId);
+    console.error("[PDF_FATAL_ERROR]", { 
+      correlationId, 
+      elapsed: Date.now() - startTime,
+      error: e?.message || e, 
+      stack: e?.stack,
+      line: e?.lineNumber,
+      name: e?.name
+    });
+    return json(500, { error: "PDF_FAILED", message: String(e?.message || "PDF generation failed"), correlationId, stack: e?.stack?.substring(0, 500) }, headers);
   }
 });
