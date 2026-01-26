@@ -804,154 +804,78 @@ Deno.serve(async (req) => {
     console.log('[PDF_SUMMARY_START]', {
       hasSummary: !!data.summary,
       summaryType: typeof data.summary,
-      summaryPreview: typeof data.summary === 'string' ? data.summary.substring(0, 100) : 'object',
-      hasClauseLedger: !!data.clause_ledger,
-      clauseCount: (data.clause_ledger || []).length,
-      hasFlags: !!data.flags,
-      flagsCount: (data.flags || []).length,
+      summaryKeys: typeof data.summary === 'object' ? Object.keys(data.summary) : null,
       riskScore: data.risk_score
     });
 
-    // CRITICAL: ALWAYS rebuild summary from clause data if string (legacy format)
-    let summaryToRender = data.summary;
+    // Convert summary object to formatted string for rendering
+    let summaryToRender = '';
 
-    if (typeof data.summary === 'string' || !data.summary) {
-      console.log('[PDF_SUMMARY_REBUILDING]', {
-        summaryWasString: typeof data.summary === 'string',
-        summaryWasNull: !data.summary,
-        originalSummary: typeof data.summary === 'string' ? data.summary : null
+    if (data.summary && typeof data.summary === 'object') {
+      // Summary is already a structured object from buildExecutiveSummary (lines 302, 594)
+      console.log('[PDF_SUMMARY_OBJECT_TO_STRING]', {
+        hasRiskHeadline: !!data.summary.riskHeadline,
+        hasIntroSummary: !!data.summary.introSummary,
+        hasKeyConcerns: !!data.summary.keyConcerns
       });
       
-      // Extract top risks from flags or clauses
-      const topRisksFromFlags = (data.flags || []).slice(0, 3).map(f => f.title || f.category);
+      const s = data.summary;
       
-      console.log('[PDF_REBUILD_INPUT]', {
-        riskScore: data.risk_score,
-        topRisks: topRisksFromFlags,
-        clauseCount: (data.clause_ledger || []).length,
-        flagsUsedForTopRisks: topRisksFromFlags.length
-      });
+      if (s.riskHeadline) summaryToRender += `${s.riskHeadline}\n\n`;
+      if (s.introSummary) summaryToRender += `${s.introSummary}\n\n`;
+      if (s.keyConcerns) summaryToRender += `${s.keyConcerns}\n\n`;
+      if (s.detailedAnalysis) summaryToRender += `Detailed Analysis:\n${s.detailedAnalysis}\n\n`;
       
-      // Build structured summary object
-      const summaryObject = buildExecutiveSummary(
-        data.risk_score || 0,
-        topRisksFromFlags,
-        data.clause_ledger || [],
-        null
-      );
-      
-      console.log('[PDF_SUMMARY_OBJECT_BUILT]', {
-        objectType: typeof summaryObject,
-        hasRiskHeadline: !!summaryObject?.riskHeadline,
-        hasIntroSummary: !!summaryObject?.introSummary,
-        hasKeyConcerns: !!summaryObject?.keyConcerns,
-        hasDetailedAnalysis: !!summaryObject?.detailedAnalysis,
-        hasNextSteps: Array.isArray(summaryObject?.recommendedNextSteps),
-        nextStepsCount: (summaryObject?.recommendedNextSteps || []).length,
-        hasTimelineRecs: Array.isArray(summaryObject?.timelineRecommendations),
-        timelineRecsCount: (summaryObject?.timelineRecommendations || []).length,
-        hasWarning: !!summaryObject?.warningRecommendation
-      });
-      
-      // Convert object to formatted string (matching in-app report behavior)
-      if (summaryObject && typeof summaryObject === 'object' && summaryObject.riskHeadline) {
-        let formattedSummary = '';
-        
-        if (summaryObject.riskHeadline) {
-          formattedSummary += `${summaryObject.riskHeadline}\n\n`;
-        }
-        
-        if (summaryObject.introSummary) {
-          formattedSummary += `${summaryObject.introSummary}\n\n`;
-        }
-        
-        if (summaryObject.keyConcerns) {
-          formattedSummary += `${summaryObject.keyConcerns}\n\n`;
-        }
-        
-        if (summaryObject.detailedAnalysis) {
-          formattedSummary += `Detailed Analysis:\n${summaryObject.detailedAnalysis}\n\n`;
-        }
-        
-        if (summaryObject.recommendedNextSteps && summaryObject.recommendedNextSteps.length > 0) {
-          formattedSummary += `Recommended Next Steps:\n`;
-          summaryObject.recommendedNextSteps.forEach((step, idx) => {
-            formattedSummary += `${idx + 1}. ${step}\n`;
-          });
-          formattedSummary += `\n`;
-        }
-        
-        if (summaryObject.timelineRecommendations && summaryObject.timelineRecommendations.length > 0) {
-          formattedSummary += `Timeline Recommendations:\n`;
-          summaryObject.timelineRecommendations.forEach(item => {
-            formattedSummary += `• ${item}\n`;
-          });
-          formattedSummary += `\n`;
-        }
-        
-        if (summaryObject.warningRecommendation) {
-          formattedSummary += `${summaryObject.warningRecommendation}`;
-        }
-        
-        summaryToRender = formattedSummary;
-        
-        console.log('[PDF_SUMMARY_STRING_CREATED]', {
-          stringLength: formattedSummary.length,
-          wordCount: formattedSummary.split(/\s+/).length,
-          preview: formattedSummary.substring(0, 200)
+      if (s.recommendedNextSteps && s.recommendedNextSteps.length > 0) {
+        summaryToRender += `Recommended Next Steps:\n`;
+        s.recommendedNextSteps.forEach((step, idx) => {
+          summaryToRender += `${idx + 1}. ${step}\n`;
         });
-      } else {
-        console.error('[PDF_SUMMARY_OBJECT_INVALID]', { 
-          summaryObject,
-          type: typeof summaryObject 
-        });
-        summaryToRender = data.summary; // Fallback to original
+        summaryToRender += `\n`;
       }
+      
+      if (s.timelineRecommendations && s.timelineRecommendations.length > 0) {
+        summaryToRender += `Timeline Recommendations:\n`;
+        s.timelineRecommendations.forEach(item => {
+          summaryToRender += `• ${item}\n`;
+        });
+        summaryToRender += `\n`;
+      }
+      
+      if (s.warningRecommendation) summaryToRender += `${s.warningRecommendation}`;
+      
+      console.log('[PDF_SUMMARY_STRING_CREATED]', {
+        stringLength: summaryToRender.length,
+        wordCount: summaryToRender.split(/\s+/).length,
+        preview: summaryToRender.substring(0, 200)
+      });
+    } else if (typeof data.summary === 'string') {
+      // Fallback for old string format
+      console.log('[PDF_SUMMARY_WAS_STRING]', { originalLength: data.summary.length });
+      summaryToRender = data.summary;
+    } else {
+      console.error('[PDF_SUMMARY_MISSING]');
+      summaryToRender = 'Summary not available.';
     }
 
     console.log('[PDF_SUMMARY_FINAL]', {
       type: typeof summaryToRender,
-      length: typeof summaryToRender === 'string' ? summaryToRender.length : 'N/A',
-      preview: typeof summaryToRender === 'string' ? summaryToRender.substring(0, 150) : 'not a string'
+      length: summaryToRender.length,
+      preview: summaryToRender.substring(0, 150)
     });
 
-    // Render summary as formatted string
-    if (summaryToRender && typeof summaryToRender === 'string') {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text("Summary", 14, y);
-      y += 6;
-      
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      
-      // Split by double newlines and render each section
-      const sections = summaryToRender.split('\n\n');
-      sections.forEach((section, idx) => {
-        if (section.trim()) {
-          // Check if this is a heading (ends with :)
-          const lines = section.split('\n');
-          lines.forEach((line, lineIdx) => {
-            if (line.endsWith(':') || line.includes('RECOMMENDATION') || line.includes('HIGH RISK') || line.includes('MEDIUM RISK') || line.includes('LOW RISK')) {
-              doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "bold");
-            } else {
-              doc.setFont(thaiOk ? 'NotoSansThai' : 'helvetica', "normal");
-            }
-            y = addText(line, 14, 9);
-            y += 1;
-          });
-          y += 3; // Extra space between sections
-        }
-      });
-      
-      y += 4;
-      console.log('[PDF_SUMMARY_RENDERED]', { finalY: y });
-    } else {
-      console.error('[PDF_SUMMARY_RENDER_FAILED]', {
-        summaryToRenderType: typeof summaryToRender,
-        summaryValue: summaryToRender
-      });
-    }
+    // Render summary
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Summary", 14, y);
+    y += 6;
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    y = addText(summaryToRender, 14, 9);
+    y += 10;
+    
+    console.log('[PDF_SUMMARY_RENDERED]', { finalY: y });
 
     // Document Templates Section
     if (y > pageHeight - 30) { doc.addPage(); y = 20; }
