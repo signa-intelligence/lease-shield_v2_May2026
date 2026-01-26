@@ -179,30 +179,28 @@ Deno.serve(async (req) => {
       clausesCount: clausesArray.length
     });
 
-    // Call new extractLeaseData function
+    // Call extractLeaseData asynchronously (non-blocking to prevent scan timeout)
     console.log('[SCAN_CF_V1_CALLING_EXTRACT]', { 
       scanId: targetScan.id, 
       leaseId: leaseId 
     });
 
-    try {
-      const extractResult = await base44.functions.invoke('extractLeaseData', {
-        scanId: targetScan.id,
-        leaseId: leaseId
-      });
-      
-      console.log('[SCAN_CF_V1_EXTRACT_RESULT]', {
+    // Fire-and-forget: don't wait for extraction to complete
+    base44.functions.invoke('extractLeaseData', {
+      scanId: targetScan.id,
+      leaseId: leaseId
+    }).then(extractResult => {
+      console.log('[SCAN_CF_V1_EXTRACT_SUCCESS]', {
         ok: extractResult?.data?.ok,
         extracted: extractResult?.data?.extracted,
         created: extractResult?.data?.created
       });
-      
-    } catch (extractError) {
+    }).catch(extractError => {
       console.error('[SCAN_CF_V1_EXTRACT_ERROR]', {
         error: extractError.message
       });
-      // Don't fail the whole scan if extraction fails
-    }
+      // Non-critical: scan succeeds even if extraction fails
+    });
 
     return new Response(JSON.stringify({
       ok: true,

@@ -754,36 +754,12 @@ Deno.serve(async (req) => {
     // Header with logo
     doc.setFillColor(12, 59, 46);
     doc.rect(0, 0, pageWidth, 30, "F");
-    
-    // Add LeaseShield logo
-    try {
-      const logoUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png';
-      const logoResponse = await fetch(logoUrl);
-      if (logoResponse.ok) {
-        const logoBlob = await logoResponse.arrayBuffer();
-        const logoBase64 = btoa(String.fromCharCode(...new Uint8Array(logoBlob)));
-        const logoDataUrl = `data:image/png;base64,${logoBase64}`;
-        doc.addImage(logoDataUrl, 'PNG', 14, 8, 14, 14);
-        
-        // Text next to logo
-        doc.setTextColor(255, 255, 255);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        doc.text("LEASE SHIELD", 30, 19);
-      } else {
-        // Fallback: text only
-        doc.setTextColor(255, 255, 255);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        doc.text("LEASE SHIELD", 14, 19);
-      }
-    } catch (e) {
-      // Fallback: text only
-      doc.setTextColor(255, 255, 255);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("LEASE SHIELD", 14, 19);
-    }
+
+    // Text-only header (logo fetching removed to prevent CPU timeout)
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("LEASE SHIELD", 14, 19);
 
     y = 42;
     doc.setTextColor(0, 0, 0);
