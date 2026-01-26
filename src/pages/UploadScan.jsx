@@ -1031,6 +1031,13 @@ function UploadScanPageContent() {
         if (!scan.id) throw new Error('BUG: scanId missing');
         if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
         
+        // Invalidate Dashboard queries so data updates immediately
+        queryClient.invalidateQueries(['deposits']);
+        queryClient.invalidateQueries(['rentPayments']);
+        queryClient.invalidateQueries(['leases']);
+        queryClient.invalidateQueries(['allScans']);
+        queryClient.invalidateQueries(['timeline']);
+        
         // Pass scan_full directly via navigation state to avoid DB replication lag
         navigate(`/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
           state: { 
@@ -1432,10 +1439,12 @@ function UploadScanPageContent() {
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
         
-        // Invalidate all queries to refresh Protection Score and data
-        await queryClient.invalidateQueries({ queryKey: ['allScans'] });
-        await queryClient.invalidateQueries({ queryKey: ['deposits'] });
-        await queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+        // Invalidate Dashboard queries so data updates immediately
+        queryClient.invalidateQueries(['deposits']);
+        queryClient.invalidateQueries(['rentPayments']);
+        queryClient.invalidateQueries(['leases']);
+        queryClient.invalidateQueries(['allScans']);
+        queryClient.invalidateQueries(['timeline']);
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
         navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
@@ -2097,17 +2106,7 @@ function UploadScanPageContent() {
         {/* Main upload UI (hidden when review screen is active) */}
         {!showReviewScreen && (
           <>
-        {/* NEW: Progress Breadcrumb */}
-        {(uploading || analyzing || selectedFiles.length > 0) && (
-          <div className="mb-6">
-            <ProgressBreadcrumb
-              steps={breadcrumbSteps}
-              currentStep={currentStep}
-              primaryColor="#0C3B2E"
-              secondaryColor="#C7A338"
-            />
-          </div>
-        )}
+
 
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
