@@ -1031,6 +1031,44 @@ function UploadScanPageContent() {
         if (!scan.id) throw new Error('BUG: scanId missing');
         if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
         
+        // Auto-populate deposit and rent trackers from scan results
+        try {
+          console.log('[AUTO_POPULATE] Populating trackers from scan...');
+          const keyTerms = scanResponse?.scan_full?.key_terms || {};
+          const depositAmount = keyTerms.deposit_amount || 0;
+          const rentAmount = keyTerms.rent_amount || 0;
+          const leaseStart = keyTerms.lease_start_date || null;
+          const leaseEnd = keyTerms.lease_end_date || null;
+          const propertyAddr = keyTerms.property_address || lease.property_address || '';
+          
+          // Create deposit tracker if deposit amount exists
+          if (depositAmount > 0 && leaseStart && leaseEnd) {
+            console.log('[AUTO_POPULATE] Creating deposit tracker...', { depositAmount, propertyAddr });
+            const depositDueDate = new Date(leaseStart);
+            const expectedReturnDate = new Date(leaseEnd);
+            expectedReturnDate.setDate(expectedReturnDate.getDate() + 7);
+            
+            await base44.entities.DepositTracker.create({
+              deposit_amount: depositAmount,
+              deposit_paid_date: leaseStart,
+              expected_return_date: expectedReturnDate.toISOString().split('T')[0],
+              deposit_due_date: depositDueDate.toISOString().split('T')[0],
+              lease_start_date: leaseStart,
+              lease_end_date: leaseEnd,
+              property_address: propertyAddr,
+              rent_amount: rentAmount > 0 ? rentAmount : null,
+              status: 'tracking',
+              source_scan_id: scan.id,
+              auto_populated: true,
+              user_reviewed: false,
+              lease_id: lease.id
+            });
+            console.log('[AUTO_POPULATE] Deposit tracker created');
+          }
+        } catch (populateErr) {
+          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
+        }
+        
         // Invalidate Dashboard queries so data updates immediately
         queryClient.invalidateQueries(['deposits']);
         queryClient.invalidateQueries(['rentPayments']);
@@ -1438,6 +1476,44 @@ function UploadScanPageContent() {
         
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        
+        // Auto-populate deposit and rent trackers from scan results
+        try {
+          console.log('[AUTO_POPULATE] Populating trackers from scan...');
+          const keyTerms = scanResponse?.scan_full?.key_terms || {};
+          const depositAmount = keyTerms.deposit_amount || 0;
+          const rentAmount = keyTerms.rent_amount || 0;
+          const leaseStart = keyTerms.lease_start_date || null;
+          const leaseEnd = keyTerms.lease_end_date || null;
+          const propertyAddr = keyTerms.property_address || lease.property_address || '';
+          
+          // Create deposit tracker if deposit amount exists
+          if (depositAmount > 0 && leaseStart && leaseEnd) {
+            console.log('[AUTO_POPULATE] Creating deposit tracker...', { depositAmount, propertyAddr });
+            const depositDueDate = new Date(leaseStart);
+            const expectedReturnDate = new Date(leaseEnd);
+            expectedReturnDate.setDate(expectedReturnDate.getDate() + 7);
+            
+            await base44.entities.DepositTracker.create({
+              deposit_amount: depositAmount,
+              deposit_paid_date: leaseStart,
+              expected_return_date: expectedReturnDate.toISOString().split('T')[0],
+              deposit_due_date: depositDueDate.toISOString().split('T')[0],
+              lease_start_date: leaseStart,
+              lease_end_date: leaseEnd,
+              property_address: propertyAddr,
+              rent_amount: rentAmount > 0 ? rentAmount : null,
+              status: 'tracking',
+              source_scan_id: scanId,
+              auto_populated: true,
+              user_reviewed: false,
+              lease_id: lease.id
+            });
+            console.log('[AUTO_POPULATE] Deposit tracker created');
+          }
+        } catch (populateErr) {
+          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
+        }
         
         // Invalidate Dashboard queries so data updates immediately
         queryClient.invalidateQueries(['deposits']);

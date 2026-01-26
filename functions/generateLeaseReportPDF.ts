@@ -803,9 +803,11 @@ Deno.serve(async (req) => {
       addText("Recommended Next Steps:", 14, 9, "bold");
       y += 2;
       doc.setFont("helvetica", "normal");
-      data.summary.recommendedNextSteps.forEach((step, idx) => {
-        addText(`${idx + 1}. ${step}`, 16, 9);
-      });
+      if (Array.isArray(data.summary.recommendedNextSteps)) {
+        data.summary.recommendedNextSteps.forEach((step, idx) => {
+          addText(`${idx + 1}. ${step}`, 16, 9);
+        });
+      }
       y += 6;
 
       // Timeline Recommendations
@@ -813,9 +815,11 @@ Deno.serve(async (req) => {
       addText("Timeline Recommendations:", 14, 9, "bold");
       y += 2;
       doc.setFont("helvetica", "normal");
-      data.summary.timelineRecommendations.forEach((item) => {
-        addText(`• ${item}`, 16, 9);
-      });
+      if (Array.isArray(data.summary.timelineRecommendations)) {
+        data.summary.timelineRecommendations.forEach((item) => {
+          addText(`• ${item}`, 16, 9);
+        });
+      }
       y += 6;
       
       // Warning Recommendation Box
