@@ -1865,9 +1865,14 @@ function UploadScanPageContent() {
 
   const handleSwipeDelete = (leaseId) => {
     haptic.heavy();
+    
+    // Find related lease data
+    const lease = leases.find(l => l.id === leaseId);
+    const leaseAddress = lease?.property_address || lease?.original_filename || 'this lease';
+    
     const confirmMessage = language === 'th'
-      ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้'
-      : 'Are you sure you want to delete this scan?\n\nThis action cannot be undone.';
+      ? `คุณแน่ใจหรือไม่ว่าต้องการลบสัญญาเช่านี้?\n\n${leaseAddress}\n\nการลบจะส่งผลต่อ:\n• สัญญาเช่า\n• การติดตามเงินมัดจำ\n• การติดตามค่าเช่า\n• ไทม์ไลน์เหตุการณ์\n• การติดตามทรัพย์สิน\n\nข้อมูลทั้งหมดจะถูกย้ายไปยังถังขยะและสามารถกู้คืนได้ในภายหลัง`
+      : `Are you sure you want to delete this lease?\n\n${leaseAddress}\n\nDeleting will affect:\n• Lease scan\n• Deposit tracking\n• Rent tracking\n• Timeline events\n• Property tracker\n\nAll data will be moved to Recycle Bin and can be restored later.`;
 
     const userConfirmed = window.confirm(confirmMessage);
 
@@ -1879,9 +1884,13 @@ function UploadScanPageContent() {
   const handleDeleteLease = (leaseId, e) => {
     e.stopPropagation();
 
+    // Find related lease data
+    const lease = leases.find(l => l.id === leaseId);
+    const leaseAddress = lease?.property_address || lease?.original_filename || 'this lease';
+    
     const confirmMessage = language === 'th'
-      ? 'คุณแน่ใจหรือไม่ว่าต้องการลบการสแกนนี้?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้'
-      : 'Are you sure you want to delete this scan?\n\nThis action cannot be undone.';
+      ? `คุณแน่ใจหรือไม่ว่าต้องการลบสัญญาเช่านี้?\n\n${leaseAddress}\n\nการลบจะส่งผลต่อ:\n• สัญญาเช่า\n• การติดตามเงินมัดจำ\n• การติดตามค่าเช่า\n• ไทม์ไลน์เหตุการณ์\n• การติดตามทรัพย์สิน\n\nข้อมูลทั้งหมดจะถูกย้ายไปยังถังขยะและสามารถกู้คืนได้ในภายหลัง`
+      : `Are you sure you want to delete this lease?\n\n${leaseAddress}\n\nDeleting will affect:\n• Lease scan\n• Deposit tracking\n• Rent tracking\n• Timeline events\n• Property tracker\n\nAll data will be moved to Recycle Bin and can be restored later.`;
 
     const userConfirmed = window.confirm(confirmMessage);
 

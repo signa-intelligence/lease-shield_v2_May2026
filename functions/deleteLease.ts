@@ -39,13 +39,24 @@ Deno.serve(async (req) => {
     }
 
     // Move lease to RecycleBin
-    await svc.entities.RecycleBin.create({
+    console.log(`[${correlationId}] Creating RecycleBin entry for lease:`, {
+      user_email: user.email,
+      original_id: lease.id,
+      item_label: lease.original_filename || lease.property_address || `Lease ${lease.id.slice(0, 8)}`
+    });
+    
+    const recycleLease = await svc.entities.RecycleBin.create({
       user_email: user.email,
       item_type: 'lease',
       original_id: lease.id,
       item_snapshot: lease,
-      item_label: lease.property_address || `Lease ${lease.id.slice(0, 8)}`,
+      item_label: lease.original_filename || lease.property_address || `Lease ${lease.id.slice(0, 8)}`,
       deleted_date: new Date().toISOString()
+    });
+    
+    console.log(`[${correlationId}] ✅ Lease moved to RecycleBin successfully:`, {
+      recycle_bin_id: recycleLease.id,
+      original_lease_id: lease.id
     });
 
     // Get and move related deposit trackers (by lease_id AND property_address)
@@ -60,7 +71,9 @@ Deno.serve(async (req) => {
     );
     
     for (const deposit of allDeposits) {
-      await svc.entities.RecycleBin.create({
+      console.log(`[${correlationId}] Moving deposit to RecycleBin:`, deposit.id);
+      
+      const recycleDeposit = await svc.entities.RecycleBin.create({
         user_email: user.email,
         item_type: 'deposit',
         original_id: deposit.id,
@@ -68,6 +81,8 @@ Deno.serve(async (req) => {
         item_label: `Deposit - ${deposit.property_address || 'Unknown'}`,
         deleted_date: new Date().toISOString()
       });
+      
+      console.log(`[${correlationId}] ✅ Deposit moved to RecycleBin:`, recycleDeposit.id);
       await svc.entities.DepositTracker.delete(deposit.id);
     }
 
@@ -77,7 +92,9 @@ Deno.serve(async (req) => {
     });
     
     for (const request of maintenanceRequests) {
-      await svc.entities.RecycleBin.create({
+      console.log(`[${correlationId}] Moving maintenance to RecycleBin:`, request.id);
+      
+      const recycleMaintenance = await svc.entities.RecycleBin.create({
         user_email: user.email,
         item_type: 'maintenance',
         original_id: request.id,
@@ -85,6 +102,8 @@ Deno.serve(async (req) => {
         item_label: request.issue_title || `Maintenance ${request.id.slice(0, 8)}`,
         deleted_date: new Date().toISOString()
       });
+      
+      console.log(`[${correlationId}] ✅ Maintenance moved to RecycleBin:`, recycleMaintenance.id);
       await svc.entities.MaintenanceRequest.delete(request.id);
     }
 
