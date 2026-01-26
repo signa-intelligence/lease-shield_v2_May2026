@@ -28,7 +28,7 @@ import {
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import ProgressBreadcrumb from "../components/shared/ProgressBreadcrumb";
+
 import UploadProgress from "../components/shared/UploadProgress";
 import { haptic } from "../components/shared/HapticFeedback";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
@@ -71,8 +71,7 @@ function UploadScanPageContent() {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [documentToView, setDocumentToView] = useState(null);
 
-  // NEW: Track current step for breadcrumb
-  const [currentStep, setCurrentStep] = useState(0);
+
 
   // NEW: State for post-scan upgrade hint
   const [showPostScanHint, setShowPostScanHint] = useState(false);
@@ -767,27 +766,6 @@ function UploadScanPageContent() {
   };
 
   const strings = t[language] || t.en;
-
-  // NEW: Define breadcrumb steps
-  const breadcrumbSteps = [
-    { label: strings.stepUpload, sublabel: language === 'th' ? 'เลือกไฟล์' : language === 'zh' ? '选择文件' : language === 'ja' ? 'ファイルを選択' : language === 'ko' ? '파일 선택' : language === 'ru' ? 'Выберите файлы' : 'Select files' },
-    { label: strings.stepAnalyze, sublabel: language === 'th' ? 'สแกน' : language === 'zh' ? '扫描' : language === 'ja' ? 'スキャン' : language === 'ko' ? '스캔' : language === 'ru' ? 'Сканирование' : 'Scan' },
-    { label: strings.stepResults, sublabel: language === 'th' ? 'ดูผล' : language === 'zh' ? '查看结果' : language === 'ja' ? '結果を見る' : language === 'ko' ? '결과 보기' : language === 'ru' ? 'Просмотр результатов' : 'View results' },
-    { label: strings.stepTrack, sublabel: language === 'th' ? 'ติดตามมัดจำ' : language === 'zh' ? '追踪押金' : language === 'ja' ? '敷金を追跡' : language === 'ko' ? '보증금 추적' : language === 'ru' ? 'Отслеживать депозит' : 'Track deposit' }
-  ];
-
-  // Update step based on upload/analysis state
-  useEffect(() => {
-    if (analyzing) {
-      setCurrentStep(1); // Analyzing step
-    } else if (uploading) {
-      setCurrentStep(1); // Also uploading/creating/scanning
-    } else if (selectedFiles.length > 0) {
-      setCurrentStep(0); // Files selected, ready to upload
-    } else {
-      setCurrentStep(0); // Initial state or after completion/error
-    }
-  }, [uploading, analyzing, selectedFiles]);
 
   const updateLeaseMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Lease.update(id, data),
@@ -2097,17 +2075,7 @@ function UploadScanPageContent() {
         {/* Main upload UI (hidden when review screen is active) */}
         {!showReviewScreen && (
           <>
-        {/* NEW: Progress Breadcrumb */}
-        {(uploading || analyzing || selectedFiles.length > 0) && (
-          <div className="mb-6">
-            <ProgressBreadcrumb
-              steps={breadcrumbSteps}
-              currentStep={currentStep}
-              primaryColor="#0C3B2E"
-              secondaryColor="#C7A338"
-            />
-          </div>
-        )}
+
 
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
