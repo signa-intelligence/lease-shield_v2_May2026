@@ -800,69 +800,92 @@ Deno.serve(async (req) => {
     y += 26;
 
     doc.setTextColor(0, 0, 0);
-    // Render comprehensive summary
-    if (data.summary && typeof data.summary === 'object') {
+    // CRITICAL: ALWAYS rebuild summary from clause data if string (legacy format)
+    let summaryToRender = data.summary;
+    if (typeof data.summary === 'string' || !data.summary) {
+      // Rebuild structured summary from clause data
+      const topRisksFromFlags = (data.flags || []).slice(0, 3).map(f => f.title || f.category);
+      summaryToRender = buildExecutiveSummary(
+        data.risk_score || 0,
+        topRisksFromFlags,
+        data.clause_ledger || [],
+        null
+      );
+    }
+
+    // Render comprehensive summary (ALWAYS structured now)
+    if (summaryToRender && typeof summaryToRender === 'object') {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
       doc.text("Summary", 14, y);
       y += 6;
-      
-      // Risk headline
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      addText(data.summary.riskHeadline, 14, 10, "bold");
-      y += 2;
-      
-      // Intro summary
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      addText(data.summary.introSummary, 14, 9);
-      y += 2;
-      
-      // Key concerns
-      doc.setFont("helvetica", "bold");
-      addText(data.summary.keyConcerns, 14, 9, "bold");
-      y += 4;
-      
-      // Detailed Analysis
-      doc.setFont("helvetica", "bold");
-      addText("Detailed Analysis:", 14, 9, "bold");
-      y += 2;
-      doc.setFont("helvetica", "normal");
-      addText(data.summary.detailedAnalysis, 14, 9);
-      y += 6;
 
-      // Recommended Next Steps
-      if (data.summary.recommendedNextSteps && Array.isArray(data.summary.recommendedNextSteps) && data.summary.recommendedNextSteps.length > 0) {
+      // Risk headline
+      if (summaryToRender.riskHeadline) {
         doc.setFont("helvetica", "bold");
-        addText("Recommended Next Steps:", 14, 9, "bold");
+        doc.setFontSize(10);
+        y = addText(summaryToRender.riskHeadline, 14, 10, "bold");
+        y += 4;
+      }
+
+      // Intro summary
+      if (summaryToRender.introSummary) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        y = addText(summaryToRender.introSummary, 14, 9);
+        y += 4;
+      }
+
+      // Key concerns
+      if (summaryToRender.keyConcerns) {
+        doc.setFont("helvetica", "bold");
+        y = addText(summaryToRender.keyConcerns, 14, 9, "bold");
+        y += 6;
+      }
+
+      // Detailed Analysis
+      if (summaryToRender.detailedAnalysis) {
+        doc.setFont("helvetica", "bold");
+        y = addText("Detailed Analysis:", 14, 9, "bold");
         y += 2;
         doc.setFont("helvetica", "normal");
-        data.summary.recommendedNextSteps.forEach((step, idx) => {
-          addText(`${idx + 1}. ${step}`, 16, 9);
+        y = addText(summaryToRender.detailedAnalysis, 14, 9);
+        y += 8;
+      }
+
+      // Recommended Next Steps
+      if (summaryToRender.recommendedNextSteps && Array.isArray(summaryToRender.recommendedNextSteps) && summaryToRender.recommendedNextSteps.length > 0) {
+        doc.setFont("helvetica", "bold");
+        y = addText("Recommended Next Steps:", 14, 9, "bold");
+        y += 3;
+        doc.setFont("helvetica", "normal");
+        summaryToRender.recommendedNextSteps.forEach((step, idx) => {
+          y = addText(`${idx + 1}. ${step}`, 16, 9);
+          y += 1;
         });
         y += 6;
       }
 
       // Timeline Recommendations
-      if (data.summary.timelineRecommendations && Array.isArray(data.summary.timelineRecommendations) && data.summary.timelineRecommendations.length > 0) {
+      if (summaryToRender.timelineRecommendations && Array.isArray(summaryToRender.timelineRecommendations) && summaryToRender.timelineRecommendations.length > 0) {
         doc.setFont("helvetica", "bold");
-        addText("Timeline Recommendations:", 14, 9, "bold");
-        y += 2;
+        y = addText("Timeline Recommendations:", 14, 9, "bold");
+        y += 3;
         doc.setFont("helvetica", "normal");
-        data.summary.timelineRecommendations.forEach((item) => {
-          addText(`• ${item}`, 16, 9);
+        summaryToRender.timelineRecommendations.forEach((item) => {
+          y = addText(`• ${item}`, 16, 9);
+          y += 1;
         });
         y += 6;
       }
-      
+
       // Warning Recommendation Box
-      if (data.summary.warningRecommendation) {
+      if (summaryToRender.warningRecommendation) {
         if (y > pageHeight - 40) { doc.addPage(); y = 20; }
         const warningPal = severityPalette.high;
         const [wr, wg, wb] = warningPal.bg;
         doc.setFillColor(wr, wg, wb);
-        const warningTextLines = doc.splitTextToSize(data.summary.warningRecommendation, pageWidth - 32);
+        const warningTextLines = doc.splitTextToSize(summaryToRender.warningRecommendation, pageWidth - 32);
         const warningBoxHeight = (warningTextLines.length * 9 * 0.55) + 10;
         doc.roundedRect(14, y, pageWidth - 28, warningBoxHeight, 3, 3, "F"); 
         doc.setTextColor(255, 255, 255);
@@ -876,16 +899,6 @@ Deno.serve(async (req) => {
         doc.setTextColor(0, 0, 0);
         y += warningBoxHeight + 10;
       }
-    } else if (typeof data.summary === 'string') {
-      // Fallback for old string format
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text("Summary", 14, y);
-      y += 6;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      addText(data.summary, 14, 9);
-      y += 6;
     }
 
     // Document Templates Section
