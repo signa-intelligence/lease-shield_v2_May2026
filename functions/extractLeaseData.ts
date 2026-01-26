@@ -6,7 +6,19 @@ Deno.serve(async (req) => {
     const svc = base44.asServiceRole || base44;
     
     const body = await req.json();
-    const { scanId, leaseId } = body;
+    const { scanId, leaseId, userEmail } = body;
+    
+    // Get user email - prefer passed userEmail, fallback to auth.me()
+    let actualUserEmail = userEmail;
+    if (!actualUserEmail) {
+      try {
+        const user = await base44.auth.me();
+        actualUserEmail = user?.email;
+      } catch {
+        actualUserEmail = null;
+      }
+    }
+    console.log('[EXTRACT_USER_CONTEXT]', { passedUserEmail: userEmail, actualUserEmail });
     
     console.log('[EXTRACT_START]', { scanId, leaseId });
     
@@ -221,8 +233,11 @@ Deno.serve(async (req) => {
         rent_amount: rentAmount || 0,
         rent_due_day: 1,
         lease_start_date: startDate || null,
-        lease_end_date: endDate || null
+        lease_end_date: endDate || null,
+        created_by: actualUserEmail // CRITICAL: Bind to actual user
       };
+      
+      console.log('[EXTRACT_DEPOSIT_CREATED_BY]', { created_by: actualUserEmail });
       
       console.log('[EXTRACT_DEPOSIT_DATA]', depositData);
       
@@ -267,7 +282,8 @@ Deno.serve(async (req) => {
               event_date: firstRentDate.toISOString().split('T')[0],
               title: 'First Rent Payment Due',
               description: `Monthly rent of ฿${rentAmount.toLocaleString()} due`,
-              property_address: propertyAddress || 'N/A'
+              property_address: propertyAddress || 'N/A',
+              created_by: actualUserEmail // CRITICAL: Bind to actual user
             });
             console.log('[EXTRACT_RENT_TIMELINE_CREATED]');
           } catch (timelineError) {
