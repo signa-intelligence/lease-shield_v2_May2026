@@ -2223,57 +2223,57 @@ function PropertyTrackerContent() {
                       </Button>
                     </div>
                   </div>
-                ) : deposit && deposit.deposit_amount > 0 ? (
-                  <div className="space-y-4">
-                    {deposit.auto_populated && deposit.user_reviewed && (
-                      <div className="p-3 rounded-lg border-l-4" style={{
-                        backgroundColor: isDarkMode ? 'rgba(16,185,129,0.1)' : '#ECFDF5',
-                        borderLeftColor: '#10B981'
-                      }}>
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <p className="text-xs font-semibold" style={{ color: isDarkMode ? '#6EE7B7' : '#059669' }}>
-                            {language === 'th' ? 'ข้อมูลจากการสแกน - ตรวจสอบแล้ว' : 'Scan data - Reviewed'}
-                          </p>
-                          {deposit.reviewed_at && (
-                            <p className="text-xs ml-auto" style={{ color: colors.textSecondary }}>
-                              {format(new Date(deposit.reviewed_at), 'MMM d, yyyy')}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <DollarSign className="w-4 h-4 text-ls-gold" />
-                          <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.depositAmount}</p>
-                          {deposit.field_metadata?.deposit_amount?.source === 'scan' && (
-                            <Badge className="text-xs bg-blue-50 text-blue-700">
-                              {language === 'th' ? 'สแกน' : 'Scan'}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
-                          ฿{deposit.deposit_amount?.toLocaleString() || '0'}
-                        </p>
-                      </div>
-                      <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="w-4 h-4 text-ls-forest" />
-                          <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.expectedReturn}</p>
-                          {deposit.expected_return_date_is_estimated && (
-                            <Badge className="text-xs bg-amber-50 text-amber-700">
-                              {language === 'th' ? 'คำนวณ' : 'Est.'}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                          {deposit.expected_return_date ? format(new Date(deposit.expected_return_date), 'MMM d, yyyy') : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
+                ) : deposit ? (
+                 <div className="space-y-4">
+                   {deposit.auto_populated && deposit.user_reviewed && (
+                     <div className="p-3 rounded-lg border-l-4" style={{
+                       backgroundColor: isDarkMode ? 'rgba(16,185,129,0.1)' : '#ECFDF5',
+                       borderLeftColor: '#10B981'
+                     }}>
+                       <div className="flex items-center gap-2">
+                         <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                         <p className="text-xs font-semibold" style={{ color: isDarkMode ? '#6EE7B7' : '#059669' }}>
+                           {language === 'th' ? 'ข้อมูลจากการสแกน - ตรวจสอบแล้ว' : 'Scan data - Reviewed'}
+                         </p>
+                         {deposit.reviewed_at && (
+                           <p className="text-xs ml-auto" style={{ color: colors.textSecondary }}>
+                             {format(new Date(deposit.reviewed_at), 'MMM d, yyyy')}
+                           </p>
+                         )}
+                       </div>
+                     </div>
+                   )}
+
+                   <div className="grid md:grid-cols-2 gap-4">
+                     <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
+                       <div className="flex items-center gap-2 mb-2">
+                         <DollarSign className="w-4 h-4 text-ls-gold" />
+                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.depositAmount}</p>
+                         {deposit.field_metadata?.deposit_amount?.source === 'scan' && (
+                           <Badge className="text-xs bg-blue-50 text-blue-700">
+                             {language === 'th' ? 'สแกน' : 'Scan'}
+                           </Badge>
+                         )}
+                       </div>
+                       <p className="text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                         {deposit.deposit_amount ? `฿${deposit.deposit_amount?.toLocaleString()}` : (language === 'th' ? '[ไม่มีข้อมูล]' : '[All data missing]')}
+                       </p>
+                     </div>
+                     <div className="p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg }}>
+                       <div className="flex items-center gap-2 mb-2">
+                         <Calendar className="w-4 h-4 text-ls-forest" />
+                         <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>{strings.expectedReturn}</p>
+                         {deposit.expected_return_date_is_estimated && (
+                           <Badge className="text-xs bg-amber-50 text-amber-700">
+                             {language === 'th' ? 'คำนวณ' : 'Est.'}
+                           </Badge>
+                         )}
+                       </div>
+                       <p className="text-lg font-bold" style={{ color: colors.textPrimary }}>
+                         {deposit.expected_return_date ? format(new Date(deposit.expected_return_date), 'MMM d, yyyy') : 'N/A'}
+                       </p>
+                     </div>
+                   </div>
                     <div className="flex gap-2 mt-4">
                       <Button
                         onClick={() => {
@@ -2599,13 +2599,16 @@ function PropertyTrackerContent() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleDepositAction('archive')}>
-                            <Archive className="w-4 h-4 mr-2" />
-                            {language === 'th' ? 'เก็บไว้' : 'Archive'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDepositAction('delete')} className="text-red-600">
+                          <DropdownMenuItem onClick={async () => {
+                            if (!confirm(language === 'th' ? 'ลบข้อมูลนี้ทั้งหมด (มัดจำ + ค่าเช่า) หรือไม่?' : 'Delete all data (deposit + rent)?')) return;
+                            haptic.heavy();
+                            await base44.entities.DepositTracker.delete(deposit.id);
+                            queryClient.invalidateQueries({ queryKey: ['deposits'] });
+                            queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+                            toast.success(language === 'th' ? 'ลบสำเร็จ' : 'Deleted successfully');
+                          }} className="text-red-600">
                             <Trash2 className="w-4 h-4 mr-2" />
-                            {language === 'th' ? 'ลบอย่างถาวร' : 'Delete'}
+                            {language === 'th' ? 'ลบทั้งหมด (มัดจำ+ค่าเช่า)' : 'Delete All (Deposit+Rent)'}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
