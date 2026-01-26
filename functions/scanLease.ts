@@ -58,7 +58,8 @@ Deno.serve(async (req) => {
       const populateResponse = await base44.functions.invoke('populateFromScan', {
         scanId: analyzeResult.scanId,
         leaseId: leaseId,
-        scan_full: analyzeResult.scan_full
+        scan_full: analyzeResult.scan_full,
+        userEmail: user.email
       });
       console.log('[SCAN_LEASE_WRAPPER] populateFromScan complete:', populateResponse?.data);
     } catch (populateErr) {

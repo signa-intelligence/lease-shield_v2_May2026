@@ -136,20 +136,28 @@ Deno.serve(async (req) => {
     
     const base44 = createClientFromRequest(req);
     
-    // CRITICAL: Get current user to bind deposit tracker correctly
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({
-        ok: false,
-        error: 'UNAUTHORIZED',
-        message: 'User not authenticated'
-      }, { status: 401 });
+    const body = await req.json().catch(() => ({}));
+    const { scanId, leaseId, scan_full, userEmail } = body;
+    
+    // Get user - prefer passed userEmail (from scanLease.js), fallback to auth.me()
+    let user;
+    if (userEmail) {
+      // When called from scanLease.js, use the passed email directly
+      user = { email: userEmail };
+      console.log('[POPULATE_USER_CONTEXT] Using passed userEmail:', userEmail);
+    } else {
+      // Direct invocation - get from request context
+      user = await base44.auth.me();
+      if (!user) {
+        return Response.json({
+          ok: false,
+          error: 'UNAUTHORIZED',
+          message: 'User not authenticated'
+        }, { status: 401 });
+      }
     }
     
     const svc = base44.asServiceRole || base44;
-    
-    const body = await req.json().catch(() => ({}));
-    const { scanId, leaseId, scan_full } = body;
     
     console.log(`[${executionId}] Input params:`, { scanId, leaseId, hasScanFull: !!scan_full });
     
