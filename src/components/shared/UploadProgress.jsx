@@ -179,7 +179,7 @@ export default function UploadProgress({
               width: `${progress}%`,
               background: isComplete 
                 ? 'linear-gradient(90deg, #10B981 0%, #059669 100%)'
-                : 'linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)'
+                : 'linear-gradient(90deg, #0C3B2E 0%, #047857 100%)'
             }}
           />
         </div>
