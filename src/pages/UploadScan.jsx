@@ -1432,8 +1432,9 @@ function UploadScanPageContent() {
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
         
-        // Invalidate all queries to refresh Protection Score and data
+        // Invalidate all queries to refresh Protection Score and Dashboard data
         await queryClient.invalidateQueries({ queryKey: ['allScans'] });
+        await queryClient.invalidateQueries({ queryKey: ['leases'] });
         await queryClient.invalidateQueries({ queryKey: ['deposits'] });
         await queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
         
@@ -1478,9 +1479,11 @@ function UploadScanPageContent() {
           
           if (populateResponse?.success) {
             console.log('[AUTO_POPULATE] Success:', populateResponse);
-            // Invalidate relevant queries
+            // Invalidate relevant queries to update Dashboard
             queryClient.invalidateQueries({ queryKey: ['deposits'] });
             queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+            queryClient.invalidateQueries({ queryKey: ['leases'] });
+            queryClient.invalidateQueries({ queryKey: ['allScans'] });
           }
         } catch (populateErr) {
           console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
@@ -1663,9 +1666,11 @@ function UploadScanPageContent() {
       if (confirmResponse?.success) {
         console.log('[CONFIRM_SCAN_DATA] Data saved successfully');
         
-        // Invalidate queries
+        // Invalidate queries to update Dashboard
         queryClient.invalidateQueries({ queryKey: ['deposits'] });
         queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+        queryClient.invalidateQueries({ queryKey: ['leases'] });
+        queryClient.invalidateQueries({ queryKey: ['allScans'] });
         
         setShowReviewScreen(false);
         setShowCompletionModal(true);
@@ -2097,18 +2102,6 @@ function UploadScanPageContent() {
         {/* Main upload UI (hidden when review screen is active) */}
         {!showReviewScreen && (
           <>
-        {/* NEW: Progress Breadcrumb */}
-        {(uploading || analyzing || selectedFiles.length > 0) && (
-          <div className="mb-6">
-            <ProgressBreadcrumb
-              steps={breadcrumbSteps}
-              currentStep={currentStep}
-              primaryColor="#0C3B2E"
-              secondaryColor="#C7A338"
-            />
-          </div>
-        )}
-
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
