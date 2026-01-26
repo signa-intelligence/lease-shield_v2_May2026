@@ -28,6 +28,7 @@ export default function Leases() {
   const [dragActive, setDragActive] = useState(false);
   const [currentScan, setCurrentScan] = useState(null);
   const [error, setError] = useState(null);
+  const [deletingLease, setDeletingLease] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -312,27 +313,27 @@ export default function Leases() {
 
   const deleteLeaseWithScanMutation = useMutation({
     mutationFn: async (leaseId) => {
-      // First delete any associated scans
-      const associatedScans = scans.filter(s => s.lease_id === leaseId);
-      for (const scan of associatedScans) {
-        await base44.entities.LeaseScan.delete(scan.id);
-      }
-      // Then delete the lease
-      await base44.entities.Lease.delete(leaseId);
+      // Call backend function for cascade deletion
+      const response = await base44.functions.invoke('deleteLease', { leaseId });
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leases'] });
       queryClient.invalidateQueries({ queryKey: ['scans'] });
+      queryClient.invalidateQueries({ queryKey: ['deposits'] });
+      queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+      setDeletingLease(null);
     },
   });
 
-  const handleDeleteLease = (leaseId, e) => {
+  const handleDeleteLease = (lease, e) => {
     e.stopPropagation();
-    if (window.confirm(language === 'th' 
-      ? 'คุณแน่ใจหรือไม่ว่าต้องการลบสัญญาเช่านี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้'
-      : 'Are you sure you want to delete this lease? This action cannot be undone.')) {
-      deleteLeaseWithScanMutation.mutate(leaseId);
-    }
+    setDeletingLease(lease);
+  };
+
+  const confirmDeleteLease = () => {
+    if (!deletingLease) return;
+    deleteLeaseWithScanMutation.mutate(deletingLease.id);
   };
 
   const getStatusColor = (status) => {
@@ -471,7 +472,7 @@ export default function Leases() {
                                 </button>
                               )}
                               <button
-                                onClick={(e) => handleDeleteLease(lease.id, e)}
+                                onClick={(e) => handleDeleteLease(lease, e)}
                                 disabled={deleteLeaseWithScanMutation.isPending}
                                 style={{
                                   backgroundColor: isDarkMode ? '#3A2626' : '#FEE2E2',
@@ -515,6 +516,72 @@ export default function Leases() {
         ) : (
           <LeaseAnalysisResults scan={currentScan} onSave={handleSaveScan} />
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!deletingLease} onOpenChange={() => setDeletingLease(null)}>
+          <DialogContent
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              maxWidth: '500px'
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'ลบสัญญาเช่าและข้อมูลที่เกี่ยวข้อง?' : 'Delete lease and related data?'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="mt-4">
+              <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2', border: '1px solid #EF4444' }}>
+                <p className="text-sm font-semibold mb-2" style={{ color: '#DC2626' }}>
+                  {language === 'th' ? '⚠️ การดำเนินการนี้จะลบ:' : '⚠️ This will delete:'}
+                </p>
+                <ul className="text-sm space-y-1 ml-4" style={{ color: colors.textSecondary }}>
+                  <li>• {language === 'th' ? 'สัญญาเช่าและการสแกน' : 'Lease and scan results'}</li>
+                  <li>• {language === 'th' ? 'ข้อมูลเงินมัดจำและค่าเช่า' : 'Deposit and rent trackers'}</li>
+                  <li>• {language === 'th' ? 'กิจกรรมทั้งหมดในไทม์ไลน์' : 'All timeline events'}</li>
+                </ul>
+              </div>
+              <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
+                  ? 'ข้อมูลจะถูกย้ายไปถังรีไซเคิล คุณแน่ใจหรือไม่?'
+                  : 'Data will be moved to Recycle Bin. Are you sure?'}
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeletingLease(null)}
+                  className="flex-1"
+                  style={{ minHeight: '44px' }}
+                >
+                  {language === 'th' ? 'ยกเลิก' : 'No'}
+                </Button>
+                <Button
+                  onClick={confirmDeleteLease}
+                  disabled={deleteLeaseWithScanMutation.isPending}
+                  className="flex-1"
+                  style={{
+                    backgroundColor: '#DC2626',
+                    color: '#FFFFFF',
+                    minHeight: '44px'
+                  }}
+                >
+                  {deleteLeaseWithScanMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {language === 'th' ? 'กำลังลบ...' : 'Deleting...'}
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {language === 'th' ? 'ใช่ ลบทั้งหมด' : 'Yes, Delete All'}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
