@@ -179,16 +179,28 @@ Deno.serve(async (req) => {
       clausesCount: clausesArray.length
     });
 
+    // Get user email for proper ownership binding
+    let userEmail = null;
+    try {
+      const user = await base44.auth.me();
+      userEmail = user?.email;
+      console.log('[SCAN_CF_V1_USER_CONTEXT]', { userEmail });
+    } catch (authErr) {
+      console.warn('[SCAN_CF_V1_USER_CONTEXT_FAILED]', { error: authErr.message });
+    }
+
     // Call new extractLeaseData function
     console.log('[SCAN_CF_V1_CALLING_EXTRACT]', { 
       scanId: targetScan.id, 
-      leaseId: leaseId 
+      leaseId: leaseId,
+      userEmail
     });
 
     try {
       const extractResult = await base44.functions.invoke('extractLeaseData', {
         scanId: targetScan.id,
-        leaseId: leaseId
+        leaseId: leaseId,
+        userEmail: userEmail // CRITICAL: Pass user email for proper ownership
       });
       
       console.log('[SCAN_CF_V1_EXTRACT_RESULT]', {
