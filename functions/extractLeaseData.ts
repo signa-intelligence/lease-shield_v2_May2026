@@ -223,6 +223,19 @@ Deno.serve(async (req) => {
         returnDate = oneYearLater.toISOString().split('T')[0];
       }
       
+      if (!actualUserEmail) {
+        console.error('[EXTRACT_NO_USER_EMAIL]', { 
+          passedUserEmail: userEmail,
+          authMeFailed: true
+        });
+        // FORCE STOP - cannot create without user email
+        return Response.json({
+          ok: false,
+          error: 'USER_NOT_AUTHENTICATED',
+          message: 'Cannot determine user email for deposit ownership'
+        }, { status: 401 });
+      }
+      
       const depositData = {
         lease_id: leaseId,
         deposit_amount: depositAmount,
@@ -237,7 +250,7 @@ Deno.serve(async (req) => {
         created_by: actualUserEmail // CRITICAL: Bind to actual user
       };
       
-      console.log('[EXTRACT_DEPOSIT_CREATED_BY]', { created_by: actualUserEmail });
+      console.log('[EXTRACT_DEPOSIT_CREATED_BY]', { created_by: actualUserEmail, depositAmount });
       
       console.log('[EXTRACT_DEPOSIT_DATA]', depositData);
       
