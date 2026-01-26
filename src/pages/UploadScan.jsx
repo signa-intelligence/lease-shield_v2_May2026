@@ -1075,14 +1075,6 @@ function UploadScanPageContent() {
             }
           });
         }
-        
-        if (scanResult.end_date) {
-          setLeaseDetails({
-            end_date: scanResult.end_date,
-            notice_period_days: scanResult.notice_period_days || 30
-          });
-          setPendingLeaseId(createdLeaseId);
-        }
 
         setSelectedFiles([]);
         queryClient.invalidateQueries({ queryKey: ['leases'] });
