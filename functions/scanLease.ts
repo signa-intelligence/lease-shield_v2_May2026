@@ -52,6 +52,20 @@ Deno.serve(async (req) => {
       riskScore: analyzeResult.scan_full?.risk_score
     });
 
+    // ✅ CRITICAL FIX: Populate Property Tracker from scan results
+    console.log('[SCAN_LEASE_WRAPPER] Invoking populateFromScan...');
+    try {
+      const populateResponse = await base44.functions.invoke('populateFromScan', {
+        scanId: analyzeResult.scanId,
+        leaseId: leaseId,
+        scan_full: analyzeResult.scan_full
+      });
+      console.log('[SCAN_LEASE_WRAPPER] populateFromScan complete:', populateResponse?.data);
+    } catch (populateErr) {
+      console.error('[SCAN_LEASE_WRAPPER] populateFromScan failed:', populateErr);
+      // Don't fail the entire scan - populate errors are non-critical
+    }
+
     // Transform to legacy format for backward compatibility
     return Response.json({
       success: true,
