@@ -193,16 +193,16 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
     summary.detailedAnalysis = `This lease contains several provisions that significantly favor the landlord, reducing fundamental tenant protections. Critical issues may include excessive property use restrictions, harsh deposit return conditions, or unfair dispute resolution clauses. These terms may not align with consumer protection laws or basic fairness principles.`;
     summary.recommendedNextSteps = [
       "Identify all problematic clauses and document your concerns",
-      "Consult with a qualified attorney before signing",
-      "Prepare documentation to negotiate modifications to high-risk clauses",
+      "Use LeaseShield's expert services to review and negotiate",
+      "Prepare documentation using LeaseShield's letter templates",
       "Consider alternative properties if landlord refuses to negotiate"
     ];
     summary.timelineRecommendations = [
       "Within 24 hours: Review all critical and high-risk clauses in detail",
-      "Within 48 hours: Use our Letter Templates to draft negotiation proposals",
-      "Within 72 hours: Schedule negotiation meeting with landlord or consider alternatives"
+      "Within 48 hours: Use LeaseShield's Letter Templates to draft negotiation proposals",
+      "Within 72 hours: Contact LeaseShield for negotiation support or schedule meeting with landlord"
     ];
-    summary.warningRecommendation = `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Use LeaseShield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
+    summary.warningRecommendation = `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Contact LeaseShield for expert review and use our Letter Templates to negotiate removal or modification of high-risk clauses.`;
   } else if (score >= 40) {
     summary.riskHeadline = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)`;
     summary.introSummary = `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. While not immediately dangerous, several provisions could impact your rights during the tenancy.`;
