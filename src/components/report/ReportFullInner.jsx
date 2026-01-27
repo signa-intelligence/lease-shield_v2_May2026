@@ -1089,7 +1089,8 @@ const clauses = clausesRaw.map((c, idx) => {
 // NOTE: Clauses are kept in DOCUMENT ORDER (not sorted by risk)
 // This preserves the original clause numbering from the lease
 
-const textTooShort = !isPreviewMode && meta.text_length !== null && (meta.text_length || 0) < 500;
+// For preview mode, text_length will be 0 (no clauses) - that's expected, not an error
+const textTooShort = !isPreviewMode && meta.text_length !== null && (meta.text_length || 0) < 500 && clauses.length > 0;
 
 // Build detailed executive summary
 const detailedSummary = buildExecutiveSummary(
