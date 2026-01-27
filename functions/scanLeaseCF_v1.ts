@@ -25,7 +25,22 @@ Deno.serve(async (req) => {
       });
     }
     
-    console.log('SCAN_CF_V1_INPUT', { leaseId, inputScanId, fileUrl: fileUrl?.substring(0, 80) });
+    // Get user tier to determine scan mode
+    let userTier = 'free';
+    let userEmail = null;
+    try {
+      const user = await base44.auth.me();
+      userTier = user?.plan_tier || 'free';
+      userEmail = user?.email;
+      console.log('SCAN_CF_V1_USER_TIER', { userTier, userEmail });
+    } catch (authErr) {
+      console.warn('SCAN_CF_V1_AUTH_CHECK_FAILED', { error: authErr.message });
+    }
+    
+    // Determine scan mode: free = preview, paid = full
+    const scanMode = (userTier === 'free') ? 'preview' : 'full';
+    
+    console.log('SCAN_CF_V1_INPUT', { leaseId, inputScanId, fileUrl: fileUrl?.substring(0, 80), scanMode, userTier });
 
     // Find or create scan record FIRST
     let targetScan = null;
@@ -58,7 +73,8 @@ Deno.serve(async (req) => {
       fileUrl: fileUrl,
       leaseId: leaseId,
       scanId: targetScan.id,
-      language: language || 'en'
+      language: language || 'en',
+      scanMode: scanMode // Pass scan mode to analyzeLease
     });
 
     console.log('SCAN_CF_V1_ANALYZELEASE_RETURNED', {

@@ -84,9 +84,13 @@ Deno.serve(async (req) => {
     
     // Parse request body
     const body = await req.json().catch(() => ({}));
-    const { fileUrl, leaseId, scanId, language = "en" } = body || {};
+    const { fileUrl, leaseId, scanId, language = "en", scanMode = "full" } = body || {};
     
-    console.log('[ANALYZE_LEASE_PARAMS]', { correlationId, leaseId, language, hasFileUrl: !!fileUrl });
+    // scanMode: "preview" = free tier (risk score + 5 top risks only)
+    //           "full" = paid tier (complete clause analysis)
+    const isPreviewMode = scanMode === 'preview';
+    
+    console.log('[ANALYZE_LEASE_PARAMS]', { correlationId, leaseId, language, hasFileUrl: !!fileUrl, scanMode, isPreviewMode });
     
     if (!fileUrl) {
       return json(400, {
@@ -179,8 +183,32 @@ Deno.serve(async (req) => {
       }, headers);
     }
     
-    // System prompt for comprehensive analysis
-    const systemPrompt = `You are Lease Shield's AI analyst specializing in residential lease agreements in Thailand and Southeast Asia. Your task is to extract and analyze EVERY SINGLE CLAUSE in the lease document with NO LIMIT.
+    // System prompt - varies based on scan mode
+    const systemPrompt = isPreviewMode 
+      ? `You are Lease Shield's AI analyst specializing in residential lease agreements in Thailand and Southeast Asia. 
+
+PREVIEW MODE: Provide a quick risk assessment with the 5 most important risks.
+
+Return JSON with:
+{
+  "risk_score": 0-100 (overall risk level),
+  "summary": {
+    "executive_summary": "2-3 sentences overall assessment of the lease",
+    "top_risks": [
+      {"title": "Risk name", "severity": "high|critical|medium", "why": "Brief explanation"}
+    ]
+  },
+  "preview_mode": true,
+  "upgrade_message": "Upgrade to see full clause-by-clause analysis with detailed recommendations"
+}
+
+IMPORTANT:
+- Include EXACTLY 5 top risks (the most significant ones)
+- Focus on: deposit issues, unfair termination terms, utility overcharging, excessive penalties, missing protections
+- Keep explanations concise but actionable
+- risk_score should reflect overall lease risk (0=safe, 100=very risky)
+`
+      : `You are Lease Shield's AI analyst specializing in residential lease agreements in Thailand and Southeast Asia. Your task is to extract and analyze EVERY SINGLE CLAUSE in the lease document with NO LIMIT.
 
 ═══════════════════════════════════════════════════════════════════════════
 CRITICAL INSTRUCTION - CLAUSE NUMBERING (HIGHEST PRIORITY):
@@ -409,7 +437,7 @@ For EACH of the 15 clauses above, you MUST return:
     
     if (isPdf) {
       // For PDF: Extract text first, then analyze
-      console.log('[ANALYZE_LEASE_PDF_EXTRACTION_START]', { correlationId });
+      console.log('[ANALYZE_LEASE_PDF_EXTRACTION_START]', { correlationId, isPreviewMode });
       
       // Use pdf-parse for text extraction
       const pdfParse = (await import("npm:pdf-parse@1.1.1")).default;
@@ -449,20 +477,24 @@ For EACH of the 15 clauses above, you MUST return:
       }
       
       // Analyze with OpenAI
-      console.log('[ANALYZE_LEASE_OPENAI_START]', { correlationId, inputLength: pdfText.length });
+      console.log('[ANALYZE_LEASE_OPENAI_START]', { correlationId, inputLength: pdfText.length, isPreviewMode });
+      
+      // Use different prompts and token limits based on scan mode
+      const userPrompt = isPreviewMode
+        ? `Quickly assess this lease document for the top 5 risks (language: ${language}):\n\n${pdfText.slice(0, 8000)}`
+        : `Analyze this complete lease document (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read the entire document thoroughly:\n\n${pdfText.slice(0, 15000)}`;
+      
+      const maxTokens = isPreviewMode ? 1000 : 4000;
       
       try {
         const completion = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: [
             { role: "system", content: systemPrompt },
-            { 
-              role: "user", 
-              content: `Analyze this complete lease document (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read the entire document thoroughly:\n\n${pdfText.slice(0, 15000)}`
-            }
+            { role: "user", content: userPrompt }
           ],
           response_format: { type: "json_object" },
-          max_tokens: 4000,
+          max_tokens: maxTokens,
           temperature: 0.2
         });
         
@@ -494,10 +526,17 @@ For EACH of the 15 clauses above, you MUST return:
       
     } else if (isImage) {
       // For Image: Use vision API
-      console.log('[ANALYZE_LEASE_IMAGE_VISION_START]', { correlationId });
+      console.log('[ANALYZE_LEASE_IMAGE_VISION_START]', { correlationId, isPreviewMode });
       
       // Convert to base64
       const base64Image = btoa(String.fromCharCode(...fileBytes));
+      
+      // Use different prompts based on scan mode
+      const imagePrompt = isPreviewMode
+        ? `Quickly assess this lease document image for the top 5 risks (language: ${language}).`
+        : `Analyze this complete lease document image (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read carefully and provide comprehensive analysis.`;
+      
+      const maxTokensImage = isPreviewMode ? 1000 : 4000;
       
       try {
         const completion = await openai.chat.completions.create({
@@ -509,7 +548,7 @@ For EACH of the 15 clauses above, you MUST return:
               content: [
                 {
                   type: "text",
-                  text: `Analyze this complete lease document image (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read carefully and provide comprehensive analysis.`
+                  text: imagePrompt
                 },
                 {
                   type: "image_url",
@@ -522,7 +561,7 @@ For EACH of the 15 clauses above, you MUST return:
             }
           ],
           response_format: { type: "json_object" },
-          max_tokens: 4000,
+          max_tokens: maxTokensImage,
           temperature: 0.2
         });
         
@@ -697,8 +736,8 @@ For EACH of the 15 clauses above, you MUST return:
       analysisResult.missingClauseCount = 0;
     }
     
-    // Check minimum clauses (lowered to 5 to catch genuinely short documents)
-    if (analysisResult.clauses.length < 5) {
+    // Check minimum clauses - skip for preview mode (which has no clauses)
+    if (!isPreviewMode && analysisResult.clauses.length < 5) {
       console.warn('[ANALYZE_LEASE_INSUFFICIENT_CLAUSES]', { 
         correlationId, 
         count: analysisResult.clauses.length 
@@ -711,6 +750,14 @@ For EACH of the 15 clauses above, you MUST return:
         retryable: true,
         correlationId
       }, headers);
+    }
+    
+    // For preview mode, add the flag
+    if (isPreviewMode) {
+      analysisResult.preview_mode = true;
+      analysisResult.upgrade_message = "Upgrade to see full clause-by-clause analysis with detailed recommendations";
+      // Ensure clauses array exists but is empty for preview
+      analysisResult.clauses = [];
     }
     
     // Add metadata
