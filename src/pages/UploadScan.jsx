@@ -1500,10 +1500,17 @@ function UploadScanPageContent() {
         if (!scanId) throw new Error('BUG: scanId missing');
         if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
         
-        // Invalidate all queries to refresh Protection Score and data
-        await queryClient.invalidateQueries({ queryKey: ['allScans'] });
-        await queryClient.invalidateQueries({ queryKey: ['deposits'] });
-        await queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+        // CRITICAL: Invalidate ALL queries to force UI refresh
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['allScans'] }),
+          queryClient.invalidateQueries({ queryKey: ['deposits'] }),
+          queryClient.invalidateQueries({ queryKey: ['timelineEvents'] }),
+          queryClient.invalidateQueries({ queryKey: ['leases'] }),
+          queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+        ]);
+        
+        // Force refetch deposits immediately to ensure UI shows new data
+        await queryClient.refetchQueries({ queryKey: ['deposits'] });
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
         navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
