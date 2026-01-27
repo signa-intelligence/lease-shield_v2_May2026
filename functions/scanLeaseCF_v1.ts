@@ -182,11 +182,24 @@ Deno.serve(async (req) => {
     // Get user email for proper ownership binding
     let userEmail = null;
     try {
-      const user = await base44.auth.me();
-      userEmail = user?.email;
-      console.log('[SCAN_CF_V1_USER_CONTEXT]', { userEmail });
+      // CRITICAL: Use service role to fetch lease record and get owner_email
+      const lease = await svc.entities.Lease.get(leaseId);
+      userEmail = lease?.owner_email || lease?.created_by;
+      console.log('[SCAN_CF_V1_USER_CONTEXT]', { userEmail, source: 'lease_record' });
+      
+      // Fallback: try auth.me() if lease doesn't have owner_email
+      if (!userEmail) {
+        const user = await base44.auth.me();
+        userEmail = user?.email;
+        console.log('[SCAN_CF_V1_USER_CONTEXT_FALLBACK]', { userEmail, source: 'auth.me' });
+      }
     } catch (authErr) {
-      console.warn('[SCAN_CF_V1_USER_CONTEXT_FAILED]', { error: authErr.message });
+      console.error('[SCAN_CF_V1_USER_CONTEXT_FAILED]', { error: authErr.message });
+      // Last resort: try to get from lease without service role
+      try {
+        const lease = await base44.entities.Lease.get(leaseId);
+        userEmail = lease?.owner_email || lease?.created_by;
+      } catch (_) {}
     }
 
     // Call new extractLeaseData function
