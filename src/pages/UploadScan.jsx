@@ -892,11 +892,16 @@ function UploadScanPageContent() {
         // Extract original filename from first file
         const originalFilename = filesToUpload[0]?.name || 'Lease Document';
 
+        // CRITICAL: Ensure user is loaded before creating lease
+        if (!user?.email) {
+          throw new Error('USER_NOT_LOADED: Cannot create lease without user email');
+        }
+
         const lease = await base44.entities.Lease.create({
           file_url: uploadedUrls[0], // Primary file
           file_urls: uploadedUrls, // All pages
           status: 'queued',
-          owner_email: user?.email,
+          owner_email: user.email,
           original_filename: originalFilename
         });
         createdLeaseId = lease.id;
@@ -1279,11 +1284,16 @@ function UploadScanPageContent() {
         // Extract original filename from first file
         const originalFilename = normalizedFiles[0]?.name || filesToUpload[0]?.name || 'Lease Document';
         
+        // CRITICAL: Ensure user is loaded before creating lease
+        if (!user?.email) {
+          throw new Error('USER_NOT_LOADED: Cannot create lease without user email');
+        }
+
         const lease = await base44.entities.Lease.create({
           file_url: fileUrls[0],
           file_urls: fileUrls,
           status: 'uploaded',
-          owner_email: user?.email,
+          owner_email: user.email,
           original_filename: originalFilename
         });
         createdLeaseId = lease.id;
