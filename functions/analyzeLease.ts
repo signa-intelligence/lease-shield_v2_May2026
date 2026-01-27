@@ -189,6 +189,8 @@ Deno.serve(async (req) => {
 
 PREVIEW MODE: Provide a quick risk assessment with the 5 most important risks.
 
+CRITICAL: You MUST extract key_terms from the lease document. These are essential for auto-populating deposit and timeline tracking.
+
 Return JSON with:
 {
   "risk_score": 0-100 (overall risk level),
@@ -199,20 +201,29 @@ Return JSON with:
     ]
   },
   "key_terms": {
-    "lease_start_date": "YYYY-MM-DD or null",
-    "lease_end_date": "YYYY-MM-DD or null",
-    "property_address": "Full address or null",
-    "monthly_rent": 38000,
-    "security_deposit": 114000,
-    "rent_due_day": 1
+    "lease_start_date": "YYYY-MM-DD" (REQUIRED - extract from lease start/commencement),
+    "lease_end_date": "YYYY-MM-DD" (REQUIRED - extract from lease end/expiry),
+    "property_address": "Full property address" (REQUIRED - extract from rental property/premises section),
+    "monthly_rent": 42000 (REQUIRED - extract rent amount as number),
+    "security_deposit": 84000 (REQUIRED - extract deposit amount as number),
+    "rent_due_day": 5 (REQUIRED - day of month rent is due, typically 1-5)
   },
   "preview_mode": true,
   "upgrade_message": "Upgrade to see full clause-by-clause analysis with detailed recommendations"
 }
 
+CRITICAL - key_terms extraction priority:
+1. Look for "LEASE TERM" or "ระยะเวลาการเช่า" → extract start and end dates
+2. Look for "RENTAL PAYMENT" or "การชำระค่าเช่า" → extract monthly rent amount and due day
+3. Look for "DEPOSIT" or "เงินประกัน" → extract security deposit amount
+4. Look for "RENTAL PROPERTY" or "ทรัพย์สินที่เช่า" → extract full property address
+5. Use NUMBERS, not strings (monthly_rent: 42000, NOT "42,000 THB")
+6. Use YYYY-MM-DD format for dates (lease_start_date: "2026-03-01", NOT "March 1, 2026")
+7. If a field is not found, use null (NOT empty string)
+
 IMPORTANT:
 - Include EXACTLY 5 top risks (the most significant ones)
-- Extract key_terms (dates, amounts, address) from document for auto-population
+- Extract key_terms is MANDATORY - do NOT return empty object
 - Focus on: deposit issues, unfair termination terms, utility overcharging, excessive penalties, missing protections
 - Keep explanations concise but actionable
 - risk_score should reflect overall lease risk (0=safe, 100=very risky)
