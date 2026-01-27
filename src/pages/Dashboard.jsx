@@ -1,4 +1,3 @@
-
 // ⚠️ LeaseShield: Dashboard overview is stabilised.
 // Do not modify card themes, layout, or handlers without explicit product approval.
 
@@ -76,7 +75,7 @@ function DashboardContent() {
 
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
     queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date', 10),
+    queryFn: () => base44.entities.Lease.filter({ owner_email: user?.email }, '-created_date', 10),
     enabled: !!user,
   });
 
@@ -84,7 +83,7 @@ function DashboardContent() {
   const { data: deposits = [], isLoading: depositsLoading } = useQuery({
     queryKey: ['deposits'],
     queryFn: async () => {
-      const allDeposits = await base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date');
+      const allDeposits = await base44.entities.DepositTracker.filter({ owner_email: user?.email }, '-created_date');
       console.log('[DASHBOARD_DEPOSITS] ✅ USER-SCOPED QUERY', {
         user: user?.email,
         count: allDeposits.length,
@@ -94,7 +93,7 @@ function DashboardContent() {
           rent_amount: d.rent_amount,
           lease_id: d.lease_id,
           property_address: d.property_address,
-          created_by: d.created_by
+          owner_email: d.owner_email
         }))
       });
       return allDeposits;
@@ -160,7 +159,7 @@ function DashboardContent() {
 
   const { data: timelineEvents = [] } = useQuery({
     queryKey: ['timelineEvents'],
-    queryFn: () => base44.entities.TimelineEvent.filter({ created_by: user?.email }),
+    queryFn: () => base44.entities.TimelineEvent.filter({ owner_email: user?.email }),
     enabled: !!user,
   });
 

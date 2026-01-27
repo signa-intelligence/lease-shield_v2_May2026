@@ -364,7 +364,7 @@ function PropertyTrackerContent() {
   const { data: deposits = [] } = useQuery({
     queryKey: ['deposits'],
     queryFn: async () => {
-      const allDeposits = await base44.entities.DepositTracker.filter({ created_by: user?.email }, '-created_date');
+      const allDeposits = await base44.entities.DepositTracker.filter({ owner_email: user?.email }, '-created_date');
       
       // Fetch lease data for each deposit
       const depositsWithLeases = await Promise.all(
