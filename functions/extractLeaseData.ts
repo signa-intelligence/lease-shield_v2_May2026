@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     let propertyAddress = null;
     
     // FIRST: Try to extract from key_terms (most reliable)
-    if (scanFull.key_terms) {
+    if (scanFull.key_terms && Object.keys(scanFull.key_terms).length > 0) {
       console.log('[EXTRACT_CHECKING_KEY_TERMS]', { 
         hasKeyTerms: true,
         keys: Object.keys(scanFull.key_terms),
@@ -95,6 +95,33 @@ Deno.serve(async (req) => {
       if (!propertyAddress && scanFull.key_terms.property_address) {
         propertyAddress = scanFull.key_terms.property_address;
         console.log('[EXTRACT_PROPERTY_ADDRESS]', { propertyAddress });
+      }
+    }
+    
+    // FALLBACK: Parse from top_risks if key_terms empty (for preview mode)
+    if ((!depositAmount || !rentAmount || !startDate || !endDate) && scanFull.summary?.top_risks) {
+      console.log('[EXTRACT_FALLBACK_TOP_RISKS]', { hasTopRisks: true, count: scanFull.summary.top_risks.length });
+      
+      for (const risk of scanFull.summary.top_risks) {
+        const text = `${risk.title || ''} ${risk.why || ''}`.toLowerCase();
+        
+        // Try to extract deposit from risk text
+        if (!depositAmount && text.includes('deposit')) {
+          const match = text.match(/(?:thb|฿)\s*([\d,]+)/i);
+          if (match) {
+            depositAmount = parseInt(match[1].replace(/,/g, ''));
+            console.log('[EXTRACT_DEPOSIT_FROM_RISK]', { depositAmount, source: risk.title });
+          }
+        }
+        
+        // Try to extract rent from risk text
+        if (!rentAmount && (text.includes('rent') || text.includes('monthly'))) {
+          const match = text.match(/(?:thb|฿)\s*([\d,]+)/i);
+          if (match) {
+            rentAmount = parseInt(match[1].replace(/,/g, ''));
+            console.log('[EXTRACT_RENT_FROM_RISK]', { rentAmount, source: risk.title });
+          }
+        }
       }
     }
     
@@ -207,17 +234,24 @@ Deno.serve(async (req) => {
       notification: null
     };
     
-    // Create deposit record
-    if (depositAmount) {
-      // Calculate dates - use lease end date if available, otherwise 1 year
+    // Create deposit record if we have ANY data
+    if (depositAmount || rentAmount) {
       const today = new Date().toISOString().split('T')[0];
+      
+      // Calculate dates - use lease end date if available, otherwise 1 year from start
       let returnDate;
       if (endDate) {
         // Use lease end date + 30 days as expected return
         const endDateObj = new Date(endDate);
         endDateObj.setDate(endDateObj.getDate() + 30);
         returnDate = endDateObj.toISOString().split('T')[0];
+      } else if (startDate) {
+        // Use start date + 1 year
+        const startDateObj = new Date(startDate);
+        startDateObj.setFullYear(startDateObj.getFullYear() + 1);
+        returnDate = startDateObj.toISOString().split('T')[0];
       } else {
+        // Fallback: 1 year from today
         const oneYearLater = new Date();
         oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
         returnDate = oneYearLater.toISOString().split('T')[0];
@@ -239,9 +273,12 @@ Deno.serve(async (req) => {
       const depositData = {
         owner_email: actualUserEmail, // CRITICAL: Bind to actual user
         lease_id: leaseId,
-        deposit_amount: depositAmount,
+        deposit_amount: depositAmount || 0,
         deposit_paid_date: startDate || today,
         expected_return_date: returnDate,
+        expected_return_date_is_estimated: !endDate, // Flag if we estimated the date
+        deposit_due_date: startDate || today,
+        deposit_due_date_is_estimated: !startDate,
         property_address: propertyAddress || 'N/A',
         status: 'tracking',
         rent_amount: rentAmount || 0,

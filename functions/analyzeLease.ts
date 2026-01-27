@@ -198,12 +198,21 @@ Return JSON with:
       {"title": "Risk name", "severity": "high|critical|medium", "why": "Brief explanation"}
     ]
   },
+  "key_terms": {
+    "lease_start_date": "YYYY-MM-DD or null",
+    "lease_end_date": "YYYY-MM-DD or null",
+    "property_address": "Full address or null",
+    "monthly_rent": 38000,
+    "security_deposit": 114000,
+    "rent_due_day": 1
+  },
   "preview_mode": true,
   "upgrade_message": "Upgrade to see full clause-by-clause analysis with detailed recommendations"
 }
 
 IMPORTANT:
 - Include EXACTLY 5 top risks (the most significant ones)
+- Extract key_terms (dates, amounts, address) from document for auto-population
 - Focus on: deposit issues, unfair termination terms, utility overcharging, excessive penalties, missing protections
 - Keep explanations concise but actionable
 - risk_score should reflect overall lease risk (0=safe, 100=very risky)
