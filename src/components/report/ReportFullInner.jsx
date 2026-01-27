@@ -1057,7 +1057,7 @@ console.log('[PREVIEW_MODE_CHECK]', {
   clausesCount: sf.clauses?.length || 0
 });
 
-// Map top_risks to display format
+// Map top_risks to display format (for Explorer tier preview mode)
 const topRisksRaw = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
 const topRisks = topRisksRaw.map((risk, idx) => {
   if (typeof risk === 'string') {
@@ -1065,6 +1065,25 @@ const topRisks = topRisksRaw.map((risk, idx) => {
   }
   return risk;
 });
+
+// Display top risks in preview mode (Explorer tier)
+const topRisksSection = isPreviewMode && topRisks.length > 0 ? (
+  <div className="mb-6 p-4 rounded-lg border" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
+    <h4 className="font-semibold mb-3" style={{ color: colors.textPrimary }}>
+      {language === 'th' ? 'ความเสี่ยงหลัก' : 'Top Risks Identified'}
+    </h4>
+    <ul className="space-y-2">
+      {topRisks.slice(0, 5).map((risk, idx) => (
+        <li key={idx} className="flex items-start gap-2">
+          <span className="text-red-600 font-bold mt-0.5 flex-shrink-0">•</span>
+          <span style={{ color: colors.textPrimary }}>
+            {typeof risk === 'string' ? risk : risk.title || `Risk ${idx + 1}`}
+          </span>
+        </li>
+      ))}
+    </ul>
+  </div>
+) : null;
 
 // Map clauses to normalize field names with 3 recommendations each
 // IMPORTANT: Preserve original document order - DO NOT sort by risk
@@ -1205,19 +1224,31 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
             Back
           </Button>
           <div className="flex items-center gap-2">
-            <Button onClick={handleExportPdf} disabled={exportingPdf} style={{ backgroundColor: "#0C3B2E", color: "#fff" }}>
-              {exportingPdf ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4 mr-2" />
-                  {language === 'th' ? 'ส่งออกรายงาน' : 'Export Report'}
-                </>
-              )}
-            </Button>
+            {!isPreviewMode && (
+              <Button onClick={handleExportPdf} disabled={exportingPdf} style={{ backgroundColor: "#0C3B2E", color: "#fff" }}>
+                {exportingPdf ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    {language === 'th' ? 'ส่งออกรายงาน' : 'Export Report'}
+                  </>
+                )}
+              </Button>
+            )}
+            {isPreviewMode && (
+              <Button 
+                onClick={() => window.location.href = '/account#plans'}
+                style={{ backgroundColor: "#0C3B2E", color: "#fff" }}
+                title={language === 'th' ? 'PDF ส่งออกพร้อมใช้งานสำหรับสมาชิก' : 'PDF export available for members'}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {language === 'th' ? 'ส่งออก (อัปเกรด)' : 'Export (Upgrade)'}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1303,7 +1334,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 color: colors.textPrimary,
                 lineHeight: '1.5'
               }}>
-                {lease.property_address || reportData.lease_address || reportData.key_terms?.property_address || 'Property address not specified'}
+                {lease?.property_address || reportData?.lease_address || reportData?.key_terms?.property_address || sf?.meta?.property_address || (language === 'th' ? 'ไม่ระบุที่อยู่' : 'Property address not specified')}
               </p>
             </div>
 
@@ -1356,40 +1387,43 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               </div>
             </div>
 
-            {/* PREVIEW MODE: Show upgrade CTA instead of full clauses */}
+            {/* PREVIEW MODE: Show top 5 risks + upgrade CTA instead of full clauses */}
             {isPreviewMode && (
-              <div className="mb-6 p-6 rounded-xl border-2" style={{
-                backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
-                borderColor: '#3B82F6'
-              }}>
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{
-                    backgroundColor: '#3B82F6'
-                  }}>
-                    <FileText className="w-8 h-8 text-white" />
+              <>
+                {topRisksSection}
+                <div className="mb-6 p-6 rounded-xl border-2" style={{
+                  backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                  borderColor: '#3B82F6'
+                }}>
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{
+                      backgroundColor: '#3B82F6'
+                    }}>
+                      <FileText className="w-8 h-8 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? 'ดูการวิเคราะห์ทีละข้อฉบับเต็ม' : 'View Full Clause-by-Clause Analysis'}
+                    </h3>
+                    <p className="mb-4" style={{ color: colors.textSecondary }}>
+                      {language === 'th' 
+                        ? 'อัปเกรดเพื่อดูการวิเคราะห์ทุกข้อสัญญาพร้อมคำแนะนำโดยละเอียด'
+                        : upgradeMessage}
+                    </p>
+                    <Button
+                      onClick={() => window.location.href = '/account#plans'}
+                      style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                      className="px-8 py-3"
+                    >
+                      {language === 'th' ? 'อัปเกรดเลย' : 'Upgrade Now'}
+                    </Button>
+                    <p className="mt-3 text-xs" style={{ color: colors.textSecondary }}>
+                      {language === 'th' 
+                        ? 'เริ่มต้นเพียง ฿158/เดือน สำหรับ 6 สแกน/ปี'
+                        : 'Starting at ฿158/month for 6 scans/year'}
+                    </p>
                   </div>
-                  <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                    {language === 'th' ? 'ดูการวิเคราะห์ทีละข้อฉบับเต็ม' : 'View Full Clause-by-Clause Analysis'}
-                  </h3>
-                  <p className="mb-4" style={{ color: colors.textSecondary }}>
-                    {language === 'th' 
-                      ? 'อัปเกรดเพื่อดูการวิเคราะห์ทุกข้อสัญญาพร้อมคำแนะนำโดยละเอียด'
-                      : upgradeMessage}
-                  </p>
-                  <Button
-                    onClick={() => window.location.href = '/account#plans'}
-                    style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
-                    className="px-8 py-3"
-                  >
-                    {language === 'th' ? 'อัปเกรดเลย' : 'Upgrade Now'}
-                  </Button>
-                  <p className="mt-3 text-xs" style={{ color: colors.textSecondary }}>
-                    {language === 'th' 
-                      ? 'เริ่มต้นเพียง ฿158/เดือน สำหรับ 6 สแกน/ปี'
-                      : 'Starting at ฿158/month for 6 scans/year'}
-                  </p>
                 </div>
-              </div>
+              </>
             )}
 
             {/* Clauses - Card-based layout with 3 recommendations (only for paid users) */}
