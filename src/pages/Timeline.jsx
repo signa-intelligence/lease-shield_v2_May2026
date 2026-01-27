@@ -408,15 +408,28 @@ function TimelineContent() {
     // Generate rent payment events from deposits with rent schedules
     deposits.forEach(deposit => {
       if (deposit.rent_amount && deposit.rent_due_day) {
+        // Determine valid rent period boundaries
+        const leaseStart = deposit.lease_start_date ? parseISO(deposit.lease_start_date) : null;
+        const leaseEnd = deposit.lease_end_date ? parseISO(deposit.lease_end_date) : null;
+        
         const currentMonth = startOfMonth(currentDate);
         const threeMonthsAgo = subMonths(currentMonth, 3);
         const twelveMonthsAhead = addMonths(currentMonth, 12);
 
-        // Generate recurring rent events for next 12 months + past 3 months
-        for (let month = threeMonthsAgo; month <= twelveMonthsAhead; month = addMonths(month, 1)) {
+        // Determine rent generation boundaries
+        // If lease dates exist, use them; otherwise use 3 months ago to 12 months ahead
+        const startBoundary = leaseStart && isAfter(leaseStart, threeMonthsAgo) ? startOfMonth(leaseStart) : threeMonthsAgo;
+        const endBoundary = leaseEnd && isBefore(leaseEnd, twelveMonthsAhead) ? endOfMonth(leaseEnd) : twelveMonthsAhead;
+
+        // Generate recurring rent events within valid period
+        for (let month = startBoundary; month <= endBoundary; month = addMonths(month, 1)) {
           const rentDate = new Date(month);
           rentDate.setDate(deposit.rent_due_day);
           rentDate.setHours(12, 0, 0, 0);
+
+          // Skip if rent date is before lease start or after lease end
+          if (leaseStart && isBefore(rentDate, leaseStart)) continue;
+          if (leaseEnd && isAfter(rentDate, leaseEnd)) continue;
 
           const rentLabel = language === 'th' 
             ? `ค่าเช่า - ฿${deposit.rent_amount.toLocaleString()}`
