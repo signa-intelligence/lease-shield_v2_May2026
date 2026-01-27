@@ -130,7 +130,7 @@ function UploadScanPageContent() {
 
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: () => base44.entities.Lease.filter({ owner_email: user?.email }, '-created_date'),
     enabled: !!user,
     initialData: [],
     refetchInterval: (query) => {
@@ -896,7 +896,7 @@ function UploadScanPageContent() {
           file_url: uploadedUrls[0], // Primary file
           file_urls: uploadedUrls, // All pages
           status: 'queued',
-          created_by: user?.email,
+          owner_email: user?.email,
           original_filename: originalFilename
         });
         createdLeaseId = lease.id;
@@ -1283,7 +1283,7 @@ function UploadScanPageContent() {
           file_url: fileUrls[0],
           file_urls: fileUrls,
           status: 'uploaded',
-          created_by: user?.email,
+          owner_email: user?.email,
           original_filename: originalFilename
         });
         createdLeaseId = lease.id;
