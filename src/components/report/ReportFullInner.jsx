@@ -1046,6 +1046,10 @@ console.log('DEBUG_REPORTDATA:', {
 });
 const meta = sf.meta || {};
 
+// Check if this is a preview mode scan (free tier)
+const isPreviewMode = sf.preview_mode === true;
+const upgradeMessage = sf.upgrade_message || 'Upgrade to see full clause-by-clause analysis';
+
 // Map top_risks to display format
 const topRisksRaw = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
 const topRisks = topRisksRaw.map((risk, idx) => {
@@ -1078,7 +1082,7 @@ const clauses = clausesRaw.map((c, idx) => {
 // NOTE: Clauses are kept in DOCUMENT ORDER (not sorted by risk)
 // This preserves the original clause numbering from the lease
 
-const textTooShort = meta.text_length !== null && (meta.text_length || 0) < 500;
+const textTooShort = !isPreviewMode && meta.text_length !== null && (meta.text_length || 0) < 500;
 
 // Build detailed executive summary
 const detailedSummary = buildExecutiveSummary(
@@ -1344,7 +1348,45 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               </div>
             </div>
 
-            {/* Clauses - Card-based layout with 3 recommendations */}
+            {/* PREVIEW MODE: Show upgrade CTA instead of full clauses */}
+            {isPreviewMode && (
+              <div className="mb-6 p-6 rounded-xl border-2" style={{
+                backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                borderColor: '#3B82F6'
+              }}>
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{
+                    backgroundColor: '#3B82F6'
+                  }}>
+                    <FileText className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? 'ดูการวิเคราะห์ทีละข้อฉบับเต็ม' : 'View Full Clause-by-Clause Analysis'}
+                  </h3>
+                  <p className="mb-4" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? 'อัปเกรดเพื่อดูการวิเคราะห์ทุกข้อสัญญาพร้อมคำแนะนำโดยละเอียด'
+                      : upgradeMessage}
+                  </p>
+                  <Button
+                    onClick={() => window.location.href = '/account#plans'}
+                    style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+                    className="px-8 py-3"
+                  >
+                    {language === 'th' ? 'อัปเกรดเลย' : 'Upgrade Now'}
+                  </Button>
+                  <p className="mt-3 text-xs" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? 'เริ่มต้นเพียง ฿158/เดือน สำหรับ 6 สแกน/ปี'
+                      : 'Starting at ฿158/month for 6 scans/year'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Clauses - Card-based layout with 3 recommendations (only for paid users) */}
+            {!isPreviewMode && (
+              <>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
                 {language === 'th' ? 'การวิเคราะห์ทีละข้อ' : 'Clause-by-Clause Analysis'}
@@ -1439,7 +1481,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 );
               })}
               
-              {clauses.length === 0 && (
+              {clauses.length === 0 && !isPreviewMode && (
                 <div className="p-8 text-center rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F9FAFB' }}>
                   <p style={{ color: colors.textSecondary }}>
                     {language === 'th' ? 'ไม่พบข้อสัญญา' : 'No clauses parsed.'}
@@ -1447,6 +1489,8 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 </div>
               )}
             </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
