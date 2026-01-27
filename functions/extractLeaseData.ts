@@ -237,6 +237,7 @@ Deno.serve(async (req) => {
       }
       
       const depositData = {
+        owner_email: actualUserEmail, // CRITICAL: Bind to actual user
         lease_id: leaseId,
         deposit_amount: depositAmount,
         deposit_paid_date: startDate || today,
@@ -246,8 +247,7 @@ Deno.serve(async (req) => {
         rent_amount: rentAmount || 0,
         rent_due_day: 1,
         lease_start_date: startDate || null,
-        lease_end_date: endDate || null,
-        created_by: actualUserEmail // CRITICAL: Bind to actual user
+        lease_end_date: endDate || null
       };
       
       console.log('[EXTRACT_DEPOSIT_CREATED_BY]', { created_by: actualUserEmail, depositAmount });
@@ -290,13 +290,13 @@ Deno.serve(async (req) => {
             firstRentDate.setDate(1); // Rent due on 1st
             
             await svc.entities.TimelineEvent.create({
+              owner_email: actualUserEmail, // CRITICAL: Bind to actual user
               lease_id: leaseId,
               event_type: 'rent_due',
               event_date: firstRentDate.toISOString().split('T')[0],
               title: 'First Rent Payment Due',
               description: `Monthly rent of ฿${rentAmount.toLocaleString()} due`,
-              property_address: propertyAddress || 'N/A',
-              created_by: actualUserEmail // CRITICAL: Bind to actual user
+              property_address: propertyAddress || 'N/A'
             });
             console.log('[EXTRACT_RENT_TIMELINE_CREATED]');
           } catch (timelineError) {
