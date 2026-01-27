@@ -1047,8 +1047,15 @@ console.log('DEBUG_REPORTDATA:', {
 const meta = sf.meta || {};
 
 // Check if this is a preview mode scan (free tier)
-const isPreviewMode = sf.preview_mode === true || ((user?.plan_tier || "").toLowerCase() === "free");
+// CRITICAL: Only use sf.preview_mode flag - the scan determines this based on user tier at scan time
+const isPreviewMode = sf.preview_mode === true;
 const upgradeMessage = sf.upgrade_message || 'Upgrade to see full clause-by-clause analysis';
+
+console.log('[PREVIEW_MODE_CHECK]', { 
+  sf_preview_mode: sf.preview_mode, 
+  isPreviewMode,
+  clausesCount: sf.clauses?.length || 0
+});
 
 // Map top_risks to display format
 const topRisksRaw = Array.isArray(sf.summary?.top_risks) ? sf.summary.top_risks : [];
