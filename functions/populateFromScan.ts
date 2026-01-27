@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
       }
     }
     
-    const svc = base44.asServiceRole || base44;
+    const svc = base44; // Use authenticated context, not service role
     
     console.log(`[${executionId}] Input params:`, { scanId, leaseId, hasScanFull: !!scan_full });
     
@@ -536,8 +536,8 @@ Deno.serve(async (req) => {
     if (updates.deposit && Object.keys(updates.deposit).length > 3) {
       const depositData = {
         ...updates.deposit,
-        lease_id: leaseId,
-        created_by: user.email // CRITICAL FIX: Bind to actual user
+        lease_id: leaseId
+        // created_by will be set automatically from authenticated context
       };
       
       // Validate required fields
@@ -622,8 +622,8 @@ Deno.serve(async (req) => {
           const created = await svc.entities.TimelineEvent.create({
             ...event,
             needs_review: false,
-            is_estimated: false,
-            created_by: user.email // CRITICAL FIX: Bind to actual user
+            is_estimated: false
+            // created_by will be set automatically from authenticated context
           });
           createdEvents.push(created);
           console.log('[TIMELINE_EVENT_CREATED]', { eventId: created.id, eventType: event.event_type });
