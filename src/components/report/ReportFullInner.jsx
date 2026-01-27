@@ -1263,8 +1263,8 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 />
               </div>
             )}
-            {/* Error banner if extraction failed / empty */}
-            {(clauses.length === 0 || textTooShort) && (
+            {/* Error banner if extraction failed / empty - ONLY show for paid users (not preview mode) */}
+            {!isPreviewMode && (clauses.length === 0 || textTooShort) && (
               <div className="mb-4 p-4 rounded-lg border-2" style={{ backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2', borderColor: '#EF4444' }}>
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
