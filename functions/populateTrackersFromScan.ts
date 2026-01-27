@@ -115,6 +115,7 @@ Deno.serve(async (req) => {
       };
 
       depositTrackerData = {
+        owner_email: user.email,
         deposit_amount: extractedData.deposit_amount,
         deposit_paid_date: deposit_due_date,
         expected_return_date: expected_return_date || deposit_due_date,
@@ -156,6 +157,7 @@ Deno.serve(async (req) => {
       // 1. Lease scanned event
       if (!eventExists('lease_scanned')) {
         timelineEventsData.push({
+          owner_email: user.email,
           event_type: 'lease_scanned',
           event_date: new Date().toISOString(),
           title: 'Lease scanned',
@@ -172,6 +174,7 @@ Deno.serve(async (req) => {
       // 2. Lease start event
       if (extractedData.start_date && !eventExists('lease_start')) {
         timelineEventsData.push({
+          owner_email: user.email,
           event_type: 'lease_start',
           event_date: new Date(extractedData.start_date).toISOString(),
           title: 'Lease starts',
@@ -188,6 +191,7 @@ Deno.serve(async (req) => {
       // 3. Lease end event
       if (extractedData.end_date && !eventExists('lease_end')) {
         timelineEventsData.push({
+          owner_email: user.email,
           event_type: 'lease_end',
           event_date: new Date(extractedData.end_date).toISOString(),
           title: 'Lease ends',
@@ -204,6 +208,7 @@ Deno.serve(async (req) => {
       // 4. Deposit due event
       if (depositTrackerData?.deposit_due_date && !eventExists('deposit_due')) {
         timelineEventsData.push({
+          owner_email: user.email,
           event_type: 'deposit_due',
           event_date: new Date(depositTrackerData.deposit_due_date).toISOString(),
           title: 'Deposit due',
@@ -220,6 +225,7 @@ Deno.serve(async (req) => {
       // 5. Deposit return event
       if (depositTrackerData?.expected_return_date && !eventExists('deposit_return')) {
         timelineEventsData.push({
+          owner_email: user.email,
           event_type: 'deposit_return',
           event_date: new Date(depositTrackerData.expected_return_date).toISOString(),
           title: 'Deposit return expected',
@@ -240,6 +246,7 @@ Deno.serve(async (req) => {
         noticeDate.setDate(noticeDate.getDate() - extractedData.notice_period_days);
         
         timelineEventsData.push({
+          owner_email: user.email,
           event_type: 'notice_deadline',
           event_date: noticeDate.toISOString(),
           title: 'Notice deadline',
@@ -259,10 +266,37 @@ Deno.serve(async (req) => {
       console.error(`[${correlationId}] Timeline events population failed:`, error.message);
     }
 
-    // ===== RESPONSE WITH REVIEW DATA (NOT SAVED YET) =====
+    // ===== SAVE DATA TO DATABASE =====
+    let depositCreated = false;
+    let timelineCreated = 0;
+    
+    try {
+      if (depositTrackerData && depositTrackerData.deposit_amount) {
+        await base44.entities.DepositTracker.create(depositTrackerData);
+        depositCreated = true;
+        console.log(`[${correlationId}] DepositTracker created successfully`);
+      }
+      
+      if (timelineEventsData.length > 0) {
+        for (const event of timelineEventsData) {
+          await base44.entities.TimelineEvent.create(event);
+          timelineCreated++;
+        }
+        console.log(`[${correlationId}] Created ${timelineCreated} TimelineEvents`);
+      }
+    } catch (saveError) {
+      console.error(`[${correlationId}] Failed to save auto-populated data:`, saveError.message);
+      // Continue - don't fail the entire operation
+    }
+
+    // ===== RESPONSE WITH SUCCESS STATUS =====
     return Response.json({
       success: true,
-      review_mode: true,
+      auto_populated: true,
+      records_created: {
+        deposit_tracker: depositCreated,
+        timeline_events: timelineCreated
+      },
       data_prepared: {
         deposit_tracker: depositTrackerData,
         timeline_events: timelineEventsData
