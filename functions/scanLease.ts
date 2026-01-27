@@ -55,6 +55,12 @@ Deno.serve(async (req) => {
     // ✅ CRITICAL FIX: Populate Property Tracker from scan results
     console.log('[SCAN_LEASE_WRAPPER] Invoking populateFromScan...');
     try {
+      // Update lease with owner_email FIRST
+      await base44.entities.Lease.update(leaseId, {
+        owner_email: user.email
+      });
+      console.log('[SCAN_LEASE_WRAPPER] Set lease owner_email:', user.email);
+
       const populateResponse = await base44.functions.invoke('populateFromScan', {
         scanId: analyzeResult.scanId,
         leaseId: leaseId,
