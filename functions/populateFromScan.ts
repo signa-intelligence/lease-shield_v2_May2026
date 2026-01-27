@@ -536,8 +536,8 @@ Deno.serve(async (req) => {
     if (updates.deposit && Object.keys(updates.deposit).length > 3) {
       const depositData = {
         ...updates.deposit,
-        lease_id: leaseId
-        // created_by will be set automatically from authenticated context
+        lease_id: leaseId,
+        created_by: userEmail // EXPLICIT ownership binding
       };
       
       // Validate required fields
@@ -622,8 +622,8 @@ Deno.serve(async (req) => {
           const created = await svc.entities.TimelineEvent.create({
             ...event,
             needs_review: false,
-            is_estimated: false
-            // created_by will be set automatically from authenticated context
+            is_estimated: false,
+            created_by: userEmail // EXPLICIT ownership binding
           });
           createdEvents.push(created);
           console.log('[TIMELINE_EVENT_CREATED]', { eventId: created.id, eventType: event.event_type });
