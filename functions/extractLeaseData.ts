@@ -245,7 +245,8 @@ Deno.serve(async (req) => {
         property_address: propertyAddress || 'N/A',
         status: 'tracking',
         rent_amount: rentAmount || 0,
-        rent_due_day: 1,
+        rent_due_day: scanFull.key_terms?.rent_due_day || 1,
+        rent_due_day_needs_review: !scanFull.key_terms?.rent_due_day,
         lease_start_date: startDate || null,
         lease_end_date: endDate || null
       };

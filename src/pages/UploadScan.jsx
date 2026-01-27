@@ -174,13 +174,14 @@ function UploadScanPageContent() {
 
     let scannedCount = 0;
     if (limits.period === 'lifetime') {
-      scannedCount = leases.filter(l => l.status === 'scanned' || l.status === 'paid').length;
+      // Count ALL leases for free tier (not just scanned status)
+      scannedCount = leases.length;
     } else if (limits.period === 'year') {
       const thisYear = new Date().getFullYear();
       scannedCount = leases.filter(l => {
         if (!l.created_date) return false;
         const leaseYear = new Date(l.created_date).getFullYear();
-        return leaseYear === thisYear && (l.status === 'scanned' || l.status === 'paid');
+        return leaseYear === thisYear;
       }).length;
     }
 
