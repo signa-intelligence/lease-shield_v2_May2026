@@ -273,39 +273,143 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Create rent schedule record if rent amount found (already included in deposit creation above)
-    // This section updates if rent was NOT included initially
-    if (rentAmount && results.deposit && !results.deposit.rent_amount) {
-      try {
-        results.rent = await svc.entities.DepositTracker.update(results.deposit.id, {
-          rent_amount: rentAmount,
-          rent_due_day: 1
+    // ===== CREATE TIMELINE EVENTS =====
+    console.log('[EXTRACT_CREATING_TIMELINE_EVENTS]');
+    
+    try {
+      // 1. Lease scanned event
+      await svc.entities.TimelineEvent.create({
+        owner_email: actualUserEmail,
+        lease_id: leaseId,
+        event_type: 'lease_scanned',
+        event_date: new Date().toISOString(),
+        title: 'Lease scanned',
+        description: propertyAddress || 'Lease document analyzed',
+        property_address: propertyAddress || 'N/A',
+        source: 'lease_scan',
+        source_scan_id: scanId,
+        is_estimated: false,
+        needs_review: false
+      });
+      console.log('[EXTRACT_TIMELINE_SCANNED_CREATED]');
+    } catch (err) {
+      console.error('[EXTRACT_TIMELINE_SCANNED_FAILED]', { error: err.message });
+    }
+    
+    try {
+      // 2. Lease start event
+      if (startDate) {
+        await svc.entities.TimelineEvent.create({
+          owner_email: actualUserEmail,
+          lease_id: leaseId,
+          event_type: 'lease_start',
+          event_date: new Date(startDate).toISOString(),
+          title: 'Lease starts',
+          description: propertyAddress || 'Lease begins',
+          property_address: propertyAddress || 'N/A',
+          source: 'lease_scan',
+          source_scan_id: scanId,
+          is_estimated: false,
+          needs_review: false
         });
-        console.log('[EXTRACT_RENT_UPDATED]', { rentAmount, rent_due_day: 1 });
-        
-        // Create timeline event for first rent payment
-        if (startDate) {
-          try {
-            const firstRentDate = new Date(startDate);
-            firstRentDate.setDate(1); // Rent due on 1st
-            
-            await svc.entities.TimelineEvent.create({
-              owner_email: actualUserEmail, // CRITICAL: Bind to actual user
-              lease_id: leaseId,
-              event_type: 'rent_due',
-              event_date: firstRentDate.toISOString().split('T')[0],
-              title: 'First Rent Payment Due',
-              description: `Monthly rent of ฿${rentAmount.toLocaleString()} due`,
-              property_address: propertyAddress || 'N/A'
-            });
-            console.log('[EXTRACT_RENT_TIMELINE_CREATED]');
-          } catch (timelineError) {
-            console.error('[EXTRACT_RENT_TIMELINE_FAILED]', { error: timelineError.message });
-          }
-        }
-      } catch (rentError) {
-        console.error('[EXTRACT_RENT_UPDATE_FAILED]', { error: rentError.message });
+        console.log('[EXTRACT_TIMELINE_START_CREATED]', { startDate });
       }
+    } catch (err) {
+      console.error('[EXTRACT_TIMELINE_START_FAILED]', { error: err.message });
+    }
+    
+    try {
+      // 3. Lease end event
+      if (endDate) {
+        await svc.entities.TimelineEvent.create({
+          owner_email: actualUserEmail,
+          lease_id: leaseId,
+          event_type: 'lease_end',
+          event_date: new Date(endDate).toISOString(),
+          title: 'Lease ends',
+          description: propertyAddress || 'Lease expires',
+          property_address: propertyAddress || 'N/A',
+          source: 'lease_scan',
+          source_scan_id: scanId,
+          is_estimated: false,
+          needs_review: false
+        });
+        console.log('[EXTRACT_TIMELINE_END_CREATED]', { endDate });
+      }
+    } catch (err) {
+      console.error('[EXTRACT_TIMELINE_END_FAILED]', { error: err.message });
+    }
+    
+    try {
+      // 4. Deposit due event
+      if (depositAmount && startDate) {
+        await svc.entities.TimelineEvent.create({
+          owner_email: actualUserEmail,
+          lease_id: leaseId,
+          event_type: 'deposit_due',
+          event_date: new Date(startDate).toISOString(),
+          title: 'Deposit due',
+          description: `฿${depositAmount.toLocaleString()}`,
+          property_address: propertyAddress || 'N/A',
+          source: 'lease_scan',
+          source_scan_id: scanId,
+          is_estimated: false,
+          needs_review: false
+        });
+        console.log('[EXTRACT_TIMELINE_DEPOSIT_DUE_CREATED]', { depositAmount });
+      }
+    } catch (err) {
+      console.error('[EXTRACT_TIMELINE_DEPOSIT_DUE_FAILED]', { error: err.message });
+    }
+    
+    try {
+      // 5. Deposit return event
+      if (depositAmount && endDate) {
+        const returnDate = new Date(endDate);
+        returnDate.setDate(returnDate.getDate() + 30);
+        
+        await svc.entities.TimelineEvent.create({
+          owner_email: actualUserEmail,
+          lease_id: leaseId,
+          event_type: 'deposit_return',
+          event_date: returnDate.toISOString(),
+          title: 'Deposit return expected',
+          description: `฿${depositAmount.toLocaleString()}`,
+          property_address: propertyAddress || 'N/A',
+          source: 'lease_scan',
+          source_scan_id: scanId,
+          is_estimated: true,
+          needs_review: true
+        });
+        console.log('[EXTRACT_TIMELINE_DEPOSIT_RETURN_CREATED]');
+      }
+    } catch (err) {
+      console.error('[EXTRACT_TIMELINE_DEPOSIT_RETURN_FAILED]', { error: err.message });
+    }
+    
+    try {
+      // 6. First rent payment event
+      if (rentAmount && startDate) {
+        const firstRentDate = new Date(startDate);
+        firstRentDate.setDate(1); // Rent due on 1st
+        
+        await svc.entities.TimelineEvent.create({
+          owner_email: actualUserEmail,
+          lease_id: leaseId,
+          event_type: 'rent_due',
+          event_date: firstRentDate.toISOString(),
+          title: 'First rent payment due',
+          description: `฿${rentAmount.toLocaleString()} monthly rent`,
+          property_address: propertyAddress || 'N/A',
+          source: 'lease_scan',
+          source_scan_id: scanId,
+          is_estimated: false,
+          needs_review: false
+        });
+        console.log('[EXTRACT_TIMELINE_RENT_CREATED]', { rentAmount });
+      }
+    } catch (err) {
+      console.error('[EXTRACT_TIMELINE_RENT_FAILED]', { error: err.message });
     }
     
     // Update lease with all extracted data
