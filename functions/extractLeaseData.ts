@@ -445,19 +445,26 @@ Deno.serve(async (req) => {
       results.leaseUpdated = true;
     }
     
-    // Create notification
-    if (endDate) {
-      const notifDate = new Date(endDate);
-      notifDate.setDate(notifDate.getDate() - 30); // 30 days before
-      
-      results.notification = await svc.entities.NotificationLog.create({
-        lease_id: leaseId,
-        notification_type: 'lease_ending',
-        scheduled_date: notifDate.toISOString(),
-        status: 'pending',
-        message: `Your lease ends on ${endDate}`
-      });
-      console.log('[EXTRACT_NOTIFICATION_CREATED]');
+    // Create notification (optional - wrapped in try/catch to not break flow)
+    if (endDate && actualUserEmail) {
+      try {
+        const notifDate = new Date(endDate);
+        notifDate.setDate(notifDate.getDate() - 30); // 30 days before
+        
+        results.notification = await svc.entities.NotificationLog.create({
+          user_email: actualUserEmail,  // REQUIRED field
+          notification_type: '30d_notice',  // Must be valid enum value
+          channel: 'Email',  // REQUIRED field
+          status: 'sent',
+          related_entity_type: 'lease',
+          related_entity_id: leaseId,
+          message_preview: `Your lease ends on ${endDate}`
+        });
+        console.log('[EXTRACT_NOTIFICATION_CREATED]');
+      } catch (notifError) {
+        console.error('[EXTRACT_NOTIFICATION_FAILED]', { error: notifError.message });
+        // Don't fail the whole function for notification failure
+      }
     }
     
     console.log('[EXTRACT_SUCCESS]', {
