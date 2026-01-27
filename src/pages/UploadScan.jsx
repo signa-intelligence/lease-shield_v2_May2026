@@ -802,6 +802,38 @@ function UploadScanPageContent() {
       return;
     }
     
+    // ✅ CRITICAL: CHECK SCAN LIMIT FIRST BEFORE ANY UPLOAD
+    // Get fresh scan status based on current lease count
+    const currentLeaseCount = leases.length;
+    const limits = getScanLimits();
+    
+    let scannedCount = 0;
+    if (limits.period === 'lifetime') {
+      scannedCount = currentLeaseCount;
+    } else if (limits.period === 'year') {
+      const thisYear = new Date().getFullYear();
+      scannedCount = leases.filter(l => {
+        if (!l.created_date) return false;
+        const leaseYear = new Date(l.created_date).getFullYear();
+        return leaseYear === thisYear;
+      }).length;
+    }
+    
+    const canScan = limits.unlimited || scannedCount < limits.limit;
+    
+    if (!canScan) {
+      const periodText = limits.period === 'year'
+        ? (language === 'th' ? 'ปีนี้' : 'this year')
+        : (language === 'th' ? 'ตลอดชีพ' : 'lifetime');
+
+      alert(
+        language === 'th'
+          ? `คุณใช้ครบโควต้าการสแกนแล้ว (${scannedCount}/${limits.limit} ${periodText})\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
+          : `You've reached your scan limit (${scannedCount}/${limits.limit} ${periodText})\n\nUpgrade your plan for more scans`
+      );
+      return;
+    }
+    
     // Update state for UI display
     setSelectedFiles(filesToUpload);
     
@@ -829,22 +861,11 @@ function UploadScanPageContent() {
     logStage('INIT', { 
       deviceContext,
       filesCount: selectedFiles.length,
-      userTier
+      userTier,
+      currentLeaseCount,
+      scannedCount,
+      canScan
     });
-
-    // ✅ CHECK SCAN LIMIT BEFORE UPLOAD
-    if (!scanStatus.allowed) {
-      const periodText = scanStatus.period === 'year'
-        ? (language === 'th' ? 'ปีนี้' : 'this year')
-        : (language === 'th' ? 'ตลอดชีพ' : 'lifetime');
-
-      alert(
-        language === 'th'
-          ? `คุณใช้ครบโควต้าการสแกนแล้ว (${scanStatus.used}/${scanStatus.limit} ${periodText})\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
-          : `You've reached your scan limit (${scanStatus.used}/${scanStatus.limit} ${periodText})\n\nUpgrade your plan for more scans`
-      );
-      return;
-    }
 
     haptic.medium();
 
