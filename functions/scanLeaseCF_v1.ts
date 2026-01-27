@@ -37,8 +37,9 @@ Deno.serve(async (req) => {
       console.warn('SCAN_CF_V1_AUTH_CHECK_FAILED', { error: authErr.message });
     }
     
-    // CRITICAL FIX: Treat null, undefined, 'free', and 'discover' as free tier
-    const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover' || userTier === 'explorer';
+    // CRITICAL FIX: Treat null, undefined, 'free', 'discover' as free tier
+    // Database stores 'free', UI displays as 'Explorer'
+    const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover';
     const scanMode = isFreeTier ? 'preview' : 'full';
     
     console.log('SCAN_CF_V1_MODE_DECISION', { userTier, isFreeTier, scanMode });
