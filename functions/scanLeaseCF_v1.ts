@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     }
     
     // CRITICAL FIX: Treat null, undefined, 'free', and 'discover' as free tier
-    const isFree Tier = !userTier || userTier === 'free' || userTier === 'discover';
+    const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover' || userTier === 'explorer';
     const scanMode = isFreeTier ? 'preview' : 'full';
     
     console.log('SCAN_CF_V1_MODE_DECISION', { userTier, isFreeTier, scanMode });
