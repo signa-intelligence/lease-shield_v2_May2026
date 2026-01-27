@@ -22,6 +22,14 @@ export default function ReportFull() {
     // Safe access to window after mount
     const urlParams = new URLSearchParams(window.location.search);
     
+    // Log raw URL for debugging
+    console.log('[REPORTFULL_PARSE]', {
+      href: window.location.href,
+      search: window.location.search,
+      searchEmpty: window.location.search === '',
+      allParams: Object.fromEntries(urlParams)
+    });
+    
     // Resolve scanId with all case variants
     const resolvedScanId = (
       urlParams.get('scanId') || 
@@ -67,6 +75,8 @@ export default function ReportFull() {
       },
       hasParams: !!(resolvedScanId && resolvedLeaseId)
     };
+    
+    console.log('[REPORTFULL_RESOLVED]', forensic);
     
     // Set all state at once
     setScanId(resolvedScanId);
