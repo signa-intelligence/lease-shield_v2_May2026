@@ -1513,7 +1513,9 @@ function UploadScanPageContent() {
         await queryClient.refetchQueries({ queryKey: ['deposits'] });
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
-        navigate(`/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
+        const reportUrl = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
+        console.log('[NAVIGATE_REPORT]', { reportUrl, scanId, leaseId: lease.id });
+        navigate(reportUrl, {
           state: { 
             scan_full: scanResponse?.scan_full,
             fromUpload: true 
