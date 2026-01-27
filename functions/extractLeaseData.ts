@@ -248,7 +248,9 @@ Deno.serve(async (req) => {
         rent_due_day: scanFull.key_terms?.rent_due_day || 1,
         rent_due_day_needs_review: !scanFull.key_terms?.rent_due_day,
         lease_start_date: startDate || null,
-        lease_end_date: endDate || null
+        lease_end_date: endDate || null,
+        auto_populated: true,
+        source_scan_id: scanId
       };
       
       console.log('[EXTRACT_DEPOSIT_CREATED_BY]', { created_by: actualUserEmail, depositAmount });

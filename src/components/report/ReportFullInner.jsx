@@ -1047,7 +1047,7 @@ console.log('DEBUG_REPORTDATA:', {
 const meta = sf.meta || {};
 
 // Check if this is a preview mode scan (free tier)
-const isPreviewMode = sf.preview_mode === true;
+const isPreviewMode = sf.preview_mode === true || ((user?.plan_tier || "").toLowerCase() === "free");
 const upgradeMessage = sf.upgrade_message || 'Upgrade to see full clause-by-clause analysis';
 
 // Map top_risks to display format
