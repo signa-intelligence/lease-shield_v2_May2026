@@ -791,12 +791,30 @@ For EACH of the 15 clauses above, you MUST return:
       }, headers);
     }
     
-    // For preview mode, add the flag
+    // For preview mode, FORCE empty clauses array
     if (isPreviewMode) {
+      console.log('[ANALYZE_LEASE_FORCING_PREVIEW_MODE]', { 
+        correlationId,
+        originalClausesCount: analysisResult.clauses?.length || 0
+      });
+      
       analysisResult.preview_mode = true;
       analysisResult.upgrade_message = "Upgrade to see full clause-by-clause analysis with detailed recommendations";
-      // Ensure clauses array exists but is empty for preview
+      
+      // CRITICAL: Force empty clauses array for free tier
       analysisResult.clauses = [];
+      
+      // Ensure top_risks is limited to 5
+      if (Array.isArray(analysisResult.summary?.top_risks)) {
+        analysisResult.summary.top_risks = analysisResult.summary.top_risks.slice(0, 5);
+      }
+      
+      console.log('[ANALYZE_LEASE_PREVIEW_MODE_ENFORCED]', {
+        correlationId,
+        clausesCount: 0,
+        topRisksCount: analysisResult.summary?.top_risks?.length || 0,
+        hasKeyTerms: !!analysisResult.key_terms
+      });
     }
     
     // Add metadata
