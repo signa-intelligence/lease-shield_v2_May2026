@@ -941,10 +941,11 @@ function TimelineContent() {
                             : `1px solid ${colors.borderColor}`,
                         opacity: dayData.isCurrentMonth ? 1 : 0.4
                       }}
-                      onClick={() => {
-                        if (hasEvents && dayData.events[0].route) {
+                      onClick={(e) => {
+                        if (hasEvents) {
                           haptic.light();
-                          navigate(dayData.events[0].route);
+                          e.stopPropagation();
+                          // Stay in calendar - event details shown in section below
                         }
                       }}
                     >

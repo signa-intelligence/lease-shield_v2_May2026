@@ -56,9 +56,10 @@ Deno.serve(async (req) => {
     let depositTrackerData = null;
     
     try {
-      // Check if deposit tracker already exists for this user
+      // Check if deposit tracker already exists for this lease
       const existingDeposits = await base44.entities.DepositTracker.filter({ 
-        created_by: user.email 
+        owner_email: user.email,
+        lease_id: leaseId
       });
       const existingDeposit = existingDeposits.length > 0 ? existingDeposits[0] : null;
       
@@ -145,13 +146,14 @@ Deno.serve(async (req) => {
     const timelineEventsData = [];
     
     try {
-      // Check existing timeline events for this scan to avoid duplicates
+      // Check existing timeline events for this lease to avoid duplicates
       const existingEvents = await base44.entities.TimelineEvent.filter({
-        source_scan_id: scanId
+        lease_id: leaseId,
+        owner_email: user.email
       });
       
       const eventExists = (eventType) => {
-        return existingEvents.some(e => e.event_type === eventType);
+        return existingEvents.some(e => e.event_type === eventType && e.source_scan_id === scanId);
       };
       
       // 1. Lease scanned event
