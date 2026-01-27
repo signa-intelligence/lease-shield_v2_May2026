@@ -546,8 +546,8 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
 
         // STEP 2: lease
         logStep("FETCH_LEASE_START", { leaseId });
-        const leaseArr = await base44.entities.Lease.filter({ id: leaseId });
-        const leaseData = leaseArr?.[0] || null;
+        const leaseArr = await base44.entities.Lease.filter({});
+        const leaseData = leaseArr?.find(l => l.id === leaseId) || null;
         logStep("FETCH_LEASE_COMPLETE", { found: !!leaseData });
 
 
