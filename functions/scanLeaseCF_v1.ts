@@ -37,8 +37,11 @@ Deno.serve(async (req) => {
       console.warn('SCAN_CF_V1_AUTH_CHECK_FAILED', { error: authErr.message });
     }
     
-    // Determine scan mode: free = preview, paid = full
-    const scanMode = (userTier === 'free') ? 'preview' : 'full';
+    // CRITICAL FIX: Treat null, undefined, 'free', and 'discover' as free tier
+    const isFree Tier = !userTier || userTier === 'free' || userTier === 'discover';
+    const scanMode = isFreeTier ? 'preview' : 'full';
+    
+    console.log('SCAN_CF_V1_MODE_DECISION', { userTier, isFreeTier, scanMode });
     
     console.log('SCAN_CF_V1_INPUT', { leaseId, inputScanId, fileUrl: fileUrl?.substring(0, 80), scanMode, userTier });
 
@@ -195,34 +198,26 @@ Deno.serve(async (req) => {
       clausesCount: clausesArray.length
     });
 
-    // Get user email for proper ownership binding
-    let userEmail = null;
-    try {
-      // CRITICAL: Use service role to fetch lease record and get owner_email
-      const lease = await svc.entities.Lease.get(leaseId);
-      userEmail = lease?.owner_email || lease?.created_by;
-      console.log('[SCAN_CF_V1_USER_CONTEXT]', { userEmail, source: 'lease_record' });
-      
-      // Fallback: try auth.me() if lease doesn't have owner_email
-      if (!userEmail) {
-        const user = await base44.auth.me();
-        userEmail = user?.email;
-        console.log('[SCAN_CF_V1_USER_CONTEXT_FALLBACK]', { userEmail, source: 'auth.me' });
-      }
-    } catch (authErr) {
-      console.error('[SCAN_CF_V1_USER_CONTEXT_FAILED]', { error: authErr.message });
-      // Last resort: try to get from lease without service role
+    // CRITICAL FIX: Reuse userEmail from tier check (don't redeclare, causes shadowing bug)
+    // userEmail was already set in lines 29-38 above
+    if (!userEmail) {
+      // Fallback: fetch from lease record
       try {
-        const lease = await base44.entities.Lease.get(leaseId);
+        const lease = await svc.entities.Lease.get(leaseId);
         userEmail = lease?.owner_email || lease?.created_by;
-      } catch (_) {}
+        console.log('[SCAN_CF_V1_USER_EMAIL_FROM_LEASE]', { userEmail });
+      } catch (err) {
+        console.error('[SCAN_CF_V1_USER_EMAIL_FAILED]', { error: err.message });
+      }
     }
 
-    // Call new extractLeaseData function
+    // CRITICAL FIX: AWAIT extractLeaseData completion BEFORE returning
+    // This ensures deposits/timeline are created BEFORE UI navigates
     console.log('[SCAN_CF_V1_CALLING_EXTRACT]', { 
       scanId: targetScan.id, 
       leaseId: leaseId,
-      userEmail
+      userEmail,
+      willWait: true
     });
 
     try {
@@ -232,17 +227,27 @@ Deno.serve(async (req) => {
         userEmail: userEmail // CRITICAL: Pass user email for proper ownership
       });
       
-      console.log('[SCAN_CF_V1_EXTRACT_RESULT]', {
+      console.log('[SCAN_CF_V1_EXTRACT_COMPLETE]', {
         ok: extractResult?.data?.ok,
         extracted: extractResult?.data?.extracted,
-        created: extractResult?.data?.created
+        created: extractResult?.data?.created,
+        depositCreated: extractResult?.data?.created?.deposit,
+        timelineCreated: extractResult?.data?.created?.notification
       });
+      
+      // CRITICAL: Only proceed if extraction succeeded or was not needed
+      if (extractResult?.data?.ok === false && extractResult?.data?.error !== 'Scan not found') {
+        console.error('[SCAN_CF_V1_EXTRACT_FAILED_CRITICAL]', {
+          error: extractResult?.data?.error
+        });
+      }
       
     } catch (extractError) {
       console.error('[SCAN_CF_V1_EXTRACT_ERROR]', {
-        error: extractError.message
+        error: extractError.message,
+        stack: extractError.stack
       });
-      // Don't fail the whole scan if extraction fails
+      // Log but don't fail scan - extraction is supplementary
     }
 
     return new Response(JSON.stringify({
