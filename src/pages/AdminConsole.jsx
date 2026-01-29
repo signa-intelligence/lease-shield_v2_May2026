@@ -1901,9 +1901,30 @@ function AdminConsoleContent() {
               onClick={async () => {
                 try {
                   const response = await base44.functions.invoke('generateUserManual');
-                  const blob = new Blob([response.data], { 
+                  
+                  // Handle ArrayBuffer response
+                  let blobData;
+                  if (response.data instanceof ArrayBuffer) {
+                    blobData = response.data;
+                  } else if (response.data instanceof Blob) {
+                    blobData = await response.data.arrayBuffer();
+                  } else if (typeof response.data === 'string') {
+                    // Base64 encoded
+                    const binaryString = atob(response.data);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                      bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    blobData = bytes.buffer;
+                  } else {
+                    // Assume it's already a buffer-like object
+                    blobData = response.data;
+                  }
+                  
+                  const blob = new Blob([blobData], { 
                     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
                   });
+                  
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
