@@ -255,7 +255,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           display: 'flex',
           flexDirection: 'column',
           animation: 'slideIn 0.3s ease-out',
-          fontFamily: 'Inter, -apple-system, sans-serif'
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -267,7 +267,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           justifyContent: 'space-between'
         }}>
           <h2 style={{
-            fontFamily: 'Inter',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
             fontWeight: '600',
             fontSize: '16px',
             color: isDarkMode ? '#ECEFED' : '#063F2C',
@@ -276,7 +276,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             {strings.title}
           </h2>
           <div style={{
-            fontFamily: 'Inter',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
             fontWeight: '500',
             fontSize: '13px',
             color: isDarkMode ? '#A8ABAD' : '#6B7280'
@@ -331,7 +331,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
 
           {/* Title */}
           <h3 style={{
-            fontFamily: 'Inter',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
             fontWeight: '700',
             fontSize: '22px',
             color: '#0F4229',
@@ -343,7 +343,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
 
           {/* Subtitle */}
           <p style={{
-            fontFamily: 'Inter',
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
             fontWeight: '400',
             fontSize: '15px',
             color: isDarkMode ? '#D1D5DB' : '#444444',
@@ -400,7 +400,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
               }}
             />
             <span style={{
-              fontFamily: 'Inter',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
               fontWeight: '400',
               fontSize: '13px',
               color: isDarkMode ? '#A8ABAD' : '#6B7280'
@@ -419,7 +419,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                 onClick={handleBack}
                 style={{
                   flex: 1,
-                  fontFamily: 'Inter',
+                  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
                   fontWeight: '600',
                   fontSize: '14px',
                   color: '#0F4229',
@@ -447,7 +447,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
               onClick={handleNext}
               style={{
                 flex: isFirstStep ? 1 : 2,
-                fontFamily: 'Inter',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
                 fontWeight: '600',
                 fontSize: '14px',
                 color: '#FFFFFF',
@@ -467,7 +467,10 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           </div>
           
           {(!user?.plan_tier || user.plan_tier === 'free') && (
-            <p className="text-xs text-center mt-3" style={{ color: '#6B7280' }}>
+            <p className="text-xs text-center mt-3" style={{ 
+              color: '#6B7280',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+            }}>
               <a 
                 href={createPageUrl("Account") + '?showPlans=true'}
                 onClick={(e) => {
@@ -478,7 +481,10 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                   navigate(createPageUrl("Account") + '?showPlans=true');
                 }}
                 className="font-semibold underline"
-                style={{ color: '#CFAF6A' }}
+                style={{ 
+                  color: '#CFAF6A',
+                  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+                }}
               >
                 {language === 'th' ? 'อัปเกรดเพื่อการปกป้องเต็มรูปแบบ →' : 
                  language === 'zh' ? '升级以获得全面保护 →' : 

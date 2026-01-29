@@ -268,7 +268,7 @@ function UploadScanPageContent() {
       scanLimitReached: "Scan Limit Reached",
       scanLimitMsg: "You've used {used} of {limit} scans {periodText}",
       upgradeForMore: "Upgrade for More Scans",
-      scansRemaining: "{remaining} scan(s) remaining {periodText}",
+      scansRemaining: "{remaining} {lifetimeLabel} remaining",
       unlimitedScans: "Unlimited Scans",
       browseDocuments: "Upload Documents",
       batchUpload: "Batch Upload",
@@ -361,7 +361,7 @@ function UploadScanPageContent() {
       scanLimitReached: "ถึงขีดจำกัดการสแกนแล้ว",
       scanLimitMsg: "คุณใช้ไป {used} จาก {limit} การสแกน{periodText}",
       upgradeForMore: "อัปเกรดเพื่อเพิ่มการสแกน",
-      scansRemaining: "เหลืออีก {remaining} การสแกน{periodText}",
+      scansRemaining: "เหลืออีก {remaining} การสแกน {periodText}",
       unlimitedScans: "สแกนได้ไม่จำกัด",
       browseDocuments: "อัปโหลดเอกสาร",
       batchUpload: "อัปโหลดแบบกลุ่ม",
@@ -2183,9 +2183,19 @@ function UploadScanPageContent() {
             ) : (
               <Badge className={scanStatus.allowed ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}>
                 {scanStatus.allowed
-                  ? strings.scansRemaining
-                      .replace('{remaining}', scanStatus.remaining)
-                      .replace('{periodText}', getPeriodText(scanStatus.period))
+                  ? (() => {
+                      const lifetimeLabel = scanStatus.remaining === 1 
+                        ? (scanStatus.period === 'lifetime' 
+                            ? (language === 'th' ? 'การสแกนตลอดชีพ' : language === 'zh' ? '终身扫描' : language === 'ja' ? 'ライフタイムスキャン' : language === 'ko' ? '평생 스캔' : language === 'ru' ? 'сканирование (пожизненно)' : 'lifetime scan')
+                            : (language === 'th' ? 'การสแกน' : language === 'zh' ? '扫描' : language === 'ja' ? 'スキャン' : language === 'ko' ? '스캔' : language === 'ru' ? 'сканирование' : 'scan'))
+                        : (scanStatus.period === 'lifetime'
+                            ? (language === 'th' ? 'การสแกนตลอดชีพ' : language === 'zh' ? '终身扫描' : language === 'ja' ? 'ライフタイムスキャン' : language === 'ko' ? '평생 스캔' : language === 'ru' ? 'сканирований (пожизненно)' : 'lifetime scans')
+                            : (language === 'th' ? 'การสแกน' : language === 'zh' ? '扫描' : language === 'ja' ? 'スキャン' : language === 'ko' ? '스캔' : language === 'ru' ? 'сканирований' : 'scans'));
+                      return strings.scansRemaining
+                        .replace('{remaining}', scanStatus.remaining)
+                        .replace('{lifetimeLabel}', lifetimeLabel)
+                        .replace('{periodText}', scanStatus.period === 'lifetime' ? '' : ` (${getPeriodText(scanStatus.period)})`);
+                    })()
                   : strings.scanLimitMsg
                       .replace('{used}', scanStatus.used)
                       .replace('{limit}', scanStatus.limit)
