@@ -501,9 +501,12 @@ function AccountContent() {
       }, 300);
     }
     
-    if (hash === '#notifications') {
+    const urlParams = new URLSearchParams(window.location.search);
+    const section = urlParams.get('section');
+    
+    if (hash === '#notifications' || section === 'notifications') {
       setTimeout(() => {
-        // Automatically expand notification preferences if hash is present
+        // Automatically expand notification preferences if hash or section param is present
         setExpandedNotifPrefs(true); 
         const notificationSection = document.getElementById('notification-preferences');
         if (notificationSection) {
