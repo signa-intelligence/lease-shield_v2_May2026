@@ -187,11 +187,12 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
 
   const handleNext = () => {
     haptic.light();
-    if (isLastStep) {
+    if (currentStep >= steps.length - 1) {
+      // Final slide - close modal and go to dashboard
       handleFinish();
-    } else {
-      setCurrentStep(currentStep + 1);
+      return;
     }
+    setCurrentStep(currentStep + 1);
   };
 
   const handleBack = () => {
