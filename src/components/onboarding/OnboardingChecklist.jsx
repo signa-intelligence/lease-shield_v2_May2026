@@ -274,7 +274,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       description: strings.tasks.enableNotificationsDesc,
       icon: Bell,
       completed: user?.email_notifications || user?.line_notifications,
-      route: "Account",
+      route: "Account?section=notifications",
       points: 10
     }
   ];
