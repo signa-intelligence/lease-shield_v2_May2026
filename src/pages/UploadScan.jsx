@@ -2184,17 +2184,19 @@ function UploadScanPageContent() {
               <Badge className={scanStatus.allowed ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}>
                 {scanStatus.allowed
                   ? (() => {
-                      const lifetimeLabel = scanStatus.remaining === 1 
-                        ? (scanStatus.period === 'lifetime' 
-                            ? (language === 'th' ? 'การสแกนตลอดชีพ' : language === 'zh' ? '终身扫描' : language === 'ja' ? 'ライフタイムスキャン' : language === 'ko' ? '평생 스캔' : language === 'ru' ? 'сканирование (пожизненно)' : 'lifetime scan')
-                            : (language === 'th' ? 'การสแกน' : language === 'zh' ? '扫描' : language === 'ja' ? 'スキャン' : language === 'ko' ? '스캔' : language === 'ru' ? 'сканирование' : 'scan'))
-                        : (scanStatus.period === 'lifetime'
-                            ? (language === 'th' ? 'การสแกนตลอดชีพ' : language === 'zh' ? '终身扫描' : language === 'ja' ? 'ライフタイムスキャン' : language === 'ko' ? '평생 스캔' : language === 'ru' ? 'сканирований (пожизненно)' : 'lifetime scans')
-                            : (language === 'th' ? 'การสแกน' : language === 'zh' ? '扫描' : language === 'ja' ? 'スキャン' : language === 'ko' ? '스캔' : language === 'ru' ? 'сканирований' : 'scans'));
+                      // For free tier (one-time scan), remove "lifetime" label
+                      const scanLabel = scanStatus.remaining === 1 
+                        ? (language === 'th' ? 'การสแกน' : language === 'zh' ? '扫描' : language === 'ja' ? 'スキャン' : language === 'ko' ? '스캔' : language === 'ru' ? 'сканирование' : 'scan')
+                        : (language === 'th' ? 'การสแกน' : language === 'zh' ? '扫描' : language === 'ja' ? 'スキャン' : language === 'ko' ? '스캔' : language === 'ru' ? 'сканирований' : 'scans');
+                      
+                      const periodSuffix = scanStatus.period === 'year' 
+                        ? ` (${getPeriodText(scanStatus.period)})`
+                        : '';
+                      
                       return strings.scansRemaining
                         .replace('{remaining}', scanStatus.remaining)
-                        .replace('{lifetimeLabel}', lifetimeLabel)
-                        .replace('{periodText}', scanStatus.period === 'lifetime' ? '' : ` (${getPeriodText(scanStatus.period)})`);
+                        .replace('{lifetimeLabel}', scanLabel)
+                        .replace('{periodText}', periodSuffix);
                     })()
                   : strings.scanLimitMsg
                       .replace('{used}', scanStatus.used)
