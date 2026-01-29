@@ -867,7 +867,18 @@ For EACH of the 15 clauses above, you MUST return:
           scanId: providedScanId 
         });
 
+        // Populate scan_preview for UI display
+        const scan_preview = {
+          property_address: analysisResult.key_terms?.property_address || '',
+          risk_score: analysisResult.risk_score,
+          risk_level: analysisResult.risk_score >= 75 ? 'critical' : analysisResult.risk_score >= 50 ? 'high' : analysisResult.risk_score >= 25 ? 'medium' : 'low',
+          total_clauses: analysisResult.clauses?.length || 0,
+          critical_count: analysisResult.clauses?.filter(c => c.risk_level === 'critical').length || 0,
+          high_count: analysisResult.clauses?.filter(c => c.risk_level === 'high').length || 0
+        };
+
         scan = await svc.entities.LeaseScan.update(providedScanId, {
+          scan_preview: scan_preview,
           scan_full: analysisResult,
           risk_score: analysisResult.risk_score,
           status: 'completed'
@@ -883,9 +894,20 @@ For EACH of the 15 clauses above, you MUST return:
         // No scanId provided - this shouldn't happen, but handle it
         console.warn('[ANALYZE_LEASE_NO_SCANID_PROVIDED]', { correlationId });
 
+        // Populate scan_preview for UI display
+        const scan_preview = {
+          property_address: analysisResult.key_terms?.property_address || '',
+          risk_score: analysisResult.risk_score,
+          risk_level: analysisResult.risk_score >= 75 ? 'critical' : analysisResult.risk_score >= 50 ? 'high' : analysisResult.risk_score >= 25 ? 'medium' : 'low',
+          total_clauses: analysisResult.clauses?.length || 0,
+          critical_count: analysisResult.clauses?.filter(c => c.risk_level === 'critical').length || 0,
+          high_count: analysisResult.clauses?.filter(c => c.risk_level === 'high').length || 0
+        };
+
         // Create new scan
         scan = await svc.entities.LeaseScan.create({
           lease_id: leaseId,
+          scan_preview: scan_preview,
           scan_full: analysisResult,
           risk_score: analysisResult.risk_score,
           status: 'completed'
