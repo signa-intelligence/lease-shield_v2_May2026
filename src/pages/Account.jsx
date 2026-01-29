@@ -3631,6 +3631,72 @@ function AccountContent() {
           <CardContent className="p-6">
             <div className="space-y-4">
               <div
+                onClick={async () => {
+                  haptic.medium();
+                  try {
+                    const response = await base44.functions.invoke('generateUserManual');
+                    const blob = new Blob([response.data], { 
+                      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+                    });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'LeaseShield_User_Manual_v1.0.docx';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    toast.success(language === 'th' ? 'ดาวน์โหลดคู่มือผู้ใช้แล้ว' : 'User manual downloaded');
+                    haptic.success();
+                  } catch (error) {
+                    console.error('Manual download failed:', error);
+                    toast.error(language === 'th' ? 'ไม่สามารถดาวน์โหลดคู่มือได้' : 'Failed to download manual');
+                    haptic.error();
+                  }
+                }}
+                style={{
+                  padding: '16px',
+                  backgroundColor: colors.fieldBg,
+                  borderRadius: '12px',
+                  borderLeft: '4px solid #3B82F6',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
+                  e.currentTarget.style.borderLeftColor = '#C7A338';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = colors.fieldBg;
+                  e.currentTarget.style.borderLeftColor = '#3B82F6';
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: '#3B82F6',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: colors.textPrimary, marginBottom: '2px' }}>
+                        {language === 'th' ? 'คู่มือผู้ใช้ Lease Shield' : language === 'zh' ? 'Lease Shield 用户手册' : language === 'ja' ? 'Lease Shield ユーザーマニュアル' : language === 'ko' ? 'Lease Shield 사용자 매뉴얼' : language === 'ru' ? 'Руководство пользователя Lease Shield' : 'Lease Shield User Manual'}
+                      </div>
+                      <div style={{ fontSize: '13px', fontWeight: '500', color: colors.textSecondary }}>
+                        {language === 'th' ? 'ดาวน์โหลดคู่มือฉบับเต็ม (DOCX)' : language === 'zh' ? '下载完整手册 (DOCX)' : language === 'ja' ? '完全版マニュアルをダウンロード (DOCX)' : language === 'ko' ? '전체 매뉴얼 다운로드 (DOCX)' : language === 'ru' ? 'Скачать полное руководство (DOCX)' : 'Download complete guide (DOCX)'}
+                      </div>
+                    </div>
+                  </div>
+                  <Download className="w-5 h-5" style={{ color: colors.textPrimary }} />
+                </div>
+              </div>
+              <div
                 onClick={handleInstallApp}
                 style={{
                   padding: '16px',
