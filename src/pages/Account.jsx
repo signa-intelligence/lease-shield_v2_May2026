@@ -478,6 +478,7 @@ function AccountContent() {
     const urlParams = new URLSearchParams(window.location.search);
     const showPlans = urlParams.get('showPlans');
     const highlight = urlParams.get('highlight');
+    const section = urlParams.get('section');
     const hash = window.location.hash;
     
     // Force light mode when arriving via ?showPlans=true
@@ -500,9 +501,6 @@ function AccountContent() {
         }
       }, 300);
     }
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const section = urlParams.get('section');
     
     if (hash === '#notifications' || section === 'notifications') {
       setTimeout(() => {
