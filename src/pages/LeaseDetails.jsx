@@ -81,8 +81,9 @@ function LeaseDetailsContent() {
     enabled: !!lease?.id,
   });
   
-  // Derive property address from scan if not on lease
+  // Derive property address with scan_preview fallback
   const propertyAddress = lease?.property_address || 
+    scan?.scan_preview?.property_address ||
     scan?.scan_full?.key_terms?.property_address || 
     'N/A';
 
@@ -728,9 +729,9 @@ function LeaseDetailsContent() {
                   <div className="flex items-center gap-3">
                     <div
                       className="text-3xl md:text-4xl font-bold"
-                      style={{ color: getRiskColor(scan.risk_score) }}
+                      style={{ color: getRiskColor(scan.risk_score || scan.scan_preview?.risk_score || scan.scan_full?.risk_score || 0) }}
                     >
-                      {scan.risk_score}
+                      {scan.risk_score || scan.scan_preview?.risk_score || scan.scan_full?.risk_score || 0}
                     </div>
                     <div className="text-xl md:text-2xl font-medium" style={{ color: colors.textSecondary }}>
                       /100
