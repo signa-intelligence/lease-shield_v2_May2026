@@ -1195,20 +1195,6 @@ Deno.serve(async (req) => {
             }
           }
         },
-        headers: {
-          default: new Paragraph({
-            children: [
-              new TextRun({ text: "Lease Shield User Manual", color: "0F4229" })
-            ],
-            alignment: AlignmentType.LEFT
-          })
-        },
-        footers: {
-          default: new Paragraph({
-            text: "© 2026 Lease Shield. All rights reserved.",
-            alignment: AlignmentType.CENTER
-          })
-        },
         children: sections
       }],
       styles: {
