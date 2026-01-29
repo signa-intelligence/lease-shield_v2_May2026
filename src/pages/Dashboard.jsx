@@ -23,9 +23,7 @@ import PullToRefresh from "../components/shared/PullToRefresh";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import OnboardingWizard from "../components/onboarding/OnboardingWizard";
 import OnboardingChecklist from "../components/onboarding/OnboardingChecklist";
-import OnboardingBanner from "../components/onboarding/OnboardingBanner";
 import FeatureTour from "../components/onboarding/FeatureTour";
-import FirstSessionProgress from "../components/onboarding/FirstSessionProgress";
 import { haptic } from "../components/shared/HapticFeedback";
 import FloatingActionButton from "../components/shared/FloatingActionButton";
 import { getFeatureCardStyles, FEATURE_COLORS } from "../components/shared/featureTheme";
@@ -1667,26 +1665,6 @@ ja: {
                   }
                   />
                   </div>
-
-                  {/* Onboarding Banner - Shows for new users who haven't completed onboarding */}
-                  {!user?.onboarding_completed && !user?.onboarding_banner_dismissed && (
-                  <OnboardingBanner
-                  user={user}
-                  isDarkMode={isDarkMode}
-                  language={language}
-                  onStartSetup={() => setShowOnboarding(true)}
-                  />
-                  )}
-
-                  {/* First Session Progress - Shows in first 24 hours */}
-                  <FirstSessionProgress
-                  user={user}
-                  leases={leases}
-                  deposits={deposits}
-                  documents={documents}
-                  isDarkMode={isDarkMode}
-                  language={language}
-                  />
 
                   {/* Feature Tour - Auto-shows after onboarding */}
                   {user && !user.has_seen_tour && user.onboarding_completed && (
