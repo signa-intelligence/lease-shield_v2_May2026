@@ -688,6 +688,233 @@ For EACH of the 15 clauses above, you MUST return:
       }
     }
     
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FALLBACK: Extract key_terms from raw lease text if OpenAI failed
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    /**
+     * Extract property address from lease text using regex patterns
+     * Supports both Thai and English address formats
+     */
+    function extractAddressFromText(text) {
+      if (!text || typeof text !== 'string') return null;
+      
+      const patterns = [
+        // English patterns - explicit labels
+        /(?:Property\s*Address|Leased\s*Property|Rental\s*Property|Premises|Location)[:\s]*([^\n\r]{20,150})/i,
+        /(?:Unit|Room|Apartment|Suite|Condo|Condominium|Flat)[:\s#.]*(\d+[A-Z]?)[,\s]+([^\n\r]{15,120})/i,
+        /(?:Building|Tower|Block)[:\s]*([A-Z]|\d+)[,\s]+([^\n\r]{15,100})/i,
+        
+        // Thai patterns
+        /(?:ทรัพย์สินที่เช่า|สถานที่เช่า|ที่ตั้งทรัพย์สิน|ห้องเลขที่)[:\s]*([^\n\r]{20,150})/i,
+        /(?:ห้องเลขที่|ยูนิต|ชั้น)[:\s]*(\d+[A-Z]?\/?\d*)[,\s]*([^\n\r]{15,120})/i,
+        
+        // Combined Unit + Building + Address pattern
+        /(?:Unit|Room|ห้อง)\s*(?:No\.?|#)?\s*(\d+[A-Z]?)[,\s]+(?:Floor|ชั้น)\s*(\d+)[,\s]+([^\n\r]{20,100})/i,
+        
+        // Address with postal code (Thailand)
+        /(\d+\/?\d*\s+(?:Soi|ซอย|Moo|หมู่)?[^\n\r]{10,80}\s*\d{5})/i,
+        
+        // Condo/Building name followed by address
+        /([\w\s]+(?:Condo|Condominium|Residence|Place|Court|Tower|Building))[,\s]+(\d+\/?\d*[^\n\r]{10,80})/i,
+        
+        // Thai district patterns
+        /(\d+\/?\d*\s+[^\n\r]{5,50}(?:แขวง|เขต|อำเภอ|จังหวัด|ตำบล)[^\n\r]{5,60}\s*\d{5})/i,
+        
+        // Fallback: Any line starting with numbers that looks like an address
+        /^(\d+\/?\d*\s+[A-Za-z\s]+(?:Road|Street|Avenue|Lane|Soi|Way|Drive)[^\n\r]{5,80})/im
+      ];
+      
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match) {
+          // Clean up the extracted address
+          let address = match.slice(1).filter(Boolean).join(', ').trim();
+          
+          // Remove excessive whitespace and clean up
+          address = address.replace(/\s+/g, ' ').trim();
+          
+          // Remove common prefixes if they got included
+          address = address.replace(/^(?:at|located at|situated at|being)[:\s]*/i, '').trim();
+          
+          // Ensure minimum length for a valid address
+          if (address.length >= 15) {
+            return address;
+          }
+        }
+      }
+      
+      return null;
+    }
+    
+    /**
+     * Extract dates from lease text
+     */
+    function extractDatesFromText(text) {
+      if (!text || typeof text !== 'string') return { start: null, end: null };
+      
+      const result = { start: null, end: null };
+      
+      // Pattern for dates near keywords
+      const startPatterns = [
+        /(?:Commencement|Start|Begin(?:ning)?|Effective)\s*(?:Date)?[:\s]*(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}|\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/i,
+        /(?:from|starting)\s+(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}|\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/i,
+        /(?:วันเริ่มสัญญา|เริ่มต้น)[:\s]*(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i
+      ];
+      
+      const endPatterns = [
+        /(?:Expir(?:y|ation)|End|Terminat(?:e|ion))\s*(?:Date)?[:\s]*(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}|\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/i,
+        /(?:to|until|ending)\s+(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}|\d{4}[-\/]\d{1,2}[-\/]\d{1,2})/i,
+        /(?:วันสิ้นสุดสัญญา|สิ้นสุด)[:\s]*(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i
+      ];
+      
+      for (const pattern of startPatterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+          result.start = normalizeDate(match[1]);
+          break;
+        }
+      }
+      
+      for (const pattern of endPatterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+          result.end = normalizeDate(match[1]);
+          break;
+        }
+      }
+      
+      return result;
+    }
+    
+    /**
+     * Normalize date string to YYYY-MM-DD format
+     */
+    function normalizeDate(dateStr) {
+      if (!dateStr) return null;
+      
+      // Try parsing various formats
+      const parts = dateStr.split(/[-\/]/);
+      if (parts.length !== 3) return null;
+      
+      let year, month, day;
+      
+      // YYYY-MM-DD format
+      if (parts[0].length === 4) {
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+        day = parseInt(parts[2]);
+      }
+      // DD-MM-YYYY or MM-DD-YYYY (assume DD-MM-YYYY for Thai documents)
+      else if (parts[2].length === 4) {
+        year = parseInt(parts[2]);
+        // Assume day-month-year for Thai leases
+        day = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+      }
+      // DD-MM-YY or MM-DD-YY
+      else {
+        let yr = parseInt(parts[2]);
+        year = yr < 50 ? 2000 + yr : (yr < 100 ? 1900 + yr : yr);
+        day = parseInt(parts[0]);
+        month = parseInt(parts[1]);
+      }
+      
+      // Validate
+      if (year < 2000 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
+        return null;
+      }
+      
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+    
+    /**
+     * Extract monetary amounts from lease text
+     */
+    function extractAmountsFromText(text) {
+      if (!text || typeof text !== 'string') return { rent: null, deposit: null };
+      
+      const result = { rent: null, deposit: null };
+      
+      // Rent patterns
+      const rentPatterns = [
+        /(?:Monthly\s*Rent|Rental\s*(?:Amount|Payment|Fee)|Rent)[:\s]*(?:THB|฿|Baht)?\s*([\d,]+)(?:\s*(?:THB|Baht|บาท))?(?:\s*(?:per|\/)\s*month)?/i,
+        /(?:ค่าเช่ารายเดือน|ค่าเช่า)[:\s]*([\d,]+)(?:\s*บาท)?/i,
+        /([\d,]+)\s*(?:THB|Baht|บาท)\s*(?:per|\/)\s*month/i
+      ];
+      
+      // Deposit patterns
+      const depositPatterns = [
+        /(?:Security\s*Deposit|Deposit|Guarantee)[:\s]*(?:THB|฿|Baht)?\s*([\d,]+)(?:\s*(?:THB|Baht|บาท))?/i,
+        /(?:เงินประกัน|เงินมัดจำ)[:\s]*([\d,]+)(?:\s*บาท)?/i,
+        /deposit\s*(?:of|:)?\s*(?:THB|฿|Baht)?\s*([\d,]+)/i
+      ];
+      
+      for (const pattern of rentPatterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+          const amount = parseInt(match[1].replace(/,/g, ''));
+          // Sanity check: rent should be reasonable (1,000 - 1,000,000 THB)
+          if (amount >= 1000 && amount <= 1000000) {
+            result.rent = amount;
+            break;
+          }
+        }
+      }
+      
+      for (const pattern of depositPatterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+          const amount = parseInt(match[1].replace(/,/g, ''));
+          // Sanity check: deposit should be reasonable (1,000 - 5,000,000 THB)
+          if (amount >= 1000 && amount <= 5000000) {
+            result.deposit = amount;
+            break;
+          }
+        }
+      }
+      
+      return result;
+    }
+    
+    /**
+     * Extract rent due day from lease text
+     */
+    function extractRentDueDayFromText(text) {
+      if (!text || typeof text !== 'string') return null;
+      
+      const patterns = [
+        /(?:due|payable|paid)\s*(?:on|by)\s*(?:the)?\s*(\d{1,2})(?:st|nd|rd|th)?\s*(?:day)?(?:\s*of\s*(?:each|every)\s*month)?/i,
+        /(?:on|by)\s*(?:the)?\s*(\d{1,2})(?:st|nd|rd|th)?\s*(?:day)?\s*of\s*(?:each|every)\s*month/i,
+        /(?:ชำระภายในวันที่|วันที่ชำระ)[:\s]*(\d{1,2})/i,
+        /day\s*(\d{1,2})\s*of\s*(?:each|every)\s*month/i
+      ];
+      
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match && match[1]) {
+          const day = parseInt(match[1]);
+          if (day >= 1 && day <= 31) {
+            return day;
+          }
+        }
+      }
+      
+      return null;
+    }
+    
+    // Store raw text for fallback extraction (only available for PDF)
+    let rawLeaseText = '';
+    if (isPdf) {
+      try {
+        const pdfParse = (await import("npm:pdf-parse@1.1.1")).default;
+        const pdfData = await pdfParse(fileBytes);
+        rawLeaseText = pdfData.text || '';
+      } catch (e) {
+        console.warn('[ANALYZE_LEASE_FALLBACK_TEXT_EXTRACTION_FAILED]', { correlationId, error: e.message });
+      }
+    }
+    
     // Validate and normalize result
     if (!analysisResult || typeof analysisResult !== 'object') {
       analysisResult = {};
@@ -730,10 +957,80 @@ For EACH of the 15 clauses above, you MUST return:
       }
     }
     
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FALLBACK EXTRACTION: If OpenAI didn't return key_terms, extract from raw text
+    // ═══════════════════════════════════════════════════════════════════════════
+    
+    const keyTermsBefore = { ...analysisResult.key_terms };
+    let fallbackUsed = false;
+    
+    // Fallback for property_address (MOST CRITICAL)
+    if (!analysisResult.key_terms.property_address && rawLeaseText) {
+      console.log('[ANALYZE_LEASE_FALLBACK_ADDRESS_START]', { correlationId });
+      const fallbackAddress = extractAddressFromText(rawLeaseText);
+      if (fallbackAddress) {
+        analysisResult.key_terms.property_address = fallbackAddress;
+        fallbackUsed = true;
+        console.log('[ANALYZE_LEASE_FALLBACK_ADDRESS_SUCCESS]', { 
+          correlationId, 
+          extractedAddress: fallbackAddress 
+        });
+      } else {
+        console.warn('[ANALYZE_LEASE_FALLBACK_ADDRESS_FAILED]', { 
+          correlationId,
+          message: 'Could not extract address from raw text',
+          textPreview: rawLeaseText.slice(0, 500)
+        });
+      }
+    }
+    
+    // Fallback for dates
+    if ((!analysisResult.key_terms.lease_start_date || !analysisResult.key_terms.lease_end_date) && rawLeaseText) {
+      const fallbackDates = extractDatesFromText(rawLeaseText);
+      if (fallbackDates.start && !analysisResult.key_terms.lease_start_date) {
+        analysisResult.key_terms.lease_start_date = fallbackDates.start;
+        fallbackUsed = true;
+        console.log('[ANALYZE_LEASE_FALLBACK_START_DATE_SUCCESS]', { correlationId, date: fallbackDates.start });
+      }
+      if (fallbackDates.end && !analysisResult.key_terms.lease_end_date) {
+        analysisResult.key_terms.lease_end_date = fallbackDates.end;
+        fallbackUsed = true;
+        console.log('[ANALYZE_LEASE_FALLBACK_END_DATE_SUCCESS]', { correlationId, date: fallbackDates.end });
+      }
+    }
+    
+    // Fallback for amounts
+    if ((!analysisResult.key_terms.monthly_rent || !analysisResult.key_terms.security_deposit) && rawLeaseText) {
+      const fallbackAmounts = extractAmountsFromText(rawLeaseText);
+      if (fallbackAmounts.rent && !analysisResult.key_terms.monthly_rent) {
+        analysisResult.key_terms.monthly_rent = fallbackAmounts.rent;
+        fallbackUsed = true;
+        console.log('[ANALYZE_LEASE_FALLBACK_RENT_SUCCESS]', { correlationId, rent: fallbackAmounts.rent });
+      }
+      if (fallbackAmounts.deposit && !analysisResult.key_terms.security_deposit) {
+        analysisResult.key_terms.security_deposit = fallbackAmounts.deposit;
+        fallbackUsed = true;
+        console.log('[ANALYZE_LEASE_FALLBACK_DEPOSIT_SUCCESS]', { correlationId, deposit: fallbackAmounts.deposit });
+      }
+    }
+    
+    // Fallback for rent due day
+    if (!analysisResult.key_terms.rent_due_day && rawLeaseText) {
+      const fallbackDueDay = extractRentDueDayFromText(rawLeaseText);
+      if (fallbackDueDay) {
+        analysisResult.key_terms.rent_due_day = fallbackDueDay;
+        fallbackUsed = true;
+        console.log('[ANALYZE_LEASE_FALLBACK_DUE_DAY_SUCCESS]', { correlationId, dueDay: fallbackDueDay });
+      }
+    }
+    
     console.log('[ANALYZE_LEASE_KEY_TERMS_NORMALIZED]', {
       correlationId,
       key_terms: analysisResult.key_terms,
-      hasPropertyAddress: !!analysisResult.key_terms.property_address
+      hasPropertyAddress: !!analysisResult.key_terms.property_address,
+      fallbackUsed,
+      beforeFallback: keyTermsBefore,
+      afterFallback: analysisResult.key_terms
     });
     
     // Normalize clauses
