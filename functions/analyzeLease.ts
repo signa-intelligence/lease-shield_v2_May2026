@@ -936,8 +936,14 @@ For EACH of the 15 clauses above, you MUST return:
           scanId: providedScanId 
         });
 
-        // Extract property address from key_terms
+        // Extract property address from key_terms - CRITICAL for UI display
         const extractedAddress = analysisResult.key_terms?.property_address || null;
+        
+        console.log('[ANALYZE_LEASE_KEY_TERMS_FINAL]', {
+          correlationId,
+          extractedAddress,
+          allKeyTerms: analysisResult.key_terms
+        });
         
         console.log('[ANALYZE_LEASE_EXTRACTED_ADDRESS]', { 
           correlationId, 
