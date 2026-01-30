@@ -1258,11 +1258,22 @@ For EACH of the 15 clauses above, you MUST return:
           keyTerms: analysisResult.key_terms
         });
 
+        // Store key_terms in scan_full for UI to access
+        analysisResult.key_terms = analysisResult.key_terms || {};
+        
         scan = await svc.entities.LeaseScan.update(providedScanId, {
           scan_preview: scan_preview,
           scan_full: analysisResult,
           risk_score: analysisResult.risk_score,
           status: 'completed'
+        });
+        
+        console.log('[ANALYZE_LEASE_DB_UPDATE_COMPLETE]', {
+          correlationId,
+          scanId: providedScanId,
+          scan_preview_saved: !!scan_preview,
+          property_address_in_preview: scan_preview?.property_address,
+          key_terms_in_full: analysisResult.key_terms
         });
         
         // Also update the Lease entity with extracted key_terms
