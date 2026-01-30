@@ -713,6 +713,29 @@ For EACH of the 15 clauses above, you MUST return:
       analysisResult.clauses = [];
     }
     
+    // CRITICAL: Ensure key_terms object exists with all required fields
+    if (!analysisResult.key_terms || typeof analysisResult.key_terms !== 'object') {
+      console.warn('[ANALYZE_LEASE_KEY_TERMS_MISSING]', { 
+        correlationId,
+        message: 'AI did not return key_terms - initializing empty object'
+      });
+      analysisResult.key_terms = {};
+    }
+    
+    // Ensure all key_terms fields exist (even if null)
+    const requiredKeyTerms = ['property_address', 'lease_start_date', 'lease_end_date', 'monthly_rent', 'security_deposit', 'rent_due_day'];
+    for (const field of requiredKeyTerms) {
+      if (analysisResult.key_terms[field] === undefined) {
+        analysisResult.key_terms[field] = null;
+      }
+    }
+    
+    console.log('[ANALYZE_LEASE_KEY_TERMS_NORMALIZED]', {
+      correlationId,
+      key_terms: analysisResult.key_terms,
+      hasPropertyAddress: !!analysisResult.key_terms.property_address
+    });
+    
     // Normalize clauses
     const normalizedClauses = [];
     for (let idx = 0; idx < analysisResult.clauses.length; idx++) {
