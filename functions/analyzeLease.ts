@@ -524,6 +524,7 @@ For EACH of the 15 clauses above, you MUST return:
     const openai = new OpenAI({ apiKey: openaiApiKey });
     
     let analysisResult;
+    let rawLeaseText = ''; // Store raw text for fallback extraction
     
     if (isPdf) {
       // For PDF: Extract text first, then analyze
