@@ -606,8 +606,12 @@ For EACH of the 15 clauses above, you MUST return:
           missingClausesCount: analysisResult.missingCriticalClauses?.length || 0,
           hasKeyTerms: !!analysisResult.key_terms,
           keyTermsKeys: Object.keys(analysisResult.key_terms || {}),
-          propertyAddress: analysisResult.key_terms?.property_address || 'NOT_FOUND'
+          propertyAddress: analysisResult.key_terms?.property_address || 'NOT_FOUND',
+          rawTextLength: pdfText?.length || 0
         });
+        
+        // Store raw text for fallback extraction
+        rawLeaseText = pdfText;
       } catch (e) {
         console.error('[ANALYZE_LEASE_OPENAI_FAILED]', { correlationId, error: e.message });
         return json(500, {
