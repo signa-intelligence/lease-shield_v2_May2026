@@ -601,7 +601,10 @@ For EACH of the 15 clauses above, you MUST return:
           clausesCount: analysisResult.clauses?.length || 0,
           riskScore: analysisResult.risk_score,
           hasMissingClauses: !!analysisResult.missingCriticalClauses,
-          missingClausesCount: analysisResult.missingCriticalClauses?.length || 0
+          missingClausesCount: analysisResult.missingCriticalClauses?.length || 0,
+          hasKeyTerms: !!analysisResult.key_terms,
+          keyTermsKeys: Object.keys(analysisResult.key_terms || {}),
+          propertyAddress: analysisResult.key_terms?.property_address || 'NOT_FOUND'
         });
       } catch (e) {
         console.error('[ANALYZE_LEASE_OPENAI_FAILED]', { correlationId, error: e.message });
