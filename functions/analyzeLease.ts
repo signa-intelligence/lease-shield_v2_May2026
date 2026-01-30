@@ -576,18 +576,24 @@ For EACH of the 15 clauses above, you MUST return:
         ? `Quickly assess this lease document for the top 5 risks (language: ${language}):\n\n${pdfText.slice(0, 8000)}`
         : `Analyze this complete lease document (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read the entire document thoroughly:\n\n${pdfText.slice(0, 15000)}`;
       
-      const maxTokens = isPreviewMode ? 1000 : 4000;
+      const maxTokens = isPreviewMode ? 1500 : 4000;
+      
+      // Use gpt-4o-mini for preview mode (faster, cheaper, better at structured extraction)
+      // Use gpt-4o for full mode (more thorough clause analysis)
+      const modelToUse = isPreviewMode ? "gpt-4o-mini" : "gpt-4o";
+      
+      console.log('[ANALYZE_LEASE_MODEL_SELECTED]', { correlationId, model: modelToUse, isPreviewMode });
       
       try {
         const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
+          model: modelToUse,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt }
           ],
           response_format: { type: "json_object" },
           max_tokens: maxTokens,
-          temperature: 0.2
+          temperature: 0.1
         });
         
         const rawContent = completion.choices[0].message.content;
