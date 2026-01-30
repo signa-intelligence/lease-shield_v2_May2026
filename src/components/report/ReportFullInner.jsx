@@ -1334,11 +1334,14 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 color: colors.textPrimary,
                 lineHeight: '1.5'
               }}>
+                {/* Priority order for property address resolution */}
                 {lease?.property_address || 
                  scan?.scan_preview?.property_address ||
+                 scan?.scan_full?.key_terms?.property_address ||
                  reportData?.key_terms?.property_address || 
                  reportData?.lease_address || 
                  sf?.key_terms?.property_address ||
+                 sf?.summary?.property_address ||
                  sf?.meta?.property_address || 
                  (language === 'th' ? 'ไม่ระบุที่อยู่' : 'Property address not specified')}
               </p>
