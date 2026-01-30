@@ -537,6 +537,7 @@ For EACH of the 15 clauses above, you MUST return:
       try {
         const pdfData = await pdfParse(fileBytes);
         pdfText = pdfData.text;
+        rawLeaseText = pdfText; // Store for fallback extraction
         
         console.log('[ANALYZE_LEASE_PDF_EXTRACTED]', { 
           correlationId, 
