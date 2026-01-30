@@ -930,8 +930,17 @@ For EACH of the 15 clauses above, you MUST return:
           risk_level: analysisResult.risk_score >= 75 ? 'critical' : analysisResult.risk_score >= 50 ? 'high' : analysisResult.risk_score >= 25 ? 'medium' : 'low',
           total_clauses: analysisResult.clauses?.length || 0,
           critical_count: analysisResult.clauses?.filter(c => c.risk_level === 'critical').length || 0,
-          high_count: analysisResult.clauses?.filter(c => c.risk_level === 'high').length || 0
+          high_count: analysisResult.clauses?.filter(c => c.risk_level === 'high').length || 0,
+          // Include all key_terms in scan_preview for easy access
+          ...analysisResult.key_terms
         };
+        
+        console.log('[ANALYZE_LEASE_SCAN_PREVIEW_BUILT]', {
+          correlationId,
+          scan_preview,
+          extractedAddress,
+          keyTerms: analysisResult.key_terms
+        });
 
         scan = await svc.entities.LeaseScan.update(providedScanId, {
           scan_preview: scan_preview,
