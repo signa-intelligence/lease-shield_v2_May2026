@@ -190,70 +190,83 @@ Deno.serve(async (req) => {
 PREVIEW MODE: Provide a quick risk assessment with the 5 most important risks.
 
 ═══════════════════════════════════════════════════════════════════════════
-CRITICAL: KEY_TERMS EXTRACTION IS MANDATORY (HIGHEST PRIORITY)
+MANDATORY OUTPUT STRUCTURE - YOU MUST RETURN ALL THESE FIELDS:
 ═══════════════════════════════════════════════════════════════════════════
 
-You MUST extract key_terms from the lease document. These are essential for auto-populating deposit and timeline tracking.
-DO NOT return empty key_terms object. Search the ENTIRE document for these fields.
-
-Return JSON with:
 {
-  "risk_score": 0-100 (overall risk level),
+  "risk_score": <number 0-100>,
   "summary": {
-    "executive_summary": "2-3 sentences overall assessment of the lease",
-    "top_risks": [
-      {"title": "Risk name", "severity": "high|critical|medium", "why": "Brief explanation"}
-    ]
+    "executive_summary": "<string>",
+    "top_risks": [<5 risk objects>]
   },
   "key_terms": {
-    "property_address": "Full property address with unit, building, street, city" (REQUIRED - MUST extract),
-    "lease_start_date": "YYYY-MM-DD" (REQUIRED - extract from lease start/commencement),
-    "lease_end_date": "YYYY-MM-DD" (REQUIRED - extract from lease end/expiry),
-    "monthly_rent": 42000 (REQUIRED - extract rent amount as number),
-    "security_deposit": 84000 (REQUIRED - extract deposit amount as number),
-    "rent_due_day": 5 (REQUIRED - day of month rent is due, typically 1-5)
+    "property_address": "<REQUIRED - full address string or null>",
+    "lease_start_date": "<REQUIRED - YYYY-MM-DD or null>",
+    "lease_end_date": "<REQUIRED - YYYY-MM-DD or null>",
+    "monthly_rent": <REQUIRED - number or null>,
+    "security_deposit": <REQUIRED - number or null>,
+    "rent_due_day": <REQUIRED - number 1-31 or null>
   },
   "preview_mode": true,
   "upgrade_message": "Upgrade to see full clause-by-clause analysis with detailed recommendations"
 }
 
 ═══════════════════════════════════════════════════════════════════════════
-PROPERTY ADDRESS EXTRACTION (CRITICAL - DO NOT SKIP)
+CRITICAL: KEY_TERMS EXTRACTION IS MANDATORY (HIGHEST PRIORITY)
 ═══════════════════════════════════════════════════════════════════════════
 
-Search for property address in these locations:
-1. "LEASED PROPERTY" or "RENTAL PROPERTY" clause
-2. "PREMISES" or "Property" section
-3. "ทรัพย์สินที่เช่า" (Thai: rented property)
-4. Near words: "Unit", "Room", "Apartment", "Condo", "Suite", "Floor"
-5. Building names, street addresses, district names
+The key_terms object MUST be included in your response and MUST contain all 6 fields.
+Even if you cannot find a value, include the field with null.
+DO NOT return an empty key_terms object {}.
+DO NOT omit the key_terms field entirely.
 
-Extract FULL address including:
-- Unit/Room number (e.g., "Unit 1806", "Room 505")
-- Building name (e.g., "Tower C", "Emerald Bay Condominium")
-- Street address (e.g., "299/45 Pattaya Second Road")
-- District/Area (e.g., "Nong Prue, Bang Lamung")
-- City/Province (e.g., "Chonburi", "Bangkok")
-- Postal code if available
+SEARCH STRATEGIES FOR EACH FIELD:
 
-Example: "Unit 1806, Tower C, Emerald Bay Condominium, 299/45 Pattaya Second Road, Nong Prue, Bang Lamung, Chonburi 20150"
+1. property_address (MOST IMPORTANT):
+   - Look for "LEASED PROPERTY", "RENTAL PROPERTY", "PREMISES", "Property Address"
+   - Thai: "ทรัพย์สินที่เช่า", "สถานที่เช่า", "ที่ตั้งทรัพย์สิน"
+   - Near words: "Unit", "Room", "Apartment", "Condo", "Suite", "Floor", "Building"
+   - Extract FULL address: unit + building + street + district + city + postal code
+   - Example: "Unit 1806, Tower C, Emerald Bay Condo, 299/45 Pattaya Second Road, Nong Prue, Bang Lamung, Chonburi 20150"
+
+2. lease_start_date / lease_end_date:
+   - Look for "LEASE TERM", "Term of Lease", "Commencement Date", "Expiry Date"
+   - Thai: "ระยะเวลาการเช่า", "วันเริ่มสัญญา", "วันสิ้นสุดสัญญา"
+   - Format as YYYY-MM-DD (e.g., "2026-03-01")
+
+3. monthly_rent:
+   - Look for "RENTAL PAYMENT", "Monthly Rent", "Rent Amount"
+   - Thai: "ค่าเช่ารายเดือน", "การชำระค่าเช่า"
+   - Return as NUMBER only (42000, not "42,000 THB")
+
+4. security_deposit:
+   - Look for "SECURITY DEPOSIT", "Deposit", "Guarantee"
+   - Thai: "เงินประกัน", "เงินมัดจำ"
+   - Return as NUMBER only (84000, not "84,000 baht")
+
+5. rent_due_day:
+   - Look for "due on the [X]th day", "payable by the [X]"
+   - Thai: "ชำระภายในวันที่"
+   - Return as NUMBER 1-31 (typically 1, 5, or first of month)
 
 ═══════════════════════════════════════════════════════════════════════════
+RISK ASSESSMENT GUIDELINES
+═══════════════════════════════════════════════════════════════════════════
 
-OTHER key_terms extraction rules:
-1. Look for "LEASE TERM" or "ระยะเวลาการเช่า" → extract start and end dates
-2. Look for "RENTAL PAYMENT" or "การชำระค่าเช่า" → extract monthly rent amount and due day
-3. Look for "DEPOSIT" or "เงินประกัน" → extract security deposit amount
-4. Use NUMBERS, not strings (monthly_rent: 42000, NOT "42,000 THB")
-5. Use YYYY-MM-DD format for dates (lease_start_date: "2026-03-01", NOT "March 1, 2026")
-6. If a field is not found, use null (NOT empty string)
+Include EXACTLY 5 top_risks objects with:
+- title: Short risk name
+- severity: "critical", "high", or "medium"
+- why: Brief explanation (1-2 sentences)
 
-IMPORTANT:
-- Include EXACTLY 5 top risks (the most significant ones)
-- key_terms MUST have property_address - search harder if not obvious
-- Focus on: deposit issues, unfair termination terms, utility overcharging, excessive penalties, missing protections
-- Keep explanations concise but actionable
-- risk_score should reflect overall lease risk (0=safe, 100=very risky)
+Focus on: deposit issues, unfair termination terms, utility overcharging, excessive penalties, missing protections.
+
+risk_score guidelines:
+- 0-25: Low risk, balanced lease
+- 26-50: Medium risk, some concerns
+- 51-75: High risk, significant issues
+- 76-100: Critical risk, heavily landlord-favored
+
+REMEMBER: key_terms MUST be populated. This is critical for the app to function properly.
 `
       : `You are Lease Shield's AI analyst specializing in residential lease agreements in Thailand and Southeast Asia. Your task is to extract and analyze EVERY SINGLE CLAUSE in the lease document with NO LIMIT.
 
