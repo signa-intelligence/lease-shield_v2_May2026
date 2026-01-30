@@ -1239,7 +1239,7 @@ For EACH of the 15 clauses above, you MUST return:
           keyTermsKeys: Object.keys(analysisResult.key_terms || {})
         });
 
-        // Populate scan_preview for UI display
+        // Populate scan_preview for UI display - CRITICAL: This must be saved to database
         const scan_preview = {
           property_address: extractedAddress,
           risk_score: analysisResult.risk_score,
@@ -1248,8 +1248,18 @@ For EACH of the 15 clauses above, you MUST return:
           critical_count: analysisResult.clauses?.filter(c => c.risk_level === 'critical').length || 0,
           high_count: analysisResult.clauses?.filter(c => c.risk_level === 'high').length || 0,
           // Include all key_terms in scan_preview for easy access
-          ...analysisResult.key_terms
+          lease_start_date: analysisResult.key_terms?.lease_start_date || null,
+          lease_end_date: analysisResult.key_terms?.lease_end_date || null,
+          monthly_rent: analysisResult.key_terms?.monthly_rent || null,
+          security_deposit: analysisResult.key_terms?.security_deposit || null,
+          rent_due_day: analysisResult.key_terms?.rent_due_day || null
         };
+        
+        console.log('[ANALYZE_LEASE_SCAN_PREVIEW_CONSTRUCTED]', {
+          correlationId,
+          scan_preview_object: JSON.stringify(scan_preview),
+          extractedAddress_value: extractedAddress
+        });
         
         console.log('[ANALYZE_LEASE_SCAN_PREVIEW_BUILT]', {
           correlationId,
