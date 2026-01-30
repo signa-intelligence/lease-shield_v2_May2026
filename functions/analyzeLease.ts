@@ -1283,8 +1283,18 @@ For EACH of the 15 clauses above, you MUST return:
           scanId: providedScanId,
           scan_preview_saved: !!scan_preview,
           property_address_in_preview: scan_preview?.property_address,
-          key_terms_in_full: analysisResult.key_terms
+          key_terms_in_full: analysisResult.key_terms,
+          scan_result_preview: scan?.scan_preview
         });
+        
+        // Verify the scan was updated correctly
+        if (!scan?.scan_preview) {
+          console.error('[ANALYZE_LEASE_SCAN_PREVIEW_NOT_SAVED]', {
+            correlationId,
+            expected_preview: scan_preview,
+            actual_scan: scan
+          });
+        }
         
         // Also update the Lease entity with extracted key_terms
         if (extractedAddress || analysisResult.key_terms?.monthly_rent || analysisResult.key_terms?.security_deposit) {
