@@ -970,6 +970,7 @@ For EACH of the 15 clauses above, you MUST return:
     let fallbackUsed = false;
     
     // Fallback for property_address (MOST CRITICAL)
+    console.log('[FALLBACK_EXTRACTION_TRIGGERED]', { correlationId, hasRawText: !!rawLeaseText, hasPropertyAddress: !!analysisResult.key_terms.property_address });
     if (!analysisResult.key_terms.property_address && rawLeaseText) {
       console.log('[ANALYZE_LEASE_FALLBACK_ADDRESS_START]', { correlationId });
       const fallbackAddress = extractAddressFromText(rawLeaseText);
