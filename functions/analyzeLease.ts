@@ -1271,6 +1271,9 @@ For EACH of the 15 clauses above, you MUST return:
         // Store key_terms in scan_full for UI to access
         analysisResult.key_terms = analysisResult.key_terms || {};
         
+        // Store key_terms in scan_full so it's persisted
+        analysisResult.key_terms = analysisResult.key_terms || {};
+        
         const updatePayload = {
           scan_preview: scan_preview,
           scan_full: analysisResult,
@@ -1280,12 +1283,21 @@ For EACH of the 15 clauses above, you MUST return:
         
         console.log('[ANALYZE_LEASE_DB_UPDATE_PAYLOAD]', {
           correlationId,
-          updatePayload: JSON.stringify(updatePayload).slice(0, 1000),
+          updatePayload_preview: JSON.stringify(scan_preview),
           scan_preview_type: typeof scan_preview,
-          scan_preview_keys: Object.keys(scan_preview || {})
+          scan_preview_keys: Object.keys(scan_preview || {}),
+          scan_full_key_terms: analysisResult.key_terms
         });
         
         scan = await svc.entities.LeaseScan.update(providedScanId, updatePayload);
+        
+        // Force-verify the update went through
+        const verifyUpdate = await svc.entities.LeaseScan.get(providedScanId);
+        console.log('[ANALYZE_LEASE_VERIFY_UPDATE]', {
+          correlationId,
+          scan_preview_after_update: verifyUpdate?.scan_preview,
+          has_scan_preview: !!verifyUpdate?.scan_preview
+        });
         
         console.log('[ANALYZE_LEASE_DB_UPDATE_COMPLETE]', {
           correlationId,
