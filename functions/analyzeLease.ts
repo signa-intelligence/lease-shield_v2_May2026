@@ -1290,22 +1290,32 @@ For EACH of the 15 clauses above, you MUST return:
         // Store key_terms in scan_full so it's persisted
         analysisResult.key_terms = analysisResult.key_terms || {};
         
-        const updatePayload = {
+        // Split into two updates to avoid MongoDB timeout on large payloads
+        // First: Save lightweight scan_preview + metadata (fast)
+        console.log('[ANALYZE_LEASE_DB_UPDATE_STEP1_START]', {
+          correlationId,
+          scan_preview_size: JSON.stringify(scan_preview).length
+        });
+
+        scan = await svc.entities.LeaseScan.update(providedScanId, {
           scan_preview: scan_preview,
-          scan_full: analysisResult,
           risk_score: analysisResult.risk_score,
           status: 'completed'
-        };
-        
-        console.log('[ANALYZE_LEASE_DB_UPDATE_PAYLOAD]', {
-          correlationId,
-          updatePayload_preview: JSON.stringify(scan_preview),
-          scan_preview_type: typeof scan_preview,
-          scan_preview_keys: Object.keys(scan_preview || {}),
-          scan_full_key_terms: analysisResult.key_terms
         });
-        
-        scan = await svc.entities.LeaseScan.update(providedScanId, updatePayload);
+
+        console.log('[ANALYZE_LEASE_DB_UPDATE_STEP1_SUCCESS]', { correlationId });
+
+        // Second: Save full analysis separately (may be large, 15-20KB)
+        console.log('[ANALYZE_LEASE_DB_UPDATE_STEP2_START]', {
+          correlationId,
+          scan_full_size: JSON.stringify(analysisResult).length
+        });
+
+        await svc.entities.LeaseScan.update(providedScanId, {
+          scan_full: analysisResult
+        });
+
+        console.log('[ANALYZE_LEASE_DB_UPDATE_STEP2_SUCCESS]', { correlationId });
         
         // Force-verify the update went through
         const verifyUpdate = await svc.entities.LeaseScan.get(providedScanId);
