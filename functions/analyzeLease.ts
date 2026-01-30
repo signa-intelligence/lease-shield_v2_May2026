@@ -905,18 +905,6 @@ For EACH of the 15 clauses above, you MUST return:
       return null;
     }
     
-    // Store raw text for fallback extraction (only available for PDF)
-    let rawLeaseText = '';
-    if (isPdf) {
-      try {
-        const pdfParse = (await import("npm:pdf-parse@1.1.1")).default;
-        const pdfData = await pdfParse(fileBytes);
-        rawLeaseText = pdfData.text || '';
-      } catch (e) {
-        console.warn('[ANALYZE_LEASE_FALLBACK_TEXT_EXTRACTION_FAILED]', { correlationId, error: e.message });
-      }
-    }
-    
     // Validate and normalize result
     if (!analysisResult || typeof analysisResult !== 'object') {
       analysisResult = {};
