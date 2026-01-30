@@ -20,8 +20,19 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getFeatureCardStyles } from "@/components/shared/featureTheme";
 
-const OnboardingChecklist = ({ user, leases, deposits, documents, cases, maintenanceRequests = [], isDarkMode = false, language = 'en' }) => {
+const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [], cases = [], maintenanceRequests = [], isDarkMode = false, language = 'en' }) => {
 
+  // Debug log to verify props are being passed correctly
+  console.log('[ONBOARDING_CHECKLIST_PROPS]', {
+    leasesCount: leases?.length || 0,
+    depositsCount: deposits?.length || 0,
+    documentsCount: documents?.length || 0,
+    maintenanceCount: maintenanceRequests?.length || 0,
+    hasPhone: !!user?.phone,
+    hasTenantAddress: !!user?.tenant_address,
+    hasEmailNotif: !!user?.email_notifications,
+    hasLineNotif: !!user?.line_notifications
+  });
 
   const leasesTheme = getFeatureCardStyles("leases", isDarkMode);
   const depositsTheme = getFeatureCardStyles("deposits", isDarkMode);
@@ -222,13 +233,21 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
 
   const strings = t[language] || t.en;
 
+  // Safely check array lengths with fallbacks
+  const hasLeases = Array.isArray(leases) && leases.length > 0;
+  const hasDeposits = Array.isArray(deposits) && deposits.length > 0;
+  const hasMaintenanceRequests = Array.isArray(maintenanceRequests) && maintenanceRequests.length > 0;
+  const hasDocuments = Array.isArray(documents) && documents.length >= 3;
+  const hasProfile = !!(user?.phone && user?.tenant_address);
+  const hasNotifications = !!(user?.email_notifications || user?.line_notifications);
+
   const tasks = [
     {
       id: 'upload_lease',
       label: strings.tasks.uploadLease,
       description: strings.tasks.uploadLeaseDesc,
       icon: Upload,
-      completed: leases.length > 0,
+      completed: hasLeases,
       route: "UploadScan",
       points: 25
     },
@@ -237,7 +256,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.trackDeposit,
       description: strings.tasks.trackDepositDesc,
       icon: Wallet,
-      completed: deposits.length > 0,
+      completed: hasDeposits,
       route: "PropertyTracker",
       points: 20
     },
@@ -246,7 +265,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.reportMaintenance,
       description: strings.tasks.reportMaintenanceDesc,
       icon: Wrench,
-      completed: maintenanceRequests.length > 0,
+      completed: hasMaintenanceRequests,
       route: "PropertyTracker",
       points: 15
     },
@@ -255,7 +274,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.uploadDoc,
       description: strings.tasks.uploadDocDesc,
       icon: FileText,
-      completed: documents.length >= 3,
+      completed: hasDocuments,
       route: "EvidenceVault",
       points: 15
     },
@@ -264,7 +283,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.setupProfile,
       description: strings.tasks.setupProfileDesc,
       icon: User,
-      completed: user?.phone && user?.tenant_address,
+      completed: hasProfile,
       route: "Account",
       points: 10
     },
@@ -273,7 +292,7 @@ const OnboardingChecklist = ({ user, leases, deposits, documents, cases, mainten
       label: strings.tasks.enableNotifications,
       description: strings.tasks.enableNotificationsDesc,
       icon: Bell,
-      completed: user?.email_notifications || user?.line_notifications,
+      completed: hasNotifications,
       route: "Account?section=notifications",
       points: 10
     }
