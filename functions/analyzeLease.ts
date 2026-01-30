@@ -212,7 +212,7 @@ MANDATORY OUTPUT STRUCTURE - YOU MUST RETURN ALL THESE FIELDS:
 }
 
 ═══════════════════════════════════════════════════════════════════════════
-CRITICAL: KEY_TERMS EXTRACTION IS MANDATORY (HIGHEST PRIORITY)
+STEP 1: EXTRACT KEY_TERMS (DO THIS FIRST - HIGHEST PRIORITY)
 ═══════════════════════════════════════════════════════════════════════════
 
 The key_terms object MUST be included in your response and MUST contain all 6 fields.
@@ -250,7 +250,7 @@ SEARCH STRATEGIES FOR EACH FIELD:
    - Return as NUMBER 1-31 (typically 1, 5, or first of month)
 
 ═══════════════════════════════════════════════════════════════════════════
-RISK ASSESSMENT GUIDELINES
+STEP 2: ASSESS RISK (DO THIS AFTER EXTRACTING KEY_TERMS)
 ═══════════════════════════════════════════════════════════════════════════
 
 Include EXACTLY 5 top_risks objects with:
@@ -265,8 +265,6 @@ risk_score guidelines:
 - 26-50: Medium risk, some concerns
 - 51-75: High risk, significant issues
 - 76-100: Critical risk, heavily landlord-favored
-
-REMEMBER: key_terms MUST be populated. This is critical for the app to function properly.
 `
       : `You are Lease Shield's AI analyst specializing in residential lease agreements in Thailand and Southeast Asia. Your task is to extract and analyze EVERY SINGLE CLAUSE in the lease document with NO LIMIT.
 
