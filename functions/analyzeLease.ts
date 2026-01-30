@@ -189,7 +189,12 @@ Deno.serve(async (req) => {
 
 PREVIEW MODE: Provide a quick risk assessment with the 5 most important risks.
 
-CRITICAL: You MUST extract key_terms from the lease document. These are essential for auto-populating deposit and timeline tracking.
+═══════════════════════════════════════════════════════════════════════════
+CRITICAL: KEY_TERMS EXTRACTION IS MANDATORY (HIGHEST PRIORITY)
+═══════════════════════════════════════════════════════════════════════════
+
+You MUST extract key_terms from the lease document. These are essential for auto-populating deposit and timeline tracking.
+DO NOT return empty key_terms object. Search the ENTIRE document for these fields.
 
 Return JSON with:
 {
@@ -201,9 +206,9 @@ Return JSON with:
     ]
   },
   "key_terms": {
+    "property_address": "Full property address with unit, building, street, city" (REQUIRED - MUST extract),
     "lease_start_date": "YYYY-MM-DD" (REQUIRED - extract from lease start/commencement),
     "lease_end_date": "YYYY-MM-DD" (REQUIRED - extract from lease end/expiry),
-    "property_address": "Full property address" (REQUIRED - extract from rental property/premises section),
     "monthly_rent": 42000 (REQUIRED - extract rent amount as number),
     "security_deposit": 84000 (REQUIRED - extract deposit amount as number),
     "rent_due_day": 5 (REQUIRED - day of month rent is due, typically 1-5)
@@ -212,18 +217,40 @@ Return JSON with:
   "upgrade_message": "Upgrade to see full clause-by-clause analysis with detailed recommendations"
 }
 
-CRITICAL - key_terms extraction priority:
+═══════════════════════════════════════════════════════════════════════════
+PROPERTY ADDRESS EXTRACTION (CRITICAL - DO NOT SKIP)
+═══════════════════════════════════════════════════════════════════════════
+
+Search for property address in these locations:
+1. "LEASED PROPERTY" or "RENTAL PROPERTY" clause
+2. "PREMISES" or "Property" section
+3. "ทรัพย์สินที่เช่า" (Thai: rented property)
+4. Near words: "Unit", "Room", "Apartment", "Condo", "Suite", "Floor"
+5. Building names, street addresses, district names
+
+Extract FULL address including:
+- Unit/Room number (e.g., "Unit 1806", "Room 505")
+- Building name (e.g., "Tower C", "Emerald Bay Condominium")
+- Street address (e.g., "299/45 Pattaya Second Road")
+- District/Area (e.g., "Nong Prue, Bang Lamung")
+- City/Province (e.g., "Chonburi", "Bangkok")
+- Postal code if available
+
+Example: "Unit 1806, Tower C, Emerald Bay Condominium, 299/45 Pattaya Second Road, Nong Prue, Bang Lamung, Chonburi 20150"
+
+═══════════════════════════════════════════════════════════════════════════
+
+OTHER key_terms extraction rules:
 1. Look for "LEASE TERM" or "ระยะเวลาการเช่า" → extract start and end dates
 2. Look for "RENTAL PAYMENT" or "การชำระค่าเช่า" → extract monthly rent amount and due day
 3. Look for "DEPOSIT" or "เงินประกัน" → extract security deposit amount
-4. Look for "RENTAL PROPERTY" or "ทรัพย์สินที่เช่า" → extract full property address
-5. Use NUMBERS, not strings (monthly_rent: 42000, NOT "42,000 THB")
-6. Use YYYY-MM-DD format for dates (lease_start_date: "2026-03-01", NOT "March 1, 2026")
-7. If a field is not found, use null (NOT empty string)
+4. Use NUMBERS, not strings (monthly_rent: 42000, NOT "42,000 THB")
+5. Use YYYY-MM-DD format for dates (lease_start_date: "2026-03-01", NOT "March 1, 2026")
+6. If a field is not found, use null (NOT empty string)
 
 IMPORTANT:
 - Include EXACTLY 5 top risks (the most significant ones)
-- Extract key_terms is MANDATORY - do NOT return empty object
+- key_terms MUST have property_address - search harder if not obvious
 - Focus on: deposit issues, unfair termination terms, utility overcharging, excessive penalties, missing protections
 - Keep explanations concise but actionable
 - risk_score should reflect overall lease risk (0=safe, 100=very risky)
@@ -867,9 +894,19 @@ For EACH of the 15 clauses above, you MUST return:
           scanId: providedScanId 
         });
 
+        // Extract property address from key_terms
+        const extractedAddress = analysisResult.key_terms?.property_address || null;
+        
+        console.log('[ANALYZE_LEASE_EXTRACTED_ADDRESS]', { 
+          correlationId, 
+          extractedAddress,
+          hasKeyTerms: !!analysisResult.key_terms,
+          keyTermsKeys: Object.keys(analysisResult.key_terms || {})
+        });
+
         // Populate scan_preview for UI display
         const scan_preview = {
-          property_address: analysisResult.key_terms?.property_address || '',
+          property_address: extractedAddress,
           risk_score: analysisResult.risk_score,
           risk_level: analysisResult.risk_score >= 75 ? 'critical' : analysisResult.risk_score >= 50 ? 'high' : analysisResult.risk_score >= 25 ? 'medium' : 'low',
           total_clauses: analysisResult.clauses?.length || 0,
@@ -883,6 +920,22 @@ For EACH of the 15 clauses above, you MUST return:
           risk_score: analysisResult.risk_score,
           status: 'completed'
         });
+        
+        // Also update the Lease entity with extracted key_terms
+        if (extractedAddress || analysisResult.key_terms?.monthly_rent || analysisResult.key_terms?.security_deposit) {
+          const leaseUpdate = {};
+          if (extractedAddress) leaseUpdate.property_address = extractedAddress;
+          if (analysisResult.key_terms?.monthly_rent) leaseUpdate.rent_amount = analysisResult.key_terms.monthly_rent;
+          if (analysisResult.key_terms?.security_deposit) leaseUpdate.deposit_amount = analysisResult.key_terms.security_deposit;
+          if (analysisResult.key_terms?.lease_start_date) leaseUpdate.start_date = analysisResult.key_terms.lease_start_date;
+          if (analysisResult.key_terms?.lease_end_date) leaseUpdate.end_date = analysisResult.key_terms.lease_end_date;
+          if (analysisResult.key_terms?.notice_period_days) leaseUpdate.notice_period_days = analysisResult.key_terms.notice_period_days;
+          
+          if (Object.keys(leaseUpdate).length > 0) {
+            console.log('[ANALYZE_LEASE_UPDATING_LEASE_ENTITY]', { correlationId, leaseId, leaseUpdate });
+            await svc.entities.Lease.update(leaseId, leaseUpdate);
+          }
+        }
 
         console.log('[ANALYZE_LEASE_SCAN_UPDATED_SUCCESS]', { 
           correlationId, 
@@ -894,9 +947,12 @@ For EACH of the 15 clauses above, you MUST return:
         // No scanId provided - this shouldn't happen, but handle it
         console.warn('[ANALYZE_LEASE_NO_SCANID_PROVIDED]', { correlationId });
 
+        // Extract property address from key_terms
+        const extractedAddressNew = analysisResult.key_terms?.property_address || null;
+
         // Populate scan_preview for UI display
         const scan_preview = {
-          property_address: analysisResult.key_terms?.property_address || '',
+          property_address: extractedAddressNew,
           risk_score: analysisResult.risk_score,
           risk_level: analysisResult.risk_score >= 75 ? 'critical' : analysisResult.risk_score >= 50 ? 'high' : analysisResult.risk_score >= 25 ? 'medium' : 'low',
           total_clauses: analysisResult.clauses?.length || 0,
@@ -912,6 +968,22 @@ For EACH of the 15 clauses above, you MUST return:
           risk_score: analysisResult.risk_score,
           status: 'completed'
         });
+        
+        // Also update the Lease entity with extracted key_terms
+        if (extractedAddressNew || analysisResult.key_terms?.monthly_rent || analysisResult.key_terms?.security_deposit) {
+          const leaseUpdateNew = {};
+          if (extractedAddressNew) leaseUpdateNew.property_address = extractedAddressNew;
+          if (analysisResult.key_terms?.monthly_rent) leaseUpdateNew.rent_amount = analysisResult.key_terms.monthly_rent;
+          if (analysisResult.key_terms?.security_deposit) leaseUpdateNew.deposit_amount = analysisResult.key_terms.security_deposit;
+          if (analysisResult.key_terms?.lease_start_date) leaseUpdateNew.start_date = analysisResult.key_terms.lease_start_date;
+          if (analysisResult.key_terms?.lease_end_date) leaseUpdateNew.end_date = analysisResult.key_terms.lease_end_date;
+          if (analysisResult.key_terms?.notice_period_days) leaseUpdateNew.notice_period_days = analysisResult.key_terms.notice_period_days;
+          
+          if (Object.keys(leaseUpdateNew).length > 0) {
+            console.log('[ANALYZE_LEASE_UPDATING_LEASE_ENTITY_NEW]', { correlationId, leaseId, leaseUpdateNew });
+            await svc.entities.Lease.update(leaseId, leaseUpdateNew);
+          }
+        }
 
         console.log('[ANALYZE_LEASE_SCAN_CREATED]', { 
           correlationId, 
