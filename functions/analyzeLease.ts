@@ -1271,12 +1271,21 @@ For EACH of the 15 clauses above, you MUST return:
         // Store key_terms in scan_full for UI to access
         analysisResult.key_terms = analysisResult.key_terms || {};
         
-        scan = await svc.entities.LeaseScan.update(providedScanId, {
+        const updatePayload = {
           scan_preview: scan_preview,
           scan_full: analysisResult,
           risk_score: analysisResult.risk_score,
           status: 'completed'
+        };
+        
+        console.log('[ANALYZE_LEASE_DB_UPDATE_PAYLOAD]', {
+          correlationId,
+          updatePayload: JSON.stringify(updatePayload).slice(0, 1000),
+          scan_preview_type: typeof scan_preview,
+          scan_preview_keys: Object.keys(scan_preview || {})
         });
+        
+        scan = await svc.entities.LeaseScan.update(providedScanId, updatePayload);
         
         console.log('[ANALYZE_LEASE_DB_UPDATE_COMPLETE]', {
           correlationId,
