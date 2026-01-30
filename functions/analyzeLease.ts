@@ -641,11 +641,16 @@ For EACH of the 15 clauses above, you MUST return:
         ? `Quickly assess this lease document image for the top 5 risks (language: ${language}).`
         : `Analyze this complete lease document image (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read carefully and provide comprehensive analysis.`;
       
-      const maxTokensImage = isPreviewMode ? 1000 : 4000;
+      const maxTokensImage = isPreviewMode ? 1500 : 4000;
+      
+      // Use gpt-4o-mini for preview mode images too
+      const imageModelToUse = isPreviewMode ? "gpt-4o-mini" : "gpt-4o";
+      
+      console.log('[ANALYZE_LEASE_IMAGE_MODEL_SELECTED]', { correlationId, model: imageModelToUse, isPreviewMode });
       
       try {
         const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
+          model: imageModelToUse,
           messages: [
             { role: "system", content: systemPrompt },
             { 
@@ -667,7 +672,7 @@ For EACH of the 15 clauses above, you MUST return:
           ],
           response_format: { type: "json_object" },
           max_tokens: maxTokensImage,
-          temperature: 0.2
+          temperature: 0.1
         });
         
         const rawContentVision = completion.choices[0].message.content;
