@@ -81,6 +81,24 @@ Deno.serve(async (req) => {
       console.error('[ANALYZE_LEASE_AUTH_FAILED]', { correlationId, error: e.message });
       return json(401, { error: "UNAUTHORIZED" }, headers);
     }
+
+    // Validate user has tier configured
+    if (!user.tier || user.available_scans === undefined) {
+      console.error('[ANALYZE_LEASE_USER_MISCONFIGURED]', { 
+        correlationId,
+        userId: user.id, 
+        email: user.email,
+        hasTier: !!user.tier,
+        hasScans: user.available_scans !== undefined
+      });
+      return json(400, {
+        ok: false,
+        step: 'VALIDATION',
+        error_code: 'USER_NOT_CONFIGURED',
+        message: 'User account not properly configured. Please contact support.',
+        correlationId
+      }, headers);
+    }
     
     // Parse request body
     const body = await req.json().catch(() => ({}));
