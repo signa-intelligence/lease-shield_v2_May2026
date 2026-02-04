@@ -39,10 +39,8 @@ Deno.serve(async (req) => {
     }
 
     // Move lease to RecycleBin
-    // CRITICAL: Use lease.owner_email (not user.email) so the owner can see it in RecycleBin
-    const ownerEmail = lease.owner_email || user.email;
     await svc.entities.RecycleBin.create({
-      user_email: ownerEmail,
+      user_email: user.email,
       item_type: 'lease',
       original_id: lease.id,
       item_snapshot: lease,
@@ -63,7 +61,7 @@ Deno.serve(async (req) => {
 
     for (const deposit of allDeposits) {
       await svc.entities.RecycleBin.create({
-        user_email: deposit.owner_email || ownerEmail,
+        user_email: user.email,
         item_type: 'deposit',
         original_id: deposit.id,
         item_snapshot: deposit,
@@ -84,7 +82,7 @@ Deno.serve(async (req) => {
 
     for (const request of maintenanceRequests) {
       await svc.entities.RecycleBin.create({
-        user_email: request.created_by || ownerEmail,
+        user_email: user.email,
         item_type: 'maintenance',
         original_id: request.id,
         item_snapshot: request,
@@ -117,9 +115,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // DO NOT delete lease scans - keep them for report viewing
-    // Lease scans are needed to display the full report even after lease deletion
-    console.log(`[${correlationId}] Preserving LeaseScan records for deleted lease`, { leaseId });
+    // Soft-delete related lease scans (no need to save to RecycleBin - auto-generated)
+    const leaseScans = await base44.entities.LeaseScan.filter({
+      lease_id: leaseId
+    });
+
+    for (const scan of leaseScans) {
+      await svc.entities.LeaseScan.delete(scan.id);
+    }
 
     // Soft-delete the lease itself by setting status to "deleted"
     await svc.entities.Lease.update(leaseId, {
@@ -129,9 +132,8 @@ Deno.serve(async (req) => {
     });
 
     // Return scan credit to user
-    // CRITICAL: User might have scans in data.available_scans (nested) - check both locations
     const currentUser = await svc.entities.User.get(user.id);
-    const currentScans = currentUser.available_scans ?? currentUser.data?.available_scans ?? 0;
+    const currentScans = currentUser.available_scans || 0;
     const newScanBalance = currentScans + 1;
 
     await svc.entities.User.update(user.id, {
@@ -152,14 +154,14 @@ Deno.serve(async (req) => {
 
     console.log(`[${correlationId}] Scan credit returned to user`, {
       previousBalance: currentScans,
-      newBalance: newScanBalance,
-      usedNestedData: !currentUser.available_scans && !!currentUser.data?.available_scans
+      newBalance: newScanBalance
     });
 
     console.log(`[${correlationId}] Successfully moved lease to RecycleBin`, {
       deposits: allDeposits.length,
       maintenance: maintenanceRequests.length,
-      timeline: allTimelineEvents.length
+      timeline: allTimelineEvents.length,
+      scans: leaseScans.length
     });
 
     return Response.json({
@@ -168,10 +170,9 @@ Deno.serve(async (req) => {
         lease: 1,
         deposits: allDeposits.length,
         maintenance: maintenanceRequests.length,
-        timeline: allTimelineEvents.length
+        timeline: allTimelineEvents.length,
+        scans: leaseScans.length
       },
-      scan_credit_returned: true,
-      new_scan_balance: newScanBalance,
       correlationId
     });
 
