@@ -131,31 +131,9 @@ Deno.serve(async (req) => {
       archived_by: user.email
     });
 
-    // Return scan credit to user
-    const currentUser = await svc.entities.User.get(user.id);
-    const currentScans = currentUser.available_scans || 0;
-    const newScanBalance = currentScans + 1;
-
-    await svc.entities.User.update(user.id, {
-      available_scans: newScanBalance
-    });
-
-    // Log credit return in CreditLedger
-    await svc.entities.CreditLedger.create({
-      user_id: user.id,
-      user_email: user.email,
-      action_type: 'ADD',
-      amount: 1,
-      previous_balance: currentScans,
-      new_balance: newScanBalance,
-      reason: `Scan credit returned: Lease deleted (${lease.property_address || lease.id})`,
-      related_entity_id: leaseId
-    });
-
-    console.log(`[${correlationId}] Scan credit returned to user`, {
-      previousBalance: currentScans,
-      newBalance: newScanBalance
-    });
+    // NOTE: Credits are NOT refunded on deletion per business rules
+    // Credits are permanently consumed when a lease is scanned
+    console.log(`[${correlationId}] Lease soft-deleted (credits not refunded per policy)`);
 
     console.log(`[${correlationId}] Successfully moved lease to RecycleBin`, {
       deposits: allDeposits.length,
