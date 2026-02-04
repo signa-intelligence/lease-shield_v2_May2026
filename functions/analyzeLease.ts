@@ -1027,24 +1027,27 @@ For EACH of the 15 clauses above, you MUST return:
     let fallbackUsed = false;
     
     // Fallback for property_address (MOST CRITICAL)
-    console.log('[FALLBACK_EXTRACTION_TRIGGERED]', { correlationId, hasRawText: !!rawLeaseText, hasPropertyAddress: !!analysisResult.key_terms.property_address });
-    if (!analysisResult.key_terms.property_address && rawLeaseText) {
-      console.log('[ANALYZE_LEASE_FALLBACK_ADDRESS_START]', { correlationId });
-      const fallbackAddress = extractAddressFromText(rawLeaseText);
-      if (fallbackAddress) {
-        analysisResult.key_terms.property_address = fallbackAddress;
-        fallbackUsed = true;
-        console.log('[ANALYZE_LEASE_FALLBACK_ADDRESS_SUCCESS]', { 
-          correlationId, 
-          extractedAddress: fallbackAddress 
-        });
-      } else {
-        console.warn('[ANALYZE_LEASE_FALLBACK_ADDRESS_FAILED]', { 
-          correlationId,
-          message: 'Could not extract address from raw text',
-          textPreview: rawLeaseText.slice(0, 500)
-        });
-      }
+    console.log('[FALLBACK_EXTRACTION_TRIGGERED]', { correlationId, hasRawText: !!rawLeaseText, hasPropertyAddress: !!analysisResult.key_terms.property_address, propertyAddressValue: analysisResult.key_terms.property_address });
+    // Extract if null, undefined, or falsy
+    if ((analysisResult.key_terms.property_address === null || analysisResult.key_terms.property_address === undefined || !analysisResult.key_terms.property_address) && rawLeaseText) {
+     console.log('[ANALYZE_LEASE_FALLBACK_ADDRESS_START]', { correlationId, currentValue: analysisResult.key_terms.property_address });
+     const fallbackAddress = extractAddressFromText(rawLeaseText);
+     if (fallbackAddress) {
+       analysisResult.key_terms.property_address = fallbackAddress;
+       fallbackUsed = true;
+       console.log('[ANALYZE_LEASE_FALLBACK_ADDRESS_SUCCESS]', { 
+         correlationId, 
+         extractedAddress: fallbackAddress,
+         source: 'fallback_extraction'
+       });
+     } else {
+       console.warn('[ANALYZE_LEASE_FALLBACK_ADDRESS_FAILED]', { 
+         correlationId,
+         message: 'Could not extract address from raw text - fallback failed',
+         textPreview: rawLeaseText.slice(0, 500),
+         searchedPatterns: 'address extraction patterns'
+       });
+     }
     }
     
     // Fallback for dates
