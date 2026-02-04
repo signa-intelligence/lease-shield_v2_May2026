@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { X, Copy, FileText, CreditCard, Loader2 } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
-import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from "npm:docx@8.5.0";
 import { translateTemplateContent } from "./translateTemplate";
 
 export default function TemplateViewer({ template, isOpen, onClose, colors, language, user, toast }) {

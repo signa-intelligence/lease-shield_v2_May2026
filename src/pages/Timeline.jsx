@@ -162,7 +162,6 @@ function TimelineContent() {
       maintenanceReported: "Maintenance Reported",
       eventsOn: "Events on",
       rentDue: "Rent Due",
-      upcoming: "Upcoming",
       paid: "Paid"
     },
     th: {

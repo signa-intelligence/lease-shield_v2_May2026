@@ -77,6 +77,7 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profile from './pages/Profile';
 import PropertyTracker from './pages/PropertyTracker';
+import RecycleBin from './pages/RecycleBin';
 import RefundPolicy from './pages/RefundPolicy';
 import ReportFull from './pages/ReportFull';
 import ResolveCase from './pages/ResolveCase';
@@ -89,7 +90,6 @@ import Timeline from './pages/Timeline';
 import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
-import RecycleBin from './pages/RecycleBin';
 import __Layout from './Layout.jsx';
 
 
@@ -124,6 +124,7 @@ export const PAGES = {
     "PrivacyPolicy": PrivacyPolicy,
     "Profile": Profile,
     "PropertyTracker": PropertyTracker,
+    "RecycleBin": RecycleBin,
     "RefundPolicy": RefundPolicy,
     "ReportFull": ReportFull,
     "ResolveCase": ResolveCase,
@@ -136,7 +137,6 @@ export const PAGES = {
     "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
-    "RecycleBin": RecycleBin,
 }
 
 export const pagesConfig = {
