@@ -1357,23 +1357,31 @@ For EACH of the 15 clauses above, you MUST return:
           scan_preview_size: JSON.stringify(scan_preview).length
         });
 
-        scan = await svc.entities.LeaseScan.update(providedScanId, {
+        // Save everything in single update to avoid partial state
+        const updatePayload = {
           scan_preview: scan_preview,
+          scan_full: analysisResult,
           risk_score: analysisResult.risk_score,
           property_address: extractedAddress,
           status: 'completed'
-        });
-
-        console.log('[ANALYZE_LEASE_DB_UPDATE_STEP1_SUCCESS]', { correlationId });
-
-        // Second: Save full analysis separately (may be large, 15-20KB)
-        console.log('[ANALYZE_LEASE_DB_UPDATE_STEP2_START]', {
+        };
+        
+        console.log('[ANALYZE_LEASE_DB_UPDATE_PAYLOAD]', {
           correlationId,
-          scan_full_size: JSON.stringify(analysisResult).length
+          payload_keys: Object.keys(updatePayload),
+          has_scan_preview: !!updatePayload.scan_preview,
+          has_scan_full: !!updatePayload.scan_full,
+          scan_preview_keys: Object.keys(updatePayload.scan_preview || {}),
+          property_address_in_payload: updatePayload.property_address
         });
 
-        await svc.entities.LeaseScan.update(providedScanId, {
-          scan_full: analysisResult
+        scan = await svc.entities.LeaseScan.update(providedScanId, updatePayload);
+
+        console.log('[ANALYZE_LEASE_DB_UPDATE_SUCCESS]', { 
+          correlationId,
+          scan_preview_after_update: !!scan?.scan_preview,
+          property_address_after_update: scan?.property_address,
+          status_after_update: scan?.status
         });
 
         console.log('[ANALYZE_LEASE_DB_UPDATE_STEP2_SUCCESS]', { correlationId });
