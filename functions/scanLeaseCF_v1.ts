@@ -28,18 +28,20 @@ Deno.serve(async (req) => {
     // Get user tier to determine scan mode
     let userTier = 'free';
     let userEmail = null;
+    let userObj = null;
     try {
       const user = await base44.auth.me();
+      userObj = user;
       userTier = user?.tier || 'free';
       userEmail = user?.email;
-      console.log('SCAN_CF_V1_USER_TIER', { userTier, userEmail });
+      console.log('SCAN_CF_V1_USER_TIER', { userTier, userEmail, availableScans: user?.available_scans });
     } catch (authErr) {
       console.warn('SCAN_CF_V1_AUTH_CHECK_FAILED', { error: authErr.message });
     }
     
-    // CRITICAL FIX: Treat null, undefined, 'free', 'discover' as free tier
-    // Database stores 'free', UI displays as 'Explorer'
-    const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover';
+    // CRITICAL FIX: Treat null, undefined, 'free', 'discover', 'explorer' as free tier
+    // Database stores 'explorer' for free tier users
+    const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover' || userTier === 'explorer';
     const scanMode = isFreeTier ? 'preview' : 'full';
     
     console.log('SCAN_CF_V1_MODE_DECISION', { userTier, isFreeTier, scanMode });
@@ -209,6 +211,33 @@ Deno.serve(async (req) => {
         console.log('[SCAN_CF_V1_USER_EMAIL_FROM_LEASE]', { userEmail });
       } catch (err) {
         console.error('[SCAN_CF_V1_USER_EMAIL_FAILED]', { error: err.message });
+      }
+    }
+
+    // CRITICAL FIX: Decrement available_scans for 'explorer' tier AFTER successful analysis
+    if (userObj && userTier === 'explorer' && result?.ok === true) {
+      try {
+        const currentScans = userObj.available_scans || 0;
+        if (currentScans > 0) {
+          const updatedScans = currentScans - 1;
+          await svc.entities.User.update(userObj.id, { available_scans: updatedScans });
+          console.log('SCAN_CF_V1_CREDIT_DECREMENTED', { 
+            userId: userObj.id, 
+            oldScans: currentScans, 
+            newScans: updatedScans 
+          });
+        } else {
+          console.warn('SCAN_CF_V1_CREDIT_ALREADY_ZERO', { 
+            userId: userObj.id, 
+            availableScans: currentScans 
+          });
+        }
+      } catch (creditError) {
+        console.error('SCAN_CF_V1_CREDIT_DECREMENT_FAILED', { 
+          userId: userObj.id, 
+          error: creditError.message 
+        });
+        // Log error but do not block scan completion
       }
     }
 
