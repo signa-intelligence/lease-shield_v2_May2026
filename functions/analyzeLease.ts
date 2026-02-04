@@ -586,33 +586,76 @@ For EACH of the 15 clauses above, you MUST return:
         }, headers);
       }
       
-      // Analyze with OpenAI
-      console.log('[ANALYZE_LEASE_OPENAI_START]', { correlationId, inputLength: pdfText.length, isPreviewMode });
-      
-      // Use different prompts and token limits based on scan mode
-      const userPrompt = isPreviewMode
-        ? `Quickly assess this lease document for the top 5 risks (language: ${language}):\n\n${pdfText.slice(0, 8000)}`
-        : `Analyze this complete lease document (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read the entire document thoroughly:\n\n${pdfText.slice(0, 15000)}`;
-      
-      const maxTokens = isPreviewMode ? 1500 : 4000;
-      
-      // Use gpt-4o-mini for preview mode (faster, cheaper, better at structured extraction)
-      // Use gpt-4o for full mode (more thorough clause analysis)
-      const modelToUse = isPreviewMode ? "gpt-4o-mini" : "gpt-4o";
-      
-      console.log('[ANALYZE_LEASE_MODEL_SELECTED]', { correlationId, model: modelToUse, isPreviewMode });
-      
-      try {
-        const completion = await openai.chat.completions.create({
-          model: modelToUse,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt }
-          ],
-          response_format: { type: "json_object" },
-          max_tokens: maxTokens,
-          temperature: 0.1
+      // Analyze with Claude for preview, OpenAI for full
+      if (isPreviewMode) {
+        console.log('[ANALYZE_LEASE_CLAUDE_START]', { correlationId, inputLength: pdfText.length });
+        
+        const claudeApiKey = Deno.env.get('ANTHROPIC_API_KEY');
+        if (!claudeApiKey) {
+          throw new Error('ANTHROPIC_API_KEY not configured');
+        }
+        
+        const userPrompt = `You are Lease Shield's AI analyst. Analyze this lease for the top 5 risks (language: ${language}):\n\n${pdfText.slice(0, 8000)}`;
+        
+        const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': claudeApiKey,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 2000,
+            thinking: {
+              type: 'enabled',
+              budget_tokens: 1000
+            },
+            messages: [{
+              role: 'user',
+              content: systemPrompt + '\n\n' + userPrompt
+            }]
+          })
         });
+        
+        if (!claudeResponse.ok) {
+          const error = await claudeResponse.text();
+          throw new Error(`Claude API error: ${error}`);
+        }
+        
+        const claudeData = await claudeResponse.json();
+        const rawContent = claudeData.content[0].type === 'text' ? claudeData.content[0].text : claudeData.content.find(c => c.type === 'text')?.text;
+        
+        console.log('[ANALYZE_LEASE_CLAUDE_RESPONSE]', { correlationId, preview: rawContent?.slice(0, 500) });
+        
+        analysisResult = JSON.parse(rawContent);
+        
+        console.log('[ANALYZE_LEASE_CLAUDE_COMPLETE]', { 
+          correlationId,
+          hasKeyTerms: !!analysisResult.key_terms,
+          hasPropertyAddress: !!analysisResult.key_terms?.property_address,
+          riskScore: analysisResult.risk_score
+        });
+        
+      } else {
+        // Use OpenAI for full mode
+        console.log('[ANALYZE_LEASE_OPENAI_START]', { correlationId, inputLength: pdfText.length, isPreviewMode: false });
+        
+        const userPrompt = `Analyze this complete lease document (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read the entire document thoroughly:\n\n${pdfText.slice(0, 15000)}`;
+        
+        console.log('[ANALYZE_LEASE_MODEL_SELECTED]', { correlationId, model: 'gpt-4o' });
+        
+        try {
+          const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt }
+            ],
+            response_format: { type: "json_object" },
+            max_tokens: 4000,
+            temperature: 0.1
+          });
         
         const rawContent = completion.choices[0].message.content;
         console.log('[ANALYZE_LEASE_OPENAI_RAW_RESPONSE]', { 
