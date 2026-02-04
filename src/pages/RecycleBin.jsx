@@ -28,7 +28,15 @@ function RecycleBinContent() {
 
   const { data: deletedItems = [], isLoading } = useQuery({
     queryKey: ['recycleBin', user?.email],
-    queryFn: () => base44.entities.RecycleBin.filter({ user_email: user?.email }, '-deleted_date'),
+    queryFn: async () => {
+      const items = await base44.entities.RecycleBin.filter({ user_email: user?.email }, '-deleted_date');
+      console.log('[RECYCLE_BIN_QUERY]', { 
+        userEmail: user?.email,
+        itemsCount: items?.length || 0,
+        items 
+      });
+      return items;
+    },
     enabled: !!user,
   });
 
@@ -134,11 +142,20 @@ function RecycleBinContent() {
       
       const entityName = entityMap[item.item_type];
       
-      // Update original record to undelete (only update soft-delete flags)
-      await base44.entities[entityName].update(item.original_id, {
-        is_deleted: false,
-        deleted_at: null
-      });
+      // For lease: restore status from "deleted" to "active"
+      if (item.item_type === 'lease') {
+        await base44.entities[entityName].update(item.original_id, {
+          status: 'active',
+          archived_at: null,
+          archived_by: null
+        });
+      } else {
+        // For other entities: clear is_archived flags
+        await base44.entities[entityName].update(item.original_id, {
+          is_archived: false,
+          archived_at: null
+        });
+      }
       
       // Remove from recycle bin
       await base44.entities.RecycleBin.delete(item.id);
