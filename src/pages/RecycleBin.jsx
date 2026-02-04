@@ -29,9 +29,18 @@ function RecycleBinContent() {
   const { data: deletedItems = [], isLoading } = useQuery({
     queryKey: ['recycleBin', user?.email],
     queryFn: async () => {
-      const items = await base44.entities.RecycleBin.filter({ user_email: user?.email }, '-deleted_date');
+      // For admin users: show ALL RecycleBin items
+      // For regular users: show only their own items
+      const isAdmin = ['admin', 'super_admin', 'va'].includes(user?.role?.toLowerCase()) || 
+                      ['admin', 'super_admin', 'va'].includes(user?.access_level?.toLowerCase());
+      
+      const items = isAdmin 
+        ? await base44.entities.RecycleBin.list('-deleted_date', 100)
+        : await base44.entities.RecycleBin.filter({ user_email: user?.email }, '-deleted_date');
+      
       console.log('[RECYCLE_BIN_QUERY]', { 
         userEmail: user?.email,
+        isAdmin,
         itemsCount: items?.length || 0,
         items 
       });
