@@ -1384,14 +1384,14 @@ For EACH of the 15 clauses above, you MUST return:
           status_after_update: scan?.status
         });
 
-        console.log('[ANALYZE_LEASE_DB_UPDATE_STEP2_SUCCESS]', { correlationId });
-        
-        // Force-verify the update went through
+        // Verify the update went through
         const verifyUpdate = await svc.entities.LeaseScan.get(providedScanId);
         console.log('[ANALYZE_LEASE_VERIFY_UPDATE]', {
           correlationId,
-          scan_preview_after_update: verifyUpdate?.scan_preview,
-          has_scan_preview: !!verifyUpdate?.scan_preview
+          scan_preview_in_db: !!verifyUpdate?.scan_preview,
+          property_address_in_db: verifyUpdate?.property_address,
+          property_address_value: verifyUpdate?.property_address,
+          scan_preview_property_address: verifyUpdate?.scan_preview?.property_address
         });
         
         console.log('[ANALYZE_LEASE_DB_UPDATE_COMPLETE]', {
