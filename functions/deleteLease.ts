@@ -48,17 +48,17 @@ Deno.serve(async (req) => {
       deleted_date: new Date().toISOString()
     });
 
-    // Get and move related deposit trackers (by lease_id AND property_address)
+    // Get and soft-delete related deposit trackers (by lease_id AND property_address)
     const depositsByLeaseId = await base44.entities.DepositTracker.filter({ lease_id: leaseId });
     const depositsByAddress = lease.property_address 
       ? await base44.entities.DepositTracker.filter({ property_address: lease.property_address })
       : [];
-    
+
     // Deduplicate deposits
     const allDeposits = [...depositsByLeaseId, ...depositsByAddress].filter((v, i, a) => 
       a.findIndex(t => t.id === v.id) === i
     );
-    
+
     for (const deposit of allDeposits) {
       await svc.entities.RecycleBin.create({
         user_email: user.email,
@@ -68,14 +68,18 @@ Deno.serve(async (req) => {
         item_label: `Deposit - ${deposit.property_address || 'Unknown'}`,
         deleted_date: new Date().toISOString()
       });
-      await svc.entities.DepositTracker.delete(deposit.id);
+      // Soft delete: set is_archived flag
+      await svc.entities.DepositTracker.update(deposit.id, {
+        is_archived: true,
+        archived_at: new Date().toISOString()
+      });
     }
 
-    // Get and move related maintenance requests
+    // Get and soft-delete related maintenance requests
     const maintenanceRequests = await base44.entities.MaintenanceRequest.filter({
       lease_id: leaseId
     });
-    
+
     for (const request of maintenanceRequests) {
       await svc.entities.RecycleBin.create({
         user_email: user.email,
@@ -85,35 +89,73 @@ Deno.serve(async (req) => {
         item_label: request.issue_title || `Maintenance ${request.id.slice(0, 8)}`,
         deleted_date: new Date().toISOString()
       });
-      await svc.entities.MaintenanceRequest.delete(request.id);
+      // Soft delete: set is_archived flag
+      await svc.entities.MaintenanceRequest.update(request.id, {
+        is_archived: true,
+        archived_at: new Date().toISOString()
+      });
     }
 
-    // Delete related timeline events (by lease_id AND property_address)
+    // Soft-delete related timeline events (by lease_id AND property_address)
     const timelineByLeaseId = await base44.entities.TimelineEvent.filter({ lease_id: leaseId });
     const timelineByAddress = lease.property_address
       ? await base44.entities.TimelineEvent.filter({ property_address: lease.property_address })
       : [];
-    
+
     // Deduplicate events
     const allTimelineEvents = [...timelineByLeaseId, ...timelineByAddress].filter((v, i, a) => 
       a.findIndex(t => t.id === v.id) === i
     );
-    
+
     for (const event of allTimelineEvents) {
-      await svc.entities.TimelineEvent.delete(event.id);
+      // Soft delete: set is_archived flag
+      await svc.entities.TimelineEvent.update(event.id, {
+        is_archived: true,
+        archived_at: new Date().toISOString()
+      });
     }
 
-    // Delete related lease scans (no need to save to RecycleBin - auto-generated)
+    // Soft-delete related lease scans (no need to save to RecycleBin - auto-generated)
     const leaseScans = await base44.entities.LeaseScan.filter({
       lease_id: leaseId
     });
-    
+
     for (const scan of leaseScans) {
       await svc.entities.LeaseScan.delete(scan.id);
     }
 
-    // Finally, delete the lease itself
-    await svc.entities.Lease.delete(leaseId);
+    // Soft-delete the lease itself by setting status to "deleted"
+    await svc.entities.Lease.update(leaseId, {
+      status: 'deleted',
+      archived_at: new Date().toISOString(),
+      archived_by: user.email
+    });
+
+    // Return scan credit to user
+    const currentUser = await svc.entities.User.get(user.id);
+    const currentScans = currentUser.available_scans || 0;
+    const newScanBalance = currentScans + 1;
+
+    await svc.entities.User.update(user.id, {
+      available_scans: newScanBalance
+    });
+
+    // Log credit return in CreditLedger
+    await svc.entities.CreditLedger.create({
+      user_id: user.id,
+      user_email: user.email,
+      action_type: 'ADD',
+      amount: 1,
+      previous_balance: currentScans,
+      new_balance: newScanBalance,
+      reason: `Scan credit returned: Lease deleted (${lease.property_address || lease.id})`,
+      related_entity_id: leaseId
+    });
+
+    console.log(`[${correlationId}] Scan credit returned to user`, {
+      previousBalance: currentScans,
+      newBalance: newScanBalance
+    });
 
     console.log(`[${correlationId}] Successfully moved lease to RecycleBin`, {
       deposits: allDeposits.length,

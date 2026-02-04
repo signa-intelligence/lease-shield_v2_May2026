@@ -1318,6 +1318,7 @@ For EACH of the 15 clauses above, you MUST return:
         scan = await svc.entities.LeaseScan.update(providedScanId, {
           scan_preview: scan_preview,
           risk_score: analysisResult.risk_score,
+          property_address: extractedAddress,
           status: 'completed'
         });
 
