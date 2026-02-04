@@ -39,8 +39,10 @@ Deno.serve(async (req) => {
     }
 
     // Move lease to RecycleBin
+    // CRITICAL: Use lease.owner_email (not user.email) so the owner can see it in RecycleBin
+    const ownerEmail = lease.owner_email || user.email;
     await svc.entities.RecycleBin.create({
-      user_email: user.email,
+      user_email: ownerEmail,
       item_type: 'lease',
       original_id: lease.id,
       item_snapshot: lease,
@@ -61,7 +63,7 @@ Deno.serve(async (req) => {
 
     for (const deposit of allDeposits) {
       await svc.entities.RecycleBin.create({
-        user_email: user.email,
+        user_email: deposit.owner_email || ownerEmail,
         item_type: 'deposit',
         original_id: deposit.id,
         item_snapshot: deposit,
@@ -82,7 +84,7 @@ Deno.serve(async (req) => {
 
     for (const request of maintenanceRequests) {
       await svc.entities.RecycleBin.create({
-        user_email: user.email,
+        user_email: request.created_by || ownerEmail,
         item_type: 'maintenance',
         original_id: request.id,
         item_snapshot: request,
