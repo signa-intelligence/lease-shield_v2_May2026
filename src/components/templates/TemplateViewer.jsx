@@ -4,7 +4,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { X, Copy, FileText, CreditCard, Loader2 } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
-import { Document, Packer, Paragraph, TextRun, AlignmentType } from "npm:docx@8.5.0";
 import { translateTemplateContent } from "./translateTemplate";
 
 export default function TemplateViewer({ template, isOpen, onClose, colors, language, user, toast }) {
@@ -209,48 +208,15 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     try {
       console.log('[TEMPLATE] DOCX download action:', { template_key: template?.template_key, lang: displayLang, credits_before: letterCredits });
 
-      // Generate DOCX from selected language document_content
-      const paragraphs = [];
-      
-      // Title (bold, centered)
-      paragraphs.push(
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          children: [
-            new TextRun({
-              text: title,
-              bold: true,
-              size: 32
-            })
-          ],
-          spacing: { after: 400 }
-        })
-      );
-
-      // Body paragraphs from selected language document_content
-      const bodyLines = documentContent.split('\n');
-      bodyLines.forEach((line) => {
-        paragraphs.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: line,
-                size: 24
-              })
-            ],
-            spacing: { after: 200 }
-          })
-        );
+      // Call backend function to generate DOCX
+      const response = await base44.functions.invoke('generateDocx', {
+        title,
+        content: documentContent,
+        language: documentLangForExport
       });
 
-      const doc = new Document({
-        sections: [{
-          properties: {},
-          children: paragraphs
-        }]
-      });
-
-      const blob = await Packer.toBlob(doc);
+      // Download the generated DOCX
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
