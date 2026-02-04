@@ -134,11 +134,26 @@ function RecycleBinContent() {
       
       const entityName = entityMap[item.item_type];
       
-      // Update original record to undelete (only update soft-delete flags)
-      await base44.entities[entityName].update(item.original_id, {
-        is_deleted: false,
-        deleted_at: null
-      });
+      // For lease: update status back to active
+      if (item.item_type === 'lease') {
+        await base44.entities[entityName].update(item.original_id, {
+          status: 'active',
+          archived_at: null,
+          archived_by: null
+        });
+      } else if (item.item_type === 'deposit' || item.item_type === 'maintenance') {
+        // For deposit/maintenance: clear is_archived flag
+        await base44.entities[entityName].update(item.original_id, {
+          is_archived: false,
+          archived_at: null
+        });
+      } else {
+        // For case/evidence: use is_deleted flag
+        await base44.entities[entityName].update(item.original_id, {
+          is_deleted: false,
+          deleted_at: null
+        });
+      }
       
       // Remove from recycle bin
       await base44.entities.RecycleBin.delete(item.id);
@@ -201,10 +216,26 @@ function RecycleBinContent() {
 
       for (const item of items) {
         const entityName = entityMap[item.item_type];
-        await base44.entities[entityName].update(item.original_id, {
-          is_deleted: false,
-          deleted_at: null
-        });
+        
+        // Handle different entity types
+        if (item.item_type === 'lease') {
+          await base44.entities[entityName].update(item.original_id, {
+            status: 'active',
+            archived_at: null,
+            archived_by: null
+          });
+        } else if (item.item_type === 'deposit' || item.item_type === 'maintenance') {
+          await base44.entities[entityName].update(item.original_id, {
+            is_archived: false,
+            archived_at: null
+          });
+        } else {
+          await base44.entities[entityName].update(item.original_id, {
+            is_deleted: false,
+            deleted_at: null
+          });
+        }
+        
         await base44.entities.RecycleBin.delete(item.id);
       }
     },
