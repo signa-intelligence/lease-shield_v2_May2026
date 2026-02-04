@@ -115,14 +115,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Soft-delete related lease scans (no need to save to RecycleBin - auto-generated)
-    const leaseScans = await base44.entities.LeaseScan.filter({
-      lease_id: leaseId
-    });
-
-    for (const scan of leaseScans) {
-      await svc.entities.LeaseScan.delete(scan.id);
-    }
+    // DO NOT delete lease scans - keep them for report viewing
+    // Lease scans are needed to display the full report even after lease deletion
+    console.log(`[${correlationId}] Preserving LeaseScan records for deleted lease`, { leaseId });
 
     // Soft-delete the lease itself by setting status to "deleted"
     await svc.entities.Lease.update(leaseId, {
@@ -132,8 +127,9 @@ Deno.serve(async (req) => {
     });
 
     // Return scan credit to user
+    // CRITICAL: User might have scans in data.available_scans (nested) - check both locations
     const currentUser = await svc.entities.User.get(user.id);
-    const currentScans = currentUser.available_scans || 0;
+    const currentScans = currentUser.available_scans ?? currentUser.data?.available_scans ?? 0;
     const newScanBalance = currentScans + 1;
 
     await svc.entities.User.update(user.id, {
@@ -154,7 +150,8 @@ Deno.serve(async (req) => {
 
     console.log(`[${correlationId}] Scan credit returned to user`, {
       previousBalance: currentScans,
-      newBalance: newScanBalance
+      newBalance: newScanBalance,
+      usedNestedData: !currentUser.available_scans && !!currentUser.data?.available_scans
     });
 
     console.log(`[${correlationId}] Successfully moved lease to RecycleBin`, {
