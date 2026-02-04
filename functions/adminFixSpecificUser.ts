@@ -15,47 +15,61 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - admin access required' }, { status: 403 });
     }
     
-    const { userId } = await req.json();
-    
-    if (!userId) {
-      return Response.json({ error: 'userId required' }, { status: 400 });
-    }
-    
-    console.log('[ADMIN_FIX_USER] Fixing user:', userId);
-    
     const svc = base44.asServiceRole || base44;
     
-    // Get user first
-    const user = await svc.entities.User.get(userId);
+    // Get user by email
+    const users = await svc.entities.User.filter({ email: "recruitbkkhotel@gmail.com" });
     
-    if (!user) {
+    if (!users || users.length === 0) {
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
     
+    const user = users[0];
+    
     console.log('[ADMIN_FIX_USER] Current state:', {
       email: user.email,
-      tier: user.tier,
-      available_scans: user.available_scans,
-      subscription_status: user.subscription_status
+      root_tier: user.tier,
+      nested_tier: user.data?.tier,
+      root_scans: user.available_scans,
+      nested_scans: user.data?.available_scans
     });
     
+    // FORCE update with values from data.* if root is null
+    const updateData = {
+      tier: user.tier || user.data?.tier || 'explorer',
+      available_scans: user.available_scans !== null && user.available_scans !== undefined ? user.available_scans : (user.data?.available_scans ?? 1),
+      subscription_status: user.subscription_status || user.data?.subscription_status || 'active'
+    };
+    
+    console.log('[ADMIN_FIX_USER] Applying update:', updateData);
+    
     // Fix user configuration
-    await svc.entities.User.update(userId, {
-      tier: 'explorer',
-      available_scans: 1,
-      subscription_status: 'active'
-    });
+    await svc.entities.User.update(user.id, updateData);
     
     console.log('[ADMIN_FIX_USER] ✅ User fixed successfully');
     
+    // Verify the update
+    const verifyUser = await svc.entities.User.get(user.id);
+    
+    console.log('[ADMIN_FIX_USER] After update:', {
+      email: verifyUser.email,
+      tier: verifyUser.tier,
+      available_scans: verifyUser.available_scans,
+      subscription_status: verifyUser.subscription_status
+    });
+    
     return Response.json({
       success: true,
-      userId,
+      userId: user.id,
       email: user.email,
-      applied: {
-        tier: 'explorer',
-        available_scans: 1,
-        subscription_status: 'active'
+      before: {
+        tier: user.tier,
+        available_scans: user.available_scans
+      },
+      after: {
+        tier: verifyUser.tier,
+        available_scans: verifyUser.available_scans,
+        subscription_status: verifyUser.subscription_status
       }
     });
     
