@@ -689,15 +689,15 @@ For EACH of the 15 clauses above, you MUST return:
       
     } else if (isImage) {
       // For Image: Use vision API
-      console.log('[ANALYZE_LEASE_IMAGE_VISION_START]', { correlationId, isPreviewMode });
-      
-      // Convert to base64
-      const base64Image = btoa(String.fromCharCode(...fileBytes));
-      
-      // Use different prompts based on scan mode
-      const imagePrompt = isPreviewMode
-        ? `Quickly assess this lease document image for the top 5 risks (language: ${language}).\n\nIMPORTANT: Extract the FULL property address from the "Property" or "Leased Property" section (e.g., "Unit 1806, Tower C, 299/45 Pattaya Road, Bangkok 20150"). This is CRITICAL - look carefully at every line.`
-        : `Analyze this complete lease document image (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read carefully and provide comprehensive analysis.`;
+        console.log('[ANALYZE_LEASE_IMAGE_VISION_START]', { correlationId, isPreviewMode });
+
+        // Convert to base64
+        const base64Image = btoa(String.fromCharCode(...fileBytes));
+
+        // Use different prompts based on scan mode
+        const imagePrompt = isPreviewMode
+          ? `Quickly assess this lease document image for the top 5 risks (language: ${language}).\n\nCRITICAL INSTRUCTION - PROPERTY ADDRESS EXTRACTION:\nYou MUST find and extract the property address from this lease image. Look for sections labeled:\n- "Property Address"\n- "Leased Property"\n- "Unit/Room Number"\n- "Building Name"\n- "Location" or "Address"\n\nThe address may be formatted as:\n- "Unit 1806, Tower C, 299/45 Pattaya Road, Bangkok 20150"\n- Or split across multiple lines\n\nExtract the COMPLETE address and place it in key_terms.property_address. If no explicit address label exists, look for any line starting with a unit number or building name.\n\nAlso extract: lease_start_date, lease_end_date, monthly_rent, security_deposit, rent_due_day from the document.\n\nReview the document thoroughly before responding.`
+          : `Analyze this complete lease document image (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read carefully and provide comprehensive analysis.`;
       
       const maxTokensImage = isPreviewMode ? 1500 : 4000;
       
