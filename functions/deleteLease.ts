@@ -38,10 +38,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lease not found' }, { status: 404 });
     }
 
-    // CRITICAL FIX: Use user context (not service role) for RecycleBin to respect RLS
+    // CRITICAL FIX: Use lease owner's email, not admin's email, for RLS
+    const leaseOwnerEmail = lease.data?.owner_email || lease.owner_email || user.email;
+    
     // Move lease to RecycleBin
-    await base44.entities.RecycleBin.create({
-      user_email: user.email,
+    await svc.entities.RecycleBin.create({
+      user_email: leaseOwnerEmail,
       item_type: 'lease',
       original_id: lease.id,
       item_snapshot: lease.data || lease,
@@ -61,8 +63,8 @@ Deno.serve(async (req) => {
     );
 
     for (const deposit of allDeposits) {
-      await base44.entities.RecycleBin.create({
-        user_email: user.email,
+      await svc.entities.RecycleBin.create({
+        user_email: leaseOwnerEmail,
         item_type: 'deposit',
         original_id: deposit.id,
         item_snapshot: deposit.data || deposit,
@@ -82,8 +84,8 @@ Deno.serve(async (req) => {
     });
 
     for (const request of maintenanceRequests) {
-      await base44.entities.RecycleBin.create({
-        user_email: user.email,
+      await svc.entities.RecycleBin.create({
+        user_email: leaseOwnerEmail,
         item_type: 'maintenance',
         original_id: request.id,
         item_snapshot: request.data || request,
@@ -116,16 +118,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Soft-delete related lease scans (no need to save to RecycleBin - auto-generated)
+    // CRITICAL FIX: Archive scans instead of deleting (preserves property_address for reports)
     const leaseScans = await base44.entities.LeaseScan.filter({
       lease_id: leaseId
     });
 
     for (const scan of leaseScans) {
-      await svc.entities.LeaseScan.delete(scan.id);
+      // Soft-delete by marking as archived (keep scan data for report viewing)
+      await svc.entities.LeaseScan.update(scan.id, {
+        status: 'archived',
+        archived_at: new Date().toISOString()
+      });
     }
 
-    // Soft-delete the lease itself by setting status to "deleted" (use service role here)
+    // Soft-delete the lease itself by setting status to "deleted"
     await svc.entities.Lease.update(leaseId, {
       status: 'deleted',
       archived_at: new Date().toISOString(),
