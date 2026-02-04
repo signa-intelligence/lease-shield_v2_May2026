@@ -630,23 +630,10 @@ For EACH of the 15 clauses above, you MUST return:
         
         analysisResult = JSON.parse(rawContent);
         
-        // Ensure key_terms exists and has all required fields for preview mode
-        if (!analysisResult.key_terms || typeof analysisResult.key_terms !== 'object') {
-          analysisResult.key_terms = {};
-        }
-        
-        const requiredKeyTerms = ['property_address', 'lease_start_date', 'lease_end_date', 'monthly_rent', 'security_deposit', 'rent_due_day'];
-        for (const field of requiredKeyTerms) {
-          if (analysisResult.key_terms[field] === undefined) {
-            analysisResult.key_terms[field] = null;
-          }
-        }
-        
         console.log('[ANALYZE_LEASE_CLAUDE_COMPLETE]', { 
           correlationId,
           hasKeyTerms: !!analysisResult.key_terms,
           hasPropertyAddress: !!analysisResult.key_terms?.property_address,
-          propertyAddressValue: analysisResult.key_terms?.property_address,
           riskScore: analysisResult.risk_score
         });
         
