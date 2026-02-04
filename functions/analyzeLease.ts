@@ -657,66 +657,34 @@ For EACH of the 15 clauses above, you MUST return:
             temperature: 0.1
           });
         
-        const rawContent = completion.choices[0].message.content;
-        console.log('[ANALYZE_LEASE_OPENAI_RAW_RESPONSE]', { 
-          correlationId, 
-          preview: rawContent?.slice(0, 500) 
-        });
-        
-        analysisResult = JSON.parse(rawContent);
-        
-        console.log('[ANALYZE_LEASE_OPENAI_COMPLETE]', { 
-          correlationId, 
-          clausesCount: analysisResult.clauses?.length || 0,
-          riskScore: analysisResult.risk_score,
-          hasMissingClauses: !!analysisResult.missingCriticalClauses,
-          missingClausesCount: analysisResult.missingCriticalClauses?.length || 0,
-          hasKeyTerms: !!analysisResult.key_terms,
-          keyTermsKeys: Object.keys(analysisResult.key_terms || {}),
-          propertyAddress: analysisResult.key_terms?.property_address || 'NOT_FOUND',
-          rawTextLength: pdfText?.length || 0
-        });
-        
-        // Store raw text for fallback extraction
-        rawLeaseText = pdfText;
-        
-        // FORCE property address extraction for preview mode if OpenAI didn't return it
-        if (isPreviewMode && !analysisResult.key_terms?.property_address && rawLeaseText) {
-          console.log('[ANALYZE_LEASE_FORCE_PREVIEW_ADDRESS]', { 
-            correlationId,
-            hasRawText: !!rawLeaseText,
-            textLength: rawLeaseText.length
+          const rawContent = completion.choices[0].message.content;
+          console.log('[ANALYZE_LEASE_OPENAI_RAW_RESPONSE]', { 
+            correlationId, 
+            preview: rawContent?.slice(0, 500) 
           });
           
-          // Run fallback extraction immediately
-          const extractedAddress = extractAddressFromText(rawLeaseText);
+          analysisResult = JSON.parse(rawContent);
           
-          if (extractedAddress) {
-            if (!analysisResult.key_terms) {
-              analysisResult.key_terms = {};
-            }
-            analysisResult.key_terms.property_address = extractedAddress;
-            
-            console.log('[ANALYZE_LEASE_PREVIEW_ADDRESS_EXTRACTED]', {
-              correlationId,
-              address: extractedAddress
-            });
-          } else {
-            console.warn('[ANALYZE_LEASE_PREVIEW_ADDRESS_EXTRACTION_FAILED]', {
-              correlationId,
-              textPreview: rawLeaseText.slice(0, 500)
-            });
-          }
+          console.log('[ANALYZE_LEASE_OPENAI_COMPLETE]', { 
+            correlationId, 
+            clausesCount: analysisResult.clauses?.length || 0,
+            riskScore: analysisResult.risk_score,
+            hasKeyTerms: !!analysisResult.key_terms,
+            propertyAddress: analysisResult.key_terms?.property_address || 'NOT_FOUND'
+          });
+          
+          // Store raw text for fallback extraction
+          rawLeaseText = pdfText;
+        } catch (e) {
+          console.error('[ANALYZE_LEASE_OPENAI_FAILED]', { correlationId, error: e.message });
+          return json(500, {
+            ok: false,
+            step: 'OPENAI_ANALYSIS',
+            error_code: 'OPENAI_ERROR',
+            message: `OpenAI analysis failed: ${e.message}`,
+            correlationId
+          }, headers);
         }
-      } catch (e) {
-        console.error('[ANALYZE_LEASE_OPENAI_FAILED]', { correlationId, error: e.message });
-        return json(500, {
-          ok: false,
-          step: 'OPENAI_ANALYSIS',
-          error_code: 'OPENAI_ERROR',
-          message: `OpenAI analysis failed: ${e.message}`,
-          correlationId
-        }, headers);
       }
       
     } else if (isImage) {
