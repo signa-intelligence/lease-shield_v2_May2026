@@ -782,52 +782,82 @@ For EACH of the 15 clauses above, you MUST return:
      */
     function extractAddressFromText(text) {
       if (!text || typeof text !== 'string') return null;
-      
+
+      // Clean up the text first (remove extra whitespace, normalize)
+      const cleanText = text.replace(/\s+/g, ' ').trim();
+
       const patterns = [
-        // English patterns - explicit labels
-        /(?:Property\s*Address|Leased\s*Property|Rental\s*Property|Premises|Location)[:\s]*([^\n\r]{20,150})/i,
-        /(?:Unit|Room|Apartment|Suite|Condo|Condominium|Flat)[:\s#.]*(\d+[A-Z]?)[,\s]+([^\n\r]{15,120})/i,
-        /(?:Building|Tower|Block)[:\s]*([A-Z]|\d+)[,\s]+([^\n\r]{15,100})/i,
-        
-        // Thai patterns
-        /(?:ทรัพย์สินที่เช่า|สถานที่เช่า|ที่ตั้งทรัพย์สิน|ห้องเลขที่)[:\s]*([^\n\r]{20,150})/i,
-        /(?:ห้องเลขที่|ยูนิต|ชั้น)[:\s]*(\d+[A-Z]?\/?\d*)[,\s]*([^\n\r]{15,120})/i,
-        
-        // Combined Unit + Building + Address pattern
-        /(?:Unit|Room|ห้อง)\s*(?:No\.?|#)?\s*(\d+[A-Z]?)[,\s]+(?:Floor|ชั้น)\s*(\d+)[,\s]+([^\n\r]{20,100})/i,
-        
-        // Address with postal code (Thailand)
-        /(\d+\/?\d*\s+(?:Soi|ซอย|Moo|หมู่)?[^\n\r]{10,80}\s*\d{5})/i,
-        
-        // Condo/Building name followed by address
-        /([\w\s]+(?:Condo|Condominium|Residence|Place|Court|Tower|Building))[,\s]+(\d+\/?\d*[^\n\r]{10,80})/i,
-        
-        // Thai district patterns
-        /(\d+\/?\d*\s+[^\n\r]{5,50}(?:แขวง|เขต|อำเภอ|จังหวัด|ตำบล)[^\n\r]{5,60}\s*\d{5})/i,
-        
-        // Fallback: Any line starting with numbers that looks like an address
-        /^(\d+\/?\d*\s+[A-Za-z\s]+(?:Road|Street|Avenue|Lane|Soi|Way|Drive)[^\n\r]{5,80})/im
+        // ===== HIGHEST PRIORITY: Explicit location keywords =====
+        /(?:Property\s*Address|Leased\s*Property|Rental\s*Property|Premises|Location|Address\s*of\s*Property)[:\s]*([^\n]{20,200})/i,
+
+        // ===== UNIT + BUILDING + ADDRESS COMBO PATTERNS =====
+        // "Unit 1806, Tower C, Building XYZ, Street, City, Postal Code"
+        /(?:Unit|Room|Suite|Apt|Apartment|ห้อง)\s*(?:No\.?|#)?\s*(\d+[A-Z]?[\/\s-]*\d*)[,\s]+(?:(?:Tower|Building|Block|Condo|Condominium)\s*[A-Z0-9]+)[,\s]+([^\n]{20,120})/i,
+
+        // "Unit 1806, 299/45 Street Address, City, Postal"
+        /(?:Unit|Room|Suite|Apartment)\s+(\d+[A-Z]?)[,\s]+(\d+\/\d+[^\n]{20,120})/i,
+
+        // ===== THAI SPECIFIC PATTERNS =====
+        // "ทรัพย์สินที่เช่า: [full address]"
+        /(?:ทรัพย์สินที่เช่า|สถานที่เช่า|ที่ตั้ง|ที่ตั้งทรัพย์สิน|ห้องเลขที่)[:\s]+([^\n]{15,150})/i,
+
+        // Thai unit + building pattern
+        /(?:ห้องเลขที่|ยูนิต|ห้อง)\s*(?:ที่)?\s*(\d+[A-Z]?\/?\d*)[,\s]+(?:ชั้น|ชั้นที่)\s*(\d+)[,\s]+([^\n]{15,100})/i,
+
+        // ===== ADDRESS PATTERNS WITH POSTAL CODES =====
+        // "123/45 Soi/Moo Street, District, City Postal"
+        /(\d+\/\d+[^\n]{20,100}(?:ซอย|Soi|หมู่|Moo|มoo)[^\n]{15,80}\d{5})/i,
+
+        // Full Thai address with postal
+        /(\d+\/\d*\s+[^\n]{10,80}(?:แขวง|เขต|อำเภอ|จังหวัด|ตำบล)[^\n]{10,60}\s*\d{5})/i,
+
+        // ===== BUILDING/CONDO NAMES =====
+        // "[Building Name] Condo/Building, [Address Details]"
+        /([\w\s\-]{3,40}(?:Condo|Condominium|Residence|Tower|Building|Place|Court|Park|Gardens)[,\s]+[^\n]{20,100})/i,
+
+        // ===== FALLBACK: Address-like patterns =====
+        // Line starting with "123/45" or "unit/building indicators"
+        /^([0-9]{1,4}\/[0-9]{1,4}[\s\w\-,\.]{15,120})/im,
+
+        // "Unit/Room/Suite followed by content"
+        /(?:^|\n)((?:Unit|Room|Suite|Apt|Apartment|Floor|ห้อง|ชั้น)[^\n]{20,130})/im,
+
+        // Generic multi-line address (look for lines with house/building numbers)
+        /(\d{2,4}[\s\/\-]\d{0,4}[\s\w\-,\.]{15,120}(?:Road|Street|Avenue|Lane|Soi|Way|Drive|Place|ซอย|ถนน|สาย|ตรอก)[^\n]*)/i
       ];
-      
+
       for (const pattern of patterns) {
-        const match = text.match(pattern);
+        const match = cleanText.match(pattern);
         if (match) {
-          // Clean up the extracted address
+          // Extract the matched address (handle single or multiple groups)
           let address = match.slice(1).filter(Boolean).join(', ').trim();
-          
-          // Remove excessive whitespace and clean up
-          address = address.replace(/\s+/g, ' ').trim();
-          
-          // Remove common prefixes if they got included
-          address = address.replace(/^(?:at|located at|situated at|being)[:\s]*/i, '').trim();
-          
-          // Ensure minimum length for a valid address
-          if (address.length >= 15) {
+
+          // Clean up
+          address = address
+            .replace(/\s+/g, ' ')
+            .replace(/^(?:at|located at|situated at|being|Address)[:\s]*/i, '')
+            .trim();
+
+          // Validate: must contain number (house/unit) + some letters (street/district)
+          const hasNumber = /\d/.test(address);
+          const hasLetters = /[a-zA-Zก-๙]/.test(address);
+          const isLongEnough = address.length >= 15;
+
+          if (hasNumber && hasLetters && isLongEnough) {
             return address;
           }
         }
       }
-      
+
+      // LAST RESORT: Look for any line that looks like an address
+      const lines = cleanText.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (/^\d+[\s\/]/.test(trimmed) && trimmed.length >= 20) {
+          return trimmed;
+        }
+      }
+
       return null;
     }
     
