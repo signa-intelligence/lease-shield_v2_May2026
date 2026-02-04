@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { email, tier = 'explorer', available_scans = 5 } = await req.json();
+    const { email, tier = 'explorer', available_scans = 1 } = await req.json();
 
     if (!email) {
       return Response.json({ error: 'Email is required' }, { status: 400 });
