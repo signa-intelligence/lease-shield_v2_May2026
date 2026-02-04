@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
     let userEmail = null;
     try {
       const user = await base44.auth.me();
-      userTier = user?.plan_tier || 'free';
+      userTier = user?.tier || 'free';
       userEmail = user?.email;
       console.log('SCAN_CF_V1_USER_TIER', { userTier, userEmail });
     } catch (authErr) {
