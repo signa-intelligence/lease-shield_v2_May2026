@@ -104,14 +104,14 @@ export default function Leases() {
 
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }, '-created_date'),
+    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email, status: { $ne: 'deleted' } }, '-created_date'),
     enabled: !!user,
   });
 
   const { data: scans = [] } = useQuery({
     queryKey: ['scans'],
     queryFn: async () => {
-      const allScans = await base44.entities.LeaseScan.list();
+      const allScans = await base44.entities.LeaseScan.filter({ status: { $ne: 'archived' } });
       return allScans.filter(s => leases.some(l => l.id === s.lease_id));
     },
     enabled: !!user && leases.length > 0,
