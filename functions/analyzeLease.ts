@@ -1017,6 +1017,18 @@ For EACH of the 15 clauses above, you MUST return:
       return null;
     }
     
+    // DEBUG: Log what we got from AI
+    console.log('[ANALYZE_LEASE_DEBUG_EXTRACTION]', {
+      correlationId,
+      isPreviewMode,
+      hasRawText: !!rawLeaseText,
+      rawTextLength: rawLeaseText?.length || 0,
+      hasKeyTerms: !!analysisResult?.key_terms,
+      hasPropertyAddress: !!analysisResult?.key_terms?.property_address,
+      propertyAddressValue: analysisResult?.key_terms?.property_address,
+      aiReturnedKeys: Object.keys(analysisResult || {})
+    });
+
     // Validate and normalize result
     if (!analysisResult || typeof analysisResult !== 'object') {
       analysisResult = {};
