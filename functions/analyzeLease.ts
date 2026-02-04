@@ -1357,7 +1357,15 @@ For EACH of the 15 clauses above, you MUST return:
           scan_preview_size: JSON.stringify(scan_preview).length
         });
 
-        // Save everything in single update to avoid partial state
+        // Log the exact payload being sent
+        console.log('[ANALYZE_LEASE_DB_UPDATE_PAYLOAD_DETAILS]', {
+          correlationId,
+          scan_preview: JSON.stringify(scan_preview),
+          extractedAddress,
+          scan_full_size: JSON.stringify(analysisResult).length
+        });
+
+        // Save with explicit field mapping
         const updatePayload = {
           scan_preview: scan_preview,
           scan_full: analysisResult,
@@ -1366,22 +1374,21 @@ For EACH of the 15 clauses above, you MUST return:
           status: 'completed'
         };
         
-        console.log('[ANALYZE_LEASE_DB_UPDATE_PAYLOAD]', {
+        console.log('[ANALYZE_LEASE_CALLING_UPDATE]', {
           correlationId,
-          payload_keys: Object.keys(updatePayload),
-          has_scan_preview: !!updatePayload.scan_preview,
-          has_scan_full: !!updatePayload.scan_full,
-          scan_preview_keys: Object.keys(updatePayload.scan_preview || {}),
-          property_address_in_payload: updatePayload.property_address
+          scanId: providedScanId,
+          updatePayload_keys: Object.keys(updatePayload),
+          updatePayload_JSON: JSON.stringify(updatePayload).substring(0, 500)
         });
 
         scan = await svc.entities.LeaseScan.update(providedScanId, updatePayload);
 
-        console.log('[ANALYZE_LEASE_DB_UPDATE_SUCCESS]', { 
+        console.log('[ANALYZE_LEASE_UPDATE_RETURNED]', { 
           correlationId,
-          scan_preview_after_update: !!scan?.scan_preview,
-          property_address_after_update: scan?.property_address,
-          status_after_update: scan?.status
+          scan_id: scan?.id,
+          scan_keys: Object.keys(scan || {}),
+          scan_preview_returned: scan?.scan_preview ? 'YES' : 'NO',
+          property_address_returned: scan?.property_address ? 'YES' : 'NO'
         });
 
         // Verify the update went through
