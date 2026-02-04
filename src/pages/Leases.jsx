@@ -324,6 +324,11 @@ export default function Leases() {
       queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
       setDeletingLease(null);
     },
+    onError: (error) => {
+      const errorMsg = error?.message || (language === 'th' ? 'ไม่สามารถลบสัญญาเช่าได้' : 'Failed to delete lease');
+      setError(errorMsg);
+      setDeletingLease(null);
+    }
   });
 
   const handleDeleteLease = (lease, e) => {
