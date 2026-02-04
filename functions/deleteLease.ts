@@ -38,8 +38,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lease not found' }, { status: 404 });
     }
 
+    // CRITICAL FIX: Use user context (not service role) for RecycleBin to respect RLS
     // Move lease to RecycleBin
-    await svc.entities.RecycleBin.create({
+    await base44.entities.RecycleBin.create({
       user_email: user.email,
       item_type: 'lease',
       original_id: lease.id,
@@ -60,7 +61,7 @@ Deno.serve(async (req) => {
     );
 
     for (const deposit of allDeposits) {
-      await svc.entities.RecycleBin.create({
+      await base44.entities.RecycleBin.create({
         user_email: user.email,
         item_type: 'deposit',
         original_id: deposit.id,
@@ -81,7 +82,7 @@ Deno.serve(async (req) => {
     });
 
     for (const request of maintenanceRequests) {
-      await svc.entities.RecycleBin.create({
+      await base44.entities.RecycleBin.create({
         user_email: user.email,
         item_type: 'maintenance',
         original_id: request.id,
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
       await svc.entities.LeaseScan.delete(scan.id);
     }
 
-    // Soft-delete the lease itself by setting status to "deleted"
+    // Soft-delete the lease itself by setting status to "deleted" (use service role here)
     await svc.entities.Lease.update(leaseId, {
       status: 'deleted',
       archived_at: new Date().toISOString(),
