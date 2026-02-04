@@ -157,8 +157,7 @@ Deno.serve(async (req) => {
     console.log(`[${correlationId}] Successfully moved lease to RecycleBin`, {
       deposits: allDeposits.length,
       maintenance: maintenanceRequests.length,
-      timeline: allTimelineEvents.length,
-      scans: leaseScans.length
+      timeline: allTimelineEvents.length
     });
 
     return Response.json({
@@ -167,9 +166,10 @@ Deno.serve(async (req) => {
         lease: 1,
         deposits: allDeposits.length,
         maintenance: maintenanceRequests.length,
-        timeline: allTimelineEvents.length,
-        scans: leaseScans.length
+        timeline: allTimelineEvents.length
       },
+      scan_credit_returned: true,
+      new_scan_balance: newScanBalance,
       correlationId
     });
 
