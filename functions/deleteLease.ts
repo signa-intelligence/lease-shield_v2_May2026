@@ -39,9 +39,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Lease not found' }, { status: 404 });
     }
 
-    // Move lease to RecycleBin - MUST use user context for RLS
+    // Move lease to RecycleBin - use lease owner's email for RLS
+    const leaseOwnerEmail = lease.data?.owner_email || lease.owner_email || user.email;
     await base44.entities.RecycleBin.create({
-      user_email: user.email,
+      user_email: leaseOwnerEmail,
       item_type: 'lease',
       original_id: lease.id,
       item_snapshot: lease.data || lease,
@@ -61,8 +62,9 @@ Deno.serve(async (req) => {
     );
 
     for (const deposit of allDeposits) {
+      const depositOwnerEmail = deposit.data?.owner_email || deposit.owner_email || user.email;
       await base44.entities.RecycleBin.create({
-        user_email: user.email,
+        user_email: depositOwnerEmail,
         item_type: 'deposit',
         original_id: deposit.id,
         item_snapshot: deposit.data || deposit,
@@ -82,8 +84,9 @@ Deno.serve(async (req) => {
     });
 
     for (const request of maintenanceRequests) {
+      const requestOwnerEmail = request.data?.created_by || request.created_by || user.email;
       await base44.entities.RecycleBin.create({
-        user_email: user.email,
+        user_email: requestOwnerEmail,
         item_type: 'maintenance',
         original_id: request.id,
         item_snapshot: request.data || request,
@@ -116,13 +119,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Soft-delete related lease scans (no need to save to RecycleBin - auto-generated)
+    // Archive related lease scans (preserve data for reports but hide from UI)
     const leaseScans = await base44.entities.LeaseScan.filter({
       lease_id: leaseId
     });
 
     for (const scan of leaseScans) {
-      await svc.entities.LeaseScan.delete(scan.id);
+      await svc.entities.LeaseScan.update(scan.id, {
+        status: 'archived',
+        is_archived: true,
+        archived_at: new Date().toISOString()
+      });
     }
 
     // Soft-delete the lease itself by setting status to "deleted" (use service role here)
