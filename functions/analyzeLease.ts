@@ -595,7 +595,7 @@ For EACH of the 15 clauses above, you MUST return:
           throw new Error('ANTHROPIC_API_KEY not configured');
         }
         
-        const userPrompt = `You are Lease Shield's AI analyst. Analyze this lease for the top 5 risks (language: ${language}):\n\n${pdfText.slice(0, 8000)}`;
+        const userPrompt = `You are Lease Shield's AI analyst. Analyze this lease for the top 5 risks (language: ${language}).\n\nIMPORTANT: Extract the complete property address from the lease (e.g., "Unit 1806, Tower C, 299/45 Pattaya Road, Bangkok 20150") - this is CRITICAL for the app.\n\n${pdfText.slice(0, 8000)}`;
         
         const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -696,7 +696,7 @@ For EACH of the 15 clauses above, you MUST return:
       
       // Use different prompts based on scan mode
       const imagePrompt = isPreviewMode
-        ? `Quickly assess this lease document image for the top 5 risks (language: ${language}).`
+        ? `Quickly assess this lease document image for the top 5 risks (language: ${language}).\n\nIMPORTANT: Extract the FULL property address from the "Property" or "Leased Property" section (e.g., "Unit 1806, Tower C, 299/45 Pattaya Road, Bangkok 20150"). This is CRITICAL - look carefully at every line.`
         : `Analyze this complete lease document image (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read carefully and provide comprehensive analysis.`;
       
       const maxTokensImage = isPreviewMode ? 1500 : 4000;
@@ -752,13 +752,12 @@ For EACH of the 15 clauses above, you MUST return:
           propertyAddress: analysisResult.key_terms?.property_address || 'NOT_FOUND'
         });
         
-        // FORCE property address extraction for preview mode images if OpenAI didn't return it
-        // Note: For images we don't have rawLeaseText, so fallback won't work
-        // But we log it for visibility
+        // For preview mode images, log if address wasn't extracted
         if (isPreviewMode && !analysisResult.key_terms?.property_address) {
           console.warn('[ANALYZE_LEASE_PREVIEW_IMAGE_NO_ADDRESS]', {
             correlationId,
-            message: 'Preview mode image scan did not extract property address - OCR limitation'
+            message: 'Preview mode image scan did not extract property address',
+            apiResponse: !!analysisResult.key_terms
           });
         }
       } catch (e) {
