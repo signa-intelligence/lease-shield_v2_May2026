@@ -43,8 +43,8 @@ Deno.serve(async (req) => {
       user_email: user.email,
       item_type: 'lease',
       original_id: lease.id,
-      item_snapshot: lease,
-      item_label: lease.property_address || `Lease ${lease.id.slice(0, 8)}`,
+      item_snapshot: lease.data || lease,
+      item_label: (lease.data?.property_address || lease.property_address) || `Lease ${lease.id.slice(0, 8)}`,
       deleted_date: new Date().toISOString()
     });
 
@@ -64,8 +64,8 @@ Deno.serve(async (req) => {
         user_email: user.email,
         item_type: 'deposit',
         original_id: deposit.id,
-        item_snapshot: deposit,
-        item_label: `Deposit - ${deposit.property_address || 'Unknown'}`,
+        item_snapshot: deposit.data || deposit,
+        item_label: `Deposit - ${(deposit.data?.property_address || deposit.property_address) || 'Unknown'}`,
         deleted_date: new Date().toISOString()
       });
       // Soft delete: set is_archived flag
@@ -85,8 +85,8 @@ Deno.serve(async (req) => {
         user_email: user.email,
         item_type: 'maintenance',
         original_id: request.id,
-        item_snapshot: request,
-        item_label: request.issue_title || `Maintenance ${request.id.slice(0, 8)}`,
+        item_snapshot: request.data || request,
+        item_label: (request.data?.issue_title || request.issue_title) || `Maintenance ${request.id.slice(0, 8)}`,
         deleted_date: new Date().toISOString()
       });
       // Soft delete: set is_archived flag
