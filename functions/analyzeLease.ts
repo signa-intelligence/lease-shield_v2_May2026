@@ -1357,38 +1357,35 @@ For EACH of the 15 clauses above, you MUST return:
           scan_preview_size: JSON.stringify(scan_preview).length
         });
 
-        // Log the exact payload being sent
-        console.log('[ANALYZE_LEASE_DB_UPDATE_PAYLOAD_DETAILS]', {
-          correlationId,
-          scan_preview: JSON.stringify(scan_preview),
-          extractedAddress,
-          scan_full_size: JSON.stringify(analysisResult).length
-        });
+        // Update LeaseScan with all extracted data
+        // Ensure scan_full ALWAYS contains key_terms for UI display
+        const scanFullWithKeyTerms = {
+          ...analysisResult,
+          key_terms: analysisResult.key_terms || {}
+        };
 
-        // Save with explicit field mapping
         const updatePayload = {
           scan_preview: scan_preview,
-          scan_full: analysisResult,
+          scan_full: scanFullWithKeyTerms,
           risk_score: analysisResult.risk_score,
           property_address: extractedAddress,
           status: 'completed'
         };
         
-        console.log('[ANALYZE_LEASE_CALLING_UPDATE]', {
+        console.log('[ANALYZE_LEASE_DB_UPDATE_FIELDS]', {
           correlationId,
-          scanId: providedScanId,
-          updatePayload_keys: Object.keys(updatePayload),
-          updatePayload_JSON: JSON.stringify(updatePayload).substring(0, 500)
+          fields_being_updated: Object.keys(updatePayload),
+          property_address_value: extractedAddress,
+          scan_preview_property_address: scan_preview?.property_address
         });
 
+        // Use service role to ensure fields persist
         scan = await svc.entities.LeaseScan.update(providedScanId, updatePayload);
 
-        console.log('[ANALYZE_LEASE_UPDATE_RETURNED]', { 
+        console.log('[ANALYZE_LEASE_DB_WRITE_COMPLETE]', { 
           correlationId,
-          scan_id: scan?.id,
-          scan_keys: Object.keys(scan || {}),
-          scan_preview_returned: scan?.scan_preview ? 'YES' : 'NO',
-          property_address_returned: scan?.property_address ? 'YES' : 'NO'
+          returned_scan_id: scan?.id,
+          returned_status: scan?.status
         });
 
         // Verify the update went through
