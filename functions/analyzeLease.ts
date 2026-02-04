@@ -1407,6 +1407,7 @@ For EACH of the 15 clauses above, you MUST return:
           scan_preview: scan_preview,
           scan_full: analysisResult,
           risk_score: analysisResult.risk_score,
+          property_address: extractedAddressNew,
           status: 'completed'
         });
         
