@@ -567,7 +567,6 @@ For EACH of the 15 clauses above, you MUST return:
       try {
         const pdfData = await pdfParse(fileBytes);
         pdfText = pdfData.text;
-        rawLeaseText = pdfText; // Store for fallback extraction
         
         console.log('[ANALYZE_LEASE_PDF_EXTRACTED]', { 
           correlationId, 
@@ -627,16 +626,18 @@ For EACH of the 15 clauses above, you MUST return:
         
         analysisResult = JSON.parse(rawContent);
         
+        // CRITICAL: Store raw PDF text IMMEDIATELY for fallback extraction (before normalization)
+        rawLeaseText = pdfText;
+        
         console.log('[ANALYZE_LEASE_OPENAI_COMPLETE]', { 
           correlationId, 
           clausesCount: analysisResult.clauses?.length || 0,
           riskScore: analysisResult.risk_score,
           hasKeyTerms: !!analysisResult.key_terms,
-          propertyAddress: analysisResult.key_terms?.property_address || 'NOT_FOUND'
+          propertyAddress: analysisResult.key_terms?.property_address || 'NOT_FOUND',
+          rawTextAvailable: !!rawLeaseText,
+          rawTextLength: rawLeaseText?.length || 0
         });
-        
-        // Store raw text for fallback extraction
-        rawLeaseText = pdfText;
       } catch (e) {
         console.error('[ANALYZE_LEASE_OPENAI_FAILED]', { correlationId, error: e.message });
         return json(500, {
