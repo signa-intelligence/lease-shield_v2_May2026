@@ -53,12 +53,13 @@ function json(status, body, extraHeaders = {}) {
 }
 
 Deno.serve(async (req) => {
-  // ═══════════════════════════════════════════════════════════════════════════
-  // DEPLOYMENT MARKER - IF YOU SEE THIS, NEW CODE IS DEPLOYED
-  // ═══════════════════════════════════════════════════════════════════════════
-  console.log('╔═══════════════════════════════════════════════════════════════╗');
-  console.log('║ DEPLOYMENT V4 - 2026-02-05 15:20 UTC - ENHANCED LOGGING      ║');
-  console.log('╚═══════════════════════════════════════════════════════════════╝');
+  // DEPLOYMENT TEST - USING console.error TO BYPASS CACHE
+  const DEPLOYMENT_ID = 'V999_FINAL_' + Date.now();
+  console.error('═══════════════════════════════════════════════════════');
+  console.error('🚨🚨🚨 NEW DEPLOYMENT ACTIVE 🚨🚨🚨');
+  console.error('DEPLOYMENT_ID:', DEPLOYMENT_ID);
+  console.error('TIMESTAMP:', new Date().toISOString());
+  console.error('═══════════════════════════════════════════════════════');
   
   const { allowed, headers } = corsHeaders(req);
   
