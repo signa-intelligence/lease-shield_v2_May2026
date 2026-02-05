@@ -167,6 +167,22 @@ Deno.serve(async (req) => {
         summary: scanFull.summary?.executive_summary || "Lease analysis complete.",
         status: 'completed'
       });
+      
+      // Update Lease entity with extracted key_terms
+      if (scanFull.key_terms) {
+        await svc.entities.Lease.update(leaseId, {
+          property_address: scanFull.key_terms.property_address || null,
+          start_date: scanFull.key_terms.lease_start_date || null,
+          end_date: scanFull.key_terms.lease_end_date || null,
+          rent_amount: scanFull.key_terms.monthly_rent || null,
+          deposit_amount: scanFull.key_terms.security_deposit || null
+        });
+        
+        console.log('[SCANLEASE_LEASE_UPDATED]', { 
+          leaseId,
+          propertyAddress: scanFull.key_terms.property_address 
+        });
+      }
 
       // Verify the scan exists
       const verifiedScan = await svc.entities.LeaseScan.get(targetScan.id);
