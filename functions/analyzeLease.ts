@@ -53,10 +53,11 @@ function json(status, body, extraHeaders = {}) {
 }
 
 Deno.serve(async (req) => {
-  console.log('[🔥 ANALYZE_LEASE_ENTRY_POINT]', { 
+  console.log('[🔥🔥🔥 NEW_DEPLOYMENT_ACTIVE_V3 🔥🔥🔥]', { 
     timestamp: new Date().toISOString(),
     method: req.method,
-    message: 'Function invoked - deployment working'
+    version: 'V3_WITH_ENHANCED_LOGGING',
+    message: 'NEW CODE IS RUNNING - LOGS SHOULD APPEAR'
   });
   
   const { allowed, headers } = corsHeaders(req);
