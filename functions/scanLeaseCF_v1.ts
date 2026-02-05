@@ -251,9 +251,10 @@ Deno.serve(async (req) => {
     });
 
     try {
-      const extractResult = await base44.functions.invoke('extractLeaseData', {
+      const extractResult = await base44.functions.invoke('populateFromScan', {
         scanId: targetScan.id,
         leaseId: leaseId,
+        scan_full: scanFull,
         userEmail: userEmail // CRITICAL: Pass user email for proper ownership
       });
       
