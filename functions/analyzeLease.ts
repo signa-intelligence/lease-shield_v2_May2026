@@ -1015,21 +1015,14 @@ For EACH of the 15 clauses above, you MUST return:
       analysisResult.clauses = [];
     }
     
-    // CRITICAL: Ensure key_terms object exists with all required fields
+    // CRITICAL: Initialize key_terms if missing but DON'T populate fields yet
+    // Let fallback extraction run first (lines 1042-1124)
     if (!analysisResult.key_terms || typeof analysisResult.key_terms !== 'object') {
       console.warn('[ANALYZE_LEASE_KEY_TERMS_MISSING]', { 
         correlationId,
-        message: 'AI did not return key_terms - initializing empty object'
+        message: 'AI did not return key_terms - will use fallback extraction'
       });
-      analysisResult.key_terms = {};
-    }
-    
-    // Ensure all key_terms fields exist (even if null)
-    const requiredKeyTerms = ['property_address', 'lease_start_date', 'lease_end_date', 'monthly_rent', 'security_deposit', 'rent_due_day'];
-    for (const field of requiredKeyTerms) {
-      if (analysisResult.key_terms[field] === undefined) {
-        analysisResult.key_terms[field] = null;
-      }
+      analysisResult.key_terms = {}; // Empty placeholder - fallback will populate
     }
     
     // ═══════════════════════════════════════════════════════════════════════════
@@ -1131,6 +1124,14 @@ For EACH of the 15 clauses above, you MUST return:
       beforeFallback: keyTermsBefore,
       afterFallback: analysisResult.key_terms
     });
+    
+    // FINAL VALIDATION: Ensure all key_terms fields exist (populate nulls for missing fields)
+    const requiredKeyTerms = ['property_address', 'lease_start_date', 'lease_end_date', 'monthly_rent', 'security_deposit', 'rent_due_day'];
+    for (const field of requiredKeyTerms) {
+      if (analysisResult.key_terms[field] === undefined) {
+        analysisResult.key_terms[field] = null;
+      }
+    }
     
     // Normalize clauses
     const normalizedClauses = [];
