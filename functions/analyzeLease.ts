@@ -613,7 +613,7 @@ For EACH of the 15 clauses above, you MUST return:
       console.log('[ANALYZE_LEASE_OPENAI_START]', { correlationId, inputLength: pdfText.length, isPreviewMode });
       
       const userPrompt = isPreviewMode
-        ? `You are Lease Shield's AI analyst. Analyze this lease for the top 5 risks (language: ${language}).\n\nIMPORTANT: Extract the complete property address from the lease (e.g., "Unit 1806, Tower C, 299/45 Pattaya Road, Bangkok 20150") - this is CRITICAL for the app.\n\n${pdfText.slice(0, 8000)}`
+        ? `CRITICAL: Your JSON output MUST start with the key_terms field. Do NOT omit it.\n\nExample correct format:\n{"key_terms":{"property_address":"...","lease_start_date":"...","lease_end_date":"...","monthly_rent":0,"security_deposit":0,"rent_due_day":0},"risk_score":0,"summary":{...}}\n\nAnalyze this lease for the top 5 risks (language: ${language}). Extract the FULL property address.\n\n${pdfText.slice(0, 8000)}`
         : `Analyze this complete lease document (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read the entire document thoroughly:\n\n${pdfText.slice(0, 15000)}`;
       
       console.log('[ANALYZE_LEASE_MODEL_SELECTED]', { correlationId, model: 'gpt-4o', isPreviewMode });
