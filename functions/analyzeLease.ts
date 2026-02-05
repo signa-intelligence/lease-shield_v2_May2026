@@ -1,5 +1,5 @@
 // PRODUCTION CODE - DO NOT MODIFY WITHOUT EXPLICIT APPROVAL
-// Last verified working: 2026-02-05
+// Last verified working: 2026-02-05 (redeployed to fix cache issue)
 
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 import OpenAI from "npm:openai@4.28.0";
