@@ -53,12 +53,12 @@ function json(status, body, extraHeaders = {}) {
 }
 
 Deno.serve(async (req) => {
-  console.log('[🔥🔥🔥 NEW_DEPLOYMENT_ACTIVE_V3 🔥🔥🔥]', { 
-    timestamp: new Date().toISOString(),
-    method: req.method,
-    version: 'V3_WITH_ENHANCED_LOGGING',
-    message: 'NEW CODE IS RUNNING - LOGS SHOULD APPEAR'
-  });
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DEPLOYMENT MARKER - IF YOU SEE THIS, NEW CODE IS DEPLOYED
+  // ═══════════════════════════════════════════════════════════════════════════
+  console.log('╔═══════════════════════════════════════════════════════════════╗');
+  console.log('║ DEPLOYMENT V4 - 2026-02-05 15:20 UTC - ENHANCED LOGGING      ║');
+  console.log('╚═══════════════════════════════════════════════════════════════╝');
   
   const { allowed, headers } = corsHeaders(req);
   
