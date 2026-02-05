@@ -625,21 +625,31 @@ For EACH of the 15 clauses above, you MUST return:
         });
       
         const rawContent = completion.choices[0].message.content;
+
+        // CRITICAL DEBUG: Log FULL raw response to see what OpenAI actually returned
         console.log('[ANALYZE_LEASE_OPENAI_RAW_RESPONSE_FULL]', { 
           correlationId, 
           fullResponse: rawContent,
-          length: rawContent?.length
+          length: rawContent?.length,
+          isPreviewMode
         });
 
         analysisResult = JSON.parse(rawContent);
 
-        console.log('[ANALYZE_LEASE_PARSED_RESULT]', {
+        // CRITICAL DEBUG: Log parsed result IMMEDIATELY to see if key_terms exists
+        console.log('[ANALYZE_LEASE_PARSED_RESULT_IMMEDIATE]', {
           correlationId,
+          isPreviewMode,
           hasKeyTerms: !!analysisResult.key_terms,
-          keyTermsValue: analysisResult.key_terms,
+          keyTermsValue: JSON.stringify(analysisResult.key_terms),
           keyTermsType: typeof analysisResult.key_terms,
+          keyTermsIsNull: analysisResult.key_terms === null,
+          keyTermsIsUndefined: analysisResult.key_terms === undefined,
+          keyTermsIsEmptyObject: analysisResult.key_terms && Object.keys(analysisResult.key_terms).length === 0,
           keyTermsKeys: analysisResult.key_terms ? Object.keys(analysisResult.key_terms) : 'N/A',
-          allTopLevelKeys: Object.keys(analysisResult)
+          allTopLevelKeys: Object.keys(analysisResult),
+          rawTextAvailable: !!pdfText,
+          rawTextLength: pdfText?.length || 0
         });
         
         // CRITICAL: Store raw PDF text IMMEDIATELY for fallback extraction (before normalization)
