@@ -74,6 +74,11 @@ Deno.serve(async (req) => {
   }
   
   const correlationId = `analyze-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+  console.log('[🚀 DEPLOYMENT_VERSION_2026_02_05_V2]', { 
+    correlationId, 
+    timestamp: new Date().toISOString(),
+    message: 'FRESH DEPLOYMENT - Enhanced logging active'
+  });
   console.log('[ANALYZE_LEASE_START]', { correlationId, timestamp: new Date().toISOString() });
   
   try {
