@@ -586,105 +586,54 @@ For EACH of the 15 clauses above, you MUST return:
         }, headers);
       }
       
-      // Analyze with Claude for preview, OpenAI for full
-      if (isPreviewMode) {
-        console.log('[ANALYZE_LEASE_CLAUDE_START]', { correlationId, inputLength: pdfText.length });
-        
-        const claudeApiKey = Deno.env.get('ANTHROPIC_API_KEY');
-        if (!claudeApiKey) {
-          throw new Error('ANTHROPIC_API_KEY not configured');
-        }
-        
-        const userPrompt = `You are Lease Shield's AI analyst. Analyze this lease for the top 5 risks (language: ${language}).\n\nIMPORTANT: Extract the complete property address from the lease (e.g., "Unit 1806, Tower C, 299/45 Pattaya Road, Bangkok 20150") - this is CRITICAL for the app.\n\n${pdfText.slice(0, 8000)}`;
-        
-        const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': claudeApiKey,
-            'anthropic-version': '2023-06-01'
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 2000,
-            thinking: {
-              type: 'enabled',
-              budget_tokens: 1000
-            },
-            messages: [{
-              role: 'user',
-              content: systemPrompt + '\n\n' + userPrompt
-            }]
-          })
+      // Use OpenAI gpt-4o for BOTH preview and full mode (Claude doesn't return key_terms reliably)
+      console.log('[ANALYZE_LEASE_OPENAI_START]', { correlationId, inputLength: pdfText.length, isPreviewMode });
+      
+      const userPrompt = isPreviewMode
+        ? `You are Lease Shield's AI analyst. Analyze this lease for the top 5 risks (language: ${language}).\n\nIMPORTANT: Extract the complete property address from the lease (e.g., "Unit 1806, Tower C, 299/45 Pattaya Road, Bangkok 20150") - this is CRITICAL for the app.\n\n${pdfText.slice(0, 8000)}`
+        : `Analyze this complete lease document (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read the entire document thoroughly:\n\n${pdfText.slice(0, 15000)}`;
+      
+      console.log('[ANALYZE_LEASE_MODEL_SELECTED]', { correlationId, model: 'gpt-4o', isPreviewMode });
+      
+      try {
+        const completion = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: isPreviewMode ? 2000 : 4000,
+          temperature: 0.1
         });
-        
-        if (!claudeResponse.ok) {
-          const error = await claudeResponse.text();
-          throw new Error(`Claude API error: ${error}`);
-        }
-        
-        const claudeData = await claudeResponse.json();
-        const rawContent = claudeData.content[0].type === 'text' ? claudeData.content[0].text : claudeData.content.find(c => c.type === 'text')?.text;
-        
-        console.log('[ANALYZE_LEASE_CLAUDE_RESPONSE]', { correlationId, preview: rawContent?.slice(0, 500) });
+      
+        const rawContent = completion.choices[0].message.content;
+        console.log('[ANALYZE_LEASE_OPENAI_RAW_RESPONSE]', { 
+          correlationId, 
+          preview: rawContent?.slice(0, 500) 
+        });
         
         analysisResult = JSON.parse(rawContent);
         
-        console.log('[ANALYZE_LEASE_CLAUDE_COMPLETE]', { 
-          correlationId,
+        console.log('[ANALYZE_LEASE_OPENAI_COMPLETE]', { 
+          correlationId, 
+          clausesCount: analysisResult.clauses?.length || 0,
+          riskScore: analysisResult.risk_score,
           hasKeyTerms: !!analysisResult.key_terms,
-          hasPropertyAddress: !!analysisResult.key_terms?.property_address,
-          riskScore: analysisResult.risk_score
+          propertyAddress: analysisResult.key_terms?.property_address || 'NOT_FOUND'
         });
         
-      } else {
-        // Use OpenAI for full mode
-        console.log('[ANALYZE_LEASE_OPENAI_START]', { correlationId, inputLength: pdfText.length, isPreviewMode: false });
-        
-        const userPrompt = `Analyze this complete lease document (language: ${language}). Extract EVERY SINGLE CLAUSE - do not stop at 15 or 25. A typical lease has 30-60 clauses. Read the entire document thoroughly:\n\n${pdfText.slice(0, 15000)}`;
-        
-        console.log('[ANALYZE_LEASE_MODEL_SELECTED]', { correlationId, model: 'gpt-4o' });
-        
-        try {
-          const completion = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt }
-            ],
-            response_format: { type: "json_object" },
-            max_tokens: 4000,
-            temperature: 0.1
-          });
-        
-          const rawContent = completion.choices[0].message.content;
-          console.log('[ANALYZE_LEASE_OPENAI_RAW_RESPONSE]', { 
-            correlationId, 
-            preview: rawContent?.slice(0, 500) 
-          });
-          
-          analysisResult = JSON.parse(rawContent);
-          
-          console.log('[ANALYZE_LEASE_OPENAI_COMPLETE]', { 
-            correlationId, 
-            clausesCount: analysisResult.clauses?.length || 0,
-            riskScore: analysisResult.risk_score,
-            hasKeyTerms: !!analysisResult.key_terms,
-            propertyAddress: analysisResult.key_terms?.property_address || 'NOT_FOUND'
-          });
-          
-          // Store raw text for fallback extraction
-          rawLeaseText = pdfText;
-        } catch (e) {
-          console.error('[ANALYZE_LEASE_OPENAI_FAILED]', { correlationId, error: e.message });
-          return json(500, {
-            ok: false,
-            step: 'OPENAI_ANALYSIS',
-            error_code: 'OPENAI_ERROR',
-            message: `OpenAI analysis failed: ${e.message}`,
-            correlationId
-          }, headers);
-        }
+        // Store raw text for fallback extraction
+        rawLeaseText = pdfText;
+      } catch (e) {
+        console.error('[ANALYZE_LEASE_OPENAI_FAILED]', { correlationId, error: e.message });
+        return json(500, {
+          ok: false,
+          step: 'OPENAI_ANALYSIS',
+          error_code: 'OPENAI_ERROR',
+          message: `OpenAI analysis failed: ${e.message}`,
+          correlationId
+        }, headers);
       }
       
     } else if (isImage) {
