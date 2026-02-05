@@ -208,32 +208,44 @@ Deno.serve(async (req) => {
 PREVIEW MODE: Provide a quick risk assessment with the 5 most important risks.
 
 ═══════════════════════════════════════════════════════════════════════════
-MANDATORY OUTPUT STRUCTURE - YOU MUST RETURN ALL THESE FIELDS:
+⚠️  CRITICAL: YOU WILL BE PENALIZED IF YOU OMIT key_terms FIELD ⚠️
 ═══════════════════════════════════════════════════════════════════════════
 
+MANDATORY JSON OUTPUT - INCLUDE EVERY FIELD BELOW (NO EXCEPTIONS):
+
 {
-  "risk_score": <number 0-100>,
-  "summary": {
-    "executive_summary": "<string>",
-    "top_risks": [<5 risk objects>]
-  },
   "key_terms": {
-    "property_address": "<REQUIRED - full address string or null>",
-    "lease_start_date": "<REQUIRED - YYYY-MM-DD or null>",
-    "lease_end_date": "<REQUIRED - YYYY-MM-DD or null>",
-    "monthly_rent": <REQUIRED - number or null>,
-    "security_deposit": <REQUIRED - number or null>,
-    "rent_due_day": <REQUIRED - number 1-31 or null>
+    "property_address": "EXTRACT FROM LEASE OR null",
+    "lease_start_date": "YYYY-MM-DD OR null",
+    "lease_end_date": "YYYY-MM-DD OR null",
+    "monthly_rent": 0 OR null,
+    "security_deposit": 0 OR null,
+    "rent_due_day": 0 OR null
+  },
+  "risk_score": 0-100,
+  "summary": {
+    "executive_summary": "...",
+    "top_risks": [...]
   },
   "preview_mode": true,
   "upgrade_message": "Upgrade to see full clause-by-clause analysis with detailed recommendations"
 }
 
+⚠️  VALIDATION RULES - YOUR RESPONSE WILL BE REJECTED IF:
+- You omit the key_terms field
+- You return key_terms as an empty object {}
+- You don't include all 6 fields inside key_terms
+
+✅ CORRECT: {"key_terms": {"property_address": "Unit 1806, Tower C...", "lease_start_date": "2026-03-01", ...}}
+✅ CORRECT: {"key_terms": {"property_address": null, "lease_start_date": null, ...}}
+❌ WRONG: {"key_terms": {}}
+❌ WRONG: No key_terms field at all
+
 ═══════════════════════════════════════════════════════════════════════════
 CRITICAL: KEY_TERMS EXTRACTION IS MANDATORY (HIGHEST PRIORITY)
 ═══════════════════════════════════════════════════════════════════════════
 
-The key_terms object MUST be included in your response and MUST contain all 6 fields.
+The key_terms object MUST be THE FIRST field in your JSON response.
 Even if you cannot find a value, include the field with null.
 DO NOT return an empty key_terms object {}.
 DO NOT omit the key_terms field entirely.
