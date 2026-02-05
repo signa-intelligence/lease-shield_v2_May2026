@@ -654,36 +654,47 @@ For EACH of the 15 clauses above, you MUST return:
         
         // CRITICAL: Store raw PDF text IMMEDIATELY for fallback extraction (before normalization)
         rawLeaseText = pdfText;
-        
-        // FORCE fallback extraction if key_terms is empty
-        if (!analysisResult.key_terms || Object.keys(analysisResult.key_terms).length === 0) {
-          console.log('[ANALYZE_LEASE_FORCE_FALLBACK]', { 
+
+        // CRITICAL FIX: FORCE fallback extraction if key_terms is missing, null, undefined, or empty
+        const hasKeyTerms = analysisResult.key_terms && typeof analysisResult.key_terms === 'object' && Object.keys(analysisResult.key_terms).length > 0;
+
+        if (!hasKeyTerms) {
+          console.log('[ANALYZE_LEASE_FORCE_FALLBACK_TRIGGERED]', { 
             correlationId,
-            reason: 'OpenAI returned empty key_terms',
+            reason: 'OpenAI did not return key_terms or returned empty object',
+            keyTermsValue: analysisResult.key_terms,
             hasRawText: !!rawLeaseText,
+            rawTextLength: rawLeaseText?.length || 0,
             isPreviewMode
           });
-          
+
           // Run ALL fallback extractions
           const fallbackAddress = extractAddressFromText(rawLeaseText);
           const fallbackDates = extractDatesFromText(rawLeaseText);
           const fallbackAmounts = extractAmountsFromText(rawLeaseText);
           const fallbackDueDay = extractRentDueDayFromText(rawLeaseText);
-          
+
           analysisResult.key_terms = {
-            property_address: fallbackAddress || "Address not found",
+            property_address: fallbackAddress || "Address not found in lease",
             lease_start_date: fallbackDates.start || null,
             lease_end_date: fallbackDates.end || null,
             monthly_rent: fallbackAmounts.rent || null,
             security_deposit: fallbackAmounts.deposit || null,
             rent_due_day: fallbackDueDay || null
           };
-          
-          console.log('[ANALYZE_LEASE_FALLBACK_COMPLETE]', { 
+
+          console.log('[ANALYZE_LEASE_FALLBACK_EXTRACTION_COMPLETE]', { 
             correlationId,
             extractedAddress: analysisResult.key_terms.property_address,
             extractedDates: { start: fallbackDates.start, end: fallbackDates.end },
-            extractedAmounts: { rent: fallbackAmounts.rent, deposit: fallbackAmounts.deposit }
+            extractedAmounts: { rent: fallbackAmounts.rent, deposit: fallbackAmounts.deposit },
+            dueDay: fallbackDueDay
+          });
+        } else {
+          console.log('[ANALYZE_LEASE_KEY_TERMS_FROM_AI]', {
+            correlationId,
+            propertyAddress: analysisResult.key_terms.property_address,
+            source: 'OpenAI returned valid key_terms'
           });
         }
         
