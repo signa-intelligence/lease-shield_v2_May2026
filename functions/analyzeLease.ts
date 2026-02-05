@@ -53,6 +53,12 @@ function json(status, body, extraHeaders = {}) {
 }
 
 Deno.serve(async (req) => {
+  console.log('[🔥 ANALYZE_LEASE_ENTRY_POINT]', { 
+    timestamp: new Date().toISOString(),
+    method: req.method,
+    message: 'Function invoked - deployment working'
+  });
+  
   const { allowed, headers } = corsHeaders(req);
   
   if (req.method === "OPTIONS") {
@@ -619,12 +625,22 @@ For EACH of the 15 clauses above, you MUST return:
         });
       
         const rawContent = completion.choices[0].message.content;
-        console.log('[ANALYZE_LEASE_OPENAI_RAW_RESPONSE]', { 
+        console.log('[ANALYZE_LEASE_OPENAI_RAW_RESPONSE_FULL]', { 
           correlationId, 
-          preview: rawContent?.slice(0, 500) 
+          fullResponse: rawContent,
+          length: rawContent?.length
         });
-        
+
         analysisResult = JSON.parse(rawContent);
+
+        console.log('[ANALYZE_LEASE_PARSED_RESULT]', {
+          correlationId,
+          hasKeyTerms: !!analysisResult.key_terms,
+          keyTermsValue: analysisResult.key_terms,
+          keyTermsType: typeof analysisResult.key_terms,
+          keyTermsKeys: analysisResult.key_terms ? Object.keys(analysisResult.key_terms) : 'N/A',
+          allTopLevelKeys: Object.keys(analysisResult)
+        });
         
         // CRITICAL: Store raw PDF text IMMEDIATELY for fallback extraction (before normalization)
         rawLeaseText = pdfText;
