@@ -17,6 +17,12 @@ Deno.serve(async (req) => {
 
     const { leaseId } = await req.json();
     
+    console.log('[DELETE_LEASE_START]', { 
+      leaseId,
+      userEmail: user.email,
+      timestamp: new Date().toISOString()
+    });
+    
     console.log(`[${correlationId}] Soft-deleting lease and moving to RecycleBin`, {
       leaseId,
       userEmail: user.email
@@ -131,14 +137,20 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error(`[${correlationId}] Delete lease error:`, {
-      error: error.message,
-      stack: error.stack
+    console.error('[DELETE_LEASE_ERROR_DETAILED]', {
+      correlationId,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      errorCode: error.code,
+      errorName: error.name,
+      fullError: String(error)
     });
     
     return Response.json({
       success: false,
       error: error.message,
+      errorCode: error.code,
+      errorName: error.name,
       correlationId
     }, { status: 500 });
   }
