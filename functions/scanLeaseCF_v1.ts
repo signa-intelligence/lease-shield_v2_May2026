@@ -230,17 +230,29 @@ Deno.serve(async (req) => {
       }
     }
 
-    // CRITICAL FIX: Decrement available_scans for 'explorer' tier AFTER successful analysis
-    if (userObj && userTier === 'explorer' && result?.ok === true) {
+    // CRITICAL FIX: Decrement available_scans for ALL non-unlimited tiers AFTER successful analysis
+    if (userObj && userTier !== 'secure' && result?.ok === true) {
       try {
         const currentScans = userObj.available_scans || 0;
         if (currentScans > 0) {
           const updatedScans = currentScans - 1;
           await svc.entities.User.update(userObj.id, { available_scans: updatedScans });
+          
+          // Log to CreditsLedger
+          await svc.entities.CreditsLedger.create({
+            user_id: userObj.id,
+            user_email: userEmail,
+            type: 'scans',
+            delta: -1,
+            reason: 'purchase',
+            source_ref: `lease_scan:${leaseId}`
+          });
+          
           console.log('SCAN_CF_V1_CREDIT_DECREMENTED', { 
             userId: userObj.id, 
             oldScans: currentScans, 
-            newScans: updatedScans 
+            newScans: updatedScans,
+            tier: userTier
           });
         } else {
           console.warn('SCAN_CF_V1_CREDIT_ALREADY_ZERO', { 
