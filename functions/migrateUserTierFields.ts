@@ -24,14 +24,14 @@ Deno.serve(async (req) => {
     
     for (const userRecord of users) {
       try {
-        // CRITICAL: SDK flattens data.* fields to top level
-        // So data.tier becomes userRecord.tier
-        // And data.plan_tier becomes userRecord.plan_tier
+        // CRITICAL: Query returns flattened data.* fields
+        // So userRecord.tier is actually data.tier
+        // And userRecord.plan_tier is actually data.plan_tier
         
         // Case 1: Has tier but not plan_tier - MIGRATE
         if (userRecord.tier && !userRecord.plan_tier) {
-          // Update by setting plan_tier and removing tier
-          await base44.auth.updateMe({ 
+          // Update using service role - set plan_tier and remove tier
+          await svc.entities.User.update(userRecord.id, {
             plan_tier: userRecord.tier,
             tier: null  // Remove old field
           });
@@ -58,7 +58,9 @@ Deno.serve(async (req) => {
           
         // Case 3: No tier data at all - set default
         } else {
-          await base44.auth.updateMe({ plan_tier: 'free' });
+          await svc.entities.User.update(userRecord.id, {
+            plan_tier: 'free'
+          });
           
           results.noTierData.push({
             email: userRecord.email,
