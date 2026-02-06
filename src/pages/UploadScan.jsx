@@ -130,7 +130,10 @@ function UploadScanPageContent() {
 
   const { data: leases = [] } = useQuery({
     queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ owner_email: user?.email }, '-created_date'),
+    queryFn: () => base44.entities.Lease.filter({ 
+      owner_email: user?.email,
+      status: { $ne: 'deleted' }
+    }, '-created_date'),
     enabled: !!user,
     initialData: [],
     refetchInterval: (query) => {
