@@ -1,99 +1,96 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
-  const headers = {
-    "Access-Control-Allow-Origin": "*",
-    "Content-Type": "application/json"
-  };
+  const base44 = createClientFromRequest(req);
+  const user = await base44.auth.me();
   
-  if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers });
+  // Only super admin can run migrations
+  if (user?.role !== 'admin' && user?.data?.access_level !== 'super_admin') {
+    return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
   }
   
+  const svc = base44.asServiceRole;
+  
   try {
-    const base44 = createClientFromRequest(req);
-    const svc = base44.asServiceRole || base44;
-    
     // Get all users
     const users = await svc.entities.User.list();
     
-    console.log('[MIGRATE_START]', { totalUsers: users.length });
+    const results = {
+      fixed: [],
+      alreadyCorrect: [],
+      noTierData: [],
+      errors: []
+    };
     
-    const migrated = [];
-    const skipped = [];
-    
-    for (const user of users) {
-      // Skip if already has root-level fields
-      if (user.tier !== undefined && user.available_scans !== undefined) {
-        skipped.push(user.email);
-        continue;
-      }
-      
-      // Skip if no data object
-      if (!user.data) {
-        skipped.push(user.email);
-        continue;
-      }
-      
-      console.log('[MIGRATE_USER_BEFORE]', {
-        email: user.email,
-        root_tier: user.tier,
-        nested_tier: user.data.tier,
-        root_scans: user.available_scans,
-        nested_scans: user.data.available_scans
-      });
-      
-      // Move fields from data.* to root level
-      const updateData = {};
-      
-      if (user.data.tier && !user.tier) {
-        updateData.tier = user.data.tier;
-      }
-      
-      if (user.data.available_scans !== undefined && user.available_scans === undefined) {
-        updateData.available_scans = user.data.available_scans;
-      }
-      
-      if (user.data.subscription_status && !user.subscription_status) {
-        updateData.subscription_status = user.data.subscription_status;
-      }
-      
-      // Only update if we have fields to migrate
-      if (Object.keys(updateData).length > 0) {
-        const updated = await svc.entities.User.update(user.id, updateData);
+    for (const userRecord of users) {
+      try {
+        const userData = userRecord.data || {};
         
-        console.log('[MIGRATE_USER_AFTER]', {
-          email: updated.email,
-          tier: updated.tier,
-          available_scans: updated.available_scans,
-          subscription_status: updated.subscription_status
-        });
+        // Case 1: Has data.tier but not data.plan_tier - MIGRATE
+        if (userData.tier && !userData.plan_tier) {
+          const newData = { ...userData };
+          newData.plan_tier = userData.tier;
+          delete newData.tier;
+          
+          await svc.entities.User.update(userRecord.id, newData);
+          
+          results.fixed.push({
+            email: userRecord.email,
+            migratedValue: userData.tier,
+            userId: userRecord.id
+          });
+          
+          console.log('[MIGRATION_FIXED]', {
+            email: userRecord.email,
+            tier: userData.tier,
+            to: 'plan_tier'
+          });
+          
+        // Case 2: Already has data.plan_tier - OK
+        } else if (userData.plan_tier) {
+          results.alreadyCorrect.push({
+            email: userRecord.email,
+            plan_tier: userData.plan_tier
+          });
+          
+        // Case 3: No tier data at all - default to free
+        } else {
+          results.noTierData.push({
+            email: userRecord.email,
+            note: 'No tier field found'
+          });
+        }
         
-        migrated.push({
-          email: user.email,
-          migrated: Object.keys(updateData)
+      } catch (err) {
+        results.errors.push({
+          email: userRecord.email,
+          error: err.message
         });
-      } else {
-        skipped.push(user.email);
+        console.error('[MIGRATION_ERROR]', {
+          email: userRecord.email,
+          error: err.message
+        });
       }
     }
     
-    console.log('[MIGRATE_COMPLETE]', { 
-      migrated: migrated.length, 
-      skipped: skipped.length 
-    });
-    
-    return new Response(JSON.stringify({
+    return Response.json({
       success: true,
-      migrated: migrated,
-      skipped: skipped.length
-    }), { status: 200, headers });
+      summary: {
+        totalUsers: users.length,
+        fixed: results.fixed.length,
+        alreadyCorrect: results.alreadyCorrect.length,
+        noTierData: results.noTierData.length,
+        errors: results.errors.length
+      },
+      details: results
+    }, { status: 200 });
     
-  } catch (e) {
-    console.error('[MIGRATE_ERROR]', e);
-    return new Response(JSON.stringify({
-      error: e.message,
-      stack: e.stack
-    }), { status: 500, headers });
+  } catch (error) {
+    console.error('[MIGRATION_CRASH]', error);
+    return Response.json({
+      success: false,
+      error: error.message,
+      stack: error.stack
+    }, { status: 500 });
   }
 });
