@@ -24,40 +24,50 @@ Deno.serve(async (req) => {
     
     for (const userRecord of users) {
       try {
-        const userData = userRecord.data || {};
+        // CRITICAL: SDK flattens data.* fields to top level
+        // So data.tier becomes userRecord.tier
+        // And data.plan_tier becomes userRecord.plan_tier
         
-        // Case 1: Has data.tier but not data.plan_tier - MIGRATE
-        if (userData.tier && !userData.plan_tier) {
-          const newData = { ...userData };
-          newData.plan_tier = userData.tier;
-          delete newData.tier;
-          
-          await svc.entities.User.update(userRecord.id, newData);
+        // Case 1: Has tier but not plan_tier - MIGRATE
+        if (userRecord.tier && !userRecord.plan_tier) {
+          // Update by setting plan_tier and removing tier
+          await base44.auth.updateMe({ 
+            plan_tier: userRecord.tier,
+            tier: null  // Remove old field
+          });
           
           results.fixed.push({
             email: userRecord.email,
-            migratedValue: userData.tier,
+            migratedValue: userRecord.tier,
             userId: userRecord.id
           });
           
           console.log('[MIGRATION_FIXED]', {
             email: userRecord.email,
-            tier: userData.tier,
-            to: 'plan_tier'
+            oldField: 'tier',
+            value: userRecord.tier,
+            newField: 'plan_tier'
           });
           
-        // Case 2: Already has data.plan_tier - OK
-        } else if (userData.plan_tier) {
+        // Case 2: Already has plan_tier - OK
+        } else if (userRecord.plan_tier) {
           results.alreadyCorrect.push({
             email: userRecord.email,
-            plan_tier: userData.plan_tier
+            plan_tier: userRecord.plan_tier
           });
           
-        // Case 3: No tier data at all - default to free
+        // Case 3: No tier data at all - set default
         } else {
+          await base44.auth.updateMe({ plan_tier: 'free' });
+          
           results.noTierData.push({
             email: userRecord.email,
-            note: 'No tier field found'
+            action: 'Set default plan_tier: free'
+          });
+          
+          console.log('[MIGRATION_DEFAULT]', {
+            email: userRecord.email,
+            setPlanTier: 'free'
           });
         }
         
