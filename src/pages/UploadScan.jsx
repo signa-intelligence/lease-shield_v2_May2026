@@ -175,23 +175,15 @@ function UploadScanPageContent() {
     const limits = getScanLimits();
     if (limits.unlimited) return { allowed: true, remaining: 999, used: 0, limit: 999, period: limits.period };
 
-    let scannedCount = 0;
-    if (limits.period === 'lifetime') {
-      // Count ALL leases for free tier (not just scanned status)
-      scannedCount = leases.length;
-    } else if (limits.period === 'year') {
-      const thisYear = new Date().getFullYear();
-      scannedCount = leases.filter(l => {
-        if (!l.created_date) return false;
-        const leaseYear = new Date(l.created_date).getFullYear();
-        return leaseYear === thisYear;
-      }).length;
-    }
+    // CRITICAL FIX: Read available_scans from database, don't calculate from leases.length
+    // leases.length decreases when deleted, showing incorrect "more scans available"
+    const availableScans = user?.available_scans ?? 0;
+    const used = Math.max(0, limits.limit - availableScans);
 
     return {
-      allowed: scannedCount < limits.limit,
-      remaining: Math.max(0, limits.limit - scannedCount),
-      used: scannedCount,
+      allowed: availableScans > 0,
+      remaining: availableScans,
+      used: used,
       limit: limits.limit,
       period: limits.period
     };

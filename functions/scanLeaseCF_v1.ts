@@ -35,6 +35,34 @@ Deno.serve(async (req) => {
       userTier = user?.plan_tier || 'free';
       userEmail = user?.email;
       console.log('SCAN_CF_V1_USER_TIER', { userTier, userEmail, availableScans: user?.available_scans });
+
+      // ✅ CRITICAL: CHECK CREDITS BEFORE SCAN (not after expensive operations)
+      // Treat null, undefined, 'free', 'discover', 'explorer' as limited tiers
+      const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover' || userTier === 'explorer';
+      const isLimitedTier = isFreeTier || userTier === 'lite' || userTier === 'protect';
+
+      if (isLimitedTier && userTier !== 'secure') {
+        const currentScans = user?.available_scans ?? 0;
+        if (currentScans <= 0) {
+          console.log('[SCAN_CF_V1_NO_CREDITS_BLOCKED]', { 
+            userId: user.id, 
+            availableScans: currentScans, 
+            tier: userTier 
+          });
+          return new Response(JSON.stringify({
+            ok: false,
+            step: 'CREDIT_CHECK',
+            error_code: 'NO_SCAN_CREDITS',
+            message: isFreeTier
+              ? 'You have used your free scan. Upgrade to continue scanning leases.'
+              : 'No scan credits remaining. Please purchase additional scans.'
+          }), { 
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      }
+
     } catch (authErr) {
       console.warn('SCAN_CF_V1_AUTH_CHECK_FAILED', { error: authErr.message });
     }
