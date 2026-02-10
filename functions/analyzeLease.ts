@@ -209,16 +209,16 @@ CRITICAL: You MUST return a valid JSON object with this EXACT structure (include
 
 {
   "key_terms": {
-    "property_address": "string or null",
-    "lease_start_date": "YYYY-MM-DD or null",
-    "lease_end_date": "YYYY-MM-DD or null",
-    "monthly_rent": number or null,
-    "security_deposit": number or null,
-    "rent_due_day": number or null
+    "property_address": "EXTRACT THE FULL PROPERTY ADDRESS - required, cannot be null",
+    "lease_start_date": "EXTRACT START DATE in YYYY-MM-DD format - required",
+    "lease_end_date": "EXTRACT END DATE in YYYY-MM-DD format - required",
+    "monthly_rent": "EXTRACT MONTHLY RENT as number - required",
+    "security_deposit": "EXTRACT DEPOSIT as number - required",
+    "rent_due_day": "EXTRACT DAY OF MONTH (1-31) rent is due - if not found, use 5"
   },
   "risk_score": number (0-100),
   "summary": {
-    "executive_summary": "string",
+    "executive_summary": "MUST accurately describe risk level and COUNT the number of concerning clauses/issues found. Example: 'HIGH RISK - Contains 8 concerning clauses including...' Be specific with numbers.",
     "top_risks": [
       {
         "title": "string",
@@ -232,23 +232,28 @@ CRITICAL: You MUST return a valid JSON object with this EXACT structure (include
   "clauses": []
 }
 
-DO NOT omit key_terms. Extract property address, dates, and financial terms from the lease text.
+CRITICAL RULES:
+1. key_terms CANNOT be empty - extract ALL financial and date information from the lease text
+2. executive_summary MUST include accurate count of concerning clauses (e.g., "contains 8 clauses" not "contains 0 clauses")
+3. If you find property address, dates, or amounts - INCLUDE THEM. Do not return null.
 Return ONLY valid JSON, no explanatory text.`
       : `You are a lease analysis expert. Analyze this lease document clause by clause and provide detailed risk assessment.
+
+CRITICAL: Your executive_summary MUST accurately count and describe the risky clauses found. Never say "0 clauses" when risk_score is high.
 
 Return a JSON object with this structure:
 {
   "key_terms": {
-    "property_address": "string or null",
-    "lease_start_date": "YYYY-MM-DD or null", 
-    "lease_end_date": "YYYY-MM-DD or null",
-    "monthly_rent": number or null,
-    "security_deposit": number or null,
-    "rent_due_day": number or null
+    "property_address": "EXTRACT FULL ADDRESS - cannot be null",
+    "lease_start_date": "YYYY-MM-DD - extract from lease", 
+    "lease_end_date": "YYYY-MM-DD - extract from lease",
+    "monthly_rent": "number - extract exact amount",
+    "security_deposit": "number - extract exact amount",
+    "rent_due_day": "number 1-31 - day of month rent is due"
   },
   "risk_score": number (0-100),
   "summary": {
-    "executive_summary": "string",
+    "executive_summary": "MUST include accurate count of high-risk clauses. Example: 'HIGH RISK - Found 12 concerning clauses including...' Be specific.",
     "top_risks": [{"title": "string", "severity": "low|medium|high|critical", "why": "string"}]
   },
   "clauses": [

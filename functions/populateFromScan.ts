@@ -623,6 +623,7 @@ Deno.serve(async (req) => {
             ...event,
             needs_review: false,
             is_estimated: false,
+            is_archived: false, // CRITICAL: Ensure new events are NOT archived
             owner_email: userEmail // WORKAROUND: Use owner_email instead of created_by
           });
           createdEvents.push(created);
