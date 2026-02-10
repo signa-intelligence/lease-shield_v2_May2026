@@ -177,7 +177,7 @@ function UploadScanPageContent() {
 
     // CRITICAL FIX: Read available_scans from database, don't calculate from leases.length
     // leases.length decreases when deleted, showing incorrect "more scans available"
-    const availableScans = user?.data?.available_scans ?? 0;
+    const availableScans = user?.available_scans ?? 0;
     const used = Math.max(0, limits.limit - availableScans);
 
     return {
