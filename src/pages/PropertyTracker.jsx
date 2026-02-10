@@ -446,7 +446,7 @@ function PropertyTrackerContent() {
   });
 
   const createDepositMutation = useMutation({
-    mutationFn: (data) => base44.entities.DepositTracker.create(data),
+    mutationFn: (data) => base44.entities.DepositTracker.create({ ...data, owner_email: user?.email }),
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
       setEditingDeposit(false);
