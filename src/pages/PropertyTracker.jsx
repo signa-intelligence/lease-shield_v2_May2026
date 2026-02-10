@@ -361,11 +361,14 @@ function PropertyTrackerContent() {
     queryFn: () => base44.auth.me(),
   });
 
+  const userEmail = user?.email;
+  
   const { data: deposits = [] } = useQuery({
-    queryKey: ['deposits'],
+    queryKey: ['deposits', userEmail],
     queryFn: async () => {
-      console.log('[PROPERTY_TRACKER_DEPOSIT_QUERY]', { userEmail: user?.email });
-      const allDeposits = await base44.entities.DepositTracker.filter({ owner_email: user?.email }, '-created_date');
+      if (!userEmail) return [];
+      console.log('[PROPERTY_TRACKER_DEPOSIT_QUERY]', { userEmail });
+      const allDeposits = await base44.entities.DepositTracker.filter({ owner_email: userEmail }, '-created_date');
       console.log('[PROPERTY_TRACKER_DEPOSIT_RESULTS]', { 
         count: allDeposits.length,
         deposits: allDeposits.map(d => ({ id: d.id, owner_email: d.owner_email, deposit_amount: d.deposit_amount }))
@@ -390,7 +393,7 @@ function PropertyTrackerContent() {
       
       return depositsWithLeases;
     },
-    enabled: !!user,
+    enabled: !!userEmail,
     refetchOnMount: 'always',
     refetchOnWindowFocus: 'always',
     staleTime: 0
