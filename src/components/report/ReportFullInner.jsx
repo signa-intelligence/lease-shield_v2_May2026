@@ -106,9 +106,9 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
   if (score >= 70) {
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงสูง (คะแนน: ${score}/100)\n\n`;
-      summary += `สัญญาเช่านี้มีความเสี่ยงสูงและมี ${riskyClausesCount} ข้อที่ต้องพิจารณาอย่างรอบคอบก่อนลงนาม `;
-      if (criticalCount > 0) summary += `${criticalCount} ข้อถูกจัดอันดับเป็นความเสี่ยงวิกฤตและอาจมีปัญหาทางกฎหมาย `;
-      if (highCount > 0) summary += `${highCount} ข้อถูกจัดอันดับเป็นความเสี่ยงสูงและอาจส่งผลกระทบต่อสิทธิของคุณ `;
+      summary += `สัญญาเช่านี้มีความเสี่ยงสูงและมีข้อที่ต้องพิจารณาอย่างรอบคอบก่อนลงนาม `;
+      if (criticalCount > 0) summary += `พบข้อที่ถูกจัดอันดับเป็นความเสี่ยงวิกฤตและอาจมีปัญหาทางกฎหมาย `;
+      if (highCount > 0) summary += `พบข้อที่ถูกจัดอันดับเป็นความเสี่ยงสูงและอาจส่งผลกระทบต่อสิทธิของคุณ `;
       
       summary += `\n\nการวิเคราะห์โดยละเอียด:\nสัญญานี้มีข้อกำหนดหลายข้อที่เอื้อประโยชน์ต่อเจ้าของบ้านอย่างชัดเจน โดยลดการปกป้องสิทธิพื้นฐานของผู้เช่า ข้อวิกฤตอาจรวมถึงข้อจำกัดการใช้ทรัพย์สิน เงื่อนไขการคืนเงินมัดจำที่เข้มงวด หรือการระงับข้อพิพาทที่ไม่เป็นธรรม ข้อเหล่านี้อาจไม่สอดคล้องกับกฎหมายคุ้มครองผู้บริโภคหรือหลักความยุติธรรมพื้นฐาน\n\n`;
       
@@ -126,12 +126,12 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       summary += `⚠️ คำแนะนำสำคัญ: อย่าลงนามในสัญญานี้ในรูปแบบปัจจุบัน ใช้ Letter Templates ของ Lease Shield เพื่อเจรจาแก้ไขข้อที่มีความเสี่ยงสูง`;
     } else {
       summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
-      summary += `This lease agreement is exceptionally HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
+      summary += `This lease agreement is exceptionally HIGH RISK and contains clauses that require careful attention before signing. `;
       if (criticalCount > 0) {
-        summary += `${criticalCount} clause(s) are rated CRITICAL and may be legally problematic or heavily favor the landlord while stripping the tenant of basic protections. `;
+        summary += `Found clause(s) rated CRITICAL that may be legally problematic or heavily favor the landlord while stripping the tenant of basic protections. `;
       }
       if (highCount > 0) {
-        summary += `${highCount} clause(s) are rated HIGH RISK and could significantly impact your rights as a tenant. `;
+        summary += `Found clause(s) rated HIGH RISK that could significantly impact your rights as a tenant. `;
       }
       if (topRisks && topRisks.length > 0) {
         summary += `\n\nKey concerns include: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
@@ -155,7 +155,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
   } else if (score >= 40) {
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงปานกลาง (คะแนน: ${score}/100)\n\n`;
-      summary += `สัญญาเช่านี้มี ${riskyClausesCount} ข้อที่ควรตรวจสอบและอาจต้องเจรจา `;
+      summary += `สัญญาเช่านี้มีข้อที่ควรตรวจสอบและอาจต้องเจรจา `;
       summary += `แม้ว่าจะไม่ถึงกับอันตรายในทันที แต่บางข้อกำหนดอาจส่งผลกระทบต่อสิทธิของคุณระหว่างการเช่า `;
       
       summary += `\n\nการวิเคราะห์เพิ่มเติม:\nสัญญานี้มีความสมดุลในระดับหนึ่ง แต่มีข้อที่อาจก่อให้เกิดปัญหาในอนาคต โดยเฉพาะในเรื่องการบำรุงรักษา ค่าธรรมเนียมเพิ่มเติม หรือเงื่อนไขการยกเลิกสัญญา การทำความเข้าใจข้อเหล่านี้อย่างละเอียดจะช่วยป้องกันข้อขัดแย้งในภายหลัง\n\n`;
@@ -174,7 +174,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       summary += `คำแนะนำ: ตรวจสอบข้อที่ถูกทำเครื่องหมายอย่างละเอียดและพิจารณาเจรจาแก้ไขก่อนลงนาม บันทึกข้อตกลงทางวาจาทั้งหมดเป็นลายลักษณ์อักษร`;
     } else {
       summary = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
-      summary += `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. `;
+      summary += `This lease agreement contains clauses that warrant review and possible negotiation. `;
       summary += `While not immediately dangerous, several provisions could impact your rights during the tenancy. `;
       if (topRisks && topRisks.length > 0) {
         summary += `\n\nAreas requiring attention: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
@@ -198,7 +198,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
   } else {
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงต่ำ (คะแนน: ${score}/100)\n\n`;
-      summary += `สัญญาเช่านี้ค่อนข้างสมดุลโดยมี ${riskyClausesCount || 'ไม่กี่'} ข้อที่ต้องให้ความสนใจ `;
+      summary += `สัญญาเช่านี้ค่อนข้างสมดุล `;
       summary += `ข้อกำหนดโดยทั่วไปเป็นมาตรฐานสำหรับสัญญาเช่า `;
       
       summary += `\n\nการวิเคราะห์เพิ่มเติม:\nสัญญานี้แสดงให้เห็นถึงความสมดุลที่ดีระหว่างสิทธิของผู้เช่าและเจ้าของบ้าน ข้อกำหนดส่วนใหญ่เป็นไปตามแนวทางปฏิบัติมาตรฐานในอุตสาหกรรม อย่างไรก็ตาม ยังคงสำคัญที่จะต้องทำความเข้าใจภาระผูกพันของคุณอย่างครบถ้วน\n\n`;
@@ -217,7 +217,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       summary += `คำแนะนำ: ตรวจสอบทุกข้อเพื่อให้แน่ใจว่าคุณเข้าใจภาระผูกพันของคุณ เก็บสำเนาเอกสารทั้งหมดและบันทึกตลอดการเช่า`;
     } else {
       summary = `LOW RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
-      summary += `This lease agreement appears to be relatively balanced with ${riskyClausesCount || 'few'} clauses requiring attention. `;
+      summary += `This lease agreement appears to be relatively balanced. `;
       summary += `The terms are generally standard for rental agreements. `;
       
       summary += `\n\nDetailed Analysis:\nThis lease demonstrates good balance between tenant and landlord rights. Most terms follow industry-standard practices. However, it remains important to fully understand your obligations and ensure all agreed-upon terms are documented in writing.\n\n`;
