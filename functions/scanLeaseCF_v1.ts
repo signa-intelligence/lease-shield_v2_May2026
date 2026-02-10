@@ -189,12 +189,6 @@ Deno.serve(async (req) => {
         summary: scanFull.summary?.executive_summary || "Lease analysis complete.",
         status: 'completed'
       });
-       await svc.entities.LeaseScan.update(targetScan.id, {
-        scan_full: scanFull,
-        risk_score: scanFull.risk_score || 0,
-        summary: scanFull.summary?.executive_summary || "Lease analysis complete.",
-        status: 'completed'
-      });
       
       // Update Lease entity with extracted key_terms
       if (scanFull.key_terms) {
