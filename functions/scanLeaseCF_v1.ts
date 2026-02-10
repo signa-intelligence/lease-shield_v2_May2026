@@ -252,6 +252,11 @@ Deno.serve(async (req) => {
       }
     }
 
+    // CRITICAL: Use user-scoped client (not service role) for creating DepositTracker/TimelineEvent
+    // so that created_by and created_by_id are set to the actual user.
+    // RLS read rules check created_by_id internally even when owner_email matches.
+    const userClient = base44;
+
     // CRITICAL FIX: Decrement available_scans for ALL non-unlimited tiers AFTER successful analysis
     if (userObj && userTier !== 'secure' && result?.ok === true) {
       try {
