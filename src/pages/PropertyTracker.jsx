@@ -367,6 +367,7 @@ function PropertyTrackerContent() {
       // FORENSIC DEBUG
       console.log('[PROPERTY_TRACKER_DEPOSIT_QUERY]', { userEmail: user?.email });
       let allDeposits = await base44.entities.DepositTracker.filter({ owner_email: user?.email }, '-created_date');
+      console.log('[PROPERTY_TRACKER_DEPOSIT_PRIMARY]', { count: allDeposits?.length });
       if ((!Array.isArray(allDeposits) || allDeposits.length === 0) && user?.email) {
         console.warn('[PROPERTY_TRACKER_DEPOSIT_FALLBACK]', { reason: 'primary_empty', userEmail: user?.email });
         allDeposits = await base44.entities.DepositTracker.filter({}, '-created_date');
@@ -396,6 +397,8 @@ function PropertyTrackerContent() {
       return depositsWithLeases;
     },
     enabled: !!user,
+    refetchOnMount: 'always',
+    staleTime: 0
   });
 
   const { data: maintenanceRequests = [] } = useQuery({
