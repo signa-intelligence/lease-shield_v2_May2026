@@ -261,14 +261,11 @@ Deno.serve(async (req) => {
     // CRITICAL FIX: Decrement available_scans for ALL non-unlimited tiers AFTER successful analysis
     if (userObj && userTier !== 'secure' && result?.ok === true) {
       try {
-        const currentScans = userObj.data?.available_scans || 0;
+        const currentScans = userObj?.available_scans || 0;
         if (currentScans > 0) {
           const updatedScans = currentScans - 1;
           await svc.entities.User.update(userObj.id, { 
-            data: {
-              ...userObj.data,
-              available_scans: updatedScans
-            }
+            available_scans: updatedScans
           });
           
           // Log to CreditsLedger
