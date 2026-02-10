@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       const isLimitedTier = isFreeTier || userTier === 'lite' || userTier === 'protect';
 
       if (isLimitedTier && userTier !== 'secure') {
-        const currentScans = user?.available_scans ?? 0;
+        const currentScans = user?.data?.available_scans ?? 0;
         if (currentScans <= 0) {
           console.log('[SCAN_CF_V1_NO_CREDITS_BLOCKED]', { 
             userId: user.id, 
@@ -260,11 +260,16 @@ Deno.serve(async (req) => {
 
     // CRITICAL FIX: Decrement available_scans for ALL non-unlimited tiers AFTER successful analysis
     if (userObj && userTier !== 'secure' && result?.ok === true) {
-    try {
-      const currentScans = userObj.available_scans || 0;
-      if (currentScans > 0) {
-        const updatedScans = currentScans - 1;
-        await svc.entities.User.update(userObj.id, { available_scans: updatedScans });
+      try {
+        const currentScans = userObj.data?.available_scans || 0;
+        if (currentScans > 0) {
+          const updatedScans = currentScans - 1;
+          await svc.entities.User.update(userObj.id, { 
+            data: {
+              ...userObj.data,
+              available_scans: updatedScans
+            }
+          });
           
           // Log to CreditsLedger
           await svc.entities.CreditsLedger.create({
