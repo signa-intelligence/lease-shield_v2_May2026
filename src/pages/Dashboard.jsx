@@ -71,6 +71,9 @@ function DashboardContent() {
     }
   }, [user?.id, user?.referral_code, queryClient]);
 
+  // 🔧 SECURITY FIX: Filter deposits by current user only
+  const userEmail = user?.email;
+
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
     queryKey: ['leases', userEmail],
     queryFn: () => {
@@ -79,9 +82,6 @@ function DashboardContent() {
     },
     enabled: !!userEmail,
   });
-
-  // 🔧 SECURITY FIX: Filter deposits by current user only
-  const userEmail = user?.email;
   const { data: deposits = [], isLoading: depositsLoading } = useQuery({
     queryKey: ['deposits', userEmail],
     queryFn: async () => {
