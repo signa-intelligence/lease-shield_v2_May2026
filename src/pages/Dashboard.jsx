@@ -159,6 +159,8 @@ function DashboardContent() {
     queryKey: ['timelineEvents'],
     queryFn: () => base44.entities.TimelineEvent.filter({ owner_email: user?.email }),
     enabled: !!user,
+    refetchOnMount: 'always',
+    staleTime: 0
   });
 
   const language = user?.language || 'en';
