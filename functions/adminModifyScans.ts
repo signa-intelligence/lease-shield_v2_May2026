@@ -57,7 +57,8 @@ Deno.serve(async (req) => {
     }
 
     const user = users[0];
-    const previousBalance = user.data?.available_scans || 0;
+    const userData = user.data || {};
+    const previousBalance = userData.available_scans || 0;
     
     // Calculate new balance
     let newBalance;
@@ -82,7 +83,10 @@ Deno.serve(async (req) => {
     });
 
     // Update user scan credits (stored in data object)
-    const updatedData = { ...(user.data || {}), available_scans: newBalance };
+    const updatedData = { ...userData, available_scans: newBalance };
+    // Remove nested data.data if it exists
+    delete updatedData.data;
+    
     await base44.asServiceRole.entities.User.update(userId, {
       data: updatedData
     });
