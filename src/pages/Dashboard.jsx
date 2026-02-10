@@ -72,9 +72,12 @@ function DashboardContent() {
   }, [user?.id, user?.referral_code, queryClient]);
 
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
-    queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ owner_email: user?.email }, '-created_date', 10),
-    enabled: !!user,
+    queryKey: ['leases', userEmail],
+    queryFn: () => {
+      if (!userEmail) return [];
+      return base44.entities.Lease.filter({ owner_email: userEmail }, '-created_date', 10);
+    },
+    enabled: !!userEmail,
   });
 
   // 🔧 SECURITY FIX: Filter deposits by current user only
