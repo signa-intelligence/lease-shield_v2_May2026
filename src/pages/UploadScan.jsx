@@ -1434,7 +1434,7 @@ function UploadScanPageContent() {
         await queryClient.refetchQueries({ queryKey: ['deposits'] });
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
-        const reportUrl = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
+        const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
         console.log('[NAVIGATE_REPORT]', { reportUrl, scanId, leaseId: lease.id });
         navigate(reportUrl, {
           state: { 
@@ -1443,63 +1443,6 @@ function UploadScanPageContent() {
           }
         });
         return;
-
-        const scanResult = scanResponse.result;
-        setAnalysisStage('extracting');
-        setUploadProgress(70);
-
-        await base44.entities.Lease.update(lease.id, {
-          status: 'scanned',
-          property_address: scanResult.property_address || null,
-          start_date: scanResult.start_date || null,
-          end_date: scanResult.end_date || null,
-          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
-          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
-          language_detected: scanResult.language_detected || 'en'
-        });
-        setUploadProgress(80);
-
-        setAnalysisStage('finalizing');
-
-
-        setUploadProgress(100);
-        setCurrentStep(2); // Move to results step
-
-        // Auto-populate trackers and timeline
-        try {
-          console.log('[AUTO_POPULATE] Starting auto-population...');
-          const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
-            scanResult,
-            leaseId: lease.id,
-            scanId
-          });
-          
-          if (populateResponse?.success) {
-            console.log('[AUTO_POPULATE] Success:', populateResponse);
-            // Invalidate relevant queries
-            queryClient.invalidateQueries({ queryKey: ['deposits'] });
-            queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
-          }
-        } catch (populateErr) {
-          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
-          // Don't block user flow if auto-population fails
-        }
-
-        // Show completion modal
-        setCompletedLeaseId(createdLeaseId);
-        setShowCompletionModal(true);
-        
-        if (scanResult.end_date) {
-          setLeaseDetails({
-            end_date: scanResult.end_date,
-            notice_period_days: scanResult.notice_period_days || 30
-          });
-          setPendingLeaseId(createdLeaseId);
-        }
-
-        setSelectedFiles([]);
-        queryClient.invalidateQueries({ queryKey: ['leases'] });
-        queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       } catch (err) {
         logStage('ERROR_CAUGHT', {
