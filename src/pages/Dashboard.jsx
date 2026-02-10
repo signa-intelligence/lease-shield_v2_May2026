@@ -78,12 +78,14 @@ function DashboardContent() {
   });
 
   // 🔧 SECURITY FIX: Filter deposits by current user only
+  const userEmail = user?.email;
   const { data: deposits = [], isLoading: depositsLoading } = useQuery({
-    queryKey: ['deposits'],
+    queryKey: ['deposits', userEmail],
     queryFn: async () => {
-      const allDeposits = await base44.entities.DepositTracker.filter({ owner_email: user?.email }, '-created_date');
+      if (!userEmail) return [];
+      const allDeposits = await base44.entities.DepositTracker.filter({ owner_email: userEmail }, '-created_date');
       console.log('[DASHBOARD_DEPOSITS] ✅ USER-SCOPED QUERY', {
-        user: user?.email,
+        user: userEmail,
         count: allDeposits.length,
         deposits: allDeposits.map(d => ({
           id: d.id,
@@ -96,7 +98,7 @@ function DashboardContent() {
       });
       return allDeposits;
     },
-    enabled: !!user,
+    enabled: !!userEmail,
     refetchOnMount: 'always',
     staleTime: 0
   });
