@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     }
 
     const user = users[0];
-    const previousBalance = user.available_scans || 0;
+    const previousBalance = user.data?.available_scans || 0;
     
     // Calculate new balance
     let newBalance;
@@ -81,9 +81,10 @@ Deno.serve(async (req) => {
       delta: newBalance - previousBalance
     });
 
-    // Update user scan credits
+    // Update user scan credits (stored in data object)
+    const updatedData = { ...(user.data || {}), available_scans: newBalance };
     await base44.asServiceRole.entities.User.update(userId, {
-      available_scans: newBalance
+      data: updatedData
     });
 
     // Record in audit ledger
