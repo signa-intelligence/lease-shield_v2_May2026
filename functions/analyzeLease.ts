@@ -218,7 +218,7 @@ CRITICAL: You MUST return a valid JSON object with this EXACT structure (include
   },
   "risk_score": number (0-100),
   "summary": {
-    "executive_summary": "MUST accurately describe risk level and COUNT the number of concerning clauses/issues found. Example: 'HIGH RISK - Contains 8 concerning clauses including...' Be specific with numbers.",
+    "executive_summary": "MUST accurately describe risk level and concerning clauses/issues found. Example: 'HIGH RISK - Contains clauses that require careful attention including...' Do NOT include clause counts.",
     "top_risks": [
       {
         "title": "string",
@@ -234,12 +234,12 @@ CRITICAL: You MUST return a valid JSON object with this EXACT structure (include
 
 CRITICAL RULES:
 1. key_terms CANNOT be empty - extract ALL financial and date information from the lease text
-2. executive_summary MUST include accurate count of concerning clauses (e.g., "contains 8 clauses" not "contains 0 clauses")
+2. executive_summary MUST describe concerning clauses WITHOUT counting them (e.g., "contains clauses that require attention" not "contains 8 clauses")
 3. If you find property address, dates, or amounts - INCLUDE THEM. Do not return null.
 Return ONLY valid JSON, no explanatory text.`
       : `You are a lease analysis expert. Analyze this lease document clause by clause and provide detailed risk assessment.
 
-CRITICAL: Your executive_summary MUST accurately count and describe the risky clauses found. Never say "0 clauses" when risk_score is high.
+CRITICAL: Your executive_summary MUST describe the risky clauses found WITHOUT counting them. Focus on the risk level and types of issues.
 
 Return a JSON object with this structure:
 {
@@ -253,7 +253,7 @@ Return a JSON object with this structure:
   },
   "risk_score": number (0-100),
   "summary": {
-    "executive_summary": "MUST include accurate count of high-risk clauses. Example: 'HIGH RISK - Found 12 concerning clauses including...' Be specific.",
+    "executive_summary": "Describe risk level and key concerns WITHOUT clause counts. Example: 'HIGH RISK - Contains clauses that require attention including...'",
     "top_risks": [{"title": "string", "severity": "low|medium|high|critical", "why": "string"}]
   },
   "clauses": [
