@@ -1045,72 +1045,15 @@ function UploadScanPageContent() {
         if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
-        navigate(`/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
+        const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`;
+        console.log('[NAVIGATE_REPORT_MULTI]', { reportUrl, scanId: scan.id, leaseId: lease.id });
+        navigate(reportUrl, {
           state: { 
             scan_full: scanResponse?.scan_full,
             fromUpload: true 
           }
         });
         return;
-
-
-        
-        const scanResult = scanResponse.result;
-        setAnalysisStage('extracting');
-        setUploadProgress(70);
-
-        await base44.entities.Lease.update(lease.id, {
-          status: 'scanned',
-          property_address: scanResult.property_address || null,
-          start_date: scanResult.start_date || null,
-          end_date: scanResult.end_date || null,
-          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
-          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
-          language_detected: scanResult.language_detected || 'en'
-        });
-        setUploadProgress(90);
-
-        setAnalysisStage('finalizing');
-        setUploadProgress(100);
-        setCurrentStep(2);
-
-        // Prepare data for review (multi-page mode)
-        try {
-          console.log('[AUTO_POPULATE] Preparing data for review...');
-          const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
-            scanResult,
-            leaseId: lease.id,
-            scanId: scan.id
-          });
-          
-          if (populateResponse?.success && populateResponse.review_mode) {
-            console.log('[AUTO_POPULATE] Review data prepared:', populateResponse);
-            setReviewData(populateResponse);
-            setShowReviewScreen(true);
-            setCompletedLeaseId(createdLeaseId);
-          } else {
-            // Fallback: show completion modal
-            setCompletedLeaseId(createdLeaseId);
-            setShowCompletionModal(true);
-          }
-        } catch (populateErr) {
-          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
-          // Show completion modal on error
-          setCompletedLeaseId(createdLeaseId);
-          setShowCompletionModal(true);
-        }
-        
-        if (scanResult.end_date) {
-          setLeaseDetails({
-            end_date: scanResult.end_date,
-            notice_period_days: scanResult.notice_period_days || 30
-          });
-          setPendingLeaseId(createdLeaseId);
-        }
-
-        setSelectedFiles([]);
-        queryClient.invalidateQueries({ queryKey: ['leases'] });
-        queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
