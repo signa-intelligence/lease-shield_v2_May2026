@@ -339,7 +339,7 @@ Deno.serve(async (req) => {
             expectedReturnDate = retDate.toISOString().split('T')[0];
           }
           
-          depositCreated = await svc.entities.DepositTracker.create({
+          depositCreated = await userClient.entities.DepositTracker.create({
             created_by: userEmail,
             owner_email: userEmail,
             lease_id: leaseId,
