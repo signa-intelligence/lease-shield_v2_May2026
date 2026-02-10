@@ -842,9 +842,7 @@ function UploadScanPageContent() {
       deviceContext,
       filesCount: selectedFiles.length,
       userTier,
-      currentLeaseCount,
-      scannedCount,
-      canScan
+      availableScans: user?.available_scans ?? 0
     });
 
     haptic.medium();
