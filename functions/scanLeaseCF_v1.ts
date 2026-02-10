@@ -413,7 +413,7 @@ Deno.serve(async (req) => {
       const createdEvents = [];
       for (const evt of timelineEvents) {
         try {
-          const created = await userClient.entities.TimelineEvent.create(evt);
+          const created = await svc.entities.TimelineEvent.create(evt);
           createdEvents.push(created);
         } catch (evtErr) {
           console.error('[INLINE_POPULATE_TIMELINE_ERR]', { type: evt.event_type, error: evtErr.message });
