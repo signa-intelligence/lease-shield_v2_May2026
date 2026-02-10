@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       const isLimitedTier = isFreeTier || userTier === 'lite' || userTier === 'protect';
 
       if (isLimitedTier && userTier !== 'secure') {
-        const currentScans = user?.data?.available_scans ?? 0;
+        const currentScans = user?.available_scans ?? 0;
         if (currentScans <= 0) {
           console.log('[SCAN_CF_V1_NO_CREDITS_BLOCKED]', { 
             userId: user.id, 
