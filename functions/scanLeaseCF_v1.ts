@@ -335,6 +335,7 @@ Deno.serve(async (req) => {
           }
           
           depositCreated = await svc.entities.DepositTracker.create({
+            created_by: userEmail,
             owner_email: userEmail,
             lease_id: leaseId,
             deposit_amount: depositAmount,
@@ -364,6 +365,7 @@ Deno.serve(async (req) => {
       
       if (startDate && userEmail) {
         timelineEvents.push({
+          created_by: userEmail,
           owner_email: userEmail,
           lease_id: leaseId,
           event_type: 'lease_start',
@@ -378,6 +380,7 @@ Deno.serve(async (req) => {
       
       if (endDate && userEmail) {
         timelineEvents.push({
+          created_by: userEmail,
           owner_email: userEmail,
           lease_id: leaseId,
           event_type: 'lease_end',
@@ -394,6 +397,7 @@ Deno.serve(async (req) => {
         const noticeDate = new Date(endDate);
         noticeDate.setDate(noticeDate.getDate() - noticeDays);
         timelineEvents.push({
+          created_by: userEmail,
           owner_email: userEmail,
           lease_id: leaseId,
           event_type: 'notice_deadline',
