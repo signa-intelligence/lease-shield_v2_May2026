@@ -293,55 +293,155 @@ Deno.serve(async (req) => {
       }
     }
 
-    // CRITICAL FIX: AWAIT populateFromScan completion BEFORE returning
-    // This ensures deposits/timeline are created BEFORE UI navigates
-    console.log('[SCAN_CF_V1_CALLING_POPULATE] ========================================', { 
+    // INLINE POPULATE: Create deposit tracker and timeline events directly
+    // (Eliminates ECONNREFUSED from function-to-function HTTP calls)
+    console.log('[SCAN_CF_V1_INLINE_POPULATE_START]', { 
       scanId: targetScan.id, 
-      leaseId: leaseId,
+      leaseId,
       userEmail,
       hasKeyTerms: !!scanFull?.key_terms,
-      keyTermsKeys: Object.keys(scanFull?.key_terms || {}),
-      scanFullPreview: JSON.stringify(scanFull).substring(0, 500),
-      willWait: true
+      keyTermsKeys: Object.keys(scanFull?.key_terms || {})
     });
 
     try {
-      const populateResult = await base44.functions.invoke('populateFromScan', {
-        scanId: targetScan.id,
-        leaseId: leaseId,
-        scan_full: scanFull,
-        userEmail: userEmail // CRITICAL: Pass user email for proper ownership
-      });
+      const keyTerms = scanFull.key_terms || {};
       
-      console.log('[SCAN_CF_V1_POPULATE_COMPLETE] ========================================', {
-        ok: populateResult?.data?.ok,
-        populated: populateResult?.data?.populated,
-        results: populateResult?.data?.results,
-        depositCreated: populateResult?.data?.results?.deposit?.id,
-        leaseUpdated: !!populateResult?.data?.results?.lease,
-        timelineCount: populateResult?.data?.results?.timeline?.length || 0,
-        rawResponse: JSON.stringify(populateResult?.data).substring(0, 1000)
-      });
+      // --- DEPOSIT TRACKER ---
+      const depositAmount = keyTerms.security_deposit || keyTerms.deposit_amount || null;
+      const rentAmount = keyTerms.monthly_rent || keyTerms.rent_amount || null;
+      const rentDueDay = keyTerms.rent_due_day || null;
+      const startDate = keyTerms.lease_start_date || keyTerms.start_date || null;
+      const endDate = keyTerms.lease_end_date || keyTerms.end_date || null;
       
-      // CRITICAL: Only proceed if population succeeded or was not needed
-      if (populateResult?.data?.ok === false) {
-        console.error('[SCAN_CF_V1_POPULATE_FAILED_CRITICAL] ========================================', {
-          error: populateResult?.data?.error,
-          message: populateResult?.data?.message,
-          fullResponse: JSON.stringify(populateResult?.data)
-        });
+      let depositCreated = null;
+      if (depositAmount && userEmail) {
+        // Check for existing tracker first
+        const existingTrackers = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
+        
+        if (existingTrackers && existingTrackers.length > 0) {
+          console.log('[INLINE_POPULATE_DEPOSIT_EXISTS]', { id: existingTrackers[0].id });
+          depositCreated = existingTrackers[0];
+        } else {
+          const depositPaidDate = startDate || new Date().toISOString().split('T')[0];
+          let expectedReturnDate;
+          if (endDate) {
+            const retDate = new Date(endDate);
+            retDate.setDate(retDate.getDate() + 45);
+            expectedReturnDate = retDate.toISOString().split('T')[0];
+          } else {
+            const retDate = new Date();
+            retDate.setFullYear(retDate.getFullYear() + 1);
+            expectedReturnDate = retDate.toISOString().split('T')[0];
+          }
+          
+          depositCreated = await svc.entities.DepositTracker.create({
+            owner_email: userEmail,
+            lease_id: leaseId,
+            deposit_amount: depositAmount,
+            deposit_paid_date: depositPaidDate,
+            expected_return_date: expectedReturnDate,
+            expected_return_date_is_estimated: true,
+            status: 'tracking',
+            property_address: keyTerms.property_address || null,
+            rent_amount: rentAmount,
+            rent_due_day: rentDueDay || 5,
+            rent_due_day_needs_review: !rentDueDay,
+            rent_alerts_enabled: false,
+            rent_alert_days_before: 3,
+            source_scan_id: targetScan.id,
+            auto_populated: true,
+            user_reviewed: false,
+            is_archived: false
+          });
+          console.log('[INLINE_POPULATE_DEPOSIT_CREATED]', { id: depositCreated.id });
+        }
       } else {
-        console.log('[SCAN_CF_V1_POPULATE_SUCCESS] ========================================', {
-          depositId: populateResult?.data?.results?.deposit?.id,
-          timelineEvents: populateResult?.data?.results?.timeline?.length
+        console.log('[INLINE_POPULATE_DEPOSIT_SKIPPED]', { depositAmount, userEmail: !!userEmail });
+      }
+      
+      // --- TIMELINE EVENTS ---
+      const timelineEvents = [];
+      
+      if (startDate && userEmail) {
+        timelineEvents.push({
+          owner_email: userEmail,
+          lease_id: leaseId,
+          event_type: 'lease_start',
+          event_date: new Date(startDate).toISOString(),
+          title: 'Lease Start Date',
+          description: 'Lease agreement begins',
+          source: 'lease_scan',
+          source_scan_id: targetScan.id,
+          is_archived: false
         });
       }
       
+      if (endDate && userEmail) {
+        timelineEvents.push({
+          owner_email: userEmail,
+          lease_id: leaseId,
+          event_type: 'lease_end',
+          event_date: new Date(endDate).toISOString(),
+          title: 'Lease End Date',
+          description: 'Lease agreement ends',
+          source: 'lease_scan',
+          source_scan_id: targetScan.id,
+          is_archived: false
+        });
+        
+        // Notice deadline (default 30 days before end)
+        const noticeDays = keyTerms.notice_period_days || 30;
+        const noticeDate = new Date(endDate);
+        noticeDate.setDate(noticeDate.getDate() - noticeDays);
+        timelineEvents.push({
+          owner_email: userEmail,
+          lease_id: leaseId,
+          event_type: 'notice_deadline',
+          event_date: noticeDate.toISOString(),
+          title: 'Notice Deadline',
+          description: 'Last day to notify landlord before lease ends',
+          source: 'lease_scan',
+          source_scan_id: targetScan.id,
+          is_archived: false
+        });
+      }
+      
+      // Create all timeline events
+      const createdEvents = [];
+      for (const evt of timelineEvents) {
+        try {
+          const created = await svc.entities.TimelineEvent.create(evt);
+          createdEvents.push(created);
+        } catch (evtErr) {
+          console.error('[INLINE_POPULATE_TIMELINE_ERR]', { type: evt.event_type, error: evtErr.message });
+        }
+      }
+      
+      // Update lease with notice data
+      if (endDate) {
+        const noticeDays = keyTerms.notice_period_days || 30;
+        const noticeDate = new Date(endDate);
+        noticeDate.setDate(noticeDate.getDate() - noticeDays);
+        try {
+          await svc.entities.Lease.update(leaseId, {
+            notice_period_days: noticeDays,
+            notice_deadline: noticeDate.toISOString().split('T')[0],
+            notice_alerts_enabled: true
+          });
+        } catch (leaseNoticeErr) {
+          console.error('[INLINE_POPULATE_LEASE_NOTICE_ERR]', { error: leaseNoticeErr.message });
+        }
+      }
+      
+      console.log('[SCAN_CF_V1_INLINE_POPULATE_DONE]', {
+        depositId: depositCreated?.id || null,
+        timelineCount: createdEvents.length
+      });
+      
     } catch (populateError) {
-      console.error('[SCAN_CF_V1_POPULATE_ERROR] ========================================', {
+      console.error('[SCAN_CF_V1_INLINE_POPULATE_ERROR]', {
         error: populateError.message,
-        stack: populateError.stack,
-        fullError: String(populateError)
+        stack: populateError.stack
       });
       // Log but don't fail scan - population is supplementary
     }
