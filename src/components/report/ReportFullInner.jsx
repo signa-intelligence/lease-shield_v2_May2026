@@ -554,37 +554,30 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           leaseIdToFind: leaseId
         });
 
-        // STEP 2: lease - try direct ID filter first, then owner_email fallback
-        logStep("FETCH_LEASE_START", { leaseId });
+        // STEP 2: lease - fetch by owner_email (RLS-safe)
+        logStep("FETCH_LEASE_START", { leaseId, userEmail: userRes.email });
         
         let leaseData = null;
         
-        // Primary: fetch by ID directly (fastest, avoids RLS propagation lag)
-        const leaseById = await base44.entities.Lease.filter({ id: leaseId });
-        if (leaseById.length > 0) {
-          leaseData = leaseById[0];
-          logStep("FETCH_LEASE_BY_ID_OK", { leaseId });
-        } else {
-          // Fallback: fetch by owner_email (RLS may still be propagating for new records)
-          const leaseArr = await base44.entities.Lease.filter({ owner_email: userRes.email });
-          leaseData = leaseArr?.find(l => l.id === leaseId) || null;
-          logStep("FETCH_LEASE_BY_OWNER", { total: leaseArr.length, found: !!leaseData });
-        }
-        
-        // Retry lease fetch if not found (DB propagation lag after create)
+        // Fetch all user's leases and find by ID
+        const leaseArr = await base44.entities.Lease.filter({ owner_email: userRes.email });
+        leaseData = leaseArr?.find(l => l.id === leaseId) || null;
+        logStep("FETCH_LEASE_BY_OWNER", { total: leaseArr.length, found: !!leaseData });
+
+        // Retry with increasing backoff if not found (DB write propagation)
         if (!leaseData) {
-          for (let retry = 1; retry <= 3; retry++) {
-            await new Promise(r => setTimeout(r, retry * 800));
+          for (let retry = 1; retry <= 5; retry++) {
+            await new Promise(r => setTimeout(r, retry * 1200));
             logStep(`FETCH_LEASE_RETRY_${retry}`);
-            const retryArr = await base44.entities.Lease.filter({ id: leaseId });
-            if (retryArr.length > 0) {
-              leaseData = retryArr[0];
+            const retryArr = await base44.entities.Lease.filter({ owner_email: userRes.email });
+            leaseData = retryArr?.find(l => l.id === leaseId) || null;
+            if (leaseData) {
               logStep("FETCH_LEASE_RETRY_OK", { attempt: retry });
               break;
             }
           }
         }
-        logStep("FETCH_LEASE_COMPLETE", { found: !!leaseData });
+        logStep("FETCH_LEASE_FINAL", { found: !!leaseData });
 
 
         // STEP 3: scan
