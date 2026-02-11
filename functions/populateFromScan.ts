@@ -88,21 +88,21 @@ async function createDepositTrackerWithLock(svc, leaseId, depositData, execution
     }
 
     // Return existing tracker
-    const existing = await base44.entities.DepositTracker.filter({ lease_id: leaseId });
+    const existing = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
     if (existing && existing.length > 0) {
       console.log(`[${executionId}] ✅ Returning tracker created by other execution: ${existing[0].id}`);
       return { created: false, tracker: existing[0] };
     }
-  }
+    }
 
-  // Acquire lock
-  creationLocks.set(lockKey, Date.now());
-  console.log(`[${executionId}] 🔒 Lock acquired for ${lockKey}`);
+    // Acquire lock
+    creationLocks.set(lockKey, Date.now());
+    console.log(`[${executionId}] 🔒 Lock acquired for ${lockKey}`);
 
-  try {
+    try {
     // CRITICAL: Double-check AFTER acquiring lock
     console.log(`[${executionId}] 🔍 Double-checking for existing trackers...`);
-    const existingAfterLock = await base44.entities.DepositTracker.filter({ lease_id: leaseId });
+    const existingAfterLock = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
     
     if (existingAfterLock && existingAfterLock.length > 0) {
       console.log(`[${executionId}] ⛔ ABORT - Tracker found after lock: ${existingAfterLock[0].id}`);
