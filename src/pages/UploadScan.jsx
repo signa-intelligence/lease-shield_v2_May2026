@@ -1497,8 +1497,12 @@ function UploadScanPageContent() {
         setCumulativeProgress(prev => Math.max(prev, completeProgressSingle));
         setUploadProgress(completeProgressSingle);
         
-        if (!scanId) throw new Error('BUG: scanId missing');
-        if (scanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        // CRITICAL: Use scanResponse.scanId if scanId wasn't set properly
+        const finalScanId = scanId || scanResponse?.scanId;
+        if (!finalScanId) throw new Error('BUG: scanId missing from both sources');
+        if (finalScanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        
+        console.log('[FINAL_SCAN_ID_CHECK]', { scanId, scanResponseId: scanResponse?.scanId, finalScanId });
         
         // CRITICAL: Invalidate ALL queries to force UI refresh
         await Promise.all([
@@ -1513,8 +1517,8 @@ function UploadScanPageContent() {
         await queryClient.refetchQueries({ queryKey: ['deposits'] });
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
-        const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
-        console.log('[NAVIGATE_REPORT]', { reportUrl, scanId, leaseId: lease.id });
+        const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(finalScanId)}&leaseId=${encodeURIComponent(lease.id)}`;
+        console.log('[NAVIGATE_REPORT]', { reportUrl, scanId: finalScanId, leaseId: lease.id });
         navigate(reportUrl, {
           state: { 
             scan_full: scanResponse?.scan_full,
