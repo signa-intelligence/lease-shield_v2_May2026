@@ -94,9 +94,15 @@ Deno.serve(async (req) => {
     if (!targetScan) {
       targetScan = await base44.entities.LeaseScan.create({ 
         lease_id: leaseId, 
-        status: 'initiated' 
+        status: 'initiated',
+        owner_email: userEmail || null
       });
       console.log('SCAN_CF_V1_CREATED_NEW', { scanId: targetScan.id });
+    }
+    
+    // Ensure owner_email is set on scan (backfill if missing)
+    if (targetScan && !targetScan.owner_email && userEmail) {
+      await svcRead.entities.LeaseScan.update(targetScan.id, { owner_email: userEmail });
     }
 
     // Pass the scanId so analyzeLease updates the RIGHT record
