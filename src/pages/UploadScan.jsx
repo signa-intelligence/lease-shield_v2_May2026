@@ -1429,9 +1429,17 @@ function UploadScanPageContent() {
           duration: analysisDuration,
           success: scanResponse?.success,
           hasResult: !!scanResponse?.result,
+          hasScanId: !!scanResponse?.scanId,
           backendRequestId: scanResponse?.diagnostic?.requestId,
           buildTag: scanResponse?.diagnostic?.buildTag,
           error: scanResponse?.error
+        });
+        
+        console.log('[ANALYSIS_RESPONSE_DEBUG]', {
+          scanResponse,
+          scanResponseKeys: Object.keys(scanResponse || {}),
+          hasOk: 'ok' in (scanResponse || {}),
+          okValue: scanResponse?.ok
         });
 
         if (!scanResponse || scanResponse.ok === false) {
@@ -1445,6 +1453,12 @@ function UploadScanPageContent() {
           errorObj.stack = backendError.stack;
           errorObj.requestId = requestId;
           throw errorObj;
+        }
+        
+        // CRITICAL: Extract scanId from response IMMEDIATELY
+        if (scanResponse?.scanId) {
+          scanId = scanResponse.scanId;
+          console.log('[SCANNED_ID_FROM_RESPONSE]', { scanId });
         }
 
         // VERIFY PAYLOAD - NON-BLOCKING (ReportFull will materialize if needed)
