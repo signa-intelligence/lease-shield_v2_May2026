@@ -16,29 +16,32 @@ const AuthGuard = ({ children }) => {
 
     async function checkAuth() {
       try {
-        const me = await base44.auth.me();
+        const isAuthenticated = await base44.auth.isAuthenticated();
         if (cancelled) return;
 
-        if (me) {
-          // Block access if account is deactivated
-          if (me.is_active === false) {
-            console.warn("AuthGuard: Account deactivated");
-            alert("Your account has been deactivated. Please contact support.");
-            window.location.href = `/login`;
-            return;
+        if (isAuthenticated) {
+          const me = await base44.auth.me();
+          if (cancelled) return;
+
+          if (me) {
+            // Block access if account is deactivated
+            if (me.is_active === false) {
+              console.warn("AuthGuard: Account deactivated");
+              alert("Your account has been deactivated. Please contact support.");
+              base44.auth.redirectToLogin();
+              return;
+            }
+            setIsAuthed(true);
+          } else {
+            base44.auth.redirectToLogin(window.location.pathname + window.location.search);
           }
-          setIsAuthed(true);
         } else {
-          // Redirect to login with next parameter
-          const currentPath = window.location.pathname + window.location.search;
-          window.location.href = `/login?next=${encodeURIComponent(currentPath)}`;
+          base44.auth.redirectToLogin(window.location.pathname + window.location.search);
         }
       } catch (err) {
         console.error("AuthGuard: auth check failed", err);
         if (!cancelled) {
-          // Redirect to login with next parameter
-          const currentPath = window.location.pathname + window.location.search;
-          window.location.href = `/login?next=${encodeURIComponent(currentPath)}`;
+          base44.auth.redirectToLogin(window.location.pathname + window.location.search);
         }
       } finally {
         if (!cancelled) {
