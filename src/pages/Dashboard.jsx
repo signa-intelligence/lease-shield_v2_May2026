@@ -71,24 +71,19 @@ function DashboardContent() {
     }
   }, [user?.id, user?.referral_code, queryClient]);
 
-  // 🔧 SECURITY FIX: Filter deposits by current user only
-  const userEmail = user?.email;
-
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
-    queryKey: ['leases', userEmail],
-    queryFn: () => {
-      if (!userEmail) return [];
-      return base44.entities.Lease.filter({ owner_email: userEmail }, '-created_date', 10);
-    },
-    enabled: !!userEmail,
+    queryKey: ['leases'],
+    queryFn: () => base44.entities.Lease.filter({ owner_email: user?.email }, '-created_date', 10),
+    enabled: !!user,
   });
+
+  // 🔧 SECURITY FIX: Filter deposits by current user only
   const { data: deposits = [], isLoading: depositsLoading } = useQuery({
-    queryKey: ['deposits', userEmail],
+    queryKey: ['deposits'],
     queryFn: async () => {
-      if (!userEmail) return [];
-      const allDeposits = await base44.entities.DepositTracker.filter({ owner_email: userEmail }, '-created_date');
+      const allDeposits = await base44.entities.DepositTracker.filter({ owner_email: user?.email }, '-created_date');
       console.log('[DASHBOARD_DEPOSITS] ✅ USER-SCOPED QUERY', {
-        user: userEmail,
+        user: user?.email,
         count: allDeposits.length,
         deposits: allDeposits.map(d => ({
           id: d.id,
@@ -101,7 +96,7 @@ function DashboardContent() {
       });
       return allDeposits;
     },
-    enabled: !!userEmail,
+    enabled: !!user,
     refetchOnMount: 'always',
     staleTime: 0
   });
@@ -164,8 +159,6 @@ function DashboardContent() {
     queryKey: ['timelineEvents'],
     queryFn: () => base44.entities.TimelineEvent.filter({ owner_email: user?.email }),
     enabled: !!user,
-    refetchOnMount: 'always',
-    staleTime: 0
   });
 
   const language = user?.language || 'en';

@@ -67,8 +67,8 @@ function LeaseDetailsContent() {
   const { data: scan } = useQuery({
     queryKey: ['scan', lease?.id],
     queryFn: async () => {
-      const scans = await base44.entities.LeaseScan.filter({ lease_id: lease.id });
-      const matchingScan = scans[0];
+      const scans = await base44.entities.LeaseScan.list();
+      const matchingScan = scans.find(s => s.lease_id === lease.id);
       if (matchingScan) {
         console.log('[LEASE_SCAN_DATA]', {
           scan_id: matchingScan.id,

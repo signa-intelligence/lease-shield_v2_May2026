@@ -106,9 +106,9 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
   if (score >= 70) {
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงสูง (คะแนน: ${score}/100)\n\n`;
-      summary += `สัญญาเช่านี้มีความเสี่ยงสูงและมีข้อที่ต้องพิจารณาอย่างรอบคอบก่อนลงนาม `;
-      if (criticalCount > 0) summary += `พบข้อที่ถูกจัดอันดับเป็นความเสี่ยงวิกฤตและอาจมีปัญหาทางกฎหมาย `;
-      if (highCount > 0) summary += `พบข้อที่ถูกจัดอันดับเป็นความเสี่ยงสูงและอาจส่งผลกระทบต่อสิทธิของคุณ `;
+      summary += `สัญญาเช่านี้มีความเสี่ยงสูงและมี ${riskyClausesCount} ข้อที่ต้องพิจารณาอย่างรอบคอบก่อนลงนาม `;
+      if (criticalCount > 0) summary += `${criticalCount} ข้อถูกจัดอันดับเป็นความเสี่ยงวิกฤตและอาจมีปัญหาทางกฎหมาย `;
+      if (highCount > 0) summary += `${highCount} ข้อถูกจัดอันดับเป็นความเสี่ยงสูงและอาจส่งผลกระทบต่อสิทธิของคุณ `;
       
       summary += `\n\nการวิเคราะห์โดยละเอียด:\nสัญญานี้มีข้อกำหนดหลายข้อที่เอื้อประโยชน์ต่อเจ้าของบ้านอย่างชัดเจน โดยลดการปกป้องสิทธิพื้นฐานของผู้เช่า ข้อวิกฤตอาจรวมถึงข้อจำกัดการใช้ทรัพย์สิน เงื่อนไขการคืนเงินมัดจำที่เข้มงวด หรือการระงับข้อพิพาทที่ไม่เป็นธรรม ข้อเหล่านี้อาจไม่สอดคล้องกับกฎหมายคุ้มครองผู้บริโภคหรือหลักความยุติธรรมพื้นฐาน\n\n`;
       
@@ -126,12 +126,12 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       summary += `⚠️ คำแนะนำสำคัญ: อย่าลงนามในสัญญานี้ในรูปแบบปัจจุบัน ใช้ Letter Templates ของ Lease Shield เพื่อเจรจาแก้ไขข้อที่มีความเสี่ยงสูง`;
     } else {
       summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
-      summary += `This lease agreement is exceptionally HIGH RISK and contains clauses that require careful attention before signing. `;
+      summary += `This lease agreement is exceptionally HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
       if (criticalCount > 0) {
-        summary += `Found clause(s) rated CRITICAL that may be legally problematic or heavily favor the landlord while stripping the tenant of basic protections. `;
+        summary += `${criticalCount} clause(s) are rated CRITICAL and may be legally problematic or heavily favor the landlord while stripping the tenant of basic protections. `;
       }
       if (highCount > 0) {
-        summary += `Found clause(s) rated HIGH RISK that could significantly impact your rights as a tenant. `;
+        summary += `${highCount} clause(s) are rated HIGH RISK and could significantly impact your rights as a tenant. `;
       }
       if (topRisks && topRisks.length > 0) {
         summary += `\n\nKey concerns include: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
@@ -155,7 +155,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
   } else if (score >= 40) {
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงปานกลาง (คะแนน: ${score}/100)\n\n`;
-      summary += `สัญญาเช่านี้มีข้อที่ควรตรวจสอบและอาจต้องเจรจา `;
+      summary += `สัญญาเช่านี้มี ${riskyClausesCount} ข้อที่ควรตรวจสอบและอาจต้องเจรจา `;
       summary += `แม้ว่าจะไม่ถึงกับอันตรายในทันที แต่บางข้อกำหนดอาจส่งผลกระทบต่อสิทธิของคุณระหว่างการเช่า `;
       
       summary += `\n\nการวิเคราะห์เพิ่มเติม:\nสัญญานี้มีความสมดุลในระดับหนึ่ง แต่มีข้อที่อาจก่อให้เกิดปัญหาในอนาคต โดยเฉพาะในเรื่องการบำรุงรักษา ค่าธรรมเนียมเพิ่มเติม หรือเงื่อนไขการยกเลิกสัญญา การทำความเข้าใจข้อเหล่านี้อย่างละเอียดจะช่วยป้องกันข้อขัดแย้งในภายหลัง\n\n`;
@@ -174,7 +174,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       summary += `คำแนะนำ: ตรวจสอบข้อที่ถูกทำเครื่องหมายอย่างละเอียดและพิจารณาเจรจาแก้ไขก่อนลงนาม บันทึกข้อตกลงทางวาจาทั้งหมดเป็นลายลักษณ์อักษร`;
     } else {
       summary = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
-      summary += `This lease agreement contains clauses that warrant review and possible negotiation. `;
+      summary += `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. `;
       summary += `While not immediately dangerous, several provisions could impact your rights during the tenancy. `;
       if (topRisks && topRisks.length > 0) {
         summary += `\n\nAreas requiring attention: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
@@ -198,7 +198,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
   } else {
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงต่ำ (คะแนน: ${score}/100)\n\n`;
-      summary += `สัญญาเช่านี้ค่อนข้างสมดุล `;
+      summary += `สัญญาเช่านี้ค่อนข้างสมดุลโดยมี ${riskyClausesCount || 'ไม่กี่'} ข้อที่ต้องให้ความสนใจ `;
       summary += `ข้อกำหนดโดยทั่วไปเป็นมาตรฐานสำหรับสัญญาเช่า `;
       
       summary += `\n\nการวิเคราะห์เพิ่มเติม:\nสัญญานี้แสดงให้เห็นถึงความสมดุลที่ดีระหว่างสิทธิของผู้เช่าและเจ้าของบ้าน ข้อกำหนดส่วนใหญ่เป็นไปตามแนวทางปฏิบัติมาตรฐานในอุตสาหกรรม อย่างไรก็ตาม ยังคงสำคัญที่จะต้องทำความเข้าใจภาระผูกพันของคุณอย่างครบถ้วน\n\n`;
@@ -217,7 +217,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       summary += `คำแนะนำ: ตรวจสอบทุกข้อเพื่อให้แน่ใจว่าคุณเข้าใจภาระผูกพันของคุณ เก็บสำเนาเอกสารทั้งหมดและบันทึกตลอดการเช่า`;
     } else {
       summary = `LOW RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
-      summary += `This lease agreement appears to be relatively balanced. `;
+      summary += `This lease agreement appears to be relatively balanced with ${riskyClausesCount || 'few'} clauses requiring attention. `;
       summary += `The terms are generally standard for rental agreements. `;
       
       summary += `\n\nDetailed Analysis:\nThis lease demonstrates good balance between tenant and landlord rights. Most terms follow industry-standard practices. However, it remains important to fully understand your obligations and ensure all agreed-upon terms are documented in writing.\n\n`;
@@ -554,46 +554,40 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           leaseIdToFind: leaseId
         });
 
-        // STEP 2: lease - fetch by owner_email (RLS-safe)
-        logStep("FETCH_LEASE_START", { leaseId, userEmail: userRes.email });
-        
-        let leaseData = null;
-        
-        // Fetch all user's leases and find by ID
+        // STEP 2: lease
+        logStep("FETCH_LEASE_START", { leaseId });
         const leaseArr = await base44.entities.Lease.filter({ owner_email: userRes.email });
-        leaseData = leaseArr?.find(l => l.id === leaseId) || null;
-        logStep("FETCH_LEASE_BY_OWNER", { total: leaseArr.length, found: !!leaseData });
+        
+        // FORENSIC LOG: STEP 3 - Lease Query Result
+        console.log('[LEASE_QUERY_RESULT]', {
+          queryUsed: { owner_email: userRes.email },
+          totalResults: leaseArr.length,
+          leaseIds: leaseArr.map(l => l.id),
+          targetLeaseId: leaseId,
+          found: leaseArr.some(l => l.id === leaseId)
+        });
 
-        // Retry with increasing backoff if not found (DB write propagation)
-        if (!leaseData) {
-          for (let retry = 1; retry <= 5; retry++) {
-            await new Promise(r => setTimeout(r, retry * 1200));
-            logStep(`FETCH_LEASE_RETRY_${retry}`);
-            const retryArr = await base44.entities.Lease.filter({ owner_email: userRes.email });
-            leaseData = retryArr?.find(l => l.id === leaseId) || null;
-            if (leaseData) {
-              logStep("FETCH_LEASE_RETRY_OK", { attempt: retry });
-              break;
-            }
-          }
-        }
-        logStep("FETCH_LEASE_FINAL", { found: !!leaseData });
+        // FORENSIC LOG: STEP 5 - Lease Emails in DB
+        console.log('[LEASE_EMAILS_IN_DB]', {
+          allLeaseEmails: leaseArr.map(l => ({ id: l.id, owner_email: l.owner_email, created_by: l.created_by }))
+        });
+
+        // FORENSIC LOG: STEP 6 - Test Unfiltered Query
+        const allLeases = await base44.entities.Lease.filter({});
+        console.log('[ALL_LEASES_UNFILTERED]', {
+          count: allLeases.length,
+          leaseIds: allLeases.map(l => l.id),
+          targetFound: allLeases.some(l => l.id === leaseId)
+        });
+
+        const leaseData = leaseArr?.find(l => l.id === leaseId) || null;
+        logStep("FETCH_LEASE_COMPLETE", { found: !!leaseData });
 
 
         // STEP 3: scan
         logStep("FETCH_SCAN_START", { scanId });
-        let scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
+        const scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
         let scanData = scanArr?.[0] || null;
-        
-        // Retry scan fetch if not found
-        if (!scanData) {
-          for (let retry = 1; retry <= 3; retry++) {
-            await new Promise(r => setTimeout(r, retry * 800));
-            scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
-            scanData = scanArr?.[0] || null;
-            if (scanData) break;
-          }
-        }
         logStep("FETCH_SCAN_COMPLETE", { found: !!scanData });
 
 

@@ -209,16 +209,16 @@ CRITICAL: You MUST return a valid JSON object with this EXACT structure (include
 
 {
   "key_terms": {
-    "property_address": "EXTRACT THE FULL PROPERTY ADDRESS - required, cannot be null",
-    "lease_start_date": "EXTRACT START DATE in YYYY-MM-DD format - required",
-    "lease_end_date": "EXTRACT END DATE in YYYY-MM-DD format - required",
-    "monthly_rent": "EXTRACT MONTHLY RENT as number - required",
-    "security_deposit": "EXTRACT DEPOSIT as number - required",
-    "rent_due_day": "EXTRACT DAY OF MONTH (1-31) rent is due - if not found, use 5"
+    "property_address": "string or null",
+    "lease_start_date": "YYYY-MM-DD or null",
+    "lease_end_date": "YYYY-MM-DD or null",
+    "monthly_rent": number or null,
+    "security_deposit": number or null,
+    "rent_due_day": number or null
   },
   "risk_score": number (0-100),
   "summary": {
-    "executive_summary": "MUST accurately describe risk level and concerning clauses/issues found. Example: 'HIGH RISK - Contains clauses that require careful attention including...' Do NOT include clause counts.",
+    "executive_summary": "string",
     "top_risks": [
       {
         "title": "string",
@@ -232,28 +232,23 @@ CRITICAL: You MUST return a valid JSON object with this EXACT structure (include
   "clauses": []
 }
 
-CRITICAL RULES:
-1. key_terms CANNOT be empty - extract ALL financial and date information from the lease text
-2. executive_summary MUST describe concerning clauses WITHOUT counting them (e.g., "contains clauses that require attention" not "contains 8 clauses")
-3. If you find property address, dates, or amounts - INCLUDE THEM. Do not return null.
+DO NOT omit key_terms. Extract property address, dates, and financial terms from the lease text.
 Return ONLY valid JSON, no explanatory text.`
       : `You are a lease analysis expert. Analyze this lease document clause by clause and provide detailed risk assessment.
-
-CRITICAL: Your executive_summary MUST describe the risky clauses found WITHOUT counting them. Focus on the risk level and types of issues.
 
 Return a JSON object with this structure:
 {
   "key_terms": {
-    "property_address": "EXTRACT FULL ADDRESS - cannot be null",
-    "lease_start_date": "YYYY-MM-DD - extract from lease", 
-    "lease_end_date": "YYYY-MM-DD - extract from lease",
-    "monthly_rent": "number - extract exact amount",
-    "security_deposit": "number - extract exact amount",
-    "rent_due_day": "number 1-31 - day of month rent is due"
+    "property_address": "string or null",
+    "lease_start_date": "YYYY-MM-DD or null", 
+    "lease_end_date": "YYYY-MM-DD or null",
+    "monthly_rent": number or null,
+    "security_deposit": number or null,
+    "rent_due_day": number or null
   },
   "risk_score": number (0-100),
   "summary": {
-    "executive_summary": "Describe risk level and key concerns WITHOUT clause counts. Example: 'HIGH RISK - Contains clauses that require attention including...'",
+    "executive_summary": "string",
     "top_risks": [{"title": "string", "severity": "low|medium|high|critical", "why": "string"}]
   },
   "clauses": [
@@ -404,40 +399,6 @@ Return ONLY valid JSON.`;
     });
 
     const svc = base44.asServiceRole || base44;
-    
-    // Verify lease exists using service role with retry (handles DB write propagation lag)
-    let leaseVerified = false;
-    for (let attempt = 1; attempt <= 4; attempt++) {
-      try {
-        const leaseCheck = await svc.entities.Lease.filter({ id: leaseId });
-        if (leaseCheck && leaseCheck.length > 0) {
-          console.log('[ANALYZE_LEASE_LEASE_VERIFIED]', { correlationId, leaseId, owner: leaseCheck[0]?.owner_email, attempt });
-          leaseVerified = true;
-          break;
-        }
-        console.warn('[ANALYZE_LEASE_LEASE_NOT_FOUND_YET]', { correlationId, leaseId, attempt });
-        if (attempt < 4) {
-          await new Promise(r => setTimeout(r, attempt * 1000));
-        }
-      } catch (leaseErr) {
-        console.error('[ANALYZE_LEASE_LEASE_CHECK_ERROR]', { correlationId, error: leaseErr.message, attempt });
-        if (attempt < 4) {
-          await new Promise(r => setTimeout(r, attempt * 1000));
-        }
-      }
-    }
-    
-    if (!leaseVerified) {
-      console.error('[ANALYZE_LEASE_LEASE_NOT_FOUND_FINAL]', { correlationId, leaseId });
-      return new Response(JSON.stringify({
-        ok: false,
-        step: 'FETCH_LEASE',
-        error_code: 'LEASE_NOT_FOUND',
-        message: `No lease record for ID ${leaseId} after 4 attempts`,
-        correlationId
-      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    }
-
     let targetScanId = inputScanId;
 
     if (!targetScanId) {

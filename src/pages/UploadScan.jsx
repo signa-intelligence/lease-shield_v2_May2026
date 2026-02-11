@@ -149,9 +149,9 @@ function UploadScanPageContent() {
   });
 
   const { data: allScans = [] } = useQuery({
-    queryKey: ['allScans', user?.email],
-    queryFn: () => base44.entities.LeaseScan.filter({ owner_email: user?.email }, '-created_date'),
-    enabled: !!user?.email,
+    queryKey: ['allScans'],
+    queryFn: () => base44.entities.LeaseScan.list(),
+    enabled: !!user,
     refetchOnMount: 'always',
     staleTime: 0
   });
@@ -797,19 +797,34 @@ function UploadScanPageContent() {
       return;
     }
     
-    // ✅ CRITICAL: CHECK SCAN LIMIT USING available_scans (not leases.length)
-    // canUploadLease() already reads user.available_scans correctly
-    const freshScanStatus = canUploadLease();
+    // ✅ CRITICAL: CHECK SCAN LIMIT FIRST BEFORE ANY UPLOAD
+    // Get fresh scan status based on current lease count
+    const currentLeaseCount = leases.length;
+    const limits = getScanLimits();
     
-    if (!freshScanStatus.allowed) {
-      const periodText = freshScanStatus.period === 'year'
+    let scannedCount = 0;
+    if (limits.period === 'lifetime') {
+      scannedCount = currentLeaseCount;
+    } else if (limits.period === 'year') {
+      const thisYear = new Date().getFullYear();
+      scannedCount = leases.filter(l => {
+        if (!l.created_date) return false;
+        const leaseYear = new Date(l.created_date).getFullYear();
+        return leaseYear === thisYear;
+      }).length;
+    }
+    
+    const canScan = limits.unlimited || scannedCount < limits.limit;
+    
+    if (!canScan) {
+      const periodText = limits.period === 'year'
         ? (language === 'th' ? 'ปีนี้' : 'this year')
         : (language === 'th' ? 'ตลอดชีพ' : 'lifetime');
 
       alert(
         language === 'th'
-          ? `คุณใช้ครบโควต้าการสแกนแล้ว (${freshScanStatus.used}/${freshScanStatus.limit} ${periodText})\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
-          : `You've reached your scan limit (${freshScanStatus.used}/${freshScanStatus.limit} ${periodText})\n\nUpgrade your plan for more scans`
+          ? `คุณใช้ครบโควต้าการสแกนแล้ว (${scannedCount}/${limits.limit} ${periodText})\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
+          : `You've reached your scan limit (${scannedCount}/${limits.limit} ${periodText})\n\nUpgrade your plan for more scans`
       );
       return;
     }
@@ -842,7 +857,9 @@ function UploadScanPageContent() {
       deviceContext,
       filesCount: selectedFiles.length,
       userTier,
-      availableScans: user?.available_scans ?? 0
+      currentLeaseCount,
+      scannedCount,
+      canScan
     });
 
     haptic.medium();
@@ -906,11 +923,20 @@ function UploadScanPageContent() {
         });
         createdLeaseId = lease.id;
 
+        // FORENSIC LOG: STEP 1 - Lease Created
         console.log('[LEASE_CREATED]', {
           leaseId: lease.id,
           owner_email: lease.owner_email,
+          created_by: lease.created_by,
           userEmail: user.email,
           timestamp: new Date().toISOString()
+        });
+
+        // FORENSIC LOG: STEP 2 - Verify Lease in DB Immediately
+        const verifyLease = await base44.entities.Lease.filter({ id: lease.id });
+        console.log('[LEASE_VERIFY_IMMEDIATE]', {
+          found: verifyLease.length > 0,
+          leaseData: verifyLease[0]
         });
 
         const createdProgress = 40;
@@ -949,8 +975,7 @@ function UploadScanPageContent() {
         const scan = await base44.entities.LeaseScan.create({
           lease_id: lease.id,
           status: 'initiated',
-          request_id: requestId,
-          owner_email: user.email
+          request_id: requestId
         });
 
         if (!scan.id) {
@@ -1037,15 +1062,72 @@ function UploadScanPageContent() {
         if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
-        const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`;
-        console.log('[NAVIGATE_REPORT_MULTI]', { reportUrl, scanId: scan.id, leaseId: lease.id });
-        navigate(reportUrl, {
+        navigate(`/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
           state: { 
             scan_full: scanResponse?.scan_full,
             fromUpload: true 
           }
         });
         return;
+
+
+        
+        const scanResult = scanResponse.result;
+        setAnalysisStage('extracting');
+        setUploadProgress(70);
+
+        await base44.entities.Lease.update(lease.id, {
+          status: 'scanned',
+          property_address: scanResult.property_address || null,
+          start_date: scanResult.start_date || null,
+          end_date: scanResult.end_date || null,
+          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
+          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
+          language_detected: scanResult.language_detected || 'en'
+        });
+        setUploadProgress(90);
+
+        setAnalysisStage('finalizing');
+        setUploadProgress(100);
+        setCurrentStep(2);
+
+        // Prepare data for review (multi-page mode)
+        try {
+          console.log('[AUTO_POPULATE] Preparing data for review...');
+          const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
+            scanResult,
+            leaseId: lease.id,
+            scanId: scan.id
+          });
+          
+          if (populateResponse?.success && populateResponse.review_mode) {
+            console.log('[AUTO_POPULATE] Review data prepared:', populateResponse);
+            setReviewData(populateResponse);
+            setShowReviewScreen(true);
+            setCompletedLeaseId(createdLeaseId);
+          } else {
+            // Fallback: show completion modal
+            setCompletedLeaseId(createdLeaseId);
+            setShowCompletionModal(true);
+          }
+        } catch (populateErr) {
+          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
+          // Show completion modal on error
+          setCompletedLeaseId(createdLeaseId);
+          setShowCompletionModal(true);
+        }
+        
+        if (scanResult.end_date) {
+          setLeaseDetails({
+            end_date: scanResult.end_date,
+            notice_period_days: scanResult.notice_period_days || 30
+          });
+          setPendingLeaseId(createdLeaseId);
+        }
+
+        setSelectedFiles([]);
+        queryClient.invalidateQueries({ queryKey: ['leases'] });
+        queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
@@ -1249,11 +1331,20 @@ function UploadScanPageContent() {
         });
         createdLeaseId = lease.id;
 
+        // FORENSIC LOG: STEP 1 - Lease Created
         console.log('[LEASE_CREATED]', {
           leaseId: lease.id,
           owner_email: lease.owner_email,
+          created_by: lease.created_by,
           userEmail: user.email,
           timestamp: new Date().toISOString()
+        });
+
+        // FORENSIC LOG: STEP 2 - Verify Lease in DB Immediately
+        const verifyLease = await base44.entities.Lease.filter({ id: lease.id });
+        console.log('[LEASE_VERIFY_IMMEDIATE]', {
+          found: verifyLease.length > 0,
+          leaseData: verifyLease[0]
         });
         const createdProgressSingle = 50;
         setCumulativeProgress(prev => Math.max(prev, createdProgressSingle));
@@ -1291,8 +1382,7 @@ function UploadScanPageContent() {
           lease_id: lease.id,
           status: 'initiated',
           request_id: requestId,
-          created_at: new Date().toISOString(),
-          owner_email: user.email
+          created_at: new Date().toISOString()
         });
         scanId = scan?.id;
         if (!scanId) throw new Error('BUG: scanId missing after LeaseScan.create');
@@ -1418,7 +1508,7 @@ function UploadScanPageContent() {
         await queryClient.refetchQueries({ queryKey: ['deposits'] });
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
-        const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
+        const reportUrl = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
         console.log('[NAVIGATE_REPORT]', { reportUrl, scanId, leaseId: lease.id });
         navigate(reportUrl, {
           state: { 
@@ -1427,6 +1517,63 @@ function UploadScanPageContent() {
           }
         });
         return;
+
+        const scanResult = scanResponse.result;
+        setAnalysisStage('extracting');
+        setUploadProgress(70);
+
+        await base44.entities.Lease.update(lease.id, {
+          status: 'scanned',
+          property_address: scanResult.property_address || null,
+          start_date: scanResult.start_date || null,
+          end_date: scanResult.end_date || null,
+          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
+          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
+          language_detected: scanResult.language_detected || 'en'
+        });
+        setUploadProgress(80);
+
+        setAnalysisStage('finalizing');
+
+
+        setUploadProgress(100);
+        setCurrentStep(2); // Move to results step
+
+        // Auto-populate trackers and timeline
+        try {
+          console.log('[AUTO_POPULATE] Starting auto-population...');
+          const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
+            scanResult,
+            leaseId: lease.id,
+            scanId
+          });
+          
+          if (populateResponse?.success) {
+            console.log('[AUTO_POPULATE] Success:', populateResponse);
+            // Invalidate relevant queries
+            queryClient.invalidateQueries({ queryKey: ['deposits'] });
+            queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+          }
+        } catch (populateErr) {
+          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
+          // Don't block user flow if auto-population fails
+        }
+
+        // Show completion modal
+        setCompletedLeaseId(createdLeaseId);
+        setShowCompletionModal(true);
+        
+        if (scanResult.end_date) {
+          setLeaseDetails({
+            end_date: scanResult.end_date,
+            notice_period_days: scanResult.notice_period_days || 30
+          });
+          setPendingLeaseId(createdLeaseId);
+        }
+
+        setSelectedFiles([]);
+        queryClient.invalidateQueries({ queryKey: ['leases'] });
+        queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       } catch (err) {
         logStage('ERROR_CAUGHT', {

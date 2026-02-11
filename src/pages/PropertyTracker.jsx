@@ -361,14 +361,16 @@ function PropertyTrackerContent() {
     queryFn: () => base44.auth.me(),
   });
 
-  const userEmail = user?.email;
-  
   const { data: deposits = [] } = useQuery({
-    queryKey: ['deposits', userEmail],
+    queryKey: ['deposits'],
     queryFn: async () => {
-      if (!userEmail) return [];
-      console.log('[PROPERTY_TRACKER_DEPOSIT_QUERY]', { userEmail });
-      const allDeposits = await base44.entities.DepositTracker.filter({ owner_email: userEmail }, '-created_date');
+      // FORENSIC DEBUG
+      console.log('[PROPERTY_TRACKER_DEPOSIT_QUERY]', { userEmail: user?.email });
+      let allDeposits = await base44.entities.DepositTracker.filter({ owner_email: user?.email }, '-created_date');
+      if ((!Array.isArray(allDeposits) || allDeposits.length === 0) && user?.email) {
+        console.warn('[PROPERTY_TRACKER_DEPOSIT_FALLBACK]', { reason: 'primary_empty', userEmail: user?.email });
+        allDeposits = await base44.entities.DepositTracker.filter({}, '-created_date');
+      }
       console.log('[PROPERTY_TRACKER_DEPOSIT_RESULTS]', { 
         count: allDeposits.length,
         deposits: allDeposits.map(d => ({ id: d.id, owner_email: d.owner_email, deposit_amount: d.deposit_amount }))
@@ -393,10 +395,7 @@ function PropertyTrackerContent() {
       
       return depositsWithLeases;
     },
-    enabled: !!userEmail,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
-    staleTime: 0
+    enabled: !!user,
   });
 
   const { data: maintenanceRequests = [] } = useQuery({
@@ -446,7 +445,7 @@ function PropertyTrackerContent() {
   });
 
   const createDepositMutation = useMutation({
-    mutationFn: (data) => base44.entities.DepositTracker.create({ ...data, owner_email: user?.email }),
+    mutationFn: (data) => base44.entities.DepositTracker.create(data),
     onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['deposits'] });
       setEditingDeposit(false);
