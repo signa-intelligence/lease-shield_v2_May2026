@@ -559,7 +559,7 @@ Deno.serve(async (req) => {
         });
       } else {
         // Use atomic lock mechanism
-        const lockResult = await createDepositTrackerWithLock(svc, leaseId, depositData, executionId);
+        const lockResult = await createDepositTrackerWithLock(base44, svc, leaseId, depositData, executionId);
         results.deposit = lockResult.tracker;
         
         console.log(`[${executionId}] [DEPOSIT_CREATED]`, { id: results.deposit?.id, created: lockResult.created });
