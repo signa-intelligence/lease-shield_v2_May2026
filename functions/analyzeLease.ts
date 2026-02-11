@@ -405,22 +405,37 @@ Return ONLY valid JSON.`;
 
     const svc = base44.asServiceRole || base44;
     
-    // Verify lease exists using service role (bypasses RLS race condition after creation)
-    try {
-      const leaseCheck = await svc.entities.Lease.filter({ id: leaseId });
-      if (!leaseCheck || leaseCheck.length === 0) {
-        console.error('[ANALYZE_LEASE_LEASE_NOT_FOUND]', { correlationId, leaseId });
-        return new Response(JSON.stringify({
-          ok: false,
-          step: 'FETCH_LEASE',
-          error_code: 'LEASE_NOT_FOUND',
-          message: `No lease record for ID ${leaseId}`,
-          correlationId
-        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    // Verify lease exists using service role with retry (handles DB write propagation lag)
+    let leaseVerified = false;
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      try {
+        const leaseCheck = await svc.entities.Lease.filter({ id: leaseId });
+        if (leaseCheck && leaseCheck.length > 0) {
+          console.log('[ANALYZE_LEASE_LEASE_VERIFIED]', { correlationId, leaseId, owner: leaseCheck[0]?.owner_email, attempt });
+          leaseVerified = true;
+          break;
+        }
+        console.warn('[ANALYZE_LEASE_LEASE_NOT_FOUND_YET]', { correlationId, leaseId, attempt });
+        if (attempt < 4) {
+          await new Promise(r => setTimeout(r, attempt * 1000));
+        }
+      } catch (leaseErr) {
+        console.error('[ANALYZE_LEASE_LEASE_CHECK_ERROR]', { correlationId, error: leaseErr.message, attempt });
+        if (attempt < 4) {
+          await new Promise(r => setTimeout(r, attempt * 1000));
+        }
       }
-      console.log('[ANALYZE_LEASE_LEASE_VERIFIED]', { correlationId, leaseId, owner: leaseCheck[0]?.owner_email });
-    } catch (leaseErr) {
-      console.error('[ANALYZE_LEASE_LEASE_CHECK_ERROR]', { correlationId, error: leaseErr.message });
+    }
+    
+    if (!leaseVerified) {
+      console.error('[ANALYZE_LEASE_LEASE_NOT_FOUND_FINAL]', { correlationId, leaseId });
+      return new Response(JSON.stringify({
+        ok: false,
+        step: 'FETCH_LEASE',
+        error_code: 'LEASE_NOT_FOUND',
+        message: `No lease record for ID ${leaseId} after 4 attempts`,
+        correlationId
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     let targetScanId = inputScanId;
