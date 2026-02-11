@@ -533,7 +533,7 @@ Deno.serve(async (req) => {
     console.log(`[${executionId}] LeaseId: ${leaseId}`);
     console.log(`[${executionId}] ═══════════════════════════════════════════════`);
     
-    if (updates.deposit && Object.keys(updates.deposit).length > 3) {
+    if (updates.deposit && Object.keys(updates.deposit).length >= 3) {
       const depositData = {
         ...updates.deposit,
         lease_id: leaseId,
@@ -541,13 +541,22 @@ Deno.serve(async (req) => {
         created_by: userEmail
       };
       
+      console.log(`[${executionId}] [DEPOSIT_CREATE_ATTEMPT]`, depositData);
+      
       // Validate required fields
       if (!depositData.deposit_amount || !depositData.deposit_paid_date || !depositData.expected_return_date) {
         console.log(`[${executionId}] ⚠️ Missing required fields - skipping deposit creation`);
+        console.log(`[${executionId}] [DEPOSIT_VALIDATION_FAILED]`, {
+          hasAmount: !!depositData.deposit_amount,
+          hasPaidDate: !!depositData.deposit_paid_date,
+          hasReturnDate: !!depositData.expected_return_date
+        });
       } else {
         // Use atomic lock mechanism
         const lockResult = await createDepositTrackerWithLock(svc, leaseId, depositData, executionId);
         results.deposit = lockResult.tracker;
+        
+        console.log(`[${executionId}] [DEPOSIT_CREATED]`, { id: results.deposit?.id, created: lockResult.created });
         
         if (lockResult.created) {
           console.log(`[${executionId}] ✅ NEW deposit tracker created`);
@@ -557,6 +566,11 @@ Deno.serve(async (req) => {
       }
     } else {
       console.log(`[${executionId}] ⚠️ Insufficient deposit data - skipping`);
+      console.log(`[${executionId}] [DEPOSIT_DATA_INSUFFICIENT]`, {
+        hasDepositObj: !!updates.deposit,
+        keysCount: Object.keys(updates.deposit || {}).length,
+        allKeys: Object.keys(updates.deposit || {})
+      });
     }
     
     console.log(`[${executionId}] ═══════════════════════════════════════════════`);
