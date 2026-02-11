@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
       fileUrl: fileUrl?.substring(0, 80) 
     });
     
-    const analyzeResult = await base44.functions.invoke('analyzeLease', {
+    const analyzeResult = await svcRead.functions.invoke('analyzeLease', {
       fileUrl: fileUrl,
       leaseId: leaseId,
       scanId: targetScan.id,
