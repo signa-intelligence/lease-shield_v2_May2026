@@ -1062,7 +1062,7 @@ function UploadScanPageContent() {
         if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
-        navigate(`/reportfull?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
+        navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
           state: { 
             scan_full: scanResponse?.scan_full,
             fromUpload: true 
@@ -1508,7 +1508,7 @@ function UploadScanPageContent() {
         await queryClient.refetchQueries({ queryKey: ['deposits'] });
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
-        const reportUrl = `/reportfull?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
+        const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
         console.log('[NAVIGATE_REPORT]', { reportUrl, scanId, leaseId: lease.id });
         navigate(reportUrl, {
           state: { 
@@ -2521,7 +2521,7 @@ function UploadScanPageContent() {
                         onClick={() => {
                           haptic.medium();
                           setSelectedLease(null);
-                          navigate(`/reportfull?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
+                          navigate(createPageUrl("ReportFull") + `?scanId=${selectedScan.id}&leaseId=${selectedLease.id}`);
                         }}
                         className="w-full py-4 text-base font-bold"
                         style={{
