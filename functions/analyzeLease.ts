@@ -404,6 +404,25 @@ Return ONLY valid JSON.`;
     });
 
     const svc = base44.asServiceRole || base44;
+    
+    // Verify lease exists using service role (bypasses RLS race condition after creation)
+    try {
+      const leaseCheck = await svc.entities.Lease.filter({ id: leaseId });
+      if (!leaseCheck || leaseCheck.length === 0) {
+        console.error('[ANALYZE_LEASE_LEASE_NOT_FOUND]', { correlationId, leaseId });
+        return new Response(JSON.stringify({
+          ok: false,
+          step: 'FETCH_LEASE',
+          error_code: 'LEASE_NOT_FOUND',
+          message: `No lease record for ID ${leaseId}`,
+          correlationId
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      console.log('[ANALYZE_LEASE_LEASE_VERIFIED]', { correlationId, leaseId, owner: leaseCheck[0]?.owner_email });
+    } catch (leaseErr) {
+      console.error('[ANALYZE_LEASE_LEASE_CHECK_ERROR]', { correlationId, error: leaseErr.message });
+    }
+
     let targetScanId = inputScanId;
 
     if (!targetScanId) {
