@@ -41,16 +41,31 @@ Deno.serve(async (req) => {
       nested_scans: user.data?.available_scans
     });
     
-    // FORCE update with values from parameters or data.* if root is null
-    const updateData = {
-      tier: tier || user.tier || user.data?.tier || 'explorer',
-      available_scans: available_scans !== null && available_scans !== undefined ? available_scans : (user.available_scans !== null && user.available_scans !== undefined ? user.available_scans : (user.data?.available_scans ?? 1)),
-      subscription_status: subscription_status || user.subscription_status || user.data?.subscription_status || 'active'
-    };
+    // Parse updates from request body (supports arbitrary fields)
+    const body = { email, tier, available_scans, subscription_status };
+    // Also accept a generic "updates" object
+    let rawBody;
+    try { rawBody = JSON.parse(await req.clone().text()); } catch(e) { rawBody = {}; }
+    const updates = rawBody.updates || {};
+
+    // Build update payload from explicit params + updates object
+    const updateData = { ...updates };
+    if (tier !== undefined) updateData.tier = tier;
+    if (available_scans !== undefined) updateData.available_scans = available_scans;
+    if (subscription_status !== undefined) updateData.subscription_status = subscription_status;
+
+    // If nothing explicit, apply defaults
+    if (Object.keys(updateData).length === 0) {
+      updateData.tier = user.tier || user.data?.tier || 'explorer';
+      updateData.available_scans = user.available_scans ?? user.data?.available_scans ?? 1;
+      updateData.subscription_status = user.subscription_status || user.data?.subscription_status || 'active';
+    }
     
     console.log('[ADMIN_FIX_USER] Applying update:', updateData);
     
-    // Fix user configuration
+    // CRITICAL: User entity stores custom fields inside a `data` envelope.
+    // svc.entities.User.update() wraps into data.X automatically.
+    // So we use it directly — the SDK handles the nesting.
     await svc.entities.User.update(user.id, updateData);
     
     console.log('[ADMIN_FIX_USER] ✅ User fixed successfully');
