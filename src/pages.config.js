@@ -57,6 +57,7 @@ import Analytics from './pages/Analytics';
 import CaseDetails from './pages/CaseDetails';
 import Cases from './pages/Cases';
 import CookieSync from './pages/CookieSync';
+import Dashboard from './pages/Dashboard';
 import DepositTracker from './pages/DepositTracker';
 import DocumentVault from './pages/DocumentVault';
 import Documents from './pages/Documents';
@@ -64,6 +65,7 @@ import EvidenceVault from './pages/EvidenceVault';
 import FAQ from './pages/FAQ';
 import Home from './pages/Home';
 import Index from './pages/Index';
+import LeaseDetails from './pages/LeaseDetails';
 import LeaseLetters from './pages/LeaseLetters';
 import LeaseViewer from './pages/LeaseViewer';
 import Leases from './pages/Leases';
@@ -74,6 +76,7 @@ import OpsConsole from './pages/OpsConsole';
 import PaymentSuccess from './pages/PaymentSuccess';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profile from './pages/Profile';
+import PropertyTracker from './pages/PropertyTracker';
 import RecycleBin from './pages/RecycleBin';
 import RefundPolicy from './pages/RefundPolicy';
 import ReportFull from './pages/ReportFull';
@@ -83,13 +86,10 @@ import RiskFeedbackAdmin from './pages/RiskFeedbackAdmin';
 import ScanPreview from './pages/ScanPreview';
 import Search from './pages/Search';
 import Templates from './pages/Templates';
+import Timeline from './pages/Timeline';
+import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
-import LeaseDetails from './pages/LeaseDetails';
-import Timeline from './pages/Timeline';
-import PropertyTracker from './pages/PropertyTracker';
-import Dashboard from './pages/Dashboard';
-import UploadScan from './pages/UploadScan';
 import __Layout from './Layout.jsx';
 
 
@@ -104,6 +104,7 @@ export const PAGES = {
     "CaseDetails": CaseDetails,
     "Cases": Cases,
     "CookieSync": CookieSync,
+    "Dashboard": Dashboard,
     "DepositTracker": DepositTracker,
     "DocumentVault": DocumentVault,
     "Documents": Documents,
@@ -111,6 +112,7 @@ export const PAGES = {
     "FAQ": FAQ,
     "Home": Home,
     "Index": Index,
+    "LeaseDetails": LeaseDetails,
     "LeaseLetters": LeaseLetters,
     "LeaseViewer": LeaseViewer,
     "Leases": Leases,
@@ -121,6 +123,7 @@ export const PAGES = {
     "PaymentSuccess": PaymentSuccess,
     "PrivacyPolicy": PrivacyPolicy,
     "Profile": Profile,
+    "PropertyTracker": PropertyTracker,
     "RecycleBin": RecycleBin,
     "RefundPolicy": RefundPolicy,
     "ReportFull": ReportFull,
@@ -130,13 +133,10 @@ export const PAGES = {
     "ScanPreview": ScanPreview,
     "Search": Search,
     "Templates": Templates,
+    "Timeline": Timeline,
+    "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
-    "LeaseDetails": LeaseDetails,
-    "Timeline": Timeline,
-    "PropertyTracker": PropertyTracker,
-    "Dashboard": Dashboard,
-    "UploadScan": UploadScan,
 }
 
 export const pagesConfig = {
