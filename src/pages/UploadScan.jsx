@@ -906,20 +906,11 @@ function UploadScanPageContent() {
         });
         createdLeaseId = lease.id;
 
-        // FORENSIC LOG: STEP 1 - Lease Created
         console.log('[LEASE_CREATED]', {
           leaseId: lease.id,
           owner_email: lease.owner_email,
-          created_by: lease.created_by,
           userEmail: user.email,
           timestamp: new Date().toISOString()
-        });
-
-        // FORENSIC LOG: STEP 2 - Verify Lease in DB Immediately
-        const verifyLease = await base44.entities.Lease.filter({ id: lease.id });
-        console.log('[LEASE_VERIFY_IMMEDIATE]', {
-          found: verifyLease.length > 0,
-          leaseData: verifyLease[0]
         });
 
         const createdProgress = 40;
