@@ -79,30 +79,30 @@ async function createDepositTrackerWithLock(svc, leaseId, depositData, execution
   // Check if already being created by another execution
   if (creationLocks.has(lockKey)) {
     console.log(`[${executionId}] ⏳ Lock exists - another execution is creating tracker`);
-    
+
     // Wait for other execution to finish (max 10 seconds)
     let waitCount = 0;
     while (creationLocks.has(lockKey) && waitCount < 100) {
       await new Promise(resolve => setTimeout(resolve, 100));
       waitCount++;
     }
-    
+
     // Return existing tracker
-    const existing = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
+    const existing = await base44.entities.DepositTracker.filter({ lease_id: leaseId });
     if (existing && existing.length > 0) {
       console.log(`[${executionId}] ✅ Returning tracker created by other execution: ${existing[0].id}`);
       return { created: false, tracker: existing[0] };
     }
   }
-  
+
   // Acquire lock
   creationLocks.set(lockKey, Date.now());
   console.log(`[${executionId}] 🔒 Lock acquired for ${lockKey}`);
-  
+
   try {
     // CRITICAL: Double-check AFTER acquiring lock
     console.log(`[${executionId}] 🔍 Double-checking for existing trackers...`);
-    const existingAfterLock = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
+    const existingAfterLock = await base44.entities.DepositTracker.filter({ lease_id: leaseId });
     
     if (existingAfterLock && existingAfterLock.length > 0) {
       console.log(`[${executionId}] ⛔ ABORT - Tracker found after lock: ${existingAfterLock[0].id}`);
@@ -110,9 +110,9 @@ async function createDepositTrackerWithLock(svc, leaseId, depositData, execution
     }
     
     // Create new tracker
-    console.log(`[${executionId}] ✅ No tracker exists - creating new one...`);
-    const created = await svc.entities.DepositTracker.create(depositData);
-    console.log(`[${executionId}] ✅ CREATED deposit tracker: ${created.id}`);
+     console.log(`[${executionId}] ✅ No tracker exists - creating new one...`);
+     const created = await base44.entities.DepositTracker.create(depositData);
+     console.log(`[${executionId}] ✅ CREATED deposit tracker: ${created.id}`);
     
     return { created: true, tracker: created };
     
@@ -598,7 +598,7 @@ Deno.serve(async (req) => {
       });
       try {
         // FORCE UPDATE: Scan data is authoritative, override existing values
-        results.lease = await svc.entities.Lease.update(leaseId, updates.lease);
+        results.lease = await base44.entities.Lease.update(leaseId, updates.lease);
         console.log('[POPULATE_LEASE_UPDATED] ========================================', { 
           success: true,
           leaseId, 
@@ -640,7 +640,7 @@ Deno.serve(async (req) => {
       for (const event of updates.timeline) {
         try {
           console.log('[CREATING_TIMELINE_EVENT]', event);
-          const created = await svc.entities.TimelineEvent.create({
+          const created = await base44.entities.TimelineEvent.create({
             ...event,
             needs_review: false,
             is_estimated: false,
