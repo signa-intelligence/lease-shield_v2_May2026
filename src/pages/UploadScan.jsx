@@ -1291,7 +1291,8 @@ function UploadScanPageContent() {
           lease_id: lease.id,
           status: 'initiated',
           request_id: requestId,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          owner_email: user.email
         });
         scanId = scan?.id;
         if (!scanId) throw new Error('BUG: scanId missing after LeaseScan.create');
