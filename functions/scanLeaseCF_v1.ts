@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
       risk_score: scanFull.risk_score
     });
 
-    // Update the existing scan record
+    // Update the existing scan record (svcRead already declared above)
     const svc = base44.asServiceRole || base44;
     
     try {
