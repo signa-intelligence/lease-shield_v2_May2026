@@ -554,33 +554,23 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           leaseIdToFind: leaseId
         });
 
-        // STEP 2: lease
+        // STEP 2: lease - try direct ID filter first, then owner_email fallback
         logStep("FETCH_LEASE_START", { leaseId });
-        const leaseArr = await base44.entities.Lease.filter({ owner_email: userRes.email });
         
-        // FORENSIC LOG: STEP 3 - Lease Query Result
-        console.log('[LEASE_QUERY_RESULT]', {
-          queryUsed: { owner_email: userRes.email },
-          totalResults: leaseArr.length,
-          leaseIds: leaseArr.map(l => l.id),
-          targetLeaseId: leaseId,
-          found: leaseArr.some(l => l.id === leaseId)
-        });
-
-        // FORENSIC LOG: STEP 5 - Lease Emails in DB
-        console.log('[LEASE_EMAILS_IN_DB]', {
-          allLeaseEmails: leaseArr.map(l => ({ id: l.id, owner_email: l.owner_email, created_by: l.created_by }))
-        });
-
-        // FORENSIC LOG: STEP 6 - Test Unfiltered Query
-        const allLeases = await base44.entities.Lease.filter({});
-        console.log('[ALL_LEASES_UNFILTERED]', {
-          count: allLeases.length,
-          leaseIds: allLeases.map(l => l.id),
-          targetFound: allLeases.some(l => l.id === leaseId)
-        });
-
-        const leaseData = leaseArr?.find(l => l.id === leaseId) || null;
+        let leaseData = null;
+        
+        // Primary: fetch by ID directly (fastest, avoids RLS propagation lag)
+        const leaseById = await base44.entities.Lease.filter({ id: leaseId });
+        if (leaseById.length > 0) {
+          leaseData = leaseById[0];
+          logStep("FETCH_LEASE_BY_ID_OK", { leaseId });
+        } else {
+          // Fallback: fetch by owner_email (RLS may still be propagating for new records)
+          const leaseArr = await base44.entities.Lease.filter({ owner_email: userRes.email });
+          leaseData = leaseArr?.find(l => l.id === leaseId) || null;
+          logStep("FETCH_LEASE_BY_OWNER", { total: leaseArr.length, found: !!leaseData });
+        }
+        
         logStep("FETCH_LEASE_COMPLETE", { found: !!leaseData });
 
 
