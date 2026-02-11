@@ -11,32 +11,37 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Get event payload
-    const { event, data } = await req.json();
+    // Get event payload from entity automation
+    const body = await req.json();
+    const event = body?.event;
+    const data = body?.data;
     
-    console.log(`[${correlationId}] New user registration detected`, {
+    console.log(`[${correlationId}] initializeNewUser triggered`, {
       event,
       userId: data?.id,
-      email: data?.email
+      email: data?.email,
+      bodyKeys: Object.keys(body || {})
     });
     
     // Only process create events
-    if (event?.type !== 'create' || event?.entity_name !== 'User') {
-      console.log(`[${correlationId}] Skipping - not a user creation event`);
-      return Response.json({ skipped: true });
+    if (event?.type !== 'create') {
+      console.log(`[${correlationId}] Skipping - not a create event, type=${event?.type}`);
+      return Response.json({ skipped: true, reason: 'not_create_event' });
     }
     
-    const userId = data?.id;
+    const userId = event?.entity_id || data?.id;
     const userEmail = data?.email;
     
-    if (!userId || !userEmail) {
-      console.error(`[${correlationId}] Missing user ID or email`);
-      return Response.json({ error: 'Missing user data' }, { status: 400 });
+    if (!userId) {
+      console.error(`[${correlationId}] Missing user ID`);
+      return Response.json({ error: 'Missing user ID' }, { status: 400 });
     }
     
-    // Check if user already has tier configured
-    if (data.tier && data.available_scans !== undefined) {
-      console.log(`[${correlationId}] User already has tier configured - skipping`);
+    // Check if user already has tier configured (handles re-runs)
+    const existingTier = data?.tier || data?.data?.tier;
+    const existingScans = data?.available_scans ?? data?.data?.available_scans;
+    if (existingTier && existingScans !== undefined && existingScans !== null) {
+      console.log(`[${correlationId}] User already has tier configured - skipping`, { existingTier, existingScans });
       return Response.json({ 
         skipped: true, 
         reason: 'already_configured' 
