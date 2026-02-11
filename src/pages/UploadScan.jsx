@@ -1417,6 +1417,11 @@ function UploadScanPageContent() {
           return;
         }
         const scanResponse = resp.data;
+        
+        // CRITICAL: Use scanId from function response if available (for tracking)
+        if (scanResponse?.scanId && !scanId) {
+          scanId = scanResponse.scanId;
+        }
 
         const analysisDuration = Date.now() - analysisStartTime;
         
