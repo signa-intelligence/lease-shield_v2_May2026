@@ -571,13 +571,36 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
           logStep("FETCH_LEASE_BY_OWNER", { total: leaseArr.length, found: !!leaseData });
         }
         
+        // Retry lease fetch if not found (DB propagation lag after create)
+        if (!leaseData) {
+          for (let retry = 1; retry <= 3; retry++) {
+            await new Promise(r => setTimeout(r, retry * 800));
+            logStep(`FETCH_LEASE_RETRY_${retry}`);
+            const retryArr = await base44.entities.Lease.filter({ id: leaseId });
+            if (retryArr.length > 0) {
+              leaseData = retryArr[0];
+              logStep("FETCH_LEASE_RETRY_OK", { attempt: retry });
+              break;
+            }
+          }
+        }
         logStep("FETCH_LEASE_COMPLETE", { found: !!leaseData });
 
 
         // STEP 3: scan
         logStep("FETCH_SCAN_START", { scanId });
-        const scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
+        let scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
         let scanData = scanArr?.[0] || null;
+        
+        // Retry scan fetch if not found
+        if (!scanData) {
+          for (let retry = 1; retry <= 3; retry++) {
+            await new Promise(r => setTimeout(r, retry * 800));
+            scanArr = await base44.entities.LeaseScan.filter({ id: scanId });
+            scanData = scanArr?.[0] || null;
+            if (scanData) break;
+          }
+        }
         logStep("FETCH_SCAN_COMPLETE", { found: !!scanData });
 
 
