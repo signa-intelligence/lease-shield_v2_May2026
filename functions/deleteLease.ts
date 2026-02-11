@@ -93,34 +93,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Archive related lease scans (preserve data for reports but hide from UI)
-    const leaseScans = await svc.entities.LeaseScan.filter({
-      lease_id: leaseId
-    });
-
-    for (const scan of leaseScans) {
-      await svc.entities.LeaseScan.update(scan.id, {
-        status: 'archived',
-        is_archived: true,
-        archived_at: new Date().toISOString()
-      });
+    // CASCADE DELETE: Delete timeline events by lease_id
+    for (const event of timelineByLeaseId) {
+      await svc.entities.TimelineEvent.delete(event.id);
     }
 
-    // Soft-delete the lease itself by setting status to "deleted"
-    await svc.entities.Lease.update(leaseId, {
-      status: 'deleted',
-      archived_at: new Date().toISOString(),
-      archived_by: user.email
-    });
+    // CASCADE DELETE: Delete deposits by lease_id
+    for (const deposit of depositsByLeaseId) {
+      await svc.entities.DepositTracker.delete(deposit.id);
+    }
 
-    // NOTE: Credits are NOT refunded on deletion per business rules
-    // Credits are permanently consumed when a lease is scanned
-    console.log(`[${correlationId}] Lease soft-deleted (credits not refunded per policy)`);
+    // CASCADE DELETE: Delete lease scans
+    for (const scan of leaseScans) {
+      await svc.entities.LeaseScan.delete(scan.id);
+    }
 
-    console.log(`[${correlationId}] Successfully archived lease and related records`, {
-      deposits: allDeposits.length,
+    // CASCADE DELETE: Delete lease itself
+    await svc.entities.Lease.delete(leaseId);
+
+    console.log(`[${correlationId}] Successfully deleted lease and cascaded records`, {
+      deposits: depositsByLeaseId.length,
       maintenance: maintenanceRequests.length,
-      timeline: allTimelineEvents.length,
+      timeline: timelineByLeaseId.length,
       scans: leaseScans.length
     });
 

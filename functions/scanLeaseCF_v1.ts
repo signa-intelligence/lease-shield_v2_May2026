@@ -311,7 +311,9 @@ Deno.serve(async (req) => {
         scanId: targetScan.id,
         leaseId: leaseId,
         scan_full: scanFull,
-        userEmail: userEmail // CRITICAL: Pass user email for proper ownership
+        userEmail: userEmail,
+        created_by: userEmail,
+        owner_email: userEmail
       });
       
       console.log('[SCAN_CF_V1_EXTRACT_COMPLETE]', {
