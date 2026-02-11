@@ -71,7 +71,7 @@ function findClauseByName(clauses, names) {
 // ═══════════════════════════════════════════════════════════════════════
 const creationLocks = new Map();
 
-async function createDepositTrackerWithLock(svc, leaseId, depositData, executionId) {
+async function createDepositTrackerWithLock(base44, svc, leaseId, depositData, executionId) {
   const lockKey = `deposit_${leaseId}`;
   
   console.log(`[${executionId}] 🔒 Attempting to acquire lock for ${lockKey}`);
