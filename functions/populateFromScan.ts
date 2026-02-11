@@ -537,7 +537,8 @@ Deno.serve(async (req) => {
       const depositData = {
         ...updates.deposit,
         lease_id: leaseId,
-        owner_email: userEmail // WORKAROUND: Use owner_email instead of created_by
+        owner_email: userEmail,
+        created_by: userEmail
       };
       
       // Validate required fields
@@ -623,7 +624,8 @@ Deno.serve(async (req) => {
             ...event,
             needs_review: false,
             is_estimated: false,
-            owner_email: userEmail // WORKAROUND: Use owner_email instead of created_by
+            owner_email: userEmail,
+            created_by: userEmail
           });
           createdEvents.push(created);
           console.log('[TIMELINE_EVENT_CREATED]', { eventId: created.id, eventType: event.event_type });
