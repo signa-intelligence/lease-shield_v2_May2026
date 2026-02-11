@@ -18,7 +18,8 @@ Deno.serve(async (req) => {
     const svc = base44.asServiceRole || base44;
     
     // Get parameters from request body
-    const { email, tier, available_scans, subscription_status } = await req.json();
+    const rawBody = await req.json();
+    const { email, tier, available_scans, subscription_status } = rawBody;
 
     if (!email) {
       return Response.json({ error: 'Email is required' }, { status: 400 });
