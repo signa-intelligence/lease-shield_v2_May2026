@@ -94,22 +94,51 @@ Deno.serve(async (req) => {
     }
 
     // CASCADE DELETE: Delete timeline events by lease_id
-    for (const event of timelineByLeaseId) {
-      await svc.entities.TimelineEvent.delete(event.id);
+    console.log(`[${correlationId}] [DELETE_TIMELINE_START]`, { count: timelineByLeaseId.length });
+    try {
+      for (const event of timelineByLeaseId) {
+        await svc.entities.TimelineEvent.delete(event.id);
+      }
+      console.log(`[${correlationId}] [DELETE_TIMELINE_DONE]`);
+    } catch (err) {
+      console.error(`[${correlationId}] [DELETE_TIMELINE_FAILED]`, { error: err.message, stack: err.stack });
+      throw err;
     }
 
     // CASCADE DELETE: Delete deposits by lease_id
-    for (const deposit of depositsByLeaseId) {
-      await svc.entities.DepositTracker.delete(deposit.id);
+    console.log(`[${correlationId}] [DELETE_DEPOSITS_START]`, { count: depositsByLeaseId.length });
+    try {
+      for (const deposit of depositsByLeaseId) {
+        await svc.entities.DepositTracker.delete(deposit.id);
+      }
+      console.log(`[${correlationId}] [DELETE_DEPOSITS_DONE]`);
+    } catch (err) {
+      console.error(`[${correlationId}] [DELETE_DEPOSITS_FAILED]`, { error: err.message, stack: err.stack });
+      throw err;
     }
 
     // CASCADE DELETE: Delete lease scans
-    for (const scan of leaseScans) {
-      await svc.entities.LeaseScan.delete(scan.id);
+    const leaseScans = await svc.entities.LeaseScan.filter({ lease_id: leaseId });
+    console.log(`[${correlationId}] [DELETE_SCANS_START]`, { count: leaseScans.length });
+    try {
+      for (const scan of leaseScans) {
+        await svc.entities.LeaseScan.delete(scan.id);
+      }
+      console.log(`[${correlationId}] [DELETE_SCANS_DONE]`);
+    } catch (err) {
+      console.error(`[${correlationId}] [DELETE_SCANS_FAILED]`, { error: err.message, stack: err.stack });
+      throw err;
     }
 
     // CASCADE DELETE: Delete lease itself
-    await svc.entities.Lease.delete(leaseId);
+    console.log(`[${correlationId}] [DELETE_LEASE_START]`, { leaseId });
+    try {
+      await svc.entities.Lease.delete(leaseId);
+      console.log(`[${correlationId}] [DELETE_LEASE_DONE]`);
+    } catch (err) {
+      console.error(`[${correlationId}] [DELETE_LEASE_FAILED]`, { error: err.message, stack: err.stack });
+      throw err;
+    }
 
     console.log(`[${correlationId}] Successfully deleted lease and cascaded records`, {
       deposits: depositsByLeaseId.length,
