@@ -48,30 +48,63 @@ Deno.serve(async (req) => {
       });
     }
     
-    // Set default tier and credits
-    console.log(`[${correlationId}] Initializing user with default tier`);
+    // Set default tier and credits using service role
+    console.log(`[${correlationId}] Initializing user with default tier`, { userId, email: userEmail });
     
-    const svc = base44.asServiceRole || base44;
-    await svc.entities.User.update(userId, {
-      tier: 'explorer',
-      available_scans: 1,
-      subscription_status: 'active'
-    });
+    const svc = base44.asServiceRole;
     
-    console.log(`[${correlationId}] ✅ User initialized successfully`, {
-      userId,
-      email: userEmail,
-      tier: 'explorer',
-      available_scans: 1
-    });
+    // Retry update up to 3 times (user record may still be propagating)
+    let updateSuccess = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await svc.entities.User.update(userId, {
+          tier: 'explorer',
+          available_scans: 1,
+          subscription_status: 'active',
+          plan_tier: 'free'
+        });
+        updateSuccess = true;
+        console.log(`[${correlationId}] ✅ User initialized on attempt ${attempt}`, {
+          userId,
+          email: userEmail,
+          tier: 'explorer',
+          available_scans: 1
+        });
+        break;
+      } catch (updateErr) {
+        console.warn(`[${correlationId}] Update attempt ${attempt} failed:`, updateErr.message);
+        if (attempt < 3) {
+          await new Promise(r => setTimeout(r, attempt * 1000));
+        }
+      }
+    }
     
-    // Send welcome email (if function exists)
+    if (!updateSuccess) {
+      console.error(`[${correlationId}] ❌ All 3 update attempts failed for user ${userId}`);
+      return Response.json({ success: false, error: 'Failed to update user after 3 attempts', correlationId }, { status: 500 });
+    }
+    
+    // Verify the update actually took
     try {
-      await base44.functions.invoke('sendWelcomeEmail', {});
-      console.log(`[${correlationId}] Welcome email triggered`);
+      const verifyUser = await svc.entities.User.get(userId);
+      console.log(`[${correlationId}] Verification:`, {
+        available_scans: verifyUser?.available_scans,
+        tier: verifyUser?.tier
+      });
+    } catch (verifyErr) {
+      console.warn(`[${correlationId}] Verify failed (non-fatal):`, verifyErr.message);
+    }
+    
+    // Send welcome email (non-blocking)
+    try {
+      await svc.integrations.Core.SendEmail({
+        to: userEmail,
+        subject: 'Welcome to Lease Shield',
+        body: `Hi ${data?.full_name || 'there'},\n\nWelcome to Lease Shield! Your account is ready with 1 free lease scan.\n\nGet started by uploading your lease agreement.\n\nBest,\nLease Shield Team`
+      });
+      console.log(`[${correlationId}] Welcome email sent`);
     } catch (emailErr) {
-      console.warn(`[${correlationId}] Failed to send welcome email:`, emailErr.message);
-      // Don't fail the whole process if email fails
+      console.warn(`[${correlationId}] Welcome email failed (non-fatal):`, emailErr.message);
     }
     
     return Response.json({
