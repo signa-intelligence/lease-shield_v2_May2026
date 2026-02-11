@@ -412,6 +412,12 @@ Deno.serve(async (req) => {
     });
     
     // Build deposit data with REQUIRED FIELDS
+    console.log('[DEPOSIT_AMOUNT_CHECK]', { 
+      depositAmount, 
+      isTruthy: !!depositAmount,
+      type: typeof depositAmount
+    });
+    
     if (depositAmount) {
       console.log('[BUILDING_DEPOSIT_DATA] depositAmount found:', depositAmount);
       updates.deposit.deposit_amount = depositAmount;
