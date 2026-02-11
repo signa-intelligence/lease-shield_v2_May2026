@@ -41,32 +41,44 @@ Deno.serve(async (req) => {
       nested_scans: user.data?.available_scans
     });
     
-    // Parse updates from request body (supports arbitrary fields)
-    const body = { email, tier, available_scans, subscription_status };
-    // Also accept a generic "updates" object
-    let rawBody;
-    try { rawBody = JSON.parse(await req.clone().text()); } catch(e) { rawBody = {}; }
-    const updates = rawBody.updates || {};
-
-    // Build update payload from explicit params + updates object
-    const updateData = { ...updates };
+    // Build update payload - also accept "scans" shorthand
+    const updateData = {};
     if (tier !== undefined) updateData.tier = tier;
     if (available_scans !== undefined) updateData.available_scans = available_scans;
     if (subscription_status !== undefined) updateData.subscription_status = subscription_status;
-
+    
+    // Support "scans" shorthand from caller
+    if (rawBody?.scans !== undefined) updateData.available_scans = rawBody.scans;
+    
     // If nothing explicit, apply defaults
     if (Object.keys(updateData).length === 0) {
-      updateData.tier = user.tier || user.data?.tier || 'explorer';
-      updateData.available_scans = user.available_scans ?? user.data?.available_scans ?? 1;
-      updateData.subscription_status = user.subscription_status || user.data?.subscription_status || 'active';
+      updateData.available_scans = 1;
     }
     
     console.log('[ADMIN_FIX_USER] Applying update:', updateData);
     
-    // CRITICAL: User entity stores custom fields inside a `data` envelope.
-    // svc.entities.User.update() wraps into data.X automatically.
-    // So we use it directly — the SDK handles the nesting.
+    // CRITICAL FIX: The User entity nests custom fields inside `data`.
+    // svc.entities.User.update() auto-wraps into data.X.
+    // But if `data.data` exists from prior bugs, we must also clean it.
+    // First, do the normal update:
     await svc.entities.User.update(user.id, updateData);
+    
+    // Then clean up any nested data.data pollution
+    if (user.data?.data) {
+      console.log('[ADMIN_FIX_USER] Cleaning nested data.data pollution');
+      // Flatten data.data fields into data level
+      const nestedData = user.data.data;
+      const cleanUpdate = {};
+      for (const [key, val] of Object.entries(nestedData)) {
+        // Only promote if the root level doesn't already have it set correctly
+        if (updateData[key] !== undefined) {
+          cleanUpdate[key] = updateData[key]; // Use the new value
+        }
+      }
+      if (Object.keys(cleanUpdate).length > 0) {
+        await svc.entities.User.update(user.id, cleanUpdate);
+      }
+    }
     
     console.log('[ADMIN_FIX_USER] ✅ User fixed successfully');
     
