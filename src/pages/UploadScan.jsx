@@ -149,9 +149,9 @@ function UploadScanPageContent() {
   });
 
   const { data: allScans = [] } = useQuery({
-    queryKey: ['allScans'],
-    queryFn: () => base44.entities.LeaseScan.list(),
-    enabled: !!user,
+    queryKey: ['allScans', user?.email],
+    queryFn: () => base44.entities.LeaseScan.filter({ owner_email: user?.email }, '-created_date'),
+    enabled: !!user?.email,
     refetchOnMount: 'always',
     staleTime: 0
   });
