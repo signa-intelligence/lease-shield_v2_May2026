@@ -76,15 +76,18 @@ Deno.serve(async (req) => {
     
     console.log('SCAN_CF_V1_INPUT', { leaseId, inputScanId, fileUrl: fileUrl?.substring(0, 80), scanMode, userTier });
 
+    // Use service role for all DB reads to bypass RLS race conditions
+    const svcRead = base44.asServiceRole || base44;
+
     // Find or create scan record FIRST
     let targetScan = null;
     if (inputScanId) {
-      const scanArr = await base44.entities.LeaseScan.filter({ id: inputScanId });
+      const scanArr = await svcRead.entities.LeaseScan.filter({ id: inputScanId });
       targetScan = scanArr?.[0] || null;
       console.log('SCAN_CF_V1_LOOKUP_BY_INPUT_ID', { inputScanId, found: !!targetScan });
     }
     if (!targetScan) {
-      const scans = await base44.entities.LeaseScan.filter({ lease_id: leaseId }, '-created_date');
+      const scans = await svcRead.entities.LeaseScan.filter({ lease_id: leaseId }, '-created_date');
       targetScan = scans?.[0] || null;
       console.log('SCAN_CF_V1_LOOKUP_BY_LEASE', { leaseId, found: !!targetScan, scanId: targetScan?.id });
     }
