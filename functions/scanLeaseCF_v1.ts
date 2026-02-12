@@ -179,7 +179,9 @@ Deno.serve(async (req) => {
     });
 
     // Update the existing scan record
-    const svc = base44.asServiceRole || base44;
+    // CRITICAL: Use base44 (user context), NOT asServiceRole
+    // asServiceRole sets created_by=null, blocking subsequent user updates via RLS
+    const svc = base44;
     
     try {
       console.log('SCAN_CF_V1_UPDATING_SCAN', { scanId: targetScan.id });
