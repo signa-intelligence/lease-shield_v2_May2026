@@ -543,41 +543,23 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         const userRes = await base44.auth.me();
         logStep("FETCH_USER_COMPLETE", { userId: userRes?.id });
 
-        // FORENSIC LOG: STEP 3 - Report Load Start
-        console.log('[REPORT_LOAD_START]', { leaseId, scanId });
-        console.log('[USER_FETCHED]', { userEmail: userRes.email });
-
-        // FORENSIC LOG: STEP 5 - Email Comparison BEFORE Query
-        console.log('[EMAIL_COMPARISON]', {
-          userEmail: userRes.email,
-          userEmailType: typeof userRes.email,
-          leaseIdToFind: leaseId
-        });
+        // ═══════════════════════════════════════════════════════════════════════
+        // FORENSIC LOGS: TRACK FULL FLOW FROM USER TO LEASE QUERY
+        // ═══════════════════════════════════════════════════════════════════════
+        console.log('[REPORTFULL_USER]', userRes?.email);
+        console.log('[REPORTFULL_QUERY]', { leaseId, filter: { owner_email: userRes.email } });
 
         // STEP 2: lease
         logStep("FETCH_LEASE_START", { leaseId });
         const leaseArr = await base44.entities.Lease.filter({ owner_email: userRes.email });
         
-        // FORENSIC LOG: STEP 3 - Lease Query Result
-        console.log('[LEASE_QUERY_RESULT]', {
-          queryUsed: { owner_email: userRes.email },
+        console.log('[REPORTFULL_RESULT]', { 
+          found: leaseArr.some(l => l.id === leaseId),
+          leaseData: leaseArr.find(l => l.id === leaseId) || null,
           totalResults: leaseArr.length,
           leaseIds: leaseArr.map(l => l.id),
           targetLeaseId: leaseId,
-          found: leaseArr.some(l => l.id === leaseId)
-        });
-
-        // FORENSIC LOG: STEP 5 - Lease Emails in DB
-        console.log('[LEASE_EMAILS_IN_DB]', {
           allLeaseEmails: leaseArr.map(l => ({ id: l.id, owner_email: l.owner_email, created_by: l.created_by }))
-        });
-
-        // FORENSIC LOG: STEP 6 - Test Unfiltered Query
-        const allLeases = await base44.entities.Lease.filter({});
-        console.log('[ALL_LEASES_UNFILTERED]', {
-          count: allLeases.length,
-          leaseIds: allLeases.map(l => l.id),
-          targetFound: allLeases.some(l => l.id === leaseId)
         });
 
         const leaseData = leaseArr?.find(l => l.id === leaseId) || null;
