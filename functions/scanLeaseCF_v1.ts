@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
       targetScan = await base44.entities.LeaseScan.create({ 
         lease_id: leaseId,
         owner_email: userEmail,
+        created_by: userEmail,
         status: 'initiated' 
       });
       console.log('SCAN_CF_V1_CREATED_NEW', { scanId: targetScan.id });

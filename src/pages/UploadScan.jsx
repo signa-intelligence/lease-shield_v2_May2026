@@ -976,6 +976,7 @@ function UploadScanPageContent() {
         const scan = await base44.entities.LeaseScan.create({
           lease_id: lease.id,
           owner_email: user.email,
+          created_by: user.email,
           status: 'initiated',
           request_id: requestId
         });
@@ -1384,6 +1385,7 @@ function UploadScanPageContent() {
         const scan = await base44.entities.LeaseScan.create({
           lease_id: lease.id,
           owner_email: user.email,
+          created_by: user.email,
           status: 'initiated',
           request_id: requestId,
           created_at: new Date().toISOString()
