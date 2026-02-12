@@ -90,7 +90,8 @@ Deno.serve(async (req) => {
     }
     if (!targetScan) {
       targetScan = await base44.entities.LeaseScan.create({ 
-        lease_id: leaseId, 
+        lease_id: leaseId,
+        owner_email: userEmail,
         status: 'initiated' 
       });
       console.log('SCAN_CF_V1_CREATED_NEW', { scanId: targetScan.id });
