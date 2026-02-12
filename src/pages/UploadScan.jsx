@@ -919,6 +919,7 @@ function UploadScanPageContent() {
           file_urls: uploadedUrls, // All pages
           status: 'queued',
           owner_email: user.email,
+          created_by: user.email,
           original_filename: originalFilename
         });
         createdLeaseId = lease.id;
@@ -1328,6 +1329,7 @@ function UploadScanPageContent() {
           file_urls: fileUrls,
           status: 'uploaded',
           owner_email: user.email,
+          created_by: user.email,
           original_filename: originalFilename
         });
         createdLeaseId = lease.id;
