@@ -4,16 +4,49 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  console.log('═══════════════════════════════════════════════════════════════');
+  console.log(`🔍 SCAN REQUEST START [${requestId}]`);
+  console.log('Function: scanLeaseCF_v1.js');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('═══════════════════════════════════════════════════════════════');
+  
   try {
     const base44 = createClientFromRequest(req);
 
     const bodyText = await req.text();
+    console.log(`[${requestId}] Raw body text length:`, bodyText?.length || 0);
+    
     let payload = {};
-    try { payload = JSON.parse(bodyText || '{}'); } catch (_) { payload = {}; }
+    try { 
+      payload = JSON.parse(bodyText || '{}'); 
+      console.log(`[${requestId}] [INPUT_PARAMS_RECEIVED]`, {
+        leaseId: payload.leaseId,
+        fileUrl: payload.fileUrl?.substring(0, 80),
+        language: payload.language,
+        inputScanId: payload.scanId,
+        hasFileUrl: !!payload.fileUrl
+      });
+    } catch (parseErr) { 
+      console.error(`[${requestId}] [JSON_PARSE_FAILED]`, { error: parseErr.message });
+      payload = {}; 
+    }
 
     const { leaseId = null, fileUrl = null, language = null, scanId: inputScanId = null } = payload;
     
+    console.log(`[${requestId}] [PARAMS_EXTRACTED]`, {
+      leaseId,
+      fileUrl: fileUrl?.substring(0, 80),
+      language,
+      inputScanId
+    });
+    
     if (!leaseId || !fileUrl) {
+      console.error(`[${requestId}] [VALIDATION_FAILED]`, { 
+        hasLeaseId: !!leaseId, 
+        hasFileUrl: !!fileUrl 
+      });
       return new Response(JSON.stringify({ 
         ok: false, 
         step: 'INPUT_VALIDATION', 
@@ -30,11 +63,18 @@ Deno.serve(async (req) => {
     let userEmail = null;
     let userObj = null;
     try {
+      console.log(`[${requestId}] [AUTH_CHECK_START]`);
       const user = await base44.auth.me();
       userObj = user;
       userTier = user?.plan_tier || 'free';
       userEmail = user?.email;
-      console.log('SCAN_CF_V1_USER_TIER', { userTier, userEmail, availableScans: user?.available_scans });
+      console.log(`[${requestId}] [USER_AUTHENTICATED]`, { 
+        userId: user?.id,
+        userTier, 
+        userEmail, 
+        availableScans: user?.available_scans,
+        role: user?.role
+      });
 
       // ✅ CRITICAL: CHECK CREDITS BEFORE SCAN (not after expensive operations)
       // Treat null, undefined, 'free', 'discover', 'explorer' as limited tiers
