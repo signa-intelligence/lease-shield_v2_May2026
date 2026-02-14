@@ -485,42 +485,54 @@ Deno.serve(async (req) => {
 
     // CRITICAL FIX: AWAIT extractLeaseData completion BEFORE returning
     // This ensures deposits/timeline are created BEFORE UI navigates
-    console.log('[SCAN_CF_V1_CALLING_EXTRACT]', { 
+    const populateParams = {
+      scanId: targetScan.id,
+      leaseId: leaseId,
+      scan_full: scanFull,
+      userEmail: userEmail,
+      created_by: userEmail,
+      owner_email: userEmail
+    };
+    
+    console.log(`[${requestId}] [POPULATE_FROM_SCAN_CALL_START]`, { 
       scanId: targetScan.id, 
       leaseId: leaseId,
       userEmail,
-      willWait: true
+      hasScanFull: !!scanFull,
+      scanFullSize: JSON.stringify(scanFull).length,
+      keyTermsKeys: scanFull.key_terms ? Object.keys(scanFull.key_terms) : []
     });
 
     try {
-      const extractResult = await base44.functions.invoke('populateFromScan', {
-        scanId: targetScan.id,
-        leaseId: leaseId,
-        scan_full: scanFull,
-        userEmail: userEmail,
-        created_by: userEmail,
-        owner_email: userEmail
-      });
+      const extractResult = await base44.functions.invoke('populateFromScan', populateParams);
       
-      console.log('[SCAN_CF_V1_EXTRACT_COMPLETE]', {
+      console.log(`[${requestId}] [POPULATE_FROM_SCAN_RESPONSE]`, {
+        hasData: !!extractResult?.data,
         ok: extractResult?.data?.ok,
-        extracted: extractResult?.data?.extracted,
-        created: extractResult?.data?.created,
-        depositCreated: extractResult?.data?.created?.deposit,
-        timelineCreated: extractResult?.data?.created?.notification
+        populated: extractResult?.data?.populated,
+        depositCreated: extractResult?.data?.populated?.deposit,
+        leaseUpdated: extractResult?.data?.populated?.lease,
+        timelineCreated: extractResult?.data?.populated?.timeline,
+        resultsDepositId: extractResult?.data?.results?.deposit?.id,
+        error: extractResult?.data?.error,
+        fullResponse: extractResult?.data
       });
       
       // CRITICAL: Only proceed if extraction succeeded or was not needed
       if (extractResult?.data?.ok === false && extractResult?.data?.error !== 'Scan not found') {
-        console.error('[SCAN_CF_V1_EXTRACT_FAILED_CRITICAL]', {
-          error: extractResult?.data?.error
+        console.error(`[${requestId}] [POPULATE_FAILED_CRITICAL]`, {
+          error: extractResult?.data?.error,
+          message: extractResult?.data?.message,
+          fullResponse: extractResult?.data
         });
       }
       
     } catch (extractError) {
-      console.error('[SCAN_CF_V1_EXTRACT_ERROR]', {
+      console.error(`[${requestId}] [POPULATE_FROM_SCAN_ERROR]`, {
         error: extractError.message,
-        stack: extractError.stack
+        stack: extractError.stack,
+        errorName: extractError.name,
+        params: populateParams
       });
       // Log but don't fail scan - extraction is supplementary
     }
