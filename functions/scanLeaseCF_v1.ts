@@ -205,24 +205,47 @@ Deno.serve(async (req) => {
     }
 
     // Pass the scanId so analyzeLease updates the RIGHT record
-    console.log('SCAN_CF_V1_CALLING_ANALYZELEASE', { 
+    console.log(`[${requestId}] [ANALYZE_LEASE_CALL_START]`, { 
       scanId: targetScan.id,
       leaseId, 
-      fileUrl: fileUrl?.substring(0, 80) 
+      fileUrl: fileUrl?.substring(0, 80),
+      language: language || 'en',
+      scanMode
     });
     
-    const analyzeResult = await base44.functions.invoke('analyzeLease', {
-      fileUrl: fileUrl,
-      leaseId: leaseId,
-      scanId: targetScan.id,
-      language: language || 'en',
-      scanMode: scanMode // Pass scan mode to analyzeLease
-    });
-
-    console.log('SCAN_CF_V1_ANALYZELEASE_RETURNED', {
-      ok: analyzeResult?.data?.ok,
-      scanId: analyzeResult?.data?.scanId
-    });
+    let analyzeResult;
+    try {
+      analyzeResult = await base44.functions.invoke('analyzeLease', {
+        fileUrl: fileUrl,
+        leaseId: leaseId,
+        scanId: targetScan.id,
+        language: language || 'en',
+        scanMode: scanMode
+      });
+      
+      console.log(`[${requestId}] [ANALYZE_LEASE_RESPONSE]`, {
+        hasData: !!analyzeResult?.data,
+        ok: analyzeResult?.data?.ok,
+        returnedScanId: analyzeResult?.data?.scanId,
+        returnedLeaseId: analyzeResult?.data?.leaseId,
+        hasFullScan: !!analyzeResult?.data?.scan_full,
+        step: analyzeResult?.data?.step,
+        error_code: analyzeResult?.data?.error_code,
+        fullResponse: analyzeResult?.data
+      });
+    } catch (analyzeErr) {
+      console.error(`[${requestId}] [ANALYZE_LEASE_FAILED]`, {
+        error: analyzeErr.message,
+        stack: analyzeErr.stack,
+        params: {
+          fileUrl: fileUrl?.substring(0, 80),
+          leaseId,
+          scanId: targetScan.id,
+          scanMode
+        }
+      });
+      throw analyzeErr;
+    }
 
     const result = analyzeResult?.data;
 
