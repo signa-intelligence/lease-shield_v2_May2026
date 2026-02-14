@@ -381,27 +381,45 @@ Deno.serve(async (req) => {
       }
 
       // Verify the scan exists
-      const verifiedScan = await svc.entities.LeaseScan.get(targetScan.id);
-      if (!verifiedScan) {
-        throw new Error('Scan update succeeded but record not found');
+      try {
+        const verifiedScan = await svc.entities.LeaseScan.get(targetScan.id);
+        if (!verifiedScan) {
+          console.error(`[${requestId}] [SCAN_VERIFICATION_FAILED]`, {
+            scanId: targetScan.id,
+            error: 'Record not found after update'
+          });
+          throw new Error('Scan update succeeded but record not found');
+        }
+        console.log(`[${requestId}] [SCAN_VERIFIED]`, { 
+          scanId: targetScan.id,
+          hasFullScan: !!verifiedScan.scan_full,
+          status: verifiedScan.status,
+          clausesCount: scanFull.clauses?.length || 0
+        });
+      } catch (verifyErr) {
+        console.error(`[${requestId}] [SCAN_VERIFICATION_ERROR]`, {
+          error: verifyErr.message,
+          stack: verifyErr.stack,
+          scanId: targetScan.id
+        });
+        throw verifyErr;
       }
-      console.log('SCAN_CF_V1_SCAN_UPDATED', { 
-        scanId: targetScan.id,
-        clausesCount: scanFull.clauses?.length || 0
-      });
       
     } catch (dbError) {
-      console.error('SCAN_CF_V1_DATABASE_ERROR', {
+      console.error(`[${requestId}] [DATABASE_ERROR]`, {
         scanId: targetScan.id,
-        error: String(dbError),
-        stack: dbError.stack
+        error: dbError.message,
+        stack: dbError.stack,
+        errorName: dbError.name,
+        fullError: String(dbError)
       });
       
       return new Response(JSON.stringify({
         ok: false,
         step: 'DATABASE',
         error_code: 'DB_ERROR',
-        message: `Database operation failed: ${dbError.message}`
+        message: `Database operation failed: ${dbError.message}`,
+        scanId: targetScan.id
       }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
