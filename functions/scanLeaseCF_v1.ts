@@ -132,25 +132,76 @@ Deno.serve(async (req) => {
     });
 
     // Find or create scan record FIRST
+    console.log(`[${requestId}] [SCAN_LOOKUP_START]`, { inputScanId, leaseId });
     let targetScan = null;
+    
     if (inputScanId) {
-      const scanArr = await base44.entities.LeaseScan.filter({ id: inputScanId });
-      targetScan = scanArr?.[0] || null;
-      console.log('SCAN_CF_V1_LOOKUP_BY_INPUT_ID', { inputScanId, found: !!targetScan });
+      try {
+        const scanArr = await base44.entities.LeaseScan.filter({ id: inputScanId });
+        targetScan = scanArr?.[0] || null;
+        console.log(`[${requestId}] [SCAN_LOOKUP_BY_INPUT_ID]`, { 
+          inputScanId, 
+          found: !!targetScan,
+          scanStatus: targetScan?.status,
+          scanOwner: targetScan?.owner_email
+        });
+      } catch (lookupErr) {
+        console.error(`[${requestId}] [SCAN_LOOKUP_BY_ID_FAILED]`, {
+          error: lookupErr.message,
+          stack: lookupErr.stack,
+          inputScanId
+        });
+      }
     }
+    
     if (!targetScan) {
-      const scans = await base44.entities.LeaseScan.filter({ lease_id: leaseId }, '-created_date');
-      targetScan = scans?.[0] || null;
-      console.log('SCAN_CF_V1_LOOKUP_BY_LEASE', { leaseId, found: !!targetScan, scanId: targetScan?.id });
+      try {
+        const scans = await base44.entities.LeaseScan.filter({ lease_id: leaseId }, '-created_date');
+        targetScan = scans?.[0] || null;
+        console.log(`[${requestId}] [SCAN_LOOKUP_BY_LEASE]`, { 
+          leaseId, 
+          found: !!targetScan, 
+          scanId: targetScan?.id,
+          scanStatus: targetScan?.status,
+          scansFound: scans?.length || 0
+        });
+      } catch (lookupErr) {
+        console.error(`[${requestId}] [SCAN_LOOKUP_BY_LEASE_FAILED]`, {
+          error: lookupErr.message,
+          stack: lookupErr.stack,
+          leaseId
+        });
+      }
     }
+    
     if (!targetScan) {
-      targetScan = await base44.entities.LeaseScan.create({ 
-        lease_id: leaseId,
-        owner_email: userEmail,
-        created_by: userEmail,
-        status: 'initiated' 
-      });
-      console.log('SCAN_CF_V1_CREATED_NEW', { scanId: targetScan.id });
+      try {
+        console.log(`[${requestId}] [SCAN_CREATE_ATTEMPT]`, {
+          lease_id: leaseId,
+          owner_email: userEmail,
+          created_by: userEmail
+        });
+        targetScan = await base44.entities.LeaseScan.create({ 
+          lease_id: leaseId,
+          owner_email: userEmail,
+          created_by: userEmail,
+          status: 'initiated' 
+        });
+        console.log(`[${requestId}] [SCAN_CREATED_NEW]`, { 
+          scanId: targetScan.id,
+          status: targetScan.status,
+          owner_email: targetScan.owner_email,
+          created_by: targetScan.created_by
+        });
+      } catch (createErr) {
+        console.error(`[${requestId}] [SCAN_CREATE_FAILED]`, {
+          error: createErr.message,
+          stack: createErr.stack,
+          leaseId,
+          userEmail
+        });
+        throw createErr;
+      }
     }
 
     // Pass the scanId so analyzeLease updates the RIGHT record
