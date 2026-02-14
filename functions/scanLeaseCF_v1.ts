@@ -104,7 +104,10 @@ Deno.serve(async (req) => {
       }
 
     } catch (authErr) {
-      console.warn('SCAN_CF_V1_AUTH_CHECK_FAILED', { error: authErr.message });
+      console.error(`[${requestId}] [AUTH_CHECK_FAILED]`, { 
+        error: authErr.message,
+        stack: authErr.stack
+      });
     }
     
     // CRITICAL FIX: Treat null, undefined, 'free', 'discover', 'explorer' as free tier
@@ -112,9 +115,21 @@ Deno.serve(async (req) => {
     const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover' || userTier === 'explorer';
     const scanMode = isFreeTier ? 'preview' : 'full';
     
-    console.log('SCAN_CF_V1_MODE_DECISION', { userTier, isFreeTier, scanMode });
+    console.log(`[${requestId}] [SCAN_MODE_DECISION]`, { 
+      userTier, 
+      isFreeTier, 
+      scanMode,
+      logic: 'isFreeTier checks for null/undefined/free/discover/explorer'
+    });
     
-    console.log('SCAN_CF_V1_INPUT', { leaseId, inputScanId, fileUrl: fileUrl?.substring(0, 80), scanMode, userTier });
+    console.log(`[${requestId}] [SCAN_INPUT_SUMMARY]`, { 
+      leaseId, 
+      inputScanId, 
+      fileUrl: fileUrl?.substring(0, 80), 
+      scanMode, 
+      userTier,
+      language: language || 'en'
+    });
 
     // Find or create scan record FIRST
     let targetScan = null;
