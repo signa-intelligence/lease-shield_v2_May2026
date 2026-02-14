@@ -249,7 +249,18 @@ Deno.serve(async (req) => {
 
     const result = analyzeResult?.data;
 
+    console.log(`[${requestId}] [ANALYZE_RESULT_FULL_INSPECTION] ========================================`);
+    console.log(`[${requestId}] Result exists:`, !!result);
+    console.log(`[${requestId}] Result keys:`, result ? Object.keys(result) : 'N/A');
+    console.log(`[${requestId}] Result.ok:`, result?.ok);
+    console.log(`[${requestId}] Result.scan_full exists:`, !!result?.scan_full);
+    console.log(`[${requestId}] Full result object:`, JSON.stringify(result, null, 2));
+    
     if (!result) {
+      console.error(`[${requestId}] [ANALYZE_NO_RESULT]`, {
+        analyzeResultExists: !!analyzeResult,
+        analyzeResultData: analyzeResult
+      });
       return new Response(JSON.stringify({
         ok: false,
         step: 'ANALYZE_LEASE',
@@ -262,6 +273,14 @@ Deno.serve(async (req) => {
     }
 
     if (result.ok === false) {
+      console.error(`[${requestId}] [ANALYZE_FAILED]`, {
+        scanId: result.scanId,
+        leaseId: result.leaseId,
+        step: result.step,
+        error_code: result.error_code,
+        message: result.message,
+        fullResult: result
+      });
       return new Response(JSON.stringify({
         ok: false,
         scanId: result.scanId,
@@ -277,6 +296,32 @@ Deno.serve(async (req) => {
 
     // SUCCESS - Transform data
     const scanFull = result.scan_full || {};
+    
+    console.log(`[${requestId}] [SCAN_FULL_INSPECTION] ========================================`);
+    console.log(`[${requestId}] scan_full exists:`, !!scanFull);
+    console.log(`[${requestId}] scan_full keys:`, Object.keys(scanFull));
+    console.log(`[${requestId}] scan_full.pdfPayload exists:`, !!scanFull.pdfPayload);
+    console.log(`[${requestId}] scan_full.clauses exists:`, !!scanFull.clauses);
+    console.log(`[${requestId}] scan_full.clauses length:`, Array.isArray(scanFull.clauses) ? scanFull.clauses.length : 'N/A');
+    console.log(`[${requestId}] scan_full.meta:`, scanFull.meta);
+    console.log(`[${requestId}] scan_full.key_terms:`, scanFull.key_terms);
+    console.log(`[${requestId}] Full scan_full object:`, JSON.stringify(scanFull, null, 2));
+    
+    // LOG PDFPAYLOAD INSPECTION
+    if (scanFull.pdfPayload) {
+      console.log(`[${requestId}] [PDFPAYLOAD_FOUND] ========================================`);
+      console.log(`[${requestId}] pdfPayload type:`, typeof scanFull.pdfPayload);
+      console.log(`[${requestId}] pdfPayload keys:`, Object.keys(scanFull.pdfPayload || {}));
+      console.log(`[${requestId}] pdfPayload.hasResult:`, scanFull.pdfPayload?.hasResult);
+      console.log(`[${requestId}] pdfPayload.text_length:`, scanFull.pdfPayload?.text_length);
+      console.log(`[${requestId}] pdfPayload.chunks:`, scanFull.pdfPayload?.chunks);
+      console.log(`[${requestId}] pdfPayload.warnings:`, scanFull.pdfPayload?.warnings);
+      console.log(`[${requestId}] Full pdfPayload:`, JSON.stringify(scanFull.pdfPayload, null, 2));
+    } else {
+      console.warn(`[${requestId}] [PDFPAYLOAD_MISSING] ========================================`);
+      console.warn(`[${requestId}] pdfPayload is undefined or null`);
+      console.warn(`[${requestId}] Available scan_full keys:`, Object.keys(scanFull));
+    }
     const clausesArray = Array.isArray(scanFull.clauses) ? scanFull.clauses : [];
     
     scanFull.meta = scanFull.meta || {};
