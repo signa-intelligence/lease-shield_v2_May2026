@@ -300,12 +300,14 @@ Deno.serve(async (req) => {
     
     scanFull.key_terms = scanFull.key_terms || {};
 
-    console.log('SCAN_CF_V1_BEFORE_UPDATE', { 
+    console.log(`[${requestId}] [SCAN_UPDATE_PREPARATION]`, { 
       scanId: targetScan.id,
       clausesCount: clausesArray.length,
-      clause_ledger_count: scanFull.clause_ledger.length,
-      text_length: scanFull.meta.text_length,
-      risk_score: scanFull.risk_score
+      clause_ledger_count: scanFull.clause_ledger?.length || 0,
+      text_length: scanFull.meta?.text_length,
+      risk_score: scanFull.risk_score,
+      hasKeyTerms: !!scanFull.key_terms,
+      keyTermsKeys: scanFull.key_terms ? Object.keys(scanFull.key_terms) : []
     });
 
     // Update the existing scan record
@@ -313,29 +315,68 @@ Deno.serve(async (req) => {
     // asServiceRole sets created_by=null, blocking subsequent user updates via RLS
     const svc = base44;
     
+    const scanUpdateData = {
+      scan_full: scanFull,
+      risk_score: scanFull.risk_score || 0,
+      summary: scanFull.summary?.executive_summary || "Lease analysis complete.",
+      status: 'completed'
+    };
+    
+    console.log(`[${requestId}] [SCAN_UPDATE_DATA]`, {
+      scanId: targetScan.id,
+      updateFields: Object.keys(scanUpdateData),
+      riskScore: scanUpdateData.risk_score,
+      status: scanUpdateData.status,
+      summaryLength: scanUpdateData.summary?.length || 0,
+      scanFullSize: JSON.stringify(scanUpdateData.scan_full).length
+    });
+    
     try {
-      console.log('SCAN_CF_V1_UPDATING_SCAN', { scanId: targetScan.id });
+      console.log(`[${requestId}] [SCAN_UPDATE_START]`, { scanId: targetScan.id });
       
-      await svc.entities.LeaseScan.update(targetScan.id, {
-        scan_full: scanFull,
-        risk_score: scanFull.risk_score || 0,
-        summary: scanFull.summary?.executive_summary || "Lease analysis complete.",
-        status: 'completed'
-      });
+      await svc.entities.LeaseScan.update(targetScan.id, scanUpdateData);
+      
+      console.log(`[${requestId}] [SCAN_UPDATE_SUCCESS]`, { scanId: targetScan.id });
       
       // Update Lease entity with extracted key_terms
       if (scanFull.key_terms) {
-        await svc.entities.Lease.update(leaseId, {
+        const leaseUpdateData = {
           property_address: scanFull.key_terms.property_address || null,
           start_date: scanFull.key_terms.lease_start_date || null,
           end_date: scanFull.key_terms.lease_end_date || null,
           rent_amount: scanFull.key_terms.monthly_rent || null,
           deposit_amount: scanFull.key_terms.security_deposit || null
+        };
+        
+        console.log(`[${requestId}] [LEASE_UPDATE_DATA]`, {
+          leaseId,
+          updateFields: Object.keys(leaseUpdateData).filter(k => leaseUpdateData[k] !== null),
+          propertyAddress: leaseUpdateData.property_address,
+          startDate: leaseUpdateData.start_date,
+          endDate: leaseUpdateData.end_date,
+          rentAmount: leaseUpdateData.rent_amount,
+          depositAmount: leaseUpdateData.deposit_amount
         });
         
-        console.log('[SCANLEASE_LEASE_UPDATED]', { 
-          leaseId,
-          propertyAddress: scanFull.key_terms.property_address 
+        try {
+          await svc.entities.Lease.update(leaseId, leaseUpdateData);
+          
+          console.log(`[${requestId}] [LEASE_UPDATE_SUCCESS]`, { 
+            leaseId,
+            updatedFields: Object.keys(leaseUpdateData).filter(k => leaseUpdateData[k] !== null)
+          });
+        } catch (leaseUpdateErr) {
+          console.error(`[${requestId}] [LEASE_UPDATE_FAILED]`, {
+            error: leaseUpdateErr.message,
+            stack: leaseUpdateErr.stack,
+            leaseId,
+            updateData: leaseUpdateData
+          });
+          // Continue despite lease update failure
+        }
+      } else {
+        console.log(`[${requestId}] [LEASE_UPDATE_SKIPPED]`, { 
+          reason: 'No key_terms in scan_full' 
         });
       }
 
