@@ -537,6 +537,17 @@ Deno.serve(async (req) => {
       // Log but don't fail scan - extraction is supplementary
     }
 
+    console.log(`[${requestId}] [SCAN_SUCCESS]`, {
+      scanId: targetScan.id,
+      leaseId: leaseId,
+      clausesCount: scanFull.clauses?.length || 0,
+      riskScore: scanFull.risk_score
+    });
+    
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log(`✅ SCAN REQUEST COMPLETE [${requestId}]`);
+    console.log('═══════════════════════════════════════════════════════════════');
+    
     return new Response(JSON.stringify({
       ok: true,
       scanId: targetScan.id,
@@ -548,12 +559,23 @@ Deno.serve(async (req) => {
     });
 
   } catch (e) {
-    console.error('SCAN_CF_V1_ERROR', String(e));
+    console.error(`[${requestId}] [CRITICAL_ERROR]`, {
+      error: e.message,
+      stack: e.stack,
+      errorName: e.name,
+      fullError: String(e)
+    });
+    
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log(`❌ SCAN REQUEST FAILED [${requestId}]`);
+    console.log('═══════════════════════════════════════════════════════════════');
+    
     return new Response(JSON.stringify({ 
       ok: false, 
       step: 'FUNCTION_CRASH', 
       error_code: 'UNHANDLED_EXCEPTION', 
-      message: String(e?.message || e) 
+      message: String(e?.message || e),
+      stack: e?.stack
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
