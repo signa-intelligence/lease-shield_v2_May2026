@@ -18,7 +18,10 @@ Deno.serve(async (req) => {
     const svc = base44.asServiceRole || base44;
     
     // Get parameters from request body
-    const { email, tier, available_scans, subscription_status } = await req.json();
+    const { email, tier, scans, available_scans, subscription_status } = await req.json();
+    
+    // Support both 'scans' and 'available_scans' parameter names
+    const targetScans = scans !== undefined ? scans : available_scans;
 
     if (!email) {
       return Response.json({ error: 'Email is required' }, { status: 400 });
@@ -44,7 +47,7 @@ Deno.serve(async (req) => {
     // FORCE update with values from parameters or data.* if root is null
     const updateData = {
       tier: tier || user.tier || user.data?.tier || 'explorer',
-      available_scans: available_scans !== null && available_scans !== undefined ? available_scans : (user.available_scans !== null && user.available_scans !== undefined ? user.available_scans : (user.data?.available_scans ?? 1)),
+      available_scans: targetScans !== null && targetScans !== undefined ? targetScans : (user.available_scans !== null && user.available_scans !== undefined ? user.available_scans : (user.data?.available_scans ?? 1)),
       subscription_status: subscription_status || user.subscription_status || user.data?.subscription_status || 'active'
     };
     
