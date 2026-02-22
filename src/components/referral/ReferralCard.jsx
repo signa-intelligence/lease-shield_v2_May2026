@@ -13,9 +13,28 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
 
   const { data: referrals = [] } = useQuery({
     queryKey: ['referrals', user?.email],
-    queryFn: () => base44.entities.Referral.filter({ referrer_email: user?.email }, '-created_date', 10),
+    queryFn: () => base44.entities.Referral.filter({ referrer_email: user?.email }, '-created_date', 50),
     enabled: !!user,
   });
+
+  // Tier-based referral limits
+  const TIER_LIMITS = {
+    free: 3,
+    lite: 10,
+    protect: 25,
+    secure: 999
+  };
+
+  const userTier = user?.plan_tier || 'free';
+  const tierLimit = user?.referral_limit_override || TIER_LIMITS[userTier] || TIER_LIMITS.free;
+  const isUnlimited = userTier === 'secure' || tierLimit >= 999;
+
+  // Count active referrals (exclude refunded/chargeback)
+  const activeReferrals = referrals.filter(r => 
+    ['pending_first_payment', 'pending_refund_window', 'converted', 'cancelled'].includes(r.status)
+  );
+  const currentReferralCount = activeReferrals.length;
+  const limitReached = !isUnlimited && currentReferralCount >= tierLimit;
 
   const t = {
     en: {
@@ -23,6 +42,11 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       subtitle: "Share your link. When friends complete 3 months of paid subscription, you earn credit toward your next invoice.",
       unlimitedReferrals: "Unlimited Referrals",
       unlimitedDesc: "No cap on invites",
+      referralLimit: "Referral Limit",
+      referralsUsed: "used",
+      upgradeForMore: "Upgrade for more",
+      limitReached: "Limit Reached",
+      limitReachedDesc: "Upgrade your plan to refer more friends",
       creditRule: "Earn Friend's Plan Value",
       creditRuleDesc: "You earn what your friend subscribes to",
       autoApplied: "Auto-Applied",
@@ -48,6 +72,11 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       subtitle: "แชร์ลิงก์ของคุณ เมื่อเพื่อนชำระครบ 3 เดือนติดต่อกัน คุณจะได้รับเครดิตสำหรับใบแจ้งหนี้ถัดไป",
       unlimitedReferrals: "แนะนำได้ไม่จำกัด",
       unlimitedDesc: "ไม่จำกัดจำนวนเพื่อน",
+      referralLimit: "ขอบเขตการแนะนำ",
+      referralsUsed: "ใช้ไปแล้ว",
+      upgradeForMore: "อัปเกรดเพื่อเพิ่มเติม",
+      limitReached: "ถึงขีดจำกัด",
+      limitReachedDesc: "อัปเกรดแผนเพื่อแนะนำเพื่อนเพิ่มเติม",
       creditRule: "ได้รับมูลค่าแผนของเพื่อน",
       creditRuleDesc: "คุณได้รับตามแผนที่เพื่อนสมัคร",
       autoApplied: "ใช้อัตโนมัติ",
@@ -73,6 +102,11 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       subtitle: "分享您的链接。当好友完成3个月的连续付费订阅时，您将获得下次发票的抵扣额度。",
       unlimitedReferrals: "无限推荐",
       unlimitedDesc: "邀请不设上限",
+      referralLimit: "推荐限制",
+      referralsUsed: "已使用",
+      upgradeForMore: "升级以获取更多",
+      limitReached: "已达上限",
+      limitReachedDesc: "升级您的计划以推荐更多朋友",
       creditRule: "获得好友计划价值",
       creditRuleDesc: "您获得好友订阅的计划价值",
       autoApplied: "自动应用",
@@ -98,6 +132,11 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       subtitle: "リンクを共有。友達が3ヶ月間の連続有料購読を完了すると、次回請求のクレジットが得られます。",
       unlimitedReferrals: "無制限紹介",
       unlimitedDesc: "招待上限なし",
+      referralLimit: "紹介制限",
+      referralsUsed: "使用済み",
+      upgradeForMore: "アップグレードして増やす",
+      limitReached: "上限に達しました",
+      limitReachedDesc: "より多くの友達を紹介するにはプランをアップグレード",
       creditRule: "友達のプラン価値を獲得",
       creditRuleDesc: "友達が購読するプランの価値を獲得",
       autoApplied: "自動適用",
@@ -123,6 +162,11 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       subtitle: "링크를 공유하세요. 친구가 3개월 연속 유료 구독을 완료하면 다음 청구서의 크레딧을 받습니다.",
       unlimitedReferrals: "무제한 추천",
       unlimitedDesc: "초대 제한 없음",
+      referralLimit: "추천 한도",
+      referralsUsed: "사용됨",
+      upgradeForMore: "업그레이드하여 더 많이",
+      limitReached: "한도 도달",
+      limitReachedDesc: "더 많은 친구를 추천하려면 플랜 업그레이드",
       creditRule: "친구 플랜 가치 획득",
       creditRuleDesc: "친구가 구독하는 플랜 가치 획득",
       autoApplied: "자동 적용",
@@ -148,6 +192,11 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       subtitle: "Поделитесь ссылкой. Когда друзья завершат 3 месяца подряд платной подписки, вы получите кредит на следующий счёт.",
       unlimitedReferrals: "Неограниченные приглашения",
       unlimitedDesc: "Без лимита",
+      referralLimit: "Лимит приглашений",
+      referralsUsed: "использовано",
+      upgradeForMore: "Обновите для большего",
+      limitReached: "Лимит достигнут",
+      limitReachedDesc: "Обновите план, чтобы приглашать больше друзей",
       creditRule: "Получаете стоимость плана друга",
       creditRuleDesc: "Вы получаете стоимость того плана, который выбирает друг",
       autoApplied: "Автоприменение",
@@ -268,13 +317,27 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
             backgroundColor: colors.fieldBg,
             border: `1px solid ${colors.borderColor}`
           }}>
-            <Gift className="w-5 h-5 mx-auto mb-1" style={{ color: '#10B981' }} />
-            <p className="text-xs font-bold mb-0.5" style={{ color: colors.textPrimary }}>
-              {strings.unlimitedReferrals}
-            </p>
-            <p className="text-[10px]" style={{ color: colors.textSecondary }}>
-              {strings.unlimitedDesc}
-            </p>
+            {isUnlimited ? (
+              <>
+                <Gift className="w-5 h-5 mx-auto mb-1" style={{ color: '#10B981' }} />
+                <p className="text-xs font-bold mb-0.5" style={{ color: colors.textPrimary }}>
+                  {strings.unlimitedReferrals}
+                </p>
+                <p className="text-[10px]" style={{ color: colors.textSecondary }}>
+                  {strings.unlimitedDesc}
+                </p>
+              </>
+            ) : (
+              <>
+                <Users className="w-5 h-5 mx-auto mb-1" style={{ color: limitReached ? '#EF4444' : '#10B981' }} />
+                <p className="text-xs font-bold mb-0.5" style={{ color: colors.textPrimary }}>
+                  {currentReferralCount} / {tierLimit}
+                </p>
+                <p className="text-[10px]" style={{ color: colors.textSecondary }}>
+                  {strings.referralsUsed}
+                </p>
+              </>
+            )}
           </div>
           <div className="p-3 rounded-lg text-center" style={{
             backgroundColor: colors.fieldBg,
@@ -339,6 +402,49 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
           </div>
         )}
 
+        {/* Limit warning banner */}
+        {limitReached && (
+          <div className="mb-6 p-4 rounded-xl border-2" style={{
+            backgroundColor: colors.fieldBg,
+            borderColor: '#EF4444'
+          }}>
+            <div className="flex items-start gap-3">
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                backgroundColor: '#EF4444',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-bold mb-1" style={{ color: '#EF4444' }}>
+                  {strings.limitReached}
+                </p>
+                <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                  {strings.limitReachedDesc}
+                </p>
+                <a
+                  href="#plan-selector"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    haptic.medium();
+                    document.getElementById('plan-selector')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-xs font-bold underline"
+                  style={{ color: '#0C3B2E' }}
+                >
+                  {strings.upgradeForMore} →
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Referral link */}
         <div className="mb-6">
           <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
@@ -348,27 +454,31 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
             <div className="flex-1 p-3 rounded-lg text-sm font-mono truncate" style={{
               backgroundColor: colors.fieldBg,
               border: `1px solid ${colors.borderColor}`,
-              color: colors.textPrimary
+              color: limitReached ? colors.textSecondary : colors.textPrimary,
+              opacity: limitReached ? 0.6 : 1
             }}>
               {referralLink}
             </div>
             <button
-              onClick={handleCopy}
+              onClick={limitReached ? null : handleCopy}
+              disabled={limitReached}
               className="btn-interaction"
               style={{
                 padding: '12px 16px',
                 borderRadius: '8px',
-                backgroundColor: copiedItem === 'link' ? '#10B981' : '#0C3B2E',
+                backgroundColor: limitReached ? '#9CA3AF' : (copiedItem === 'link' ? '#10B981' : '#0C3B2E'),
                 color: '#FFFFFF',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: limitReached ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
                 fontWeight: '600',
                 fontSize: '14px',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                opacity: limitReached ? 0.5 : 1
               }}
+              title={limitReached ? strings.limitReachedDesc : ''}
             >
               {copiedItem === 'link' ? (
                 <CheckCircle2 className="w-4 h-4" />
@@ -378,22 +488,25 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
               <span className="hidden sm:inline">{copiedItem === 'link' ? strings.linkCopied : strings.copyLink}</span>
             </button>
             <button
-              onClick={handleShare}
+              onClick={limitReached ? null : handleShare}
+              disabled={limitReached}
               className="btn-interaction"
               style={{
                 padding: '12px 16px',
                 borderRadius: '8px',
-                backgroundColor: '#C7A338',
+                backgroundColor: limitReached ? '#9CA3AF' : '#C7A338',
                 color: '#FFFFFF',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: limitReached ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
                 fontWeight: '600',
                 fontSize: '14px',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                opacity: limitReached ? 0.5 : 1
               }}
+              title={limitReached ? strings.limitReachedDesc : ''}
             >
               <Share2 className="w-4 h-4" />
               <span className="hidden sm:inline">{strings.shareLink}</span>

@@ -56,6 +56,47 @@ Deno.serve(async (req) => {
       });
     }
 
+    // TIER-BASED REFERRAL LIMITS - Prevent unlimited exploitation
+    const REFERRAL_LIMITS = {
+      'free': 3,
+      'lite': 10,
+      'protect': 25,
+      'secure': 999  // Effectively unlimited
+    };
+
+    const referrerTier = referrer.plan_tier || 'free';
+    const tierLimit = referrer.referral_limit_override || REFERRAL_LIMITS[referrerTier] || REFERRAL_LIMITS.free;
+
+    // Count active referrals (exclude refunded/chargeback)
+    const existingReferrals = await base44.asServiceRole.entities.Referral.filter({
+      referrer_user_id: referrer.id,
+      status: {
+        $in: ['pending_first_payment', 'pending_refund_window', 'converted', 'cancelled']
+      }
+    });
+
+    const currentReferralCount = existingReferrals.length;
+
+    console.log('[REFERRAL_LIMIT_CHECK]', {
+      referrerEmail: referrer.email,
+      referrerTier: referrerTier,
+      currentCount: currentReferralCount,
+      tierLimit: tierLimit,
+      allowed: currentReferralCount < tierLimit
+    });
+
+    if (currentReferralCount >= tierLimit) {
+      console.warn('[REFERRAL_SIGNUP] ⚠️ Referral limit exceeded');
+      return Response.json({ 
+        processed: false,
+        reason: 'referral_limit_exceeded',
+        message: `Referrer has reached their ${referrerTier} tier limit (${tierLimit} referrals). They need to upgrade to refer more friends.`,
+        currentCount: currentReferralCount,
+        tierLimit: tierLimit,
+        referrerTier: referrerTier
+      });
+    }
+
     // Update user with referrer
     await base44.auth.updateMe({ referred_by: referrer.id });
 
