@@ -20,13 +20,13 @@ export default function ReportFull() {
   // Parse params ONLY after mount (window-safe)
   useEffect(() => {
     // Safe access to window after mount
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search);
     
     // Log raw URL for debugging
     console.log('[REPORTFULL_PARSE]', {
       href: window.location.href,
-      search: window.location.search,
-      searchEmpty: window.location.search === '',
+      search: location.search,
+      searchEmpty: location.search === '',
       allParams: Object.fromEntries(urlParams)
     });
     
