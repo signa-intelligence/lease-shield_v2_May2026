@@ -280,6 +280,112 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
   const totalEarned = user?.referral_credits_total_thb || 0;
   const referralCount = user?.referral_count || 0;
 
+  // Account age check
+  const accountCreatedAt = user?.created_date ? new Date(user.created_date) : new Date();
+  const accountAgeMs = Date.now() - accountCreatedAt.getTime();
+  const accountAgeDays = accountAgeMs / (1000 * 60 * 60 * 24);
+  const MINIMUM_AGE_DAYS = 7;
+  const accountTooNew = accountAgeDays < MINIMUM_AGE_DAYS && !user?.referral_code;
+  const daysUntilEligible = Math.ceil(MINIMUM_AGE_DAYS - accountAgeDays);
+
+  // If account too new and no referral code, show countdown
+  if (accountTooNew) {
+    return (
+      <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+        <CardHeader style={{
+          background: 'linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%)',
+          borderRadius: '16px 16px 0 0'
+        }}>
+          <div className="flex items-start gap-3">
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              background: 'rgba(255,255,255,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Users className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-lg font-bold text-white mb-1">
+                {language === 'th' ? '🔒 โปรแกรมแนะนำจะปลดล็อกเร็วๆ นี้' : 
+                 language === 'zh' ? '🔒 推荐计划即将解锁' :
+                 language === 'ja' ? '🔒 紹介プログラムがまもなく解除されます' :
+                 language === 'ko' ? '🔒 추천 프로그램 곧 잠금 해제' :
+                 language === 'ru' ? '🔒 Реферальная программа скоро откроется' :
+                 '🔒 Referral Program Unlocks Soon'}
+              </CardTitle>
+              <p className="text-sm text-white/90">
+                {language === 'th' ? 'บัญชีของคุณต้องมีอายุ 7 วันเพื่อสร้างรหัสแนะนำ' :
+                 language === 'zh' ? '您的账户必须达到7天才能生成推荐代码' :
+                 language === 'ja' ? 'アカウントが7日経過すると紹介コードを生成できます' :
+                 language === 'ko' ? '추천 코드를 생성하려면 계정이 7일 이상 되어야 합니다' :
+                 language === 'ru' ? 'Вашему аккаунту должно быть 7 дней для генерации реферального кода' :
+                 'Your account must be 7 days old to generate a referral code'}
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <div className="mb-4">
+              <p className="text-5xl font-bold mb-2" style={{ color: '#C7A338' }}>
+                {daysUntilEligible}
+              </p>
+              <p className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+                {language === 'th' ? `${daysUntilEligible} วันที่เหลือ` :
+                 language === 'zh' ? `还剩${daysUntilEligible}天` :
+                 language === 'ja' ? `あと${daysUntilEligible}日` :
+                 language === 'ko' ? `${daysUntilEligible}일 남음` :
+                 language === 'ru' ? `Осталось ${daysUntilEligible} дн.` :
+                 `${daysUntilEligible} day${daysUntilEligible !== 1 ? 's' : ''} remaining`}
+              </p>
+            </div>
+            <div className="mb-6">
+              <div style={{
+                width: '100%',
+                height: '12px',
+                backgroundColor: colors.fieldBg,
+                borderRadius: '6px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${(accountAgeDays / MINIMUM_AGE_DAYS) * 100}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #0C3B2E 0%, #10B981 100%)',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+              <p className="text-xs mt-2" style={{ color: colors.textSecondary }}>
+                {language === 'th' ? `วันที่ ${Math.floor(accountAgeDays)} จาก 7` :
+                 language === 'zh' ? `第${Math.floor(accountAgeDays)}天，共7天` :
+                 language === 'ja' ? `${Math.floor(accountAgeDays)}日目 / 7日` :
+                 language === 'ko' ? `${Math.floor(accountAgeDays)}일 / 7일` :
+                 language === 'ru' ? `День ${Math.floor(accountAgeDays)} из 7` :
+                 `Day ${Math.floor(accountAgeDays)} of 7`}
+              </p>
+            </div>
+            <div className="p-4 rounded-lg" style={{
+              backgroundColor: colors.fieldBg,
+              border: `1px solid ${colors.borderColor}`
+            }}>
+              <p className="text-xs" style={{ color: colors.textSecondary }}>
+                {language === 'th' ? '💡 สิ่งนี้ช่วยป้องกันการฉ้อโกงและทำให้มั่นใจว่าผู้ใช้ที่แท้จริงเข้าร่วมโปรแกรมแนะนำของเรา' :
+                 language === 'zh' ? '💡 这有助于防止欺诈并确保真实用户参与我们的推荐计划' :
+                 language === 'ja' ? '💡 これは不正を防ぎ、本物のユーザーが紹介プログラムに参加することを保証します' :
+                 language === 'ko' ? '💡 이는 사기를 방지하고 진정한 사용자가 추천 프로그램에 참여하도록 보장합니다' :
+                 language === 'ru' ? '💡 Это помогает предотвратить мошенничество и гарантирует участие настоящих пользователей' :
+                 '💡 This helps prevent fraud and ensures genuine users participate in our referral program.'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
       <CardHeader style={{

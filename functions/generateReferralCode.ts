@@ -24,6 +24,36 @@ Deno.serve(async (req) => {
       }, { status: 429 });
     }
 
+    // MINIMUM ACCOUNT AGE REQUIREMENT - Prevent immediate farming
+    const MINIMUM_ACCOUNT_AGE_DAYS = 7;
+    const accountCreatedAt = new Date(user.created_date);
+    const accountAgeMs = Date.now() - accountCreatedAt.getTime();
+    const accountAgeDays = accountAgeMs / (1000 * 60 * 60 * 24);
+
+    if (accountAgeDays < MINIMUM_ACCOUNT_AGE_DAYS) {
+      const daysRemaining = Math.ceil(MINIMUM_ACCOUNT_AGE_DAYS - accountAgeDays);
+      
+      console.log('[ACCOUNT_AGE_CHECK] ⚠️ Account too new:', {
+        email: user.email,
+        accountAgeDays: Math.floor(accountAgeDays),
+        required: MINIMUM_ACCOUNT_AGE_DAYS,
+        daysRemaining
+      });
+
+      return Response.json({
+        error: 'ACCOUNT_TOO_NEW',
+        message: `Your account must be ${MINIMUM_ACCOUNT_AGE_DAYS} days old to generate a referral code. Please wait ${daysRemaining} more day(s).`,
+        accountAgeDays: Math.floor(accountAgeDays),
+        requiredAgeDays: MINIMUM_ACCOUNT_AGE_DAYS,
+        daysRemaining: daysRemaining
+      }, { status: 403 });
+    }
+
+    console.log('[ACCOUNT_AGE_CHECK] ✅ Account age sufficient:', {
+      accountAgeDays: Math.floor(accountAgeDays),
+      required: MINIMUM_ACCOUNT_AGE_DAYS
+    });
+
     // Check if user already has a referral code
     if (user.referral_code) {
       return Response.json({
