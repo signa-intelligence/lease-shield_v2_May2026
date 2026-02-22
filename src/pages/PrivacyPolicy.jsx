@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 
 export default function PrivacyPolicy() {
-  const language = 'en'; // Default to English for legal doc
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
@@ -19,8 +18,32 @@ export default function PrivacyPolicy() {
       lastUpdated: "Last Updated: January 2025",
       sections: [
         {
+          icon: AlertCircle,
+          title: "1. Right to be Forgotten (GDPR)",
+          content: `You have the right to request deletion of all your personal data at any time. This is your fundamental right under GDPR and data protection laws.
+
+HOW TO DELETE YOUR ACCOUNT:
+1. Go to Account → Data & Privacy section
+2. Click "Delete Account Permanently"
+3. Confirm your email address
+4. Accept that this action is permanent
+5. Click "Permanently Delete Account"
+
+WHAT GETS DELETED:
+• All lease documents and scans
+• All deposit tracking and timeline events
+• All cases and maintenance requests
+• All uploaded files and evidence
+• Personal information (name, phone, address)
+• Notification preferences and settings
+
+PROCESSING TIME: Your data will be permanently deleted immediately upon confirmation. This process is irreversible.
+
+NEED HELP? For GDPR-related requests or questions, contact us at privacy@leaseshield.asia`
+        },
+        {
           icon: FileText,
-          title: "1. Information We Collect",
+          title: "2. Information We Collect",
           content: `We collect the following information to provide our lease analysis services:
 
 • Personal Information: Name, email address, phone number, and country
@@ -34,7 +57,7 @@ All data collection is limited to what is necessary to provide our services to y
         },
         {
           icon: Lock,
-          title: "2. How We Use Your Information",
+          title: "3. How We Use Your Information",
           content: `Your information is used exclusively for:
 
 • AI-Powered Lease Analysis: Analyzing your lease agreements for risks and unfair clauses
@@ -51,7 +74,7 @@ Lease Shield team members do not have access to user documents by default. Only 
         },
         {
           icon: Shield,
-          title: "3. Data Storage & Security",
+          title: "4. Data Storage & Security",
           content: `Your data security is our top priority:
 
 • Encryption: All files are encrypted at rest and in transit using industry-standard protocols
@@ -65,7 +88,7 @@ We implement technical and organizational measures to protect against unauthoriz
         },
         {
           icon: Globe,
-          title: "4. Data Sharing & Third Parties",
+          title: "5. Data Sharing & Third Parties",
           content: `We work with trusted service providers:
 
 • Base44/Supabase: Cloud storage and database infrastructure (Data Processor)
@@ -79,7 +102,7 @@ We may disclose information if required by law, court order, or to protect our l
         },
         {
           icon: FileText,
-          title: "5. Your Rights Under PDPA",
+          title: "6. Your Rights Under PDPA",
           content: `As a data subject in Thailand, you have the right to:
 
 • Access: Request a copy of all personal data we hold about you
@@ -94,7 +117,7 @@ To exercise these rights, contact us at privacy@leaseshield.asia or use the "Exp
         },
         {
           icon: AlertCircle,
-          title: "6. Data Retention",
+          title: "7. Data Retention",
           content: `We retain your information for:
 
 • Active Accounts: As long as your account remains active
@@ -106,7 +129,7 @@ After account closure, we securely delete your data within 30 days, except where
         },
         {
           icon: Mail,
-          title: "7. Cookies & Tracking",
+          title: "8. Cookies & Tracking",
           content: `We use essential cookies to:
 
 • Maintain your login session
@@ -117,7 +140,7 @@ We do NOT use third-party advertising cookies or sell your browsing data.`
         },
         {
           icon: Shield,
-          title: "8. International Data Transfers",
+          title: "9. International Data Transfers",
           content: `Your data is primarily stored in Singapore (AWS Asia-Pacific region). If we transfer data outside Thailand, we ensure:
 
 • Adequate protection mechanisms are in place
@@ -126,7 +149,7 @@ We do NOT use third-party advertising cookies or sell your browsing data.`
         },
         {
           icon: FileText,
-          title: "9. Changes to This Policy",
+          title: "10. Changes to This Policy",
           content: `We may update this Privacy Policy to reflect changes in our practices or legal requirements. We will notify you of significant changes via:
 
 • Email notification to your registered address
@@ -137,7 +160,7 @@ Continued use of our services after changes constitutes acceptance of the update
         },
         {
           icon: Mail,
-          title: "10. Contact Us",
+          title: "11. Contact Us",
           content: `For privacy-related questions or to exercise your rights:
 
 Email: privacy@leaseshield.asia
