@@ -37,6 +37,20 @@ function TemplatesContent() {
   const isDarkMode = user?.theme === 'dark';
   const letterCredits = user?.letter_credits || 0;
   const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
+  const userTier = user?.plan_tier || 'free';
+
+  // Fetch template download usage
+  const { data: templateUsage } = useQuery({
+    queryKey: ['templateUsage', user?.email],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('checkTemplateDownloadLimit', {
+        userEmail: user.email,
+        tier: userTier
+      });
+      return response?.data;
+    },
+    enabled: !!user
+  });
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ['templateAssets'],
@@ -366,19 +380,59 @@ function TemplatesContent() {
           showBack={false}
           isDarkMode={isDarkMode}
           actions={
-            <Card className="border-none shadow-md" style={{ backgroundColor: colors.cardBg }}>
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ShoppingCart className="w-5 h-5" style={{ color: '#0C3B2E' }} />
-                  <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                    {strings.creditsBalance}
-                  </span>
-                </div>
-                <Badge className="text-lg font-bold px-4 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-                  {letterCredits}
-                </Badge>
-              </CardContent>
-            </Card>
+            <div className="flex flex-col gap-2">
+              <Card className="border-none shadow-md" style={{ backgroundColor: colors.cardBg }}>
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="w-5 h-5" style={{ color: '#0C3B2E' }} />
+                    <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                      {strings.creditsBalance}
+                    </span>
+                  </div>
+                  <Badge className="text-lg font-bold px-4 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
+                    {letterCredits}
+                  </Badge>
+                </CardContent>
+              </Card>
+
+              {/* Template Usage for Free/Lite tiers */}
+              {['free', 'lite', 'explorer'].includes(userTier) && templateUsage && (
+                <Card className="border-none shadow-md" style={{ backgroundColor: colors.cardBg }}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                        {language === 'th' ? 'เทมเพลตที่ใช้' : 'Templates Used'}
+                      </span>
+                      <span className="text-sm font-bold" style={{ 
+                        color: templateUsage.used >= templateUsage.limit ? '#EF4444' : '#0C3B2E' 
+                      }}>
+                        {templateUsage.used}/{templateUsage.limit}
+                      </span>
+                    </div>
+                    {templateUsage.used >= templateUsage.limit && (
+                      <div className="mt-2 p-2 rounded-lg text-center" style={{ backgroundColor: '#FEE2E2' }}>
+                        <p className="text-xs font-semibold" style={{ color: '#DC2626' }}>
+                          {language === 'th' 
+                            ? 'ถึงขอบเขตแล้ว! อัปเกรดเพื่อเทมเพลตไม่จำกัด' 
+                            : 'Limit reached! Upgrade for unlimited templates'}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Unlimited badge for Protect/Secure */}
+              {['protect', 'secure'].includes(userTier) && (
+                <Card className="border-none shadow-md" style={{ backgroundColor: colors.cardBg }}>
+                  <CardContent className="p-3 flex items-center justify-center">
+                    <Badge className="text-sm font-bold px-3 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
+                      {language === 'th' ? '✨ เทมเพลตไม่จำกัด' : '✨ Unlimited Templates'}
+                    </Badge>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           }
         />
 

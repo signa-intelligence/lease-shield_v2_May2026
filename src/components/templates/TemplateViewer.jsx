@@ -140,6 +140,19 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       return;
     }
 
+    // Check template download limit
+    const userTier = user?.plan_tier || 'free';
+    const limitCheckResponse = await base44.functions.invoke('checkTemplateDownloadLimit', {
+      userEmail: user.email,
+      tier: userTier
+    });
+    
+    const limitCheck = limitCheckResponse?.data;
+    if (!limitCheck?.allowed) {
+      toast.error(limitCheck?.message || 'Template download limit reached');
+      return;
+    }
+
     setCopying(true);
     try {
       console.log('[TEMPLATE] Copy text action:', { template_key: template?.template_key, lang: displayLang, credits_before: letterCredits });
@@ -172,9 +185,18 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         source_ref: `template_copy:${template.template_key}:${documentLangForExport}`
       });
 
+      // Track download
+      await base44.functions.invoke('trackTemplateDownload', {
+        userEmail: user.email,
+        templateKey: template.template_key,
+        templateName: title,
+        tier: userTier
+      });
+
       console.log('[TEMPLATE] Credit deducted, credits_after:', letterCredits - 1);
 
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ['templateUsage'] });
       toast.success(language === 'th' 
         ? `คัดลอกแล้ว! เครดิตคงเหลือ: ${letterCredits - 1}` 
         : `Copied! Credits remaining: ${letterCredits - 1}`);
@@ -201,6 +223,19 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
     if (!canUseCredits) {
       setShowCreditModal(true);
+      return;
+    }
+
+    // Check template download limit
+    const userTier = user?.plan_tier || 'free';
+    const limitCheckResponse = await base44.functions.invoke('checkTemplateDownloadLimit', {
+      userEmail: user.email,
+      tier: userTier
+    });
+    
+    const limitCheck = limitCheckResponse?.data;
+    if (!limitCheck?.allowed) {
+      toast.error(limitCheck?.message || 'Template download limit reached');
       return;
     }
 
@@ -241,9 +276,18 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         source_ref: `template_docx:${template.template_key}:${documentLangForExport}`
       });
 
+      // Track download
+      await base44.functions.invoke('trackTemplateDownload', {
+        userEmail: user.email,
+        templateKey: template.template_key,
+        templateName: title,
+        tier: userTier
+      });
+
       console.log('[TEMPLATE] Credit deducted, credits_after:', letterCredits - 1);
 
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ['templateUsage'] });
       toast.success(language === 'th' 
         ? `ดาวน์โหลดแล้ว! เครดิตคงเหลือ: ${letterCredits - 1}` 
         : `Downloaded! Credits remaining: ${letterCredits - 1}`);
