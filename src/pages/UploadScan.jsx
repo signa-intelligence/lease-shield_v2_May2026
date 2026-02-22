@@ -942,13 +942,40 @@ function UploadScanPageContent() {
           throw new Error('USER_NOT_LOADED: Cannot create lease without user email');
         }
 
+        // Calculate total file size for storage tracking
+        const totalFileSize = filesToUpload.reduce((sum, file) => sum + (file?.size || 0), 0);
+        
+        // Check storage quota BEFORE upload
+        try {
+          const quotaResponse = await base44.functions.invoke('checkStorageQuota', {
+            fileSize: totalFileSize
+          });
+          
+          const quotaResult = quotaResponse?.data;
+          
+          if (quotaResult && !quotaResult.allowed) {
+            const errorMsg = language === 'th'
+              ? `พื้นที่จัดเก็บไม่เพียงพอ\n\nคุณมีพื้นที่เหลือ ${quotaResult.remainingMB}MB แต่ต้องการ ${quotaResult.fileSizeMB}MB\n\nอัปเกรดเพื่อเพิ่มพื้นที่จัดเก็บ`
+              : `Storage limit exceeded\n\nYou have ${quotaResult.remainingMB}MB remaining but need ${quotaResult.fileSizeMB}MB\n\nUpgrade for more storage`;
+            
+            setError(errorMsg);
+            setUploading(false);
+            setAnalyzing(false);
+            return;
+          }
+        } catch (quotaErr) {
+          console.warn('[STORAGE_QUOTA_CHECK_FAILED]', quotaErr);
+          // Fail open - allow upload if quota check fails
+        }
+        
         const lease = await base44.entities.Lease.create({
           file_url: uploadedUrls[0], // Primary file
           file_urls: uploadedUrls, // All pages
           status: 'queued',
           owner_email: user.email,
           created_by: user.email,
-          original_filename: originalFilename
+          original_filename: originalFilename,
+          file_size_bytes: totalFileSize
         });
         createdLeaseId = lease.id;
 
@@ -1091,6 +1118,17 @@ function UploadScanPageContent() {
         
         if (!scan.id) throw new Error('BUG: scanId missing');
         if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        
+        // Update storage usage after successful upload
+        try {
+          await base44.functions.invoke('updateStorageUsage', {
+            bytesAdded: totalFileSize
+          });
+          console.log('[STORAGE_USAGE_UPDATED]', { bytesAdded: totalFileSize });
+        } catch (storageErr) {
+          console.warn('[STORAGE_UPDATE_FAILED]', storageErr);
+          // Non-blocking - continue even if storage tracking fails
+        }
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
         navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
@@ -1353,13 +1391,41 @@ function UploadScanPageContent() {
           throw new Error('USER_NOT_LOADED: Cannot create lease without user email');
         }
 
+        // Calculate total file size for storage tracking
+        const totalFileSizeSingle = normalizedFiles.reduce((sum, file) => sum + (file?.size || 0), 0);
+        
+        // Check storage quota BEFORE creating lease
+        try {
+          const quotaResponse = await base44.functions.invoke('checkStorageQuota', {
+            fileSize: totalFileSizeSingle
+          });
+          
+          const quotaResult = quotaResponse?.data;
+          
+          if (quotaResult && !quotaResult.allowed) {
+            const errorMsg = language === 'th'
+              ? `พื้นที่จัดเก็บไม่เพียงพอ\n\nคุณมีพื้นที่เหลือ ${quotaResult.remainingMB}MB แต่ต้องการ ${quotaResult.fileSizeMB}MB\n\nอัปเกรดเพื่อเพิ่มพื้นที่จัดเก็บ`
+              : `Storage limit exceeded\n\nYou have ${quotaResult.remainingMB}MB remaining but need ${quotaResult.fileSizeMB}MB\n\nUpgrade for more storage`;
+            
+            setError(errorMsg);
+            setUploading(false);
+            setAnalyzing(false);
+            setAnalysisStage('');
+            return;
+          }
+        } catch (quotaErr) {
+          console.warn('[STORAGE_QUOTA_CHECK_FAILED]', quotaErr);
+          // Fail open - allow upload if quota check fails
+        }
+        
         const lease = await base44.entities.Lease.create({
           file_url: fileUrls[0],
           file_urls: fileUrls,
           status: 'uploaded',
           owner_email: user.email,
           created_by: user.email,
-          original_filename: originalFilename
+          original_filename: originalFilename,
+          file_size_bytes: totalFileSizeSingle
         });
         createdLeaseId = lease.id;
 
@@ -1563,6 +1629,17 @@ function UploadScanPageContent() {
         
         // Force refetch deposits immediately to ensure UI shows new data
         await queryClient.refetchQueries({ queryKey: ['deposits'] });
+        
+        // Update storage usage after successful upload
+        try {
+          await base44.functions.invoke('updateStorageUsage', {
+            bytesAdded: totalFileSizeSingle
+          });
+          console.log('[STORAGE_USAGE_UPDATED]', { bytesAdded: totalFileSizeSingle });
+        } catch (storageErr) {
+          console.warn('[STORAGE_UPDATE_FAILED]', storageErr);
+          // Non-blocking - continue even if storage tracking fails
+        }
         
         // Pass scan_full directly via navigation state to avoid DB replication lag
         const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(finalScanId)}&leaseId=${encodeURIComponent(lease.id)}`;

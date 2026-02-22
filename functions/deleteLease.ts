@@ -44,6 +44,16 @@ Deno.serve(async (req) => {
     if (!lease) {
       return Response.json({ error: 'Lease not found' }, { status: 404 });
     }
+    
+    // Track file size for storage decrement
+    const fileSize = lease.file_size_bytes || 0;
+    const ownerEmail = lease.owner_email;
+    
+    console.log('[DELETE_LEASE_STORAGE]', {
+      leaseId,
+      fileSize,
+      ownerEmail
+    });
 
     // Get and archive related deposit trackers (by lease_id AND property_address)
     const depositsByLeaseId = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
@@ -140,11 +150,25 @@ Deno.serve(async (req) => {
       throw err;
     }
 
+    // Decrement storage usage after successful deletion
+    if (fileSize > 0 && ownerEmail) {
+      try {
+        await svc.functions.invoke('updateStorageUsage', {
+          bytesAdded: -fileSize
+        });
+        console.log(`[${correlationId}] [STORAGE_DECREMENTED]`, { bytesRemoved: fileSize });
+      } catch (storageErr) {
+        console.warn(`[${correlationId}] [STORAGE_DECREMENT_FAILED]`, storageErr);
+        // Non-blocking - continue even if storage update fails
+      }
+    }
+    
     console.log(`[${correlationId}] Successfully deleted lease and cascaded records`, {
       deposits: depositsByLeaseId.length,
       maintenance: maintenanceRequests.length,
       timeline: timelineByLeaseId.length,
-      scans: leaseScans.length
+      scans: leaseScans.length,
+      storageFreed: fileSize
     });
 
     return Response.json({
@@ -156,6 +180,7 @@ Deno.serve(async (req) => {
         timeline: allTimelineEvents.length,
         scans: leaseScans.length
       },
+      storageFreed: fileSize,
       correlationId
     });
 

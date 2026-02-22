@@ -17,6 +17,7 @@ import RecentLeases from "../components/dashboard/RecentLeases";
 import ProtectionScoreEnhanced from "../components/dashboard/ProtectionScoreEnhanced";
 import NotificationSummary from "../components/dashboard/NotificationSummary";
 import ProtectionScoreDetails from "../components/dashboard/ProtectionScoreDetails";
+import StorageMeter from "../components/dashboard/StorageMeter";
 import EmptyState from "../components/shared/EmptyState";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import PullToRefresh from "../components/shared/PullToRefresh";
@@ -158,6 +159,15 @@ function DashboardContent() {
   const { data: timelineEvents = [] } = useQuery({
     queryKey: ['timelineEvents'],
     queryFn: () => base44.entities.TimelineEvent.filter({ owner_email: user?.email }),
+    enabled: !!user,
+  });
+
+  const { data: storageInfo } = useQuery({
+    queryKey: ['userStorage', user?.email],
+    queryFn: async () => {
+      const storageRecords = await base44.entities.UserStorage.filter({ user_email: user?.email });
+      return storageRecords[0] || null;
+    },
     enabled: !!user,
   });
 
@@ -2622,6 +2632,26 @@ ja: {
                     </div>
                   )}
                 </Card>
+                
+                {/* Storage Usage Section */}
+                {storageInfo && (
+                  <Card
+                    className="border-none shadow-lg"
+                    style={{
+                      backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
+                      border: `1px solid ${colors.borderColor}`
+                    }}
+                  >
+                    <div className="p-5">
+                      <StorageMeter 
+                        storageInfo={storageInfo}
+                        userTier={userTier}
+                        colors={colors}
+                        language={language}
+                      />
+                    </div>
+                  </Card>
+                )}
               </>
             )}
           </div>
