@@ -223,21 +223,67 @@ Deno.serve(async (req) => {
       });
     }
 
+    // FRAUD PATTERN DETECTION - Check for suspicious activity
+    let fraudCheck = { riskScore: 0, riskLevel: 'low', patterns: [], suspicious: false };
+    
+    try {
+      const fraudResponse = await base44.asServiceRole.functions.invoke('checkReferralFraudPatterns', {
+        referrerUserId: referrer.id,
+        referredUserEmail: user.email
+      });
+      
+      fraudCheck = fraudResponse.data || fraudCheck;
+      
+      if (fraudCheck.riskLevel === 'critical' || fraudCheck.riskLevel === 'high') {
+        console.log('[FRAUD_ALERT] ⚠️ High-risk referral detected:', {
+          referrerEmail: referrer.email,
+          referredEmail: user.email,
+          riskLevel: fraudCheck.riskLevel,
+          riskScore: fraudCheck.riskScore,
+          patterns: fraudCheck.patterns.length
+        });
+      }
+    } catch (fraudError) {
+      console.error('[FRAUD_CHECK] ⚠️ Fraud check failed (non-critical):', fraudError.message);
+      // Continue with referral creation even if fraud check fails
+    }
+
     // Update user with referrer
     await base44.auth.updateMe({ referred_by: referrer.id });
 
-    // Create pending referral record (store normalized email for deduplication)
+    // Create pending referral record (store normalized email + fraud metadata)
+    const referralStatus = fraudCheck.riskLevel === 'critical' ? 'pending_review' : 'pending_first_payment';
+    
     await base44.asServiceRole.entities.Referral.create({
       referrer_user_id: referrer.id,
       referrer_email: referrer.email,
       referred_user_id: user.id,
       referred_email: normalizedUserEmail, // Use normalized email
       referral_code: referralCode,
-      status: 'pending_first_payment',
+      status: referralStatus,
       stripe_customer_id: user.stripe_customer_id || null,
       stripe_subscription_id: null, // Will be set when subscription created
-      months_paid: 0
+      months_paid: 0,
+      fraud_risk_score: fraudCheck.riskScore,
+      fraud_patterns: JSON.stringify(fraudCheck.patterns),
+      flagged_for_review: fraudCheck.riskLevel === 'critical'
     });
+
+    // Send admin alert if critical risk
+    if (fraudCheck.riskLevel === 'critical') {
+      try {
+        await base44.asServiceRole.functions.invoke('notifyAdminFraudAlert', {
+          referralId: referrer.id, // Will be created ID
+          referrerEmail: referrer.email,
+          riskScore: fraudCheck.riskScore,
+          patterns: JSON.stringify(fraudCheck.patterns)
+        });
+        
+        console.log('[FRAUD_ALERT] ✅ Admin notified of critical fraud pattern');
+      } catch (alertError) {
+        console.error('[FRAUD_ALERT] ⚠️ Failed to send admin alert:', alertError.message);
+      }
+    }
 
     console.log('[REFERRAL_SIGNUP] ✅ Referral created');
     console.log('[REFERRAL_SIGNUP] Referrer:', referrer.email);

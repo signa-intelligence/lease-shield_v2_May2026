@@ -65,7 +65,9 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       noReferralsYet: "No referrals yet. Share your link to get started!",
       example: "Example: You're on Lite. Friend joins Protect (฿390) and completes 3 months → you earn ฿390.",
       earnedCredit: "Earned",
-      status: "Status"
+      status: "Status",
+      pendingVerification: "Pending Verification",
+      pendingVerificationDesc: "referral(s) pending routine verification. Typically completes within 24-48 hours."
     },
     th: {
       title: "แนะนำเพื่อน รับเดือนฟรี",
@@ -95,7 +97,9 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       noReferralsYet: "ยังไม่มีการแนะนำ แชร์ลิงก์เพื่อเริ่มต้น!",
       example: "ตัวอย่าง: คุณใช้ Lite เพื่อนใช้ Protect (฿390) และชำระครบ 3 เดือน → คุณได้ ฿390",
       earnedCredit: "ได้รับ",
-      status: "สถานะ"
+      status: "สถานะ",
+      pendingVerification: "รอการตรวจสอบ",
+      pendingVerificationDesc: "การแนะนำกำลังรอการตรวจสอบตามปกติ โดยปกติจะเสร็จภายใน 24-48 ชั่วโมง"
     },
     zh: {
       title: "推荐好友，赚免费月份",
@@ -276,6 +280,7 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
   };
 
   const convertedReferrals = referrals.filter(r => r.status === 'converted');
+  const pendingReviewCount = referrals.filter(r => r.status === 'pending_review').length;
   const totalCredit = user?.referral_credits_thb || 0;
   const totalEarned = user?.referral_credits_total_thb || 0;
   const referralCount = user?.referral_count || 0;
@@ -505,6 +510,37 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
             <p className="text-xs" style={{ color: colors.textSecondary }}>
               💡 {strings.appliedToNextInvoice}
             </p>
+          </div>
+        )}
+
+        {/* Pending verification notice */}
+        {pendingReviewCount > 0 && (
+          <div className="mb-6 p-4 rounded-lg" style={{
+            backgroundColor: colors.fieldBg,
+            borderLeft: '4px solid #3B82F6'
+          }}>
+            <div className="flex items-start gap-3">
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                backgroundColor: '#3B82F6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <CheckCircle2 className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-semibold mb-1" style={{ color: '#3B82F6' }}>
+                  ℹ️ {pendingReviewCount} {strings.pendingVerification}
+                </p>
+                <p className="text-xs" style={{ color: colors.textSecondary }}>
+                  {strings.pendingVerificationDesc}
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

@@ -221,7 +221,42 @@ Deno.serve(async (req) => {
                 });
 
                 if (referralRecords.length > 0) {
-                  await base44.asServiceRole.entities.Referral.update(referralRecords[0].id, {
+                  const referral = referralRecords[0];
+                  
+                  // FRAUD CHECK - Don't issue credit if flagged for review
+                  if (referral.flagged_for_review && !referral.reviewed_by_admin) {
+                    console.log('[CREDIT_BLOCKED_PENDING_REVIEW]', {
+                      referralId: referral.id,
+                      referrerEmail: referrer.email,
+                      riskScore: referral.fraud_risk_score
+                    });
+                    
+                    await base44.asServiceRole.entities.Referral.update(referral.id, {
+                      status: 'pending_review',
+                      stripe_subscription_id: session.subscription,
+                      stripe_customer_id: session.customer,
+                      months_paid: billingInterval === 'annual' ? 12 : 1,
+                      last_payment_date: now
+                    });
+                    
+                    // Send alert to admin
+                    try {
+                      await base44.asServiceRole.functions.invoke('notifyAdminFraudAlert', {
+                        referralId: referral.id,
+                        referrerEmail: referrer.email,
+                        riskScore: referral.fraud_risk_score || 0,
+                        patterns: referral.fraud_patterns || '[]'
+                      });
+                    } catch (alertErr) {
+                      console.error('[FRAUD_ALERT] Failed:', alertErr.message);
+                    }
+                    
+                    console.log('[REFERRAL_CREDIT] ⚠️ Credit held pending manual review');
+                    return; // Don't issue credit yet
+                  }
+                  
+                  // Normal flow - update referral
+                  await base44.asServiceRole.entities.Referral.update(referral.id, {
                     status: billingInterval === 'annual' ? 'pending_refund_window' : 'converted',
                     credit_thb: creditTHB,
                     referrer_plan_at_conversion: referrer.plan_tier,
@@ -792,7 +827,34 @@ Deno.serve(async (req) => {
           console.log('[PAYMENT_WEBHOOK] Months paid:', monthsPaid, '/ 3');
 
           if (monthsPaid >= 3) {
-            // Qualified! Award credit to referrer
+            // Qualified! But check fraud flag first
+            
+            // FRAUD CHECK - Don't issue credit if flagged
+            if (referral.flagged_for_review && !referral.reviewed_by_admin) {
+              console.log('[CREDIT_BLOCKED_3MONTH] Flagged for review:', referral.id);
+              
+              await base44.asServiceRole.entities.Referral.update(referral.id, {
+                status: 'pending_review',
+                months_paid: monthsPaid,
+                last_payment_date: now
+              });
+              
+              // Alert admin
+              try {
+                await base44.asServiceRole.functions.invoke('notifyAdminFraudAlert', {
+                  referralId: referral.id,
+                  referrerEmail: referral.referrer_email,
+                  riskScore: referral.fraud_risk_score || 0,
+                  patterns: referral.fraud_patterns || '[]'
+                });
+              } catch (alertErr) {
+                console.error('[FRAUD_ALERT] Failed:', alertErr.message);
+              }
+              
+              continue; // Don't issue credit
+            }
+            
+            // Award credit to referrer
             const creditTHB = referral.credit_thb || 0;
             
             if (creditTHB > 0) {
