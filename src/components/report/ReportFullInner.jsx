@@ -107,8 +107,8 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงสูง (คะแนน: ${score}/100)\n\n`;
       summary += `สัญญาเช่านี้มีความเสี่ยงสูงและมีข้อที่ต้องพิจารณาอย่างรอบคอบก่อนลงนาม `;
-      if (criticalCount > 0) summary += `${criticalCount} ข้อถูกจัดอันดับเป็นความเสี่ยงวิกฤตและอาจมีปัญหาทางกฎหมาย `;
-      if (highCount > 0) summary += `${highCount} ข้อถูกจัดอันดับเป็นความเสี่ยงสูงและอาจส่งผลกระทบต่อสิทธิของคุณ `;
+      if (criticalCount > 0) summary += `ข้อวิกฤตอาจมีปัญหาทางกฎหมาย `;
+      if (highCount > 0) summary += `ข้อเสี่ยงสูงอาจส่งผลกระทบต่อสิทธิของคุณ `;
       
       summary += `\n\nการวิเคราะห์โดยละเอียด:\nสัญญานี้มีข้อกำหนดหลายข้อที่เอื้อประโยชน์ต่อเจ้าของบ้านอย่างชัดเจน โดยลดการปกป้องสิทธิพื้นฐานของผู้เช่า ข้อวิกฤตอาจรวมถึงข้อจำกัดการใช้ทรัพย์สิน เงื่อนไขการคืนเงินมัดจำที่เข้มงวด หรือการระงับข้อพิพาทที่ไม่เป็นธรรม ข้อเหล่านี้อาจไม่สอดคล้องกับกฎหมายคุ้มครองผู้บริโภคหรือหลักความยุติธรรมพื้นฐาน\n\n`;
       
@@ -128,10 +128,10 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
       summary += `This lease agreement is exceptionally HIGH RISK and contains clauses that require careful attention before signing. `;
       if (criticalCount > 0) {
-        summary += `${criticalCount} clause(s) are rated CRITICAL and may be legally problematic or heavily favor the landlord while stripping the tenant of basic protections. `;
+        summary += `Critical clauses may be legally problematic or heavily favor the landlord while stripping the tenant of basic protections. `;
       }
       if (highCount > 0) {
-        summary += `${highCount} clause(s) are rated HIGH RISK and could significantly impact your rights as a tenant. `;
+        summary += `High-risk clauses could significantly impact your rights as a tenant. `;
       }
       if (topRisks && topRisks.length > 0) {
         summary += `\n\nKey concerns include: ${topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ')}. `;
@@ -1081,7 +1081,7 @@ const clauses = clausesRaw.map((c, idx) => {
     original_clause_title: c.original_clause_title || c.canonical_name || c.title || `Clause ${idx + 1}`,
     title: c.original_clause_title || c.canonical_name || c.title || `Clause ${idx + 1}`,
     risk_level: riskLevel,
-    plain_english: c.explanation || c.plain_english || c.risk_summary || '—',
+    plain_english: c.analysis || c.explanation || c.plain_english || c.risk_summary || '—',
     text: c.clause_text || c.text || c.full_text || '',
     recommendations: recs
   };
