@@ -881,13 +881,13 @@ function CasesContent() {
                            language === 'ja' ? '会員価格は会員登録後30日で適用されます。ケース提出中のアップグレードは今後のケースにのみ適用されます。' :
                            language === 'ko' ? '회원 요금은 회원 가입 30일 후 적용됩니다. 사례 제출 중 업그레이드는 향후 사례에만 적용됩니다.' :
                            language === 'ru' ? 'Цены для членов действуют через 30 дней членства. Обновления во время подачи дела применяются только к будущим делам.' :
-                           'Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only.')
-                        : (language === 'th' ? 'ราคาสมาชิกใช้งานได้หลังสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน' :
-                           language === 'zh' ? '会员价在Lite、Protect或Secure会员30天后生效' :
-                           language === 'ja' ? '会員価格はLite、Protect、Secureの会員登録後30日で適用' :
-                           language === 'ko' ? '회원 요금은 Lite, Protect 또는 Secure 회원 30일 후 적용' :
-                           language === 'ru' ? 'Цены для членов действуют через 30 дней активного членства Lite, Protect или Secure' :
-                           'Member rates apply after 30 days of active Lite, Protect or Secure membership')
+                           'Member rates apply after 30 days of active Protect or Secure membership. Upgrades during case submission apply to future cases only.')
+                        : (language === 'th' ? 'ราคาสมาชิกใช้งานได้หลังสมาชิก Protect หรือ Secure ครบ 30 วัน' :
+                           language === 'zh' ? '会员价在Protect或Secure会员30天后生效' :
+                           language === 'ja' ? '会員価格はProtect、Secureの会員登録後30日で適用' :
+                           language === 'ko' ? '회원 요금은 Protect 또는 Secure 회원 30일 후 적용' :
+                           language === 'ru' ? 'Цены для членов действуют через 30 дней активного членства Protect или Secure' :
+                           'Member rates apply after 30 days of active Protect or Secure membership')
                       }
                     </p>
                   </div>
