@@ -66,7 +66,10 @@ Deno.serve(async (req) => {
       referred_user_id: user.id,
       referred_email: user.email,
       referral_code: referralCode,
-      status: 'pending_first_payment'
+      status: 'pending_first_payment',
+      stripe_customer_id: user.stripe_customer_id || null,
+      stripe_subscription_id: null, // Will be set when subscription created
+      months_paid: 0
     });
 
     console.log('[REFERRAL_SIGNUP] ✅ Referral created');

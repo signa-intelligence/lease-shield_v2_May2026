@@ -140,7 +140,8 @@ Deno.serve(async (req) => {
           subscription_status: 'active',
           subscription_started_at: now,
           member_since: subscribedUser.member_since || now,
-          stripe_subscription_id: session.subscription
+          stripe_subscription_id: session.subscription,
+          stripe_customer_id: session.customer
         });
 
         await safeLog('SUBSCRIPTION_UPDATED', { userId, planTier });
@@ -213,7 +214,7 @@ Deno.serve(async (req) => {
                   console.error('[REFERRAL_CREDIT] ⚠️ Stripe balance update failed:', stripeError.message);
                 }
 
-                // Update referral record
+                // Update referral record with Stripe IDs for refund tracking
                 const referralRecords = await base44.asServiceRole.entities.Referral.filter({
                   referrer_user_id: referrer.id,
                   referred_user_id: subscribedUser.id
@@ -221,14 +222,18 @@ Deno.serve(async (req) => {
 
                 if (referralRecords.length > 0) {
                   await base44.asServiceRole.entities.Referral.update(referralRecords[0].id, {
-                    status: 'converted',
+                    status: billingInterval === 'annual' ? 'pending_refund_window' : 'converted',
                     credit_thb: creditTHB,
                     referrer_plan_at_conversion: referrer.plan_tier,
                     referred_plan: planTier,
-                    converted_at: now
+                    converted_at: now,
+                    stripe_subscription_id: session.subscription,
+                    stripe_customer_id: session.customer,
+                    months_paid: billingInterval === 'annual' ? 12 : 1,
+                    last_payment_date: now
                   });
 
-                  console.log('[REFERRAL_CREDIT] ✅ Referral record updated to converted');
+                  console.log('[REFERRAL_CREDIT] ✅ Referral record updated to', billingInterval === 'annual' ? 'pending_refund_window' : 'converted');
                 }
 
                 // Notify referrer (non-blocking)
@@ -522,6 +527,370 @@ Deno.serve(async (req) => {
       // Non-credit checkout - ignore
       console.log('[WEBHOOK] Non-credit checkout, skipping');
       return Response.json({ received: true }, { status: 200 });
+    }
+
+    // ========================================
+    // HANDLE: charge.refunded - Reverse referral credits
+    // ========================================
+    if (event.type === 'charge.refunded') {
+      const charge = event.data.object;
+      const customerId = charge.customer;
+
+      console.log('[REFUND_WEBHOOK] 💳 Refund detected for customer:', customerId);
+
+      try {
+        // Find converted referrals linked to this customer
+        const referrals = await base44.asServiceRole.entities.Referral.filter({
+          stripe_customer_id: customerId,
+          status: { $in: ['converted', 'pending_refund_window'] }
+        });
+
+        console.log('[REFUND_WEBHOOK] Found', referrals.length, 'referrals to reverse');
+
+        for (const referral of referrals) {
+          const creditToReverse = referral.credit_thb || 0;
+
+          if (creditToReverse > 0) {
+            // Reverse credit from referrer
+            const referrer = await base44.asServiceRole.entities.User.get(referral.referrer_user_id);
+            
+            if (referrer) {
+              await base44.asServiceRole.entities.User.update(referrer.id, {
+                referral_credits_thb: Math.max(0, (referrer.referral_credits_thb || 0) - creditToReverse),
+                referral_count: Math.max(0, (referrer.referral_count || 0) - 1)
+              });
+
+              console.log('[REFUND_WEBHOOK] ✅ Credit reversed from referrer:', referrer.email);
+              console.log('[REFUND_WEBHOOK] Amount reversed:', creditToReverse);
+
+              // Reverse Stripe customer balance if applicable
+              if (referrer.stripe_customer_id) {
+                try {
+                  const customer = await stripe.customers.retrieve(referrer.stripe_customer_id);
+                  const currentBalance = customer.balance || 0;
+                  const creditInSatang = creditToReverse * 100;
+
+                  await stripe.customers.update(referrer.stripe_customer_id, {
+                    balance: currentBalance + creditInSatang // Add back (remove negative credit)
+                  });
+
+                  console.log('[REFUND_WEBHOOK] ✅ Stripe balance reversed');
+                } catch (stripeErr) {
+                  console.error('[REFUND_WEBHOOK] ⚠️ Stripe balance reversal failed:', stripeErr.message);
+                }
+              }
+            }
+
+            // Update referral status
+            await base44.asServiceRole.entities.Referral.update(referral.id, {
+              status: 'refunded',
+              refunded_at: new Date().toISOString(),
+              credit_thb: 0
+            });
+
+            console.log('[REFUND_WEBHOOK] ✅ Referral marked as refunded');
+          }
+        }
+
+        return Response.json({ 
+          received: true, 
+          processed: 'refund',
+          referrals_reversed: referrals.length
+        }, { status: 200 });
+
+      } catch (refundError) {
+        console.error('[REFUND_WEBHOOK] ❌ Error processing refund:', refundError.message);
+        return Response.json({ received: true, error: 'refund_processing_failed' }, { status: 200 });
+      }
+    }
+
+    // ========================================
+    // HANDLE: charge.dispute.created - Chargeback detection
+    // ========================================
+    if (event.type === 'charge.dispute.created') {
+      const dispute = event.data.object;
+      const chargeId = dispute.charge;
+      
+      console.log('[CHARGEBACK_WEBHOOK] ⚠️ Chargeback dispute created');
+
+      try {
+        // Retrieve charge to get customer ID
+        const charge = await stripe.charges.retrieve(chargeId);
+        const customerId = charge.customer;
+
+        console.log('[CHARGEBACK_WEBHOOK] Customer:', customerId);
+
+        // Find converted referrals
+        const referrals = await base44.asServiceRole.entities.Referral.filter({
+          stripe_customer_id: customerId,
+          status: { $in: ['converted', 'pending_refund_window'] }
+        });
+
+        console.log('[CHARGEBACK_WEBHOOK] Found', referrals.length, 'referrals to reverse');
+
+        for (const referral of referrals) {
+          const creditToReverse = referral.credit_thb || 0;
+
+          if (creditToReverse > 0) {
+            // Reverse credit from referrer
+            const referrer = await base44.asServiceRole.entities.User.get(referral.referrer_user_id);
+            
+            if (referrer) {
+              await base44.asServiceRole.entities.User.update(referrer.id, {
+                referral_credits_thb: Math.max(0, (referrer.referral_credits_thb || 0) - creditToReverse),
+                referral_count: Math.max(0, (referrer.referral_count || 0) - 1)
+              });
+
+              console.log('[CHARGEBACK_WEBHOOK] ✅ Credit reversed from referrer:', referrer.email);
+              console.log('[CHARGEBACK_WEBHOOK] Amount reversed:', creditToReverse);
+
+              // Reverse Stripe customer balance
+              if (referrer.stripe_customer_id) {
+                try {
+                  const customer = await stripe.customers.retrieve(referrer.stripe_customer_id);
+                  const currentBalance = customer.balance || 0;
+                  const creditInSatang = creditToReverse * 100;
+
+                  await stripe.customers.update(referrer.stripe_customer_id, {
+                    balance: currentBalance + creditInSatang
+                  });
+
+                  console.log('[CHARGEBACK_WEBHOOK] ✅ Stripe balance reversed');
+                } catch (stripeErr) {
+                  console.error('[CHARGEBACK_WEBHOOK] ⚠️ Stripe balance reversal failed:', stripeErr.message);
+                }
+              }
+
+              // Send notification to referrer
+              if (RESEND_API_KEY && referrer.email_notifications) {
+                const emailBody = `
+                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(to right, #DC2626, #EF4444); padding: 20px; border-radius: 8px 8px 0 0;">
+                      <h2 style="color: white; margin: 0;">⚠️ Referral Credit Reversed</h2>
+                    </div>
+                    <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                      <p>Hi <strong>${referrer.full_name || 'there'}</strong>,</p>
+                      <p>A payment dispute was detected for one of your referrals.</p>
+                      <div style="background: #FEE2E2; padding: 16px; border-radius: 8px; border-left: 4px solid #DC2626; margin: 20px 0;">
+                        <p style="margin: 8px 0;"><strong>Credit reversed:</strong> ฿${creditToReverse}</p>
+                        <p style="margin: 8px 0;"><strong>Current balance:</strong> ฿${Math.max(0, (referrer.referral_credits_thb || 0) - creditToReverse)}</p>
+                      </div>
+                      <p>This occurred due to a payment chargeback. If you have questions, please contact support.</p>
+                      <p style="margin-top: 24px; color: #666; font-size: 12px;">— The Lease Shield Team</p>
+                    </div>
+                  </div>
+                `;
+
+                fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${RESEND_API_KEY}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    from: 'Lease Shield <no-reply@leaseshield.asia>',
+                    to: [referrer.email],
+                    subject: '⚠️ Referral Credit Reversed - Lease Shield',
+                    html: emailBody,
+                  }),
+                }).catch((err) => console.error('[CHARGEBACK_WEBHOOK] Email failed:', err));
+              }
+            }
+
+            // Update referral status
+            await base44.asServiceRole.entities.Referral.update(referral.id, {
+              status: 'chargeback',
+              chargeback_at: new Date().toISOString(),
+              credit_thb: 0
+            });
+
+            console.log('[CHARGEBACK_WEBHOOK] ✅ Referral marked as chargeback');
+          }
+        }
+
+        return Response.json({ 
+          received: true, 
+          processed: 'chargeback',
+          referrals_reversed: referrals.length
+        }, { status: 200 });
+
+      } catch (chargebackError) {
+        console.error('[CHARGEBACK_WEBHOOK] ❌ Error processing chargeback:', chargebackError.message);
+        return Response.json({ received: true, error: 'chargeback_processing_failed' }, { status: 200 });
+      }
+    }
+
+    // ========================================
+    // HANDLE: customer.subscription.deleted - Early cancellation
+    // ========================================
+    if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object;
+      const customerId = subscription.customer;
+
+      console.log('[CANCELLATION_WEBHOOK] 🚫 Subscription cancelled for customer:', customerId);
+
+      try {
+        // Find pending referrals (not yet converted - less than 3 months)
+        const referrals = await base44.asServiceRole.entities.Referral.filter({
+          stripe_customer_id: customerId,
+          status: 'pending_first_payment'
+        });
+
+        console.log('[CANCELLATION_WEBHOOK] Found', referrals.length, 'pending referrals');
+
+        for (const referral of referrals) {
+          await base44.asServiceRole.entities.Referral.update(referral.id, {
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString()
+          });
+
+          console.log('[CANCELLATION_WEBHOOK] ✅ Referral cancelled:', referral.id);
+        }
+
+        return Response.json({ 
+          received: true, 
+          processed: 'cancellation',
+          referrals_cancelled: referrals.length
+        }, { status: 200 });
+
+      } catch (cancellationError) {
+        console.error('[CANCELLATION_WEBHOOK] ❌ Error processing cancellation:', cancellationError.message);
+        return Response.json({ received: true, error: 'cancellation_processing_failed' }, { status: 200 });
+      }
+    }
+
+    // ========================================
+    // HANDLE: invoice.payment_succeeded - Track monthly payments for 3-month rule
+    // ========================================
+    if (event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object;
+      const customerId = invoice.customer;
+      const subscriptionId = invoice.subscription;
+
+      // Only process subscription invoices (not one-time payments)
+      if (!subscriptionId) {
+        return Response.json({ received: true, ignored: true }, { status: 200 });
+      }
+
+      console.log('[PAYMENT_WEBHOOK] 💰 Subscription payment succeeded');
+      console.log('[PAYMENT_WEBHOOK] Customer:', customerId);
+      console.log('[PAYMENT_WEBHOOK] Subscription:', subscriptionId);
+
+      try {
+        // Find pending referrals for this subscription
+        const referrals = await base44.asServiceRole.entities.Referral.filter({
+          stripe_subscription_id: subscriptionId,
+          status: 'pending_first_payment'
+        });
+
+        console.log('[PAYMENT_WEBHOOK] Found', referrals.length, 'pending referrals');
+
+        for (const referral of referrals) {
+          const monthsPaid = (referral.months_paid || 0) + 1;
+          const now = new Date().toISOString();
+
+          console.log('[PAYMENT_WEBHOOK] Months paid:', monthsPaid, '/ 3');
+
+          if (monthsPaid >= 3) {
+            // Qualified! Award credit to referrer
+            const creditTHB = referral.credit_thb || 0;
+            
+            if (creditTHB > 0) {
+              const referrer = await base44.asServiceRole.entities.User.get(referral.referrer_user_id);
+              
+              if (referrer) {
+                await base44.asServiceRole.entities.User.update(referrer.id, {
+                  referral_credits_thb: (referrer.referral_credits_thb || 0) + creditTHB,
+                  referral_credits_total_thb: (referrer.referral_credits_total_thb || 0) + creditTHB,
+                  referral_count: (referrer.referral_count || 0) + 1
+                });
+
+                // Apply Stripe balance credit
+                if (referrer.stripe_customer_id) {
+                  try {
+                    const creditInSatang = creditTHB * 100;
+                    await stripe.customers.update(referrer.stripe_customer_id, {
+                      balance: -creditInSatang, // Negative = credit
+                      metadata: {
+                        last_referral_credit: creditTHB.toString(),
+                        last_referral_date: now
+                      }
+                    });
+
+                    console.log('[PAYMENT_WEBHOOK] ✅ Stripe credit applied');
+                  } catch (stripeErr) {
+                    console.error('[PAYMENT_WEBHOOK] ⚠️ Stripe balance update failed:', stripeErr.message);
+                  }
+                }
+
+                console.log('[PAYMENT_WEBHOOK] ✅ 3-month qualification met - credit awarded');
+
+                // Send referrer notification
+                if (RESEND_API_KEY && referrer.email_notifications) {
+                  const emailBody = `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                      <div style="background: linear-gradient(to right, #0C3B2E, #047857); padding: 20px; border-radius: 8px 8px 0 0;">
+                        <h2 style="color: white; margin: 0;">🎉 Referral Credit Earned!</h2>
+                      </div>
+                      <div style="background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px;">
+                        <p>Hi <strong>${referrer.full_name || 'there'}</strong>,</p>
+                        <p>Your friend completed 3 months of active subscription!</p>
+                        <div style="background: #FFFBEB; padding: 16px; border-radius: 8px; border-left: 4px solid #C7A338; margin: 20px 0;">
+                          <p style="margin: 8px 0;"><strong>Credit earned:</strong> ฿${creditTHB}</p>
+                          <p style="margin: 8px 0;"><strong>New balance:</strong> ฿${(referrer.referral_credits_thb || 0) + creditTHB}</p>
+                        </div>
+                        <p>This credit will automatically reduce your next invoice(s).</p>
+                        <p><a href="https://app.leaseshield.asia/account#referral" style="color: #0C3B2E; font-weight: bold;">View Your Referrals →</a></p>
+                        <p style="margin-top: 24px; color: #666; font-size: 12px;">— The Lease Shield Team</p>
+                      </div>
+                    </div>
+                  `;
+
+                  fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${RESEND_API_KEY}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      from: 'Lease Shield <no-reply@leaseshield.asia>',
+                      to: [referrer.email],
+                      subject: '🎉 You Earned a Referral Credit!',
+                      html: emailBody,
+                    }),
+                  }).catch((err) => console.error('[PAYMENT_WEBHOOK] Email failed:', err));
+                }
+              }
+            }
+
+            // Update referral to converted
+            await base44.asServiceRole.entities.Referral.update(referral.id, {
+              status: 'converted',
+              converted_at: now,
+              months_paid: monthsPaid,
+              last_payment_date: now
+            });
+
+          } else {
+            // Not yet qualified - just increment counter
+            await base44.asServiceRole.entities.Referral.update(referral.id, {
+              months_paid: monthsPaid,
+              last_payment_date: now
+            });
+
+            console.log('[PAYMENT_WEBHOOK] Month', monthsPaid, 'of 3 tracked');
+          }
+        }
+
+        return Response.json({ 
+          received: true, 
+          processed: 'payment_tracking'
+        }, { status: 200 });
+
+      } catch (paymentError) {
+        console.error('[PAYMENT_WEBHOOK] ❌ Error tracking payment:', paymentError.message);
+        return Response.json({ received: true, error: 'payment_tracking_failed' }, { status: 200 });
+      }
     }
 
     // Other event types - acknowledge but don't process
