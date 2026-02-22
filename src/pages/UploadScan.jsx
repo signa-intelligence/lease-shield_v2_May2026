@@ -2200,7 +2200,7 @@ function UploadScanPageContent() {
 
           {/* ✅ SCAN LIMIT INDICATOR */}
           <div className="mt-3">
-            {isLoadingUser ? (
+            {isLoadingUser || !user ? (
               <div className="h-6 w-48 rounded animate-pulse" style={{ backgroundColor: isDarkMode ? '#374151' : '#E5E7EB' }} />
             ) : getScanLimits().unlimited ? (
               <Badge className="bg-purple-100 text-purple-700 border-purple-200">
