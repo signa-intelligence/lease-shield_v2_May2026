@@ -122,7 +122,7 @@ function UploadScanPageContent() {
     }
   };
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: isLoadingUser } = useQuery({
     queryKey: ['user'],
     queryFn: () => base44.auth.me(),
     staleTime: 5 * 60 * 1000
@@ -3001,7 +3001,7 @@ function UploadScanPageContent() {
             ) : (
               <>
                 {/* ✅ SHOW UPGRADE BANNER IF LIMIT REACHED */}
-                {!scanStatus.allowed && (
+                {!isLoadingUser && !scanStatus.allowed && (
                   <div className="mb-6 p-6 rounded-xl border-2" style={{
                     backgroundColor: isDarkMode ? '#3A2626' : '#FEF2F2',
                     borderColor: '#EF4444'
