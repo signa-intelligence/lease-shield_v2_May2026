@@ -234,7 +234,9 @@ CRITICAL: You MUST return a valid JSON object with this EXACT structure (include
 
 DO NOT omit key_terms. Extract property address, dates, and financial terms from the lease text.
 Return ONLY valid JSON, no explanatory text.`
-      : `You are a lease analysis expert. Analyze this lease document clause by clause and provide detailed risk assessment.
+      : `You are a lease analysis expert. 
+
+CRITICAL REQUIREMENT: Analyze EVERY SINGLE clause in this lease document. You MUST provide detailed analysis for ALL clauses found, including low-risk and standard clauses. Do not skip or selectively analyze clauses based on importance. If the lease contains 25 clauses, you must return 25 clause analyses. If it contains 50 clauses, return 50 analyses. EVERY clause must have analysis, risk assessment, and recommendations.
 
 Return a JSON object with this structure:
 {
@@ -264,7 +266,7 @@ Return a JSON object with this structure:
   ]
 }
 
-Return ONLY valid JSON.`;
+REMEMBER: Analyze ALL clauses completely. Return ONLY valid JSON.`;
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -322,9 +324,20 @@ Return ONLY valid JSON.`;
       preview: JSON.stringify(analysisResult).substring(0, 500)
     });
 
+    const returnedClauseCount = analysisResult.clauses?.length || 0;
+    
+    // WARNING: Check if OpenAI returned fewer clauses than expected
+    if (returnedClauseCount < 10 && !isPreviewMode) {
+      console.warn('[ANALYZE_LEASE_LOW_CLAUSE_COUNT]', {
+        correlationId,
+        returnedCount: returnedClauseCount,
+        warning: 'OpenAI may have selectively analyzed clauses instead of ALL clauses'
+      });
+    }
+
     console.log('[ANALYZE_LEASE_OPENAI_COMPLETE]', {
       correlationId,
-      clausesCount: analysisResult.clauses?.length || 0,
+      clausesCount: returnedClauseCount,
       riskScore: analysisResult.risk_score,
       hasMissingClauses: !!analysisResult.missingCriticalClauses,
       missingClausesCount: analysisResult.missingCriticalClauses?.length || 0
