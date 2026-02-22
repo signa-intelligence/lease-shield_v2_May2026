@@ -1,7 +1,6 @@
 import React from 'react';
-<parameter name="content">import React from 'react';
 import { Progress } from '@/components/ui/progress';
-import { Database, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Database, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default function StorageMeter({ storageInfo, userTier, colors, language = 'en' }) {
