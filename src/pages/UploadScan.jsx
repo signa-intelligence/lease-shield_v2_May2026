@@ -797,6 +797,34 @@ function UploadScanPageContent() {
       return;
     }
     
+    // ✅ RATE LIMIT CHECK: Prevent spam uploads (max 20 uploads/hour)
+    try {
+      const rateLimitResponse = await base44.functions.invoke('checkRateLimit', {
+        actionType: 'upload',
+        windowMinutes: 60
+      });
+      
+      const rateLimitResult = rateLimitResponse?.data;
+      
+      if (rateLimitResult && !rateLimitResult.allowed) {
+        const retryMinutes = rateLimitResult.retryAfterMinutes || 1;
+        const errorMsg = language === 'th'
+          ? `ถึงขีดจำกัดการอัปโหลดแล้ว\n\nคุณสามารถอัปโหลดได้อีกครั้งใน ${retryMinutes} นาที\n\nขีดจำกัด: ${rateLimitResult.limit} ไฟล์ต่อชั่วโมง`
+          : `Upload limit reached\n\nYou can upload again in ${retryMinutes} minute${retryMinutes !== 1 ? 's' : ''}\n\nLimit: ${rateLimitResult.limit} uploads per hour`;
+        
+        alert(errorMsg);
+        return;
+      }
+      
+      console.log('[UPLOAD_RATE_LIMIT_PASSED]', {
+        remaining: rateLimitResult?.remaining,
+        limit: rateLimitResult?.limit
+      });
+    } catch (rateLimitErr) {
+      // Fail open - don't block on rate limit errors
+      console.warn('[UPLOAD_RATE_LIMIT_CHECK_FAILED]', rateLimitErr);
+    }
+    
     // ✅ CRITICAL: CHECK SCAN LIMIT FIRST BEFORE ANY UPLOAD
     // Get fresh scan status based on current lease count
     const currentLeaseCount = leases.length;

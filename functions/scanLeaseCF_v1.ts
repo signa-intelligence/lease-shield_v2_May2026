@@ -76,6 +76,50 @@ Deno.serve(async (req) => {
         role: user?.role
       });
 
+      // ✅ RATE LIMIT CHECK: Prevent abuse (max 5-100 scans/hour based on tier)
+      try {
+        const rateLimitResponse = await base44.functions.invoke('checkRateLimit', {
+          actionType: 'scan',
+          windowMinutes: 60
+        });
+        
+        const rateLimitResult = rateLimitResponse?.data;
+        
+        if (rateLimitResult && !rateLimitResult.allowed) {
+          console.log(`[${requestId}] [RATE_LIMIT_EXCEEDED]`, {
+            userEmail,
+            actionType: 'scan',
+            count: rateLimitResult.count,
+            limit: rateLimitResult.limit,
+            retryAfterMinutes: rateLimitResult.retryAfterMinutes
+          });
+          
+          return new Response(JSON.stringify({
+            ok: false,
+            step: 'RATE_LIMIT',
+            error_code: 'RATE_LIMIT_EXCEEDED',
+            message: rateLimitResult.message || 'Too many scan requests. Please try again later.',
+            retryAfter: rateLimitResult.retryAfter,
+            retryAfterMinutes: rateLimitResult.retryAfterMinutes
+          }), { 
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+        
+        console.log(`[${requestId}] [RATE_LIMIT_PASSED]`, {
+          count: rateLimitResult?.count,
+          remaining: rateLimitResult?.remaining,
+          limit: rateLimitResult?.limit
+        });
+      } catch (rateLimitErr) {
+        // Fail open - don't block on rate limit errors
+        console.warn(`[${requestId}] [RATE_LIMIT_CHECK_FAILED]`, {
+          error: rateLimitErr.message,
+          failOpen: true
+        });
+      }
+
       // ✅ CRITICAL: CHECK CREDITS BEFORE SCAN (not after expensive operations)
       // Treat null, undefined, 'free', 'discover', 'explorer' as limited tiers
       const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover' || userTier === 'explorer';
