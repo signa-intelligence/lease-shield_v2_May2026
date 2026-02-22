@@ -1068,9 +1068,8 @@ const topRisksSection = isPreviewMode && topRisks.length > 0 ? (
 ) : null;
 
 // Map clauses to normalize field names with 3 recommendations each
-// IMPORTANT: Preserve original document order - DO NOT sort by risk
 const clausesRaw = Array.isArray(sf.clauses) ? sf.clauses : [];
-const clauses = clausesRaw.map((c, idx) => {
+const allClauses = clausesRaw.map((c, idx) => {
   const riskLevel = c.risk_level || 'none';
   const category = c.canonical_name || c.original_clause_title || c.title || 'clause';
   const recs = parseRecommendations(c.recommended_action || c.recommendation, riskLevel, category);
@@ -1087,20 +1086,50 @@ const clauses = clausesRaw.map((c, idx) => {
   };
 });
 
-// NOTE: Clauses are kept in DOCUMENT ORDER (not sorted by risk)
-// This preserves the original clause numbering from the lease
+// TIER-BASED FILTERING: Lite tier shows top 5 highest-risk clauses only
+const userTier = user?.plan_tier || 'free';
+const isLiteTier = userTier === 'lite';
+
+// Sort clauses by risk level for Lite tier (CRITICAL > HIGH > MEDIUM > LOW)
+const riskOrder = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1, 'none': 0 };
+const sortedByRisk = [...allClauses].sort((a, b) => {
+  const riskDiff = (riskOrder[a.risk_level] || 0) - (riskOrder[b.risk_level] || 0);
+  if (riskDiff !== 0) return -riskDiff; // Descending
+  return 0; // Stable sort for same risk level
+});
+
+// Lite tier: top 5 highest-risk clauses | Other tiers: all clauses
+const clauses = isLiteTier ? sortedByRisk.slice(0, 5) : allClauses;
+const hiddenClausesCount = isLiteTier ? Math.max(0, allClauses.length - 5) : 0;
+
+console.log('[TIER_BASED_FILTERING]', {
+  userTier,
+  isLiteTier,
+  totalClauses: allClauses.length,
+  displayedClauses: clauses.length,
+  hiddenClauses: hiddenClausesCount
+});
 
 // For preview mode, text_length will be 0 (no clauses) - that's expected, not an error
 const textTooShort = !isPreviewMode && meta.text_length !== null && (meta.text_length || 0) < 500 && clauses.length > 0;
 
 // Build detailed executive summary
-const detailedSummary = buildExecutiveSummary(
+let detailedSummary = buildExecutiveSummary(
   sf.risk_score, 
   topRisks, 
   clausesRaw, 
   sf.summary?.executive_summary,
   language
 );
+
+// Add Lite tier limitation notice to summary
+if (isLiteTier && hiddenClausesCount > 0) {
+  const liteNotice = language === 'th'
+    ? `\n\n**หมายเหตุ:** รายงาน Lite tier นี้แสดงการวิเคราะห์ ${clauses.length} ข้อที่มีความเสี่ยงสูงสุด ตรวจพบเพิ่มเติมอีก ${hiddenClausesCount} ข้อ อัปเกรดเป็น Protect เพื่อดูการวิเคราะห์ครบทั้งหมด ${allClauses.length} ข้อ`
+    : `\n\n**Note:** This Lite tier report shows analysis of the ${clauses.length} highest-risk clauses. ${hiddenClausesCount} additional clause${hiddenClausesCount !== 1 ? 's were' : ' was'} detected. Upgrade to Protect for complete analysis of all ${allClauses.length} clauses.`;
+  
+  detailedSummary += liteNotice;
+}
 
 
   return (
@@ -1425,7 +1454,15 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 {language === 'th' ? 'การวิเคราะห์ทีละข้อ' : 'Clause-by-Clause Analysis'}
               </h3>
               <div className="text-xs" style={{ color: colors.textSecondary }}>
-                {clauses.length} {language === 'th' ? 'ข้อ' : 'clauses'}
+                {isLiteTier && hiddenClausesCount > 0 ? (
+                  <>
+                    {language === 'th' ? 'แสดง' : 'Showing'} <strong>{clauses.length}</strong> {language === 'th' ? 'จาก' : 'of'} <strong>{allClauses.length}</strong> {language === 'th' ? 'ข้อ' : 'clauses'}
+                  </>
+                ) : (
+                  <>
+                    {clauses.length} {language === 'th' ? 'ข้อ' : 'clauses'}
+                  </>
+                )}
               </div>
             </div>
             
@@ -1522,6 +1559,78 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 </div>
               )}
             </div>
+
+            {/* LITE TIER UPGRADE BANNER - Show if clauses are hidden */}
+            {isLiteTier && hiddenClausesCount > 0 && (
+              <div className="mt-6 p-6 rounded-xl border-2 shadow-lg" style={{
+                background: isDarkMode 
+                  ? 'linear-gradient(135deg, #1E3A5F 0%, #2A4A6F 100%)'
+                  : 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)',
+                borderColor: '#C7A338'
+              }}>
+                <div className="text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{
+                    backgroundColor: '#C7A338'
+                  }}>
+                    <FileText className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
+                    {language === 'th' 
+                      ? `ดูการวิเคราะห์ทั้งหมด ${allClauses.length} ข้อ`
+                      : `View All ${allClauses.length} Clause Analyses`}
+                  </h3>
+                  <p className="mb-4" style={{ color: colors.textSecondary }}>
+                    {language === 'th'
+                      ? `คุณกำลังดูข้อที่มีความเสี่ยงสูงสุด 5 ข้อ มีอีก ${hiddenClausesCount} ข้อที่ซ่อนอยู่`
+                      : `You're viewing the top 5 highest-risk clauses. ${hiddenClausesCount} additional clause${hiddenClausesCount !== 1 ? 's are' : ' is'} hidden.`}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4 text-left max-w-md mx-auto">
+                    <div className="flex items-center gap-2 text-sm" style={{ color: colors.textPrimary }}>
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <span>{language === 'th' ? `การวิเคราะห์ครบทั้งหมด ${allClauses.length} ข้อ` : `Full analysis of all ${allClauses.length} clauses`}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm" style={{ color: colors.textPrimary }}>
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <span>{language === 'th' ? 'การแจ้งเตือน LINE' : 'LINE notifications'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm" style={{ color: colors.textPrimary }}>
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <span>{language === 'th' ? 'การแจ้งเตือนหลายช่องทาง' : 'Multi-channel alerts'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm" style={{ color: colors.textPrimary }}>
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <span>{language === 'th' ? '5GB พื้นที่เก็บข้อมูล' : '5GB storage'}</span>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      console.log('[LITE_TIER_UPGRADE_CLICKED]', {
+                        userId: user?.id,
+                        source: 'clause_limit_banner',
+                        hiddenClauses: hiddenClausesCount
+                      });
+                      window.location.href = '/account#plans';
+                    }}
+                    style={{ 
+                      backgroundColor: '#0C3B2E', 
+                      color: '#C7A338',
+                      border: '2px solid #C7A338',
+                      fontWeight: 'bold',
+                      padding: '12px 32px',
+                      fontSize: '16px'
+                    }}
+                    className="hover:bg-green-800 transition-all"
+                  >
+                    {language === 'th' ? 'อัปเกรดเป็น Protect ฿390/เดือน' : 'Upgrade to Protect for ฿390/month'}
+                  </Button>
+                  <p className="mt-3 text-xs" style={{ color: colors.textSecondary }}>
+                    {language === 'th'
+                      ? 'ดูความเสี่ยงทั้งหมดและรับการวิเคราะห์แบบเต็มรูปแบบ'
+                      : 'See all risks and get complete analysis'}
+                  </p>
+                </div>
+              </div>
+            )}
               </>
             )}
           </CardContent>
