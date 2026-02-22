@@ -1,4 +1,23 @@
-// components/report/ReportFullInner.jsx
+/******************************************************************************
+ * ⚠️ PRODUCTION CODE - FROZEN - DO NOT MODIFY ⚠️
+ * 
+ * Last Working State: February 22, 2026
+ * Status: PRODUCTION READY - LAUNCHING TO CUSTOMERS
+ * Version: 1.0.0
+ * 
+ * Features working:
+ * - Tier-based clause display (Lite=5, Protect/Secure=all) ✅
+ * - Preview mode upgrade prompts ✅
+ * - Executive summary generation ✅
+ * - Risk scoring and categorization ✅
+ * - PDF export (paid tiers) ✅
+ * - Multi-language support ✅
+ * 
+ * CRITICAL: Tier filtering logic determines user experience value
+ * 
+ * Change process: See CHANGE_REQUEST_TEMPLATE.md
+ ******************************************************************************/
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";

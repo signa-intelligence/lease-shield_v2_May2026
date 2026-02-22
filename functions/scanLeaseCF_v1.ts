@@ -1,5 +1,27 @@
-// PRODUCTION CODE - DO NOT MODIFY WITHOUT EXPLICIT APPROVAL
-// Last verified working: 2026-02-12 (FORCE REBUILD)
+/******************************************************************************
+ * ⚠️ PRODUCTION CODE - FROZEN - DO NOT MODIFY ⚠️
+ * 
+ * Last Working State: February 22, 2026
+ * Status: PRODUCTION READY - LAUNCHING TO CUSTOMERS
+ * Version: 1.0.0
+ * 
+ * THIS CODE IS FROZEN AND MUST NOT BE CHANGED WITHOUT EXPLICIT APPROVAL.
+ * 
+ * Features working:
+ * - Tier-based scan modes (free=preview, paid=full) ✅
+ * - Credit deduction after successful scan ✅
+ * - Auto-populate deposits/timeline ✅
+ * - Rate limiting (tier-based) ✅
+ * - Storage tracking ✅
+ * - Error handling and logging ✅
+ * 
+ * ANY MODIFICATION WILL BREAK WORKING FUNCTIONALITY.
+ * 
+ * Change process: See CHANGE_REQUEST_TEMPLATE.md
+ * Get approval from: steve.l@signa-consultants.com
+ * 
+ * IF IT'S NOT BROKEN, DO NOT FIX IT.
+ ******************************************************************************/
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 

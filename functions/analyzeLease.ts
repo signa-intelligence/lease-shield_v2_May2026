@@ -1,7 +1,22 @@
-// analyzeLease.ts - Lease Analysis Function with Preview/Full Mode Support
-// PRODUCTION CODE - Critical Fix Applied for Preview Mode key_terms Extraction
-// Last Modified: 2026-02-05
-// Fix: Force fallback extraction when OpenAI omits key_terms in preview mode
+/******************************************************************************
+ * ⚠️ PRODUCTION CODE - FROZEN - DO NOT MODIFY ⚠️
+ * 
+ * Last Working State: February 22, 2026
+ * Status: PRODUCTION READY - LAUNCHING TO CUSTOMERS
+ * Version: 1.0.0
+ * 
+ * Features working:
+ * - OpenAI clause analysis (full mode) ✅
+ * - Preview mode (top 5 risks summary) ✅
+ * - Key terms extraction with fallback ✅
+ * - PDF parsing and text extraction ✅
+ * - Risk scoring and categorization ✅
+ * 
+ * CRITICAL: scanMode logic determines tier display (preview vs full)
+ * 
+ * Change process: See CHANGE_REQUEST_TEMPLATE.md
+ * Get approval from: steve.l@signa-consultants.com
+ ******************************************************************************/
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import PDFParser from 'npm:pdf-parse@1.1.1';
