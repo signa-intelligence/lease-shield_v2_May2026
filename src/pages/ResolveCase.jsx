@@ -546,7 +546,9 @@ function ResolveCaseContent() {
       memberPricingUnlocksIn: "Member pricing unlocks after 30 days of active membership. Your member rate will apply to cases submitted after",
       membersPayAfter30Days: "Members pay ฿2,490 per case after 30 days. You can join today for additional benefits.",
       newMembershipNote: "Your new membership will apply member rates to future cases. This case is billed at the public rate.",
-      memberRateExplanation: "Member rates apply after 30 days of active Lite, Protect or Secure membership. Upgrades during case submission apply to future cases only."
+      memberRateExplanation: "Member rates apply after 30 days of active Protect or Secure membership. Lite tier uses public pricing. Upgrades during case submission apply to future cases only.",
+      litePublicNote: "Lite tier uses public rate (฿5,000). Upgrade to Protect or Secure for member pricing (฿3,500).",
+      noSubscriptionRequired: "No subscription required. Anyone can purchase Resolve at ฿5,000 per case."
     },
     th: {
       title: "เปิดคดี",
@@ -594,7 +596,9 @@ function ResolveCaseContent() {
       memberPricingUnlocksIn: "ราคาสมาชิกจะปลดล็อกหลังจากสมาชิกครบ 30 วัน ราคาสมาชิกจะใช้กับคดีที่ส่งหลังวันที่",
       membersPayAfter30Days: "สมาชิกจ่าย ฿2,490 ต่อคดีหลังครบ 30 วัน คุณสามารถเข้าร่วมวันนี้เพื่อรับสิทธิพิเศษเพิ่มเติม",
       newMembershipNote: "การเป็นสมาชิกใหม่ของคุณจะใช้ราคาสมาชิกกับคดีในอนาคต คดีนี้จะคิดราคาทั่วไป",
-      memberRateExplanation: "ราคาสมาชิกใช้งานได้หลังสมาชิก Lite, Protect หรือ Secure ครบ 30 วัน การอัปเกรดระหว่างส่งคดีจะมีผลกับคดีในอนาคตเท่านั้น"
+      memberRateExplanation: "ราคาสมาชิกใช้งานได้หลังสมาชิก Protect หรือ Secure ครบ 30 วัน แผน Lite ใช้ราคาทั่วไป การอัปเกรดระหว่างส่งคดีจะมีผลกับคดีในอนาคตเท่านั้น",
+      litePublicNote: "แผน Lite ใช้ราคาทั่วไป (฿5,000) อัปเกรดเป็น Protect หรือ Secure เพื่อราคาสมาชิก (฿3,500)",
+      noSubscriptionRequired: "ไม่ต้องสมัครสมาชิก ทุกคนสามารถซื้อ Resolve ได้ที่ ฿5,000 ต่อคดี"
     },
     zh: {
       title: "开启案件",
@@ -642,7 +646,9 @@ function ResolveCaseContent() {
       memberPricingUnlocksIn: "会员定价在活跃会员30天后解锁。您的会员价格将适用于之后提交的案件",
       membersPayAfter30Days: "会员30天后每案支付฿2,490。您可以今天加入以获得更多福利。",
       newMembershipNote: "您的新会员资格将对未来案件适用会员价格。此案件按公开价格计费。",
-      memberRateExplanation: "会员价格在Lite、Protect或Secure会员30天后生效。案件提交期间的升级仅适用于未来的案件。"
+      memberRateExplanation: "会员价格在Protect或Secure会员30天后生效。Lite计划使用公开价格。案件提交期间的升级仅适用于未来的案件。",
+      litePublicNote: "Lite计划使用公开价格 (฿5,000)。升级到Protect或Secure以获得会员定价 (฿3,500)。",
+      noSubscriptionRequired: "无需订阅。任何人都可以以每案฿5,000的价格购买Resolve。"
     },
     ja: {
       title: "ケースを開く",
@@ -690,7 +696,9 @@ function ResolveCaseContent() {
       memberPricingUnlocksIn: "会員価格は30日のアクティブな会員資格後に解除されます。会員価格は次の日以降に提出されたケースに適用されます",
       membersPayAfter30Days: "会員は30日後にケースごとに฿2,490を支払います。今日参加して追加の特典を受け取りましょう。",
       newMembershipNote: "新しい会員資格は今後のケースに会員価格を適用します。このケースは公開価格で請求されます。",
-      memberRateExplanation: "会員価格はLite、Protect、Secureの会員登録後30日で適用されます。ケース提出中のアップグレードは今後のケースにのみ適用されます。"
+      memberRateExplanation: "会員価格はProtect、Secureの会員登録後30日で適用されます。Liteプランは公開価格を使用します。ケース提出中のアップグレードは今後のケースにのみ適用されます。",
+      litePublicNote: "Liteプランは公開価格 (฿5,000) を使用します。会員価格 (฿3,500) を利用するにはProtectまたはSecureにアップグレードしてください。",
+      noSubscriptionRequired: "サブスクリプション不要。誰でも฿5,000でResolveを購入できます。"
     },
     ko: {
       title: "사례 열기",
@@ -738,7 +746,9 @@ function ResolveCaseContent() {
       memberPricingUnlocksIn: "회원 가격은 30일의 활성 회원 자격 후에 잠금 해제됩니다. 회원 가격은 다음 날짜 이후에 제출된 사례에 적용됩니다",
       membersPayAfter30Days: "회원은 30일 후 사례당 ฿2,490를 지불합니다. 오늘 가입하여 추가 혜택을 받으세요.",
       newMembershipNote: "새 회원 자격은 향후 사례에 회원 가격을 적용합니다. 이 사례는 공개 가격으로 청구됩니다.",
-      memberRateExplanation: "회원 요금은 Lite, Protect 또는 Secure 회원 가입 30일 후 적용됩니다. 사례 제출 중 업그레이드는 향후 사례에만 적용됩니다.",
+      memberRateExplanation: "회원 요금은 Protect 또는 Secure 회원 가입 30일 후 적용됩니다. Lite 플랜은 공개 요금을 사용합니다. 사례 제출 중 업그레이드는 향후 사례에만 적용됩니다.",
+      litePublicNote: "Lite 플랜은 공개 요금 (฿5,000)을 사용합니다. 회원 가격 (฿3,500)을 이용하려면 Protect 또는 Secure로 업그레이드하세요.",
+      noSubscriptionRequired: "구독 불필요. 누구나 케이스당 ฿5,000에 Resolve를 구매할 수 있습니다.",
       cancel: "취소"
     },
     ru: {
@@ -787,7 +797,9 @@ function ResolveCaseContent() {
       memberPricingUnlocksIn: "Тариф участника активируется после 30 дней активного членства. Ваш тариф применится к делам, поданным после",
       membersPayAfter30Days: "Участники платят ฿2,490 за дело через 30 дней. Присоединяйтесь сегодня для дополнительных преимуществ.",
       newMembershipNote: "Ваше новое членство применит тарифы участника к будущим делам. Это дело оплачивается по публичному тарифу.",
-      memberRateExplanation: "Тарифы участника действуют через 30 дней активного членства Lite, Protect или Secure. Обновления во время подачи дела применяются только к будущим делам.",
+      memberRateExplanation: "Тарифы участника действуют через 30 дней активного членства Protect или Secure. План Lite использует публичные цены. Обновления во время подачи дела применяются только к будущим делам.",
+      litePublicNote: "План Lite использует публичную цену (฿5,000). Обновитесь до Protect или Secure для тарифа участника (฿3,500).",
+      noSubscriptionRequired: "Подписка не требуется. Любой может приобрести Resolve за ฿5,000 за дело.",
       cancel: "Отмена"
     }
   };

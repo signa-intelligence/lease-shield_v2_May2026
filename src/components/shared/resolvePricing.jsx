@@ -1,9 +1,10 @@
 /**
  * UNIFIED MEMBERSHIP SYSTEM - Single source of truth for ALL member benefits
  * 
- * CRITICAL BUSINESS RULES:
+ * CRITICAL BUSINESS RULES (Updated Feb 2026):
  * - Secure: Immediate member benefits (no 30-day wait)
- * - Lite/Protect: Member benefits after 30 days of active membership
+ * - Protect: Member benefits after 30 days of active membership
+ * - Lite: NO member pricing for Resolve (public rate only)
  * - Free: No member benefits, ever
  * 
  * Applies to: Resolve pricing, Letter pricing, Priority features
@@ -72,8 +73,8 @@ export function getMembershipInfo(user, now = new Date()) {
     // APPLIES TO BOTH MONTHLY AND ANNUAL SECURE
     qualifiesForMemberBenefits = true;
     reason = 'secure_immediate';
-  } else if (plan === 'lite' || plan === 'protect') {
-    // LITE/PROTECT: Member benefits after 30 days
+  } else if (plan === 'protect') {
+    // PROTECT: Member benefits after 30 days
     if (membershipDays >= 30) {
       qualifiesForMemberBenefits = true;
       reason = 'qualified_30_days';
@@ -82,6 +83,11 @@ export function getMembershipInfo(user, now = new Date()) {
       reason = 'insufficient_membership_duration';
       daysUntilMemberBenefits = 30 - membershipDays;
     }
+  } else if (plan === 'lite') {
+    // LITE: NO member pricing for Resolve (public rate only)
+    qualifiesForMemberBenefits = false;
+    reason = 'lite_not_eligible';
+    daysUntilMemberBenefits = null;
   } else {
     // FREE: Never qualifies
     qualifiesForMemberBenefits = false;
