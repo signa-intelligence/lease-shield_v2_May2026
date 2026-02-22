@@ -3,6 +3,32 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// Safe logging utility - redacts PII
+const DEBUG_MODE = Deno.env.get('ADMIN_DEBUG') === 'true';
+const PII_FIELDS = ['email', 'userEmail', 'user_email', 'owner_email', 'created_by'];
+
+function redactPII(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const sanitized = Array.isArray(obj) ? [...obj] : { ...obj };
+  for (const key in sanitized) {
+    if (PII_FIELDS.includes(key) && typeof sanitized[key] === 'string' && sanitized[key].includes('@')) {
+      const [local, domain] = sanitized[key].split('@');
+      sanitized[key] = `${local.substring(0, 3)}***@${domain}`;
+    } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
+      sanitized[key] = redactPII(sanitized[key]);
+    }
+  }
+  return sanitized;
+}
+
+function safeLog(message, data = {}, level = 'log') {
+  if (DEBUG_MODE) {
+    console[level](`[${message}]`, data);
+  } else {
+    console[level](`[${message}]`, redactPII(data));
+  }
+}
+
 Deno.serve(async (req) => {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
@@ -68,13 +94,13 @@ Deno.serve(async (req) => {
       userObj = user;
       userTier = user?.plan_tier || 'free';
       userEmail = user?.email;
-      console.log(`[${requestId}] [USER_AUTHENTICATED]`, { 
+      safeLog(`${requestId}_USER_AUTHENTICATED`, { 
         userId: user?.id,
         userTier, 
         userEmail, 
         availableScans: user?.available_scans,
         role: user?.role
-      });
+      }, 'log');
 
       // ✅ RATE LIMIT CHECK: Prevent abuse (max 5-100 scans/hour based on tier)
       try {
@@ -86,13 +112,13 @@ Deno.serve(async (req) => {
         const rateLimitResult = rateLimitResponse?.data;
         
         if (rateLimitResult && !rateLimitResult.allowed) {
-          console.log(`[${requestId}] [RATE_LIMIT_EXCEEDED]`, {
+          safeLog(`${requestId}_RATE_LIMIT_EXCEEDED`, {
             userEmail,
             actionType: 'scan',
             count: rateLimitResult.count,
             limit: rateLimitResult.limit,
             retryAfterMinutes: rateLimitResult.retryAfterMinutes
-          });
+          }, 'log');
           
           return new Response(JSON.stringify({
             ok: false,
@@ -220,30 +246,30 @@ Deno.serve(async (req) => {
     
     if (!targetScan) {
       try {
-        console.log(`[${requestId}] [SCAN_CREATE_ATTEMPT]`, {
+        safeLog(`${requestId}_SCAN_CREATE_ATTEMPT`, {
           lease_id: leaseId,
           owner_email: userEmail,
           created_by: userEmail
-        });
+        }, 'log');
         targetScan = await base44.entities.LeaseScan.create({ 
           lease_id: leaseId,
           owner_email: userEmail,
           created_by: userEmail,
           status: 'initiated' 
         });
-        console.log(`[${requestId}] [SCAN_CREATED_NEW]`, { 
+        safeLog(`${requestId}_SCAN_CREATED_NEW`, { 
           scanId: targetScan.id,
           status: targetScan.status,
           owner_email: targetScan.owner_email,
           created_by: targetScan.created_by
-        });
+        }, 'log');
       } catch (createErr) {
-        console.error(`[${requestId}] [SCAN_CREATE_FAILED]`, {
+        safeLog(`${requestId}_SCAN_CREATE_FAILED`, {
           error: createErr.message,
           stack: createErr.stack,
           leaseId,
           userEmail
-        });
+        }, 'error');
         throw createErr;
       }
     }
@@ -583,14 +609,14 @@ Deno.serve(async (req) => {
       owner_email: userEmail
     };
     
-    console.log(`[${requestId}] [POPULATE_FROM_SCAN_CALL_START]`, { 
+    safeLog(`${requestId}_POPULATE_FROM_SCAN_CALL_START`, { 
       scanId: targetScan.id, 
       leaseId: leaseId,
       userEmail,
       hasScanFull: !!scanFull,
       scanFullSize: JSON.stringify(scanFull).length,
       keyTermsKeys: scanFull.key_terms ? Object.keys(scanFull.key_terms) : []
-    });
+    }, 'log');
 
     try {
       const extractResult = await base44.functions.invoke('populateFromScan', populateParams);

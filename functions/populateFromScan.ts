@@ -3,6 +3,32 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// Safe logging utility - redacts PII
+const DEBUG_MODE = Deno.env.get('ADMIN_DEBUG') === 'true';
+const PII_FIELDS = ['email', 'userEmail', 'user_email', 'owner_email', 'created_by'];
+
+function redactPII(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const sanitized = Array.isArray(obj) ? [...obj] : { ...obj };
+  for (const key in sanitized) {
+    if (PII_FIELDS.includes(key) && typeof sanitized[key] === 'string' && sanitized[key].includes('@')) {
+      const [local, domain] = sanitized[key].split('@');
+      sanitized[key] = `${local.substring(0, 3)}***@${domain}`;
+    } else if (typeof sanitized[key] === 'object' && sanitized[key] !== null) {
+      sanitized[key] = redactPII(sanitized[key]);
+    }
+  }
+  return sanitized;
+}
+
+function safeLog(message, data = {}, level = 'log') {
+  if (DEBUG_MODE) {
+    console[level](`[${message}]`, data);
+  } else {
+    console[level](`[${message}]`, redactPII(data));
+  }
+}
+
 function extractNumericValue(text) {
   if (!text) return null;
   // Extract numbers from strings like "THB 38,000" or "38000" or "38,000.00"
@@ -144,7 +170,7 @@ Deno.serve(async (req) => {
     if (userEmail) {
       // When called from scanLease.js, use the passed email directly
       user = { email: userEmail };
-      console.log('[POPULATE_USER_CONTEXT] Using passed userEmail:', userEmail);
+      safeLog('POPULATE_USER_CONTEXT', { userEmail }, 'log');
     } else {
       // Direct invocation - get from request context
       user = await base44.auth.me();
@@ -517,7 +543,7 @@ Deno.serve(async (req) => {
         event_type: 'lease_start',
         event_date: new Date(startDate).toISOString(),
         title: 'Lease Start Date',
-        description: `Lease agreement begins`,
+        description: 'Lease agreement begins',
         source: 'lease_scan',
         source_scan_id: scanId,
         lease_id: leaseId
@@ -547,7 +573,7 @@ Deno.serve(async (req) => {
         created_by: userEmail
       };
       
-      console.log(`[${executionId}] [DEPOSIT_CREATE_ATTEMPT]`, depositData);
+      safeLog(`${executionId}_DEPOSIT_CREATE_ATTEMPT`, depositData, 'log');
       
       // Validate required fields
       if (!depositData.deposit_amount || !depositData.deposit_paid_date || !depositData.expected_return_date) {
@@ -639,7 +665,11 @@ Deno.serve(async (req) => {
       
       for (const event of updates.timeline) {
         try {
-          console.log('[CREATING_TIMELINE_EVENT]', event);
+          safeLog('CREATING_TIMELINE_EVENT', { 
+            eventType: event.event_type,
+            owner_email: userEmail,
+            created_by: userEmail
+          }, 'log');
           const created = await base44.entities.TimelineEvent.create({
             ...event,
             needs_review: false,
