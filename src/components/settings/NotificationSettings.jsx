@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,6 +89,10 @@ export default function NotificationSettings({ user, onUpdate, colors }) {
       updateMutation.mutate({ line_notifications: !user?.line_notifications });
     }
   };
+  
+  // TIER CHECK: LINE notifications require Protect or Secure
+  const userTier = user?.plan_tier || 'free';
+  const lineAllowed = ['protect', 'secure'].includes(userTier);
 
   return (
     <div className="space-y-6">
@@ -127,11 +130,61 @@ export default function NotificationSettings({ user, onUpdate, colors }) {
               onCheckedChange={toggleEmail}
             />
           </div>
+          
+          {/* LINE Toggle - TIER GATED */}
+          {!lineAllowed && (
+            <div className="p-4 rounded-lg border-2 border-dashed" style={{
+              backgroundColor: colors.bg,
+              borderColor: '#C7A338'
+            }}>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <MessageCircle className="w-5 h-5 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold mb-1" style={{ color: colors.textPrimary }}>
+                    {str.lineNotifications}
+                  </p>
+                  <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? 'ต้องการแผน Protect หรือ Secure เพื่อเปิดใช้งานการแจ้งเตือน LINE'
+                      : language === 'zh'
+                        ? '需要 Protect 或 Secure 计划才能启用 LINE 通知'
+                        : language === 'ja'
+                          ? 'LINE通知を有効にするには、ProtectまたはSecureプランが必要です'
+                          : language === 'ko'
+                            ? 'LINE 알림을 활성화하려면 Protect 또는 Secure 플랜이 필요합니다'
+                            : language === 'ru'
+                              ? 'Для включения уведомлений LINE требуется тариф Protect или Secure'
+                              : 'Requires Protect or Secure tier to enable LINE notifications'}
+                  </p>
+                  <a
+                    href="/account?showPlans=true"
+                    style={{
+                      display: 'inline-block',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      backgroundColor: '#C7A338',
+                      color: '#FFFFFF',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      textDecoration: 'none',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#0C3B2E'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = '#C7A338'}
+                  >
+                    {language === 'th' ? 'อัปเกรด' : language === 'zh' ? '升级' : language === 'ja' ? 'アップグレード' : language === 'ko' ? '업그레이드' : language === 'ru' ? 'Обновить' : 'Upgrade Now'}
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* LINE Connection Flow as separate card */}
-      <LineConnectionFlow user={user} onUpdate={onUpdate} colors={colors} />
+      {/* LINE Connection Flow as separate card - ONLY show if tier allows */}
+      {lineAllowed && <LineConnectionFlow user={user} onUpdate={onUpdate} colors={colors} />}
     </div>
   );
 }

@@ -260,7 +260,11 @@ async function sendNotification(base44, user, flexMessage, notificationType, ent
   const plainText = generatePlainTextFromFlex(flexMessage, language);
 
   // Send to LINE with Flex Message if enabled
-  if (user.line_messaging_token && user.line_notifications) {
+  // TIER GATING: LINE notifications require Protect or Secure tier
+  const userTier = user.plan_tier || 'free';
+  const lineAllowed = ['protect', 'secure'].includes(userTier);
+  
+  if (user.line_messaging_token && user.line_notifications && lineAllowed) {
     try {
       await base44.asServiceRole.functions.invoke('sendLineMessage', {
         userId: user.line_messaging_token,
@@ -271,6 +275,8 @@ async function sendNotification(base44, user, flexMessage, notificationType, ent
     } catch (err) {
       console.error(`❌ LINE failed for ${user.email}:`, err);
     }
+  } else if (!lineAllowed) {
+    console.log(`⏭️ LINE skipped for ${user.email} - tier: ${userTier} (requires Protect/Secure)`);
   }
 
   // Send to Email if enabled

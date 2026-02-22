@@ -618,7 +618,12 @@ Deno.serve(async (req) => {
 
     // Send to tenant via LINE (confirmation)
     console.log('📤 Attempting to send tenant LINE notification...');
-    if (user.line_messaging_token && user.line_notifications !== false) {
+    
+    // TIER GATING: LINE notifications require Protect or Secure tier
+    const userTier = user.plan_tier || 'free';
+    const lineAllowed = ['protect', 'secure'].includes(userTier);
+    
+    if (user.line_messaging_token && user.line_notifications !== false && lineAllowed) {
       try {
         const flexData = {
           issueTitle: maintenanceRequest.issue_title,
@@ -648,8 +653,13 @@ Deno.serve(async (req) => {
         notifications.push({ recipient: 'tenant', method: 'LINE', status: 'failed', error: error.message });
       }
     } else {
-      console.log('⚠️ Tenant LINE not configured or disabled');
-      notifications.push({ recipient: 'tenant', method: 'LINE', status: 'skipped', reason: 'not_configured' });
+      const reason = !lineAllowed 
+        ? 'tier_protection_required' 
+        : !user.line_messaging_token 
+          ? 'not_configured' 
+          : 'disabled';
+      console.log(`⚠️ Tenant LINE skipped: ${reason}`);
+      notifications.push({ recipient: 'tenant', method: 'LINE', status: 'skipped', reason });
     }
 
     // Send to landlord (email) using Resend directly

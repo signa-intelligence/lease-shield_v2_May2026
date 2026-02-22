@@ -11,6 +11,20 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    
+    // TIER GATING: LINE notifications require Protect or Secure tier
+    const user = await base44.auth.me();
+    if (user) {
+      const userTier = user.plan_tier || 'free';
+      if (!['protect', 'secure'].includes(userTier)) {
+        console.log('❌ LINE_TIER_REQUIRED:', { userEmail: user.email, tier: userTier });
+        return Response.json({ 
+          error: 'LINE_TIER_REQUIRED',
+          message: 'LINE notifications require Protect or Secure tier. Upgrade at app.leaseshield.asia/account'
+        }, { status: 403 });
+      }
+    }
+    
     const channelAccessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN'); // LINE Messaging API token
     
     if (!channelAccessToken) {
