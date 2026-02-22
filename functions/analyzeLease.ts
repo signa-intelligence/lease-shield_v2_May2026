@@ -234,7 +234,11 @@ CRITICAL: You MUST return a valid JSON object with this EXACT structure (include
 
 DO NOT omit key_terms. Extract property address, dates, and financial terms from the lease text.
 Return ONLY valid JSON, no explanatory text.`
-      : `You are a lease analysis expert. Analyze this lease document clause by clause and provide detailed risk assessment.
+      : `You are a lease analysis expert. 
+
+CRITICAL INSTRUCTION: Analyze EVERY SINGLE clause in this lease document. You MUST provide analysis for ALL clauses found, including low-risk clauses. Do not skip or selectively analyze clauses based on importance. Each clause must have a title, risk level, analysis, and recommendations.
+
+If the lease has 25 clauses, you must return 25 clause analyses. If it has 30, return 30. Analyze ALL of them.
 
 Return a JSON object with this structure:
 {
@@ -264,7 +268,7 @@ Return a JSON object with this structure:
   ]
 }
 
-Return ONLY valid JSON.`;
+Return ONLY valid JSON with ALL clauses analyzed.`;
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -299,6 +303,21 @@ Return ONLY valid JSON.`;
 
     const completion = await openaiResponse.json();
     const analysisResult = JSON.parse(completion.choices[0].message.content);
+
+    // VALIDATION: Check if all clauses were analyzed
+    const clauseCount = analysisResult.clauses?.length || 0;
+    const textLength = pdfText.length;
+    const estimatedClauseCount = Math.floor(textLength / 200); // Rough estimate
+    
+    if (!isPreviewMode && clauseCount < 10 && textLength > 5000) {
+      console.warn('[ANALYZE_LEASE_INCOMPLETE_ANALYSIS]', {
+        correlationId,
+        clausesReturned: clauseCount,
+        textLength,
+        estimatedClauses: estimatedClauseCount,
+        warning: 'OpenAI may have selectively analyzed clauses instead of all clauses'
+      });
+    }
 
     // CRITICAL FIX: Force fallback extraction for preview mode (OpenAI doesn't return key_terms)
     if (isPreviewMode && (!analysisResult.key_terms || Object.keys(analysisResult.key_terms).length === 0)) {
