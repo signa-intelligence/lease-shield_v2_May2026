@@ -426,6 +426,10 @@ function AccountContent() {
 
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportFormat, setExportFormat] = useState('pdf');
+  const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [confirmDeleteEmail, setConfirmDeleteEmail] = useState('');
+  const [confirmDeleteUnderstand, setConfirmDeleteUnderstand] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const plansSectionRef = React.useRef(null);
 
@@ -872,6 +876,53 @@ function AccountContent() {
       alert(language === 'th' ? 'ไม่สามารถสร้างการชำระเงินได้ กรุณาลองอีกครั้ง' : 'Failed to create checkout. Please try again.');
     } finally {
       setBuyingCredits(prev => ({ ...prev, [pkg.id]: false }));
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (confirmDeleteEmail !== user?.email || !confirmDeleteUnderstand) {
+      toast.error(language === 'th' ? 'กรุณายืนยันอีเมลและยอมรับข้อกำหนด' : 'Please confirm email and accept terms');
+      return;
+    }
+
+    haptic.medium();
+    setIsDeleting(true);
+
+    try {
+      const response = await base44.functions.invoke('deleteUserData', {
+        confirmEmail: confirmDeleteEmail
+      });
+
+      if (response.data?.ok) {
+        haptic.success();
+        alert(language === 'th' 
+          ? 'บัญชีและข้อมูลทั้งหมดของคุณถูกลบอย่างถาวร คุณจะถูกออกจากระบบตอนนี้'
+          : language === 'zh'
+            ? '您的账户和所有数据已被永久删除。您现在将被注销。'
+            : language === 'ja'
+              ? 'アカウントとすべてのデータが完全に削除されました。今すぐログアウトします。'
+              : language === 'ko'
+                ? '계정 및 모든 데이터가 영구적으로 삭제되었습니다. 지금 로그아웃됩니다.'
+                : language === 'ru'
+                  ? 'Ваша учётная запись и все данные были окончательно удалены. Сейчас вы будете выведены из системы.'
+                  : 'Your account and all data have been permanently deleted. You will now be logged out.');
+        
+        await base44.auth.logout();
+        window.location.href = '/';
+      } else {
+        haptic.error();
+        alert(language === 'th' 
+          ? `การลบล้มเหลว: ${response.data?.message || 'ข้อผิดพลาดที่ไม่ทราบสาเหตุ'}`
+          : `Deletion failed: ${response.data?.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('[DELETE_ACCOUNT_ERROR]', error);
+      haptic.error();
+      alert(language === 'th' 
+        ? 'เกิดข้อผิดพลาดระหว่างการลบบัญชี กรุณาติดต่อฝ่ายสนับสนุน'
+        : 'An error occurred during account deletion. Please contact support.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -3983,23 +4034,62 @@ function AccountContent() {
                 </div>
               </div>
 
-              <div style={{
-                padding: '16px',
-                backgroundColor: isDarkMode ? '#2A2020' : '#FEF2F2',
-                borderRadius: '12px',
-                border: '2px solid #DC2626'
-              }}>
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold mb-2" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>{strings.deleteAccount}</p>
-                    <p className="text-sm mb-2" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B', lineHeight: '1.5' }}>
-                      {strings.deleteDesc} <strong>privacy@leaseshield.asia</strong>
-                    </p>
-                    <p className="text-xs" style={{ color: isDarkMode ? '#FECACA' : '#B91C1C', lineHeight: '1.4' }}>
-                      {strings.deleteNote}
-                    </p>
+              <div
+                onClick={() => {
+                  haptic.medium();
+                  setShowDeleteAccountModal(true);
+                }}
+                style={{
+                  padding: '16px',
+                  backgroundColor: isDarkMode ? '#2A2020' : '#FEF2F2',
+                  borderRadius: '12px',
+                  border: '2px solid #DC2626',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = isDarkMode ? '#3A1010' : '#FEE2E2';
+                  e.currentTarget.style.borderColor = '#EF4444';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = isDarkMode ? '#2A2020' : '#FEF2F2';
+                  e.currentTarget.style.borderColor = '#DC2626';
+                }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      backgroundColor: '#DC2626',
+                      borderRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <Trash2 className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold mb-2" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                        {language === 'th' ? 'ลบบัญชีอย่างถาวร' : language === 'zh' ? '永久删除账户' : language === 'ja' ? 'アカウントを完全に削除' : language === 'ko' ? '계정 영구 삭제' : language === 'ru' ? 'Удалить аккаунт навсегда' : 'Delete Account Permanently'}
+                      </p>
+                      <p className="text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B', lineHeight: '1.5' }}>
+                        {language === 'th' 
+                          ? 'ลบข้อมูลทั้งหมดและบัญชีของคุณอย่างถาวร การกระทำนี้ไม่สามารถยกเลิกได้'
+                          : language === 'zh'
+                            ? '永久删除您的所有数据和账户。此操作无法撤销。'
+                            : language === 'ja'
+                              ? 'すべてのデータとアカウントを完全に削除します。この操作は元に戻せません。'
+                              : language === 'ko'
+                                ? '모든 데이터와 계정을 영구적으로 삭제합니다. 이 작업은 취소할 수 없습니다.'
+                                : language === 'ru'
+                                  ? 'Окончательно удалите все ваши данные и аккаунт. Это действие нельзя отменить.'
+                                  : 'Permanently delete all your data and account. This action cannot be undone.'}
+                      </p>
+                    </div>
                   </div>
+                  <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: '#DC2626' }} />
                 </div>
               </div>
             </div>
@@ -5188,6 +5278,203 @@ function AccountContent() {
                   </>
                 )}
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Account Confirmation Dialog */}
+        <Dialog open={showDeleteAccountModal} onOpenChange={(open) => {
+          setShowDeleteAccountModal(open);
+          if (!open) {
+            setConfirmDeleteEmail('');
+            setConfirmDeleteUnderstand(false);
+          }
+        }}>
+          <DialogContent 
+            className="modal-enter" 
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: '#DC2626',
+              color: colors.textPrimary,
+              maxHeight: '90vh',
+              width: '95vw',
+              maxWidth: '600px',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            <DialogHeader style={{ flexShrink: 0, paddingBottom: '12px' }}>
+              <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl" style={{ color: '#DC2626' }}>
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  {language === 'th' ? 'ยืนยันการลบบัญชี' : language === 'zh' ? '确认删除账户' : language === 'ja' ? 'アカウント削除の確認' : language === 'ko' ? '계정 삭제 확인' : language === 'ru' ? 'Подтверждение удаления аккаунта' : 'Confirm Account Deletion'}
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            <div 
+              style={{
+                overflowY: 'auto',
+                flex: 1,
+                paddingRight: '4px',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
+              <div className="space-y-4 py-4">
+                <div className="p-4 rounded-lg" style={{
+                  backgroundColor: '#FEE2E2',
+                  border: '2px solid #FCA5A5'
+                }}>
+                  <p className="font-bold text-red-900 mb-3">
+                    {language === 'th' ? 'การกระทำนี้เป็นการถาวรและไม่สามารถยกเลิกได้' : language === 'zh' ? '此操作是永久性的，无法撤销' : language === 'ja' ? 'この操作は永続的で元に戻せません' : language === 'ko' ? '이 작업은 영구적이며 취소할 수 없습니다' : language === 'ru' ? 'Это действие необратимо' : 'This action is PERMANENT and cannot be undone'}
+                  </p>
+                  <p className="text-sm text-red-800 mb-3">
+                    {language === 'th' ? 'ข้อมูลทั้งหมดของคุณจะถูกลบ:' : language === 'zh' ? '您的所有数据将被删除：' : language === 'ja' ? 'すべてのデータが削除されます：' : language === 'ko' ? '모든 데이터가 삭제됩니다:' : language === 'ru' ? 'Все ваши данные будут удалены:' : 'All your data will be deleted:'}
+                  </p>
+                  <ul className="space-y-1 text-sm text-red-800">
+                    <li>• {language === 'th' ? 'สัญญาและการสแกนทั้งหมด' : language === 'zh' ? '所有租约和扫描' : language === 'ja' ? 'すべてのリースとスキャン' : language === 'ko' ? '모든 임대 및 스캔' : language === 'ru' ? 'Все договоры и сканирования' : 'All leases and scans'}</li>
+                    <li>• {language === 'th' ? 'เงินมัดจำและไทม์ไลน์ทั้งหมด' : language === 'zh' ? '所有押金和时间线' : language === 'ja' ? 'すべての敷金とタイムライン' : language === 'ko' ? '모든 보증금 및 타임라인' : language === 'ru' ? 'Все депозиты и временные метки' : 'All deposits and timeline events'}</li>
+                    <li>• {language === 'th' ? 'คดีและคำขอการซ่อมบำรุงทั้งหมด' : language === 'zh' ? '所有案件和维护请求' : language === 'ja' ? 'すべてのケースとメンテナンス依頼' : language === 'ko' ? '모든 사례 및 유지보수 요청' : language === 'ru' ? 'Все дела и запросы на обслуживание' : 'All cases and maintenance requests'}</li>
+                    <li>• {language === 'th' ? 'ไฟล์ที่อัปโหลดทั้งหมด' : language === 'zh' ? '所有上传的文件' : language === 'ja' ? 'アップロードされたすべてのファイル' : language === 'ko' ? '업로드된 모든 파일' : language === 'ru' ? 'Все загруженные файлы' : 'All uploaded files'}</li>
+                    <li>• {language === 'th' ? 'ข้อมูลบัญชีทั้งหมด' : language === 'zh' ? '所有账户数据' : language === 'ja' ? 'すべてのアカウントデータ' : language === 'ko' ? '모든 계정 데이터' : language === 'ru' ? 'Все данные аккаунта' : 'All account data'}</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <Label htmlFor="confirmDeleteEmail" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? 'พิมพ์อีเมลของคุณเพื่อยืนยัน:' : language === 'zh' ? '输入您的电子邮件以确认：' : language === 'ja' ? 'メールアドレスを入力して確認：' : language === 'ko' ? '확인을 위해 이메일을 입력하세요:' : language === 'ru' ? 'Введите свой email для подтверждения:' : 'Type your email to confirm:'} <strong>{user?.email}</strong>
+                  </Label>
+                  <Input
+                    id="confirmDeleteEmail"
+                    value={confirmDeleteEmail}
+                    onChange={(e) => setConfirmDeleteEmail(e.target.value)}
+                    placeholder={user?.email}
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary,
+                      borderRadius: '8px',
+                      padding: '12px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-start gap-3 p-4 rounded-lg" style={{
+                  backgroundColor: colors.fieldBg,
+                  border: `1px solid ${colors.borderColor}`
+                }}>
+                  <input
+                    type="checkbox"
+                    id="confirmDeleteUnderstand"
+                    checked={confirmDeleteUnderstand}
+                    onChange={(e) => setConfirmDeleteUnderstand(e.target.checked)}
+                    className="mt-1"
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      cursor: 'pointer'
+                    }}
+                  />
+                  <label htmlFor="confirmDeleteUnderstand" className="text-sm" style={{ color: colors.textPrimary, cursor: 'pointer' }}>
+                    {language === 'th' 
+                      ? 'ฉันเข้าใจว่าการกระทำนี้เป็นการถาวรและไม่สามารถยกเลิกได้'
+                      : language === 'zh'
+                        ? '我理解此操作是永久性的且无法撤销'
+                        : language === 'ja'
+                          ? 'この操作は永続的で元に戻せないことを理解しています'
+                          : language === 'ko'
+                            ? '이 작업이 영구적이며 취소할 수 없음을 이해합니다'
+                            : language === 'ru'
+                              ? 'Я понимаю, что это действие необратимо'
+                              : 'I understand this action is permanent and cannot be undone'}
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-3" style={{ 
+              flexShrink: 0, 
+              borderTop: `1px solid ${colors.borderColor}`, 
+              paddingTop: '12px'
+            }}>
+              <button
+                onClick={() => {
+                  haptic.light();
+                  setShowDeleteAccountModal(false);
+                  setConfirmDeleteEmail('');
+                  setConfirmDeleteUnderstand(false);
+                }}
+                disabled={isDeleting}
+                className="btn-interaction"
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  border: `2px solid ${colors.borderColor}`,
+                  backgroundColor: colors.cardBg,
+                  color: colors.textPrimary,
+                  cursor: isDeleting ? 'not-allowed' : 'pointer',
+                  opacity: isDeleting ? 0.5 : 1,
+                  transition: 'all 0.2s',
+                  minHeight: '48px'
+                }}
+                onMouseEnter={(e) => !isDeleting && (e.target.style.backgroundColor = colors.hoverBg)}
+                onMouseLeave={(e) => !isDeleting && (e.target.style.backgroundColor = colors.cardBg)}
+              >
+                {strings.cancel}
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isDeleting || confirmDeleteEmail !== user?.email || !confirmDeleteUnderstand}
+                className="btn-interaction"
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  border: 'none',
+                  backgroundColor: (isDeleting || confirmDeleteEmail !== user?.email || !confirmDeleteUnderstand) ? '#9CA3AF' : '#DC2626',
+                  color: '#FFFFFF',
+                  cursor: (isDeleting || confirmDeleteEmail !== user?.email || !confirmDeleteUnderstand) ? 'not-allowed' : 'pointer',
+                  opacity: (isDeleting || confirmDeleteEmail !== user?.email || !confirmDeleteUnderstand) ? 0.5 : 1,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  minHeight: '48px'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isDeleting && confirmDeleteEmail === user?.email && confirmDeleteUnderstand) {
+                    e.target.style.backgroundColor = '#B91C1C';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isDeleting && confirmDeleteEmail === user?.email && confirmDeleteUnderstand) {
+                    e.target.style.backgroundColor = '#DC2626';
+                  }
+                }}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{language === 'th' ? 'กำลังลบ...' : language === 'zh' ? '删除中...' : language === 'ja' ? '削除中...' : language === 'ko' ? '삭제 중...' : language === 'ru' ? 'Удаление...' : 'Deleting...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>{language === 'th' ? 'ลบบัญชีอย่างถาวร' : language === 'zh' ? '永久删除账户' : language === 'ja' ? 'アカウントを完全に削除' : language === 'ko' ? '계정 영구 삭제' : language === 'ru' ? 'Удалить навсегда' : 'Permanently Delete Account'}</span>
+                  </>
+                )}
+              </button>
             </div>
           </DialogContent>
         </Dialog>
