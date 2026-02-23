@@ -789,7 +789,23 @@ IMPORTANT: Provide tier-appropriate advice. Explain limitations based on current
             <MessageCircle className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="font-bold text-white text-base">Lisa</p>
+            <div className="flex items-center gap-2">
+              <p className="font-bold text-white text-base">Lisa</p>
+              {user && (
+                <span style={{
+                  fontSize: '10px',
+                  fontWeight: '600',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  backgroundColor: user.plan_tier === 'secure' ? '#C7A338' : user.plan_tier === 'protect' ? '#10B981' : user.plan_tier === 'lite' ? '#3B82F6' : '#6B7280',
+                  color: '#FFFFFF',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  {user.plan_tier || 'FREE'}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1.5">
               <div style={{
                 width: '8px',
