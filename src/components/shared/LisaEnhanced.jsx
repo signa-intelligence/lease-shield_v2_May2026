@@ -531,7 +531,20 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
 - Storage Used: ${storageUsedMB}MB / ${storageLimitMB}MB
 - Tier Capabilities: ${tierCapabilities[userTier] || tierCapabilities.free}
 
-IMPORTANT: Provide tier-appropriate advice. Explain limitations based on current tier. Suggest upgrades only when relevant to user's question. Don't be pushy. Be helpful within current tier constraints.`;
+IMPORTANT:
+- Provide tier-appropriate advice
+- Explain limitations based on current tier
+- If user is on Secure tier: NEVER suggest upgrades (they're on the top tier already)
+- If user is on Free/Lite/Protect: Only suggest upgrades when relevant to their question
+- Don't be pushy about upgrades
+- Be helpful within current tier constraints
+- When discussing features, acknowledge what user already has on their current tier
+
+SECURE TIER USERS:
+- Already have all features (unlimited scans, 20GB storage, priority queue, etc.)
+- Never suggest upgrades
+- Focus on helping them use existing features
+- Can mention Annual benefits (1 free Resolve case/year) if they're on Monthly`;
       
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `${LISA_SYSTEM_PROMPT}${userContext}${languageInstruction}\n\nUser question: ${textToSend}`,
