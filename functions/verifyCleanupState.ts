@@ -21,8 +21,9 @@ Deno.serve(async (req) => {
 
     // STEP 1: Get ALL users
     console.log('[VERIFY_CLEANUP] Fetching all users...');
-    const allUsersResp = await svc.functions.invoke('adminListUsers', {});
-    const allUsers = allUsersResp?.data?.users || [];
+    
+    // Query User entity directly instead of using adminListUsers
+    const allUsers = await svc.entities.User.list();
 
     console.log(`[VERIFY_CLEANUP] Total users: ${allUsers.length}`);
     console.log(`[VERIFY_CLEANUP] User emails:`, allUsers.map(u => u.email));
