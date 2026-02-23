@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
 
     const keptEmails = [
       'steve.l@signa-consultants.com',
-      'shortyroc@gmail.com',
+      'shortyroc36@gmail.com',
       'steve.d.lockhart@gmail.com'
     ];
 
