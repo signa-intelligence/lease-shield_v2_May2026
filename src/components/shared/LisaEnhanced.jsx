@@ -561,7 +561,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     setIsOpen(false);
     setIsMinimized(false);
     setInputValue('');
-    localStorage.removeItem('lisa_chat_history');
+    // Don't clear localStorage - let chat history persist across sessions
     if (onClose) onClose();
   };
 
