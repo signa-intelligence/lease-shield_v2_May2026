@@ -586,8 +586,8 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
 
       setConversationId(newConv.id);
       setMessages([]);
+      localStorage.removeItem('lisa_chat_history'); // Clear localStorage for new conversation
       queryClient.invalidateQueries({ queryKey: ['lisaConversation'] });
-      haptic.success();
     } catch (error) {
       console.error('Failed to start new conversation:', error);
     }
