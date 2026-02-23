@@ -246,6 +246,24 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  // Fetch user context for tier-aware responses
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: storageInfo } = useQuery({
+    queryKey: ['userStorage', user?.email],
+    queryFn: async () => {
+      if (!user) return null;
+      const storage = await base44.entities.UserStorage.filter({ user_email: user.email });
+      return storage[0] || null;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Sync with external control
   useEffect(() => {
     setIsOpen(externalIsOpen);
