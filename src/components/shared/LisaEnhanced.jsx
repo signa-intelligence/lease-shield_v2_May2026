@@ -512,8 +512,29 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
 
       const languageInstruction = `\n\nCRITICAL: Respond in ${languageMap[responseLanguage]} ONLY. Do not switch languages unless the user explicitly requests it.`;
       
+      // Build user context for tier-aware responses
+      const userTier = user?.plan_tier || 'free';
+      const availableScans = user?.available_scans || 0;
+      const storageUsedMB = storageInfo ? Math.round(storageInfo.total_bytes / (1024 * 1024)) : 0;
+      const storageLimitMB = storageInfo ? Math.round(storageInfo.tier_limit_bytes / (1024 * 1024)) : 100;
+      
+      const tierCapabilities = {
+        free: 'Preview scan only (top 5 risks summary), 100MB storage, public case pricing (฿5,000)',
+        lite: 'Full scans with top 5 clause analysis, 1GB storage, deposit tracking, timeline, property tracker, member case pricing (฿3,500 after 30 days), 10 referrals max',
+        protect: 'Full scans with ALL clause analysis, 5GB storage, all Lite features, LINE notifications, member case pricing (฿3,500 after 30 days), 25 referrals max',
+        secure: 'All Protect features, 20GB storage, unlimited scans, priority queue, 1 free Resolve case/year (Annual only), unlimited referrals'
+      };
+
+      const userContext = `\n\nCURRENT USER CONTEXT:
+- Subscription Tier: ${userTier.toUpperCase()}
+- Available Scans: ${availableScans}
+- Storage Used: ${storageUsedMB}MB / ${storageLimitMB}MB
+- Tier Capabilities: ${tierCapabilities[userTier] || tierCapabilities.free}
+
+IMPORTANT: Provide tier-appropriate advice. Explain limitations based on current tier. Suggest upgrades only when relevant to user's question. Don't be pushy. Be helpful within current tier constraints.`;
+      
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `${LISA_SYSTEM_PROMPT}${languageInstruction}\n\nUser question: ${textToSend}`,
+        prompt: `${LISA_SYSTEM_PROMPT}${userContext}${languageInstruction}\n\nUser question: ${textToSend}`,
         add_context_from_internet: false
       });
 
