@@ -51,14 +51,17 @@ Deno.serve(async (req) => {
       console.log('[DELETE] Deleting dom.sources@gmail.com...');
       
       // Delete user's data via adminDeleteUserData
-      await svc.functions.invoke('adminDeleteUserData', {
+      const deleteResp = await svc.functions.invoke('adminDeleteUserData', {
         userEmail: 'dom.sources@gmail.com'
       });
+      
+      console.log('[DELETE] dom.sources deletion result:', deleteResp?.data);
       
       report.deletedUsers.push({
         email: 'dom.sources@gmail.com',
         reason: 'Remaining test account from cleanup',
-        method: 'adminDeleteUserData'
+        method: 'adminDeleteUserData',
+        result: deleteResp?.data
       });
     } else {
       console.log('[DELETE] dom.sources@gmail.com not found (already deleted)');
@@ -94,14 +97,17 @@ Deno.serve(async (req) => {
         console.log('[DELETE] Deleting old pamperme account...');
         
         // Delete user's data via adminDeleteUserData
-        await svc.functions.invoke('adminDeleteUserData', {
+        const deletePamperResp = await svc.functions.invoke('adminDeleteUserData', {
           userEmail: 'pamperme@editionsalon.com'
         });
+        
+        console.log('[DELETE] pamperme deletion result:', deletePamperResp?.data);
         
         report.deletedUsers.push({
           email: 'pamperme@editionsalon.com',
           reason: 'Old test account from before cleanup',
-          method: 'adminDeleteUserData'
+          method: 'adminDeleteUserData',
+          result: deletePamperResp?.data
         });
       }
     } else {
