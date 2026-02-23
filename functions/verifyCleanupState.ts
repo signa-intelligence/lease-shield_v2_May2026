@@ -52,7 +52,8 @@ Deno.serve(async (req) => {
       
       // Delete user's data via adminDeleteUserData
       const deleteResp = await svc.functions.invoke('adminDeleteUserData', {
-        userEmail: 'dom.sources@gmail.com'
+        targetUserEmail: 'dom.sources@gmail.com',  // FIXED: correct param name
+        reason: 'cleanup_remaining_test_account'
       });
       
       console.log('[DELETE] dom.sources deletion result:', deleteResp?.data);
@@ -98,7 +99,8 @@ Deno.serve(async (req) => {
         
         // Delete user's data via adminDeleteUserData
         const deletePamperResp = await svc.functions.invoke('adminDeleteUserData', {
-          userEmail: 'pamperme@editionsalon.com'
+          targetUserEmail: 'pamperme@editionsalon.com',  // FIXED: correct param name
+          reason: 'cleanup_old_test_account'
         });
         
         console.log('[DELETE] pamperme deletion result:', deletePamperResp?.data);
