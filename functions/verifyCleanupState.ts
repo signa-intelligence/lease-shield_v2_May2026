@@ -49,10 +49,16 @@ Deno.serve(async (req) => {
     const domUser = allUsers.find(u => u.email === 'dom.sources@gmail.com');
     if (domUser) {
       console.log('[DELETE] Deleting dom.sources@gmail.com...');
-      await svc.auth.deleteUser(domUser.id);
+      
+      // Delete user's data via adminDeleteUserData
+      await svc.functions.invoke('adminDeleteUserData', {
+        userEmail: 'dom.sources@gmail.com'
+      });
+      
       report.deletedUsers.push({
         email: 'dom.sources@gmail.com',
-        reason: 'Remaining test account from cleanup'
+        reason: 'Remaining test account from cleanup',
+        method: 'adminDeleteUserData'
       });
     } else {
       console.log('[DELETE] dom.sources@gmail.com not found (already deleted)');
@@ -86,10 +92,16 @@ Deno.serve(async (req) => {
       if (!isNewSignup) {
         // Delete old account
         console.log('[DELETE] Deleting old pamperme account...');
-        await svc.auth.deleteUser(pampermeUser.id);
+        
+        // Delete user's data via adminDeleteUserData
+        await svc.functions.invoke('adminDeleteUserData', {
+          userEmail: 'pamperme@editionsalon.com'
+        });
+        
         report.deletedUsers.push({
           email: 'pamperme@editionsalon.com',
-          reason: 'Old test account from before cleanup'
+          reason: 'Old test account from before cleanup',
+          method: 'adminDeleteUserData'
         });
       }
     } else {
