@@ -136,12 +136,12 @@ export default function MobileMenuDrawer({ isOpen, onClose, colors, language = '
       route: createPageUrl('Account') + '#refer-friends',
       color: '#10B981'
     },
-    ...(isAdminOrVA ? [{
+    {
       icon: BarChart3,
       label: strings.insights,
       route: createPageUrl('Analytics'),
       color: '#6B7280'
-    }] : []),
+    },
     {
       icon: TrendingUp,
       label: strings.upgradePlan,
