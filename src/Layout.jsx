@@ -108,6 +108,25 @@ export default function Layout({ children, currentPageName }) {
     staleTime: 5 * 60 * 1000,
   });
 
+  // CRITICAL: Initialize new user defaults (free tier + 1 scan) on first load
+  // Entity automations don't support User entity, so we catch it here
+  React.useEffect(() => {
+    if (user && user.available_scans === undefined && !user.plan_tier) {
+      console.log('[LAYOUT] New user detected - initializing defaults:', user.email);
+      base44.auth.updateMe({
+        plan_tier: 'free',
+        available_scans: 1,
+        is_active: true,
+        subscription_status: 'active'
+      })
+        .then(() => {
+          console.log('[LAYOUT] ✅ User initialized: plan_tier=free, available_scans=1');
+          queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        })
+        .catch(err => console.error('[LAYOUT] Failed to initialize user:', err));
+    }
+  }, [user?.id, user?.available_scans, user?.plan_tier, queryClient]);
+
   // Handle language from URL parameter
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
