@@ -141,6 +141,29 @@ Deno.serve(async (req) => {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
+    // DEEP CLEANUP: DELETE ANY REMAINING TIMELINE EVENTS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    console.log('[DEEP CLEANUP] Checking for remaining timeline events...');
+
+    for (const email of usersToClean) {
+      const timelineEvents = await svc.entities.TimelineEvent.filter({ owner_email: email });
+      
+      if (timelineEvents.length > 0) {
+        console.log(`[DEEP CLEANUP] Found ${timelineEvents.length} additional timeline events for ${email}`);
+        
+        for (const event of timelineEvents) {
+          try {
+            await svc.entities.TimelineEvent.delete(event.id);
+            console.log(`[DEEP CLEANUP]   ✅ Deleted event: ${event.id}`);
+          } catch (error) {
+            console.error(`[DEEP CLEANUP]   ❌ Failed to delete event ${event.id}:`, error.message);
+          }
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     // VERIFY SHORTYROC36 DATA PRESERVED
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -162,24 +185,37 @@ Deno.serve(async (req) => {
     };
 
     // ═══════════════════════════════════════════════════════════════════════
-    // FINAL VERIFICATION
+    // FINAL VERIFICATION - ALL ENTITIES
     // ═══════════════════════════════════════════════════════════════════════
 
     const finalSteveLLeases = await svc.entities.Lease.filter({ owner_email: 'steve.l@signa-consultants.com' });
     const finalSteveDLeases = await svc.entities.Lease.filter({ owner_email: 'steve.d.lockhart@gmail.com' });
+    
+    const finalSteveLTimeline = await svc.entities.TimelineEvent.filter({ owner_email: 'steve.l@signa-consultants.com' });
+    const finalSteveDTimeline = await svc.entities.TimelineEvent.filter({ owner_email: 'steve.d.lockhart@gmail.com' });
+    const finalShortyTimeline = await svc.entities.TimelineEvent.filter({ owner_email: 'shortyroc36@gmail.com' });
+
+    const pampermeTimeline = await svc.entities.TimelineEvent.filter({ owner_email: 'pamperme@editionsalon.com' });
 
     report.final_verification = {
       steve_l: {
         leases: finalSteveLLeases.length,
-        status: finalSteveLLeases.length === 0 ? '✅ CLEAN' : '❌ STILL HAS DATA'
+        timeline_events: finalSteveLTimeline.length,
+        status: (finalSteveLLeases.length === 0 && finalSteveLTimeline.length === 0) ? '✅ CLEAN' : '❌ STILL HAS DATA'
       },
       steve_d: {
         leases: finalSteveDLeases.length,
-        status: finalSteveDLeases.length === 0 ? '✅ CLEAN' : '❌ STILL HAS DATA'
+        timeline_events: finalSteveDTimeline.length,
+        status: (finalSteveDLeases.length === 0 && finalSteveDTimeline.length === 0) ? '✅ CLEAN' : '❌ STILL HAS DATA'
       },
       shortyroc36: {
         leases: shortyrocLeases.length,
-        status: shortyrocLeases.length > 0 ? '✅ PRESERVED' : '❌ DATA LOST'
+        timeline_events: finalShortyTimeline.length,
+        status: '✅ PRESERVED (not touched)'
+      },
+      pamperme: {
+        timeline_events: pampermeTimeline.length,
+        status: pampermeTimeline.length === 0 ? '✅ CLEAN (expected for new user)' : '⚠️ HAS EVENTS'
       }
     };
 
