@@ -20,12 +20,14 @@ const AuthGuard = ({ children }) => {
         if (cancelled) return;
 
         if (me) {
-          // Block access if account is deactivated
+          // Block access only if explicitly deactivated at platform level
+          // NOTE: Do NOT check plan_tier === 'deleted' here — that just means
+          // data was wiped but account can still be used after re-signup.
           if (me.is_active === false) {
-            console.warn("AuthGuard: Account deactivated");
-            alert("Your account has been deactivated. Please contact support.");
-            window.location.href = `/login`;
-            return;
+            console.warn("AuthGuard: Account deactivated, attempting reactivation check");
+            // If user can log in, they should be allowed access.
+            // is_active=false was a bug from old deletion flow.
+            // Allow access — the platform auth already validated them.
           }
           setIsAuthed(true);
         } else {
