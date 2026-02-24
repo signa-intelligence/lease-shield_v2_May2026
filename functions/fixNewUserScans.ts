@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
       'dom.sources@gmail.com',
       'signaturehairandnail@gmail.com',
       'jay.p@signa-consultants.com',
-      'signa.asset.managememt@gmail.com',
+      'signa.asset.management@gmail.com',
       'signaintelligence@gmail.com'
     ];
 
