@@ -2,84 +2,89 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
  * Initialize new user with default tier and credits
- * Triggered automatically when User entity is created
+ * Triggered automatically via entity automation when User is created
  */
 
 Deno.serve(async (req) => {
   const correlationId = `init-user-${Date.now()}`;
   
   try {
+    // Clone the request so we can read the body AND pass it to createClientFromRequest
+    const clonedReq = req.clone();
     const base44 = createClientFromRequest(req);
     
-    // Get event payload
-    const { event, data } = await req.json();
+    // Get event payload from cloned request
+    const payload = await clonedReq.json();
+    const { event, data } = payload;
     
-    console.log(`[${correlationId}] New user registration detected`, {
-      event,
+    console.log(`[${correlationId}] User automation triggered`, {
+      eventType: event?.type,
+      entityName: event?.entity_name,
       userId: data?.id,
       email: data?.email
     });
     
-    // Only process create events
+    // Only process create events for User entity
     if (event?.type !== 'create' || event?.entity_name !== 'User') {
       console.log(`[${correlationId}] Skipping - not a user creation event`);
       return Response.json({ skipped: true });
     }
     
-    const userId = data?.id;
+    const userId = event?.entity_id || data?.id;
     const userEmail = data?.email;
     
-    if (!userId || !userEmail) {
-      console.error(`[${correlationId}] Missing user ID or email`);
-      return Response.json({ error: 'Missing user data' }, { status: 400 });
+    if (!userId) {
+      console.error(`[${correlationId}] Missing user ID`);
+      return Response.json({ error: 'Missing user ID' }, { status: 400 });
     }
     
-    // Check if user already has tier configured
-    if (data.tier && data.available_scans !== undefined) {
-      console.log(`[${correlationId}] User already has tier configured - skipping`);
-      return Response.json({ 
-        skipped: true, 
-        reason: 'already_configured' 
-      });
+    // Check if user already has scans configured (e.g. invited with a specific tier)
+    if (data?.plan_tier && data?.available_scans > 0) {
+      console.log(`[${correlationId}] User already configured: plan_tier=${data.plan_tier}, scans=${data.available_scans} - skipping`);
+      return Response.json({ skipped: true, reason: 'already_configured' });
     }
     
-    // Set default tier and credits
-    console.log(`[${correlationId}] Initializing user with default tier`);
+    // Set default free tier with 1 explorer scan
+    console.log(`[${correlationId}] Initializing user with free tier + 1 scan`);
     
-    const svc = base44.asServiceRole || base44;
+    const svc = base44.asServiceRole;
     await svc.entities.User.update(userId, {
-      tier: 'explorer',
+      plan_tier: 'free',
       available_scans: 1,
+      is_active: true,
       subscription_status: 'active'
     });
     
-    console.log(`[${correlationId}] ✅ User initialized successfully`, {
+    console.log(`[${correlationId}] ✅ User initialized`, {
       userId,
       email: userEmail,
-      tier: 'explorer',
+      plan_tier: 'free',
       available_scans: 1
     });
     
-    // Send welcome email (if function exists)
+    // Send welcome email (non-blocking)
     try {
-      await base44.functions.invoke('sendWelcomeEmail', {});
-      console.log(`[${correlationId}] Welcome email triggered`);
+      await svc.integrations.Core.SendEmail({
+        to: userEmail,
+        subject: 'Welcome to Lease Shield',
+        body: `<p>Welcome to Lease Shield! Your account is ready with 1 free lease scan.</p>`
+      });
+      console.log(`[${correlationId}] Welcome email sent`);
     } catch (emailErr) {
-      console.warn(`[${correlationId}] Failed to send welcome email:`, emailErr.message);
-      // Don't fail the whole process if email fails
+      console.warn(`[${correlationId}] Welcome email failed:`, emailErr.message);
     }
     
     return Response.json({
       success: true,
       userId,
       email: userEmail,
-      tier: 'explorer',
+      plan_tier: 'free',
       available_scans: 1,
       correlationId
     });
     
   } catch (error) {
-    console.error(`[${correlationId}] Error initializing user:`, {
+    console.error(`[${correlationId}] Error:`, {
       error: error.message,
       stack: error.stack
     });
