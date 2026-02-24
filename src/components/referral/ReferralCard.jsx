@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Copy, Share2, CheckCircle2, TrendingUp, Gift, Zap } from 'lucide-react';
+import { Users, Copy, Share2, CheckCircle2, TrendingUp, Gift, Zap, Info } from 'lucide-react';
 import { haptic } from '../shared/HapticFeedback';
 import { useToast } from '../shared/Toast';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import ReferralTermsModal from './ReferralTermsModal';
 
 export default function ReferralCard({ user, colors, language = 'en' }) {
   const [copiedItem, setCopiedItem] = useState(null);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const toast = useToast();
 
   const { data: referrals = [] } = useQuery({
@@ -67,7 +69,8 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       earnedCredit: "Earned",
       status: "Status",
       pendingVerification: "Pending Verification",
-      pendingVerificationDesc: "referral(s) pending routine verification. Typically completes within 24-48 hours."
+      pendingVerificationDesc: "referral(s) pending routine verification. Typically completes within 24-48 hours.",
+      viewTerms: "View Terms & Conditions"
     },
     th: {
       title: "แนะนำเพื่อน รับเดือนฟรี",
@@ -99,7 +102,8 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       earnedCredit: "ได้รับ",
       status: "สถานะ",
       pendingVerification: "รอการตรวจสอบ",
-      pendingVerificationDesc: "การแนะนำกำลังรอการตรวจสอบตามปกติ โดยปกติจะเสร็จภายใน 24-48 ชั่วโมง"
+      pendingVerificationDesc: "การแนะนำกำลังรอการตรวจสอบตามปกติ โดยปกติจะเสร็จภายใน 24-48 ชั่วโมง",
+      viewTerms: "ดูข้อกำหนดและเงื่อนไข"
     },
     zh: {
       title: "推荐好友，赚免费月份",
@@ -129,7 +133,8 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       noReferralsYet: "还没有推荐。分享您的链接开始吧！",
       example: "示例：您使用Lite。好友订阅Protect（฿390）并完成3个月 → 您获得฿390。",
       earnedCredit: "获得",
-      status: "状态"
+      status: "状态",
+      viewTerms: "查看条款和条件"
     },
     ja: {
       title: "友達紹介で無料月を獲得",
@@ -159,7 +164,8 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       noReferralsYet: "まだ紹介がありません。リンクを共有して始めましょう！",
       example: "例：あなたはLite。友達がProtect（฿390）に参加し3ヶ月完了 → あなたは฿390獲得。",
       earnedCredit: "獲得",
-      status: "ステータス"
+      status: "ステータス",
+      viewTerms: "利用規約を見る"
     },
     ko: {
       title: "친구 추천으로 무료 월 받기",
@@ -189,7 +195,8 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       noReferralsYet: "아직 추천이 없습니다. 링크를 공유하여 시작하세요!",
       example: "예: 귀하는 Lite. 친구가 Protect（฿390）가입 후 3개월 완료 → 귀하는 ฿390 획득.",
       earnedCredit: "획득",
-      status: "상태"
+      status: "상태",
+      viewTerms: "약관 보기"
     },
     ru: {
       title: "Пригласите друзей. Заработайте бесплатные месяцы.",
@@ -219,7 +226,8 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
       noReferralsYet: "Пока нет приглашений. Поделитесь ссылкой, чтобы начать!",
       example: "Пример: Вы на Lite. Друг на Protect (฿390) и завершает 3 месяца → Вы получаете ฿390.",
       earnedCredit: "Получено",
-      status: "Статус"
+      status: "Статус",
+      viewTerms: "Посмотреть условия"
     }
   };
 
@@ -587,6 +595,25 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
           </div>
         )}
 
+        {/* View Terms Link */}
+        <button
+          onClick={() => {
+            haptic.light();
+            setShowTermsModal(true);
+          }}
+          className="mb-4 flex items-center gap-1.5 text-xs font-semibold underline-offset-2 transition-all hover:underline"
+          style={{
+            color: '#2D5016',
+            background: 'none',
+            border: 'none',
+            padding: '0',
+            cursor: 'pointer'
+          }}
+        >
+          <Info className="w-3.5 h-3.5" />
+          {strings.viewTerms}
+        </button>
+
         {/* Referral link */}
         <div className="mb-6">
           <p className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
@@ -722,6 +749,13 @@ export default function ReferralCard({ user, colors, language = 'en' }) {
           )}
         </div>
       </CardContent>
+
+      <ReferralTermsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        colors={colors}
+        language={language}
+      />
     </Card>
   );
 }
