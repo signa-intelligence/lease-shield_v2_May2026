@@ -77,20 +77,24 @@ function TimelineContent() {
 
   const { data: maintenance = [], isLoading: maintenanceLoading } = useQuery({
     queryKey: ['maintenance'],
-    queryFn: () => base44.entities.MaintenanceRequest.filter({}, '-created_date'),
+    queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }, '-created_date'),
     enabled: !!user,
   });
 
   const { data: timelineEvents = [] } = useQuery({
     queryKey: ['timelineEvents'],
     queryFn: async () => {
-      // Timeline events are filtered by RLS (owner_email = user.email)
-      // No need for additional filtering - orphaned events won't exist after cascade deletion
-      const events = await base44.entities.TimelineEvent.filter({}, '-created_date');
+      // CRITICAL FIX: Explicitly filter by owner_email (don't rely solely on RLS)
+      const events = await base44.entities.TimelineEvent.filter({ owner_email: user?.email }, '-created_date');
       
       console.log('[TIMELINE_EVENTS]', {
         count: events.length,
-        user: user?.email
+        user: user?.email,
+        sampleEvents: events.slice(0, 3).map(e => ({
+          id: e.id,
+          type: e.event_type,
+          owner: e.owner_email
+        }))
       });
       
       return events;
