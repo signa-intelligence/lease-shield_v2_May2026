@@ -809,52 +809,7 @@ function AnalyticsContent() {
     }
   };
 
-  const handleExportJson = () => {
-    haptic.light();
-    const report = {
-      generated_at: new Date().toISOString(),
-      user: user?.email,
-      time_range: timeRange,
-      summary: {
-        total_deposits: deposits.length,
-        total_deposit_value: totalDepositValue,
-        active_cases: activeCasesCount,
-        success_rate: successRate,
-        total_recovered: totalRecovered,
-        documents_stored: documents.length,
-        avg_return_time: avgReturnTime,
-        avg_resolution_time: avgResolutionTime
-      },
-      deposits: deposits.map(d => ({
-        amount: d.deposit_amount,
-        property: d.property_address,
-        status: d.status,
-        paid_date: d.deposit_paid_date,
-        expected_return: d.expected_return_date
-      })),
-      cases: cases.map(c => ({
-        case_number: c.case_number,
-        type: c.type,
-        status: c.status,
-        amount: c.dispute_amount,
-        created: c.created_date
-      })),
-      monthly_data: monthlyData,
-      risk_insights: riskInsights,
-      upcoming_deadlines: upcomingDeadlines
-    };
 
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `lease_shield_analytics_${format(new Date(), 'yyyy-MM-dd')}.json`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    a.remove();
-    toast.success(strings.exportSuccess);
-  };
 
   const hasData = deposits.length > 0 || cases.length > 0 || documents.length > 0;
   const activeMaintenanceCount = maintenanceRequests.filter(r => r.status !== 'completed' && r.status !== 'rejected').length;
@@ -902,15 +857,7 @@ function AnalyticsContent() {
                   </>
                 )}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportJson}
-                disabled={!hasData}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {strings.exportJson}
-              </Button>
+
             </div>
           </div>
 
