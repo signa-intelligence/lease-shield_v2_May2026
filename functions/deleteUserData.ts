@@ -172,18 +172,19 @@ Deno.serve(async (req) => {
     
     // 12. Anonymize User record (keep for auth, remove PII)
     try {
+      // NOTE: Do NOT set is_active=false — it permanently blocks re-signup on Base44.
+      // Instead, just clear PII and mark as deleted. The user record stays "active" 
+      // at the platform level so they can re-register later if needed.
       await svc.auth.updateMe({
         plan_tier: 'deleted',
         available_scans: 0,
         data_deleted_at: new Date().toISOString(),
-        full_name: '[DELETED]',
         display_name: '[DELETED]',
         phone: null,
         line_id: null,
         line_connected: false,
         quick_guide_dismissed: true,
-        onboarding_completed: true,
-        is_active: false
+        onboarding_completed: true
       });
       deletionLog.userAnonymized = true;
     } catch (e) {
