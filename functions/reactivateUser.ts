@@ -67,10 +67,11 @@ Deno.serve(async (req) => {
         data_deleted_at: targetUser.data_deleted_at
       });
 
-      // Reactivate: clear deactivation flags, reset to free tier
+      // Reactivate: clear deactivation flags, reset to free tier with 1 scan
       await svc.entities.User.update(targetUser.id, {
         is_active: true,
         plan_tier: 'free',
+        available_scans: 1,
         data_deleted_at: null,
         display_name: targetUser.display_name === '[DELETED]' ? null : targetUser.display_name
       });
@@ -105,6 +106,7 @@ Deno.serve(async (req) => {
         await svc.entities.User.update(user.id, {
           is_active: true,
           plan_tier: 'free',
+          available_scans: 1,
           data_deleted_at: null,
           display_name: user.display_name === '[DELETED]' ? null : user.display_name
         });
