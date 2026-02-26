@@ -116,7 +116,9 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const documentContent = documentLangForExport === 'th' ? docTh : docEn;
   
   const letterCredits = user?.letter_credits || 0;
-  const canUseCredits = letterCredits >= 1;
+  const userTierForCredits = user?.plan_tier || 'free';
+  const hasUnlimitedCredits = ['secure', 'protect'].includes(userTierForCredits);
+  const canUseCredits = hasUnlimitedCredits || letterCredits >= 1;
   const hasPreview = previewContent && previewContent.trim().length >= 50;
   const hasDocument = documentContent && documentContent.trim().length >= 300;
 
