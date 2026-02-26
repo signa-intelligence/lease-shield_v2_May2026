@@ -173,19 +173,21 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         document.body.removeChild(textarea);
       }
 
-      // ONLY deduct credit after successful copy
-      await base44.auth.updateMe({ 
-        letter_credits: Math.max(0, letterCredits - 1) 
-      });
+      // ONLY deduct credit after successful copy (skip for unlimited tiers)
+      if (!hasUnlimitedCredits) {
+        await base44.auth.updateMe({ 
+          letter_credits: Math.max(0, letterCredits - 1) 
+        });
 
-      await base44.entities.CreditsLedger.create({
-        user_id: user.id,
-        user_email: user.email,
-        type: 'letters',
-        delta: -1,
-        reason: 'purchase',
-        source_ref: `template_copy:${template.template_key}:${documentLangForExport}`
-      });
+        await base44.entities.CreditsLedger.create({
+          user_id: user.id,
+          user_email: user.email,
+          type: 'letters',
+          delta: -1,
+          reason: 'purchase',
+          source_ref: `template_copy:${template.template_key}:${documentLangForExport}`
+        });
+      }
 
       // Track download
       await base44.functions.invoke('trackTemplateDownload', {
@@ -195,13 +197,13 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         tier: userTier
       });
 
-      console.log('[TEMPLATE] Credit deducted, credits_after:', letterCredits - 1);
+      console.log('[TEMPLATE] Copy done, unlimited:', hasUnlimitedCredits, 'credits_after:', hasUnlimitedCredits ? '∞' : letterCredits - 1);
 
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       queryClient.invalidateQueries({ queryKey: ['templateUsage'] });
       toast.success(language === 'th' 
-        ? `คัดลอกแล้ว! เครดิตคงเหลือ: ${letterCredits - 1}` 
-        : `Copied! Credits remaining: ${letterCredits - 1}`);
+        ? (hasUnlimitedCredits ? 'คัดลอกแล้ว!' : `คัดลอกแล้ว! เครดิตคงเหลือ: ${letterCredits - 1}`)
+        : (hasUnlimitedCredits ? 'Copied!' : `Copied! Credits remaining: ${letterCredits - 1}`));
       haptic.success();
     } catch (error) {
       console.error('[TEMPLATE] Copy error:', error);
@@ -264,19 +266,21 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      // ONLY deduct credit after successful download
-      await base44.auth.updateMe({ 
-        letter_credits: Math.max(0, letterCredits - 1) 
-      });
+      // ONLY deduct credit after successful download (skip for unlimited tiers)
+      if (!hasUnlimitedCredits) {
+        await base44.auth.updateMe({ 
+          letter_credits: Math.max(0, letterCredits - 1) 
+        });
 
-      await base44.entities.CreditsLedger.create({
-        user_id: user.id,
-        user_email: user.email,
-        type: 'letters',
-        delta: -1,
-        reason: 'purchase',
-        source_ref: `template_docx:${template.template_key}:${documentLangForExport}`
-      });
+        await base44.entities.CreditsLedger.create({
+          user_id: user.id,
+          user_email: user.email,
+          type: 'letters',
+          delta: -1,
+          reason: 'purchase',
+          source_ref: `template_docx:${template.template_key}:${documentLangForExport}`
+        });
+      }
 
       // Track download
       await base44.functions.invoke('trackTemplateDownload', {
@@ -286,13 +290,13 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         tier: userTier
       });
 
-      console.log('[TEMPLATE] Credit deducted, credits_after:', letterCredits - 1);
+      console.log('[TEMPLATE] DOCX done, unlimited:', hasUnlimitedCredits, 'credits_after:', hasUnlimitedCredits ? '∞' : letterCredits - 1);
 
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       queryClient.invalidateQueries({ queryKey: ['templateUsage'] });
       toast.success(language === 'th' 
-        ? `ดาวน์โหลดแล้ว! เครดิตคงเหลือ: ${letterCredits - 1}` 
-        : `Downloaded! Credits remaining: ${letterCredits - 1}`);
+        ? (hasUnlimitedCredits ? 'ดาวน์โหลดแล้ว!' : `ดาวน์โหลดแล้ว! เครดิตคงเหลือ: ${letterCredits - 1}`)
+        : (hasUnlimitedCredits ? 'Downloaded!' : `Downloaded! Credits remaining: ${letterCredits - 1}`));
       haptic.success();
     } catch (error) {
       console.error('[TEMPLATE] DOCX error:', error);
@@ -384,8 +388,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   : language === 'ru' ? 'Ваши кредиты：'
                   : 'Your credits:'}
               </span>
-              <span className="font-bold" style={{ color: letterCredits > 0 ? '#10B981' : '#EF4444' }}>
-                {letterCredits}
+              <span className="font-bold" style={{ color: (hasUnlimitedCredits || letterCredits > 0) ? '#10B981' : '#EF4444' }}>
+                {hasUnlimitedCredits ? '∞' : letterCredits}
               </span>
             </div>
             
