@@ -116,16 +116,27 @@ export default function Layout({ children, currentPageName }) {
       base44.auth.updateMe({
         plan_tier: 'free',
         available_scans: 1,
+        letter_credits: 0,
         is_active: true,
         subscription_status: 'active'
       })
         .then(() => {
-          console.log('[LAYOUT] ✅ User initialized: plan_tier=free, available_scans=1');
+          console.log('[LAYOUT] ✅ User initialized: plan_tier=free, available_scans=1, letter_credits=0');
           queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         })
         .catch(err => console.error('[LAYOUT] Failed to initialize user:', err));
     }
-  }, [user?.id, user?.available_scans, user?.plan_tier, queryClient]);
+    // Fix letter credits for existing Secure/Protect users who have low credits
+    if (user && user.plan_tier && ['secure', 'protect'].includes(user.plan_tier) && (user.letter_credits === undefined || user.letter_credits < 999999)) {
+      console.log('[LAYOUT] Fixing unlimited letter credits for', user.plan_tier, 'user:', user.email);
+      base44.auth.updateMe({ letter_credits: 999999 })
+        .then(() => {
+          console.log('[LAYOUT] ✅ Letter credits set to unlimited (999999)');
+          queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        })
+        .catch(err => console.error('[LAYOUT] Failed to fix letter credits:', err));
+    }
+  }, [user?.id, user?.available_scans, user?.plan_tier, user?.letter_credits, queryClient]);
 
   // Handle language from URL parameter
   React.useEffect(() => {
