@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
       'free': 0,
       'explorer': 0,
       'lite': 3,
-      'protect': 999999,
+      'protect': 10,
       'secure': 999999
     };
 
@@ -25,8 +25,8 @@ Deno.serve(async (req) => {
       const expectedCredits = TIER_LETTER_CREDITS[tier] || 0;
       const currentCredits = u.letter_credits || 0;
       
-      // Fix Secure/Protect users who have less than unlimited
-      if (['secure', 'protect'].includes(tier) && currentCredits < 999999) {
+      // Fix Secure users who have less than unlimited
+      if (tier === 'secure' && currentCredits < 999999) {
         await base44.asServiceRole.entities.User.update(u.id, {
           letter_credits: 999999
         });
@@ -35,6 +35,18 @@ Deno.serve(async (req) => {
           tier,
           before: currentCredits,
           after: 999999,
+          fixed: true
+        });
+      // Fix Protect users - should be exactly 10 (reset from 999999)
+      } else if (tier === 'protect' && currentCredits !== 10) {
+        await base44.asServiceRole.entities.User.update(u.id, {
+          letter_credits: 10
+        });
+        results.push({
+          email: u.email,
+          tier,
+          before: currentCredits,
+          after: 10,
           fixed: true
         });
       } else {

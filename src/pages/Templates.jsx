@@ -36,7 +36,7 @@ function TemplatesContent() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const letterCredits = user?.letter_credits || 0;
-  const hasUnlimitedCredits = ['secure', 'protect'].includes(user?.plan_tier);
+  const hasUnlimitedCredits = user?.plan_tier === 'secure';
   const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
   const userTier = user?.plan_tier || 'free';
 
@@ -424,7 +424,7 @@ function TemplatesContent() {
               )}
 
               {/* Unlimited badge for Protect/Secure */}
-              {['protect', 'secure'].includes(userTier) && (
+              {userTier === 'secure' && (
                 <Card className="border-none shadow-md" style={{ backgroundColor: colors.cardBg }}>
                   <CardContent className="p-3 flex items-center justify-center">
                     <Badge className="text-sm font-bold px-3 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
