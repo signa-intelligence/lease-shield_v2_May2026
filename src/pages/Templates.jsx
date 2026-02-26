@@ -36,6 +36,7 @@ function TemplatesContent() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const letterCredits = user?.letter_credits || 0;
+  const hasUnlimitedCredits = ['secure', 'protect'].includes(user?.plan_tier);
   const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
   const userTier = user?.plan_tier || 'free';
 
@@ -390,7 +391,7 @@ function TemplatesContent() {
                     </span>
                   </div>
                   <Badge className="text-lg font-bold px-4 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-                    {letterCredits}
+                    {hasUnlimitedCredits ? '∞' : letterCredits}
                   </Badge>
                 </CardContent>
               </Card>

@@ -47,98 +47,98 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import Templates from './pages/Templates';
+import RiskFeedbackAdmin from './pages/RiskFeedbackAdmin';
+import RefundPolicy from './pages/RefundPolicy';
+import FAQ from './pages/FAQ';
+import Welcome from './pages/Welcome';
+import EvidenceVault from './pages/EvidenceVault';
+import LeaseViewer from './pages/LeaseViewer';
+import AdminReferrals from './pages/AdminReferrals';
+import UploadScan from './pages/UploadScan';
+import LisaAnalytics from './pages/LisaAnalytics';
+import AdminTemplates from './pages/AdminTemplates';
+import Cases from './pages/Cases';
+import ScanPreview from './pages/ScanPreview';
 import Account from './pages/Account';
-import Acknowledge from './pages/Acknowledge';
+import LeaseDetails from './pages/LeaseDetails';
+import LetterReview from './pages/LetterReview';
+import PropertyTracker from './pages/PropertyTracker';
+import Profile from './pages/Profile';
+import DepositTracker from './pages/DepositTracker';
+import RevenueAnalytics from './pages/RevenueAnalytics';
 import AcknowledgeMaintenance from './pages/AcknowledgeMaintenance';
 import AdminConsole from './pages/AdminConsole';
-import AdminCredits from './pages/AdminCredits';
-import AdminReferrals from './pages/AdminReferrals';
-import AdminTemplates from './pages/AdminTemplates';
-import Analytics from './pages/Analytics';
-import CaseDetails from './pages/CaseDetails';
-import Cases from './pages/Cases';
-import CookieSync from './pages/CookieSync';
-import Dashboard from './pages/Dashboard';
-import DepositTracker from './pages/DepositTracker';
-import DocumentVault from './pages/DocumentVault';
 import Documents from './pages/Documents';
-import EvidenceVault from './pages/EvidenceVault';
-import FAQ from './pages/FAQ';
+import Leases from './pages/Leases';
+import CaseDetails from './pages/CaseDetails';
+import LeaseLetters from './pages/LeaseLetters';
+import Analytics from './pages/Analytics';
+import Timeline from './pages/Timeline';
+import DocumentVault from './pages/DocumentVault';
+import Acknowledge from './pages/Acknowledge';
+import RecycleBin from './pages/RecycleBin';
+import cookieSync from './pages/cookie-sync';
+import PaymentSuccess from './pages/PaymentSuccess';
+import CookieSync from './pages/CookieSync';
+import ResolveCase from './pages/ResolveCase';
+import OpsConsole from './pages/OpsConsole';
+import MaintenanceTracker from './pages/MaintenanceTracker';
+import Search from './pages/Search';
+import Dashboard from './pages/Dashboard';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import Home from './pages/Home';
 import Index from './pages/Index';
-import LeaseDetails from './pages/LeaseDetails';
-import LeaseLetters from './pages/LeaseLetters';
-import LeaseViewer from './pages/LeaseViewer';
-import Leases from './pages/Leases';
-import LetterReview from './pages/LetterReview';
-import LisaAnalytics from './pages/LisaAnalytics';
-import MaintenanceTracker from './pages/MaintenanceTracker';
-import OpsConsole from './pages/OpsConsole';
-import PaymentSuccess from './pages/PaymentSuccess';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import Profile from './pages/Profile';
-import PropertyTracker from './pages/PropertyTracker';
-import RecycleBin from './pages/RecycleBin';
-import RefundPolicy from './pages/RefundPolicy';
+import AdminCredits from './pages/AdminCredits';
 import ReportFull from './pages/ReportFull';
-import ResolveCase from './pages/ResolveCase';
-import RevenueAnalytics from './pages/RevenueAnalytics';
-import RiskFeedbackAdmin from './pages/RiskFeedbackAdmin';
-import ScanPreview from './pages/ScanPreview';
-import Search from './pages/Search';
-import Templates from './pages/Templates';
-import Timeline from './pages/Timeline';
-import UploadScan from './pages/UploadScan';
-import Welcome from './pages/Welcome';
-import cookieSync from './pages/cookie-sync';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "Templates": Templates,
+    "RiskFeedbackAdmin": RiskFeedbackAdmin,
+    "RefundPolicy": RefundPolicy,
+    "FAQ": FAQ,
+    "Welcome": Welcome,
+    "EvidenceVault": EvidenceVault,
+    "LeaseViewer": LeaseViewer,
+    "AdminReferrals": AdminReferrals,
+    "UploadScan": UploadScan,
+    "LisaAnalytics": LisaAnalytics,
+    "AdminTemplates": AdminTemplates,
+    "Cases": Cases,
+    "ScanPreview": ScanPreview,
     "Account": Account,
-    "Acknowledge": Acknowledge,
+    "LeaseDetails": LeaseDetails,
+    "LetterReview": LetterReview,
+    "PropertyTracker": PropertyTracker,
+    "Profile": Profile,
+    "DepositTracker": DepositTracker,
+    "RevenueAnalytics": RevenueAnalytics,
     "AcknowledgeMaintenance": AcknowledgeMaintenance,
     "AdminConsole": AdminConsole,
-    "AdminCredits": AdminCredits,
-    "AdminReferrals": AdminReferrals,
-    "AdminTemplates": AdminTemplates,
-    "Analytics": Analytics,
-    "CaseDetails": CaseDetails,
-    "Cases": Cases,
-    "CookieSync": CookieSync,
-    "Dashboard": Dashboard,
-    "DepositTracker": DepositTracker,
-    "DocumentVault": DocumentVault,
     "Documents": Documents,
-    "EvidenceVault": EvidenceVault,
-    "FAQ": FAQ,
+    "Leases": Leases,
+    "CaseDetails": CaseDetails,
+    "LeaseLetters": LeaseLetters,
+    "Analytics": Analytics,
+    "Timeline": Timeline,
+    "DocumentVault": DocumentVault,
+    "Acknowledge": Acknowledge,
+    "RecycleBin": RecycleBin,
+    "cookie-sync": cookieSync,
+    "PaymentSuccess": PaymentSuccess,
+    "CookieSync": CookieSync,
+    "ResolveCase": ResolveCase,
+    "OpsConsole": OpsConsole,
+    "MaintenanceTracker": MaintenanceTracker,
+    "Search": Search,
+    "Dashboard": Dashboard,
+    "PrivacyPolicy": PrivacyPolicy,
     "Home": Home,
     "Index": Index,
-    "LeaseDetails": LeaseDetails,
-    "LeaseLetters": LeaseLetters,
-    "LeaseViewer": LeaseViewer,
-    "Leases": Leases,
-    "LetterReview": LetterReview,
-    "LisaAnalytics": LisaAnalytics,
-    "MaintenanceTracker": MaintenanceTracker,
-    "OpsConsole": OpsConsole,
-    "PaymentSuccess": PaymentSuccess,
-    "PrivacyPolicy": PrivacyPolicy,
-    "Profile": Profile,
-    "PropertyTracker": PropertyTracker,
-    "RecycleBin": RecycleBin,
-    "RefundPolicy": RefundPolicy,
+    "AdminCredits": AdminCredits,
     "ReportFull": ReportFull,
-    "ResolveCase": ResolveCase,
-    "RevenueAnalytics": RevenueAnalytics,
-    "RiskFeedbackAdmin": RiskFeedbackAdmin,
-    "ScanPreview": ScanPreview,
-    "Search": Search,
-    "Templates": Templates,
-    "Timeline": Timeline,
-    "UploadScan": UploadScan,
-    "Welcome": Welcome,
-    "cookie-sync": cookieSync,
 }
 
 export const pagesConfig = {
