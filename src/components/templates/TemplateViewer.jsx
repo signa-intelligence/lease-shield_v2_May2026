@@ -248,16 +248,46 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     try {
       console.log('[TEMPLATE] DOCX download action:', { template_key: template?.template_key, lang: displayLang, credits_before: letterCredits });
 
-      // Call backend function to generate DOCX
-      const response = await base44.functions.invoke('generateDocx', {
-        title,
-        content: documentContent,
-        language: documentLangForExport
+      // Generate DOCX on the client using the docx library
+      const lines = documentContent.split('\n');
+      const children = [];
+
+      // Add title
+      children.push(new Paragraph({
+        children: [new TextRun({ text: title, bold: true, size: 28, color: '0C3B2E' })],
+        heading: HeadingLevel.HEADING_1,
+        spacing: { after: 400 }
+      }));
+
+      // Convert content lines to paragraphs
+      for (const line of lines) {
+        if (line.trim() === '') {
+          children.push(new Paragraph({ text: '' }));
+          continue;
+        }
+        const bulletMatch = line.match(/^\s*[-•*]\s+(.*)$/);
+        if (bulletMatch) {
+          children.push(new Paragraph({
+            text: bulletMatch[1],
+            bullet: { level: 0 },
+            spacing: { before: 80, after: 80 }
+          }));
+          continue;
+        }
+        children.push(new Paragraph({
+          children: [new TextRun({ text: line.trim(), size: 22 })],
+          spacing: { before: 80, after: 80 }
+        }));
+      }
+
+      const doc = new Document({
+        sections: [{ properties: {}, children }]
       });
 
-      // Download the generated DOCX
-      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-      const url = window.URL.createObjectURL(blob);
+      const buffer = await Packer.toBlob(doc);
+
+      // Trigger download
+      const url = window.URL.createObjectURL(buffer);
       const a = document.createElement('a');
       a.href = url;
       const langSuffix = documentLangForExport === 'th' ? '_TH' : '_EN';
