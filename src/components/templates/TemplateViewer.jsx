@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { X, Copy, FileText, CreditCard, Loader2 } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
 import { translateTemplateContent } from "./translateTemplate";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 
 export default function TemplateViewer({ template, isOpen, onClose, colors, language, user, toast }) {
   const queryClient = useQueryClient();
