@@ -753,7 +753,10 @@ function EvidenceVaultContent() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const userTier = (user?.plan_tier || 'free').toLowerCase().trim();
-  const isSecureTier = userTier === 'secure' || userTier === 'protect';
+  const isVideoTier = ['protect', 'secure'].includes(userTier);
+  const isSecureTier = isVideoTier; // kept for backward compat
+  const MAX_VIDEO_SIZE_MB = 50;
+  const MAX_VIDEO_COUNT = userTier === 'protect' ? 10 : Infinity; // protect=10, secure=unlimited
   const storageLimits = getStorageLimits();
   const storageCheck = canUploadFiles(0);
 
