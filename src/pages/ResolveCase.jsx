@@ -15,6 +15,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import ProgressBar from "../components/shared/ProgressBar";
 import TrustBadge from "../components/shared/TrustBadge";
+import CaseSuccessModal from "../components/resolve/CaseSuccessModal";
 
 function ResolveCaseContent() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ function ResolveCaseContent() {
   const [checkingEligibility, setCheckingEligibility] = useState(false);
   const [freeResolveEligible, setFreeResolveEligible] = useState(false);
   const [eligibilityData, setEligibilityData] = useState(null);
+  const [successModal, setSuccessModal] = useState({ open: false, caseNumber: '' });
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -112,37 +114,24 @@ function ResolveCaseContent() {
     fieldBg: '#F8FAFC'
   };
 
+  // Helper to send confirmation email (non-blocking)
+  const sendConfirmationEmail = (createdCase, authenticatedUser, paymentType) => {
+    base44.functions.invoke('sendCaseConfirmationEmail', {
+      caseNumber: createdCase.case_number,
+      userName: authenticatedUser.full_name,
+      userEmail: authenticatedUser.email,
+      disputeAmount: createdCase.dispute_amount,
+      paymentType: paymentType,
+      language: language
+    }).then(() => {
+      console.log('[RESOLVE_FLOW] ✅ Confirmation email sent');
+    }).catch(emailErr => {
+      console.error('[RESOLVE_FLOW] ⚠️ Confirmation email failed (non-blocking):', emailErr?.message);
+    });
+  };
+
   const createCaseMutation = useMutation({
     mutationFn: async ({ caseData }) => {
-      /**
-       * ═══════════════════════════════════════════════════════════════
-       * CASE CREATION - OWNERSHIP BINDING FIX
-       * ═══════════════════════════════════════════════════════════════
-       * 
-       * CRITICAL BUG IDENTIFIED:
-       * Cases were being created with user_email = signaconsultants@gmail.com
-       * (admin account) instead of the actual logged-in tenant.
-       * 
-       * ROOT CAUSE:
-       * - RLS uses user_email field for ownership: WHERE user_email = {{user.email}}
-       * - Cases created without explicit user_email binding
-       * - Frontend auth.me() was being called, but user_email still wrong
-       * 
-       * SOLUTION:
-       * - Explicitly verify authenticated user in mutation
-       * - Force user_email = authenticatedUser.email (from auth token)
-       * - Never trust user_email from form data or props
-       * - Log everything for verification
-       * 
-       * VERIFICATION:
-       * After this fix, new cases should show:
-       * - user_email = <tenant's actual email>
-       * - created_by = <tenant's actual email>
-       * - Case visible in tenant's "My Cases" page
-       * - Case visible in Ops Console (admins see all cases)
-       * ═══════════════════════════════════════════════════════════════
-       */
-      
       // Step 1: Get REAL authenticated user from auth token
       const authenticatedUser = await base44.auth.me();
       if (!authenticatedUser) {
@@ -158,11 +147,10 @@ function ResolveCaseContent() {
       });
       
       // Step 2: Build secure case with FORCED user binding
-      // NEVER trust caseData.user_email - always override with auth user
       const secureCase = {
         ...caseData,
-        user_email: authenticatedUser.email,  // CRITICAL: Force from auth token
-        created_by: authenticatedUser.email   // Redundant but safe
+        user_email: authenticatedUser.email,
+        created_by: authenticatedUser.email
       };
       
       console.log('[CASE_CREATION] 📦 Case data prepared with FORCED user binding:', {
@@ -199,7 +187,6 @@ function ResolveCaseContent() {
       }
       
       // CRITICAL: Send admin notification IMMEDIATELY after case creation
-      // This runs regardless of payment/activation status so admins always know
       try {
         await base44.functions.invoke('notifyAdminNewCase', {
           caseNumber: createdCase.case_number,
@@ -219,10 +206,11 @@ function ResolveCaseContent() {
       return { 
         createdCase, 
         userId: authenticatedUser.id, 
-        userEmail: authenticatedUser.email
+        userEmail: authenticatedUser.email,
+        authenticatedUser
       };
     },
-    onSuccess: async ({ createdCase, userId, userEmail }) => {
+    onSuccess: async ({ createdCase, userId, userEmail, authenticatedUser }) => {
       const useFreeEntitlement = freeResolveEligible;
       console.log('[RESOLVE_FLOW] ✅ Case created successfully:', {
         id: createdCase.id,
@@ -247,15 +235,10 @@ function ResolveCaseContent() {
           console.log('🎁 [RESOLVE_FLOW] createResolveCaseFree response:', activateResponse.data);
           
           if (activateResponse.data?.success) {
-            toast.success(
-              language === 'th' ? '✅ คดีถูกเปิดโดยใช้สิทธิ์ Resolve ฟรี'
-              : language === 'zh' ? '✅ 案件已使用免费Resolve权益激活'
-              : language === 'ja' ? '✅ 無料Resolve権利を使用してケースが開設されました'
-              : language === 'ko' ? '✅ 무료 Resolve 권한으로 사례 개설됨'
-              : language === 'ru' ? '✅ Дело открыто с использованием бесплатного Resolve'
-              : '✅ Case opened using free Resolve entitlement'
-            );
-            navigate(createPageUrl("Cases"));
+            // Send confirmation email (non-blocking)
+            sendConfirmationEmail(createdCase, authenticatedUser, 'free');
+            // Show success modal instead of navigating
+            setSuccessModal({ open: true, caseNumber: createdCase.case_number });
             return;
           } else {
             console.error('❌ [RESOLVE_FLOW] Free activation returned non-success:', activateResponse.data);
@@ -263,7 +246,6 @@ function ResolveCaseContent() {
               language === 'th' ? 'ไม่สามารถใช้สิทธิ์ฟรีได้: ' + (activateResponse.data?.error || 'Unknown error')
               : 'Failed to use free entitlement: ' + (activateResponse.data?.error || 'Unknown error')
             );
-            // Don't fall through to paid - case was already created, just show error
             return;
           }
         } catch (freeError) {
@@ -273,7 +255,6 @@ function ResolveCaseContent() {
             language === 'th' ? 'ไม่สามารถใช้สิทธิ์ฟรีได้: ' + errMsg
             : 'Failed to use free entitlement: ' + errMsg
           );
-          // Don't fall through to paid flow - show the error
           return;
         }
       }
@@ -294,6 +275,8 @@ function ResolveCaseContent() {
         console.log('[RESOLVE_FLOW] 💳 Checkout response:', response.data);
         
         if (response.data?.url) {
+          // Send confirmation email before redirect (non-blocking)
+          sendConfirmationEmail(createdCase, authenticatedUser, 'paid');
           window.location.href = response.data.url;
         } else {
           console.error('[RESOLVE_FLOW] No checkout URL returned:', response.data);
@@ -333,9 +316,6 @@ function ResolveCaseContent() {
     const fileArray = Array.from(files);
     console.log('[RESOLVE_UPLOAD] Starting upload:', fileArray.map(f => `${f.name} (${f.type}, ${f.size}b)`));
 
-    // Skip quota check - it was causing Network Errors and blocking uploads
-    // Storage usage is tracked post-upload instead
-
     setUploading(true);
     try {
       const uploadResults = [];
@@ -345,12 +325,10 @@ function ResolveCaseContent() {
         let uploaded = false;
         let lastError = '';
         
-        // Retry up to 3 times
         for (let attempt = 1; attempt <= 3 && !uploaded; attempt++) {
           try {
             console.log(`[RESOLVE_UPLOAD] Attempt ${attempt} for ${file.name} (${file.type}, ${file.size}b)`);
             
-            // Create a fresh File object to avoid stale blob references
             let uploadFile = file;
             if (attempt > 1 || !file.type.startsWith('image/')) {
               const arrayBuffer = await file.arrayBuffer();
@@ -374,7 +352,7 @@ function ResolveCaseContent() {
             lastError = uploadError?.message || 'Unknown error';
             console.error(`[RESOLVE_UPLOAD] ❌ Attempt ${attempt} failed for ${file.name}:`, lastError);
             if (attempt < 3) {
-              await new Promise(r => setTimeout(r, 1000 * attempt)); // backoff
+              await new Promise(r => setTimeout(r, 1000 * attempt));
             }
           }
         }
@@ -427,7 +405,6 @@ function ResolveCaseContent() {
         );
       }
 
-      // Update storage usage after successful uploads (non-blocking)
       if (totalUploadedBytes > 0) {
         base44.functions.invoke('updateStorageUsage', { bytesAdded: totalUploadedBytes }).catch(err =>
           console.warn('[RESOLVE] Storage update failed (non-blocking):', err?.message)
@@ -488,7 +465,6 @@ function ResolveCaseContent() {
     haptic.medium();
 
     try {
-      // CRITICAL FIX: Use unified membership system
       const membershipForCase = getMembershipInfo(user);
       const isMember = membershipForCase.qualifiesForMemberBenefits;
       const planTier = user?.plan_tier?.toLowerCase() || 'free';
@@ -506,7 +482,6 @@ function ResolveCaseContent() {
       
       const caseNumber = caseNumberResponse.data.case_number;
 
-      // Map evidence to clean array (no file objects)
       const evidenceData = formData.evidence_files.map(file => ({
         id: file.id,
         url: file.url,
@@ -515,21 +490,9 @@ function ResolveCaseContent() {
         uploaded_date: file.uploaded_date
       }));
 
-      /**
-       * ═══════════════════════════════════════════════════════════════
-       * CASE DATA CONSTRUCTION
-       * ═══════════════════════════════════════════════════════════════
-       * 
-       * CRITICAL: user_email is set here, but will be RE-FORCED in the
-       * mutation to use auth.me() to prevent any tampering.
-       * 
-       * This user.email is just for logging/consistency - the mutation
-       * will override it with the authenticated user's email.
-       * ═══════════════════════════════════════════════════════════════
-       */
       const caseData = {
         case_number: caseNumber,
-        user_email: user.email, // Will be re-forced in mutation from auth token
+        user_email: user.email,
         type: formData.type,
         dispute_amount: parseFloat(formData.dispute_amount),
         summary: formData.summary,
@@ -556,7 +519,6 @@ function ResolveCaseContent() {
         ]
       };
 
-      // Pass case data to mutation with free entitlement flag
       createCaseMutation.mutate({ 
         caseData,
         useFreeEntitlement: freeResolveEligible
@@ -1203,7 +1165,6 @@ function ResolveCaseContent() {
                 const daysRemaining = membership.daysUntilMemberBenefits;
                 
                 if (membership.qualifiesForMemberBenefits) {
-                  // Qualified for member rate
                   return (
                     <>
                       <div className="flex items-baseline gap-2 mb-2">
@@ -1225,7 +1186,6 @@ function ResolveCaseContent() {
                     </>
                   );
                 } else if (membership.isPaidPlan && daysRemaining > 0) {
-                  // Paid plan but under 30 days - show public rate with countdown
                   return (
                     <>
                       <div className="flex items-baseline gap-2 mb-2">
@@ -1260,7 +1220,6 @@ function ResolveCaseContent() {
                     </>
                   );
                 } else {
-                  // Free plan or no membership
                   return (
                     <>
                       <div className="flex items-baseline gap-2 mb-2">
@@ -1439,7 +1398,7 @@ function ResolveCaseContent() {
               <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>{str.evidenceDesc}</p>
             </CardHeader>
             <CardContent>
-              {/* Privacy Notice - Consent (before evidence upload) */}
+              {/* Privacy Notice */}
               <div className="mb-4 p-4 rounded-lg" style={{
                 backgroundColor: isDarkMode ? '#1F2937' : '#F0FDF4',
                 border: `2px solid ${isDarkMode ? '#10B981' : '#86EFAC'}`
@@ -1517,7 +1476,7 @@ function ResolveCaseContent() {
             </Card>
           )}
 
-          {/* Trust Badge - before submit */}
+          {/* Trust Badge */}
           <div className="mb-4">
             <TrustBadge language={language} isDarkMode={isDarkMode} />
           </div>
@@ -1561,6 +1520,15 @@ function ResolveCaseContent() {
           </Button>
         </form>
       </div>
+
+      {/* Success Modal */}
+      <CaseSuccessModal
+        isOpen={successModal.open}
+        caseNumber={successModal.caseNumber}
+        language={language}
+        isDarkMode={isDarkMode}
+        onClose={() => setSuccessModal({ open: false, caseNumber: '' })}
+      />
     </div>
   );
 }
