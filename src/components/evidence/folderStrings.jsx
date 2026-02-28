@@ -93,7 +93,7 @@ const folderStrings = {
     createFirstFolder: "証拠を整理するフォルダを作成しましょう", emptyFolder: "このフォルダは空です",
     unsorted: "未整理ファイル",
     saveToFolder: "フォルダに保存", createNewFolder: "+ 新しいフォルダを作成",
-    newFolderName: "新しいフォルダ名", savingTo: "保存先：", rootLevel: "ルート（すべてのファイル）",
+    newFolderName: "新しいフォルダ名", savingTo: "保存先：", rootLevel: "アップロード",
   },
   ko: {
     newFolder: "새 폴더", createFolder: "폴더 만들기", renameFolder: "폴더 이름 변경",
