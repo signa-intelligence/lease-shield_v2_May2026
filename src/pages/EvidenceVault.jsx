@@ -1322,36 +1322,7 @@ function EvidenceVaultContent() {
                    {strings.addVoiceNote}
                   </button>
 
-                  <button
-                  type="button"
-                  onClick={handleVideoClick}
-                  className="btn-interaction"
-                  title={!isVideoTier ? strings.upgradeTitle : ''}
-                   style={{
-                     padding: '8px 14px',
-                     borderRadius: '8px',
-                     border: `2px solid ${colors.borderColor}`,
-                     backgroundColor: colors.uploadBg,
-                     color: colors.textPrimary,
-                     fontSize: '13px',
-                     fontWeight: '600',
-                     cursor: 'pointer',
-                     display: 'flex',
-                     alignItems: 'center',
-                     gap: '6px',
-                     transition: 'all 0.2s',
-                     minHeight: '40px'
-                   }}
-                   onMouseEnter={(e) => {
-                     e.currentTarget.style.backgroundColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
-                   }}
-                   onMouseLeave={(e) => {
-                     e.currentTarget.style.backgroundColor = colors.uploadBg;
-                   }}
-                  >
-                   <FileVideo className="w-4 h-4" />
-                   {strings.addVideo}
-                  </button>
+                  {/* Video upload handled via main file picker - tier-gated by accept attribute */}
                 </div>
 
                 {/* Voice Notes Preview */}
