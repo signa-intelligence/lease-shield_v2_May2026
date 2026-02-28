@@ -54,6 +54,7 @@ import AdminConsole from './pages/AdminConsole';
 import AdminCredits from './pages/AdminCredits';
 import AdminReferrals from './pages/AdminReferrals';
 import AdminTemplates from './pages/AdminTemplates';
+import AdminUserManagement from './pages/AdminUserManagement';
 import Analytics from './pages/Analytics';
 import CaseDetails from './pages/CaseDetails';
 import Cases from './pages/Cases';
@@ -91,7 +92,6 @@ import Timeline from './pages/Timeline';
 import UploadScan from './pages/UploadScan';
 import Welcome from './pages/Welcome';
 import cookieSync from './pages/cookie-sync';
-import AdminUserManagement from './pages/AdminUserManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -103,6 +103,7 @@ export const PAGES = {
     "AdminCredits": AdminCredits,
     "AdminReferrals": AdminReferrals,
     "AdminTemplates": AdminTemplates,
+    "AdminUserManagement": AdminUserManagement,
     "Analytics": Analytics,
     "CaseDetails": CaseDetails,
     "Cases": Cases,
@@ -140,7 +141,6 @@ export const PAGES = {
     "UploadScan": UploadScan,
     "Welcome": Welcome,
     "cookie-sync": cookieSync,
-    "AdminUserManagement": AdminUserManagement,
 }
 
 export const pagesConfig = {

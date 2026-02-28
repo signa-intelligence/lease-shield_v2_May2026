@@ -23,10 +23,18 @@ function AdminUserManagementContent() {
     queryFn: () => base44.auth.me(),
   });
 
+  const isAdmin = currentUser && (
+    ['admin', 'super_admin', 'va'].includes(currentUser.role) ||
+    ['admin', 'super_admin', 'va'].includes(currentUser.access_level)
+  );
+
   const { data: users = [], isLoading, refetch } = useQuery({
     queryKey: ["adminUsers"],
-    queryFn: () => base44.entities.User.list("-created_date", 200),
-    enabled: currentUser?.role === "admin",
+    queryFn: async () => {
+      const response = await base44.functions.invoke('adminListUsers');
+      return response.data?.users || [];
+    },
+    enabled: !!isAdmin,
   });
 
   const filteredUsers = useMemo(() => {
@@ -53,7 +61,7 @@ function AdminUserManagementContent() {
     queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
   };
 
-  if (currentUser?.role !== "admin") {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-lg text-muted-foreground">Admin access required</p>
