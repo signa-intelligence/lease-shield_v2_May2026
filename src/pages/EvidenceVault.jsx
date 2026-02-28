@@ -823,6 +823,9 @@ function EvidenceVaultContent() {
     toast.success(strings.refreshed);
   };
 
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+
   // === Folder handler functions ===
   const handleCreateFolder = async () => {
     if (!newFolderName.trim() || !user?.email) return;
@@ -876,7 +879,6 @@ function EvidenceVaultContent() {
     if (!deletingFolder) return;
     setDeletingFolderLoading(true);
     try {
-      // Move files in this folder back to root
       const folderDocs = documents.filter(d => d.folder_id === deletingFolder.id);
       for (const doc of folderDocs) {
         await base44.entities.Document.update(doc.id, { folder_id: null });
@@ -922,9 +924,6 @@ function EvidenceVaultContent() {
       setMovingFile(false);
     }
   };
-
-  const language = user?.language || 'en';
-  const isDarkMode = user?.theme === 'dark';
   const rawTier = (user?.plan_tier || 'free').toLowerCase().trim();
   const userTier = (rawTier === 'explorer') ? 'free' : rawTier; // normalize explorer → free
   const isVideoTier = ['protect', 'secure'].includes(userTier);
