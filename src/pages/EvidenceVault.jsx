@@ -219,11 +219,25 @@ function EvidenceVaultContent() {
     
     // Check if any video files are selected and user is not on Protect/Secure tier
     const hasVideoFiles = files.some(f => f.type.startsWith('video/'));
-    if (hasVideoFiles && !isSecureTier) {
+    if (hasVideoFiles && !isVideoTier) {
       setUpgradeModalType('video');
       setShowUpgradeModal(true);
       e.target.value = null;
       return;
+    }
+
+    // Validate video file sizes (50 MB max)
+    const maxVideoBytes = MAX_VIDEO_SIZE_MB * 1024 * 1024;
+    for (const f of files) {
+      if (f.type.startsWith('video/') && f.size > maxVideoBytes) {
+        toast.error(
+          language === 'th'
+            ? `ไฟล์วิดีโอใหญ่เกินไป: ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB) — สูงสุด ${MAX_VIDEO_SIZE_MB} MB`
+            : `Video too large: ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB) — max ${MAX_VIDEO_SIZE_MB} MB`
+        );
+        e.target.value = null;
+        return;
+      }
     }
 
     console.log('[EV] Files selected:', files.map(f => `${f.name} (${f.type}, ${(f.size/1024).toFixed(1)}KB)`));
