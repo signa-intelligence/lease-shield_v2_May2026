@@ -120,6 +120,16 @@ function EvidenceVaultContent() {
     staleTime: 30000,
   });
 
+  const { data: folders = [], isLoading: isLoadingFolders } = useQuery({
+    queryKey: ['evidenceFolders', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.EvidenceFolder.filter({ owner_email: user.email }, 'created_date');
+    },
+    enabled: !!user?.email,
+    staleTime: 30000,
+  });
+
   // ADDED: Optimistic update hook
   const optimistic = useOptimisticUpdate(['documents'], 'Document');
 
