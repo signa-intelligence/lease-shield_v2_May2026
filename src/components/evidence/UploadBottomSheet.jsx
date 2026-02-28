@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, Loader2, FileText, FileVideo, CheckCircle2, Mic, Folder } from "lucide-react";
+import { Upload, X, Loader2, FileText, FileVideo, CheckCircle2, Mic, Folder, FolderPlus } from "lucide-react";
 import { compressMultipleImages } from "../shared/ImageCompression";
 import { uploadFilesSequentially } from "./uploadFiles";
 import { haptic } from "../shared/HapticFeedback";
@@ -291,33 +291,46 @@ export default function UploadBottomSheet({
             <div>
               <Label className="text-sm font-semibold mb-2 block" style={{ color: colors.textPrimary }}>
                 <Folder className="w-4 h-4 inline mr-1.5 mb-0.5" />
-                {folderStr.saveToFolder}
+                {folderStr.saveTo}
               </Label>
               {!showInlineCreate ? (
-                <Select
-                  value={uploadFolderId || "__root__"}
-                  onValueChange={(v) => {
-                    if (v === '__create_new__') {
-                      setShowInlineCreate(true);
-                      haptic.light();
-                    } else {
+                <div className="flex gap-2 items-center">
+                  <Select
+                    value={uploadFolderId || "__root__"}
+                    onValueChange={(v) => {
                       setUploadFolderId(v === '__root__' ? null : v);
-                    }
-                  }}
-                >
-                  <SelectTrigger style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
-                    <SelectItem value="__root__">📂 {folderStr.rootLevel}</SelectItem>
-                    {folders.map(f => (
-                      <SelectItem key={f.id} value={f.id}>📁 {f.folder_name}</SelectItem>
-                    ))}
-                    <SelectItem value="__create_new__">
-                      <span style={{ color: '#0C3B2E', fontWeight: 600 }}>{folderStr.createNewFolder}</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                    }}
+                  >
+                    <SelectTrigger className="flex-1" style={{ backgroundColor: colors.inputBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                      <SelectItem value="__root__">📂 {folderStr.rootLevel}</SelectItem>
+                      {folders.map(f => (
+                        <SelectItem key={f.id} value={f.id}>📁 {f.folder_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <button
+                    type="button"
+                    onClick={() => { setShowInlineCreate(true); haptic.light(); }}
+                    className="btn-interaction flex items-center gap-1.5 whitespace-nowrap"
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: `2px solid ${isDarkMode ? '#C7A338' : '#0C3B2E'}`,
+                      backgroundColor: 'transparent',
+                      color: isDarkMode ? '#C7A338' : '#0C3B2E',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      minHeight: '36px',
+                    }}
+                  >
+                    <FolderPlus className="w-4 h-4" />
+                    {folderStr.newFolderBtn}
+                  </button>
+                </div>
               ) : (
                 <div className="flex gap-2">
                   <Input

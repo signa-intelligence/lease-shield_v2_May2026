@@ -26,6 +26,8 @@ const folderStrings = {
     emptyFolder: "This folder is empty",
     unsorted: "Unsorted Files",
     saveToFolder: "Save to Folder",
+    saveTo: "Save to",
+    newFolderBtn: "+ Folder",
     createNewFolder: "+ Create New Folder",
     newFolderName: "New folder name",
     savingTo: "Saving to:",
@@ -58,6 +60,8 @@ const folderStrings = {
     emptyFolder: "โฟลเดอร์นี้ว่างเปล่า",
     unsorted: "ไฟล์ที่ไม่ได้จัดหมวด",
     saveToFolder: "บันทึกไปยังโฟลเดอร์",
+    saveTo: "บันทึกไปยัง",
+    newFolderBtn: "+ โฟลเดอร์",
     createNewFolder: "+ สร้างโฟลเดอร์ใหม่",
     newFolderName: "ชื่อโฟลเดอร์ใหม่",
     savingTo: "บันทึกไปยัง:",
@@ -76,7 +80,7 @@ const folderStrings = {
     deleteFolderBtn: "删除文件夹", move: "移动", noFolders: "暂无文件夹",
     createFirstFolder: "创建文件夹来整理您的证据", emptyFolder: "此文件夹为空",
     unsorted: "未分类文件",
-    saveToFolder: "保存到文件夹", createNewFolder: "+ 新建文件夹",
+    saveToFolder: "保存到文件夹", saveTo: "保存到", newFolderBtn: "+ 文件夹", createNewFolder: "+ 新建文件夹",
     newFolderName: "新文件夹名称", savingTo: "保存到：", rootLevel: "上传",
   },
   ja: {
@@ -92,7 +96,7 @@ const folderStrings = {
     deleteFolderBtn: "フォルダを削除", move: "移動", noFolders: "フォルダはまだありません",
     createFirstFolder: "証拠を整理するフォルダを作成しましょう", emptyFolder: "このフォルダは空です",
     unsorted: "未整理ファイル",
-    saveToFolder: "フォルダに保存", createNewFolder: "+ 新しいフォルダを作成",
+    saveToFolder: "フォルダに保存", saveTo: "保存先", newFolderBtn: "+ フォルダ", createNewFolder: "+ 新しいフォルダを作成",
     newFolderName: "新しいフォルダ名", savingTo: "保存先：", rootLevel: "アップロード",
   },
   ko: {
@@ -108,7 +112,7 @@ const folderStrings = {
     deleteFolderBtn: "폴더 삭제", move: "이동", noFolders: "아직 폴더가 없습니다",
     createFirstFolder: "증거를 정리할 폴더를 만드세요", emptyFolder: "이 폴더는 비어 있습니다",
     unsorted: "미분류 파일",
-    saveToFolder: "폴더에 저장", createNewFolder: "+ 새 폴더 만들기",
+    saveToFolder: "폴더에 저장", saveTo: "저장 위치", newFolderBtn: "+ 폴더", createNewFolder: "+ 새 폴더 만들기",
     newFolderName: "새 폴더 이름", savingTo: "저장 위치:", rootLevel: "업로드",
   },
   ru: {
@@ -124,7 +128,7 @@ const folderStrings = {
     deleteFolderBtn: "Удалить папку", move: "Переместить", noFolders: "Папок пока нет",
     createFirstFolder: "Создайте папки для организации ваших доказательств", emptyFolder: "Эта папка пуста",
     unsorted: "Несортированные файлы",
-    saveToFolder: "Сохранить в папку", createNewFolder: "+ Создать новую папку",
+    saveToFolder: "Сохранить в папку", saveTo: "Сохранить в", newFolderBtn: "+ Папка", createNewFolder: "+ Создать новую папку",
     newFolderName: "Имя новой папки", savingTo: "Сохранить в:", rootLevel: "Загрузки",
   }
 };
