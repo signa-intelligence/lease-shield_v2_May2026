@@ -105,7 +105,8 @@ function EvidenceVaultContent() {
   const filteredDocuments = documents;
 
   const getStorageLimits = () => {
-    const tier = user?.plan_tier || 'free';
+    const rawT = (user?.plan_tier || 'free').toLowerCase().trim();
+    const tier = rawT === 'explorer' ? 'free' : rawT;
     switch(tier) {
       case 'free': return { limit: 100 * 1024 * 1024, limitMB: 100, fileLimit: 3 };
       case 'lite': return { limit: 1024 * 1024 * 1024, limitMB: 1024, fileLimit: 999 };
@@ -126,7 +127,9 @@ function EvidenceVaultContent() {
     const currentFileCount = documents.length;
 
     // Check file count limit (Free tier only)
-    if (user?.plan_tier === 'free' && currentFileCount + fileCount > limits.fileLimit) {
+    const effTier = (user?.plan_tier || 'free').toLowerCase().trim();
+    const isFreeOrExplorer = effTier === 'free' || effTier === 'explorer';
+    if (isFreeOrExplorer && currentFileCount + fileCount > limits.fileLimit) {
       return {
         allowed: false,
         reason: 'file_limit',
@@ -789,7 +792,8 @@ function EvidenceVaultContent() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-  const userTier = (user?.plan_tier || 'free').toLowerCase().trim();
+  const rawTier = (user?.plan_tier || 'free').toLowerCase().trim();
+  const userTier = (rawTier === 'explorer') ? 'free' : rawTier; // normalize explorer → free
   const isVideoTier = ['protect', 'secure'].includes(userTier);
   const isSecureTier = isVideoTier; // kept for backward compat
   const MAX_VIDEO_SIZE_MB = 50;

@@ -74,9 +74,10 @@ export function useFeatureAccess(featureName) {
   });
 
   const allowedTiers = FEATURE_GATES[featureName] || [];
-  const hasAccess = user?.plan_tier && allowedTiers.includes(user.plan_tier);
+  const normalizedTier = (user?.plan_tier === 'explorer') ? 'free' : user?.plan_tier;
+  const hasAccess = normalizedTier && allowedTiers.includes(normalizedTier);
   
-  return { hasAccess, userTier: user?.plan_tier };
+  return { hasAccess, userTier: normalizedTier };
 }
 
 export function FeatureGate({ feature, children, fallback }) {
@@ -110,6 +111,7 @@ export function FeatureGate({ feature, children, fallback }) {
 }
 
 export function PlanBadge({ tier }) {
+  const normalTier = (tier === 'explorer') ? 'free' : tier;
   const configs = {
     free: { label: 'Explorer', color: 'bg-gray-100 text-gray-700', icon: null },
     lite: { label: 'Lite', color: 'bg-blue-100 text-blue-700', icon: Zap },
@@ -117,7 +119,7 @@ export function PlanBadge({ tier }) {
     secure: { label: 'Secure', color: 'bg-purple-100 text-purple-700', icon: Crown }
   };
 
-  const config = configs[tier] || configs.free;
+  const config = configs[normalTier] || configs.free;
   const Icon = config.icon;
 
   return (
