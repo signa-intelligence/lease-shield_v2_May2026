@@ -1283,14 +1283,7 @@ function EvidenceVaultContent() {
                     onChange={handleVoiceSelection}
                     className="hidden"
                   />
-                  <input
-                    id="video-evidence-input"
-                    type="file"
-                    accept="video/*"
-                    multiple
-                    onChange={handleVideoSelection}
-                    className="hidden"
-                  />
+                  {/* Video input removed - videos handled via main file picker */}
 
                   <button
                    type="button"
