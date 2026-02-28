@@ -253,33 +253,67 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const handleDownloadDOCX = async () => {
     setDownloading(true);
     try {
-      const lines = documentContent.split('\n');
       const children = [];
 
+      // Title
       children.push(new Paragraph({
-        children: [new TextRun({ text: title, bold: true, size: 28, color: '0C3B2E' })],
+        children: [new TextRun({ text: title, bold: true, size: 28, color: '0C3B2E', font: 'Arial' })],
         heading: HeadingLevel.HEADING_1,
         spacing: { after: 400 }
       }));
 
-      for (const line of lines) {
-        if (line.trim() === '') {
-          children.push(new Paragraph({ text: '' }));
-          continue;
-        }
-        const bulletMatch = line.match(/^\s*[-•*]\s+(.*)$/);
-        if (bulletMatch) {
+      // Helper to add content lines as paragraphs
+      const addContentLines = (text) => {
+        const lines = text.split('\n');
+        for (const line of lines) {
+          if (line.trim() === '') {
+            children.push(new Paragraph({ text: '' }));
+            continue;
+          }
+          const bulletMatch = line.match(/^\s*[-•*]\s+(.*)$/);
+          if (bulletMatch) {
+            children.push(new Paragraph({
+              children: [new TextRun({ text: bulletMatch[1], size: 22, font: 'Arial' })],
+              bullet: { level: 0 },
+              spacing: { before: 80, after: 80 }
+            }));
+            continue;
+          }
           children.push(new Paragraph({
-            text: bulletMatch[1],
-            bullet: { level: 0 },
+            children: [new TextRun({ text: line.trim(), size: 22, font: 'Arial' })],
             spacing: { before: 80, after: 80 }
           }));
-          continue;
         }
+      };
+
+      // Thai section
+      if (docTh && docTh.trim().length > 0) {
         children.push(new Paragraph({
-          children: [new TextRun({ text: line.trim(), size: 22 })],
-          spacing: { before: 80, after: 80 }
+          children: [new TextRun({ text: 'ภาษาไทย', bold: true, size: 24, color: '0C3B2E', font: 'Arial' })],
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 200, after: 200 }
         }));
+        addContentLines(docTh);
+      }
+
+      // Separator
+      if (docTh && docTh.trim().length > 0 && docEn && docEn.trim().length > 0) {
+        children.push(new Paragraph({ text: '', spacing: { before: 300, after: 100 } }));
+        children.push(new Paragraph({
+          children: [new TextRun({ text: '────────────────────────────────────────', size: 22, color: '999999', font: 'Arial' })],
+          spacing: { before: 100, after: 100 }
+        }));
+        children.push(new Paragraph({ text: '', spacing: { before: 100, after: 300 } }));
+      }
+
+      // English section
+      if (docEn && docEn.trim().length > 0) {
+        children.push(new Paragraph({
+          children: [new TextRun({ text: 'English', bold: true, size: 24, color: '0C3B2E', font: 'Arial' })],
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 200, after: 200 }
+        }));
+        addContentLines(docEn);
       }
 
       const doc = new Document({
