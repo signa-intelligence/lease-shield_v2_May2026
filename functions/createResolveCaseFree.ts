@@ -70,10 +70,19 @@ Deno.serve(async (req) => {
     console.log('✅ [FREE_RESOLVE] Case status updated to intake');
 
     // Step 3: Mark entitlement as used
-    await base44.asServiceRole.entities.User.update(user.id, {
+    // Check if this is a manual override user - decrement manual_case_credits
+    const currentUser = (await base44.asServiceRole.entities.User.filter({ id: user.id }))[0];
+    const updateData = {
       resolve_entitlement_used_at: new Date().toISOString(),
       resolve_entitlement_used_case_id: caseId
-    });
+    };
+    
+    if (currentUser?.manual_tier_override && (currentUser.manual_case_credits || 0) > 0) {
+      updateData.manual_case_credits = currentUser.manual_case_credits - 1;
+      console.log('🔧 [FREE_RESOLVE] Decremented manual_case_credits:', currentUser.manual_case_credits, '->', updateData.manual_case_credits);
+    }
+    
+    await base44.asServiceRole.entities.User.update(user.id, updateData);
 
     console.log('✅ [FREE_RESOLVE] Entitlement marked as used');
 
