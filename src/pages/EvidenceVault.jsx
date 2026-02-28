@@ -30,6 +30,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import AuthGuard from "../components/shared/AuthGuard";
 import TrustBadge from "../components/shared/TrustBadge";
+import { FolderPlus, Folder, FolderOpen, ChevronDown as ChevronDownIcon, ChevronRight } from "lucide-react";
 import {
   FEATURE_COLORS,
   CTA_COLOR,
@@ -40,6 +41,8 @@ import {
 const evidenceAccent = FEATURE_COLORS.evidence.accent;
 
 import { DOC_TYPE_CONFIG as _DOC_TYPE_CONFIG_DATA, getDocTypeLabel, getEvidenceStrings } from "../components/evidence/evidenceStrings";
+import { getFolderStrings } from "../components/evidence/folderStrings";
+import { CreateFolderModal, RenameFolderModal, DeleteFolderModal, MoveToFolderModal } from "../components/evidence/FolderModals";
 
 // Add icon references to the imported config
 const DOC_TYPE_CONFIG = {
