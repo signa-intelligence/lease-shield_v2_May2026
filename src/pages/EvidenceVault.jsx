@@ -61,17 +61,8 @@ function EvidenceVaultContent() {
   const toast = useToast();
   // Upload dialog states
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadType, setUploadType] = useState('photo');
-  const [uploadLabel, setUploadLabel] = useState('');
-  const [uploadFiles, setUploadFiles] = useState([]);
-  const [error, setError] = useState(null);
-  const [compressionStats, setCompressionStats] = useState(null);
-  const [uploadStage, setUploadStage] = useState('');
-  const [uploadProgressPercent, setUploadProgressPercent] = useState(0);
 
-  // Voice/Video states
-  const [voiceFiles, setVoiceFiles] = useState([]);
+  // Video states
   const [videoFiles, setVideoFiles] = useState([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeModalType, setUpgradeModalType] = useState(''); // 'video'
