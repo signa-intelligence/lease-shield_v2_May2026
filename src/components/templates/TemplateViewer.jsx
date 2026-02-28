@@ -227,10 +227,10 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     setCopying(true);
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(documentContent);
+        await navigator.clipboard.writeText(bilingualContent);
       } else {
         const textarea = document.createElement('textarea');
-        textarea.value = documentContent;
+        textarea.value = bilingualContent;
         textarea.style.position = 'fixed';
         textarea.style.opacity = '0';
         document.body.appendChild(textarea);
