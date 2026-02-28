@@ -719,8 +719,8 @@ function EvidenceVaultContent() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-  const userTier = user?.plan_tier || 'free';
-  const isSecureTier = userTier === 'secure';
+  const userTier = (user?.plan_tier || 'free').toLowerCase().trim();
+  const isSecureTier = userTier === 'secure' || userTier === 'protect';
   const storageLimits = getStorageLimits();
   const storageCheck = canUploadFiles(0);
 
