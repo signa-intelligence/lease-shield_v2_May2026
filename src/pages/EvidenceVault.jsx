@@ -277,7 +277,16 @@ function EvidenceVaultContent() {
 
   const handleVideoUpload = () => {
     setShowVideoActionSheet(false);
-    document.getElementById('video-evidence-input').click();
+    const el = document.getElementById('video-evidence-input');
+    if (el) {
+      el.click();
+    } else {
+      // Input is inside BottomSheet which may not be mounted yet — open upload dialog first
+      setShowUploadDialog(true);
+      setTimeout(() => {
+        document.getElementById('video-evidence-input')?.click();
+      }, 300);
+    }
   };
 
   const handleVideoRecord = async () => {
