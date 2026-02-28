@@ -346,6 +346,7 @@ function ResolveCaseContent() {
             file_url: result.file_url,
             fileName: file.name
           });
+          totalUploadedBytes += (file.size || 0);
         } catch (uploadError) {
           uploadResults.push({
             success: false,
@@ -391,6 +392,13 @@ function ResolveCaseContent() {
           : language === 'ko' ? `${failedUploads.length}개 파일 업로드 실패`
           : language === 'ru' ? `Не удалось загрузить ${failedUploads.length} файлов`
           : `Failed to upload ${failedUploads.length} file(s)`
+        );
+      }
+
+      // Update storage usage after successful uploads
+      if (totalUploadedBytes > 0) {
+        base44.functions.invoke('updateStorageUsage', { bytesAdded: totalUploadedBytes }).catch(err =>
+          console.warn('[RESOLVE] Storage update failed (non-blocking):', err?.message)
         );
       }
     } catch (error) {
