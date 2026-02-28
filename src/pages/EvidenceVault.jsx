@@ -823,6 +823,106 @@ function EvidenceVaultContent() {
     toast.success(strings.refreshed);
   };
 
+  // === Folder handler functions ===
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim() || !user?.email) return;
+    setCreatingFolder(true);
+    try {
+      await base44.entities.EvidenceFolder.create({ folder_name: newFolderName.trim(), owner_email: user.email });
+      queryClient.invalidateQueries({ queryKey: ['evidenceFolders', user.email] });
+      setNewFolderName('');
+      setShowCreateFolder(false);
+      toast.success(language === 'th' ? 'สร้างโฟลเดอร์แล้ว' : 'Folder created');
+      haptic.success();
+    } catch (err) {
+      console.error('Create folder failed:', err);
+      toast.error(language === 'th' ? 'สร้างโฟลเดอร์ไม่สำเร็จ' : 'Failed to create folder');
+      haptic.error();
+    } finally {
+      setCreatingFolder(false);
+    }
+  };
+
+  const openRenameFolder = (folder) => {
+    setRenamingFolderId(folder.id);
+    setRenameFolderName(folder.folder_name);
+    setShowRenameFolder(true);
+  };
+
+  const handleRenameFolder = async () => {
+    if (!renameFolderName.trim() || !renamingFolderId) return;
+    setRenamingFolder(true);
+    try {
+      await base44.entities.EvidenceFolder.update(renamingFolderId, { folder_name: renameFolderName.trim() });
+      queryClient.invalidateQueries({ queryKey: ['evidenceFolders', user?.email] });
+      setShowRenameFolder(false);
+      toast.success(language === 'th' ? 'เปลี่ยนชื่อโฟลเดอร์แล้ว' : 'Folder renamed');
+      haptic.success();
+    } catch (err) {
+      console.error('Rename folder failed:', err);
+      toast.error(language === 'th' ? 'เปลี่ยนชื่อไม่สำเร็จ' : 'Failed to rename folder');
+      haptic.error();
+    } finally {
+      setRenamingFolder(false);
+    }
+  };
+
+  const openDeleteFolder = (folder) => {
+    setDeletingFolder(folder);
+    setShowDeleteFolder(true);
+  };
+
+  const handleDeleteFolderConfirm = async () => {
+    if (!deletingFolder) return;
+    setDeletingFolderLoading(true);
+    try {
+      // Move files in this folder back to root
+      const folderDocs = documents.filter(d => d.folder_id === deletingFolder.id);
+      for (const doc of folderDocs) {
+        await base44.entities.Document.update(doc.id, { folder_id: null });
+      }
+      await base44.entities.EvidenceFolder.delete(deletingFolder.id);
+      queryClient.invalidateQueries({ queryKey: ['evidenceFolders', user?.email] });
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      if (activeFolderFilter === deletingFolder.id) setActiveFolderFilter('all');
+      setShowDeleteFolder(false);
+      setDeletingFolder(null);
+      toast.success(language === 'th' ? 'ลบโฟลเดอร์แล้ว' : 'Folder deleted');
+      haptic.success();
+    } catch (err) {
+      console.error('Delete folder failed:', err);
+      toast.error(language === 'th' ? 'ลบโฟลเดอร์ไม่สำเร็จ' : 'Failed to delete folder');
+      haptic.error();
+    } finally {
+      setDeletingFolderLoading(false);
+    }
+  };
+
+  const openMoveFile = (docId) => {
+    const doc = documents.find(d => d.id === docId);
+    setMovingFileId(docId);
+    setMoveFolderId(doc?.folder_id || null);
+    setShowMoveFile(true);
+  };
+
+  const handleMoveFileConfirm = async () => {
+    if (!movingFileId) return;
+    setMovingFile(true);
+    try {
+      await base44.entities.Document.update(movingFileId, { folder_id: moveFolderId || null });
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setShowMoveFile(false);
+      toast.success(language === 'th' ? 'ย้ายไฟล์แล้ว' : 'File moved');
+      haptic.success();
+    } catch (err) {
+      console.error('Move file failed:', err);
+      toast.error(language === 'th' ? 'ย้ายไฟล์ไม่สำเร็จ' : 'Failed to move file');
+      haptic.error();
+    } finally {
+      setMovingFile(false);
+    }
+  };
+
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const rawTier = (user?.plan_tier || 'free').toLowerCase().trim();
