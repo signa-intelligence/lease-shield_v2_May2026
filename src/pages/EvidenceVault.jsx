@@ -86,6 +86,24 @@ function EvidenceVaultContent() {
   const [exportingPdf, setExportingPdf] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
 
+  // Folder states
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [showRenameFolder, setShowRenameFolder] = useState(false);
+  const [renamingFolderId, setRenamingFolderId] = useState(null);
+  const [renameFolderName, setRenameFolderName] = useState('');
+  const [renamingFolder, setRenamingFolder] = useState(false);
+  const [showDeleteFolder, setShowDeleteFolder] = useState(false);
+  const [deletingFolder, setDeletingFolder] = useState(null);
+  const [deletingFolderLoading, setDeletingFolderLoading] = useState(false);
+  const [showMoveFile, setShowMoveFile] = useState(false);
+  const [movingFileId, setMovingFileId] = useState(null);
+  const [moveFolderId, setMoveFolderId] = useState(null);
+  const [movingFile, setMovingFile] = useState(false);
+  const [expandedFolders, setExpandedFolders] = useState({});
+  const [activeFolderFilter, setActiveFolderFilter] = useState('all'); // 'all', 'root', or folder id
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me(),
