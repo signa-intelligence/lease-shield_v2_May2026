@@ -1151,34 +1151,6 @@ function EvidenceVaultContent() {
             onBack={() => navigate(createPageUrl("Dashboard"))}
             actions={
               <div className="flex flex-col sm:flex-row gap-3 items-center">
-                {/* Upload Evidence CTA */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptic.medium();
-                    setShowUploadDialog(true);
-                  }}
-                  style={{
-                    ...primaryCtaStyle,
-                    padding: "10px 16px",
-                    fontSize: "0.875rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = primaryCtaHover.transform;
-                    e.currentTarget.style.boxShadow = primaryCtaHover.boxShadow;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "";
-                    e.currentTarget.style.boxShadow = primaryCtaStyle.boxShadow;
-                  }}
-                >
-                  <Upload className="w-4 h-4" />
-                  {strings.uploadEvidence}
-                </button>
                 {/* New Folder button */}
                 <button
                   type="button"
