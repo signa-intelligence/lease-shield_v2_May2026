@@ -854,6 +854,7 @@ function EvidenceVaultContent() {
   };
 
   const strings = getEvidenceStrings(language);
+  const folderStr = getFolderStrings(language);
 
   // Handle critical errors
   if (!user) {
