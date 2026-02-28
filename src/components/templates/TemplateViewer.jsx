@@ -149,7 +149,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const str = {
     unlockFull: language === 'th' ? 'ปลดล็อกเอกสารฉบับเต็ม' : language === 'zh' ? '解锁完整文档' : language === 'ja' ? '完全な文書をロック解除' : language === 'ko' ? '전체 문서 잠금 해제' : language === 'ru' ? 'Разблокировать полный документ' : 'Unlock Full Document',
     oneCreditCost: language === 'th' ? '(ใช้ 1 เครดิต)' : language === 'zh' ? '(1积分)' : language === 'ja' ? '(1クレジット)' : language === 'ko' ? '(1크레딧)' : language === 'ru' ? '(1 кредит)' : '(1 credit)',
-    freeCost: language === 'th' ? '(ไม่จำกัด)' : language === 'zh' ? '(无限)' : language === 'ja' ? '(無制限)' : language === 'ko' ? '(무제한)' : language === 'ru' ? '(безлимит)' : '(unlimited)',
+    freeCost: language === 'th' ? '(1 เครดิต)' : language === 'zh' ? '(1积分)' : language === 'ja' ? '(1クレジット)' : language === 'ko' ? '(1크레딧)' : language === 'ru' ? '(1 кредит)' : '(1 credit)',
     previewLabel: language === 'th' ? 'ตัวอย่าง' : language === 'zh' ? '预览' : language === 'ja' ? 'プレビュー' : language === 'ko' ? '미리보기' : language === 'ru' ? 'Предпросмотр' : 'Preview',
     fullDocument: language === 'th' ? 'เอกสารฉบับเต็ม' : language === 'zh' ? '完整文档' : language === 'ja' ? '完全なドキュメント' : language === 'ko' ? '전체 문서' : language === 'ru' ? 'Полный документ' : 'Full Document',
     copyText: language === 'th' ? 'คัดลอกข้อความ' : language === 'zh' ? '复制文本' : language === 'ja' ? 'テキストをコピー' : language === 'ko' ? '텍스트 복사' : language === 'ru' ? 'Копировать текст' : 'Copy Text',
@@ -470,8 +470,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
           <div className="p-4 border-t space-y-3" style={{ borderColor: colors.borderColor }}>
             <div className="flex items-center justify-between text-sm">
               <span style={{ color: colors.textSecondary }}>{str.yourCredits}</span>
-              <span className="font-bold" style={{ color: (hasUnlimitedCredits || letterCredits > 0) ? '#10B981' : '#EF4444' }}>
-                {hasUnlimitedCredits ? '∞' : letterCredits}
+              <span className="font-bold" style={{ color: letterCredits > 0 ? '#10B981' : '#EF4444' }}>
+                {letterCredits}
               </span>
             </div>
 
@@ -567,7 +567,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   )}
                   {str.unlockFull}
                   <span className="text-xs opacity-75 ml-2">
-                    {hasUnlimitedCredits ? str.freeCost : str.oneCreditCost}
+                    {str.oneCreditCost}
                   </span>
                 </Button>
               </div>
