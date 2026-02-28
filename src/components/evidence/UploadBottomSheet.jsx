@@ -163,10 +163,16 @@ export default function UploadBottomSheet({
     setUploadProgressPercent(0);
 
     try {
+      console.log(`[EV_UPLOAD] Starting upload of ${uploadFiles.length} files + ${voiceFiles.length} voice notes`);
+      uploadFiles.forEach((f, i) => console.log(`[EV_UPLOAD] File ${i}: ${f.name} (${f.type}, ${f.size} bytes)`));
+      
       const { files: compressedFiles, stats } = await compressMultipleImages(uploadFiles, (progress) => {
         setUploadProgressPercent(Math.round(progress * 40));
       });
       if (stats.compressedCount > 0) setCompressionStats(stats);
+      
+      console.log(`[EV_UPLOAD] After compression: ${compressedFiles.length} files`);
+      compressedFiles.forEach((f, i) => console.log(`[EV_UPLOAD] Post-compress ${i}: ${f.name} (${f.type}, ${f.size} bytes)`));
 
       setUploadStage('uploadingFiles');
       setUploadProgressPercent(40);
