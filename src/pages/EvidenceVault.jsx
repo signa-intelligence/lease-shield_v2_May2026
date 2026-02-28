@@ -473,11 +473,22 @@ function EvidenceVaultContent() {
       setUploadStage('savingDocuments');
       for (let idx = 0; idx < results.length; idx++) {
         const { result, fileIndex } = results[idx];
-        let docType = uploadType;
-        if (fileIndex >= compressedFiles.length && fileIndex < compressedFiles.length + voiceFiles.length) {
+        // Auto-detect document type from actual file MIME type
+        const originalFile = allFilesToUpload[fileIndex];
+        let docType = uploadType; // user-selected default
+        if (fileIndex >= compressedFiles.length) {
+          // Voice notes
           docType = 'other';
-        } else if (fileIndex >= compressedFiles.length + voiceFiles.length) {
-          docType = 'video';
+        } else if (originalFile) {
+          const mime = (originalFile.type || '').toLowerCase();
+          if (mime.startsWith('video/')) {
+            docType = 'video';
+          } else if (mime.startsWith('image/')) {
+            docType = 'photo';
+          } else if (mime === 'application/pdf' || mime.includes('word') || mime.includes('document') || mime.includes('spreadsheet') || mime === 'text/plain') {
+            docType = 'other';
+          }
+          // else keep user-selected uploadType
         }
         const typeLabel = getDocTypeLabel(docType, language);
 
