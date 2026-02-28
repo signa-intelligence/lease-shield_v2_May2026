@@ -134,7 +134,7 @@ function DashboardContent() {
     },
     enabled: !!user?.email,
     staleTime: 0,
-    cacheTime: 0,
+    gcTime: 0,
     refetchOnMount: 'always',
   });
 
