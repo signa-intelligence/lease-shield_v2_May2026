@@ -126,16 +126,7 @@ export default function Layout({ children, currentPageName }) {
         })
         .catch(err => console.error('[LAYOUT] Failed to initialize user:', err));
     }
-    // Fix letter credits for existing Secure users who have low credits (only Secure is unlimited)
-    if (user && user.plan_tier === 'secure' && (user.letter_credits === undefined || user.letter_credits < 999999)) {
-      console.log('[LAYOUT] Fixing unlimited letter credits for secure user:', user.email);
-      base44.auth.updateMe({ letter_credits: 999999 })
-        .then(() => {
-          console.log('[LAYOUT] ✅ Letter credits set to unlimited (999999)');
-          queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-        })
-        .catch(err => console.error('[LAYOUT] Failed to fix letter credits:', err));
-    }
+    // Note: Secure tier now has 50 letter credits (not unlimited). No auto-fix needed.
   }, [user?.id, user?.available_scans, user?.plan_tier, user?.letter_credits, queryClient]);
 
   // Handle language from URL parameter
