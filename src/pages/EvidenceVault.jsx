@@ -318,42 +318,7 @@ function EvidenceVaultContent() {
     }
   };
 
-  const handleVoiceClick = () => {
-    if (voiceFiles.length >= 3) {
-      toast.error(strings.maxVoiceReached);
-      return;
-    }
 
-    document.getElementById('voice-evidence-input').click();
-  };
-
-  const handleVoiceSelection = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
-    const validFiles = files.filter(f => {
-      const isAudio = f.type.startsWith('audio/');
-      const isUnder5MB = f.size <= 5 * 1024 * 1024;
-
-      if (!isAudio) {
-        toast.error(language === 'th' ? 'กรุณาเลือกไฟล์เสียงเท่านั้น' : 'Please select audio files only');
-        return false;
-      }
-
-      if (!isUnder5MB) {
-        toast.error(`${strings.fileTooLarge}: ${f.name} - ${strings.voiceMaxSize}`);
-        return false;
-      }
-
-      return true;
-    });
-
-    const remaining = 3 - voiceFiles.length;
-    const toAdd = validFiles.slice(0, remaining);
-
-    setVoiceFiles(prev => [...prev, ...toAdd]);
-    haptic.light();
-  };
 
   const handleVideoSelection = (e) => {
     const files = Array.from(e.target.files);
