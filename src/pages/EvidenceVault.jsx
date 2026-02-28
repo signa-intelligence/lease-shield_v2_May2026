@@ -340,24 +340,38 @@ function EvidenceVaultContent() {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
+    const maxSizeBytes = MAX_VIDEO_SIZE_MB * 1024 * 1024;
+    const existingCount = getExistingVideoCount();
+
     const validFiles = files.filter(f => {
       const isVideo = f.type.startsWith('video/');
-      const isUnder80MB = f.size <= 80 * 1024 * 1024;
 
       if (!isVideo) {
         toast.error(language === 'th' ? 'กรุณาเลือกไฟล์วิดีโอเท่านั้น' : 'Please select video files only');
         return false;
       }
 
-      if (!isUnder80MB) {
-        toast.error(`${strings.fileTooLarge}: ${f.name} - ${strings.videoMaxSize}`);
+      if (f.size > maxSizeBytes) {
+        toast.error(
+          language === 'th'
+            ? `ไฟล์ใหญ่เกินไป: ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB) — สูงสุด ${MAX_VIDEO_SIZE_MB} MB`
+            : `File too large: ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB) — max ${MAX_VIDEO_SIZE_MB} MB`
+        );
         return false;
       }
 
       return true;
     });
 
-    const remaining = 3 - videoFiles.length;
+    const remaining = MAX_VIDEO_COUNT - existingCount - videoFiles.length;
+    if (remaining <= 0) {
+      toast.error(
+        language === 'th'
+          ? `ถึงขีดจำกัดวิดีโอแล้ว (${MAX_VIDEO_COUNT} วิดีโอสำหรับแพลน Protect)`
+          : `Video limit reached (${MAX_VIDEO_COUNT} videos on Protect plan)`
+      );
+      return;
+    }
     const toAdd = validFiles.slice(0, remaining);
 
     setVideoFiles(prev => [...prev, ...toAdd]);
