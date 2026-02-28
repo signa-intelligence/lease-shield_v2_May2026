@@ -74,6 +74,8 @@ function AdminConsoleContent() {
       ['admin', 'super_admin', 'va'].includes(user.access_level) ||
       ['admin', 'super_admin', 'va'].includes(user.role)
     ),
+    refetchOnWindowFocus: true,
+    staleTime: 30000,
   });
 
   const { data: leases = [] } = useQuery({
@@ -83,6 +85,8 @@ function AdminConsoleContent() {
       ['admin', 'super_admin', 'va'].includes(user.access_level) ||
       ['admin', 'super_admin', 'va'].includes(user.role)
     ),
+    refetchOnWindowFocus: true,
+    staleTime: 30000,
   });
 
   const { data: allCases = [] } = useQuery({
@@ -92,6 +96,8 @@ function AdminConsoleContent() {
       ['admin', 'super_admin', 'va'].includes(user.access_level) ||
       ['admin', 'super_admin', 'va'].includes(user.role)
     ),
+    refetchOnWindowFocus: true,
+    staleTime: 30000,
   });
 
   const { data: allDeposits = [] } = useQuery({
