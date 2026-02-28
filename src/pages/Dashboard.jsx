@@ -176,7 +176,7 @@ function DashboardContent() {
   const isAdmin = user?.role === 'admin' || ['admin', 'super_admin'].includes(accessLevel);
   const isDarkMode = user?.theme === 'dark';
   const isLitePlan = user?.plan_tier === 'lite';
-  const isFreeTier = !user?.plan_tier || user.plan_tier === 'free';
+  const isFreeTier = !user?.plan_tier || user.plan_tier === 'free' || user.plan_tier === 'explorer';
   const isSecureTier = user?.plan_tier === 'secure';
 
   const colors = isDarkMode ? {
