@@ -1459,7 +1459,7 @@ function EvidenceVaultContent() {
                   </Button>
                   <Button
                     onClick={handleUpload}
-                    disabled={uploading || (uploadFiles.length === 0 && voiceFiles.length === 0 && videoFiles.length === 0)}
+                    disabled={uploading || (uploadFiles.length === 0 && voiceFiles.length === 0)}
                     className="flex-1"
                     style={{ 
                       minHeight: '48px',
