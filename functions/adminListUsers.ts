@@ -1,22 +1,43 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { requireSuperAdmin, safeLog } from './authGuards.js';
-import { handleCors, ensureAllowedOrigin, err } from './http.js';
 
 Deno.serve(async (req) => {
-  const pre = handleCors(req); if (pre) return pre;
-  const { allowed, requestId } = ensureAllowedOrigin(req); if (!allowed) return err(req, 'CORS_FORBIDDEN', 'Origin not allowed', 403, requestId);
-  try {
-    // SECURITY FIX: Role-based auth instead of hard-coded emails
-    const { user, base44 } = await requireSuperAdmin(req);
-    const recent = requireRecentAuth(req, 600);
-    if (!recent.ok) return err(req, 'REAUTH_REQUIRED', 'Please reauthenticate to proceed', 401);
-    
-    await safeLog('ADMIN_LIST_USERS', { userId: user.id, timestamp: new Date().toISOString() });
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-App-Id, X-Origin-URL',
+      }
+    });
+  }
 
-    // Fetch all users
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check admin access using both role and access_level
+    const role = (user.role || '').toLowerCase();
+    const accessLevel = (user.access_level || '').toLowerCase();
+    const isAdmin = ['admin', 'super_admin', 'va'].includes(role) || 
+                    ['admin', 'super_admin', 'va'].includes(accessLevel);
+
+    if (!isAdmin) {
+      console.log('[ADMIN_LIST_USERS] Access denied for:', user.email, 'role:', role, 'access_level:', accessLevel);
+      return Response.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    }
+
+    console.log('[ADMIN_LIST_USERS] Authorized:', user.email, 'role:', role, 'access_level:', accessLevel);
+
+    // Fetch all users using service role to bypass RLS
     const users = await base44.asServiceRole.entities.User.list('-created_date');
 
-    await safeLog('ADMIN_LIST_USERS_SUCCESS', { count: users.length });
+    console.log('[ADMIN_LIST_USERS] Success, count:', users.length);
 
     return Response.json({ 
       success: true,
@@ -24,16 +45,10 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    if (error.message === 'UNAUTHORIZED') {
-      return err(req, 'UNAUTHORIZED', 'Unauthorized', 401);
-    }
-    if (error.message === 'FORBIDDEN') {
-      return err(req, 'FORBIDDEN', 'Forbidden - Super admin access required', 403);
-    }
-    
-    console.error('[ADMIN_LIST_USERS_ERROR]', { error: error.message });
+    console.error('[ADMIN_LIST_USERS] Error:', error.message);
     return Response.json({ 
-      error: 'Failed to fetch users'
+      error: 'Failed to fetch users',
+      details: error.message
     }, { status: 500 });
   }
 });
