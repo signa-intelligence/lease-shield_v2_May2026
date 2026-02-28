@@ -241,39 +241,6 @@ function EvidenceVaultContent() {
     },
   });
 
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-    
-    // Filter out video files for non-video tiers with upgrade prompt
-    const validFiles = files.filter(f => {
-      if (f.type.startsWith('video/') && !isVideoTier) {
-        toast.error(
-          language === 'th'
-            ? 'การอัปโหลดวิดีโอต้องการแพ็กเกจ Protect หรือ Secure'
-            : 'Video uploads require Protect or Secure tier'
-        );
-        return false;
-      }
-      // Validate video file sizes (50 MB max)
-      if (f.type.startsWith('video/') && f.size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
-        toast.error(
-          language === 'th'
-            ? `ไฟล์วิดีโอใหญ่เกินไป: ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB) — สูงสุด ${MAX_VIDEO_SIZE_MB} MB`
-            : `Video too large: ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB) — max ${MAX_VIDEO_SIZE_MB} MB`
-        );
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length === 0) { e.target.value = null; return; }
-
-    console.log('[EV] Files selected:', validFiles.map(f => `${f.name} (${f.type}, ${(f.size/1024).toFixed(1)}KB)`));
-    setUploadFiles(prev => [...prev, ...validFiles]);
-    e.target.value = null;
-  };
-
   const [showVideoActionSheet, setShowVideoActionSheet] = useState(false);
 
   const getExistingVideoCount = () => {
