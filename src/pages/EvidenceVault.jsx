@@ -445,39 +445,13 @@ function EvidenceVaultContent() {
       const allFilesToUpload = [...compressedFiles, ...voiceFiles, ...videoFiles];
       console.log('[EV] Uploading', allFilesToUpload.length, 'files to storage');
 
-      // Upload files one at a time with delay and retry for transient failures
-      const results = [];
-      const failedFiles = [];
-      for (let i = 0; i < allFilesToUpload.length; i++) {
-        const file = allFilesToUpload[i];
-        const sizeKB = (file.size / 1024).toFixed(1);
-        console.log(`[EV] Uploading ${i + 1}/${allFilesToUpload.length}: ${file.name} (${file.type}, ${sizeKB}KB)`);
-        if (i > 0) await new Promise(r => setTimeout(r, file.size > 1024 * 1024 ? 1500 : 800));
-        let uploaded = false;
-        let lastErr = '';
-        for (let attempt = 1; attempt <= 2 && !uploaded; attempt++) {
-          try {
-            const result = await base44.integrations.Core.UploadFile({ file });
-            if (!result?.file_url) {
-              lastErr = `No URL returned: ${JSON.stringify(result)}`;
-              console.error(`[EV] No URL (attempt ${attempt}) ${file.name}:`, lastErr);
-              if (attempt < 2) { await new Promise(r => setTimeout(r, 2000)); continue; }
-            } else {
-              console.log(`[EV] ✅ ${file.name} → ${result.file_url.substring(0, 60)}...`);
-              results.push({ result, fileIndex: i });
-              uploaded = true;
-            }
-          } catch (uploadErr) {
-            const status = uploadErr?.response?.status;
-            const msg = uploadErr?.response?.data?.message || uploadErr?.response?.data?.error || uploadErr?.message || String(uploadErr);
-            lastErr = `${status || 'ERR'}: ${msg}`;
-            console.error(`[EV] ❌ (attempt ${attempt}) ${file.name}: ${lastErr}`, { type: file.type, size: file.size, responseData: uploadErr?.response?.data });
-            if (attempt < 2 && (!status || status >= 500)) { await new Promise(r => setTimeout(r, 2000)); continue; }
-          }
+      // Upload files one at a time with retry, size validation, and better error messages
+      const { results, failedFiles } = await uploadFilesSequentially(allFilesToUpload, {
+        language,
+        onProgress: (i, total) => {
+          setUploadProgressPercent(40 + Math.round(((i + 1) / total) * 30));
         }
-        if (!uploaded) failedFiles.push(`${file.name} (${lastErr})`);
-        setUploadProgressPercent(40 + Math.round(((i + 1) / allFilesToUpload.length) * 30));
-      }
+      });
 
       if (results.length === 0) {
         const detail = failedFiles.length > 0 ? failedFiles.join('\n') : strings.uploadFailed;
