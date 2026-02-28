@@ -231,7 +231,8 @@ function ResolveCaseContent() {
       return { 
         createdCase, 
         userId: authenticatedUser.id, 
-        userEmail: authenticatedUser.email 
+        userEmail: authenticatedUser.email,
+        useFreeEntitlement: freeResolveEligible
       };
     },
     onSuccess: async ({ createdCase, userId, userEmail, useFreeEntitlement }) => {
