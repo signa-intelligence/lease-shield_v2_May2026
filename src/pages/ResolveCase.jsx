@@ -249,11 +249,13 @@ function ResolveCaseContent() {
       
       // If using free entitlement, activate case directly
       if (useFreeEntitlement) {
-        console.log('🎁 [RESOLVE_FLOW] Using free Resolve entitlement');
+        console.log('🎁 [RESOLVE_FLOW] Using free Resolve entitlement for case:', createdCase.id);
         try {
           const activateResponse = await base44.functions.invoke('createResolveCaseFree', {
             caseId: createdCase.id
           });
+          
+          console.log('🎁 [RESOLVE_FLOW] createResolveCaseFree response:', activateResponse.data);
           
           if (activateResponse.data?.success) {
             toast.success(
@@ -264,40 +266,65 @@ function ResolveCaseContent() {
               : language === 'ru' ? '✅ Дело открыто с использованием бесплатного Resolve'
               : '✅ Case opened using free Resolve entitlement'
             );
-            navigate(createPageUrl("cases"));
+            navigate(createPageUrl("Cases"));
             return;
           } else {
-            throw new Error('Failed to activate free case');
+            console.error('❌ [RESOLVE_FLOW] Free activation returned non-success:', activateResponse.data);
+            toast.error(
+              language === 'th' ? 'ไม่สามารถใช้สิทธิ์ฟรีได้: ' + (activateResponse.data?.error || 'Unknown error')
+              : 'Failed to use free entitlement: ' + (activateResponse.data?.error || 'Unknown error')
+            );
+            // Don't fall through to paid - case was already created, just show error
+            return;
           }
         } catch (freeError) {
-          console.error('❌ [RESOLVE_FLOW] Free activation failed:', freeError);
+          console.error('❌ [RESOLVE_FLOW] Free activation exception:', freeError);
+          const errMsg = freeError?.response?.data?.error || freeError?.message || 'Unknown error';
           toast.error(
-            language === 'th' ? 'ไม่สามารถใช้สิทธิ์ฟรีได้ กรุณาชำระเงิน'
-            : 'Failed to use free entitlement. Please proceed to payment.'
+            language === 'th' ? 'ไม่สามารถใช้สิทธิ์ฟรีได้: ' + errMsg
+            : 'Failed to use free entitlement: ' + errMsg
           );
+          // Don't fall through to paid flow - show the error
+          return;
         }
       }
       
       // Standard paid flow - Create Stripe checkout
-      const pricing = getResolvePricingForUser(user);
-      
-      const response = await base44.functions.invoke('createResolveCheckout', {
-        userId: userId,
-        userEmail: userEmail,
-        caseId: createdCase.id,
-        priceType: pricing.priceType,
-        amount: pricing.amount
-      });
-      
-      if (response.data?.url) {
-        window.location.href = response.data.url;
-      } else {
-        throw new Error('No checkout URL returned');
+      console.log('[RESOLVE_FLOW] 💳 Starting paid flow for case:', createdCase.id);
+      try {
+        const pricing = getResolvePricingForUser(user);
+        
+        const response = await base44.functions.invoke('createResolveCheckout', {
+          userId: userId,
+          userEmail: userEmail,
+          caseId: createdCase.id,
+          priceType: pricing.priceType,
+          amount: pricing.amount
+        });
+        
+        console.log('[RESOLVE_FLOW] 💳 Checkout response:', response.data);
+        
+        if (response.data?.url) {
+          window.location.href = response.data.url;
+        } else {
+          console.error('[RESOLVE_FLOW] No checkout URL returned:', response.data);
+          toast.error(
+            language === 'th' ? 'ไม่สามารถสร้างลิงก์ชำระเงินได้'
+            : 'Failed to create payment link. Please try again.'
+          );
+        }
+      } catch (checkoutError) {
+        console.error('[RESOLVE_FLOW] 💳 Checkout error:', checkoutError);
+        const errMsg = checkoutError?.response?.data?.error || checkoutError?.message || 'Payment error';
+        toast.error(
+          language === 'th' ? 'ไม่สามารถดำเนินการชำระเงินได้: ' + errMsg
+          : 'Failed to process payment: ' + errMsg
+        );
       }
     },
     onError: (error) => {
-      console.error('[RESOLVE_FLOW] Case creation or checkout failed:', error);
-      const errorMessage = error?.message || 'Unknown error';
+      console.error('[RESOLVE_FLOW] Case creation failed:', error);
+      const errorMessage = error?.response?.data?.error || error?.message || 'Unknown error';
       toast.error(
         language === 'th' ? 'ไม่สามารถส่งคดีได้: ' + errorMessage
         : language === 'zh' ? '提交案件失败: ' + errorMessage
