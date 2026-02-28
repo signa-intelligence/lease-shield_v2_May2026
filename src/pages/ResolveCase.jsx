@@ -313,9 +313,29 @@ function ResolveCaseContent() {
     if (!files || files.length === 0) return;
     
     haptic.light();
+
+    // Storage quota check before upload
+    const totalSize = Array.from(files).reduce((sum, f) => sum + (f.size || 0), 0);
+    if (totalSize > 0) {
+      try {
+        const quotaRes = await base44.functions.invoke('checkStorageQuota', { fileSize: totalSize });
+        const quota = quotaRes.data;
+        if (quota && !quota.allowed && !quota.failOpen) {
+          const msg = language === 'th'
+            ? `พื้นที่จัดเก็บเต็ม คุณใช้ ${quota.usedMB || 0} MB จาก ${quota.limitMB || 0} MB\n\nอัปเกรดเพื่อเพิ่มพื้นที่`
+            : `Storage limit reached. You're using ${quota.usedMB || 0} MB of ${quota.limitMB || 0} MB.\n\nUpgrade for more storage.`;
+          toast.error(msg);
+          return;
+        }
+      } catch (quotaErr) {
+        console.warn('[RESOLVE] Quota check failed, continuing:', quotaErr?.message);
+      }
+    }
+
     setUploading(true);
     try {
       const uploadResults = [];
+      let totalUploadedBytes = 0;
       
       // Upload files sequentially to avoid overwhelming the system
       for (const file of Array.from(files)) {

@@ -307,14 +307,34 @@ export default function MaintenanceTrackerPage() {
     
     try {
       let photoUrls = [];
+      let totalUploadedBytes = 0;
 
       if (photoFiles.length > 0) {
+        // Storage quota check before upload
+        const totalSize = photoFiles.reduce((sum, f) => sum + (f.size || 0), 0);
+        if (totalSize > 0) {
+          try {
+            const quotaRes = await base44.functions.invoke('checkStorageQuota', { fileSize: totalSize });
+            const quota = quotaRes.data;
+            if (quota && !quota.allowed && !quota.failOpen) {
+              const msg = language === 'th'
+                ? `พื้นที่จัดเก็บเต็ม คุณใช้ ${quota.usedMB || 0} MB จาก ${quota.limitMB || 0} MB\n\nอัปเกรดเพื่อเพิ่มพื้นที่`
+                : `Storage limit reached. You're using ${quota.usedMB || 0} MB of ${quota.limitMB || 0} MB.\n\nUpgrade for more storage.`;
+              toast.error(msg);
+              return;
+            }
+          } catch (quotaErr) {
+            console.warn('[MAINT] Quota check failed, continuing:', quotaErr?.message);
+          }
+        }
+
         setUploadingPhotos(true);
         const uploadPromises = photoFiles.map(file => 
           base44.integrations.Core.UploadFile({ file })
         );
         const uploadResults = await Promise.all(uploadPromises);
         photoUrls = uploadResults.map(result => result.file_url);
+        totalUploadedBytes = totalSize;
       }
 
       const initialLogEntry = {
@@ -338,6 +358,14 @@ export default function MaintenanceTrackerPage() {
       };
 
       await createRequestMutation.mutateAsync(requestData);
+
+      // Update storage usage after successful upload
+      if (totalUploadedBytes > 0) {
+        base44.functions.invoke('updateStorageUsage', { bytesAdded: totalUploadedBytes }).catch(err =>
+          console.warn('[MAINT] Storage update failed (non-blocking):', err?.message)
+        );
+      }
+
       setUploadingPhotos(false);
     } catch (error) {
       console.error('Failed to create request:', error);
