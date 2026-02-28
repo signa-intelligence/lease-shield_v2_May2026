@@ -45,9 +45,15 @@ Deno.serve(async (req) => {
 
     const { caseNumber, tenantName, tenantEmail, landlordName, propertyAddress, disputeAmount, planTier, caseId, paymentType } = await req.json();
 
+    // Detect Fast Track vs Standard from case number position 2
+    const caseTrack = caseNumber ? caseNumber.charAt(1) : 'S';
+    const isFastTrack = caseTrack === 'F';
+    const trackLabel = isFastTrack ? '⚡ FAST TRACK' : '📋 Standard';
+
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('[ADMIN_NOTIFY] 🚨 New case intake notification (via Resend)');
     console.log('[ADMIN_NOTIFY] Case:', caseNumber);
+    console.log('[ADMIN_NOTIFY] Track:', isFastTrack ? 'Fast Track' : 'Standard');
     console.log('[ADMIN_NOTIFY] Tenant:', tenantEmail);
     console.log('[ADMIN_NOTIFY] Amount: ฿' + (disputeAmount || 'N/A'));
     console.log('[ADMIN_NOTIFY] Payment:', paymentType || 'paid');
@@ -56,7 +62,9 @@ Deno.serve(async (req) => {
     const errors = [];
 
     // Build admin email HTML
-    const adminSubject = `🚨 New Resolve Case – ${caseNumber} from ${tenantName || tenantEmail}`;
+    const adminSubject = isFastTrack
+      ? `⚡🚨 FAST TRACK Case – ${caseNumber} from ${tenantName || tenantEmail}`
+      : `🚨 New Resolve Case – ${caseNumber} from ${tenantName || tenantEmail}`;
     
     const adminHtml = `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -70,6 +78,7 @@ Deno.serve(async (req) => {
     <h3 style="color: #0F172A; margin: 0 0 12px 0; font-size: 16px;">📋 Case Details</h3>
     <p style="margin: 4px 0; color: #334155; font-size: 14px;">Case Number: <strong>${caseNumber}</strong></p>
     <p style="margin: 4px 0; color: #334155; font-size: 14px;">Status: <strong>INTAKE</strong> (awaiting first review)</p>
+    <p style="margin: 4px 0; color: ${isFastTrack ? '#EA580C' : '#334155'}; font-size: 14px; font-weight: ${isFastTrack ? 'bold' : 'normal'};">Track: <strong>${trackLabel}</strong> (${isFastTrack ? '1 business day SLA' : '2-3 business days SLA'})</p>
     <p style="margin: 4px 0; color: #334155; font-size: 14px;">Payment: <strong>${paymentType === 'free_entitlement' ? '🎁 FREE ENTITLEMENT' : '💳 Paid'}</strong></p>
     <p style="margin: 4px 0; color: #334155; font-size: 14px;">Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' })}</p>
   </div>
@@ -142,20 +151,37 @@ Deno.serve(async (req) => {
     const lineChannelToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
     
     if (lineChannelToken) {
-      const lineMessage = [
-        '🚨 New Resolve Case',
-        '',
-        `📋 Case: ${caseNumber}`,
-        `👤 Tenant: ${tenantName || tenantEmail}`,
-        `💰 Amount: ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}`,
-        `📍 Property: ${propertyAddress || 'N/A'}`,
-        `💳 Payment: ${paymentType === 'free_entitlement' ? 'Free Entitlement' : 'Paid'}`,
-        '',
-        '⚡ Action Required:',
-        '1. Open Ops Console',
-        '2. Review intake case',
-        '3. Assign to team member'
-      ].join('\n');
+      const lineMessage = isFastTrack
+        ? [
+            '⚡🚨 FAST TRACK Case',
+            '',
+            `📋 Case: ${caseNumber}`,
+            `⏱️ SLA: 1 business day`,
+            `👤 Tenant: ${tenantName || tenantEmail}`,
+            `💰 Amount: ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}`,
+            `📍 Property: ${propertyAddress || 'N/A'}`,
+            `💳 Payment: ${paymentType === 'free_entitlement' ? 'Free Entitlement' : 'Paid'}`,
+            '',
+            '⚡ PRIORITY Action Required:',
+            '1. Open Ops Console NOW',
+            '2. Review intake case (1 day SLA)',
+            '3. Assign to team member'
+          ].join('\n')
+        : [
+            '🚨 New Resolve Case',
+            '',
+            `📋 Case: ${caseNumber}`,
+            `⏱️ SLA: 2-3 business days`,
+            `👤 Tenant: ${tenantName || tenantEmail}`,
+            `💰 Amount: ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}`,
+            `📍 Property: ${propertyAddress || 'N/A'}`,
+            `💳 Payment: ${paymentType === 'free_entitlement' ? 'Free Entitlement' : 'Paid'}`,
+            '',
+            '⚡ Action Required:',
+            '1. Open Ops Console',
+            '2. Review intake case',
+            '3. Assign to team member'
+          ].join('\n');
 
       for (const admin of adminUsers) {
         const lineUserId = admin.line_messaging_token;
