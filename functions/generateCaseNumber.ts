@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
       case_number: caseNumber,
       breakdown: {
         memberStatus: isMember ? 'Member' : 'Public',
-        processing: fastTrack ? 'Fast Track (12h)' : 'Standard (24-48h)',
+        processing: fastTrack ? 'Fast Track (1 business day)' : 'Standard (2-3 business days)',
         tier: tierLevel === 'L' ? 'Lite' : tierLevel === 'P' ? 'Protect' : tierLevel === 'S' ? 'Secure' : 'Free/Public',
         period: `${month}/${year}`,
         sequential: nextSequential,
