@@ -23,6 +23,32 @@ Deno.serve(async (req) => {
     console.log('🔍 [FREE_RESOLVE_CHECK] Starting eligibility check');
     console.log('User ID:', targetUserId);
 
+    // Step 0: Check for manual override BEFORE any Stripe calls
+    const preCheckUser = await base44.asServiceRole.entities.User.filter({ id: targetUserId });
+    if (preCheckUser && preCheckUser.length > 0 && preCheckUser[0].manual_tier_override === true) {
+      const mu = preCheckUser[0];
+      console.log('🔧 [FREE_RESOLVE_CHECK] Manual override detected for user:', mu.email);
+      console.log('Manual case credits:', mu.manual_case_credits);
+      
+      if ((mu.manual_case_credits || 0) > 0) {
+        console.log('✅ [FREE_RESOLVE_CHECK] ELIGIBLE via manual override');
+        return Response.json({
+          eligible: true,
+          reason: 'manual_override',
+          message: 'Eligible via admin manual override',
+          manual_case_credits: mu.manual_case_credits,
+          period_end: mu.current_period_end || null
+        });
+      } else {
+        console.log('❌ [FREE_RESOLVE_CHECK] Manual override active but 0 case credits');
+        return Response.json({
+          eligible: false,
+          reason: 'manual_no_credits',
+          message: 'Manual override active but no case credits remaining'
+        });
+      }
+    }
+
     // Step 1: Sync latest Stripe data
     console.log('📡 [FREE_RESOLVE_CHECK] Syncing Stripe subscription...');
     const syncResponse = await base44.functions.invoke('syncStripeSubscription', { userId: targetUserId });
