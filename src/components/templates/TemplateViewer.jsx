@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
-import { X, Copy, FileText, CreditCard, Loader2, Lock, Eye } from "lucide-react";
+import { X, Copy, FileText, CreditCard, Loader2, Lock, Eye, AlertTriangle } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
 import { translateTemplateContent } from "./translateTemplate";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
@@ -128,6 +130,23 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const hasPreview = previewContent && previewContent.trim().length >= 50;
   const hasDocument = documentContent && documentContent.trim().length >= 300;
 
+  // Subscription status check
+  const hasActiveSubscription = ['lite', 'protect', 'secure'].includes(userTierForCredits) 
+    && user?.subscription_status === 'active';
+  const isExplorer = userTierForCredits === 'explorer' || userTierForCredits === 'free';
+  const subscriptionBlocked = !hasActiveSubscription;
+
+  const subStr = {
+    blockedTitle: language === 'th' ? 'ต้องมีการสมัครสมาชิกที่ใช้งานอยู่' : 'Active Subscription Required',
+    blockedDesc: language === 'th' 
+      ? 'การสมัครสมาชิกของคุณสิ้นสุดแล้ว กรุณาเปิดใช้งานการสมัครสมาชิกอีกครั้งเพื่อดาวน์โหลดเทมเพลต' 
+      : 'Your subscription has ended. Please reactivate your subscription to access template downloads.',
+    explorerDesc: language === 'th'
+      ? 'อัปเกรดเป็น Lite ขึ้นไปเพื่อดาวน์โหลดเทมเพลต'
+      : 'Upgrade to Lite or above to download templates.',
+    upgrade: language === 'th' ? 'อัปเกรด' : 'Upgrade',
+  };
+
   const contentMissing = displayLang === 'th' 
     ? (previewTh.trim().length < 50 || docTh.trim().length < 300)
     : (previewEn.trim().length < 50 || docEn.trim().length < 300);
@@ -161,6 +180,12 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
     if (!documentContent || documentContent.trim().length < 100) {
       toast?.error?.(str.contentUnavailable);
+      return;
+    }
+
+    // Block if no active subscription
+    if (subscriptionBlocked) {
+      toast?.error?.(subStr.blockedDesc);
       return;
     }
 
@@ -316,6 +341,28 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         addContentLines(docEn);
       }
 
+      // Watermark footer
+      children.push(new Paragraph({ text: '', spacing: { before: 600, after: 100 } }));
+      children.push(new Paragraph({
+        children: [new TextRun({ text: '────────────────────────────────────────', size: 16, color: '999999', font: 'Arial' })],
+        spacing: { before: 100, after: 100 }
+      }));
+      const watermarkLines = [
+        'LeaseShield Template License',
+        `Downloaded by: ${user?.email || 'Unknown'}`,
+        `Download date: ${new Date().toISOString().split('T')[0]}`,
+        `License ID: LS-${user?.id || 'unknown'}`,
+        '────────────────────────────────────────',
+        'This template is licensed for personal use only.',
+        'Sharing, reselling, or unauthorized distribution is prohibited.'
+      ];
+      for (const line of watermarkLines) {
+        children.push(new Paragraph({
+          children: [new TextRun({ text: line, size: 16, color: '666666', font: 'Arial' })],
+          spacing: { before: 40, after: 40 }
+        }));
+      }
+
       const doc = new Document({
         sections: [{ properties: {}, children }]
       });
@@ -458,6 +505,27 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
               </div>
             )}
 
+            {/* Subscription blocked message */}
+            {subscriptionBlocked && !showFullDocument && (
+              <div className="mb-3 p-4 rounded-xl text-center" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA' }}>
+                <AlertTriangle className="w-8 h-8 mx-auto mb-2" style={{ color: '#DC2626' }} />
+                <p className="text-sm font-bold mb-1" style={{ color: '#991B1B' }}>
+                  {subStr.blockedTitle}
+                </p>
+                <p className="text-xs mb-3" style={{ color: '#B91C1C' }}>
+                  {isExplorer ? subStr.explorerDesc : subStr.blockedDesc}
+                </p>
+                <Link to={createPageUrl("Account") + "?tab=subscription"}>
+                  <Button
+                    className="w-full"
+                    style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF', minHeight: '44px' }}
+                  >
+                    {subStr.upgrade}
+                  </Button>
+                </Link>
+              </div>
+            )}
+
             {showFullDocument ? (
               /* UNLOCKED: Show Copy + Download (free, no additional credit) */
               <div className="space-y-2">
@@ -506,7 +574,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                 </p>
                 <Button
                   onClick={handleUnlock}
-                  disabled={unlocking || !canUseCredits || !documentContent || documentContent.trim().length < 100}
+                  disabled={unlocking || !canUseCredits || !documentContent || documentContent.trim().length < 100 || subscriptionBlocked}
                   className="w-full"
                   style={{ 
                     backgroundColor: (!documentContent || documentContent.trim().length < 100) ? '#9CA3AF' : '#0C3B2E',
