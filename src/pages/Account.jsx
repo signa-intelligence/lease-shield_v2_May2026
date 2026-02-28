@@ -1240,7 +1240,7 @@ function AccountContent() {
     }
   };
 
-  const planTier = user?.plan_tier || 'free';
+  const planTier = ((user?.plan_tier || 'free').toLowerCase() === 'explorer') ? 'free' : (user?.plan_tier || 'free');
   const userBillingInterval = user?.billing_interval || 'monthly';
   const subscriptionStatus = user?.subscription_status || 'inactive';
   const isFreePlan = planTier === 'free';
