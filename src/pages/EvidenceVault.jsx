@@ -444,33 +444,37 @@ function EvidenceVaultContent() {
       const allFilesToUpload = [...compressedFiles, ...voiceFiles, ...videoFiles];
       console.log('[EV] Uploading', allFilesToUpload.length, 'files to storage');
 
-      // Upload files one at a time with delay to prevent network errors
+      // Upload files one at a time with delay and retry for transient failures
       const results = [];
       const failedFiles = [];
       for (let i = 0; i < allFilesToUpload.length; i++) {
         const file = allFilesToUpload[i];
-        console.log(`[EV] Uploading file ${i + 1}/${allFilesToUpload.length}:`, file.name, file.type, `${(file.size / 1024).toFixed(1)}KB`);
-        
-        // Add delay between uploads to prevent rate limiting / network congestion
-        if (i > 0) {
-          await new Promise(r => setTimeout(r, 800));
-        }
-        
-        try {
-          const result = await base44.integrations.Core.UploadFile({ file });
-          if (!result?.file_url) {
-            console.error(`[EV] Upload returned no URL for ${file.name}:`, result);
-            failedFiles.push(file.name);
-            continue;
+        const sizeKB = (file.size / 1024).toFixed(1);
+        console.log(`[EV] Uploading ${i + 1}/${allFilesToUpload.length}: ${file.name} (${file.type}, ${sizeKB}KB)`);
+        if (i > 0) await new Promise(r => setTimeout(r, file.size > 1024 * 1024 ? 1500 : 800));
+        let uploaded = false;
+        let lastErr = '';
+        for (let attempt = 1; attempt <= 2 && !uploaded; attempt++) {
+          try {
+            const result = await base44.integrations.Core.UploadFile({ file });
+            if (!result?.file_url) {
+              lastErr = `No URL returned: ${JSON.stringify(result)}`;
+              console.error(`[EV] No URL (attempt ${attempt}) ${file.name}:`, lastErr);
+              if (attempt < 2) { await new Promise(r => setTimeout(r, 2000)); continue; }
+            } else {
+              console.log(`[EV] ✅ ${file.name} → ${result.file_url.substring(0, 60)}...`);
+              results.push({ result, fileIndex: i });
+              uploaded = true;
+            }
+          } catch (uploadErr) {
+            const status = uploadErr?.response?.status;
+            const msg = uploadErr?.response?.data?.message || uploadErr?.response?.data?.error || uploadErr?.message || String(uploadErr);
+            lastErr = `${status || 'ERR'}: ${msg}`;
+            console.error(`[EV] ❌ (attempt ${attempt}) ${file.name}: ${lastErr}`, { type: file.type, size: file.size, responseData: uploadErr?.response?.data });
+            if (attempt < 2 && (!status || status >= 500)) { await new Promise(r => setTimeout(r, 2000)); continue; }
           }
-          console.log(`[EV] Upload success: ${file.name} → ${result.file_url.substring(0, 60)}...`);
-          results.push({ result, fileIndex: i });
-        } catch (uploadErr) {
-          console.error(`[EV] Upload failed for ${file.name}:`, uploadErr?.message || uploadErr);
-          failedFiles.push(file.name);
-          // Continue with remaining files instead of aborting
-          continue;
         }
+        if (!uploaded) failedFiles.push(`${file.name} (${lastErr})`);
         setUploadProgressPercent(40 + Math.round(((i + 1) / allFilesToUpload.length) * 30));
       }
 
