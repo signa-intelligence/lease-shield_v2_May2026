@@ -1,6 +1,23 @@
 import { base44 } from "@/api/base44Client";
 
 /**
+ * Re-read a File as a fresh Blob to fix stale file references
+ * (e.g. files from Google Drive, cloud storage, or long-lived file pickers).
+ */
+async function toFreshFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const blob = new Blob([reader.result], { type: file.type || 'application/octet-stream' });
+      const freshFile = new File([blob], file.name, { type: blob.type, lastModified: file.lastModified });
+      resolve(freshFile);
+    };
+    reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+/**
  * Upload files one at a time with retry logic and size validation.
  * Returns { results: [{result, fileIndex}], failedFiles: [string] }
  */
@@ -32,7 +49,14 @@ export async function uploadFilesSequentially(allFilesToUpload, { language = 'en
     let lastErr = '';
     for (let attempt = 1; attempt <= 3 && !uploaded; attempt++) {
       try {
-        const result = await base44.integrations.Core.UploadFile({ file });
+        // On retry or for PDFs, re-read the file to get a fresh blob reference
+        // This fixes "Network Error" for files from cloud sources (Google Drive, etc.)
+        const uploadFile = (attempt > 1 || file.type === 'application/pdf')
+          ? await toFreshFile(file)
+          : file;
+
+        console.log(`[EV] Upload attempt ${attempt} for ${file.name} (fresh=${attempt > 1 || file.type === 'application/pdf'}, size=${uploadFile.size})`);
+        const result = await base44.integrations.Core.UploadFile({ file: uploadFile });
         if (!result?.file_url) {
           lastErr = `No URL returned: ${JSON.stringify(result)}`;
           console.error(`[EV] No URL (attempt ${attempt}) ${file.name}:`, lastErr);
@@ -45,9 +69,15 @@ export async function uploadFilesSequentially(allFilesToUpload, { language = 'en
       } catch (uploadErr) {
         const status = uploadErr?.response?.status;
         const isNetworkError = !status && (uploadErr?.message === 'Network Error' || uploadErr?.code === 'ERR_NETWORK');
-        const msg = uploadErr?.response?.data?.message || uploadErr?.response?.data?.error || uploadErr?.message || String(uploadErr);
-        lastErr = `${status || 'Network Error'}: ${msg}`;
-        console.error(`[EV] ❌ (attempt ${attempt}) ${file.name}: ${lastErr}`, { type: file.type, size: file.size, isNetworkError, status });
+        const responseData = uploadErr?.response?.data;
+        const msg = responseData?.message || responseData?.error || uploadErr?.message || String(uploadErr);
+        lastErr = `${status || 'ERR'}: ${msg}`;
+        console.error(`[EV] ❌ (attempt ${attempt}) ${file.name}: ${lastErr}`, {
+          type: file.type, size: file.size, isNetworkError, status,
+          responseStatus: uploadErr?.response?.status,
+          responseData: responseData,
+          errorCode: uploadErr?.code
+        });
         const shouldRetry = !status || status >= 500 || isNetworkError;
         if (attempt < 3 && shouldRetry) { await new Promise(r => setTimeout(r, 3000 * attempt)); continue; }
       }
