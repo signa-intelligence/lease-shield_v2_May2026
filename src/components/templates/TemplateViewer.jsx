@@ -116,6 +116,11 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const documentLangForExport = displayLang === 'th' ? 'th' : 'en';
   const documentContent = documentLangForExport === 'th' ? docTh : docEn;
   
+  // Bilingual content for DOCX/Copy (always both languages)
+  const bilingualContent = (docTh && docEn) 
+    ? `${docTh}\n\n────────────────────────────────────────\n\n${docEn}`
+    : (docTh || docEn);
+  
   const letterCredits = user?.letter_credits || 0;
   const userTierForCredits = user?.plan_tier || 'free';
   const hasUnlimitedCredits = userTierForCredits === 'secure';
