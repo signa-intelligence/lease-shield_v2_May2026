@@ -456,14 +456,18 @@ function EvidenceVaultContent() {
         setUploadProgressPercent(70 + Math.round(((idx + 1) / results.length) * 30));
       }
 
-      console.log('[EV] All uploads complete');
+      console.log('[EV] All uploads complete. Success:', results.length, 'Failed:', failedFiles.length);
       setShowUploadDialog(false);
       setUploadFiles([]);
       setVoiceFiles([]);
       setVideoFiles([]);
       setUploadType('photo');
       setUploadLabel('');
-      toast.success(strings.uploadSuccess);
+      if (failedFiles.length > 0) {
+        toast.warning(`${results.length} uploaded, ${failedFiles.length} failed: ${failedFiles.join(', ')}`);
+      } else {
+        toast.success(strings.uploadSuccess);
+      }
     } catch (err) {
       console.error('[EV] UPLOAD FAILED:', err?.message, err?.response?.data, err);
       setError(err?.message || strings.uploadFailed);
