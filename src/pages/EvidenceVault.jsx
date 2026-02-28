@@ -1394,6 +1394,27 @@ function EvidenceVaultContent() {
           })()}
           </div>
 
+          {/* Upload FAB */}
+          <button
+            onClick={() => {
+              haptic.medium();
+              setShowUploadDialog(true);
+            }}
+            aria-label={strings.uploadEvidence}
+            className="fixed z-40 flex items-center justify-center rounded-full shadow-lg active:scale-95 transition-transform"
+            style={{
+              right: '20px',
+              bottom: 'calc(80px + env(safe-area-inset-bottom))',
+              width: '56px',
+              height: '56px',
+              backgroundColor: '#0C3B2E',
+              border: '2px solid #C7A338',
+              boxShadow: '0 6px 16px rgba(12, 59, 46, 0.4)',
+            }}
+          >
+            <Upload className="w-6 h-6 text-white" />
+          </button>
+
           {/* Legal Disclaimer */}
           <div className="mt-8 p-4 rounded-lg text-center max-w-4xl mx-auto" style={{
           backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC',
