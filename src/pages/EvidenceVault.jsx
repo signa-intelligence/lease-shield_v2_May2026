@@ -1316,10 +1316,10 @@ function EvidenceVaultContent() {
                   </button>
 
                   <button
-                   type="button"
-                   onClick={handleVideoClick}
-                   className="btn-interaction"
-                   title={!isSecureTier ? strings.upgradeTitle : ''}
+                  type="button"
+                  onClick={handleVideoClick}
+                  className="btn-interaction"
+                  title={!isVideoTier ? strings.upgradeTitle : ''}
                    style={{
                      padding: '8px 14px',
                      borderRadius: '8px',
