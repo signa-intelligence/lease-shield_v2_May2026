@@ -38,73 +38,16 @@ import {
 
 const evidenceAccent = FEATURE_COLORS.evidence.accent;
 
+import { DOC_TYPE_CONFIG as _DOC_TYPE_CONFIG_DATA, getDocTypeLabel, getEvidenceStrings } from "../components/evidence/evidenceStrings";
+
+// Add icon references to the imported config
 const DOC_TYPE_CONFIG = {
-  lease: {
-    label_en: 'Lease',
-    label_th: 'สัญญาเช่า',
-    label_zh: '租约',
-    label_ja: '賃貸契約',
-    label_ko: '임대 계약',
-    label_ru: 'Договор аренды',
-    icon: FileText,
-    color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100',
-    bgColor: '#0C3B2E'
-  },
-  receipt: {
-    label_en: 'Receipt',
-    label_th: 'ใบเสร็จ',
-    label_zh: '收据',
-    label_ja: '領収書',
-    label_ko: '영수증',
-    label_ru: 'Квитанция',
-    icon: FileText,
-    color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100',
-    bgColor: '#64748B'
-  },
-  photo: {
-    label_en: 'Photo',
-    label_th: 'รูปภาพ',
-    label_zh: '照片',
-    label_ja: '写真',
-    label_ko: '사진',
-    label_ru: 'Фото',
-    icon: Camera,
-    color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100',
-    bgColor: '#64748B'
-  },
-  video: {
-    label_en: 'Video',
-    label_th: 'วิดีโอ',
-    label_zh: '视频',
-    label_ja: '動画',
-    label_ko: '비디오',
-    label_ru: 'Видео',
-    icon: FileVideo,
-    color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100',
-    bgColor: '#64748B'
-  },
-  letter: {
-    label_en: 'Letter',
-    label_th: 'จดหมาย',
-    label_zh: '信件',
-    label_ja: 'レター',
-    label_ko: '편지',
-    label_ru: 'Письмо',
-    icon: Mail,
-    color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-100',
-    bgColor: '#0C3B2E'
-  },
-  other: {
-    label_en: 'Other',
-    label_th: 'อื่น ๆ',
-    label_zh: '其他',
-    label_ja: 'その他',
-    label_ko: '기타',
-    label_ru: 'Прочее',
-    icon: HelpCircle,
-    color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100',
-    bgColor: '#64748B'
-  }
+  lease: { ..._DOC_TYPE_CONFIG_DATA.lease, icon: FileText },
+  receipt: { ..._DOC_TYPE_CONFIG_DATA.receipt, icon: FileText },
+  photo: { ..._DOC_TYPE_CONFIG_DATA.photo, icon: Camera },
+  video: { ..._DOC_TYPE_CONFIG_DATA.video, icon: FileVideo },
+  letter: { ..._DOC_TYPE_CONFIG_DATA.letter, icon: Mail },
+  other: { ..._DOC_TYPE_CONFIG_DATA.other, icon: HelpCircle },
 };
 
 function EvidenceVaultContent() {
