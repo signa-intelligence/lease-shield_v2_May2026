@@ -44,6 +44,7 @@ import { DOC_TYPE_CONFIG as _DOC_TYPE_CONFIG_DATA, getDocTypeLabel, getEvidenceS
 import { getFolderStrings } from "../components/evidence/folderStrings";
 import { CreateFolderModal, RenameFolderModal, DeleteFolderModal, MoveToFolderModal } from "../components/evidence/FolderModals";
 import EvidenceFileCard from "../components/evidence/EvidenceFileCard";
+import UploadBottomSheet from "../components/evidence/UploadBottomSheet";
 
 // Add icon references to the imported config
 const DOC_TYPE_CONFIG = {
