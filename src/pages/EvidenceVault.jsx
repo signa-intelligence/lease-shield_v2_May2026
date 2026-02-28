@@ -1872,6 +1872,20 @@ function EvidenceVaultContent() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              handleEdit(doc);
+                            }}
+                            disabled={isOptimistic}
+                            className="py-2 px-3 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{
+                              backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
+                              color: colors.textPrimary
+                            }}
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (confirm(strings.confirmDelete)) {
                                 handleDelete(doc.id);
                               }
