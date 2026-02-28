@@ -782,7 +782,8 @@ function EvidenceVaultContent() {
     textPrimary: '#F9FAFB',
     textSecondary: '#D1D5DB',
     borderColor: 'rgba(255,255,255,0.1)',
-    inputBg: '#374151'
+    inputBg: '#374151',
+    fieldBg: '#374151'
   } : {
     bg: '#F3F6F5',
     cardBg: '#FFFFFF',
@@ -790,7 +791,8 @@ function EvidenceVaultContent() {
     textPrimary: '#0F172A',
     textSecondary: '#475569',
     borderColor: 'rgba(12,59,46,0.08)',
-    inputBg: '#FFFFFF'
+    inputBg: '#FFFFFF',
+    fieldBg: '#F8FAFC'
   };
 
   const strings = getEvidenceStrings(language);
