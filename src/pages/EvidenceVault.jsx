@@ -29,10 +29,7 @@ import AuthGuard from "../components/shared/AuthGuard";
 import TrustBadge from "../components/shared/TrustBadge";
 import { FolderPlus, Folder, FolderOpen, ChevronDown as ChevronDownIcon, ChevronRight } from "lucide-react";
 import {
-  FEATURE_COLORS,
-  CTA_COLOR,
-  primaryCtaStyle,
-  primaryCtaHover
+  FEATURE_COLORS
 } from "../components/shared/featureTheme";
 
 const evidenceAccent = FEATURE_COLORS.evidence.accent;
