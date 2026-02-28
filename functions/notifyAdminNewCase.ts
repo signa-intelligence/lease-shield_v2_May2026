@@ -135,41 +135,27 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Step 3: Send confirmation email to tenant via Resend
-    try {
-      const tenantHtml = `
-<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); padding: 24px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
-    <div style="font-size: 36px;">✅</div>
-    <h1 style="color: #059669; margin: 8px 0; font-size: 20px;">Case ${caseNumber} Submitted</h1>
-  </div>
-  <p style="color: #334155; font-size: 15px;">Your Resolve case has been submitted and is now under review.</p>
-  <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin: 16px 0;">
-    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Dispute Amount: <strong>฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}</strong></p>
-    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Payment: <strong>${paymentType === 'free_entitlement' ? 'Free Entitlement (Secure)' : 'Paid'}</strong></p>
-  </div>
-  <p style="color: #334155; font-size: 15px;">Our team will review your case within 2-3 business days. We'll contact you via LINE and email.</p>
-  <p style="color: #334155; font-size: 15px;">— LeaseShield Team</p>
-</div>`;
-
-      const result = await sendViaResend({
-        to: tenantEmail,
-        subject: `✅ Case ${caseNumber} Submitted Successfully`,
-        html: tenantHtml,
-        fromName: 'LeaseShield'
-      });
-      notified.push('confirmation:' + tenantEmail);
-      console.log('[ADMIN_NOTIFY] ✅ Resend confirmation sent to tenant:', tenantEmail, 'id:', result.id);
-    } catch (confirmErr) {
-      console.error('[ADMIN_NOTIFY] ⚠️ Resend confirmation to tenant failed:', confirmErr.message);
-      errors.push({ channel: 'email', target: tenantEmail, error: confirmErr.message });
-    }
+    // Step 3: Tenant confirmation email is sent separately by sendCaseConfirmationEmail
+    // Do NOT send a duplicate here
 
     // Step 4: Send LINE message to admin users who have line_messaging_token
     const lineChannelToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
     
     if (lineChannelToken) {
-      const lineMessage = `🚨 New Resolve Case\n\n📋 ${caseNumber}\n👤 ${tenantName || tenantEmail}\n💰 ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}\n📍 ${propertyAddress || 'N/A'}\n💳 ${paymentType === 'free_entitlement' ? 'Free Entitlement' : 'Paid'}\n\n⚡ Check Ops Console`;
+      const lineMessage = [
+        '🚨 New Resolve Case',
+        '',
+        `📋 Case: ${caseNumber}`,
+        `👤 Tenant: ${tenantName || tenantEmail}`,
+        `💰 Amount: ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}`,
+        `📍 Property: ${propertyAddress || 'N/A'}`,
+        `💳 Payment: ${paymentType === 'free_entitlement' ? 'Free Entitlement' : 'Paid'}`,
+        '',
+        '⚡ Action Required:',
+        '1. Open Ops Console',
+        '2. Review intake case',
+        '3. Assign to team member'
+      ].join('\n');
 
       for (const admin of adminUsers) {
         const lineUserId = admin.line_messaging_token;
