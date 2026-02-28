@@ -6,7 +6,7 @@ const folderStrings = {
     deleteFolder: "Delete Folder",
     moveToFolder: "Move to Folder",
     allFiles: "All Files",
-    rootNoFolder: "Uploads",
+    rootNoFolder: "Root (No Folder)",
     folderName: "Folder Name",
     folderNamePlaceholder: "e.g., Move-in Photos, Receipts, Letters",
     create: "Create",
@@ -38,7 +38,7 @@ const folderStrings = {
     deleteFolder: "ลบโฟลเดอร์",
     moveToFolder: "ย้ายไปยังโฟลเดอร์",
     allFiles: "ไฟล์ทั้งหมด",
-    rootNoFolder: "อัปโหลด",
+    rootNoFolder: "รูท (ไม่มีโฟลเดอร์)",
     folderName: "ชื่อโฟลเดอร์",
     folderNamePlaceholder: "เช่น รูปตอนย้ายเข้า, ใบเสร็จ, จดหมาย",
     create: "สร้าง",
@@ -66,7 +66,7 @@ const folderStrings = {
   zh: {
     newFolder: "新文件夹", createFolder: "创建文件夹", renameFolder: "重命名文件夹",
     deleteFolder: "删除文件夹", moveToFolder: "移动到文件夹", allFiles: "所有文件",
-    rootNoFolder: "上传", folderName: "文件夹名称",
+    rootNoFolder: "根目录（无文件夹）", folderName: "文件夹名称",
     folderNamePlaceholder: "例如：搬入照片、收据、信件",
     create: "创建", rename: "重命名", cancel: "取消",
     folderCreated: "文件夹已创建", folderRenamed: "文件夹已重命名",
@@ -82,7 +82,7 @@ const folderStrings = {
   ja: {
     newFolder: "新しいフォルダ", createFolder: "フォルダを作成", renameFolder: "フォルダの名前を変更",
     deleteFolder: "フォルダを削除", moveToFolder: "フォルダに移動", allFiles: "すべてのファイル",
-    rootNoFolder: "アップロード", folderName: "フォルダ名",
+    rootNoFolder: "ルート（フォルダなし）", folderName: "フォルダ名",
     folderNamePlaceholder: "例：入居写真、領収書、レター",
     create: "作成", rename: "名前変更", cancel: "キャンセル",
     folderCreated: "フォルダを作成しました", folderRenamed: "フォルダの名前を変更しました",
@@ -98,7 +98,7 @@ const folderStrings = {
   ko: {
     newFolder: "새 폴더", createFolder: "폴더 만들기", renameFolder: "폴더 이름 변경",
     deleteFolder: "폴더 삭제", moveToFolder: "폴더로 이동", allFiles: "모든 파일",
-    rootNoFolder: "업로드", folderName: "폴더 이름",
+    rootNoFolder: "루트 (폴더 없음)", folderName: "폴더 이름",
     folderNamePlaceholder: "예: 입주 사진, 영수증, 편지",
     create: "만들기", rename: "이름 변경", cancel: "취소",
     folderCreated: "폴더가 생성되었습니다", folderRenamed: "폴더 이름이 변경되었습니다",
@@ -114,7 +114,7 @@ const folderStrings = {
   ru: {
     newFolder: "Новая папка", createFolder: "Создать папку", renameFolder: "Переименовать папку",
     deleteFolder: "Удалить папку", moveToFolder: "Переместить в папку", allFiles: "Все файлы",
-    rootNoFolder: "Загрузки", folderName: "Имя папки",
+    rootNoFolder: "Корень (без папки)", folderName: "Имя папки",
     folderNamePlaceholder: "напр., Фото при въезде, Чеки, Письма",
     create: "Создать", rename: "Переименовать", cancel: "Отмена",
     folderCreated: "Папка создана", folderRenamed: "Папка переименована",
@@ -125,7 +125,7 @@ const folderStrings = {
     createFirstFolder: "Создайте папки для организации ваших доказательств", emptyFolder: "Эта папка пуста",
     unsorted: "Несортированные файлы",
     saveToFolder: "Сохранить в папку", createNewFolder: "+ Создать новую папку",
-    newFolderName: "Имя новой папки", savingTo: "Сохранить в:", rootLevel: "Загрузки",
+    newFolderName: "Имя новой папки", savingTo: "Сохранить в:", rootLevel: "Корень (все файлы)",
   }
 };
 
