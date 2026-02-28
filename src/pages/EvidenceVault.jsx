@@ -1655,277 +1655,104 @@ function EvidenceVaultContent() {
               </div>
           )}
 
-          {/* Documents Grid */}
-          {isLoadingDocuments ? (
-            <SkeletonLoader variant="card" count={6} colors={colors} />
-          ) : filteredDocuments.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ 
-              borderColor: colors.borderColor, 
-              backgroundColor: colors.uploadBg 
-            }}>
-              <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>{strings.noEvidenceTitle}</h3>
-              <p className="text-xs sm:text-sm mb-3" style={{ color: colors.textSecondary }}>
-                {strings.noEvidenceDescription}
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptic.medium();
-                    setShowUploadDialog(true);
-                  }}
-                  className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
-                  style={{ 
-                    backgroundColor: "#0C3B2E", 
-                    color: "#FFFFFF",
-                    border: `2px solid #C7A338`
-                  }}
-                >
-                  {strings.uploadEvidence}
+          {/* Folder Modals */}
+          <CreateFolderModal open={showCreateFolder} onClose={() => setShowCreateFolder(false)}
+            folderName={newFolderName} setFolderName={setNewFolderName}
+            onCreate={handleCreateFolder} creating={creatingFolder} colors={colors} strings={folderStr} />
+          <RenameFolderModal open={showRenameFolder} onClose={() => setShowRenameFolder(false)}
+            folderName={renameFolderName} setFolderName={setRenameFolderName}
+            onRename={handleRenameFolder} renaming={renamingFolder} colors={colors} strings={folderStr} />
+          <DeleteFolderModal open={showDeleteFolder} onClose={() => setShowDeleteFolder(false)}
+            folder={deletingFolder} fileCount={documents.filter(d => d.folder_id === deletingFolder?.id).length}
+            onDelete={handleDeleteFolderConfirm} deleting={deletingFolderLoading} colors={colors} strings={folderStr} />
+          <MoveToFolderModal open={showMoveFile} onClose={() => setShowMoveFile(false)}
+            folders={folders} selectedFolderId={moveFolderId} setSelectedFolderId={setMoveFolderId}
+            onMove={handleMoveFileConfirm} moving={movingFile} colors={colors} strings={folderStr} />
+
+          {/* Folder Tabs */}
+          {folders.length > 0 && (
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+              <button onClick={() => setActiveFolderFilter('all')}
+                className="px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0"
+                style={{
+                  backgroundColor: activeFolderFilter === 'all' ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#F3F4F6'),
+                  color: activeFolderFilter === 'all' ? '#FFFFFF' : colors.textPrimary
+                }}>
+                {folderStr.allFiles} ({filteredDocuments.length})
+              </button>
+              <button onClick={() => setActiveFolderFilter('root')}
+                className="px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0"
+                style={{
+                  backgroundColor: activeFolderFilter === 'root' ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#F3F4F6'),
+                  color: activeFolderFilter === 'root' ? '#FFFFFF' : colors.textPrimary
+                }}>
+                {folderStr.unsorted} ({filteredDocuments.filter(d => !d.folder_id).length})
+              </button>
+              {folders.map(f => (
+                <button key={f.id} onClick={() => setActiveFolderFilter(f.id)}
+                  className="px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 flex items-center gap-1"
+                  style={{
+                    backgroundColor: activeFolderFilter === f.id ? '#0C3B2E' : (isDarkMode ? '#353A3D' : '#F3F4F6'),
+                    color: activeFolderFilter === f.id ? '#FFFFFF' : colors.textPrimary
+                  }}>
+                  📁 {f.folder_name} ({filteredDocuments.filter(d => d.folder_id === f.id).length})
                 </button>
-                {(userTier === 'free') && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      haptic.light();
-                      navigate(createPageUrl("Account") + '#plans');
-                    }}
-                    className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border"
-                    style={{ 
-                      borderColor: isDarkMode ? '#C7A338' : '#0C3B2E', 
-                      color: isDarkMode ? '#C7A338' : '#0C3B2E', 
-                      backgroundColor: colors.cardBg 
-                    }}
-                  >
-                    {strings.upgradeVaultStorage}
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredDocuments.map((doc) => {
-                const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
-                const isSelected = selectedDocs.includes(doc.id);
-                const isImage = doc.file_url?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-                const isVideo = doc.file_url?.match(/\.(mp4|mov|avi)$/i);
-                const isOptimistic = doc.__optimistic;
-
-                return (
-                  <SwipeToDelete
-                    key={doc.id}
-                    onDelete={() => handleSwipeDelete(doc.id)}
-                    deleteLabel={strings.delete}
-                    colors={colors}
-                    disabled={isOptimistic}
-                  >
-                    <Card
-                      className={`overflow-hidden border-none shadow-lg hover:shadow-xl transition-all relative ${isSelected ? 'ring-2' : ''} ${isOptimistic ? 'opacity-60' : ''}`}
-                      style={{
-                        backgroundColor: colors.cardBg,
-                        borderColor: isSelected ? '#0C3B2E' : colors.borderColor,
-                        borderLeft: isSelected ? `4px solid #0C3B2E` : undefined
-                      }}
-                      onClick={() => !isOptimistic && handleCardClick(doc)}
-                    >
-                      {isOptimistic && (
-                        <div className="absolute inset-0 bg-black/10 z-10 flex items-center justify-center rounded-lg">
-                          <Loader2 className="w-8 h-8 animate-spin text-white" />
-                        </div>
-                      )}
-
-                      {isImage ? (
-                        <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
-                          <LazyImage
-                            src={doc.file_url}
-                            alt={doc.label || doc.type}
-                            className="w-full h-full object-cover"
-                            loadingColor="#0C3B2E"
-                            fallback={
-                              <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                                <FileText className="w-12 h-12 text-gray-400" />
-                              </div>
-                            }
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleView(doc);
-                            }}
-                            className="absolute top-2 right-2 p-2 bg-black/50 rounded-lg backdrop-blur-sm hover:bg-black/70 transition-colors"
-                            disabled={isOptimistic}
-                          >
-                            <Eye className="w-4 h-4 text-white" />
-                          </button>
-                        </div>
-                      ) : isVideo ? (
-                        <div className="aspect-video bg-gray-900 relative">
-                          <video
-                            src={doc.file_url}
-                            className="w-full h-full object-cover"
-                            controls
-                            preload="metadata"
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          className="aspect-video flex flex-col items-center justify-center p-4"
-                          style={{ backgroundColor: config.bgColor, color: 'white' }}
-                        >
-                          {React.createElement(config.icon, { className: "w-12 h-12 mb-2" })}
-                          <span className="text-sm font-semibold text-center break-words">
-                            {doc.label || (
-                              language === 'zh' ? config.label_zh :
-                              language === 'ja' ? config.label_ja :
-                              language === 'ko' ? config.label_ko :
-                              language === 'th' ? config.label_th :
-                              language === 'ru' ? config.label_ru :
-                              config.label_en
-                            )}
-                          </span>
-                        </div>
-                      )}
-
-                      <CardContent className="p-4">
-                        {bulkMode && (
-                          <div className="absolute top-4 right-4 z-10">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => handleToggleSelect(doc.id)}
-                              onClick={(e) => e.stopPropagation()}
-                              disabled={isOptimistic}
-                            />
-                          </div>
-                        )}
-
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0`} style={{ backgroundColor: config.bgColor }}>
-                            {React.createElement(config.icon, { className: "w-6 h-6 text-white" })}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <Badge className="mb-2" style={{
-                              backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                              color: colors.textPrimary
-                            }}>
-                              {language === 'zh' ? config.label_zh : language === 'ja' ? config.label_ja : language === 'ko' ? config.label_ko : language === 'th' ? config.label_th : language === 'ru' ? config.label_ru : config.label_en}
-                            </Badge>
-                            <h3 className="font-bold text-sm truncate" style={{ color: colors.textPrimary }}>
-                              {doc.label || (
-                                language === 'zh' ? config.label_zh :
-                                language === 'ja' ? config.label_ja :
-                                language === 'ko' ? config.label_ko :
-                                language === 'th' ? config.label_th :
-                                language === 'ru' ? config.label_ru :
-                                config.label_en
-                              )}
-                            </h3>
-                            <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>
-                              {format(new Date(doc.created_date), 'MMM d, yyyy')}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              haptic.light();
-                              handleView(doc);
-                            }}
-                            disabled={isOptimistic}
-                            className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{
-                              backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                              color: colors.textPrimary
-                            }}
-                            onMouseEnter={(e) => {
-                              if (!isOptimistic) {
-                                e.target.style.backgroundColor = isDarkMode ? '#3A3D40' : '#E5E7EB';
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (!isOptimistic) {
-                                e.target.style.backgroundColor = isDarkMode ? '#353A3D' : '#F3F4F6';
-                              }
-                            }}
-                          >
-                            <Eye className="w-3 h-3 inline mr-1" />
-                            {strings.view}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              haptic.light();
-                              handleDownload(doc);
-                            }}
-                            disabled={isOptimistic}
-                            className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{
-                              backgroundColor: CTA_COLOR,
-                              color: '#FFFFFF'
-                            }}
-                            onMouseEnter={(e) => {
-                              if (!isOptimistic) {
-                                e.target.style.backgroundColor = '#0a2f25';
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (!isOptimistic) {
-                                e.target.style.backgroundColor = CTA_COLOR;
-                              }
-                            }}
-                          >
-                            <Download className="w-3 h-3 inline mr-1" />
-                            {strings.download}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(doc);
-                            }}
-                            disabled={isOptimistic}
-                            className="py-2 px-3 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{
-                              backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6',
-                              color: colors.textPrimary
-                            }}
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm(strings.confirmDelete)) {
-                                handleDelete(doc.id);
-                              }
-                            }}
-                            disabled={isOptimistic}
-                            className="py-2 px-3 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{
-                              backgroundColor: '#FEE2E2',
-                              color: '#DC2626'
-                            }}
-                            onMouseEnter={(e) => {
-                              if (!isOptimistic) {
-                                e.target.style.backgroundColor = '#FECACA';
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (!isOptimistic) {
-                                e.target.style.backgroundColor = '#FEE2E2';
-                              }
-                            }}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </SwipeToDelete>
-                );
-              })}
+              ))}
             </div>
           )}
+
+          {/* Folder action buttons when a folder is selected */}
+          {activeFolderFilter !== 'all' && activeFolderFilter !== 'root' && folders.find(f => f.id === activeFolderFilter) && (
+            <div className="flex gap-2 mb-4">
+              <button onClick={() => openRenameFolder(folders.find(f => f.id === activeFolderFilter))}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+                style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6', color: colors.textPrimary }}>
+                <Edit2 className="w-3 h-3 inline mr-1" /> {folderStr.renameFolder}
+              </button>
+              <button onClick={() => openDeleteFolder(folders.find(f => f.id === activeFolderFilter))}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold"
+                style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}>
+                <Trash2 className="w-3 h-3 inline mr-1" /> {folderStr.deleteFolder}
+              </button>
+            </div>
+          )}
+
+          {/* Documents Grid */}
+          {(() => {
+            const docsToShow = activeFolderFilter === 'all' ? filteredDocuments
+              : activeFolderFilter === 'root' ? filteredDocuments.filter(d => !d.folder_id)
+              : filteredDocuments.filter(d => d.folder_id === activeFolderFilter);
+            
+            if (isLoadingDocuments) return <SkeletonLoader variant="card" count={6} colors={colors} />;
+            if (docsToShow.length === 0) return (
+              <div className="rounded-xl border border-dashed p-4 sm:p-5" style={{ borderColor: colors.borderColor, backgroundColor: colors.uploadBg }}>
+                <h3 className="font-semibold text-sm sm:text-base mb-1" style={{ color: colors.textPrimary }}>
+                  {activeFolderFilter !== 'all' ? folderStr.emptyFolder : strings.noEvidenceTitle}
+                </h3>
+                <p className="text-xs sm:text-sm mb-3" style={{ color: colors.textSecondary }}>{strings.noEvidenceDescription}</p>
+                <button type="button" onClick={() => { haptic.medium(); setShowUploadDialog(true); }}
+                  className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold shadow-sm"
+                  style={{ backgroundColor: "#0C3B2E", color: "#FFFFFF", border: '2px solid #C7A338' }}>
+                  {strings.uploadEvidence}
+                </button>
+              </div>
+            );
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {docsToShow.map((doc) => {
+                  const config = DOC_TYPE_CONFIG[doc.type] || DOC_TYPE_CONFIG.other;
+                  return (
+                    <EvidenceFileCard key={doc.id} doc={doc} config={config} language={language} colors={colors}
+                      isDarkMode={isDarkMode} isSelected={selectedDocs.includes(doc.id)} bulkMode={bulkMode}
+                      isOptimistic={doc.__optimistic} strings={strings}
+                      onCardClick={handleCardClick} onView={handleView} onDownload={handleDownload}
+                      onEdit={handleEdit} onDelete={(id) => { if (confirm(strings.confirmDelete)) handleDelete(id); }}
+                      onSwipeDelete={handleSwipeDelete} onMove={openMoveFile} />
+                  );
+                })}
+              </div>
+            );
+          })()}
           </div>
 
           {/* Legal Disclaimer */}
