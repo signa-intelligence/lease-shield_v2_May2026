@@ -5,9 +5,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * Called automatically after successful case creation with status='intake'
  * 
  * Sends:
- * 1. Email to support@leaseshield.asia
- * 2. Email to ADMIN_ALERT_EMAIL (if set)
- * 3. LINE message to LINE_SUPERADMIN_USER_ID (if set)
+ * 1. Email to all super_admin/admin users (via Base44 SendEmail - only works for registered app users)
+ * 2. LINE message to super_admin users who have line_messaging_token set
  */
 
 Deno.serve(async (req) => {
@@ -59,7 +58,7 @@ Deno.serve(async (req) => {
 💰 Dispute Amount: ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔗 View Case: https://app.leaseshield.asia/CaseDetails?caseId=${caseId}&from=ops
+🔗 View in Ops Console
 
 ⚡ Next Steps:
 1. Open Operations Console
@@ -69,79 +68,106 @@ Deno.serve(async (req) => {
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     `.trim();
 
-    // 1. Send to ops email
-    const opsEmail = 'support@leaseshield.asia';
+    // Step 1: Get all admin/super_admin users from the app
+    let adminUsers = [];
     try {
-      await base44.integrations.Core.SendEmail({
-        from_name: 'Lease Shield Ops',
-        to: opsEmail,
-        subject: subject,
-        body: body
+      const allUsers = await base44.asServiceRole.entities.User.list();
+      adminUsers = allUsers.filter(u => {
+        const accessLevel = u.access_level?.toLowerCase();
+        const role = u.role?.toLowerCase();
+        return (
+          accessLevel === 'super_admin' || accessLevel === 'admin' ||
+          role === 'super_admin' || role === 'admin'
+        ) && u.is_active !== false;
       });
-      notified.push(opsEmail);
-      console.log('[ADMIN_NOTIFY] ✅ Email sent to:', opsEmail);
-    } catch (emailErr) {
-      console.error('[ADMIN_NOTIFY] ❌ Email to ops failed:', emailErr.message);
-      errors.push({ channel: 'email', target: opsEmail, error: emailErr.message });
+      console.log('[ADMIN_NOTIFY] Found', adminUsers.length, 'admin users:', adminUsers.map(u => u.email));
+    } catch (listErr) {
+      console.error('[ADMIN_NOTIFY] ❌ Failed to list admin users:', listErr.message);
     }
 
-    // 2. Send to admin alert email (if configured and different from ops)
-    const adminAlertEmail = Deno.env.get('ADMIN_ALERT_EMAIL');
-    if (adminAlertEmail && adminAlertEmail !== opsEmail) {
+    // Step 2: Send email to each admin user (Base44 SendEmail only works for registered app users)
+    for (const admin of adminUsers) {
+      // Skip sending to the tenant themselves
+      if (admin.email === tenantEmail) continue;
+      
       try {
         await base44.integrations.Core.SendEmail({
           from_name: 'Lease Shield Ops',
-          to: adminAlertEmail,
+          to: admin.email,
           subject: subject,
           body: body
         });
-        notified.push(adminAlertEmail);
-        console.log('[ADMIN_NOTIFY] ✅ Email sent to admin:', adminAlertEmail);
-      } catch (adminEmailErr) {
-        console.error('[ADMIN_NOTIFY] ❌ Email to admin failed:', adminEmailErr.message);
-        errors.push({ channel: 'email', target: adminAlertEmail, error: adminEmailErr.message });
+        notified.push('email:' + admin.email);
+        console.log('[ADMIN_NOTIFY] ✅ Email sent to:', admin.email);
+      } catch (emailErr) {
+        console.error('[ADMIN_NOTIFY] ❌ Email to', admin.email, 'failed:', emailErr.message);
+        errors.push({ channel: 'email', target: admin.email, error: emailErr.message });
       }
     }
 
-    // 3. Send LINE message to SuperAdmin
-    const lineSuperAdminId = Deno.env.get('LINE_SUPERADMIN_USER_ID');
+    // Also try sending to the submitting user as confirmation (the tenant)
+    try {
+      await base44.integrations.Core.SendEmail({
+        from_name: 'Lease Shield',
+        to: tenantEmail,
+        subject: `✅ Case ${caseNumber} Submitted Successfully`,
+        body: `Your Resolve case ${caseNumber} has been submitted and is now under review.\n\nDispute Amount: ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}\nPayment: ${paymentType === 'free_entitlement' ? 'Free Entitlement (Annual Secure)' : 'Paid'}\n\nOur team will review your case within 24 hours.\n\n— Lease Shield Team`
+      });
+      notified.push('confirmation:' + tenantEmail);
+      console.log('[ADMIN_NOTIFY] ✅ Confirmation email sent to tenant:', tenantEmail);
+    } catch (confirmErr) {
+      console.error('[ADMIN_NOTIFY] ⚠️ Confirmation email to tenant failed (non-critical):', confirmErr.message);
+    }
+
+    // Step 3: Send LINE message to admin users who have line_messaging_token
     const lineChannelToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
     
-    if (lineSuperAdminId && lineChannelToken) {
-      try {
-        const lineMessage = `🚨 New Resolve Case\n\n📋 ${caseNumber}\n👤 ${tenantName || tenantEmail}\n💰 ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}\n📍 ${propertyAddress || 'N/A'}\n💳 ${paymentType === 'free_entitlement' ? 'Free Entitlement' : 'Paid'}\n\n⚡ Check Ops Console`;
+    if (lineChannelToken) {
+      const lineMessage = `🚨 New Resolve Case\n\n📋 ${caseNumber}\n👤 ${tenantName || tenantEmail}\n💰 ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}\n📍 ${propertyAddress || 'N/A'}\n💳 ${paymentType === 'free_entitlement' ? 'Free Entitlement' : 'Paid'}\n\n⚡ Check Ops Console`;
 
-        const linePayload = {
-          to: lineSuperAdminId,
-          messages: [{
-            type: 'text',
-            text: lineMessage
-          }]
-        };
-
-        const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${lineChannelToken}`
-          },
-          body: JSON.stringify(linePayload)
-        });
-
-        if (lineResponse.ok) {
-          notified.push('LINE:' + lineSuperAdminId.substring(0, 8) + '...');
-          console.log('[ADMIN_NOTIFY] ✅ LINE message sent to SuperAdmin');
-        } else {
-          const lineErr = await lineResponse.text();
-          console.error('[ADMIN_NOTIFY] ❌ LINE API error:', lineResponse.status, lineErr);
-          errors.push({ channel: 'line', target: 'superadmin', error: lineErr });
+      for (const admin of adminUsers) {
+        const lineUserId = admin.line_messaging_token;
+        if (!lineUserId) continue;
+        
+        // Validate LINE user ID format (should start with 'U' and be 33 chars)
+        if (!lineUserId.startsWith('U') || lineUserId.length !== 33) {
+          console.log('[ADMIN_NOTIFY] ⚠️ Skipping invalid LINE ID for', admin.email, ':', lineUserId);
+          continue;
         }
-      } catch (lineErr) {
-        console.error('[ADMIN_NOTIFY] ❌ LINE send failed:', lineErr.message);
-        errors.push({ channel: 'line', target: 'superadmin', error: lineErr.message });
+
+        try {
+          const linePayload = {
+            to: lineUserId,
+            messages: [{
+              type: 'text',
+              text: lineMessage
+            }]
+          };
+
+          const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${lineChannelToken}`
+            },
+            body: JSON.stringify(linePayload)
+          });
+
+          if (lineResponse.ok) {
+            notified.push('line:' + admin.email);
+            console.log('[ADMIN_NOTIFY] ✅ LINE message sent to:', admin.email);
+          } else {
+            const lineErr = await lineResponse.text();
+            console.error('[ADMIN_NOTIFY] ❌ LINE to', admin.email, 'failed:', lineResponse.status, lineErr);
+            errors.push({ channel: 'line', target: admin.email, error: lineErr });
+          }
+        } catch (lineErr) {
+          console.error('[ADMIN_NOTIFY] ❌ LINE send to', admin.email, 'failed:', lineErr.message);
+          errors.push({ channel: 'line', target: admin.email, error: lineErr.message });
+        }
       }
     } else {
-      console.log('[ADMIN_NOTIFY] ⚠️ LINE not configured (LINE_SUPERADMIN_USER_ID or LINE_CHANNEL_ACCESS_TOKEN missing)');
+      console.log('[ADMIN_NOTIFY] ⚠️ LINE_CHANNEL_ACCESS_TOKEN not configured');
     }
 
     console.log('[ADMIN_NOTIFY] 📊 Summary: notified=' + notified.length + ', errors=' + errors.length);
