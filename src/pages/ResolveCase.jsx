@@ -472,6 +472,19 @@ function ResolveCaseContent() {
       return;
     }
 
+    if (formData.summary.trim().length < 100) {
+      toast.error(
+        language === 'th' ? 'กรุณาให้รายละเอียดอย่างน้อย 100 ตัวอักษร'
+        : language === 'zh' ? '请至少提供100个字符的详情'
+        : language === 'ja' ? '少なくとも100文字の詳細を提供してください'
+        : language === 'ko' ? '최소 100자 이상의 세부 정보를 제공하세요'
+        : language === 'ru' ? 'Пожалуйста, предоставьте не менее 100 символов деталей'
+        : 'Please provide at least 100 characters of detail'
+      );
+      haptic.error();
+      return;
+    }
+
     haptic.medium();
 
     try {
@@ -1341,13 +1354,59 @@ function ResolveCaseContent() {
               <MobileFormInput
                 label={str.summary}
                 value={formData.summary}
-                onChange={(e) => setFormData({...formData, summary: e.target.value})}
+                onChange={(e) => {
+                  if (e.target.value.length <= 2000) {
+                    setFormData({...formData, summary: e.target.value});
+                  }
+                }}
                 placeholder={str.summaryPlaceholder}
                 multiline
-                rows={6}
+                rows={8}
                 required
                 colors={colors}
               />
+              <div className="mt-2 space-y-2">
+                <div className="p-3 rounded-lg" style={{
+                  backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC',
+                  border: `1px solid ${colors.borderColor}`
+                }}>
+                  <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
+                    {language === 'th' ? (
+                      <>โปรดให้รายละเอียดเพื่อช่วยให้เราตรวจสอบคดีของคุณ:<br/>• เกิดอะไรขึ้นและเมื่อไหร่<br/>• เจ้าของบ้าน/ผู้เช่าทำอะไร<br/>• คุณต้องการบรรลุอะไร<br/>• วันที่หรือจำนวนเงินที่เกี่ยวข้อง<br/><br/>ยิ่งให้รายละเอียดมาก เราก็ยิ่งช่วยคุณได้ดีขึ้น</>
+                    ) : language === 'zh' ? (
+                      <>请提供详细信息以帮助我们审查您的案件：<br/>• 发生了什么以及何时<br/>• 房东/租户做了什么<br/>• 您想达到什么目的<br/>• 任何相关日期或金额<br/><br/>您提供的细节越多，我们就越能帮助您。</>
+                    ) : language === 'ja' ? (
+                      <>ケースの審査に役立つ詳細情報を提供してください：<br/>• 何がいつ起こったか<br/>• 家主/テナントが何をしたか<br/>• 何を達成したいか<br/>• 関連する日付や金額<br/><br/>詳細が多いほど、より良いサポートが可能です。</>
+                    ) : language === 'ko' ? (
+                      <>사례 검토를 위해 자세한 정보를 제공해주세요：<br/>• 무엇이 언제 일어났는지<br/>• 집주인/세입자가 무엇을 했는지<br/>• 무엇을 달성하고 싶은지<br/>• 관련 날짜 또는 금액<br/><br/>더 많은 세부 사항을 제공할수록 더 잘 도와드릴 수 있습니다。</>
+                    ) : language === 'ru' ? (
+                      <>Предоставьте подробную информацию для рассмотрения вашего дела:<br/>• Что произошло и когда<br/>• Что сделал арендодатель/арендатор<br/>• Чего вы хотите достичь<br/>• Любые соответствующие даты или суммы<br/><br/>Чем больше деталей вы предоставите, тем лучше мы сможем вам помочь.</>
+                    ) : (
+                      <>Provide detailed information to help us review your case:<br/>• What happened and when<br/>• What the landlord/tenant has done<br/>• What you want to achieve<br/>• Any relevant dates or amounts<br/><br/>The more detail you provide, the better we can assist you.</>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs" style={{ 
+                    color: formData.summary.length < 100 ? '#EF4444' : colors.textSecondary 
+                  }}>
+                    {formData.summary.length} / 2,000 
+                    {formData.summary.length < 100 && (
+                      <span className="font-semibold ml-1">
+                        ({language === 'th' ? `ต้องมีอย่างน้อย 100 ตัวอักษร` 
+                          : language === 'zh' ? `至少需要100个字符`
+                          : language === 'ja' ? `最低100文字必要`
+                          : language === 'ko' ? `최소 100자 필요`
+                          : language === 'ru' ? `Минимум 100 символов`
+                          : `Minimum 100 required`})
+                      </span>
+                    )}
+                  </span>
+                  {formData.summary.length >= 100 && (
+                    <span className="text-xs" style={{ color: '#10B981' }}>✓</span>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
