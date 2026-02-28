@@ -86,24 +86,9 @@ Deno.serve(async (req) => {
 
     console.log('✅ [FREE_RESOLVE] Entitlement marked as used');
 
-    // Step 4: Send admin notification
-    try {
-      const caseData = (await base44.entities.Case.filter({ id: caseId }))[0];
-      await base44.functions.invoke('notifyAdminNewCase', {
-        caseNumber: caseData.case_number,
-        tenantName: user.full_name || user.display_name,
-        tenantEmail: user.email,
-        landlordName: caseData.landlord_name,
-        propertyAddress: caseData.property_address,
-        disputeAmount: caseData.dispute_amount,
-        planTier: 'secure',
-        caseId: caseId,
-        paymentType: 'free_entitlement'
-      });
-      console.log('✅ [FREE_RESOLVE] Admin notification sent');
-    } catch (notifyError) {
-      console.error('⚠️ [FREE_RESOLVE] Admin notification failed (non-critical):', notifyError);
-    }
+    // Note: Admin notification is already sent during case creation (ResolveCase page)
+    // No duplicate notification needed here
+    console.log('✅ [FREE_RESOLVE] Skipping notification (already sent at case creation)');
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
