@@ -39,6 +39,7 @@ import { getFolderStrings } from "../components/evidence/folderStrings";
 import { CreateFolderModal, RenameFolderModal, DeleteFolderModal, MoveToFolderModal } from "../components/evidence/FolderModals";
 import EvidenceFileCard from "../components/evidence/EvidenceFileCard";
 import UploadBottomSheet from "../components/evidence/UploadBottomSheet";
+import StorageMeter from "../components/dashboard/StorageMeter";
 
 // Add icon references to the imported config
 const DOC_TYPE_CONFIG = {
@@ -116,6 +117,18 @@ function EvidenceVaultContent() {
     enabled: !!user?.email,
     staleTime: 30000,
   });
+
+  // Fetch UserStorage for StorageMeter
+  const { data: userStorageRecords = [] } = useQuery({
+    queryKey: ['userStorage', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      return base44.entities.UserStorage.filter({ user_email: user.email });
+    },
+    enabled: !!user?.email,
+    staleTime: 30000,
+  });
+  const userStorageInfo = userStorageRecords[0] || null;
 
   // ADDED: Optimistic update hook
   const optimistic = useOptimisticUpdate(['documents'], 'Document');
@@ -216,17 +229,30 @@ function EvidenceVaultContent() {
   });
 
   const deleteDocumentMutation = useMutation({
-    mutationFn: (id) => base44.entities.Document.delete(id),
+    mutationFn: async (id) => {
+      // Find the doc to get file_size before deleting
+      const doc = documents.find(d => d.id === id);
+      await base44.entities.Document.delete(id);
+      // Return file_size so onSuccess can update storage
+      return { deletedFileSize: doc?.file_size || 0 };
+    },
     onMutate: async (idToDelete) => {
       haptic.heavy();
       optimistic.optimisticDelete(idToDelete);
       return { idToDelete };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       setSelectedDocs([]); // Clear selection in case a selected item was deleted
       haptic.success();
       toast.success(strings.deleteSuccess);
+      // Update storage usage (negative bytes)
+      if (data?.deletedFileSize > 0) {
+        base44.functions.invoke('updateStorageUsage', { bytesAdded: -data.deletedFileSize }).catch(err =>
+          console.warn('[EV] Storage update after delete failed:', err?.message)
+        );
+        queryClient.invalidateQueries({ queryKey: ['userStorage'] });
+      }
     },
     onError: (error, variables, context) => {
       optimistic.revert(context.idToDelete);
@@ -1177,11 +1203,6 @@ function EvidenceVaultContent() {
 
                 {/* Storage Badges */}
                 <div className="flex flex-wrap gap-2">
-                  <Badge className="bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-100 border-gray-300 text-xs">
-                  {strings.storageUsed
-                  .replace('{used}', storageCheck.usedMB)
-                  .replace('{limit}', storageLimits.limitMB)}
-                  </Badge>
                   {userTier === 'free' && (
                     <Badge className={documents.length >= storageLimits.fileLimit ? 'bg-red-100 text-red-700 text-xs' : 'bg-slate-100 text-slate-700 text-xs'}>
                       {strings.filesUsed
@@ -1193,6 +1214,18 @@ function EvidenceVaultContent() {
               </div>
             }
           />
+
+          {/* Storage Meter */}
+          {userStorageInfo && (
+            <div className="mb-6">
+              <StorageMeter
+                storageInfo={userStorageInfo}
+                userTier={userTier}
+                colors={colors}
+                language={language}
+              />
+            </div>
+          )}
 
           {/* Trust Badge */}
           <div className="mb-6">
