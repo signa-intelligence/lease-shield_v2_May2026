@@ -26,6 +26,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 const STATUS_COLUMNS = [
+  { id: 'awaiting_payment', label: 'Awaiting Payment', labelTh: 'รอชำระเงิน', color: '#DC2626', icon: AlertCircle },
   { id: 'intake', label: 'Intake', labelTh: 'รับเรื่อง', color: '#64748b', icon: Clock },
   { id: 'pending_review', label: 'Pending Review', labelTh: 'รอตรวจสอบ', color: '#F59E0B', icon: AlertCircle },
   { id: 'under_review', label: 'Under Review', labelTh: 'กำลังตรวจสอบ', color: '#3B82F6', icon: MessageSquare },

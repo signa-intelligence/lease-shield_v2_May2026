@@ -35,6 +35,7 @@ import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
 
 const STATUS_CONFIG = {
+  awaiting_payment: { label: 'Awaiting Payment', color: 'bg-red-100 text-red-800', icon: AlertCircle },
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
   pending_review: { label: 'Pending Review', color: 'bg-amber-100 text-amber-800', icon: Clock },
   under_review: { label: 'Under Review', color: 'bg-blue-100 text-blue-800', icon: Scale },
@@ -626,6 +627,7 @@ function OpsConsoleContent() {
                   }}
                 >
                   <option value="all">{strings.allStatuses}</option>
+                  <option value="awaiting_payment">{STATUS_CONFIG.awaiting_payment.label}</option>
                   <option value="intake">{STATUS_CONFIG.intake.label}</option>
                   <option value="pending_review">{STATUS_CONFIG.pending_review.label}</option>
                   <option value="under_review">{STATUS_CONFIG.under_review.label}</option>
