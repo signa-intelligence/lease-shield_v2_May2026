@@ -506,7 +506,6 @@ function EvidenceVaultContent() {
       setShowUploadDialog(false);
       setUploadFiles([]);
       setVoiceFiles([]);
-      setVideoFiles([]);
       setUploadType('photo');
       setUploadLabel('');
       if (failedFiles.length > 0) {
