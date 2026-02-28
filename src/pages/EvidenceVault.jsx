@@ -1331,7 +1331,7 @@ function EvidenceVaultContent() {
                     onChange={handleFileSelect}
                     className="hidden"
                     id="bottomsheet-file-upload"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov,.avi"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.heic,.heif"
                     disabled={uploading}
                   />
                   <label htmlFor="bottomsheet-file-upload">
