@@ -1186,44 +1186,14 @@ function EvidenceVaultContent() {
             colors={colors}
             onBack={() => navigate(createPageUrl("Dashboard"))}
             actions={
-              <div className="flex flex-col sm:flex-row gap-3 items-center">
-                {/* New Folder button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    haptic.light();
-                    setShowCreateFolder(true);
-                  }}
-                  style={{
-                    padding: "10px 16px",
-                    fontSize: "0.875rem",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    borderRadius: "10px",
-                    border: `2px solid ${isDarkMode ? '#C7A338' : '#0C3B2E'}`,
-                    backgroundColor: colors.cardBg,
-                    color: isDarkMode ? '#C7A338' : '#0C3B2E',
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    transition: "all 0.2s"
-                  }}
-                >
-                  <FolderPlus className="w-4 h-4" />
-                  {folderStr.newFolder}
-                </button>
-
-                {/* Storage Badges */}
-                <div className="flex flex-wrap gap-2">
-                  {userTier === 'free' && (
-                    <Badge className={documents.length >= storageLimits.fileLimit ? 'bg-red-100 text-red-700 text-xs' : 'bg-slate-100 text-slate-700 text-xs'}>
-                      {strings.filesUsed
-                        .replace('{count}', documents.length)
-                        .replace('{limit}', storageLimits.fileLimit)}
-                    </Badge>
-                  )}
-                </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                {userTier === 'free' && (
+                  <Badge className={documents.length >= storageLimits.fileLimit ? 'bg-red-100 text-red-700 text-xs' : 'bg-slate-100 text-slate-700 text-xs'}>
+                    {strings.filesUsed
+                      .replace('{count}', documents.length)
+                      .replace('{limit}', storageLimits.fileLimit)}
+                  </Badge>
+                )}
               </div>
             }
           />
