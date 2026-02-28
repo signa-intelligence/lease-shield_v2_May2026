@@ -109,7 +109,7 @@ const folderStrings = {
     createFirstFolder: "증거를 정리할 폴더를 만드세요", emptyFolder: "이 폴더는 비어 있습니다",
     unsorted: "미분류 파일",
     saveToFolder: "폴더에 저장", createNewFolder: "+ 새 폴더 만들기",
-    newFolderName: "새 폴더 이름", savingTo: "저장 위치:", rootLevel: "루트 (모든 파일)",
+    newFolderName: "새 폴더 이름", savingTo: "저장 위치:", rootLevel: "업로드",
   },
   ru: {
     newFolder: "Новая папка", createFolder: "Создать папку", renameFolder: "Переименовать папку",
