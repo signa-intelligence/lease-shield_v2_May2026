@@ -73,20 +73,16 @@ function OpsConsoleContent() {
     queryKey: ['allCases'],
     queryFn: async () => {
       const result = await base44.entities.Case.list('-created_date', 100);
-      // PAYMENT GATE: Only show paid or free_entitlement cases in Ops
-      const paidCases = result.filter(c => 
-        !c.is_deleted && 
-        (c.paid_at || c.stripe_payment_intent_id === 'free_entitlement')
-      );
+      // Show all non-deleted cases in Ops (admins need to see everything including awaiting_payment)
+      const visibleCases = result.filter(c => !c.is_deleted);
       
       console.log('🔍 [OPS_CONSOLE] Cases query results:', {
         total_fetched: result.length,
-        paid_cases: paidCases.length,
-        first_case_id: paidCases[0]?.id,
-        excluded_unpaid: result.length - paidCases.length
+        visible_cases: visibleCases.length,
+        statuses: visibleCases.reduce((acc, c) => { acc[c.status] = (acc[c.status] || 0) + 1; return acc; }, {})
       });
       
-      return paidCases;
+      return visibleCases;
     },
     enabled: hasOpsAccess,
   });
