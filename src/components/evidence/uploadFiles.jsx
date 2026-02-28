@@ -46,12 +46,10 @@ export async function uploadFilesSequentially(allFilesToUpload, { language = 'en
         const status = uploadErr?.response?.status;
         const isNetworkError = !status && (uploadErr?.message === 'Network Error' || uploadErr?.code === 'ERR_NETWORK');
         const msg = uploadErr?.response?.data?.message || uploadErr?.response?.data?.error || uploadErr?.message || String(uploadErr);
-        lastErr = isNetworkError
-          ? (language === 'th' ? `ไฟล์อาจใหญ่เกินไป (${sizeMB} MB)` : `File may be too large (${sizeMB} MB)`)
-          : `${status || 'ERR'}: ${msg}`;
-        console.error(`[EV] ❌ (attempt ${attempt}) ${file.name}: ${lastErr}`, { type: file.type, size: file.size, isNetworkError });
+        lastErr = `${status || 'Network Error'}: ${msg}`;
+        console.error(`[EV] ❌ (attempt ${attempt}) ${file.name}: ${lastErr}`, { type: file.type, size: file.size, isNetworkError, status });
         const shouldRetry = !status || status >= 500 || isNetworkError;
-        if (attempt < 3 && shouldRetry) { await new Promise(r => setTimeout(r, 2000 * attempt)); continue; }
+        if (attempt < 3 && shouldRetry) { await new Promise(r => setTimeout(r, 3000 * attempt)); continue; }
       }
     }
     if (!uploaded) failedFiles.push(`${file.name} (${lastErr})`);
