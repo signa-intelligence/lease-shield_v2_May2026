@@ -1,5 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+
+async function sendViaResend({ to, subject, html, fromName = 'LeaseShield' }) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: `${fromName} <notifications@leaseshield.asia>`,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html
+    })
+  });
+
+  const result = await res.json();
+  if (!res.ok) {
+    throw new Error(`Resend error: ${result.message || JSON.stringify(result)}`);
+  }
+  return result;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -28,7 +52,7 @@ Deno.serve(async (req) => {
       ? `ยื่นคดีสำเร็จ - ${caseNumber}`
       : `Case Submitted - ${caseNumber}`;
 
-    const body = lang === 'th'
+    const html = lang === 'th'
       ? `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); padding: 30px; border-radius: 16px; text-align: center; margin-bottom: 24px;">
@@ -158,15 +182,15 @@ Deno.serve(async (req) => {
   </p>
 </div>`;
 
-    await base44.integrations.Core.SendEmail({
+    const result = await sendViaResend({
       to: userEmail,
-      subject: subject,
-      body: body,
-      from_name: 'LeaseShield'
+      subject,
+      html,
+      fromName: 'LeaseShield'
     });
 
-    console.log(`[sendCaseConfirmationEmail] ✅ Confirmation email sent to ${userEmail} for case ${caseNumber}`);
-    return Response.json({ success: true });
+    console.log(`[sendCaseConfirmationEmail] ✅ Confirmation email sent via Resend to ${userEmail} for case ${caseNumber}, id: ${result.id}`);
+    return Response.json({ success: true, emailId: result.id });
 
   } catch (error) {
     console.error('[sendCaseConfirmationEmail] Error:', error.message);

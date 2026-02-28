@@ -1,19 +1,43 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+
+async function sendViaResend({ to, subject, html, fromName = 'LeaseShield Ops' }) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: `${fromName} <notifications@leaseshield.asia>`,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html
+    })
+  });
+
+  const result = await res.json();
+  if (!res.ok) {
+    throw new Error(`Resend error: ${result.message || JSON.stringify(result)}`);
+  }
+  return result;
+}
+
 /**
  * NOTIFICATION WORKFLOW: Send admin notification when new Resolve case is created
  * Called automatically after successful case creation with status='intake'
  * 
- * Sends:
- * 1. Email to all super_admin/admin users (via Base44 SendEmail - only works for registered app users)
- * 2. LINE message to super_admin users who have line_messaging_token set
+ * Sends via Resend API (bypasses Base44 unsubscribe blocklist):
+ * 1. Email to all super_admin/admin users
+ * 2. Confirmation email to tenant
+ * 3. LINE message to super_admin users who have line_messaging_token set
  */
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Authenticate request
     const user = await base44.auth.me();
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -22,7 +46,7 @@ Deno.serve(async (req) => {
     const { caseNumber, tenantName, tenantEmail, landlordName, propertyAddress, disputeAmount, planTier, caseId, paymentType } = await req.json();
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('[ADMIN_NOTIFY] 🚨 New case intake notification');
+    console.log('[ADMIN_NOTIFY] 🚨 New case intake notification (via Resend)');
     console.log('[ADMIN_NOTIFY] Case:', caseNumber);
     console.log('[ADMIN_NOTIFY] Tenant:', tenantEmail);
     console.log('[ADMIN_NOTIFY] Amount: ฿' + (disputeAmount || 'N/A'));
@@ -31,44 +55,51 @@ Deno.serve(async (req) => {
     const notified = [];
     const errors = [];
 
-    // Build email content
-    const subject = `🚨 New Resolve Case – ${caseNumber} from ${tenantName || tenantEmail}`;
+    // Build admin email HTML
+    const adminSubject = `🚨 New Resolve Case – ${caseNumber} from ${tenantName || tenantEmail}`;
     
-    const body = `
-🚨 NEW RESOLVE CASE SUBMITTED
+    const adminHtml = `
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: #FEF2F2; border: 2px solid #EF4444; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 20px;">
+    <div style="font-size: 36px;">🚨</div>
+    <h1 style="color: #DC2626; margin: 8px 0 4px 0; font-size: 20px;">New Resolve Case Submitted</h1>
+    <p style="color: #7F1D1D; margin: 0; font-size: 14px;">Requires intake review</p>
+  </div>
 
-📋 Case Details:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Case Number: ${caseNumber}
-• Status: INTAKE (awaiting first review)
-• Payment: ${paymentType === 'free_entitlement' ? '🎁 FREE ENTITLEMENT' : '💳 Paid'}
-• Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' })}
+  <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+    <h3 style="color: #0F172A; margin: 0 0 12px 0; font-size: 16px;">📋 Case Details</h3>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Case Number: <strong>${caseNumber}</strong></p>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Status: <strong>INTAKE</strong> (awaiting first review)</p>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Payment: <strong>${paymentType === 'free_entitlement' ? '🎁 FREE ENTITLEMENT' : '💳 Paid'}</strong></p>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Submitted: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' })}</p>
+  </div>
 
-👤 Tenant Information:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Name: ${tenantName || 'N/A'}
-• Email: ${tenantEmail}
-• Plan: ${planTier?.toUpperCase() || 'FREE/PUBLIC'}
+  <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+    <h3 style="color: #0F172A; margin: 0 0 12px 0; font-size: 16px;">👤 Tenant Information</h3>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Name: <strong>${tenantName || 'N/A'}</strong></p>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Email: <strong>${tenantEmail}</strong></p>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Plan: <strong>${planTier?.toUpperCase() || 'FREE/PUBLIC'}</strong></p>
+  </div>
 
-🏠 Property & Landlord:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Address: ${propertyAddress || 'Not provided'}
-• Landlord: ${landlordName || 'Not provided'}
+  <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+    <h3 style="color: #0F172A; margin: 0 0 12px 0; font-size: 16px;">🏠 Property & Landlord</h3>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Address: <strong>${propertyAddress || 'Not provided'}</strong></p>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Landlord: <strong>${landlordName || 'Not provided'}</strong></p>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Dispute Amount: <strong>฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}</strong></p>
+  </div>
 
-💰 Dispute Amount: ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}
+  <div style="background: #FFF7ED; border: 1px solid #FDBA74; border-radius: 12px; padding: 16px;">
+    <h3 style="color: #9A3412; margin: 0 0 8px 0; font-size: 16px;">⚡ Next Steps</h3>
+    <ol style="color: #9A3412; font-size: 14px; padding-left: 20px; margin: 0;">
+      <li>Open Operations Console</li>
+      <li>Review intake case</li>
+      <li>Update status: intake → pending_review</li>
+      <li>Assign to team member</li>
+    </ol>
+  </div>
+</div>`;
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔗 View in Ops Console
-
-⚡ Next Steps:
-1. Open Operations Console
-2. Review intake case
-3. Update status: intake → pending_review
-4. Assign to team member
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    `.trim();
-
-    // Step 1: Get all admin/super_admin users from the app
+    // Step 1: Get all admin/super_admin users
     let adminUsers = [];
     try {
       const allUsers = await base44.asServiceRole.entities.User.list();
@@ -85,41 +116,56 @@ Deno.serve(async (req) => {
       console.error('[ADMIN_NOTIFY] ❌ Failed to list admin users:', listErr.message);
     }
 
-    // Step 2: Send email to each admin user (Base44 SendEmail only works for registered app users)
+    // Step 2: Send email to each admin user via Resend
     for (const admin of adminUsers) {
-      // Skip sending to the tenant themselves
       if (admin.email === tenantEmail) continue;
       
       try {
-        await base44.integrations.Core.SendEmail({
-          from_name: 'Lease Shield Ops',
+        const result = await sendViaResend({
           to: admin.email,
-          subject: subject,
-          body: body
+          subject: adminSubject,
+          html: adminHtml,
+          fromName: 'LeaseShield Ops'
         });
         notified.push('email:' + admin.email);
-        console.log('[ADMIN_NOTIFY] ✅ Email sent to:', admin.email);
+        console.log('[ADMIN_NOTIFY] ✅ Resend email sent to:', admin.email, 'id:', result.id);
       } catch (emailErr) {
-        console.error('[ADMIN_NOTIFY] ❌ Email to', admin.email, 'failed:', emailErr.message);
+        console.error('[ADMIN_NOTIFY] ❌ Resend email to', admin.email, 'failed:', emailErr.message);
         errors.push({ channel: 'email', target: admin.email, error: emailErr.message });
       }
     }
 
-    // Also try sending to the submitting user as confirmation (the tenant)
+    // Step 3: Send confirmation email to tenant via Resend
     try {
-      await base44.integrations.Core.SendEmail({
-        from_name: 'Lease Shield',
+      const tenantHtml = `
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); padding: 24px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
+    <div style="font-size: 36px;">✅</div>
+    <h1 style="color: #059669; margin: 8px 0; font-size: 20px;">Case ${caseNumber} Submitted</h1>
+  </div>
+  <p style="color: #334155; font-size: 15px;">Your Resolve case has been submitted and is now under review.</p>
+  <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; margin: 16px 0;">
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Dispute Amount: <strong>฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}</strong></p>
+    <p style="margin: 4px 0; color: #334155; font-size: 14px;">Payment: <strong>${paymentType === 'free_entitlement' ? 'Free Entitlement (Secure)' : 'Paid'}</strong></p>
+  </div>
+  <p style="color: #334155; font-size: 15px;">Our team will review your case within 2-3 business days. We'll contact you via LINE and email.</p>
+  <p style="color: #334155; font-size: 15px;">— LeaseShield Team</p>
+</div>`;
+
+      const result = await sendViaResend({
         to: tenantEmail,
         subject: `✅ Case ${caseNumber} Submitted Successfully`,
-        body: `Your Resolve case ${caseNumber} has been submitted and is now under review.\n\nDispute Amount: ฿${disputeAmount ? Number(disputeAmount).toLocaleString() : 'N/A'}\nPayment: ${paymentType === 'free_entitlement' ? 'Free Entitlement (Annual Secure)' : 'Paid'}\n\nOur team will review your case within 24 hours.\n\n— Lease Shield Team`
+        html: tenantHtml,
+        fromName: 'LeaseShield'
       });
       notified.push('confirmation:' + tenantEmail);
-      console.log('[ADMIN_NOTIFY] ✅ Confirmation email sent to tenant:', tenantEmail);
+      console.log('[ADMIN_NOTIFY] ✅ Resend confirmation sent to tenant:', tenantEmail, 'id:', result.id);
     } catch (confirmErr) {
-      console.error('[ADMIN_NOTIFY] ⚠️ Confirmation email to tenant failed (non-critical):', confirmErr.message);
+      console.error('[ADMIN_NOTIFY] ⚠️ Resend confirmation to tenant failed:', confirmErr.message);
+      errors.push({ channel: 'email', target: tenantEmail, error: confirmErr.message });
     }
 
-    // Step 3: Send LINE message to admin users who have line_messaging_token
+    // Step 4: Send LINE message to admin users who have line_messaging_token
     const lineChannelToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
     
     if (lineChannelToken) {
@@ -129,28 +175,22 @@ Deno.serve(async (req) => {
         const lineUserId = admin.line_messaging_token;
         if (!lineUserId) continue;
         
-        // Validate LINE user ID format (should start with 'U' and be 33 chars)
         if (!lineUserId.startsWith('U') || lineUserId.length !== 33) {
           console.log('[ADMIN_NOTIFY] ⚠️ Skipping invalid LINE ID for', admin.email, ':', lineUserId);
           continue;
         }
 
         try {
-          const linePayload = {
-            to: lineUserId,
-            messages: [{
-              type: 'text',
-              text: lineMessage
-            }]
-          };
-
           const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${lineChannelToken}`
             },
-            body: JSON.stringify(linePayload)
+            body: JSON.stringify({
+              to: lineUserId,
+              messages: [{ type: 'text', text: lineMessage }]
+            })
           });
 
           if (lineResponse.ok) {
