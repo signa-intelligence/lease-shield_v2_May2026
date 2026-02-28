@@ -619,17 +619,28 @@ function EvidenceVaultContent() {
       // Upload annotated version
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-      // Update document with new URL using mutation for optimistic update
+      const oldSize = annotatingDocument.file_size || 0;
+      const newSize = file.size || 0;
+
+      // Update document with new URL and size
       await updateDocumentMutation.mutateAsync({
         id: annotatingDocument.id,
         data: {
-          file_url: file_url
+          file_url: file_url,
+          file_size: newSize
         }
       });
 
-      // Query invalidation and haptic.success are handled by updateDocumentMutation's onSuccess
-      setAnnotatingDocument(null);
+      // Update storage delta (new size - old size)
+      const sizeDelta = newSize - oldSize;
+      if (sizeDelta !== 0) {
+        base44.functions.invoke('updateStorageUsage', { bytesAdded: sizeDelta }).catch(err =>
+          console.warn('[EV] Storage update after annotation failed:', err?.message)
+        );
+        queryClient.invalidateQueries({ queryKey: ['userStorage'] });
+      }
 
+      setAnnotatingDocument(null);
       toast.success(strings.annotationSaved);
     } catch (error) {
       console.error('Failed to save annotation:', error);
