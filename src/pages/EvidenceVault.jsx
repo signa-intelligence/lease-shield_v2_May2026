@@ -214,17 +214,21 @@ function EvidenceVaultContent() {
   });
 
   const handleFileSelect = (e) => {
-    // If selecting video files and not Secure tier, show upsell
-    if (uploadType === 'video' && !isSecureTier) {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    
+    // Check if any video files are selected and user is not on Protect/Secure tier
+    const hasVideoFiles = files.some(f => f.type.startsWith('video/'));
+    if (hasVideoFiles && !isSecureTier) {
       setUpgradeModalType('video');
       setShowUpgradeModal(true);
       e.target.value = null;
       return;
     }
 
-    const files = Array.from(e.target.files);
+    console.log('[EV] Files selected:', files.map(f => `${f.name} (${f.type}, ${(f.size/1024).toFixed(1)}KB)`));
     setUploadFiles(prev => [...prev, ...files]);
-    e.target.value = null; // Clear input so same file can be selected again
+    e.target.value = null;
   };
 
   const [showVideoActionSheet, setShowVideoActionSheet] = useState(false);
