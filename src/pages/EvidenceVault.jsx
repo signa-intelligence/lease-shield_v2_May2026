@@ -388,65 +388,60 @@ function EvidenceVaultContent() {
     setUploadProgressPercent(0);
 
     try {
-      // Compress images (0-40%)
+      console.log('[EV] Starting upload:', uploadFiles.length, 'files');
       const { files: compressedFiles, stats } = await compressMultipleImages(uploadFiles, (progress) => {
-        setUploadProgressPercent(Math.round(progress * 40)); // 0-40% for compression
+        setUploadProgressPercent(Math.round(progress * 40));
       });
+      if (stats.compressedCount > 0) setCompressionStats(stats);
 
-      if (stats.compressedCount > 0) {
-        setCompressionStats(stats);
-      }
-
-      // Upload all files (40-70%)
       setUploadStage('uploadingFiles');
       setUploadProgressPercent(40);
 
       const allFilesToUpload = [...compressedFiles, ...voiceFiles, ...videoFiles];
-      const uploadPromises = allFilesToUpload.map(file =>
-        base44.integrations.Core.UploadFile({ file })
-      );
+      console.log('[EV] Uploading', allFilesToUpload.length, 'files to storage');
 
-      const results = await Promise.all(uploadPromises);
-      setUploadProgressPercent(70);
+      // Upload sequentially to avoid overwhelming the API
+      const results = [];
+      for (let i = 0; i < allFilesToUpload.length; i++) {
+        const file = allFilesToUpload[i];
+        console.log('[EV] Uploading:', file.name, file.type, file.size);
+        const result = await base44.integrations.Core.UploadFile({ file });
+        console.log('[EV] Upload result:', result?.file_url ? 'got URL' : 'NO URL', result);
+        results.push(result);
+        setUploadProgressPercent(40 + Math.round(((i + 1) / allFilesToUpload.length) * 30));
+      }
 
-      // Save documents (70-100%)
       setUploadStage('savingDocuments');
-      const createPromises = results.map((result, idx) => {
+      for (let idx = 0; idx < results.length; idx++) {
+        const result = results[idx];
         let docType = uploadType;
         if (idx >= compressedFiles.length && idx < compressedFiles.length + voiceFiles.length) {
-          docType = 'other'; // Voice notes saved as 'other'
+          docType = 'other';
         } else if (idx >= compressedFiles.length + voiceFiles.length) {
           docType = 'video';
         }
+        const typeLabel = getDocTypeLabel(docType, language);
 
-        const typeLabel = language === 'zh' ? DOC_TYPE_CONFIG[docType]?.label_zh :
-                          language === 'ja' ? DOC_TYPE_CONFIG[docType]?.label_ja :
-                          language === 'ko' ? DOC_TYPE_CONFIG[docType]?.label_ko :
-                          language === 'th' ? DOC_TYPE_CONFIG[docType]?.label_th :
-                          language === 'ru' ? DOC_TYPE_CONFIG[docType]?.label_ru :
-                          DOC_TYPE_CONFIG[docType]?.label_en;
-
-        return createDocumentMutation.mutateAsync({
+        console.log('[EV] Creating doc:', docType, result.file_url);
+        await createDocumentMutation.mutateAsync({
           type: docType,
           file_url: result.file_url,
           label: uploadLabel || strings.defaultDocLabel.replace('{docType}', typeLabel).replace('{date}', new Date().toLocaleDateString()),
         });
-      });
+        setUploadProgressPercent(70 + Math.round(((idx + 1) / results.length) * 30));
+      }
 
-      await Promise.all(createPromises);
-      setUploadProgressPercent(100);
-
-      // Query invalidation and haptic.success are handled by createDocumentMutation's onSuccess
+      console.log('[EV] All uploads complete');
       setShowUploadDialog(false);
       setUploadFiles([]);
       setVoiceFiles([]);
       setVideoFiles([]);
-      setUploadType('photo'); // Reset to default
-      setUploadLabel(''); // Clear custom label
+      setUploadType('photo');
+      setUploadLabel('');
       toast.success(strings.uploadSuccess);
     } catch (err) {
-      console.error('Upload failed:', err);
-      setError(strings.uploadFailed);
+      console.error('[EV] UPLOAD FAILED:', err?.message, err?.response?.data, err);
+      setError(err?.message || strings.uploadFailed);
       haptic.error();
       toast.error(strings.uploadFailed);
     } finally {
