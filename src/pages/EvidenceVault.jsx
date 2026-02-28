@@ -233,15 +233,24 @@ function EvidenceVaultContent() {
 
   const [showVideoActionSheet, setShowVideoActionSheet] = useState(false);
 
+  const getExistingVideoCount = () => {
+    return documents.filter(d => d.type === 'video').length;
+  };
+
   const handleVideoClick = () => {
-    if (!isSecureTier) {
+    if (!isVideoTier) {
       setUpgradeModalType('video');
       setShowUpgradeModal(true);
       return;
     }
 
-    if (videoFiles.length >= 3) {
-      toast.error(strings.maxVideoReached);
+    const totalVideos = getExistingVideoCount() + videoFiles.length;
+    if (totalVideos >= MAX_VIDEO_COUNT) {
+      toast.error(
+        language === 'th'
+          ? `ถึงขีดจำกัดวิดีโอแล้ว (${MAX_VIDEO_COUNT} วิดีโอสำหรับแพลน Protect)`
+          : `Video limit reached (${MAX_VIDEO_COUNT} videos on Protect plan)`
+      );
       return;
     }
 
