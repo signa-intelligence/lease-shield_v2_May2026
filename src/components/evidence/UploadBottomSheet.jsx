@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -132,6 +133,25 @@ export default function UploadBottomSheet({
       return;
     }
 
+    // --- STORAGE QUOTA CHECK ---
+    const totalBytes = [...uploadFiles, ...voiceFiles].reduce((sum, f) => sum + (f.size || 0), 0);
+    if (totalBytes > 0) {
+      try {
+        const quotaRes = await base44.functions.invoke('checkStorageQuota', { fileSize: totalBytes });
+        const quota = quotaRes.data;
+        if (quota && !quota.allowed && !quota.failOpen) {
+          const msg = language === 'th'
+            ? `พื้นที่จัดเก็บเต็ม คุณใช้ ${quota.usedMB || 0} MB จาก ${quota.limitMB || 0} MB\n\nอัปเกรดเพื่อเพิ่มพื้นที่`
+            : `Storage limit reached. You're using ${quota.usedMB || 0} MB of ${quota.limitMB || 0} MB.\n\nUpgrade for more storage.`;
+          setError(msg);
+          return;
+        }
+      } catch (quotaErr) {
+        // Fail open — don't block upload if quota check fails
+        console.warn('[EV] Quota check failed, continuing upload:', quotaErr?.message);
+      }
+    }
+
     haptic.medium();
     setUploading(true);
     setError(null);
@@ -161,9 +181,11 @@ export default function UploadBottomSheet({
       }
 
       setUploadStage('savingDocuments');
+      let totalUploadedBytes = 0;
       for (let idx = 0; idx < results.length; idx++) {
         const { result, fileIndex } = results[idx];
         const originalFile = allFilesToUpload[fileIndex];
+        const fileSize = originalFile?.size || 0;
         let docType = uploadType;
         if (fileIndex >= compressedFiles.length) {
           docType = 'other';
@@ -178,11 +200,23 @@ export default function UploadBottomSheet({
           type: docType,
           file_url: result.file_url,
           label: uploadLabel || strings.defaultDocLabel.replace('{docType}', typeLabel).replace('{date}', new Date().toLocaleDateString()),
+          file_size: fileSize,
         };
         if (uploadFolderId) docData.folder_id = uploadFolderId;
         await createDocumentMutation.mutateAsync(docData);
+        totalUploadedBytes += fileSize;
         setUploadProgressPercent(70 + Math.round(((idx + 1) / results.length) * 30));
       }
+
+      // --- UPDATE STORAGE USAGE after all docs saved ---
+      if (totalUploadedBytes > 0) {
+        base44.functions.invoke('updateStorageUsage', { bytesAdded: totalUploadedBytes }).catch(err =>
+          console.warn('[EV] Storage update failed (non-blocking):', err?.message)
+        );
+      }
+
+      // Invalidate storage query so StorageMeter refreshes
+      queryClient.invalidateQueries({ queryKey: ['userStorage'] });
 
       resetState();
       onClose();
