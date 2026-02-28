@@ -125,7 +125,7 @@ const folderStrings = {
     createFirstFolder: "Создайте папки для организации ваших доказательств", emptyFolder: "Эта папка пуста",
     unsorted: "Несортированные файлы",
     saveToFolder: "Сохранить в папку", createNewFolder: "+ Создать новую папку",
-    newFolderName: "Имя новой папки", savingTo: "Сохранить в:", rootLevel: "Корень (все файлы)",
+    newFolderName: "Имя новой папки", savingTo: "Сохранить в:", rootLevel: "Загрузки",
   }
 };
 
