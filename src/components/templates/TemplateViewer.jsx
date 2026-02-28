@@ -18,7 +18,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const [translatedPreview, setTranslatedPreview] = useState(null);
   const [translatingPreview, setTranslatingPreview] = useState(false);
   const [translatedTitle, setTranslatedTitle] = useState(null);
-  // NEW: Track whether user has unlocked the full document
   const [unlocked, setUnlocked] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
 
@@ -28,11 +27,9 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     } else {
       setTemplateReady(false);
     }
-    // Reset unlocked state when template changes
     setUnlocked(false);
   }, [template]);
 
-  // Translate preview content and title for non-EN/TH languages
   React.useEffect(() => {
     if (!template || !language || !isOpen) return;
     
@@ -118,7 +115,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const documentLangForExport = displayLang === 'th' ? 'th' : 'en';
   const documentContent = documentLangForExport === 'th' ? docTh : docEn;
   
-  // Bilingual content for DOCX/Copy (always both languages)
   const bilingualContent = (docTh && docEn) 
     ? `${docTh}\n\n────────────────────────────────────────\n\n${docEn}`
     : (docTh || docEn);
@@ -130,7 +126,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   const hasPreview = previewContent && previewContent.trim().length >= 50;
   const hasDocument = documentContent && documentContent.trim().length >= 300;
 
-  // Subscription status check
   const hasActiveSubscription = ['lite', 'protect', 'secure'].includes(userTierForCredits) 
     && user?.subscription_status === 'active';
   const isExplorer = userTierForCredits === 'explorer' || userTierForCredits === 'free';
@@ -151,7 +146,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     ? (previewTh.trim().length < 50 || docTh.trim().length < 300)
     : (previewEn.trim().length < 50 || docEn.trim().length < 300);
 
-  // Localized strings
   const str = {
     unlockFull: language === 'th' ? 'ปลดล็อกเอกสารฉบับเต็ม' : language === 'zh' ? '解锁完整文档' : language === 'ja' ? '完全な文書をロック解除' : language === 'ko' ? '전체 문서 잠금 해제' : language === 'ru' ? 'Разблокировать полный документ' : 'Unlock Full Document',
     oneCreditCost: language === 'th' ? '(ใช้ 1 เครดิต)' : language === 'zh' ? '(1积分)' : language === 'ja' ? '(1クレジット)' : language === 'ko' ? '(1크레딧)' : language === 'ru' ? '(1 кредит)' : '(1 credit)',
@@ -171,7 +165,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     freeActions: language === 'th' ? '(ฟรี – ปลดล็อกแล้ว)' : language === 'zh' ? '(免费 – 已解锁)' : language === 'ja' ? '(無料 – ロック解除済み)' : language === 'ko' ? '(무료 – 잠금 해제됨)' : language === 'ru' ? '(бесплатно – разблокировано)' : '(free – unlocked)',
   };
 
-  // Handle unlocking (deduct credit + show full document)
   const handleUnlock = async () => {
     if (!template || !template.id) {
       toast?.error?.(str.contentUnavailable);
@@ -183,7 +176,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       return;
     }
 
-    // Block if no active subscription
     if (subscriptionBlocked) {
       toast?.error?.(subStr.blockedDesc);
       return;
@@ -194,7 +186,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       return;
     }
 
-    // Check template download limit
     const userTier = user?.plan_tier || 'free';
     const limitCheckResponse = await base44.functions.invoke('checkTemplateDownloadLimit', {
       userEmail: user.email,
@@ -209,7 +200,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
     setUnlocking(true);
     try {
-      // Deduct credit (skip for unlimited tiers)
       if (!hasUnlimitedCredits) {
         await base44.auth.updateMe({ 
           letter_credits: Math.max(0, letterCredits - 1) 
@@ -225,7 +215,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         });
       }
 
-      // Track
       await base44.functions.invoke('trackTemplateDownload', {
         userEmail: user.email,
         templateKey: template.template_key,
@@ -247,7 +236,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     }
   };
 
-  // Copy (no credit deduction – already unlocked)
   const handleCopy = async () => {
     setCopying(true);
     try {
@@ -274,20 +262,17 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     }
   };
 
-  // Download DOCX (no credit deduction – already unlocked)
   const handleDownloadDOCX = async () => {
     setDownloading(true);
     try {
       const children = [];
 
-      // Title
       children.push(new Paragraph({
         children: [new TextRun({ text: title, bold: true, size: 28, color: '0C3B2E', font: 'Arial' })],
         heading: HeadingLevel.HEADING_1,
         spacing: { after: 400 }
       }));
 
-      // Helper to add content lines as paragraphs
       const addContentLines = (text) => {
         const lines = text.split('\n');
         for (const line of lines) {
@@ -311,7 +296,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         }
       };
 
-      // Thai section
       if (docTh && docTh.trim().length > 0) {
         children.push(new Paragraph({
           children: [new TextRun({ text: 'ภาษาไทย', bold: true, size: 24, color: '0C3B2E', font: 'Arial' })],
@@ -321,7 +305,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         addContentLines(docTh);
       }
 
-      // Separator
       if (docTh && docTh.trim().length > 0 && docEn && docEn.trim().length > 0) {
         children.push(new Paragraph({ text: '', spacing: { before: 300, after: 100 } }));
         children.push(new Paragraph({
@@ -331,7 +314,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         children.push(new Paragraph({ text: '', spacing: { before: 100, after: 300 } }));
       }
 
-      // English section
       if (docEn && docEn.trim().length > 0) {
         children.push(new Paragraph({
           children: [new TextRun({ text: 'English', bold: true, size: 24, color: '0C3B2E', font: 'Arial' })],
@@ -388,8 +370,8 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
     }
   };
 
-  // Determine what to show in the body
-  const showFullDocument = unlocked || hasUnlimitedCredits;
+  // ALL tiers see preview first — Secure unlocks for free, others pay 1 credit
+  const showFullDocument = unlocked;
 
   return (
     <>
@@ -449,12 +431,10 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
             )}
 
             {showFullDocument ? (
-              /* FULL DOCUMENT VIEW (after unlock) */
               <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
                 {documentContent}
               </pre>
             ) : (
-              /* PREVIEW VIEW (before unlock) */
               <>
                 {translatingPreview ? (
                   <div className="flex items-center justify-center py-12">
@@ -465,7 +445,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                     <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
                       {previewContent}
                     </pre>
-                    {/* Fade overlay to indicate truncated content */}
                     <div 
                       className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
                       style={{ 
@@ -489,7 +468,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
           {/* Footer */}
           <div className="p-4 border-t space-y-3" style={{ borderColor: colors.borderColor }}>
-            {/* Credits info */}
             <div className="flex items-center justify-between text-sm">
               <span style={{ color: colors.textSecondary }}>{str.yourCredits}</span>
               <span className="font-bold" style={{ color: (hasUnlimitedCredits || letterCredits > 0) ? '#10B981' : '#EF4444' }}>
@@ -505,7 +483,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
               </div>
             )}
 
-            {/* Subscription blocked message */}
             {subscriptionBlocked && !showFullDocument && (
               <div className="mb-3 p-4 rounded-xl text-center" style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA' }}>
                 <AlertTriangle className="w-8 h-8 mx-auto mb-2" style={{ color: '#DC2626' }} />
@@ -527,7 +504,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
             )}
 
             {showFullDocument ? (
-              /* UNLOCKED: Show Copy + Download (free, no additional credit) */
               <div className="space-y-2">
                 <p className="text-xs text-center font-medium" style={{ color: '#10B981' }}>
                   {str.freeActions}
@@ -567,7 +543,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                 </div>
               </div>
             ) : (
-              /* LOCKED: Show Unlock button */
               <div className="space-y-2">
                 <p className="text-xs text-center" style={{ color: colors.textSecondary }}>
                   {str.unlockToSee}
@@ -577,7 +552,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
                   disabled={unlocking || !canUseCredits || !documentContent || documentContent.trim().length < 100 || subscriptionBlocked}
                   className="w-full"
                   style={{ 
-                    backgroundColor: (!documentContent || documentContent.trim().length < 100) ? '#9CA3AF' : '#0C3B2E',
+                    backgroundColor: (!documentContent || documentContent.trim().length < 100 || subscriptionBlocked) ? '#9CA3AF' : '#0C3B2E',
                     color: '#FFFFFF',
                     minHeight: '52px',
                     fontSize: '15px',
@@ -601,7 +576,6 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
         </div>
       </div>
 
-      {/* No Credits Modal */}
       {showCreditModal && (
         <div 
           className="fixed inset-0 bg-black/70 flex items-center justify-center p-4"
