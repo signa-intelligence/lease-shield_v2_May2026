@@ -400,13 +400,25 @@ function EvidenceVaultContent() {
       const allFilesToUpload = [...compressedFiles, ...voiceFiles, ...videoFiles];
       console.log('[EV] Uploading', allFilesToUpload.length, 'files to storage');
 
-      // Upload sequentially to avoid overwhelming the API
+      // Upload sequentially with delay to avoid overwhelming the API
       const results = [];
       for (let i = 0; i < allFilesToUpload.length; i++) {
         const file = allFilesToUpload[i];
-        console.log('[EV] Uploading:', file.name, file.type, file.size);
+        console.log(`[EV] Uploading file ${i + 1}/${allFilesToUpload.length}:`, file.name, file.type, `${(file.size / 1024).toFixed(1)}KB`);
+        
+        // Add delay between uploads to prevent network contention
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+        
         const result = await base44.integrations.Core.UploadFile({ file });
-        console.log('[EV] Upload result:', result?.file_url ? 'got URL' : 'NO URL', result);
+        console.log(`[EV] Upload ${i + 1} result:`, result?.file_url ? 'SUCCESS' : 'NO URL', result);
+        
+        if (!result?.file_url) {
+          console.error(`[EV] Upload returned no URL for ${file.name}`);
+          throw new Error(`Upload failed for ${file.name} - no URL returned`);
+        }
+        
         results.push(result);
         setUploadProgressPercent(40 + Math.round(((i + 1) / allFilesToUpload.length) * 30));
       }
