@@ -41,6 +41,7 @@ import { getDeviceContext } from "../components/shared/DeviceContext";
 import { uploadFileWithSession, uploadMultipleFiles, getUploadTimeout } from "../components/shared/MobileUploader";
 import RetryAnalysis from "../components/shared/RetryAnalysis";
 import ScanReviewConfirmation from "../components/scan/ScanReviewConfirmation";
+import ScanErrorDisplay from "../components/scan/ScanErrorDisplay";
 import MissingCriticalClauses from "../components/leases/MissingCriticalClauses";
 
 function UploadScanPageContent() {
@@ -58,42 +59,23 @@ function UploadScanPageContent() {
   const [leaseDetails, setLeaseDetails] = useState(null);
   const [pendingLeaseId, setPendingLeaseId] = useState(null);
   const [analysisStage, setAnalysisStage] = useState('');
-  // New state variables for batch mode
   const [batchMode, setBatchMode] = useState(false);
-  const [batchResults, setBatchResults] = useState([]); // To store results of each file in batch
-
-  // New state for viewing lease details
+  const [batchResults, setBatchResults] = useState([]);
   const [selectedLease, setSelectedLease] = useState(null);
   const [editingNotice, setEditingNotice] = useState(false);
   const [noticeSettings, setNoticeSettings] = useState({ notice_period_days: 30 });
-  
-  // NEW: Document viewer modal state
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [documentToView, setDocumentToView] = useState(null);
-
-
-
-  // NEW: State for post-scan upgrade hint
   const [showPostScanHint, setShowPostScanHint] = useState(false);
-  
-  // NEW: State for disclaimer modal
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
   const [disclaimerCheckboxTicked, setDisclaimerCheckboxTicked] = useState(false);
-
-  // NEW: State for completion modal
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completedLeaseId, setCompletedLeaseId] = useState(null);
-
-  // NEW: State for add pages flow
   const [addingPagesToLease, setAddingPagesToLease] = useState(null);
   const [additionalFiles, setAdditionalFiles] = useState([]);
-
-  // NEW: State for review confirmation
   const [showReviewScreen, setShowReviewScreen] = useState(false);
   const [reviewData, setReviewData] = useState(null);
   const [savingConfirmedData, setSavingConfirmedData] = useState(false);
-
-  // File input ref
   const fileInputRef = React.useRef(null);
 
   const queryClient = useQueryClient();
