@@ -452,7 +452,7 @@ function EvidenceVaultContent() {
       setUploadStage('uploadingFiles');
       setUploadProgressPercent(40);
 
-      const allFilesToUpload = [...compressedFiles, ...voiceFiles, ...videoFiles];
+      const allFilesToUpload = [...compressedFiles, ...voiceFiles];
       console.log('[EV] Uploading', allFilesToUpload.length, 'files to storage');
 
       // Upload files one at a time with retry, size validation, and better error messages
