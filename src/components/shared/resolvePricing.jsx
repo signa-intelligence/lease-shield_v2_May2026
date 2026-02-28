@@ -53,7 +53,8 @@ export function getMembershipInfo(user, now = new Date()) {
     };
   }
 
-  const plan = (user.plan_tier || 'free').toLowerCase();
+  const rawPlan = (user.plan_tier || 'free').toLowerCase().trim();
+  const plan = rawPlan === 'explorer' ? 'free' : rawPlan;
   const isPaidPlan = ['lite', 'protect', 'secure'].includes(plan);
 
   // Calculate membership duration
