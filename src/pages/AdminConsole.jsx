@@ -28,6 +28,7 @@ import ReminderControl from "../components/admin/ReminderControl";
 import NotificationHistory from "../components/admin/NotificationHistory";
 import CaseKanban from "../components/admin/CaseKanban";
 import UserImpersonation from "../components/admin/UserImpersonation";
+import ScanUsageAnalytics from "../components/admin/ScanUsageAnalytics";
 import AuthGuard from "../components/shared/AuthGuard";
 
 function AdminConsoleContent() {
@@ -1481,6 +1482,15 @@ function AdminConsoleContent() {
         </Dialog>
 
 
+
+        {/* SCAN USAGE ANALYTICS */}
+        <ScanUsageAnalytics
+          users={users}
+          leases={leases}
+          colors={colors}
+          language={language}
+          isDarkMode={isDarkMode}
+        />
 
         {/* 3. USER & CREDITS MANAGEMENT - Links to dedicated page */}
         <Card className="mb-6 border-none shadow-lg" style={{ 
