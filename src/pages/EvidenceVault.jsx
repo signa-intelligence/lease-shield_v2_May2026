@@ -43,6 +43,7 @@ const evidenceAccent = FEATURE_COLORS.evidence.accent;
 import { DOC_TYPE_CONFIG as _DOC_TYPE_CONFIG_DATA, getDocTypeLabel, getEvidenceStrings } from "../components/evidence/evidenceStrings";
 import { getFolderStrings } from "../components/evidence/folderStrings";
 import { CreateFolderModal, RenameFolderModal, DeleteFolderModal, MoveToFolderModal } from "../components/evidence/FolderModals";
+import EvidenceFileCard from "../components/evidence/EvidenceFileCard";
 
 // Add icon references to the imported config
 const DOC_TYPE_CONFIG = {
