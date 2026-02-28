@@ -221,31 +221,32 @@ function EvidenceVaultContent() {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     
-    // Check if any video files are selected and user is not on Protect/Secure tier
-    const hasVideoFiles = files.some(f => f.type.startsWith('video/'));
-    if (hasVideoFiles && !isVideoTier) {
-      setUpgradeModalType('video');
-      setShowUpgradeModal(true);
-      e.target.value = null;
-      return;
-    }
-
-    // Validate video file sizes (50 MB max)
-    const maxVideoBytes = MAX_VIDEO_SIZE_MB * 1024 * 1024;
-    for (const f of files) {
-      if (f.type.startsWith('video/') && f.size > maxVideoBytes) {
+    // Filter out video files for non-video tiers with upgrade prompt
+    const validFiles = files.filter(f => {
+      if (f.type.startsWith('video/') && !isVideoTier) {
+        toast.error(
+          language === 'th'
+            ? 'การอัปโหลดวิดีโอต้องการแพ็กเกจ Protect หรือ Secure'
+            : 'Video uploads require Protect or Secure tier'
+        );
+        return false;
+      }
+      // Validate video file sizes (50 MB max)
+      if (f.type.startsWith('video/') && f.size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
         toast.error(
           language === 'th'
             ? `ไฟล์วิดีโอใหญ่เกินไป: ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB) — สูงสุด ${MAX_VIDEO_SIZE_MB} MB`
             : `Video too large: ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB) — max ${MAX_VIDEO_SIZE_MB} MB`
         );
-        e.target.value = null;
-        return;
+        return false;
       }
-    }
+      return true;
+    });
 
-    console.log('[EV] Files selected:', files.map(f => `${f.name} (${f.type}, ${(f.size/1024).toFixed(1)}KB)`));
-    setUploadFiles(prev => [...prev, ...files]);
+    if (validFiles.length === 0) { e.target.value = null; return; }
+
+    console.log('[EV] Files selected:', validFiles.map(f => `${f.name} (${f.type}, ${(f.size/1024).toFixed(1)}KB)`));
+    setUploadFiles(prev => [...prev, ...validFiles]);
     e.target.value = null;
   };
 
