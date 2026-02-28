@@ -36,7 +36,7 @@ function TemplatesContent() {
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
   const letterCredits = user?.letter_credits || 0;
-  const hasUnlimitedCredits = user?.plan_tier === 'secure';
+  const hasUnlimitedCredits = false; // Secure tier now has 50 credits, not unlimited
   const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin';
   const userTier = user?.plan_tier || 'free';
 
@@ -391,7 +391,7 @@ function TemplatesContent() {
                     </span>
                   </div>
                   <Badge className="text-lg font-bold px-4 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-                    {hasUnlimitedCredits ? '∞' : letterCredits}
+                    {letterCredits}
                   </Badge>
                 </CardContent>
               </Card>
@@ -423,12 +423,12 @@ function TemplatesContent() {
                 </Card>
               )}
 
-              {/* Unlimited badge for Protect/Secure */}
+              {/* Secure tier badge */}
               {userTier === 'secure' && (
                 <Card className="border-none shadow-md" style={{ backgroundColor: colors.cardBg }}>
                   <CardContent className="p-3 flex items-center justify-center">
                     <Badge className="text-sm font-bold px-3 py-1" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
-                      {language === 'th' ? '✨ เทมเพลตไม่จำกัด' : '✨ Unlimited Templates'}
+                      {language === 'th' ? '✨ 50 เครดิต/เดือน' : '✨ 50 credits/month'}
                     </Badge>
                   </CardContent>
                 </Card>

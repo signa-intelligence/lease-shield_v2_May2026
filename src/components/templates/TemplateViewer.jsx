@@ -121,7 +121,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
   
   const letterCredits = user?.letter_credits || 0;
   const userTierForCredits = user?.plan_tier || 'free';
-  const hasUnlimitedCredits = userTierForCredits === 'secure';
+  const hasUnlimitedCredits = false; // Secure tier now has 50 credits, not unlimited
   const canUseCredits = hasUnlimitedCredits || letterCredits >= 1;
   const hasPreview = previewContent && previewContent.trim().length >= 50;
   const hasDocument = documentContent && documentContent.trim().length >= 300;
