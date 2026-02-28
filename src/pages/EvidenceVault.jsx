@@ -776,6 +776,7 @@ function EvidenceVaultContent() {
   const rawTier = (user?.plan_tier || 'free').toLowerCase().trim();
   const userTier = (rawTier === 'explorer') ? 'free' : rawTier; // normalize explorer → free
   const isVideoTier = ['protect', 'secure'].includes(userTier);
+  console.log('[EV_TIER_DEBUG]', { email: user?.email, rawTier, userTier, isVideoTier, plan_tier: user?.plan_tier });
   const isSecureTier = isVideoTier; // kept for backward compat
   const MAX_VIDEO_SIZE_MB = 50;
   const MAX_VIDEO_COUNT = userTier === 'protect' ? 10 : Infinity; // protect=10, secure=unlimited
