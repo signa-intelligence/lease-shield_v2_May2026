@@ -113,7 +113,7 @@ function ResolveCaseContent() {
   };
 
   const createCaseMutation = useMutation({
-    mutationFn: async ({ caseData, useFreeEntitlement }) => {
+    mutationFn: async ({ caseData }) => {
       /**
        * ═══════════════════════════════════════════════════════════════
        * CASE CREATION - OWNERSHIP BINDING FIX
@@ -231,17 +231,18 @@ function ResolveCaseContent() {
       return { 
         createdCase, 
         userId: authenticatedUser.id, 
-        userEmail: authenticatedUser.email,
-        useFreeEntitlement: freeResolveEligible
+        userEmail: authenticatedUser.email
       };
     },
-    onSuccess: async ({ createdCase, userId, userEmail, useFreeEntitlement }) => {
+    onSuccess: async ({ createdCase, userId, userEmail }) => {
+      const useFreeEntitlement = freeResolveEligible;
       console.log('[RESOLVE_FLOW] ✅ Case created successfully:', {
         id: createdCase.id,
         case_number: createdCase.case_number,
         status: createdCase.status,
         user_email: createdCase.user_email,
-        useFreeEntitlement
+        useFreeEntitlement,
+        freeResolveEligible
       });
       
       // Invalidate queries to ensure fresh data
