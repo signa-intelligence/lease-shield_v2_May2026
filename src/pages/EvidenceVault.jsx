@@ -1190,11 +1190,10 @@ function EvidenceVaultContent() {
             setShowUploadDialog(false);
             setUploadFiles([]);
             setVoiceFiles([]);
-            setVideoFiles([]);
             setCompressionStats(null);
             setError(null);
-            setUploadType('photo'); // Reset type to default
-            setUploadLabel(''); // Clear label
+            setUploadType('photo');
+            setUploadLabel('');
           }}
           title={strings.uploadDocument}
           colors={colors}
