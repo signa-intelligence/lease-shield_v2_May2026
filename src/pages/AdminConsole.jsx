@@ -1482,413 +1482,45 @@ function AdminConsoleContent() {
 
 
 
-        {/* 3. USER MANAGEMENT - COLLAPSIBLE */}
-        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader 
-            className="cursor-pointer" 
-            style={{ borderBottom: userManagementExpanded ? `1px solid ${colors.borderColor}` : 'none' }}
-            onClick={() => setUserManagementExpanded(!userManagementExpanded)}
-          >
-            <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Users className="w-5 h-5 text-ls-forest" />
-              {strings.userManagement} <span style={{ color: colors.textSecondary, fontWeight: 'normal' }}>({users.length} users)</span>
-            </CardTitle>
-              {userManagementExpanded ? (
-                <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
-              ) : (
-                <ChevronDown className="w-5 h-5" style={{ color: colors.textSecondary }} />
-              )}
+        {/* 3. USER & CREDITS MANAGEMENT - Links to dedicated page */}
+        <Card className="mb-6 border-none shadow-lg" style={{ 
+          backgroundColor: colors.cardBg,
+          borderLeft: '6px solid #C7A338'
+        }}>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="flex-shrink-0" style={{
+                  width: '48px',
+                  height: '48px',
+                  backgroundColor: '#C7A338',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Users className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>
+                    {strings.userManagement}
+                  </h3>
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>
+                    {language === 'th' 
+                      ? `${users.length} ผู้ใช้ • จัดการเครดิต สแกน จดหมาย คดี` 
+                      : `${users.length} users • Manage scan, letter & case credits`}
+                  </p>
+                </div>
+              </div>
+              <Link to={createPageUrl("AdminUserManagement")} className="flex-shrink-0">
+                <Button style={{ backgroundColor: '#C7A338', color: '#1A1D1F' }} className="hover:opacity-90 w-full sm:w-auto min-h-[44px] px-4 font-bold">
+                  <Coins className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">{language === 'th' ? 'จัดการผู้ใช้และเครดิต' : 'Manage Users & Credits'}</span>
+                  <span className="sm:hidden">{language === 'th' ? 'จัดการ' : 'Manage'}</span>
+                </Button>
+              </Link>
             </div>
-          </CardHeader>
-          {userManagementExpanded && (
-            <CardContent className="p-0">
-              <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead style={{ 
-                      backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                      position: 'sticky',
-                      top: 0,
-                      zIndex: 10
-                    }}>
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.user}</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.email}</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.accessLevel}</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.plan}</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>LINE</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>Credits / Refs</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.actions}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibleUsers.map((u, idx) => {
-                    const isCurrentUserSuperAdmin = user?.access_level === 'super_admin';
-                    const isTargetUserSuperAdmin = u.access_level === 'super_admin';
-                    const canChangeRole = !(isTargetUserSuperAdmin && superAdminCount <= MINIMUM_SUPER_ADMINS);
-                    const isDisabled = u.status === 'disabled';
-                    const isDeleted = u.status === 'deleted';
-                    const isSelf = u.id === user.id;
-                    
-                    return (
-                      <tr
-                        key={u.id}
-                        style={{
-                          borderBottom: `1px solid ${colors.borderColor}`,
-                          backgroundColor: idx % 2 === 0 ? colors.cardBg : (isDarkMode ? '#2A2D30' : '#F8FAFC'),
-                          opacity: (isDisabled || isDeleted) ? 0.6 : 1
-                        }}
-                      >
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>{u.full_name}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                         <p className="text-xs" style={{ color: colors.textSecondary }}>{u.email}</p>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge className={
-                            u.access_level === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                            u.access_level === 'admin' ? 'bg-blue-100 text-blue-800' :
-                            u.access_level === 'va' ? 'bg-amber-100 text-amber-800' :
-                            'bg-slate-100 text-slate-800'
-                          }>
-                            {u.access_level || 'user'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge className={
-                            u.plan_tier === 'secure' ? 'bg-purple-100 text-purple-800' :
-                            u.plan_tier === 'protect' ? 'bg-emerald-100 text-emerald-800' :
-                            u.plan_tier === 'lite' ? 'bg-blue-100 text-blue-800' :
-                            'bg-slate-100 text-slate-800'
-                          }>
-                            {u.plan_tier || 'free'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          {u.line_messaging_token ? (
-                            <Badge className="bg-emerald-100 text-emerald-700 flex items-center gap-1 w-fit">
-                              <CheckCircle className="w-3 h-3" />
-                              Connected
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-slate-500 flex items-center gap-1 w-fit">
-                              <Ban className="w-3 h-3" />
-                              Not Connected
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-col gap-1">
-                            {(() => {
-                              const credits = userCreditsMap[u.id];
-                              const letterRemaining = credits?.letters?.remaining || 0;
-                              const letterPurchased = credits?.letters?.purchased || 0;
-                              const scanRemaining = credits?.scans?.remaining || 0;
-
-                              return (
-                                <>
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => handleOpenCreditsDialog(u)}
-                                      className="flex items-center gap-1 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
-                                      title={`Purchased: ${letterPurchased}`}
-                                    >
-                                      <FileText className="w-3 h-3 text-blue-600" />
-                                      <span className="font-semibold text-xs" style={{ color: colors.textPrimary }}>
-                                        {letterRemaining}
-                                      </span>
-                                    </button>
-                                    <div className="flex items-center gap-1" title="Scan credits remaining">
-                                      <Shield className="w-3 h-3 text-emerald-600" />
-                                      <span className="font-semibold text-xs" style={{ color: colors.textPrimary }}>
-                                        {scanRemaining === 999999 ? '∞' : scanRemaining}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  {letterPurchased > 0 && (
-                                    <div className="text-xs" style={{ color: colors.textSecondary }}>
-                                      Purchased: {letterPurchased}
-                                    </div>
-                                  )}
-                                  {u.referral_count > 0 && (
-                                    <div className="flex items-center gap-1 text-xs" style={{ color: '#10B981' }}>
-                                      <Users className="w-3 h-3" />
-                                      <span>{u.referral_count} refs</span>
-                                    </div>
-                                  )}
-                                  {(u.referral_credits_thb || 0) > 0 && (
-                                    <div className="flex items-center gap-1 text-xs font-bold" style={{ color: '#C7A338' }}>
-                                      <TrendingUp className="w-3 h-3" />
-                                      <span>฿{u.referral_credits_thb}</span>
-                                    </div>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex flex-col gap-2">
-                           {/* 
-                             ═══════════════════════════════════════════════════
-                             ROLE SELECTOR - CLEAN IMPLEMENTATION
-                             ═══════════════════════════════════════════════════
-
-                             Canonical Field: access_level (custom User field)
-                             Valid Values: 'user', 'va', 'admin', 'super_admin'
-
-                             Limits:
-                             - Super Admin: min 2, max 2
-                             - Admin: max 6
-                             - VA: max 10
-
-                             Previous Issue: 
-                             - Super Admin option hidden when 1 existed
-                             - Used wrong field (role instead of access_level)
-                             - RLS blocked updates
-
-                             Current Fix:
-                             - Always show all options to Super Admin users
-                             - Disable options when at maximum (but show them)
-                             - Use asServiceRole for updates
-                             - Log everything for debugging
-                             ═══════════════════════════════════════════════════
-                           */}
-                           <Select
-                             value={u.access_level || 'user'}
-                             onValueChange={async (val) => {
-                               const currentRole = u.access_level || 'user';
-
-                               console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                               console.log('🎯 [ROLE_SELECT] User clicked role change:', {
-                                 targetUser: u.email,
-                                 currentRole,
-                                 selectedRole: val,
-                                 counts: {
-                                   super_admins: superAdminCount,
-                                   admins: adminCount,
-                                   vas: vaCount
-                                 }
-                               });
-
-                               // Pre-flight validation
-                               if (val === 'super_admin' && currentRole !== 'super_admin') {
-                                 if (superAdminCount >= MAXIMUM_SUPER_ADMINS) {
-                                   console.error('❌ [ROLE_SELECT] Blocked: Max Super Admins reached');
-                                   alert(strings.maxSuperAdminsReached + `\n\nCurrent: ${superAdminCount}/${MAXIMUM_SUPER_ADMINS}`);
-                                   return;
-                                 }
-                                 console.log('✅ [ROLE_SELECT] Super Admin promotion allowed:', `${superAdminCount}/${MAXIMUM_SUPER_ADMINS}`);
-                               }
-
-                               if (val === 'admin' && currentRole !== 'admin' && adminCount >= MAXIMUM_ADMINS) {
-                                 console.error('❌ [ROLE_SELECT] Blocked: Max Admins reached');
-                                 alert(strings.maxAdminsReached + `\n\nCurrent: ${adminCount}/${MAXIMUM_ADMINS}`);
-                                 return;
-                               }
-
-                               if (val === 'va' && currentRole !== 'va' && vaCount >= MAXIMUM_VAS) {
-                                 console.error('❌ [ROLE_SELECT] Blocked: Max VAs reached');
-                                 alert(strings.maxVAsReached + `\n\nCurrent: ${vaCount}/${MAXIMUM_VAS}`);
-                                 return;
-                               }
-
-                               // Execute mutation
-                               try {
-                                 console.log('📤 [ROLE_SELECT] Calling updateUserMutation.mutate()...');
-
-                                 await updateUserMutation.mutateAsync({
-                                   userId: u.id,
-                                   data: { access_level: val }
-                                 });
-
-                                 console.log('✅ [ROLE_SELECT] SUCCESS - mutation completed');
-                                 alert(`✅ Role updated!\n\n${u.full_name}\n${u.email}\n\n${currentRole} → ${val}`);
-                                 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-                               } catch (error) {
-                                 console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                                 console.error('❌ [ROLE_SELECT] MUTATION FAILED:', {
-                                   error: error.message,
-                                   errorName: error.name,
-                                   stack: error.stack,
-                                   targetUser: u.email,
-                                   attemptedRole: val,
-                                   currentRole
-                                 });
-                                 console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-                                 alert(`❌ ROLE UPDATE FAILED\n\nUser: ${u.email}\nAttempted: ${currentRole} → ${val}\n\nError: ${error.message}\n\nCheck browser console (F12) for full details.`);
-                               }
-                             }}
-                             disabled={!canChangeRole}
-                           >
-                             <SelectTrigger className="w-32 h-8 text-xs">
-                               <SelectValue />
-                             </SelectTrigger>
-                             <SelectContent>
-                               <SelectItem value="user">
-                                 User
-                               </SelectItem>
-                               <SelectItem 
-                                 value="va" 
-                                 disabled={u.access_level !== 'va' && vaCount >= MAXIMUM_VAS}
-                               >
-                                 VA{u.access_level !== 'va' && vaCount >= MAXIMUM_VAS ? ' (Full)' : ''}
-                               </SelectItem>
-                               <SelectItem 
-                                 value="admin" 
-                                 disabled={u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS}
-                               >
-                                 Admin{u.access_level !== 'admin' && adminCount >= MAXIMUM_ADMINS ? ' (Full)' : ''}
-                               </SelectItem>
-                               <SelectItem 
-                                 value="super_admin" 
-                                 disabled={u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS}
-                               >
-                                 Super Admin{u.access_level !== 'super_admin' && superAdminCount >= MAXIMUM_SUPER_ADMINS ? ' (Full)' : ''}
-                               </SelectItem>
-                             </SelectContent>
-                           </Select>
-                           {!canChangeRole && (
-                               <div className="flex items-center gap-1 text-red-500 text-xs">
-                                   <AlertCircle className="w-3 h-3" />
-                                   <span>{strings.superAdminWarning}</span>
-                               </div>
-                           )}
-                            <Select
-                              value={u.plan_tier || 'free'}
-                              onValueChange={async (val) => {
-                                console.log('🎯 [TIER_SELECT] User clicked tier change:', {
-                                  targetUser: u.email,
-                                  currentTier: u.plan_tier,
-                                  selectedTier: val
-                                });
-
-                                try {
-                                  await updateUserMutation.mutateAsync({
-                                    userId: u.id,
-                                    data: { plan_tier: val }
-                                  });
-
-                                  console.log('✅ [TIER_SELECT] SUCCESS - tier updated');
-                                  alert(`✅ Plan tier updated!\n\n${u.full_name}\n${u.email}\n\n${u.plan_tier || 'free'} → ${val}`);
-                                } catch (error) {
-                                  console.error('❌ [TIER_SELECT] MUTATION FAILED:', error);
-                                  alert(`❌ TIER UPDATE FAILED\n\nUser: ${u.email}\nAttempted: ${u.plan_tier} → ${val}\n\nError: ${error.message}`);
-                                }
-                              }}
-                            >
-                              <SelectTrigger className="w-24 h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="free">Free</SelectItem>
-                                <SelectItem value="lite">Lite</SelectItem>
-                                <SelectItem value="protect">Protect</SelectItem>
-                                <SelectItem value="secure">Secure</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            {isSuperAdmin && (u.access_level === 'admin' || u.access_level === 'va') && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleOpenPermissionsDialog(u)}
-                                className="text-xs h-8"
-                              >
-                                <Lock className="w-3 h-3 mr-1" />
-                                {strings.permissions}
-                              </Button>
-                            )}
-                            <div className="flex gap-1 mt-2">
-                             {isDisabled ? (
-                               <Button
-                                 size="sm"
-                                 variant="outline"
-                                 onClick={() => handleEnableUser(u)}
-                                 className="text-xs h-7 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                               >
-                                 <UserCheck className="w-3 h-3 mr-1" />
-                                 {strings.enableUser}
-                               </Button>
-                             ) : (
-                               <>
-                                 <Button
-                                   size="sm"
-                                   variant="outline"
-                                   onClick={() => handleDisableUser(u)}
-                                   disabled={isSelf}
-                                   className="text-xs h-7 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                                 >
-                                   <Ban className="w-3 h-3 mr-1" />
-                                   {strings.disableUser}
-                                 </Button>
-                                 <Button
-                                   size="sm"
-                                   variant="outline"
-                                   onClick={() => handleDeactivateUser(u)}
-                                   disabled={isSelf || (!canChangeRole && isTargetUserSuperAdmin)}
-                                   className="text-xs h-7 bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
-                                 >
-                                   <UserX className="w-3 h-3 mr-1" />
-                                   {strings.deactivateUser}
-                                 </Button>
-                               </>
-                             )}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          
-          {/* Pagination Controls */}
-          <div className="px-6 py-4 border-t" style={{ 
-            borderTopColor: colors.borderColor,
-            backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC'
-          }}>
-            <div className="flex items-center justify-between">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToPreviousPage}
-                disabled={currentPage === 1}
-                style={{ 
-                  borderColor: colors.borderColor,
-                  opacity: currentPage === 1 ? 0.5 : 1,
-                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-                }}
-              >
-                Previous
-              </Button>
-              
-              <span className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
-                Page {currentPage} of {totalPages}
-              </span>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToNextPage}
-                disabled={currentPage >= totalPages}
-                style={{ 
-                  borderColor: colors.borderColor,
-                  opacity: currentPage >= totalPages ? 0.5 : 1,
-                  cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer'
-                }}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-          )}
+          </CardContent>
         </Card>
 
         {/* USER MANUAL DOWNLOAD */}
