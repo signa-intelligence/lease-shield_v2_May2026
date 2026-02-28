@@ -394,7 +394,7 @@ export default function UploadBottomSheet({
             {/* File picker */}
             <div>
               <input type="file" multiple onChange={handleFileSelect} className="hidden" id="upload-sheet-file-input"
-                accept={isVideoTier ? ".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.heic,.heif" : ".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif"}
+                accept={isVideoTier ? ".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.heic,.heif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" : ".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
                 disabled={uploading} />
               <label htmlFor="upload-sheet-file-input">
                 <div className="border-2 border-dashed rounded-xl text-center transition-colors active:scale-[0.98]"
