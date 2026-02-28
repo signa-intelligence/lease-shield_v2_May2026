@@ -1539,6 +1539,32 @@ function EvidenceVaultContent() {
                   <Upload className="w-4 h-4" />
                   {strings.uploadEvidence}
                 </button>
+                {/* New Folder button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptic.light();
+                    setShowCreateFolder(true);
+                  }}
+                  style={{
+                    padding: "10px 16px",
+                    fontSize: "0.875rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    borderRadius: "10px",
+                    border: `2px solid ${isDarkMode ? '#C7A338' : '#0C3B2E'}`,
+                    backgroundColor: colors.cardBg,
+                    color: isDarkMode ? '#C7A338' : '#0C3B2E',
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  <FolderPlus className="w-4 h-4" />
+                  {folderStr.newFolder}
+                </button>
 
                 {/* Storage Badges */}
                 <div className="flex flex-wrap gap-2">
