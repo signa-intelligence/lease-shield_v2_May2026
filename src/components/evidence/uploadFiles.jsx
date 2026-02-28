@@ -55,8 +55,9 @@ export async function uploadFilesSequentially(allFilesToUpload, { language = 'en
           ? await toFreshFile(file)
           : file;
 
-        console.log(`[EV] Upload attempt ${attempt} for ${file.name} (fresh=${attempt > 1 || file.type === 'application/pdf'}, size=${uploadFile.size})`);
+        console.log(`[EV] Upload attempt ${attempt} for ${file.name} (type=${uploadFile.type}, fresh=${attempt > 1 || file.type === 'application/pdf'}, size=${uploadFile.size})`);
         const result = await base44.integrations.Core.UploadFile({ file: uploadFile });
+        console.log(`[EV] Upload API response for ${file.name}:`, JSON.stringify(result).substring(0, 200));
         if (!result?.file_url) {
           lastErr = `No URL returned: ${JSON.stringify(result)}`;
           console.error(`[EV] No URL (attempt ${attempt}) ${file.name}:`, lastErr);

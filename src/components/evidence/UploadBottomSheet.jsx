@@ -67,15 +67,19 @@ export default function UploadBottomSheet({
     if (files.length === 0) return;
 
     const validFiles = files.filter(f => {
+      console.log(`[EV_SELECT] File: ${f.name}, type: ${f.type}, size: ${f.size}`);
       if (f.type.startsWith('video/') && !isVideoTier) {
+        console.log(`[EV_SELECT] ❌ Rejected (video, not video tier): ${f.name}`);
         return false;
       }
       if (f.type.startsWith('video/') && f.size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
+        console.log(`[EV_SELECT] ❌ Rejected (video too large): ${f.name}`);
         return false;
       }
       return true;
     });
 
+    console.log(`[EV_SELECT] Accepted ${validFiles.length}/${files.length} files`);
     if (validFiles.length === 0) { e.target.value = null; return; }
     setUploadFiles(prev => [...prev, ...validFiles]);
     e.target.value = null;
