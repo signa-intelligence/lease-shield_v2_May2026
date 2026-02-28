@@ -1447,7 +1447,6 @@ function EvidenceVaultContent() {
                       setShowUploadDialog(false);
                       setUploadFiles([]);
                       setVoiceFiles([]);
-                      setVideoFiles([]);
                       setCompressionStats(null);
                     }}
                     disabled={uploading}
