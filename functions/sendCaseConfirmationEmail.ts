@@ -190,6 +190,62 @@ Deno.serve(async (req) => {
     });
 
     console.log(`[sendCaseConfirmationEmail] ✅ Confirmation email sent via Resend to ${userEmail} for case ${caseNumber}, id: ${result.id}`);
+
+    // Send user LINE notification if they have LINE connected
+    try {
+      const lineChannelToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
+      if (lineChannelToken) {
+        // Look up user's LINE ID
+        const allUsers = await base44.asServiceRole.entities.User.list();
+        const targetUser = allUsers.find(u => u.email === userEmail);
+        const lineUserId = targetUser?.line_messaging_token;
+
+        if (lineUserId && lineUserId.startsWith('U') && lineUserId.length === 33) {
+          const lineText = lang === 'th'
+            ? [
+                '🔔 ยื่นคดีสำเร็จ',
+                '',
+                `📋 หมายเลขคดี: ${caseNumber}`,
+                '📌 สถานะ: อยู่ระหว่างการตรวจสอบ',
+                '',
+                'เราจะติดต่อคุณภายใน 2-3 วันทำการพร้อมการประเมินคดี',
+                '',
+                'มีคำถาม? ตอบกลับที่นี่หรืออีเมล support@leaseshield.asia'
+              ].join('\n')
+            : [
+                '🔔 Case Submitted Successfully',
+                '',
+                `📋 Case: ${caseNumber}`,
+                '📌 Status: Under Review',
+                '',
+                "We'll contact you within 2-3 business days with your case assessment.",
+                '',
+                'Questions? Reply here or email support@leaseshield.asia'
+              ].join('\n');
+
+          const lineRes = await fetch('https://api.line.me/v2/bot/message/push', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${lineChannelToken}`
+            },
+            body: JSON.stringify({
+              to: lineUserId,
+              messages: [{ type: 'text', text: lineText }]
+            })
+          });
+
+          if (lineRes.ok) {
+            console.log(`[sendCaseConfirmationEmail] ✅ LINE message sent to user ${userEmail}`);
+          } else {
+            console.warn(`[sendCaseConfirmationEmail] ⚠️ LINE to user failed: ${lineRes.status}`);
+          }
+        }
+      }
+    } catch (lineErr) {
+      console.warn('[sendCaseConfirmationEmail] ⚠️ LINE notification failed (non-blocking):', lineErr.message);
+    }
+
     return Response.json({ success: true, emailId: result.id });
 
   } catch (error) {
