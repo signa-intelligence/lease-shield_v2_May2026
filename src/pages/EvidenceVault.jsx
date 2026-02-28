@@ -1241,28 +1241,6 @@ function EvidenceVaultContent() {
                  </div>
                 )}
 
-                <div>
-                  <Label style={{ color: colors.textPrimary }}>{strings.uploadTypeLabel}</Label>
-                  <Select value={uploadType} onValueChange={setUploadType}>
-                    <SelectTrigger className="mt-2" style={{
-                      backgroundColor: colors.inputBg,
-                      borderColor: colors.borderColor,
-                      color: colors.textPrimary,
-                      minHeight: '44px',
-                      fontSize: '16px'
-                    }}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
-                      {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
-                        <SelectItem key={key} value={key}>
-                           {language === 'zh' ? config.label_zh : language === 'ja' ? config.label_ja : language === 'ko' ? config.label_ko : language === 'th' ? config.label_th : config.label_en}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <MobileFormInput
                   label={strings.customLabelLabel}
                   value={uploadLabel}
