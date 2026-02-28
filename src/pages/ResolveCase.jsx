@@ -184,34 +184,22 @@ function ResolveCaseContent() {
       
       const createdCase = await base44.entities.Case.create(secureCase);
       
-      console.log('[CASE_CREATION] ✅ Case created with attachments:', {
+      console.log('[CASE_CREATION] ✅ Case created:', {
         case_id: createdCase.id,
+        case_number: createdCase.case_number,
+        user_email: createdCase.user_email,
+        status: createdCase.status,
         evidence_stored: createdCase.evidence?.length || 0
       });
       
-      // Step 4: CRITICAL VERIFICATION - Confirm user_email persisted correctly
-      console.log('[CASE_CREATION] ✅ Case created - VERIFYING user binding:', {
-        id: createdCase.id,
-        case_number: createdCase.case_number,
-        user_email: createdCase.user_email,
-        created_by: createdCase.created_by,
-        status: createdCase.status,
-        OWNERSHIP_CHECK: createdCase.user_email === authenticatedUser.email ? '✅ CORRECT' : '❌ MISMATCH'
-      });
-      
-      // Step 5: Throw error if user_email is wrong (should never happen)
+      // Verify ownership binding
       if (createdCase.user_email !== authenticatedUser.email) {
-        console.error('[CASE_CREATION] 🚨 CRITICAL: Case created with WRONG user_email!', {
-          expected: authenticatedUser.email,
-          actual: createdCase.user_email,
-          caseId: createdCase.id
-        });
-        throw new Error(`Ownership binding failed: case created with wrong user_email (${createdCase.user_email} instead of ${authenticatedUser.email})`);
+        console.error('[CASE_CREATION] 🚨 CRITICAL: Case created with WRONG user_email!');
+        throw new Error(`Ownership binding failed`);
       }
       
-      console.log('[CASE_CREATION] ✅ OWNERSHIP VERIFIED - case belongs to:', authenticatedUser.email);
-      
-      // WORKFLOW FIX: Send admin notification
+      // CRITICAL: Send admin notification IMMEDIATELY after case creation
+      // This runs regardless of payment/activation status so admins always know
       try {
         await base44.functions.invoke('notifyAdminNewCase', {
           caseNumber: createdCase.case_number,
@@ -223,9 +211,9 @@ function ResolveCaseContent() {
           planTier: authenticatedUser.plan_tier,
           caseId: createdCase.id
         });
-        console.log('[RESOLVE_FLOW] Admin notification sent');
+        console.log('[RESOLVE_FLOW] ✅ Admin notification sent for', createdCase.case_number);
       } catch (notifyError) {
-        console.error('[RESOLVE_FLOW] Admin notification failed (non-blocking):', notifyError);
+        console.error('[RESOLVE_FLOW] ⚠️ Admin notification failed (non-blocking):', notifyError?.message);
       }
       
       return { 
