@@ -417,7 +417,7 @@ function EvidenceVaultContent() {
   };
 
   const handleUpload = async () => {
-    if (uploadFiles.length === 0 && voiceFiles.length === 0 && videoFiles.length === 0) {
+    if (uploadFiles.length === 0 && voiceFiles.length === 0) {
       setError(strings.selectFile);
       return;
     }
