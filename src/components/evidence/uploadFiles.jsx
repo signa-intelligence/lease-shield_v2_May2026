@@ -49,15 +49,12 @@ export async function uploadFilesSequentially(allFilesToUpload, { language = 'en
     let lastErr = '';
     for (let attempt = 1; attempt <= 3 && !uploaded; attempt++) {
       try {
-        // On retry or for PDFs, re-read the file to get a fresh blob reference
-        // This fixes "Network Error" for files from cloud sources (Google Drive, etc.)
-        const uploadFile = (attempt > 1 || file.type === 'application/pdf')
-          ? await toFreshFile(file)
-          : file;
+        // For non-image files (PDF, DOCX, etc.) or retries, always re-read to get a fresh blob
+        const needsFresh = attempt > 1 || !file.type.startsWith('image/');
+        const uploadFile = needsFresh ? await toFreshFile(file) : file;
 
-        console.log(`[EV] Upload attempt ${attempt} for ${file.name} (type=${uploadFile.type}, fresh=${attempt > 1 || file.type === 'application/pdf'}, size=${uploadFile.size})`);
+        console.log(`[EV] Upload attempt ${attempt} for ${file.name} (type=${file.type}, fresh=${needsFresh}, inputSize=${file.size}, uploadSize=${uploadFile.size})`);
         const result = await base44.integrations.Core.UploadFile({ file: uploadFile });
-        console.log(`[EV] Upload API response for ${file.name}:`, JSON.stringify(result).substring(0, 200));
         if (!result?.file_url) {
           lastErr = `No URL returned: ${JSON.stringify(result)}`;
           console.error(`[EV] No URL (attempt ${attempt}) ${file.name}:`, lastErr);

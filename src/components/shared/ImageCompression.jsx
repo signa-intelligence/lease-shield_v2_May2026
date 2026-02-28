@@ -76,24 +76,25 @@ export const compressMultipleImages = async (files, onProgress) => {
   
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
+    const isImage = file.type.startsWith('image/');
+    console.log(`[COMPRESS] File ${i+1}/${files.length}: "${file.name}" type=${file.type} size=${file.size} isImage=${isImage}`);
     
-    if (file.type.startsWith('image/')) {
-      console.log(`[COMPRESS] Image detected: ${file.name} (${file.type}, ${file.size} bytes)`);
+    if (isImage) {
       try {
         const result = await compressImage(file);
+        console.log(`[COMPRESS] ✅ Compressed: ${file.name} ${result.originalSize} → ${result.newSize}`);
         results.push(result.file);
         totalOriginal += result.originalSize;
         totalCompressed += result.newSize;
         if (result.compressed) compressedCount++;
-        console.log(`[COMPRESS] ✅ Image compressed: ${file.name} (${result.originalSize} → ${result.newSize})`);
-      } catch (compressErr) {
-        console.warn(`[COMPRESS] ⚠️ Compression failed for ${file.name}, using original:`, compressErr?.message);
+      } catch (compErr) {
+        console.error(`[COMPRESS] ❌ Compression failed for ${file.name}, using original:`, compErr);
         results.push(file);
         totalOriginal += file.size;
         totalCompressed += file.size;
       }
     } else {
-      console.log(`[COMPRESS] Non-image, passing through: ${file.name} (${file.type}, ${file.size} bytes)`);
+      console.log(`[COMPRESS] ⏭️ Non-image passed through: "${file.name}" (${file.type})`);
       results.push(file);
       totalOriginal += file.size;
       totalCompressed += file.size;
