@@ -1954,17 +1954,17 @@ function EvidenceVaultContent() {
                       : 'All documents and evidence uploaded or generated within the app remain under the user\'s control. Users are responsible for reviewing, verifying, and deciding how and when to use any documents, evidence, or communications created through Lease Shield.'}
           </p>
           </div>
-          </div>
-          </PullToRefresh>
-          );
-          }
+      </div>
+    </PullToRefresh>
+  );
+}
 
-          export default function EvidenceVault() {
-          return (
-          <AuthGuard>
-          <ToastProvider>
-          <EvidenceVaultContent />
-          </ToastProvider>
-          </AuthGuard>
-          );
-          }
+export default function EvidenceVault() {
+  return (
+    <AuthGuard>
+      <ToastProvider>
+        <EvidenceVaultContent />
+      </ToastProvider>
+    </AuthGuard>
+  );
+}
