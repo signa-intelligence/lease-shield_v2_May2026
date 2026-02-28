@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChevronDown, ChevronUp, Shield, DollarSign, FileText, Scale, Lock, HelpCircle, Wallet, Star } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Shield, DollarSign, FileText, Scale, Lock, HelpCircle, Wallet, Star, Zap } from "lucide-react";
 import PageHeader from "../components/shared/PageHeader";
 import AuthGuard from "../components/shared/AuthGuard";
 import { base44 } from "@/api/base44Client";
@@ -386,6 +386,74 @@ const FAQ_DATA = {
         answerJa: 'いいえ。\n\nLisaは、あなたのリース契約と入力に基づいて構造化されたガイダンスと情報を提供しますが、法的解釈ではありません。',
         answerKo: '아니요。\n\nLisa는 귀하의 임대 계약 및 입력을 기반으로 구조화된 안내 및 정보를 제공하지만 법적 해석은 제공하지 않습니다。',
         answerRu: 'Нет。\n\nLisa предоставляет структурированные рекомендации и информацию на основе вашего договора и данных、но не юридическую интерпретацию。'
+      }
+    ]
+  },
+  resolve: {
+    icon: Scale,
+    color: '#DC2626',
+    titleEn: 'Resolve Service',
+    titleTh: 'บริการ Resolve',
+    titleZh: 'Resolve服务',
+    titleJa: 'Resolveサービス',
+    titleKo: 'Resolve 서비스',
+    titleRu: 'Сервис Resolve',
+    questions: [
+      {
+        questionEn: 'How long does case review take?',
+        questionTh: 'การตรวจสอบคดีใช้เวลานานเท่าไหร่?',
+        questionZh: '案件审查需要多长时间？',
+        questionJa: 'ケースレビューにはどのくらいかかりますか？',
+        questionKo: '사례 검토는 얼마나 걸리나요?',
+        questionRu: 'Сколько времени занимает рассмотрение дела?',
+        answerEn: 'We offer two review levels:\n\n📋 **Standard Review**: 2-3 business days\n⚡ **Fast Track Review**: 1 business day (priority service)\n\nBusiness days are Monday-Friday, excluding Thai public holidays.',
+        answerTh: 'เรามีการตรวจสอบ 2 ระดับ:\n\n📋 **การตรวจสอบมาตรฐาน**: 2-3 วันทำการ\n⚡ **การตรวจสอบแบบเร่งด่วน**: 1 วันทำการ (บริการเร่งด่วน)\n\nวันทำการคือวันจันทร์-ศุกร์ ไม่รวมวันหยุดนักขัตฤกษ์',
+        answerZh: '我们提供两个审查级别：\n\n📋 **标准审查**：2-3个工作日\n⚡ **快速审查**：1个工作日（优先服务）\n\n工作日为周一至周五，不包括泰国公共假期。',
+        answerJa: '2つのレビューレベルを提供しています：\n\n📋 **標準レビュー**：2-3営業日\n⚡ **ファストトラックレビュー**：1営業日（優先サービス）\n\n営業日は月曜日から金曜日で、タイの祝日は除きます。',
+        answerKo: '두 가지 검토 수준을 제공합니다:\n\n📋 **표준 검토**: 2-3영업일\n⚡ **빠른 검토**: 1영업일 (우선 서비스)\n\n영업일은 월요일~금요일이며 태국 공휴일은 제외됩니다.',
+        answerRu: 'Мы предлагаем два уровня проверки:\n\n📋 **Стандартная проверка**: 2-3 рабочих дня\n⚡ **Приоритетная проверка**: 1 рабочий день (приоритетная услуга)\n\nРабочие дни — понедельник-пятница, без тайских государственных праздников.'
+      },
+      {
+        questionEn: 'What is Fast Track review?',
+        questionTh: 'การตรวจสอบแบบเร่งด่วนคืออะไร?',
+        questionZh: '什么是快速审查？',
+        questionJa: 'ファストトラックレビューとは何ですか？',
+        questionKo: '빠른 검토란 무엇인가요?',
+        questionRu: 'Что такое приоритетная проверка?',
+        answerEn: 'Fast Track is our priority review service. Your case receives expedited review by our consultants within 1 business day, compared to 2-3 business days for standard review. It\'s ideal when you need urgent guidance on your rental dispute.',
+        answerTh: 'เร่งด่วนคือบริการตรวจสอบลำดับความสำคัญของเรา คดีของคุณจะได้รับการตรวจสอบอย่างเร่งด่วนโดยที่ปรึกษาภายใน 1 วันทำการ เทียบกับ 2-3 วันทำการสำหรับการตรวจสอบมาตรฐาน เหมาะสมเมื่อคุณต้องการคำแนะนำเร่งด่วนเกี่ยวกับข้อพิพาทการเช่า',
+        answerZh: '快速审查是我们的优先审查服务。您的案件将在1个工作日内由我们的顾问进行加急审查，而标准审查需要2-3个工作日。当您需要紧急指导处理租赁纠纷时，这是理想的选择。',
+        answerJa: 'ファストトラックは、優先レビューサービスです。標準レビューの2-3営業日に対し、1営業日以内にコンサルタントがケースの迅速なレビューを行います。賃貸紛争について緊急のガイダンスが必要な場合に最適です。',
+        answerKo: '빠른 검토는 우선 검토 서비스입니다. 표준 검토의 2-3영업일에 비해 1영업일 이내에 컨설턴트가 사례를 신속하게 검토합니다. 임대 분쟁에 대한 긴급 안내가 필요할 때 이상적입니다.',
+        answerRu: 'Приоритетная проверка — это наша услуга ускоренного рассмотрения. Ваше дело рассматривается консультантами в течение 1 рабочего дня, по сравнению с 2-3 рабочими днями для стандартной проверки. Идеально, когда вам нужна срочная помощь по арендному спору.'
+      },
+      {
+        questionEn: 'What are business days?',
+        questionTh: 'วันทำการคืออะไร?',
+        questionZh: '什么是工作日？',
+        questionJa: '営業日とは何ですか？',
+        questionKo: '영업일이란 무엇인가요?',
+        questionRu: 'Что такое рабочие дни?',
+        answerEn: 'Business days are Monday through Friday, excluding Thai public holidays.\n\nExamples:\n• Submit Friday → Standard review ready Monday-Wednesday\n• Submit Friday → Fast Track review ready Monday\n• Submit Saturday → Same as submitting Monday',
+        answerTh: 'วันทำการคือวันจันทร์ถึงวันศุกร์ ไม่รวมวันหยุดนักขัตฤกษ์ไทย\n\nตัวอย่าง:\n• ส่งวันศุกร์ → การตรวจสอบมาตรฐานพร้อมวันจันทร์-วันพุธ\n• ส่งวันศุกร์ → การตรวจสอบเร่งด่วนพร้อมวันจันทร์\n• ส่งวันเสาร์ → เหมือนส่งวันจันทร์',
+        answerZh: '工作日是周一到周五，不包括泰国公共假期。\n\n示例：\n• 周五提交 → 标准审查周一至周三完成\n• 周五提交 → 快速审查周一完成\n• 周六提交 → 等同于周一提交',
+        answerJa: '営業日は月曜日から金曜日までで、タイの祝日は除きます。\n\n例：\n• 金曜日に提出 → 標準レビューは月曜日〜水曜日に完了\n• 金曜日に提出 → ファストトラックレビューは月曜日に完了\n• 土曜日に提出 → 月曜日に提出したのと同じ',
+        answerKo: '영업일은 월요일부터 금요일까지이며 태국 공휴일은 제외됩니다。\n\n예시：\n• 금요일 제출 → 표준 검토 월요일~수요일 완료\n• 금요일 제출 → 빠른 검토 월요일 완료\n• 토요일 제출 → 월요일 제출과 동일',
+        answerRu: 'Рабочие дни — с понедельника по пятницу, без тайских государственных праздников。\n\nПримеры：\n• Подача в пятницу → Стандартная проверка готова в понедельник-среду\n• Подача в пятницу → Приоритетная проверка готова в понедельник\n• Подача в субботу → То же, что подать в понедельник'
+      },
+      {
+        questionEn: 'How much does Resolve cost?',
+        questionTh: 'Resolve มีค่าใช้จ่ายเท่าไหร่?',
+        questionZh: 'Resolve的费用是多少？',
+        questionJa: 'Resolveの費用はいくらですか？',
+        questionKo: 'Resolve 비용은 얼마인가요?',
+        questionRu: 'Сколько стоит Resolve?',
+        answerEn: '• Public rate: ฿5,000 per case (no subscription required)\n• Member rate: ฿3,500 per case (Protect/Secure subscribers after 30 days)\n• Free: 1 case/year for Annual Secure subscribers\n\nAll rates include standard review (2-3 business days). Fast Track (1 business day) is available as an upgrade.',
+        answerTh: '• ราคาทั่วไป: ฿5,000 ต่อคดี (ไม่ต้องสมัครสมาชิก)\n• ราคาสมาชิก: ฿3,500 ต่อคดี (สมาชิก Protect/Secure หลัง 30 วัน)\n• ฟรี: 1 คดี/ปี สำหรับสมาชิก Annual Secure\n\nทุกราคารวมการตรวจสอบมาตรฐาน (2-3 วันทำการ) เร่งด่วน (1 วันทำการ) เป็นตัวเลือกอัปเกรด',
+        answerZh: '• 公开价格: 每案฿5,000（无需订阅）\n• 会员价格: 每案฿3,500（Protect/Secure订阅者30天后）\n• 免费: 年度Secure订阅者每年1案\n\n所有价格包含标准审查（2-3个工作日）。快速审查（1个工作日）可作为升级选项。',
+        answerJa: '• 公開価格: ケースごとに฿5,000（サブスクリプション不要）\n• 会員価格: ケースごとに฿3,500（Protect/Secure会員30日後）\n• 無料: Annual Secure会員は年1件\n\nすべての料金に標準レビュー（2-3営業日）が含まれます。ファストトラック（1営業日）はアップグレードオプションです。',
+        answerKo: '• 공개 가격: 사례당 ฿5,000（구독 불필요）\n• 회원 가격: 사례당 ฿3,500（Protect/Secure 구독자 30일 후）\n• 무료: 연간 Secure 구독자 연 1건\n\n모든 가격에는 표준 검토（2-3영업일）가 포함됩니다. 빠른 검토（1영업일）는 업그레이드 옵션입니다。',
+        answerRu: '• Публичный тариф: ฿5,000 за дело（подписка не требуется）\n• Тариф участника: ฿3,500 за дело（участники Protect/Secure после 30 дней）\n• Бесплатно: 1 дело/год для годовых подписчиков Secure\n\nВсе тарифы включают стандартную проверку（2-3 рабочих дня）. Приоритетная проверка（1 рабочий день）доступна как обновление。'
       }
     ]
   },
@@ -863,7 +931,7 @@ function FAQContent() {
             {language === 'th' ? 'ยังต้องการความช่วยเหลือ?' : language === 'zh' ? '仍需要帮助？' : language === 'ja' ? 'まだヘルプが必要ですか？' : language === 'ko' ? '여전히 도움이 필요하신가요?' : language === 'ru' ? 'Нужна дополнительная помощь?' : 'Still Need Help?'}
           </h2>
           <p className="mb-6" style={{ color: colors.textSecondary }}>
-            {language === 'th' ? 'ไม่พบสิ่งที่คุณกำลังมองหา? ส่งข้อความถึงเรา เราจะตอบกลับภายใน 24-48 ชั่วโมง' : language === 'zh' ? '找不到您要找的内容？给我们发送消息，我们将在24-48小时内回复' : language === 'ja' ? 'お探しのものが見つかりませんか？メッセージをお送りください。24〜48時間以内に返信いたします' : language === 'ko' ? '찾고 있는 내용을 찾을 수 없나요? 메시지를 보내주시면 24-48시간 이내에 답변드리겠습니다' : language === 'ru' ? 'Не нашли то, что искали? Отправьте нам сообщение, и мы ответим в течение 24-48 часов' : "Can't find what you're looking for? Send us a message and we'll get back to you within 24-48 hours."}
+            {language === 'th' ? 'ไม่พบสิ่งที่คุณกำลังมองหา? ส่งข้อความถึงเรา เราจะตอบกลับภายใน 2-3 วันทำการ' : language === 'zh' ? '找不到您要找的内容？给我们发送消息，我们将在2-3个工作日内回复' : language === 'ja' ? 'お探しのものが見つかりませんか？メッセージをお送りください。2-3営業日以内に返信いたします' : language === 'ko' ? '찾고 있는 내용을 찾을 수 없나요? 메시지를 보내주시면 2-3영업일 이내에 답변드리겠습니다' : language === 'ru' ? 'Не нашли то, что искали? Отправьте нам сообщение, и мы ответим в течение 2-3 рабочих дней' : "Can't find what you're looking for? Send us a message and we'll get back to you within 2-3 business days."}
           </p>
           
           <form 
@@ -898,7 +966,7 @@ function FAQContent() {
                   `
                 });
                 
-                alert(language === 'th' ? 'ส่งข้อความสำเร็จ! เราจะตอบกลับภายใน 24-48 ชั่วโมง' : language === 'zh' ? '消息发送成功！我们将在24-48小时内回复' : language === 'ja' ? 'メッセージが正常に送信されました！24〜48時間以内に返信いたします' : language === 'ko' ? '메시지가 성공적으로 전송되었습니다! 24-48시간 이내에 답변드리겠습니다' : language === 'ru' ? 'Сообщение отправлено успешно! Мы ответим в течение 24-48 часов' : "Message sent successfully! We'll respond within 24-48 hours.");
+                alert(language === 'th' ? 'ส่งข้อความสำเร็จ! เราจะตอบกลับภายใน 2-3 วันทำการ' : language === 'zh' ? '消息发送成功！我们将在2-3个工作日内回复' : language === 'ja' ? 'メッセージが正常に送信されました！2-3営業日以内に返信いたします' : language === 'ko' ? '메시지가 성공적으로 전송되었습니다! 2-3영업일 이내에 답변드리겠습니다' : language === 'ru' ? 'Сообщение отправлено успешно! Мы ответим в течение 2-3 рабочих дней' : "Message sent successfully! We'll respond within 2-3 business days.");
                 e.target.reset();
                 setCaptchaAnswer('');
                 setCaptchaQuestion(generateCaptcha());
