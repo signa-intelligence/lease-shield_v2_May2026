@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import LetterPreview from "../components/shared/LetterPreview";
 import DocumentAnnotation from "../components/documents/DocumentAnnotation";
 import { compressMultipleImages } from "../components/shared/ImageCompression";
+import { uploadFilesSequentially } from "../components/evidence/uploadFiles";
 import { haptic } from "../components/shared/HapticFeedback";
 import UploadProgress from "../components/shared/UploadProgress";
 import SwipeToDelete from "../components/shared/SwipeToDelete";
