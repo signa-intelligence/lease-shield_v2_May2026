@@ -29,7 +29,7 @@ const folderStrings = {
     createNewFolder: "+ Create New Folder",
     newFolderName: "New folder name",
     savingTo: "Saving to:",
-    rootLevel: "Root (All Files)",
+    rootLevel: "Uploads",
   },
   th: {
     newFolder: "โฟลเดอร์ใหม่",
