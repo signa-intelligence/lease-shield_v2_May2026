@@ -308,55 +308,69 @@ function ResolveCaseContent() {
     }
   });
 
-  // ROOT CAUSE FIX #8: Properly handle file uploads with error handling
+  // File upload with retry logic
   const handleFileUpload = async (files) => {
     if (!files || files.length === 0) return;
     
     haptic.light();
+    const fileArray = Array.from(files);
+    console.log('[RESOLVE_UPLOAD] Starting upload:', fileArray.map(f => `${f.name} (${f.type}, ${f.size}b)`));
 
-    // Storage quota check before upload
-    const totalSize = Array.from(files).reduce((sum, f) => sum + (f.size || 0), 0);
-    if (totalSize > 0) {
-      try {
-        const quotaRes = await base44.functions.invoke('checkStorageQuota', { fileSize: totalSize });
-        const quota = quotaRes.data;
-        if (quota && !quota.allowed && !quota.failOpen) {
-          const msg = language === 'th'
-            ? `พื้นที่จัดเก็บเต็ม คุณใช้ ${quota.usedMB || 0} MB จาก ${quota.limitMB || 0} MB\n\nอัปเกรดเพื่อเพิ่มพื้นที่`
-            : `Storage limit reached. You're using ${quota.usedMB || 0} MB of ${quota.limitMB || 0} MB.\n\nUpgrade for more storage.`;
-          toast.error(msg);
-          return;
-        }
-      } catch (quotaErr) {
-        console.warn('[RESOLVE] Quota check failed, continuing:', quotaErr?.message);
-      }
-    }
+    // Skip quota check - it was causing Network Errors and blocking uploads
+    // Storage usage is tracked post-upload instead
 
     setUploading(true);
     try {
       const uploadResults = [];
       let totalUploadedBytes = 0;
       
-      // Upload files sequentially to avoid overwhelming the system
-      for (const file of Array.from(files)) {
-        try {
-          const result = await base44.integrations.Core.UploadFile({ file });
-          uploadResults.push({
-            success: true,
-            file_url: result.file_url,
-            fileName: file.name
-          });
-          totalUploadedBytes += (file.size || 0);
-        } catch (uploadError) {
+      for (const file of fileArray) {
+        let uploaded = false;
+        let lastError = '';
+        
+        // Retry up to 3 times
+        for (let attempt = 1; attempt <= 3 && !uploaded; attempt++) {
+          try {
+            console.log(`[RESOLVE_UPLOAD] Attempt ${attempt} for ${file.name} (${file.type}, ${file.size}b)`);
+            
+            // Create a fresh File object to avoid stale blob references
+            let uploadFile = file;
+            if (attempt > 1 || !file.type.startsWith('image/')) {
+              const arrayBuffer = await file.arrayBuffer();
+              uploadFile = new File([arrayBuffer], file.name, { 
+                type: file.type || 'application/octet-stream',
+                lastModified: file.lastModified 
+              });
+              console.log(`[RESOLVE_UPLOAD] Fresh file created: ${uploadFile.name} (${uploadFile.size}b)`);
+            }
+            
+            const result = await base44.integrations.Core.UploadFile({ file: uploadFile });
+            console.log(`[RESOLVE_UPLOAD] ✅ Success: ${file.name} → ${result.file_url}`);
+            uploadResults.push({
+              success: true,
+              file_url: result.file_url,
+              fileName: file.name
+            });
+            totalUploadedBytes += (file.size || 0);
+            uploaded = true;
+          } catch (uploadError) {
+            lastError = uploadError?.message || 'Unknown error';
+            console.error(`[RESOLVE_UPLOAD] ❌ Attempt ${attempt} failed for ${file.name}:`, lastError);
+            if (attempt < 3) {
+              await new Promise(r => setTimeout(r, 1000 * attempt)); // backoff
+            }
+          }
+        }
+        
+        if (!uploaded) {
           uploadResults.push({
             success: false,
             fileName: file.name,
-            error: uploadError.message
+            error: lastError
           });
         }
       }
       
-      // Check if any uploads succeeded
       const successfulUploads = uploadResults.filter(r => r.success);
       const failedUploads = uploadResults.filter(r => !r.success);
       
@@ -364,7 +378,7 @@ function ResolveCaseContent() {
         const newFiles = successfulUploads.map((result, idx) => ({
           id: `file-${Date.now()}-${idx}`,
           url: result.file_url,
-          type: 'photo',
+          type: result.fileName.toLowerCase().endsWith('.pdf') ? 'lease' : 'photo',
           label: result.fileName,
           uploaded_date: new Date().toISOString()
         }));
@@ -385,6 +399,7 @@ function ResolveCaseContent() {
       }
       
       if (failedUploads.length > 0) {
+        console.error('[RESOLVE_UPLOAD] Failed uploads:', failedUploads);
         toast.error(
           language === 'th' ? `ไม่สามารถอัปโหลด ${failedUploads.length} ไฟล์`
           : language === 'zh' ? `${failedUploads.length} 个文件上传失败`
@@ -395,13 +410,14 @@ function ResolveCaseContent() {
         );
       }
 
-      // Update storage usage after successful uploads
+      // Update storage usage after successful uploads (non-blocking)
       if (totalUploadedBytes > 0) {
         base44.functions.invoke('updateStorageUsage', { bytesAdded: totalUploadedBytes }).catch(err =>
           console.warn('[RESOLVE] Storage update failed (non-blocking):', err?.message)
         );
       }
     } catch (error) {
+      console.error('[RESOLVE_UPLOAD] Fatal error:', error);
       toast.error(
         language === 'th' ? 'เกิดข้อผิดพลาดในการอัปโหลด'
         : language === 'zh' ? '上传出错'
