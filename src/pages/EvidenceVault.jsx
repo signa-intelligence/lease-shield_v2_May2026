@@ -479,8 +479,10 @@ function EvidenceVaultContent() {
       }
 
       if (results.length === 0) {
+        const detail = failedFiles.length > 0 ? failedFiles.join('\n') : strings.uploadFailed;
+        console.error('[EV] ALL UPLOADS FAILED:', detail);
         throw new Error(failedFiles.length > 0 
-          ? `All uploads failed: ${failedFiles.join(', ')}` 
+          ? `Upload failed:\n${detail}` 
           : strings.uploadFailed);
       }
 
