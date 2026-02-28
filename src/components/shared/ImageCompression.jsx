@@ -90,7 +90,7 @@ export const compressMultipleImages = async (files, onProgress) => {
     }
     
     if (onProgress) {
-      onProgress(Math.round(((i + 1) / files.length) * 100));
+      onProgress((i + 1) / files.length);
     }
   }
   
