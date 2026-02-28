@@ -128,7 +128,7 @@ function EvidenceVaultContent() {
     enabled: !!user?.email,
     staleTime: 30000,
   });
-  const userStorageInfo = userStorageRecords[0] || null;
+  const userStorageInfo = (Array.isArray(userStorageRecords) && userStorageRecords.length > 0) ? userStorageRecords[0] : null;
 
   // ADDED: Optimistic update hook
   const optimistic = useOptimisticUpdate(['documents'], 'Document');
