@@ -324,8 +324,7 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
       const url = window.URL.createObjectURL(buffer);
       const a = document.createElement('a');
       a.href = url;
-      const langSuffix = documentLangForExport === 'th' ? '_TH' : '_EN';
-      a.download = `${template.template_key}${langSuffix}.docx`;
+      a.download = `${template.template_key}_TH_EN.docx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
