@@ -400,41 +400,54 @@ function EvidenceVaultContent() {
       const allFilesToUpload = [...compressedFiles, ...voiceFiles, ...videoFiles];
       console.log('[EV] Uploading', allFilesToUpload.length, 'files to storage');
 
-      // Upload sequentially with delay to avoid overwhelming the API
+      // Upload files one at a time with delay to prevent network errors
       const results = [];
+      const failedFiles = [];
       for (let i = 0; i < allFilesToUpload.length; i++) {
         const file = allFilesToUpload[i];
         console.log(`[EV] Uploading file ${i + 1}/${allFilesToUpload.length}:`, file.name, file.type, `${(file.size / 1024).toFixed(1)}KB`);
         
-        // Add delay between uploads to prevent network contention
+        // Add delay between uploads to prevent rate limiting / network congestion
         if (i > 0) {
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise(r => setTimeout(r, 800));
         }
         
-        const result = await base44.integrations.Core.UploadFile({ file });
-        console.log(`[EV] Upload ${i + 1} result:`, result?.file_url ? 'SUCCESS' : 'NO URL', result);
-        
-        if (!result?.file_url) {
-          console.error(`[EV] Upload returned no URL for ${file.name}`);
-          throw new Error(`Upload failed for ${file.name} - no URL returned`);
+        try {
+          const result = await base44.integrations.Core.UploadFile({ file });
+          if (!result?.file_url) {
+            console.error(`[EV] Upload returned no URL for ${file.name}:`, result);
+            failedFiles.push(file.name);
+            continue;
+          }
+          console.log(`[EV] Upload success: ${file.name} → ${result.file_url.substring(0, 60)}...`);
+          results.push({ result, fileIndex: i });
+        } catch (uploadErr) {
+          console.error(`[EV] Upload failed for ${file.name}:`, uploadErr?.message || uploadErr);
+          failedFiles.push(file.name);
+          // Continue with remaining files instead of aborting
+          continue;
         }
-        
-        results.push(result);
         setUploadProgressPercent(40 + Math.round(((i + 1) / allFilesToUpload.length) * 30));
+      }
+
+      if (results.length === 0) {
+        throw new Error(failedFiles.length > 0 
+          ? `All uploads failed: ${failedFiles.join(', ')}` 
+          : strings.uploadFailed);
       }
 
       setUploadStage('savingDocuments');
       for (let idx = 0; idx < results.length; idx++) {
-        const result = results[idx];
+        const { result, fileIndex } = results[idx];
         let docType = uploadType;
-        if (idx >= compressedFiles.length && idx < compressedFiles.length + voiceFiles.length) {
+        if (fileIndex >= compressedFiles.length && fileIndex < compressedFiles.length + voiceFiles.length) {
           docType = 'other';
-        } else if (idx >= compressedFiles.length + voiceFiles.length) {
+        } else if (fileIndex >= compressedFiles.length + voiceFiles.length) {
           docType = 'video';
         }
         const typeLabel = getDocTypeLabel(docType, language);
 
-        console.log('[EV] Creating doc:', docType, result.file_url);
+        console.log('[EV] Creating doc record:', docType, result.file_url);
         await createDocumentMutation.mutateAsync({
           type: docType,
           file_url: result.file_url,
