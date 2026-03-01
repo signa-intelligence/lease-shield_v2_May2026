@@ -2,6 +2,8 @@ import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { Database, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 export default function StorageMeter({ storageInfo, userTier, colors, language = 'en' }) {
   if (!storageInfo) {
@@ -135,16 +137,18 @@ export default function StorageMeter({ storageInfo, userTier, colors, language =
         )}
       </div>
       
-      {isCritical && (
-        <div className="mt-3 p-2 rounded-lg" style={{
-          backgroundColor: colors.bg,
-          border: '1px solid #EF4444'
-        }}>
-          <p className="text-xs font-semibold" style={{ color: '#EF4444' }}>
-            <AlertTriangle className="w-3 h-3 inline mr-1" />
-            {strings.upgrade}
-          </p>
-        </div>
+      {isNearLimit && (
+        <Link to={createPageUrl("Account") + '?showPlans=true'}>
+          <div className="mt-3 p-2.5 rounded-lg cursor-pointer transition-all hover:opacity-90" style={{
+            backgroundColor: isCritical ? (colors.bg || '#FEF2F2') : (colors.bg || '#FFFBEB'),
+            border: `1px solid ${isCritical ? '#EF4444' : '#F59E0B'}`
+          }}>
+            <p className="text-xs font-semibold" style={{ color: isCritical ? '#EF4444' : '#92400E' }}>
+              <AlertTriangle className="w-3 h-3 inline mr-1" />
+              {strings.upgrade} →
+            </p>
+          </div>
+        </Link>
       )}
     </div>
   );
