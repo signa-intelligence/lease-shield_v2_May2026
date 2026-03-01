@@ -257,6 +257,17 @@ export default function UploadBottomSheet({
   const selectedFolderName = uploadFolderId ? folders.find(f => f.id === uploadFolderId)?.folder_name : null;
 
   return (
+    <>
+    <StorageLimitModal
+      open={showStorageModal}
+      onClose={() => setShowStorageModal(false)}
+      currentUsage={storageModalData?.currentUsage}
+      limit={storageModalData?.limit}
+      currentTier={storageModalData?.currentTier}
+      fileSize={storageModalData?.fileSize}
+      language={language}
+      isDarkMode={isDarkMode}
+    />
     <BottomSheet
       open={open}
       onClose={handleClose}
