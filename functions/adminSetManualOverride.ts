@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - admin access required' }, { status: 403 });
     }
 
-    const { email, manual_tier_override, manual_letter_credits, manual_scan_credits, manual_case_credits, plan_tier } = await req.json();
+    const { email, manual_tier_override, manual_letter_credits, manual_scan_credits, manual_case_credits, plan_tier, resolve_entitlement_used_at, resolve_entitlement_used_case_id } = await req.json();
 
     if (!email) {
       return Response.json({ error: 'email is required' }, { status: 400 });
@@ -30,6 +30,8 @@ Deno.serve(async (req) => {
     if (manual_scan_credits !== undefined) updateData.manual_scan_credits = manual_scan_credits;
     if (manual_case_credits !== undefined) updateData.manual_case_credits = manual_case_credits;
     if (plan_tier !== undefined) updateData.plan_tier = plan_tier;
+    if (resolve_entitlement_used_at !== undefined) updateData.resolve_entitlement_used_at = resolve_entitlement_used_at;
+    if (resolve_entitlement_used_case_id !== undefined) updateData.resolve_entitlement_used_case_id = resolve_entitlement_used_case_id;
 
     console.log('[adminSetManualOverride] Updating user:', email, 'with:', updateData);
 
