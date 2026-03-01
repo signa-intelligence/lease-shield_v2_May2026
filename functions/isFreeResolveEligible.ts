@@ -49,26 +49,49 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Step 1: Sync latest Stripe data
-    console.log('📡 [FREE_RESOLVE_CHECK] Syncing Stripe subscription...');
-    const syncResponse = await base44.functions.invoke('syncStripeSubscription', { userId: targetUserId });
-    
-    if (!syncResponse.data?.success) {
-      console.log('⚠️ [FREE_RESOLVE_CHECK] Stripe sync failed or no subscription');
-      return Response.json({
-        eligible: false,
-        reason: 'no_subscription',
-        message: 'No active subscription found'
-      });
-    }
-
-    // Step 2: Fetch updated user data
+    // Step 1: Fetch user data first
     const targetUser = await base44.asServiceRole.entities.User.filter({ id: targetUserId });
     if (!targetUser || targetUser.length === 0) {
       return Response.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const userData = targetUser[0];
+    let userData = targetUser[0];
+
+    // Step 1b: Only sync Stripe if user has a stripe_subscription_id
+    if (userData.stripe_subscription_id) {
+      console.log('📡 [FREE_RESOLVE_CHECK] Syncing Stripe subscription...');
+      try {
+        const syncResponse = await base44.functions.invoke('syncStripeSubscription', { userId: targetUserId });
+        
+        if (syncResponse.data?.success) {
+          // Re-fetch user data after sync
+          const refreshedUser = await base44.asServiceRole.entities.User.filter({ id: targetUserId });
+          if (refreshedUser && refreshedUser.length > 0) {
+            userData = refreshedUser[0];
+          }
+          console.log('✅ [FREE_RESOLVE_CHECK] Stripe sync successful');
+        } else {
+          console.log('⚠️ [FREE_RESOLVE_CHECK] Stripe sync returned non-success, continuing with existing data');
+        }
+      } catch (syncError) {
+        console.error('⚠️ [FREE_RESOLVE_CHECK] Stripe sync failed (non-blocking):', syncError.message);
+        // Continue with existing user data - don't block eligibility check
+      }
+    } else {
+      console.log('ℹ️ [FREE_RESOLVE_CHECK] No stripe_subscription_id - skipping Stripe sync');
+      
+      // For users with plan_tier=secure but no Stripe subscription (manually set tier),
+      // check if they should be using manual override path
+      if (userData.plan_tier === 'secure' && userData.subscription_status === 'active') {
+        console.log('⚠️ [FREE_RESOLVE_CHECK] User has secure tier without Stripe subscription');
+        console.log('This user may need manual_tier_override=true and manual_case_credits set by admin');
+        return Response.json({
+          eligible: false,
+          reason: 'no_stripe_subscription',
+          message: 'Your Secure subscription is not linked to a payment. Please contact support to verify your subscription status, or ask an admin to set manual case credits.'
+        });
+      }
+    }
 
     console.log('📊 [FREE_RESOLVE_CHECK] User subscription data:', {
       stripe_status: userData.stripe_status,
