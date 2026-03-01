@@ -30,6 +30,8 @@ export default function UploadBottomSheet({
   const [compressionStats, setCompressionStats] = useState(null);
   const [uploadStage, setUploadStage] = useState('');
   const [uploadProgressPercent, setUploadProgressPercent] = useState(0);
+  const [showStorageModal, setShowStorageModal] = useState(false);
+  const [storageModalData, setStorageModalData] = useState(null);
 
   // Folder destination
   const [uploadFolderId, setUploadFolderId] = useState(() => {
