@@ -202,10 +202,12 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('❌ [FREE_RESOLVE_CHECK] Error:', error);
+    // Never return 500 - always return a graceful JSON response
     return Response.json({ 
       eligible: false,
       reason: 'error',
+      message: 'An unexpected error occurred checking eligibility. Please try again or contact support.',
       error: error.message 
-    }, { status: 500 });
+    });
   }
 });
