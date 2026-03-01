@@ -96,9 +96,19 @@ Deno.serve(async (req) => {
         usagePercent: Math.round((currentUsage / limit) * 100)
       });
       
+      // Determine next tier info for upgrade prompts
+      const NEXT_TIER = {
+        free: { next: 'lite', nextLimit: 1024 * 1024 * 1024, nextPrice: 190 },
+        lite: { next: 'protect', nextLimit: 5 * 1024 * 1024 * 1024, nextPrice: 390 },
+        protect: { next: 'secure', nextLimit: 20 * 1024 * 1024 * 1024, nextPrice: 990 },
+        secure: { next: null, nextLimit: null, nextPrice: null },
+      };
+      const tierInfo = NEXT_TIER[userTier] || NEXT_TIER.free;
+
       return Response.json({
         allowed: false,
         exceeded: true,
+        reason: 'storage_limit_reached',
         currentUsage,
         limit,
         fileSize,
@@ -108,6 +118,10 @@ Deno.serve(async (req) => {
         usedMB: parseFloat(usedMB.toFixed(2)),
         limitMB: parseFloat(limitMB.toFixed(2)),
         usagePercent: Math.round((currentUsage / limit) * 100),
+        currentTier: userTier,
+        nextTier: tierInfo.next,
+        nextTierLimit: tierInfo.nextLimit,
+        nextTierPrice: tierInfo.nextPrice,
         message: `Storage limit exceeded. You have ${remainingMB.toFixed(1)}MB remaining but need ${fileSizeMB.toFixed(1)}MB. Upgrade for more storage.`
       });
     }
