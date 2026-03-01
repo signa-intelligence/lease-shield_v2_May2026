@@ -143,6 +143,7 @@ Deno.serve(async (req) => {
       currentUsage,
       limit,
       usagePercent,
+      currentTier: userTier,
       remainingBytes,
       remainingMB: parseFloat((remainingBytes / (1024 * 1024)).toFixed(2))
     });
