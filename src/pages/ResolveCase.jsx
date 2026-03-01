@@ -1481,6 +1481,29 @@ function ResolveCaseContent() {
             <TrustBadge language={language} isDarkMode={isDarkMode} />
           </div>
 
+          {/* Legal Disclaimer */}
+          <div className="mb-4 p-4 rounded-lg" style={{
+            backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC',
+            border: `1px solid ${colors.borderColor}`
+          }}>
+            <div className="flex items-start gap-2">
+              <span className="text-sm flex-shrink-0">ℹ️</span>
+              <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
+                {language === 'th' 
+                  ? 'LeaseShield ให้คำแนะนำและการสนับสนุนสำหรับข้อพิพาทการเช่า เราไม่ใช่สำนักงานกฎหมายและไม่ให้บริการด้านกฎหมาย ไม่สามารถรับประกันผลลัพธ์ได้ ผลลัพธ์ขึ้นอยู่กับหลักฐาน เงื่อนไขสัญญาเช่า และการตอบสนองของเจ้าของบ้าน'
+                  : language === 'zh'
+                    ? 'LeaseShield提供租赁纠纷指导和支持。我们不是律师事务所，不提供法律代理。无法保证结果。结果取决于您的证据、租约条款和房东的回应。'
+                    : language === 'ja'
+                      ? 'LeaseShieldは賃貸紛争のガイダンスとサポートを提供します。法律事務所ではなく、法的代理を提供しません。結果は保証できません。結果はお客様の証拠、賃貸借契約条件、家主の対応に依存します。'
+                      : language === 'ko'
+                        ? 'LeaseShield는 임대 분쟁에 대한 안내와 지원을 제공합니다. 법률 사무소가 아니며 법적 대리를 제공하지 않습니다. 결과를 보장할 수 없습니다. 결과는 증거, 임대 조건 및 집주인의 대응에 따라 달라집니다.'
+                        : language === 'ru'
+                          ? 'LeaseShield предоставляет консультации и поддержку по арендным спорам. Мы не являемся юридической фирмой и не оказываем юридическое представительство. Результаты не гарантируются. Исход зависит от ваших доказательств, условий аренды и реакции арендодателя.'
+                          : 'LeaseShield provides guidance and support for rental disputes. We are not a law firm and do not provide legal representation. Outcomes cannot be guaranteed and depend on your evidence, lease terms, and landlord response.'}
+              </p>
+            </div>
+          </div>
+
           <Button
             type="submit"
             disabled={createCaseMutation.isPending || uploading || checkingEligibility}
