@@ -146,10 +146,14 @@ export default function UploadBottomSheet({
         const quotaRes = await base44.functions.invoke('checkStorageQuota', { fileSize: totalBytes });
         const quota = quotaRes.data;
         if (quota && !quota.allowed && !quota.failOpen) {
-          const msg = language === 'th'
-            ? `พื้นที่จัดเก็บเต็ม คุณใช้ ${quota.usedMB || 0} MB จาก ${quota.limitMB || 0} MB\n\nอัปเกรดเพื่อเพิ่มพื้นที่`
-            : `Storage limit reached. You're using ${quota.usedMB || 0} MB of ${quota.limitMB || 0} MB.\n\nUpgrade for more storage.`;
-          setError(msg);
+          // Show rich storage limit modal instead of plain text error
+          setStorageModalData({
+            currentUsage: quota.currentUsage || 0,
+            limit: quota.limit || 0,
+            currentTier: quota.currentTier || 'free',
+            fileSize: totalBytes,
+          });
+          setShowStorageModal(true);
           return;
         }
       } catch (quotaErr) {
