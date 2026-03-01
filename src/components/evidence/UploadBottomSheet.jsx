@@ -13,6 +13,7 @@ import UploadProgress from "../shared/UploadProgress";
 import BottomSheet from "../shared/BottomSheet";
 import MobileFormInput from "../shared/MobileFormInput";
 import { getDocTypeLabel } from "./evidenceStrings";
+import StorageLimitModal from "../shared/StorageLimitModal";
 
 export default function UploadBottomSheet({
   open, onClose, language, colors, isDarkMode, strings, folderStr,
