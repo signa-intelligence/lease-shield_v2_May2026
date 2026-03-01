@@ -257,7 +257,7 @@ export default function UploadBottomSheet({
   const selectedFolderName = uploadFolderId ? folders.find(f => f.id === uploadFolderId)?.folder_name : null;
 
   return (
-    <>
+    <React.Fragment>
     <StorageLimitModal
       open={showStorageModal}
       onClose={() => setShowStorageModal(false)}
@@ -469,6 +469,6 @@ export default function UploadBottomSheet({
         )}
       </div>
     </BottomSheet>
-    </>
+    </React.Fragment>
   );
 }
