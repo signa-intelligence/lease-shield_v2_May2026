@@ -202,11 +202,33 @@ Deno.serve(async (req) => {
     }
 
     const pdfBuffer = await pdfResponse.arrayBuffer();
+    const contentType = pdfResponse.headers.get('content-type') || '';
     console.log('[ANALYZE_LEASE_FILE_DOWNLOADED]', {
       correlationId,
       sizeBytes: pdfBuffer.byteLength,
-      contentType: pdfResponse.headers.get('content-type')
+      contentType
     });
+
+    // Second safety net: check content-type header for images
+    const isImageContentType = contentType.startsWith('image/');
+    if (isImageContentType) {
+      console.warn('[ANALYZE_LEASE_IMAGE_CONTENT_TYPE_REJECTED]', {
+        correlationId,
+        contentType,
+        message: 'Server returned image content-type — PDF required'
+      });
+      
+      return new Response(JSON.stringify({
+        ok: false,
+        step: 'FILE_TYPE_VALIDATION',
+        error_code: 'IMAGE_NOT_SUPPORTED',
+        message: 'Image files (JPG/PNG) are not yet supported. Please upload a PDF file with readable text.',
+        correlationId
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     // Extract text from PDF
     console.log('[ANALYZE_LEASE_PDF_EXTRACTION_START]', { correlationId, isPreviewMode });
