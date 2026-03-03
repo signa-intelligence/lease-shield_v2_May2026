@@ -3124,10 +3124,10 @@ function UploadScanPageContent() {
 
                   {/* Hidden file input */}
                   <input
-                   ref={fileInputRef}
-                   type="file"
-                   multiple
-                   accept=".pdf,.png,.jpg,.jpeg,image/*,application/pdf,image/png,image/jpeg"
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,application/pdf"
                    onChange={(e) => {
                      if (!scanStatus.allowed) return;
 
@@ -3141,10 +3141,7 @@ function UploadScanPageContent() {
 
                      files.forEach(file => {
                        const ext = file.name.toLowerCase().split('.').pop();
-                       const validExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
-                       const validMimeTypes = ['application/pdf', 'image/png', 'image/jpeg'];
-
-                       if (validExtensions.includes(ext) || validMimeTypes.includes(file.type)) {
+                       if (ext === 'pdf' || file.type === 'application/pdf') {
                          validFiles.push(file);
                        } else {
                          invalidFiles.push(file.name);
@@ -3153,10 +3150,10 @@ function UploadScanPageContent() {
 
                      if (invalidFiles.length > 0) {
                        const errorMsg = language === 'th'
-                         ? `รองรับเฉพาะ PDF, PNG และ JPG\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
+                         ? `รองรับเฉพาะไฟล์ PDF เท่านั้น 📄\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}\n\nการสแกนรูปภาพจะเปิดให้บริการเร็ว ๆ นี้`
                          : language === 'ru'
-                           ? `Поддерживаются только PDF, PNG и JPG\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
-                           : `Only PDF, PNG, and JPG files are supported.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
+                           ? `Поддерживаются только PDF файлы 📄\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}\n\nСканирование изображений скоро будет доступно`
+                           : `PDF files only 📄\n\nUnsupported files: ${invalidFiles.join(', ')}\n\nImage scanning coming soon.`;
 
                        setError(errorMsg);
                        setTimeout(() => setError(null), 5000);
