@@ -1796,7 +1796,7 @@ function UploadScanPageContent() {
     haptic.light();
     setShowCompletionModal(false);
     setCompletedLeaseId(null);
-    if (userTier === 'free') {
+    if (userTier === 'explorer') {
       setShowPostScanHint(true);
     }
   };
