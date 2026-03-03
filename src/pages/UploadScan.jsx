@@ -140,12 +140,12 @@ function UploadScanPageContent() {
 
   const language = user?.language || 'en';
   const isDarkMode = user?.theme === 'dark';
-  const userTier = user?.plan_tier || 'free';
+  const userTier = user?.plan_tier || 'explorer';
 
   // ✅ SCAN LIMIT ENFORCEMENT
   const getScanLimits = () => {
     switch(userTier) {
-      case 'free': return { limit: 1, period: 'lifetime', unlimited: false };
+      case 'explorer': return { limit: 1, period: 'lifetime', unlimited: false };
       case 'lite': return { limit: 6, period: 'year', unlimited: false };
       case 'protect': return { limit: 12, period: 'year', unlimited: false };
       case 'secure': return { limit: 999, period: 'year', unlimited: true };
