@@ -2308,7 +2308,7 @@ function UploadScanPageContent() {
         </div>
 
         {/* ✅ NEW: Post-scan upgrade hint */}
-        {showPostScanHint && userTier === 'free' && (
+        {showPostScanHint && userTier === 'explorer' && (
           <div
             style={{
               marginBottom: 16,
