@@ -2068,20 +2068,15 @@ function UploadScanPageContent() {
   };
 
   const handleFileSelect = (e) => {
-    // Only allow file selection if upload is allowed
     if (!scanStatus.allowed) return;
     const files = Array.from(e.target.files || e.dataTransfer?.files || []);
     
-    // Validate file types
     const validFiles = [];
     const invalidFiles = [];
     
     files.forEach(file => {
       const ext = file.name.toLowerCase().split('.').pop();
-      const validExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
-      const validMimeTypes = ['application/pdf', 'image/png', 'image/jpeg'];
-      
-      if (validExtensions.includes(ext) || validMimeTypes.includes(file.type)) {
+      if (ext === 'pdf' || file.type === 'application/pdf') {
         validFiles.push(file);
       } else {
         invalidFiles.push(file.name);
@@ -2089,19 +2084,11 @@ function UploadScanPageContent() {
     });
     
     if (invalidFiles.length > 0) {
-      const errorMsg = language === 'th'
-        ? `รองรับเฉพาะ PDF, PNG และ JPG\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
-        : language === 'zh'
-          ? `仅支持 PDF、PNG 和 JPG\n\n不支持的文件: ${invalidFiles.join(', ')}`
-          : language === 'ja'
-            ? `PDF、PNG、JPG のみサポート\n\nサポートされていないファイル: ${invalidFiles.join(', ')}`
-            : language === 'ko'
-              ? `PDF, PNG, JPG만 지원됩니다\n\n지원되지 않는 파일: ${invalidFiles.join(', ')}`
-              : language === 'ru'
-                ? `Поддерживаются только PDF, PNG и JPG\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
-                : `Only PDF, PNG, and JPG files are supported.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
-      
-      setError(errorMsg);
+      setError(language === 'th'
+        ? `รองรับเฉพาะไฟล์ PDF เท่านั้น 📄\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}\n\nการสแกนรูปภาพจะเปิดให้บริการเร็ว ๆ นี้`
+        : language === 'ru'
+          ? `Поддерживаются только PDF файлы 📄\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}\n\nСканирование изображений скоро будет доступно`
+          : `PDF files only 📄\n\nUnsupported: ${invalidFiles.join(', ')}\n\nImage scanning coming soon.`);
       setTimeout(() => setError(null), 5000);
     }
     
@@ -2114,22 +2101,17 @@ function UploadScanPageContent() {
   };
 
   const handleDrop = (e) => {
-    // Only allow drop if upload is allowed
     if (!scanStatus.allowed) return;
     e.preventDefault();
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
     
-    // Validate file types
     const validFiles = [];
     const invalidFiles = [];
     
     files.forEach(file => {
       const ext = file.name.toLowerCase().split('.').pop();
-      const validExtensions = ['pdf', 'png', 'jpg', 'jpeg'];
-      const validMimeTypes = ['application/pdf', 'image/png', 'image/jpeg'];
-      
-      if (validExtensions.includes(ext) || validMimeTypes.includes(file.type)) {
+      if (ext === 'pdf' || file.type === 'application/pdf') {
         validFiles.push(file);
       } else {
         invalidFiles.push(file.name);
@@ -2137,19 +2119,11 @@ function UploadScanPageContent() {
     });
     
     if (invalidFiles.length > 0) {
-      const errorMsg = language === 'th'
-        ? `รองรับเฉพาะ PDF, PNG และ JPG\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}`
-        : language === 'zh'
-          ? `仅支持 PDF、PNG 和 JPG\n\n不支持的文件: ${invalidFiles.join(', ')}`
-          : language === 'ja'
-            ? `PDF、PNG、JPG のみサポート\n\nサポートされていないファイル: ${invalidFiles.join(', ')}`
-            : language === 'ko'
-              ? `PDF, PNG, JPG만 지원됩니다\n\n지원되지 않는 파일: ${invalidFiles.join(', ')}`
-              : language === 'ru'
-                ? `Поддерживаются только PDF, PNG и JPG\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}`
-                : `Only PDF, PNG, and JPG files are supported.\n\nUnsupported files: ${invalidFiles.join(', ')}`;
-      
-      setError(errorMsg);
+      setError(language === 'th'
+        ? `รองรับเฉพาะไฟล์ PDF เท่านั้น 📄\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}\n\nการสแกนรูปภาพจะเปิดให้บริการเร็ว ๆ นี้`
+        : language === 'ru'
+          ? `Поддерживаются только PDF файлы 📄\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}\n\nСканирование изображений скоро будет доступно`
+          : `PDF files only 📄\n\nUnsupported: ${invalidFiles.join(', ')}\n\nImage scanning coming soon.`);
       setTimeout(() => setError(null), 5000);
     }
     
