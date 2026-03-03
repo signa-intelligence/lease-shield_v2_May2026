@@ -44,12 +44,12 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: true, reason: 'already_configured' });
     }
     
-    // Set default free tier with 1 explorer scan
-    console.log(`[${correlationId}] Initializing user with free tier + 1 scan`);
+    // Set default explorer tier with 1 scan
+    console.log(`[${correlationId}] Initializing user with explorer tier + 1 scan`);
     
     const svc = base44.asServiceRole;
     await svc.entities.User.update(userId, {
-      plan_tier: 'free',
+      plan_tier: 'explorer',
       available_scans: 1,
       is_active: true,
       subscription_status: 'active'
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     console.log(`[${correlationId}] ✅ User initialized`, {
       userId,
       email: userEmail,
-      plan_tier: 'free',
+      plan_tier: 'explorer',
       available_scans: 1
     });
     
@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
       success: true,
       userId,
       email: userEmail,
-      plan_tier: 'free',
+      plan_tier: 'explorer',
       available_scans: 1,
       correlationId
     });

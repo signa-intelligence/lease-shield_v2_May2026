@@ -114,14 +114,14 @@ export default function Layout({ children, currentPageName }) {
     if (user && user.available_scans === undefined && !user.plan_tier) {
       console.log('[LAYOUT] New user detected - initializing defaults:', user.email);
       base44.auth.updateMe({
-        plan_tier: 'free',
+        plan_tier: 'explorer',
         available_scans: 1,
         letter_credits: 0,
         is_active: true,
         subscription_status: 'active'
       })
         .then(() => {
-          console.log('[LAYOUT] ✅ User initialized: plan_tier=free, available_scans=1, letter_credits=0');
+          console.log('[LAYOUT] ✅ User initialized: plan_tier=explorer, available_scans=1, letter_credits=0');
           queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         })
         .catch(err => console.error('[LAYOUT] Failed to initialize user:', err));

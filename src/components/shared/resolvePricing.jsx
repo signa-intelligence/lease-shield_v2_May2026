@@ -44,7 +44,7 @@ export const LETTER_PRICING = {
 export function getMembershipInfo(user, now = new Date()) {
   if (!user) {
     return {
-      plan: 'free',
+      plan: 'explorer',
       membershipDays: 0,
       isPaidPlan: false,
       qualifiesForMemberBenefits: false,
@@ -53,8 +53,7 @@ export function getMembershipInfo(user, now = new Date()) {
     };
   }
 
-  const rawPlan = (user.plan_tier || 'free').toLowerCase().trim();
-  const plan = rawPlan === 'explorer' ? 'free' : rawPlan;
+  const plan = (user.plan_tier || 'explorer').toLowerCase().trim();
   const isPaidPlan = ['lite', 'protect', 'secure'].includes(plan);
 
   // Calculate membership duration
@@ -69,7 +68,11 @@ export function getMembershipInfo(user, now = new Date()) {
   let reason = '';
   let daysUntilMemberBenefits = null;
 
-  if (plan === 'secure') {
+  if (plan === 'explorer') {
+    // EXPLORER (free tier): Never qualifies
+    qualifiesForMemberBenefits = false;
+    reason = 'not_on_paid_plan';
+  } else if (plan === 'secure') {
     // SECURE: Immediate member benefits (no wait)
     // APPLIES TO BOTH MONTHLY AND ANNUAL SECURE
     qualifiesForMemberBenefits = true;
@@ -90,7 +93,7 @@ export function getMembershipInfo(user, now = new Date()) {
     reason = 'lite_not_eligible';
     daysUntilMemberBenefits = null;
   } else {
-    // FREE: Never qualifies
+    // Unknown tier: No benefits
     qualifiesForMemberBenefits = false;
     reason = 'not_on_paid_plan';
   }

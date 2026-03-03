@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     }
 
     // Valid tiers
-    const validTiers = ['free', 'lite', 'protect', 'secure'];
+    const validTiers = ['explorer', 'lite', 'protect', 'secure'];
     if (!validTiers.includes(tier)) {
       return Response.json({ error: 'Invalid tier' }, { status: 400 });
     }

@@ -10,13 +10,13 @@ const FEATURE_GATES = {
   // ============================================
   // FREE TIER (Trial/Discovery)
   // ============================================
-  scan_preview: ['free', 'lite', 'protect', 'secure'],
-  basic_document_vault: ['free', 'lite', 'protect', 'secure'],
-  maintenance_tracker_basic: ['free', 'lite', 'protect', 'secure'],
-  deposit_tracker_readonly: ['free', 'lite', 'protect', 'secure'],
-  storage_100mb: ['free'],
-  max_3_files: ['free'],
-  scan_limit_1_lifetime: ['free'],
+  scan_preview: ['explorer', 'lite', 'protect', 'secure'],
+  basic_document_vault: ['explorer', 'lite', 'protect', 'secure'],
+  maintenance_tracker_basic: ['explorer', 'lite', 'protect', 'secure'],
+  deposit_tracker_readonly: ['explorer', 'lite', 'protect', 'secure'],
+  storage_100mb: ['explorer'],
+  max_3_files: ['explorer'],
+  scan_limit_1_lifetime: ['explorer'],
   
   // ============================================
   // LITE TIER (Essential Protection)
@@ -74,10 +74,10 @@ export function useFeatureAccess(featureName) {
   });
 
   const allowedTiers = FEATURE_GATES[featureName] || [];
-  const normalizedTier = (user?.plan_tier === 'explorer') ? 'free' : user?.plan_tier;
-  const hasAccess = normalizedTier && allowedTiers.includes(normalizedTier);
+  const userTier = user?.plan_tier || 'explorer';
+  const hasAccess = allowedTiers.includes(userTier);
   
-  return { hasAccess, userTier: normalizedTier };
+  return { hasAccess, userTier };
 }
 
 export function FeatureGate({ feature, children, fallback }) {
@@ -111,15 +111,14 @@ export function FeatureGate({ feature, children, fallback }) {
 }
 
 export function PlanBadge({ tier }) {
-  const normalTier = (tier === 'explorer') ? 'free' : tier;
   const configs = {
-    free: { label: 'Explorer', color: 'bg-gray-100 text-gray-700', icon: null },
+    explorer: { label: 'Explorer', color: 'bg-gray-100 text-gray-700', icon: null },
     lite: { label: 'Lite', color: 'bg-blue-100 text-blue-700', icon: Zap },
     protect: { label: 'Protect', color: 'bg-emerald-100 text-emerald-700', icon: Shield },
     secure: { label: 'Secure', color: 'bg-purple-100 text-purple-700', icon: Crown }
   };
 
-  const config = configs[normalTier] || configs.free;
+  const config = configs[tier] || configs.explorer;
   const Icon = config.icon;
 
   return (
