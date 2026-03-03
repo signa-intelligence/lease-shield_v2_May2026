@@ -807,24 +807,10 @@ function UploadScanPageContent() {
       console.warn('[UPLOAD_RATE_LIMIT_CHECK_FAILED]', rateLimitErr);
     }
     
-    // ✅ CRITICAL: CHECK SCAN LIMIT FIRST BEFORE ANY UPLOAD
-    // Get fresh scan status based on current lease count
-    const currentLeaseCount = leases.length;
+    // ✅ CRITICAL: CHECK SCAN LIMIT using available_scans from user record (single source of truth)
     const limits = getScanLimits();
-    
-    let scannedCount = 0;
-    if (limits.period === 'lifetime') {
-      scannedCount = currentLeaseCount;
-    } else if (limits.period === 'year') {
-      const thisYear = new Date().getFullYear();
-      scannedCount = leases.filter(l => {
-        if (!l.created_date) return false;
-        const leaseYear = new Date(l.created_date).getFullYear();
-        return leaseYear === thisYear;
-      }).length;
-    }
-    
-    const canScan = limits.unlimited || scannedCount < limits.limit;
+    const availableScans = user?.available_scans ?? 0;
+    const canScan = limits.unlimited || availableScans > 0;
     
     if (!canScan) {
       const periodText = limits.period === 'year'
@@ -833,8 +819,8 @@ function UploadScanPageContent() {
 
       alert(
         language === 'th'
-          ? `คุณใช้ครบโควต้าการสแกนแล้ว (${scannedCount}/${limits.limit} ${periodText})\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
-          : `You've reached your scan limit (${scannedCount}/${limits.limit} ${periodText})\n\nUpgrade your plan for more scans`
+          ? `คุณใช้ครบโควต้าการสแกนแล้ว\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
+          : `You've reached your scan limit (0 remaining)\n\nUpgrade your plan for more scans`
       );
       return;
     }
