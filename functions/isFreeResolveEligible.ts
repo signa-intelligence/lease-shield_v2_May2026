@@ -80,6 +80,20 @@ Deno.serve(async (req) => {
     } else {
       console.log('ℹ️ [FREE_RESOLVE_CHECK] No stripe_subscription_id - skipping Stripe sync');
       
+      // Free-tier users should get a clear "not eligible" response, not a scary "subscription not active" message
+      const effectiveTier = userData.plan_tier || 'free';
+      const isFreeTier = !effectiveTier || effectiveTier === 'free' || effectiveTier === 'explorer' || effectiveTier === 'discover';
+      
+      if (isFreeTier) {
+        console.log('ℹ️ [FREE_RESOLVE_CHECK] Free-tier user - not eligible for free Resolve (expected)');
+        return Response.json({
+          eligible: false,
+          reason: 'not_annual_secure',
+          message: 'Free Resolve is only included with Annual Secure subscription.',
+          user_tier: effectiveTier
+        });
+      }
+      
       // For users with plan_tier=secure but no Stripe subscription (manually set tier),
       // check if they should be using manual override path
       if (userData.plan_tier === 'secure' && userData.subscription_status === 'active') {
@@ -89,6 +103,17 @@ Deno.serve(async (req) => {
           eligible: false,
           reason: 'no_stripe_subscription',
           message: 'Your Secure subscription is not linked to a payment. Please contact support to verify your subscription status, or ask an admin to set manual case credits.'
+        });
+      }
+      
+      // For other paid tiers (lite, protect) without Stripe subscription
+      if (effectiveTier === 'lite' || effectiveTier === 'protect') {
+        console.log('ℹ️ [FREE_RESOLVE_CHECK] Paid tier without Stripe - not annual secure');
+        return Response.json({
+          eligible: false,
+          reason: 'not_annual_secure',
+          message: 'Free Resolve is only included with Annual Secure subscription.',
+          user_tier: effectiveTier
         });
       }
     }
