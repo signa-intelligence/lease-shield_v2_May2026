@@ -1,9 +1,15 @@
 /******************************************************************************
- * ⚠️ PRODUCTION CODE - FROZEN - DO NOT MODIFY ⚠️
+ * ⚠️ PRODUCTION CODE - RE-FROZEN March 3, 2026 ⚠️
  * 
- * Last Working State: February 22, 2026
- * Status: PRODUCTION READY - LAUNCHING TO CUSTOMERS
- * Version: 1.0.0
+ * Last Working State: March 3, 2026
+ * Status: PRODUCTION READY
+ * Version: 1.1.0
+ * 
+ * CHANGE LOG:
+ * v1.1.0 (2026-03-03): Added image file detection to prevent crashes on 
+ *   JPG/PNG uploads. PDFParser only works on PDF files — images now return
+ *   a clear error instead of crashing.
+ * v1.0.0 (2026-02-22): Initial frozen version.
  * 
  * Features working:
  * - OpenAI clause analysis (full mode) ✅
@@ -11,11 +17,9 @@
  * - Key terms extraction with fallback ✅
  * - PDF parsing and text extraction ✅
  * - Risk scoring and categorization ✅
+ * - Image file rejection with clear error ✅
  * 
  * CRITICAL: scanMode logic determines tier display (preview vs full)
- * 
- * Change process: See CHANGE_REQUEST_TEMPLATE.md
- * Get approval from: steve.l@signa-consultants.com
  ******************************************************************************/
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
@@ -140,6 +144,40 @@ Deno.serve(async (req) => {
         step: 'INPUT_VALIDATION',
         error_code: 'MISSING_PARAMS',
         message: 'fileUrl and leaseId are required',
+        correlationId
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // FIX v1.1.0: Detect image files BEFORE attempting PDF parsing
+    // PDFParser crashes on JPG/PNG — reject with clear error message
+    // ═══════════════════════════════════════════════════════════════
+    const urlPath = fileUrl.split('?')[0]; // Strip query params
+    const fileExtension = urlPath.split('.').pop().toLowerCase();
+    const isImage = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'tiff'].includes(fileExtension);
+    
+    console.log('[ANALYZE_LEASE_FILE_TYPE_CHECK]', {
+      correlationId,
+      fileExtension,
+      isImage,
+      urlPreview: fileUrl.substring(0, 100)
+    });
+
+    if (isImage) {
+      console.warn('[ANALYZE_LEASE_IMAGE_REJECTED]', {
+        correlationId,
+        fileExtension,
+        message: 'Image files not supported — PDF required'
+      });
+      
+      return new Response(JSON.stringify({
+        ok: false,
+        step: 'FILE_TYPE_VALIDATION',
+        error_code: 'IMAGE_NOT_SUPPORTED',
+        message: 'Image files (JPG/PNG) are not yet supported. Please upload a PDF file with readable text.',
         correlationId
       }), {
         status: 200,

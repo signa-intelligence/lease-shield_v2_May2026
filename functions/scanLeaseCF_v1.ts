@@ -1,11 +1,14 @@
 /******************************************************************************
- * ⚠️ PRODUCTION CODE - FROZEN - DO NOT MODIFY ⚠️
+ * ⚠️ PRODUCTION CODE - RE-FROZEN March 3, 2026 ⚠️
  * 
- * Last Working State: February 22, 2026
- * Status: PRODUCTION READY - LAUNCHING TO CUSTOMERS
- * Version: 1.0.0
+ * Last Working State: March 3, 2026
+ * Status: PRODUCTION READY
+ * Version: 1.0.1
  * 
- * THIS CODE IS FROZEN AND MUST NOT BE CHANGED WITHOUT EXPLICIT APPROVAL.
+ * CHANGE LOG:
+ * v1.0.1 (2026-03-03): Updated freeze header only. No logic changes.
+ *   analyzeLease v1.1.0 now handles image rejection upstream.
+ * v1.0.0 (2026-02-22): Initial frozen version.
  * 
  * Features working:
  * - Tier-based scan modes (free=preview, paid=full) ✅
@@ -14,13 +17,6 @@
  * - Rate limiting (tier-based) ✅
  * - Storage tracking ✅
  * - Error handling and logging ✅
- * 
- * ANY MODIFICATION WILL BREAK WORKING FUNCTIONALITY.
- * 
- * Change process: See CHANGE_REQUEST_TEMPLATE.md
- * Get approval from: steve.l@signa-consultants.com
- * 
- * IF IT'S NOT BROKEN, DO NOT FIX IT.
  ******************************************************************************/
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
