@@ -56,7 +56,7 @@ function AdminUserManagementContent() {
     }
 
     if (tierFilter !== "all") {
-      result = result.filter((u) => (u.plan_tier || "free") === tierFilter);
+      result = result.filter((u) => (u.plan_tier || "explorer") === tierFilter);
     }
 
     if (overrideFilter === "true") {
@@ -143,7 +143,7 @@ function AdminUserManagementContent() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Tiers</SelectItem>
-                    <SelectItem value="free">Free</SelectItem>
+                    <SelectItem value="explorer">Explorer</SelectItem>
                     <SelectItem value="lite">Lite</SelectItem>
                     <SelectItem value="protect">Protect</SelectItem>
                     <SelectItem value="secure">Secure</SelectItem>
@@ -221,9 +221,9 @@ function AdminUserManagementContent() {
                           </td>
                           <td className="p-3">
                             <Badge className={tierColor(u.plan_tier)}>
-                              {(u.plan_tier || "free").toUpperCase()}
+                              {(u.plan_tier || "explorer").toUpperCase()}
                             </Badge>
-                            {!u.stripe_subscription_id && u.plan_tier && u.plan_tier !== "free" && (
+                            {!u.stripe_subscription_id && u.plan_tier && u.plan_tier !== "explorer" && u.plan_tier !== "free" && (
                               <p className="text-[10px] text-amber-600 mt-0.5">No Stripe</p>
                             )}
                           </td>

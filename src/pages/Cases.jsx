@@ -996,7 +996,7 @@ function CasesContent() {
                 >
                   {strings.openNewCase}
                 </button>
-                {(!user?.plan_tier || user.plan_tier === 'free') && (
+                {(!user?.plan_tier || user.plan_tier === 'explorer' || user.plan_tier === 'free') && (
                   <button
                     type="button"
                     onClick={() => {

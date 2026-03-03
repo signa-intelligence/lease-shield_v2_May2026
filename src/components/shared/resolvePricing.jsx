@@ -5,7 +5,7 @@
  * - Secure: Immediate member benefits (no 30-day wait)
  * - Protect: Member benefits after 30 days of active membership
  * - Lite: NO member pricing for Resolve (public rate only)
- * - Free: No member benefits, ever
+ * - Explorer (free tier): No member benefits, ever
  * 
  * Applies to: Resolve pricing, Letter pricing, Priority features
  */
@@ -44,7 +44,7 @@ export const LETTER_PRICING = {
 export function getMembershipInfo(user, now = new Date()) {
   if (!user) {
     return {
-      plan: 'explorer',
+      plan: 'free',
       membershipDays: 0,
       isPaidPlan: false,
       qualifiesForMemberBenefits: false,
@@ -53,8 +53,9 @@ export function getMembershipInfo(user, now = new Date()) {
     };
   }
 
-  const plan = (user.plan_tier || 'explorer').toLowerCase().trim();
-  const isPaidPlan = ['lite', 'protect', 'secure'].includes(plan);
+  const rawPlan = (user.plan_tier || 'explorer').toLowerCase().trim();
+  const plan = (rawPlan === 'explorer' || rawPlan === 'free') ? 'explorer' : rawPlan;
+  const isPaidPlan = !['explorer', 'free'].includes(plan);
 
   // Calculate membership duration
   let membershipDays = 0;
@@ -68,11 +69,7 @@ export function getMembershipInfo(user, now = new Date()) {
   let reason = '';
   let daysUntilMemberBenefits = null;
 
-  if (plan === 'explorer') {
-    // EXPLORER (free tier): Never qualifies
-    qualifiesForMemberBenefits = false;
-    reason = 'not_on_paid_plan';
-  } else if (plan === 'secure') {
+  if (plan === 'secure') {
     // SECURE: Immediate member benefits (no wait)
     // APPLIES TO BOTH MONTHLY AND ANNUAL SECURE
     qualifiesForMemberBenefits = true;
@@ -93,7 +90,7 @@ export function getMembershipInfo(user, now = new Date()) {
     reason = 'lite_not_eligible';
     daysUntilMemberBenefits = null;
   } else {
-    // Unknown tier: No benefits
+    // FREE: Never qualifies
     qualifiesForMemberBenefits = false;
     reason = 'not_on_paid_plan';
   }

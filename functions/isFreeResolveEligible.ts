@@ -82,10 +82,10 @@ Deno.serve(async (req) => {
       
       // Free-tier users should get a clear "not eligible" response, not a scary "subscription not active" message
       const effectiveTier = userData.plan_tier || 'free';
-      const isFreeTier = !effectiveTier || effectiveTier === 'free' || effectiveTier === 'explorer' || effectiveTier === 'discover';
+      const isExplorerTier = !effectiveTier || effectiveTier === 'explorer' || effectiveTier === 'free' || effectiveTier === 'discover';
       
-      if (isFreeTier) {
-        console.log('ℹ️ [FREE_RESOLVE_CHECK] Free-tier user - not eligible for free Resolve (expected)');
+      if (isExplorerTier) {
+        console.log('ℹ️ [FREE_RESOLVE_CHECK] Explorer-tier user - not eligible for free Resolve (expected)');
         return Response.json({
           eligible: false,
           reason: 'not_annual_secure',
@@ -117,6 +117,10 @@ Deno.serve(async (req) => {
         });
       }
     }
+
+    // FALLBACK: If we get here without returning, user has no stripe and unrecognized tier
+    console.log('ℹ️ [FREE_RESOLVE_CHECK] Fallback - unrecognized tier without Stripe:', userData.plan_tier);
+    
 
     console.log('📊 [FREE_RESOLVE_CHECK] User subscription data:', {
       stripe_status: userData.stripe_status,

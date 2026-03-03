@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     // Valid tiers
     const validTiers = ['explorer', 'lite', 'protect', 'secure'];
     if (!validTiers.includes(tier)) {
-      return Response.json({ error: 'Invalid tier' }, { status: 400 });
+      return Response.json({ error: 'Invalid tier. Valid: explorer, lite, protect, secure' }, { status: 400 });
     }
 
     await safeLog('ADMIN_UPDATE_TIER', { userId, tier });
