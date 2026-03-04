@@ -165,30 +165,32 @@ Deno.serve(async (req) => {
       }
 
       // ✅ CRITICAL: CHECK CREDITS BEFORE SCAN (not after expensive operations)
-      // Treat null, undefined, 'free', 'discover', 'explorer' as limited tiers
       const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover' || userTier === 'explorer';
-      const isLimitedTier = isFreeTier || userTier === 'lite' || userTier === 'protect';
 
-      // Check annual limit for all tiers
+      // Annual limit check (applies to ALL tiers including Secure)
       const currentScans = user?.available_scans ?? 0;
       if (currentScans <= 0) {
         console.log('[SCAN_CF_V1_NO_CREDITS_BLOCKED]', { userId: user.id, availableScans: currentScans, tier: userTier });
         return new Response(JSON.stringify({
           ok: false, step: 'CREDIT_CHECK', error_code: 'NO_SCAN_CREDITS',
-          message: isFreeTier ? 'You have used your free scan. Upgrade to continue scanning leases.' : 'No scan credits remaining for this year.'
+          message: isFreeTier
+            ? 'You have used your free scan. Upgrade to continue scanning leases.'
+            : 'No scan credits remaining for this year.'
         }), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
 
-      // Check monthly cap for Secure tier
+      // Monthly cap check for Secure tier (max 10 scans/month)
       if (userTier === 'secure') {
         const currentMonth = new Date().toISOString().slice(0, 7);
-        const isNewMonth = user.usage_month !== currentMonth;
-        const monthlyUsed = isNewMonth ? 0 : (user.scans_used_this_month || 0);
+        let monthlyUsed = 0;
+        if (user.usage_month === currentMonth) {
+          monthlyUsed = user.scans_used_this_month || 0;
+        }
         if (monthlyUsed >= 10) {
-          console.log('[SCAN_CF_V1_MONTHLY_CAP_BLOCKED]', { userId: user.id, monthlyUsed, cap: 10 });
+          console.log('[SCAN_CF_V1_MONTHLY_CAP_BLOCKED]', { userId: user.id, monthlyUsed, cap: 10, month: currentMonth });
           return new Response(JSON.stringify({
-            ok: false, step: 'MONTHLY_CAP', error_code: 'MONTHLY_SCAN_CAP',
-            message: 'Monthly scan limit reached (10/month). Your limit resets next month.'
+            ok: false, step: 'MONTHLY_CAP', error_code: 'MONTHLY_SCAN_LIMIT',
+            message: `Monthly scan limit reached (${monthlyUsed}/10). Resets next month.`
           }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
       }
@@ -579,43 +581,38 @@ Deno.serve(async (req) => {
       }
     }
 
-    // CRITICAL: Decrement available_scans for ALL tiers (including Secure) AFTER successful analysis
+    // Decrement available_scans for ALL tiers (including Secure) AFTER successful analysis
     if (userObj && result?.ok === true) {
       try {
         const currentScans = userObj.available_scans || 0;
-        const updateData = { available_scans: Math.max(0, currentScans - 1) };
-
-        // Monthly cap tracking for Secure tier
-        if (userTier === 'secure') {
+        if (currentScans > 0) {
+          const updatedScans = currentScans - 1;
           const currentMonth = new Date().toISOString().slice(0, 7);
-          const isNewMonth = userObj.usage_month !== currentMonth;
-          updateData.usage_month = currentMonth;
-          updateData.scans_used_this_month = isNewMonth ? 1 : ((userObj.scans_used_this_month || 0) + 1);
-        }
+          const updateData = { available_scans: updatedScans };
 
-        await svc.entities.User.update(userObj.id, updateData);
-        
-        await svc.entities.CreditsLedger.create({
-          user_id: userObj.id,
-          user_email: userEmail,
-          type: 'scans',
-          delta: -1,
-          reason: 'purchase',
-          source_ref: `lease_scan:${leaseId}`
-        });
-        
-        console.log('SCAN_CF_V1_CREDIT_DECREMENTED', { 
-          userId: userObj.id, 
-          oldScans: currentScans, 
-          newScans: updateData.available_scans,
-          tier: userTier,
-          monthlyUsed: updateData.scans_used_this_month
-        });
+          // Track monthly usage for Secure tier
+          if (userTier === 'secure') {
+            if (userObj.usage_month === currentMonth) {
+              updateData.scans_used_this_month = (userObj.scans_used_this_month || 0) + 1;
+            } else {
+              updateData.usage_month = currentMonth;
+              updateData.scans_used_this_month = 1;
+              updateData.letters_used_this_month = 0;
+              updateData.fasttrack_used_this_month = 0;
+            }
+          }
+
+          await svc.entities.User.update(userObj.id, updateData);
+          
+          await svc.entities.CreditsLedger.create({
+            user_id: userObj.id, user_email: userEmail, type: 'scans', delta: -1,
+            reason: 'purchase', source_ref: `lease_scan:${leaseId}`
+          });
+          
+          console.log('SCAN_CF_V1_CREDIT_DECREMENTED', { userId: userObj.id, oldScans: currentScans, newScans: updatedScans, tier: userTier, monthlyUsed: updateData.scans_used_this_month });
+        }
       } catch (creditError) {
-        console.error('SCAN_CF_V1_CREDIT_DECREMENT_FAILED', { 
-          userId: userObj.id, 
-          error: creditError.message 
-        });
+        console.error('SCAN_CF_V1_CREDIT_DECREMENT_FAILED', { userId: userObj.id, error: creditError.message });
       }
     }
 
