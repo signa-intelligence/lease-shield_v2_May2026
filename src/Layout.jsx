@@ -123,8 +123,18 @@ export default function Layout({ children, currentPageName }) {
         .then(() => {
           console.log('[LAYOUT] ✅ User initialized: plan_tier=explorer, available_scans=1, letter_credits=0');
           queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+          // Send welcome email for new users
+          base44.functions.invoke('sendWelcomeEmail')
+            .then(() => console.log('[LAYOUT] ✅ Welcome email triggered'))
+            .catch(err => console.error('[LAYOUT] Welcome email failed (non-critical):', err));
         })
         .catch(err => console.error('[LAYOUT] Failed to initialize user:', err));
+    }
+    // Also send welcome email for existing users who never got one
+    if (user && user.plan_tier && !user.welcome_email_sent) {
+      base44.functions.invoke('sendWelcomeEmail')
+        .then(() => console.log('[LAYOUT] ✅ Welcome email sent (backfill)'))
+        .catch(err => console.error('[LAYOUT] Welcome email backfill failed:', err));
     }
     // Note: Secure tier now has 50 letter credits (not unlimited). No auto-fix needed.
   }, [user?.id, user?.available_scans, user?.plan_tier, user?.letter_credits, queryClient]);
