@@ -26,6 +26,7 @@ import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
 import ReferralCard from "../components/referral/ReferralCard";
+import RetentionModal from "../components/settings/RetentionModal";
 
 // Centralized pricing config with real Stripe price IDs
 const PRICING = {
@@ -413,6 +414,7 @@ function AccountContent() {
   
   // New state for two-step downgrade flow
   const [showDowngradeFlow, setShowDowngradeFlow] = useState(false);
+  const [showRetentionModal, setShowRetentionModal] = useState(false);
   const [downgradeStep, setDowngradeStep] = useState(1);
   const [downgradeReason, setDowngradeReason] = useState('');
   const [downgradeFeedback, setDowngradeFeedback] = useState('');
@@ -3033,23 +3035,7 @@ function AccountContent() {
                       <Settings className="w-4 h-4" />
                       {language === 'th' ? 'จัดการแผน' : language === 'ru' ? 'Управление планом' : 'Manage Plan'}
                     </button>
-                    {!isScheduledForCancellation && (
-                      <button
-                        onClick={() => { haptic.light(); handleDowngradeOrCancel(); }}
-                        className="btn-interaction"
-                        style={{ width: '100%', padding: '10px 16px', backgroundColor: 'transparent', color: '#EF4444', borderRadius: '8px', fontWeight: '600', fontSize: '13px', border: '1px solid #FECACA', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '8px' }}
-                      >
-                        {strings.downgradeToFree || 'Downgrade to Free'}
-                      </button>
-                    )}
-                    {!isScheduledForCancellation && (
-                      <button
-                        onClick={() => { haptic.light(); setShowCancelDialog(true); }}
-                        style={{ width: '100%', padding: '8px', backgroundColor: 'transparent', color: colors.textSecondary, border: 'none', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline', marginTop: '4px' }}
-                      >
-                        {strings.cancelPlan || 'Change or Cancel Plan'}
-                      </button>
-                    )}
+
                   </div>
                 )}
               </CardContent>
@@ -5008,13 +4994,13 @@ function AccountContent() {
           </div>
 
           {/* Subtle cancel subscription link */}
-          {!isFreePlan && (
+          {!isFreePlan && !isScheduledForCancellation && (
             <div style={{ marginTop: "16px", textAlign: "center" }}>
               <p style={{ fontSize: "12px", color: colors.textSecondary }}>
                 {language === 'th' ? 'ต้องการยกเลิกการสมัครสมาชิก?' : language === 'zh' ? '需要取消订阅吗？' : language === 'ja' ? 'サブスクリプションをキャンセルする必要がありますか？' : language === 'ko' ? '구독을 취소해야 합니까？' : language === 'ru' ? 'Нужно отменить подписку?' : 'Need to cancel your subscription?'}{" "}
                 <button
                   type="button"
-                  onClick={() => setShowCancelDialog(true)}
+                  onClick={() => { base44.analytics.track({ eventName: 'cancellation_initiated', properties: { current_tier: planTier, monthly_value: currentPlan?.priceMonthly || 0 } }); setShowRetentionModal(true); }}
                   style={{
                     background: "none",
                     border: "none",
@@ -5032,6 +5018,7 @@ function AccountContent() {
               </p>
             </div>
           )}
+          <RetentionModal open={showRetentionModal} onClose={() => setShowRetentionModal(false)} />
         </section>
 
         {/* Downgrade Confirmation Dialog */}

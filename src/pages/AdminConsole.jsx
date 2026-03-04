@@ -30,6 +30,7 @@ import CaseKanban from "../components/admin/CaseKanban";
 import UserImpersonation from "../components/admin/UserImpersonation";
 import ScanUsageAnalytics from "../components/admin/ScanUsageAnalytics";
 import AuthGuard from "../components/shared/AuthGuard";
+import ChurnAnalytics from "../components/admin/ChurnAnalytics";
 
 function AdminConsoleContent() {
   const [seedingDemo, setSeedingDemo] = useState(false);
@@ -1628,6 +1629,17 @@ function AdminConsoleContent() {
             </div>
           </CardContent>
         </Card>
+
+        {/* CHURN ANALYTICS */}
+        {isSuperAdmin && (
+          <div className="mb-6">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2" style={{ color: colors.textPrimary }}>
+              <Users className="w-5 h-5 text-red-500" />
+              {language === 'th' ? 'วิเคราะห์การยกเลิก' : 'Churn Analytics'}
+            </h2>
+            <ChurnAnalytics colors={colors} language={language} isDarkMode={isDarkMode} />
+          </div>
+        )}
 
         {/* 4. RECENT LEASES */}
         <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
