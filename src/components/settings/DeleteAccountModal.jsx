@@ -83,15 +83,26 @@ export default function DeleteAccountModal({ open, onClose, user, colors, langua
               </ul>
             </div>
 
-            {/* Consider downgrade */}
-            <div className="p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF', border: `1px solid ${isDarkMode ? '#2563EB33' : '#BFDBFE'}` }}>
-              <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
-                💡 {language === 'th' ? 'ลองพิจารณาทางเลือกอื่น:' : 'Consider instead:'}
-              </p>
-              <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
-                {language === 'th' ? 'ลดระดับเป็น Explorer (ฟรี) เพื่อเก็บข้อมูลของคุณไว้โดยไม่ต้องจ่ายเงิน' : 'Downgrade to Explorer (free) to keep your data without paying.'}
-              </p>
-            </div>
+            {/* Conditional message based on tier */}
+            {user?.plan_tier && user.plan_tier !== 'explorer' && user.plan_tier !== 'free' ? (
+              <div className="p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF', border: `1px solid ${isDarkMode ? '#2563EB33' : '#BFDBFE'}` }}>
+                <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                  💡 {language === 'th' ? 'ลองพิจารณาทางเลือกอื่น:' : 'Consider instead:'}
+                </p>
+                <p className="text-xs" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                  {language === 'th' ? 'ลดระดับเป็น Explorer (ฟรี) เพื่อเก็บข้อมูลของคุณไว้โดยไม่ต้องจ่ายเงิน' : 'Downgrade to Explorer (free) to keep your data without paying.'}
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#3A2F1E' : '#FFFBEB', border: `1px solid ${isDarkMode ? '#D97706' + '33' : '#FDE68A'}` }}>
+                <p className="text-sm font-semibold mb-1" style={{ color: isDarkMode ? '#FCD34D' : '#92400E' }}>
+                  ℹ️ {language === 'th' ? 'คุณใช้แผน Explorer (ฟรี) อยู่แล้ว' : "You're already on the free Explorer plan"}
+                </p>
+                <p className="text-xs" style={{ color: isDarkMode ? '#FDE68A' : '#B45309' }}>
+                  {language === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลทั้งหมด? ไม่มีค่าใช้จ่ายในการเก็บบัญชีของคุณ' : 'Are you sure you want to delete all your data? There\'s no cost to keeping your account.'}
+                </p>
+              </div>
+            )}
 
             {/* Email confirmation */}
             <div>
