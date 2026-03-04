@@ -29,7 +29,6 @@ import NotificationHistory from "../components/admin/NotificationHistory";
 import CaseKanban from "../components/admin/CaseKanban";
 import UserImpersonation from "../components/admin/UserImpersonation";
 import ScanUsageAnalytics from "../components/admin/ScanUsageAnalytics";
-import ChurnAnalytics from "../components/admin/ChurnAnalytics";
 import AuthGuard from "../components/shared/AuthGuard";
 
 function AdminConsoleContent() {
@@ -1489,19 +1488,6 @@ function AdminConsoleContent() {
         </Dialog>
 
 
-
-        {/* CHURN & RETENTION ANALYTICS */}
-        <Card className="mb-6 border-none shadow-lg" style={{ backgroundColor: colors.cardBg, borderLeft: '6px solid #EF4444' }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <TrendingUp className="w-5 h-5 text-red-500" />
-              {language === 'th' ? 'การวิเคราะห์การยกเลิกและการรักษาลูกค้า' : 'Cancellation & Retention Analytics'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChurnAnalytics colors={colors} language={language} />
-          </CardContent>
-        </Card>
 
         {/* SCAN USAGE ANALYTICS */}
         <ScanUsageAnalytics

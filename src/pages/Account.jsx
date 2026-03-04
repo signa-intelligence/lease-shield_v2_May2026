@@ -25,7 +25,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
-import ReferralCard from "../components/referral/ReferralCard"; import RetentionModal from "../components/settings/RetentionModal";
+import ReferralCard from "../components/referral/ReferralCard";
 
 // Centralized pricing config with real Stripe price IDs
 const PRICING = {
@@ -397,16 +397,33 @@ function AccountContent() {
   const [subscribing, setSubscribing] = useState({});
   const [exporting, setExporting] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState('monthly');
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelFeedback, setCancelFeedback] = useState('');
   const [copiedLink, setCopiedLink] = useState(null);
   const [buyingCredits, setBuyingCredits] = useState({});
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showBillingDialog, setShowBillingDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedInterval, setSelectedInterval] = useState('monthly');
-  const [showRetentionModal, setShowRetentionModal] = useState(false);
-  const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false);
+  const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
+  const [pendingDowngradePlan, setPendingDowngradePlan] = useState(null);
+  const [pendingDowngradeInterval, setPendingDowngradeInterval] = useState('monthly');
+  
+  // New state for two-step downgrade flow
+  const [showDowngradeFlow, setShowDowngradeFlow] = useState(false);
+  const [downgradeStep, setDowngradeStep] = useState(1);
+  const [downgradeReason, setDowngradeReason] = useState('');
+  const [downgradeFeedback, setDowngradeFeedback] = useState('');
+  const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
+
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportFormat, setExportFormat] = useState('pdf');
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
-  const [confirmDeleteEmail, setConfirmDeleteEmail] = useState(''); const [confirmDeleteUnderstand, setConfirmDeleteUnderstand] = useState(false); const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDeleteEmail, setConfirmDeleteEmail] = useState('');
+  const [confirmDeleteUnderstand, setConfirmDeleteUnderstand] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const plansSectionRef = React.useRef(null);
 
@@ -744,9 +761,11 @@ function AccountContent() {
     const isUpgrade = targetMonthlyPrice > currentMonthlyPrice;
     const isDowngrade = targetMonthlyPrice < currentMonthlyPrice && !isFreePlan;
 
-    // If downgrading, show retention modal
+    // If downgrading, show confirmation first
     if (isDowngrade) {
-      setShowRetentionModal(true);
+      setPendingDowngradePlan(planKey);
+      setPendingDowngradeInterval(interval || 'monthly');
+      setShowDowngradeConfirm(true);
       return;
     }
 
@@ -757,7 +776,12 @@ function AccountContent() {
     setShowBillingDialog(true);
   };
 
-  // Downgrade confirmation handled by RetentionModal
+  const confirmDowngradeAndProceed = () => {
+    setShowDowngradeConfirm(false);
+    setSelectedPlan(pendingDowngradePlan);
+    setSelectedInterval(pendingDowngradeInterval);
+    setShowBillingDialog(true);
+  };
 
   const confirmSubscribe = async () => {
     const plan = PLAN_DETAILS.find(p => p.key === selectedPlan);
@@ -948,7 +972,84 @@ function AccountContent() {
     }
   };
 
-  // Retention modal handles all cancel/downgrade logic now
+  // Opens Step 1 of downgrade flow (retention screen)
+  const handleDowngradeOrCancel = () => {
+    haptic.medium();
+    setDowngradeStep(1);
+    setDowngradeReason('');
+    setDowngradeFeedback('');
+    setShowDowngradeFlow(true);
+  };
+
+  // Handler for switching to Lite (immediate, no Step 2)
+  const handleSwitchToLite = async () => {
+    haptic.medium();
+    setShowDowngradeFlow(false); // Close the downgrade dialog
+    
+    // Determine the user's current billing interval for a seamless switch
+    const currentBillingInterval = user?.billing_interval || 'monthly';
+    handleSubscribe('lite', currentBillingInterval); 
+  };
+
+  // Handler for continuing to Free plan (goes to Step 2)
+  const handleContinueToFree = () => {
+    haptic.light();
+    setDowngradeStep(2);
+  };
+
+  // Handler for confirming downgrade to Free (Step 2 confirmation)
+  const handleConfirmDowngradeToFree = async () => {
+    if (!downgradeReason) {
+      alert(language === 'th' ? 'กรุณาเลือกเหตุผล' : 'Please select a reason');
+      return;
+    }
+    haptic.medium();
+    setCancelling(true);
+    try {
+      const response = await base44.functions.invoke('cancelSubscription', {
+        reason: downgradeReason, feedback: downgradeFeedback || 'User chose to downgrade to free plan'
+      });
+      if (response.data?.success) {
+        refetchUser?.(); queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        setShowDowngradeFlow(false); setDowngradeStep(1); setDowngradeReason(''); setDowngradeFeedback('');
+        haptic.success();
+        const until = response.data.access_until ? new Date(response.data.access_until).toLocaleDateString() : '';
+        alert(language === 'th' ? `ลดระดับสำเร็จ เข้าถึงได้จนถึง ${until}` : `Downgrade successful. Access until ${until}.`);
+      } else if (response.data?.error) {
+        haptic.error(); alert(`${language === 'th' ? 'ลดระดับล้มเหลว' : 'Downgrade failed'}: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('[DOWNGRADE]', error); haptic.error();
+      alert(`${language === 'th' ? 'ลดระดับล้มเหลว' : 'Downgrade failed'}: ${error.response?.data?.error || error.message}`);
+    } finally { setCancelling(false); }
+  };
+
+  const handleCancelSubscription = async () => {
+    const lang = user?.language || 'en';
+    if (!cancelReason) {
+      alert(lang === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason for cancellation');
+      return;
+    }
+    haptic.medium();
+    setCancelling(true);
+    try {
+      const response = await base44.functions.invoke('cancelSubscription', {
+        reason: cancelReason, feedback: cancelFeedback
+      });
+      if (response.data?.success) {
+        refetchUser?.(); queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        setShowCancelDialog(false); setCancelReason(''); setCancelFeedback('');
+        haptic.success();
+        const until = response.data.access_until ? new Date(response.data.access_until).toLocaleDateString() : '';
+        alert(lang === 'th' ? `ยกเลิกสำเร็จ เข้าถึงได้จนถึง ${until}` : `Cancelled. Access until ${until}.`);
+      } else if (response.data?.error) {
+        haptic.error(); alert(`${lang === 'th' ? 'ยกเลิกล้มเหลว' : 'Cancel failed'}: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('[CANCEL]', error); haptic.error();
+      alert(`${lang === 'th' ? 'ยกเลิกล้มเหลว' : 'Cancel failed'}: ${error.response?.data?.error || error.message}`);
+    } finally { setCancelling(false); }
+  };
 
   const handleLandlordUpdate = async () => {
     haptic.medium();
@@ -2932,7 +3033,23 @@ function AccountContent() {
                       <Settings className="w-4 h-4" />
                       {language === 'th' ? 'จัดการแผน' : language === 'ru' ? 'Управление планом' : 'Manage Plan'}
                     </button>
-
+                    {!isScheduledForCancellation && (
+                      <button
+                        onClick={() => { haptic.light(); handleDowngradeOrCancel(); }}
+                        className="btn-interaction"
+                        style={{ width: '100%', padding: '10px 16px', backgroundColor: 'transparent', color: '#EF4444', borderRadius: '8px', fontWeight: '600', fontSize: '13px', border: '1px solid #FECACA', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '8px' }}
+                      >
+                        {strings.downgradeToFree || 'Downgrade to Free'}
+                      </button>
+                    )}
+                    {!isScheduledForCancellation && (
+                      <button
+                        onClick={() => { haptic.light(); setShowCancelDialog(true); }}
+                        style={{ width: '100%', padding: '8px', backgroundColor: 'transparent', color: colors.textSecondary, border: 'none', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline', marginTop: '4px' }}
+                      >
+                        {strings.cancelPlan || 'Change or Cancel Plan'}
+                      </button>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -3946,15 +4063,511 @@ function AccountContent() {
           </CardContent>
         </Card>
 
-        {/* RETENTION MODAL - 2-step cancel/downgrade with reason capture */}
-        <RetentionModal
-          isOpen={showRetentionModal}
-          onClose={() => setShowRetentionModal(false)}
-          user={user}
-          onSubscribe={(tierKey, interval) => handleSubscribe(tierKey, interval)}
-          colors={colors}
-          isDarkMode={isDarkMode}
-        />
+        {/* TWO-STEP DOWNGRADE FLOW DIALOG */}
+        <Dialog open={showDowngradeFlow} onOpenChange={(open) => {
+          setShowDowngradeFlow(open);
+          if (!open) {
+            setDowngradeStep(1);
+            setDowngradeReason('');
+            setDowngradeFeedback('');
+          }
+        }}>
+          <DialogContent 
+            className="modal-enter" 
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              color: colors.textPrimary,
+              maxHeight: '90vh',
+              width: '95vw',
+              maxWidth: '600px',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            {downgradeStep === 1 ? (
+              <>
+                {/* STEP 1: RETENTION SCREEN */}
+                <DialogHeader style={{ flexShrink: 0, paddingBottom: '12px' }}>
+                  <DialogTitle className="text-xl sm:text-2xl font-bold text-center" style={{ color: colors.textPrimary }}>
+                    {strings.keepProtectionActive}
+                  </DialogTitle>
+                  <p className="text-sm sm:text-base text-center mt-2" style={{ color: colors.textSecondary }}>
+                    {strings.retentionCopy}
+                  </p>
+                </DialogHeader>
+
+                <div 
+                  style={{
+                    overflowY: 'auto',
+                    flex: 1,
+                    paddingRight: '4px',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                >
+                  <div className="space-y-4 py-4">
+                    {/* PRIMARY OPTION: Switch to Lite */}
+                    <div className="p-5 sm:p-6 rounded-xl border-2 shadow-lg" style={{
+                      backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF',
+                      borderColor: '#3B82F6'
+                    }}>
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                          <Zap className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-lg mb-1" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8' }}>
+                            Lite {language === 'th' ? '- แผนที่เหมาะสมที่สุด' : language === 'zh' ? '- 最适合大多数人' : language === 'ja' ? '- ほとんどの人に最適' : language === 'ko' ? '- 대부분에게 가장 적합' : language === 'ru' ? '- Подходит для большинства' : '- Best fit for most'}
+                          </h3>
+                          <p className="text-sm mb-3" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                            {language === 'th' 
+                              ? 'เพียง ฿190/เดือน - รักษาการป้องกันหลักและประหยัด 81% จากแผนปัจจุบัน'
+                              : language === 'zh'
+                              ? '仅฿190/月 - 保持核心保护并比当前计划节省81%'
+                              : language === 'ja'
+                              ? 'わずか฿190/月 - コア保護を維持し、現在のプランから81%節約'
+                              : language === 'ko'
+                              ? '월 ฿190만 - 핵심 보호 유지 및 현재 플랜에서 81% 절약'
+                              : language === 'ru'
+                                ? 'Всего ฿190/месяц - сохраните основную защиту и экономьте 81% от текущего плана'
+                                : 'Only ฿190/month - keep core protections and save 81% from current plan'}
+                          </p>
+                          <ul className="space-y-1 text-xs sm:text-sm mb-4" style={{ color: isDarkMode ? '#BFDBFE' : '#2563EB' }}>
+                            <li className="flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4" />
+                              {language === 'th' ? '6 การสแกนสัญญาต่อปี' : language === 'zh' ? '每年6次租约扫描' : language === 'ja' ? '年6回のリーススキャン' : language === 'ko' ? '연간 6회 임대 계약 스캔' : language === 'ru' ? '6 сканирований договоров/год' : '6 Lease Scans/year'}
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4" />
+                              {language === 'th' ? 'การแจ้งเตือนทางอีเมล' : language === 'zh' ? '电子邮件通知' : language === 'ja' ? 'メール通知' : language === 'ko' ? '이메일 알림' : language === 'ru' ? 'Email уведомления' : 'Email Notifications'}
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4" />
+                              {language === 'th' ? 'ติดตามเงินมัดจำและการซ่อมบำรุง' : language === 'zh' ? '押金和维护追踪' : language === 'ja' ? '敷金とメンテナンス追跡' : language === 'ko' ? '보증금 및 유지보수 추적' : language === 'ru' ? 'Отслеживание депозита и обслуживания' : 'Deposit & Maintenance Tracking'}
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleSwitchToLite}
+                        className="btn-interaction"
+                        style={{
+                          width: '100%',
+                          padding: '14px 20px',
+                          backgroundColor: '#3B82F6',
+                          color: '#FFFFFF',
+                          borderRadius: '10px',
+                          fontWeight: '700',
+                          fontSize: '16px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          boxShadow: '0 4px 12px rgba(59,130,246,0.4)'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#2563EB';
+                          e.target.style.transform = 'translateY(-2px)';
+                          e.target.style.boxShadow = '0 6px 16px rgba(59,130,246,0.5)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = '#3B82F6';
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = '0 4px 12px rgba(59,130,246,0.4)';
+                        }}
+                      >
+                        {strings.switchToLite}
+                      </button>
+                    </div>
+
+                    {/* SECONDARY OPTION: Continue to Free */}
+                    <div className="text-center pt-2">
+                      <button
+                        onClick={handleContinueToFree}
+                        className="btn-interaction"
+                        style={{
+                          padding: '8px 16px',
+                          backgroundColor: 'transparent',
+                          color: colors.textSecondary,
+                          border: 'none',
+                          fontWeight: '500',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          textDecoration: 'underline'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.color = colors.textPrimary;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.color = colors.textSecondary;
+                        }}
+                      >
+                        {strings.continueToFree}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* STEP 2: REASON + CONFIRMATION FOR FREE */}
+                <DialogHeader style={{ flexShrink: 0, paddingBottom: '12px' }}>
+                  <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl" style={{ color: colors.textPrimary }}>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                      <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
+                    </div>
+                    <div>
+                      {strings.confirmDowngradeTitle}
+                      <p className="text-xs sm:text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
+                        {strings.confirmDowngradeWarning}
+                      </p>
+                    </div>
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div 
+                  style={{
+                    overflowY: 'auto',
+                    flex: 1,
+                    paddingRight: '4px',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                >
+                  <div className="space-y-4 py-4">
+                    {/* What you'll lose box */}
+                    {currentPlan && (
+                      <div className="p-3 sm:p-4 rounded-lg" style={{
+                        backgroundColor: '#FEE2E2',
+                        border: '2px solid #FECACA'
+                      }}>
+                        <p className="font-semibold text-red-900 mb-2 text-sm">{strings.whatYoullLose}:</p>
+                        <ul className="space-y-1 text-xs sm:text-sm text-red-800">
+                          {(language === 'th' ? currentPlan.benefitsTh : language === 'zh' ? currentPlan.benefitsZh : language === 'ja' ? currentPlan.benefitsJa : language === 'ko' ? currentPlan.benefitsKo : language === 'ru' ? currentPlan.benefitsRu : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน') && !b.startsWith('Все из') && !b.startsWith('包含') && !b.startsWith('の全て') && !b.startsWith('플랜의 모든')).slice(0, 4).map((benefit, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
+                              <span>{benefit}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Reason dropdown */}
+                    <div>
+                      <Label htmlFor="downgradeReason" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                        {strings.reasonForDowngrade} <span className="text-red-500">*</span>
+                      </Label>
+                      <Select value={downgradeReason} onValueChange={setDowngradeReason}>
+                        <SelectTrigger className="mt-2" style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.borderColor,
+                          color: colors.textPrimary,
+                          minHeight: '44px'
+                        }}>
+                          <SelectValue placeholder={strings.selectReason} />
+                        </SelectTrigger>
+                        <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                          <SelectItem value="too_expensive">{strings.reasonTooExpensive}</SelectItem>
+                          <SelectItem value="not_using">{strings.reasonNotUsingEnough}</SelectItem>
+                          <SelectItem value="found_alternative">{strings.reasonFoundAlternative}</SelectItem>
+                          <SelectItem value="missing_features">{strings.reasonMissingFeatures}</SelectItem>
+                          <SelectItem value="technical_issues">{strings.reasonTechnicalIssues}</SelectItem>
+                          <SelectItem value="other">{strings.reasonOther}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Optional feedback */}
+                    <div>
+                      <Label htmlFor="downgradeFeedback" className="text-sm" style={{ color: colors.textPrimary }}>
+                        {strings.additionalFeedback}
+                      </Label>
+                      <Textarea
+                        id="downgradeFeedback"
+                        value={downgradeFeedback}
+                        onChange={(e) => setDowngradeFeedback(e.target.value)}
+                        placeholder={strings.feedbackPlaceholder}
+                        rows={3}
+                        className="mt-2"
+                        style={{
+                          backgroundColor: colors.inputBg,
+                          borderColor: colors.borderColor,
+                          color: colors.textPrimary,
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+
+                    {/* Note about access until renewal */}
+                    <div className="p-3 rounded-lg text-xs sm:text-sm" style={{
+                      backgroundColor: isDarkMode ? '#2A2D30' : '#F3F4F6',
+                      border: `1px solid ${colors.borderColor}`
+                    }}>
+                      <p style={{ color: colors.textSecondary }}>
+                        {strings.downgradeNote.replace('{date}', user?.plan_renews_at ? new Date(user.plan_renews_at).toLocaleDateString() : '')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 2 buttons */}
+                <div className="flex gap-2 sm:gap-3 pt-3" style={{ 
+                  flexShrink: 0, 
+                  borderTop: `1px solid ${colors.borderColor}`, 
+                  paddingTop: '12px'
+                }}>
+                  <button
+                    onClick={() => {
+                      setDowngradeStep(1);
+                      setDowngradeReason('');
+                      setDowngradeFeedback('');
+                    }}
+                    disabled={cancelling}
+                    className="btn-interaction"
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      border: `2px solid ${colors.borderColor}`,
+                      backgroundColor: colors.cardBg,
+                      color: colors.textPrimary,
+                      cursor: cancelling ? 'not-allowed' : 'pointer',
+                      opacity: cancelling ? 0.5 : 1,
+                      transition: 'all 0.2s',
+                      minHeight: '44px'
+                    }}
+                    onMouseEnter={(e) => !cancelling && (e.target.style.backgroundColor = colors.hoverBg)}
+                    onMouseLeave={(e) => !cancelling && (e.target.style.backgroundColor = colors.cardBg)}
+                  >
+                    {strings.goBack}
+                  </button>
+                  <button
+                    onClick={handleConfirmDowngradeToFree}
+                    disabled={cancelling || !downgradeReason}
+                    className="btn-interaction"
+                    style={{
+                      flex: 1,
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                      border: 'none',
+                      backgroundColor: '#EF4444',
+                      color: '#FFFFFF',
+                      cursor: (cancelling || !downgradeReason) ? 'not-allowed' : 'pointer',
+                      opacity: (cancelling || !downgradeReason) ? 0.5 : 1,
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      minHeight: '44px'
+                    }}
+                    onMouseEnter={(e) => (!cancelling && downgradeReason) && (e.target.style.backgroundColor = '#DC2626')}
+                    onMouseLeave={(e) => (!cancelling && downgradeReason) && (e.target.style.backgroundColor = '#EF4444')}
+                  >
+                    {cancelling ? (
+                      <>
+                        <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                        <span className="text-xs sm:text-sm">{strings.cancelling}</span>
+                      </>
+                    ) : (
+                      <span className="text-xs sm:text-sm">{strings.confirmDowngradeBtn}</span>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* SEPARATE CANCEL SUBSCRIPTION DIALOG (full cancellation, not downgrade) */}
+        <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <DialogContent 
+            className="modal-enter" 
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              color: colors.textPrimary,
+              maxHeight: '90vh',
+              width: '95vw',
+              maxWidth: '600px',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            <DialogHeader style={{ flexShrink: 0, paddingBottom: '12px' }}>
+              <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl" style={{ color: colors.textPrimary }}>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
+                </div>
+                <div>
+                  {strings.cancelDialogTitle}
+                  <p className="text-xs sm:text-sm font-normal mt-1" style={{ color: colors.textSecondary }}>
+                    {strings.cancelDialogDesc}
+                  </p>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+
+            <div 
+              style={{
+                overflowY: 'auto',
+                flex: 1,
+                paddingRight: '4px',
+                WebkitOverflowScrolling: 'touch'
+              }}
+            >
+              <div className="space-y-4 py-4">
+                {currentPlan && (
+                  <div className="p-3 sm:p-4 rounded-lg" style={{
+                    backgroundColor: '#FEE2E2',
+                    border: '2px solid #FECACA'
+                  }}>
+                    <p className="font-semibold text-red-900 mb-2 text-sm">{strings.whatYoullLose}:</p>
+                    <ul className="space-y-1 text-xs sm:text-sm text-red-800">
+                      {(language === 'th' ? currentPlan.benefitsTh : language === 'zh' ? currentPlan.benefitsZh : language === 'ja' ? currentPlan.benefitsJa : language === 'ko' ? currentPlan.benefitsKo : language === 'ru' ? currentPlan.benefitsRu : currentPlan.benefits).filter(b => !b.startsWith('Everything') && !b.startsWith('ทุกอย่างใน') && !b.startsWith('Все из') && !b.startsWith('包含') && !b.startsWith('の全て') && !b.startsWith('플랜의 모든')).map((benefit, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <XCircle className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
+                          <span>{benefit}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div>
+                  <Label htmlFor="cancelReason" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.cancelReason} <span className="text-red-500">*</span>
+                  </Label>
+                  <Select value={cancelReason} onValueChange={setCancelReason}>
+                    <SelectTrigger className="mt-2" style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary,
+                      minHeight: '44px'
+                    }}>
+                      <SelectValue placeholder={strings.selectReason} />
+                    </SelectTrigger>
+                    <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
+                      <SelectItem value="too_expensive">{strings.reasonTooExpensive}</SelectItem>
+                      <SelectItem value="not_using">{strings.reasonNotUsingEnough}</SelectItem>
+                      <SelectItem value="found_alternative">{strings.reasonFoundAlternative}</SelectItem>
+                      <SelectItem value="missing_features">{strings.reasonMissingFeatures}</SelectItem>
+                      <SelectItem value="technical_issues">{strings.reasonTechnicalIssues}</SelectItem>
+                      <SelectItem value="other">{strings.reasonOther}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="cancelFeedback" className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                    {strings.additionalFeedback}
+                  </Label>
+                  <Textarea
+                    id="cancelFeedback"
+                    value={cancelFeedback}
+                    onChange={(e) => setCancelFeedback(e.target.value)}
+                    placeholder={strings.feedbackPlaceholder}
+                    rows={3}
+                    className="mt-2"
+                    style={{
+                      backgroundColor: colors.inputBg,
+                      borderColor: colors.borderColor,
+                      color: colors.textPrimary,
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      fontSize: '14px'
+                    }}
+                  />
+                </div>
+
+                <div className="p-3 rounded-lg text-xs sm:text-sm" style={{
+                  backgroundColor: isDarkMode ? '#2A2D30' : '#F3F4F6',
+                  border: `1px solid ${colors.borderColor}`
+                }}>
+                  <p style={{ color: colors.textSecondary }}>
+                    {strings.downgradeNote.replace('{date}', user?.plan_renews_at ? new Date(user.plan_renews_at).toLocaleDateString() : '')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 sm:gap-3 pt-3" style={{ 
+              flexShrink: 0, 
+              borderTop: `1px solid ${colors.borderColor}`, 
+              paddingTop: '12px'
+            }}>
+              <button
+                onClick={() => {
+                  setShowCancelDialog(false);
+                  setCancelReason('');
+                  setCancelFeedback('');
+                }}
+                disabled={cancelling}
+                className="btn-interaction"
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  border: 'none',
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF',
+                  cursor: cancelling ? 'not-allowed' : 'pointer',
+                  opacity: cancelling ? 0.5 : 1,
+                  transition: 'all 0.2s',
+                  minHeight: '44px'
+                }}
+                onMouseEnter={(e) => !cancelling && (e.target.style.backgroundColor = '#0a2f25')}
+                onMouseLeave={(e) => !cancelling && (e.target.style.backgroundColor = '#0C3B2E')}
+              >
+                {strings.keepSubscription}
+              </button>
+              <button
+                onClick={handleCancelSubscription}
+                disabled={cancelling || !cancelReason}
+                className="btn-interaction"
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  border: 'none',
+                  backgroundColor: '#EF4444',
+                  color: '#FFFFFF',
+                  cursor: (cancelling || !cancelReason) ? 'not-allowed' : 'pointer',
+                  opacity: (cancelling || !cancelReason) ? 0.5 : 1,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  minHeight: '44px'
+                }}
+                onMouseEnter={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#DC2626')}
+                onMouseLeave={(e) => (!cancelling && cancelReason) && (e.target.style.backgroundColor = '#EF4444')}
+              >
+                {cancelling ? (
+                  <>
+                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                    <span className="text-xs sm:text-sm">{strings.cancelling}</span>
+                  </>
+                ) : (
+                  <span className="text-xs sm:text-sm">{strings.confirmCancel}</span>
+                )}
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <div style={{
           background: 'linear-gradient(to right, #0C3B2E, #047857)',
@@ -4401,7 +5014,7 @@ function AccountContent() {
                 {language === 'th' ? 'ต้องการยกเลิกการสมัครสมาชิก?' : language === 'zh' ? '需要取消订阅吗？' : language === 'ja' ? 'サブスクリプションをキャンセルする必要がありますか？' : language === 'ko' ? '구독을 취소해야 합니까？' : language === 'ru' ? 'Нужно отменить подписку?' : 'Need to cancel your subscription?'}{" "}
                 <button
                   type="button"
-                  onClick={() => { base44.analytics.track({ eventName: 'cancellation_initiated', properties: { current_tier: planTier } }); setShowRetentionModal(true); }}
+                  onClick={() => setShowCancelDialog(true)}
                   style={{
                     background: "none",
                     border: "none",
@@ -4421,7 +5034,136 @@ function AccountContent() {
           )}
         </section>
 
-        {/* Downgrade confirmation handled by RetentionModal */}
+        {/* Downgrade Confirmation Dialog */}
+        <Dialog open={showDowngradeConfirm} onOpenChange={setShowDowngradeConfirm}>
+          <DialogContent 
+            className="modal-enter w-full max-w-lg" 
+            style={{
+              backgroundColor: colors.cardBg,
+              borderColor: colors.borderColor,
+              maxHeight: '85vh',
+              overflowY: 'auto'
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle className="text-xl sm:text-2xl font-bold" style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'กำลังคิดจะลดระดับ?' : language === 'zh' ? '考虑降级？' : language === 'ja' ? 'ダウングレードを検討中？' : language === 'ko' ? '다운그레이드를 고려 중이신가요?' : language === 'ru' ? 'Думаете о понижении плана?' : 'Thinking about downgrading?'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                {language === 'th' 
+                  ? 'การลดระดับจะลบเครื่องมือป้องกันที่สำคัญและเพิ่มความเสี่ยงของคุณ' 
+                  : language === 'zh' 
+                    ? '降级会删除关键保护工具并增加您的风险。' 
+                    : language === 'ja' 
+                      ? 'ダウングレードすると、重要な保護ツールが削除され、リスクが高まります。' 
+                      : language === 'ko' 
+                        ? '다운그레이드하면 주요 보호 도구가 제거되고 위험이 증가합니다.'
+                        : language === 'ru'
+                          ? 'Понижение плана удалит ключевые инструменты защиты и увеличит ваши риски.'
+                          : 'Downgrading removes key protection tools and increases your risk.'}
+              </p>
+              <div className="p-4 rounded-lg" style={{
+                backgroundColor: isDarkMode ? '#2A1F1F' : '#FEE2E2',
+                border: `2px solid ${isDarkMode ? '#EF4444' : '#FECACA'}`
+              }}>
+                <p className="text-sm font-semibold mb-3" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                  {language === 'th' ? 'คุณจะสูญเสีย:' : language === 'zh' ? '您将失去：' : language === 'ja' ? '失うもの：' : language === 'ko' ? '잃게 될 것:' : language === 'ru' ? 'Вы потеряете:' : 'You will lose:'}
+                </p>
+                <ul className="space-y-2 text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>{language === 'th' ? 'การแจ้งเตือนกำหนดเวลาขั้นสูง' : language === 'zh' ? '高级截止日期提醒' : language === 'ja' ? '高度な期限リマインダー' : language === 'ko' ? '고급 마감일 알림' : language === 'ru' ? 'Расширенные напоминания о сроках' : 'Advanced deadline reminders'}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>{language === 'th' ? 'การติดตามเงินมัดจำและการซ่อมบำรุงแบบเต็มรูปแบบ' : language === 'zh' ? '完整押金和维护追踪' : language === 'ja' ? '完全な敷金とメンテナンス追跡' : language === 'ko' ? '완전한 보증금 및 유지보수 추적' : language === 'ru' ? 'Полное отслеживание депозитов и обслуживания' : 'Full deposit & maintenance tracking'}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>{language === 'th' ? 'การสนับสนุนคดีลำดับความสำคัญ' : language === 'zh' ? '优先案件支持' : language === 'ja' ? '優先ケースサポート' : language === 'ko' ? '우선 사례 지원' : language === 'ru' ? 'Приоритетная поддержка дел' : 'Priority case support'}</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span>•</span>
+                    <span>{language === 'th' ? 'การสแกนสัญญาเพิ่มเติม' : language === 'zh' ? '额外租约扫描' : language === 'ja' ? '追加リーススキャン' : language === 'ko' ? '추가 임대 스캔' : language === 'ru' ? 'Дополнительные сканирования договоров' : 'Additional lease scans'}</span>
+                  </li>
+                </ul>
+              </div>
+              <p className="text-sm font-semibold" style={{ color: colors.textPrimary }}>
+                {language === 'th' 
+                  ? 'สิ่งนี้ทำให้การป้องกันของคุณอ่อนแอลง อยู่ในแผนปัจจุบันเพื่อรักษาสิทธิ์ของคุณให้ได้รับการป้องกันอย่างเต็มที่' 
+                  : language === 'zh' 
+                    ? '这会削弱您的保护。保持当前计划以全面保护您的权利。' 
+                    : language === 'ja' 
+                      ? 'これにより保護が弱まります。現在のプランを維持して、権利を完全に守りましょう。' 
+                      : language === 'ko' 
+                        ? '이는 보호를 약화시킵니다. 현재 플랜을 유지하여 권리를 완전히 보호하세요.'
+                        : language === 'ru'
+                          ? 'Это ослабляет вашу защиту. Оставайтесь на текущем плане, чтобы полностью защитить свои права.'
+                          : 'This weakens your protection. Stay on your current plan to keep your rights fully defended.'}
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}`, paddingTop: '16px' }}>
+              <button
+                onClick={() => {
+                  haptic.light();
+                  setShowDowngradeConfirm(false);
+                  setPendingDowngradePlan(null);
+                }}
+                className="w-full sm:flex-1 btn-interaction"
+                style={{
+                  padding: '14px 20px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  backgroundColor: '#0C3B2E',
+                  color: '#FFFFFF',
+                  fontWeight: '700',
+                  fontSize: '15px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 12px rgba(12,59,46,0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#0a2f25';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#0C3B2E';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                {language === 'th' ? 'รักษาการป้องกันของฉัน' : language === 'zh' ? '保持我的保护' : language === 'ja' ? '私の保護を維持' : language === 'ko' ? '내 보호 유지' : language === 'ru' ? 'Сохранить мою защиту' : 'Keep My Protection'}
+              </button>
+              <button
+                onClick={() => {
+                  haptic.medium();
+                  confirmDowngradeAndProceed();
+                }}
+                className="w-full sm:flex-1 btn-interaction"
+                style={{
+                  padding: '14px 20px',
+                  borderRadius: '10px',
+                  border: `2px solid ${colors.borderColor}`,
+                  backgroundColor: 'transparent',
+                  color: '#EF4444',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = isDarkMode ? 'rgba(239,68,68,0.1)' : '#FEE2E2';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                }}
+              >
+                {language === 'th' ? 'ลดระดับต่อไป' : language === 'zh' ? '继续降级' : language === 'ja' ? 'ダウングレードを続行' : language === 'ko' ? '다운그레이드 계속' : language === 'ru' ? 'Всё равно понизить' : 'Downgrade Anyway'}
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Export Data Dialog */}
         <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
