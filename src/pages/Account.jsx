@@ -765,12 +765,7 @@ function AccountContent() {
     setShowBillingDialog(true);
   };
 
-  const confirmDowngradeAndProceed = () => {
-    setShowDowngradeConfirm(false);
-    setSelectedPlan(pendingDowngradePlan);
-    setSelectedInterval(pendingDowngradeInterval);
-    setShowBillingDialog(true);
-  };
+  // Downgrade confirmation handled by RetentionModal
 
   const confirmSubscribe = async () => {
     const plan = PLAN_DETAILS.find(p => p.key === selectedPlan);
