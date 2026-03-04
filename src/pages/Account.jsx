@@ -872,47 +872,7 @@ function AccountContent() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (confirmDeleteEmail !== user?.email || !confirmDeleteUnderstand) {
-      toast.error(language === 'th' ? 'กรุณายืนยันอีเมลและยอมรับข้อกำหนด' : 'Please confirm email and accept terms');
-      return;
-    }
-
-    haptic.medium();
-    setIsDeleting(true);
-
-    try {
-      const response = await base44.functions.invoke('deleteUserData', {
-        confirmEmail: confirmDeleteEmail
-      });
-
-      if (response.data?.ok) {
-        haptic.success();
-        setShowDeleteAccountModal(false);
-        toast.success(language === 'th' 
-          ? 'บัญชีและข้อมูลทั้งหมดถูกลบแล้ว กำลังออกจากระบบ...'
-          : 'Account deleted. Logging out...');
-        
-        setTimeout(async () => {
-          await base44.auth.logout();
-          window.location.href = '/';
-        }, 2000);
-      } else {
-        haptic.error();
-        toast.error(language === 'th' 
-          ? `การลบล้มเหลว: ${response.data?.message || 'ข้อผิดพลาดที่ไม่ทราบสาเหตุ'}`
-          : `Deletion failed: ${response.data?.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('[DELETE_ACCOUNT_ERROR]', error);
-      haptic.error();
-      toast.error(language === 'th' 
-        ? 'เกิดข้อผิดพลาด กรุณาติดต่อฝ่ายสนับสนุน'
-        : 'An error occurred. Please contact support.');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  // Delete account handler moved to DeleteAccountModal component
 
   const handleExportData = async () => {
     haptic.medium();
