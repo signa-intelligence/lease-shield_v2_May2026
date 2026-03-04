@@ -3033,6 +3033,7 @@ function AccountContent() {
                       <Settings className="w-4 h-4" />
                       {language === 'th' ? 'จัดการแผน' : language === 'ru' ? 'Управление планом' : 'Manage Plan'}
                     </button>
+
                   </div>
                 )}
               </CardContent>
@@ -4046,18 +4047,14 @@ function AccountContent() {
           </CardContent>
         </Card>
 
-        {/* NEW 2-STEP CANCELLATION MODAL WITH RETENTION + REASON CAPTURE */}
-        <CancellationModal
+        {/* RETENTION MODAL - replaces old cancel/downgrade dialogs */}
+        <RetentionModal
           isOpen={showCancelDialog || showDowngradeFlow}
           onClose={() => { setShowCancelDialog(false); setShowDowngradeFlow(false); }}
           user={user}
-          language={language}
+          onSubscribe={(tierKey, interval) => handleSubscribe(tierKey, interval)}
           colors={colors}
           isDarkMode={isDarkMode}
-          onDowngrade={(tierKey) => { setShowCancelDialog(false); setShowDowngradeFlow(false); handleSubscribe(tierKey, user?.billing_interval || 'monthly'); }}
-          onCancel={() => { setShowCancelDialog(false); setShowDowngradeFlow(false); }}
-          queryClient={queryClient}
-          refetchUser={refetchUser}
         />
 
         <div style={{
