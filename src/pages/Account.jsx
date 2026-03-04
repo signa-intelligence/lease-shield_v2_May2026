@@ -3033,6 +3033,7 @@ function AccountContent() {
                       <Settings className="w-4 h-4" />
                       {language === 'th' ? 'จัดการแผน' : language === 'ru' ? 'Управление планом' : 'Manage Plan'}
                     </button>
+
                   </div>
                 )}
               </CardContent>
