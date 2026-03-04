@@ -801,21 +801,19 @@ function UploadScanPageContent() {
       console.warn('[UPLOAD_RATE_LIMIT_CHECK_FAILED]', rateLimitErr);
     }
     
-    // ✅ CRITICAL: CHECK SCAN LIMIT using available_scans from user record (single source of truth)
-    const limits = getScanLimits();
-    const availableScans = user?.available_scans ?? 0;
-    const canScan = limits.unlimited || availableScans > 0;
+    // ✅ CRITICAL: CHECK SCAN LIMIT (annual + monthly caps)
+    const scanCheck = canUploadLease();
     
-    if (!canScan) {
-      const periodText = limits.period === 'year'
-        ? (language === 'th' ? 'ปีนี้' : 'this year')
-        : (language === 'th' ? 'ตลอดชีพ' : 'lifetime');
-
-      alert(
-        language === 'th'
+    if (!scanCheck.allowed) {
+      if (scanCheck.monthlyBlocked) {
+        alert(language === 'th'
+          ? `ถึงขีดจำกัดการสแกนรายเดือนแล้ว (${scanCheck.monthlyUsed}/${scanCheck.monthlyMax})\n\nรีเซ็ตเดือนหน้า`
+          : `Monthly scan limit reached (${scanCheck.monthlyUsed}/${scanCheck.monthlyMax})\n\nResets next month`);
+      } else {
+        alert(language === 'th'
           ? `คุณใช้ครบโควต้าการสแกนแล้ว\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
-          : `You've reached your scan limit (0 remaining)\n\nUpgrade your plan for more scans`
-      );
+          : `You've reached your scan limit (0 remaining)\n\nUpgrade your plan for more scans`);
+      }
       return;
     }
     
