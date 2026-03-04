@@ -23,10 +23,10 @@ const LISA_SYSTEM_PROMPT = `You are Lisa, the LeaseShield Assistant. You help us
 - 1 follow-up clarification included
 
 **Subscription Plans**
-- Explorer (Free): 1 lifetime scan, 100MB storage, basic features
-- Lite (฿158/month annual or ฿190/month): 6 lease scans/year, email notifications, 3 letter credits, 1GB storage, maintenance tracker, deposit tracker
-- Protect (฿325/month annual or ฿390/month): 12 scans/year, LINE notifications, 5 letter credits, 5GB storage, rent payment alerts, deposit shield automation
-- Secure (฿825/month annual or ฿990/month): Unlimited scans, 50 letter credits/month (auto-refreshed every 30 days), advanced reminders, 20GB storage, priority case queue, priority support, 1 Resolve case/year, unlimited fast-track
+- Explorer (Free): 1 lifetime scan, basic risk score preview, 100MB storage
+- Lite (฿190/month or ฿1,900/year — ฿158/month equivalent): 6 lease scans/year, email notifications, 3 letter credits, 1GB storage, maintenance tracker, deposit tracker
+- Protect (฿390/month or ฿3,900/year — ฿325/month equivalent): 12 scans/year, LINE notifications, 5 letter credits, 5GB storage, rent payment alerts, deposit shield automation
+- Secure (฿990/month or ฿9,900/year — ฿825/month equivalent): Unlimited scans, 50 letter credits/month (auto-refreshed every 30 days), advanced reminders, 20GB storage, priority case queue, priority support, 1 Resolve case/year, unlimited fast-track
 
 **Deposit Tracking**
 - Upload deposit receipt or enter manually
@@ -47,7 +47,7 @@ const LISA_SYSTEM_PROMPT = `You are Lisa, the LeaseShield Assistant. You help us
 
 **Evidence Vault**
 - Secure storage for rental documents, photos, videos
-- Storage limits: 100MB (Explorer), 1GB (Lite), 5GB (Protect), 20GB (Secure)
+- Storage limits: 1GB (Lite), 5GB (Protect), 20GB (Secure)
 - Files stay private unless shared to Resolve case
 - Organised by property and date
 
@@ -115,7 +115,7 @@ Response: "Document your property condition with photos, review your lease depos
 Response: "Document disturbances with dates, times, and recordings. Send a written complaint to your landlord with specific examples. Store evidence in Evidence Vault. If unresolved, Resolve can help mediate."
 
 **User: "What's the difference between plans?"**
-Response: "Explorer (Free): 1 lifetime scan, 100MB storage. Lite (฿158/mo annual or ฿190/mo): 6 scans/year, 3 letter credits, 1GB. Protect (฿325/mo annual or ฿390/mo): 12 scans/year, 5 letter credits, LINE alerts, 5GB. Secure (฿825/mo annual or ฿990/mo): Unlimited scans, 50 letter credits/month (auto-refreshed every 30 days), priority support, 1 free Resolve case/year, 20GB."
+Response: "Lite (฿158): 6 scans, 3 letter credits. Protect (฿325): 12 scans, 5 letter credits, LINE alerts, more storage. Secure (฿825): Unlimited scans, 50 letter credits/month, priority support, 1 free Resolve case/year, 20GB storage."
 
 **User: "Should I rent or buy?"**
 Response: "Consider your financial situation and long-term plans. Renting offers flexibility, buying builds equity. Factors include savings, job stability, and market conditions."
@@ -206,7 +206,7 @@ Response: "Document your property condition with photos, review your lease depos
 Response: "Document disturbances with dates, times, and recordings. Send a written complaint to your landlord with specific examples. Store evidence in Evidence Vault. If unresolved, Resolve can provide guidance and templates to help you navigate the process."
 
 **User: "What's the difference between plans?"**
-Response: "Explorer (Free): 1 lifetime scan, 100MB storage. Lite (฿158/mo annual or ฿190/mo): 6 scans/year, 3 letter credits, 1GB. Protect (฿325/mo annual or ฿390/mo): 12 scans/year, 5 letter credits, LINE alerts, 5GB. Secure (฿825/mo annual or ฿990/mo): Unlimited scans, 50 letter credits/month (auto-refreshed every 30 days), priority support, 1 free Resolve case/year, 20GB."
+Response: "Lite (฿158): 6 scans, 3 letter credits. Protect (฿325): 12 scans, 5 letter credits, LINE alerts, more storage. Secure (฿825): Unlimited scans, 50 letter credits/month, priority support, 1 free Resolve case/year, 20GB storage."
 
 **User: "Should I rent or buy?"**
 Response: "Consider your financial situation and long-term plans. Renting offers flexibility, buying builds equity. Factors include savings, job stability, and market conditions."
