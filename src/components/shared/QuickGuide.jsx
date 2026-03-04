@@ -228,7 +228,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 9999,
+        zIndex: 999,
         padding: '16px',
         animation: 'fadeIn 0.2s ease-out'
       }}

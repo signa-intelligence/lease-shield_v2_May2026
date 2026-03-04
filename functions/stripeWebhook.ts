@@ -427,10 +427,24 @@ Deno.serve(async (req) => {
     // ========================================
     // HANDLE: customer.subscription.deleted
     // ========================================
-    if (event.type === 'customer.subscription.deleted') {
+    if (event.type === 'customer.subscription.deleted' || event.type === 'customer.subscription.updated') {
       const subscription = event.data.object;
       const customerId = subscription.customer;
-      console.log('[CANCELLATION_WEBHOOK] Subscription cancelled:', customerId);
+      
+      // Only process actual cancellations
+      const isCancelled = subscription.status === 'canceled' || subscription.cancel_at_period_end === true;
+      if (event.type === 'customer.subscription.updated' && !isCancelled) {
+        console.log('[SUBSCRIPTION_UPDATE_WEBHOOK] Non-cancellation update, skipping');
+        return Response.json({ received: true, ignored: true }, { status: 200 });
+      }
+
+      // For deleted events, always downgrade. For updated with cancel_at_period_end, just log.
+      if (event.type === 'customer.subscription.updated' && subscription.cancel_at_period_end && subscription.status === 'active') {
+        console.log('[SUBSCRIPTION_UPDATE_WEBHOOK] cancel_at_period_end=true, scheduled cancellation. User keeps access until period end.');
+        return Response.json({ received: true, processed: 'scheduled_cancellation' }, { status: 200 });
+      }
+
+      console.log('[CANCELLATION_WEBHOOK] Subscription cancelled:', customerId, 'status:', subscription.status);
 
       try {
         // Find and downgrade the user
@@ -440,9 +454,13 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.entities.User.update(user.id, {
             plan_tier: 'explorer',
             subscription_status: 'cancelled',
-            available_scans: 0,
+            available_scans: 1,
+            letter_credits: 0,
+            stripe_subscription_id: null
           });
-          console.log('[CANCELLATION_WEBHOOK] ✅ User downgraded to explorer:', user.id);
+          console.log('[CANCELLATION_WEBHOOK] ✅ User downgraded to explorer:', user.id, user.email);
+        } else {
+          console.error('[CANCELLATION_WEBHOOK] ❌ No user found for customer:', customerId);
         }
 
         // Cancel pending referrals
