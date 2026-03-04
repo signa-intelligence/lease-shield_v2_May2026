@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, Shield, Zap, XCircle, Crown, ArrowRight } from "lucide-react";
+import { Loader2, CheckCircle2, Shield, Zap, XCircle, Crown, ArrowRight, Gift } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
 
 const trackEvent = (eventName, properties) => {
@@ -83,7 +83,12 @@ export default function RetentionModal({ open, onClose }) {
   const handleContinue = () => {
     if (!reason) return;
     trackEvent('cancellation_reason_submitted', { reason, current_tier: planTier, monthly_value: currentPrice });
-    setStep(2);
+    // For Lite users, skip retention offers (no paid tiers below) and go straight to cancel confirmation
+    if (downgrades.length === 0) {
+      setStep(2);
+    } else {
+      setStep(2);
+    }
   };
 
   const handleDowngrade = async (tierKey) => {
@@ -191,11 +196,14 @@ export default function RetentionModal({ open, onClose }) {
           <>
             <DialogHeader style={{ flexShrink: 0, paddingBottom: '12px' }}>
               <DialogTitle className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                {isTh ? 'ก่อนยกเลิก มีตัวเลือกอื่นที่เหมาะกว่าไหม?' : 'Before you cancel, would any of these work better?'}
+                {downgrades.length === 0
+                  ? (isTh ? 'ยืนยันการยกเลิก' : 'Confirm Cancellation')
+                  : (isTh ? 'ก่อนยกเลิก มีตัวเลือกอื่นที่เหมาะกว่าไหม?' : 'Before you cancel, would any of these work better?')}
               </DialogTitle>
             </DialogHeader>
             <div style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
               <div className="space-y-3 py-4">
+                {/* Paid downgrade options (for Protect/Secure users) */}
                 {downgrades.map((tier) => {
                   const Icon = tier.icon;
                   const savings = currentPrice - tier.price;
@@ -229,6 +237,38 @@ export default function RetentionModal({ open, onClose }) {
                   );
                 })}
 
+                {/* Explorer (free) option — shown for ALL tiers including Lite */}
+                <div className="p-4 rounded-xl border-2" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC', borderColor: isDarkMode ? '#4B5563' : '#CBD5E1' }}>
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#64748B' }}>
+                      <Gift className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-base" style={{ color: colors.textPrimary }}>Explorer</h3>
+                        <Badge className="bg-slate-100 text-slate-700 text-xs">{isTh ? 'ฟรีตลอด' : 'Free Forever'}</Badge>
+                      </div>
+                      <p className="text-sm font-bold mb-2" style={{ color: '#64748B' }}>{isTh ? 'ฟรี' : 'Free'}</p>
+                      <p className="text-xs mb-2" style={{ color: colors.textSecondary }}>
+                        {isTh ? 'เก็บบัญชีและข้อมูลของคุณไว้พร้อมฟีเจอร์พื้นฐาน:' : 'Keep your account and data with basic features:'}
+                      </p>
+                      <ul className="space-y-1">
+                        {[
+                          isTh ? '1 การสแกนสัญญาเช่า (ตลอดชีพ)' : '1 lifetime lease scan',
+                          isTh ? 'พื้นที่จัดเก็บ 100MB' : '100MB storage',
+                          isTh ? 'เข้าถึงเอกสารทั้งหมดของคุณ' : 'Access all your documents',
+                          isTh ? 'ไม่ต้องใช้บัตรเครดิต' : 'No credit card required'
+                        ].map((f, i) => (
+                          <li key={i} className="flex items-center gap-2 text-xs" style={{ color: colors.textPrimary }}>
+                            <CheckCircle2 className="w-3 h-3 flex-shrink-0" style={{ color: '#64748B' }} />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Divider */}
                 <div style={{ borderTop: `2px dashed ${colors.borderColor}`, margin: '16px 0' }} />
 
@@ -240,8 +280,8 @@ export default function RetentionModal({ open, onClose }) {
                       {isTh ? 'ยกเลิกการสมัครสมาชิก' : 'Cancel Subscription'}
                     </h3>
                   </div>
-                  <p className="text-xs mb-3" style={{ color: '#991B1B' }}>
-                    {isTh ? 'สิ้นสุดฟีเจอร์ที่ชำระเงินเมื่อสิ้นสุดรอบบิล' : 'End paid features at billing period end'}
+                  <p className="text-xs mb-2" style={{ color: '#991B1B' }}>
+                    {isTh ? 'สิ้นสุดฟีเจอร์ที่ชำระเงินเมื่อสิ้นสุดรอบบิล แล้วเปลี่ยนเป็น Explorer (ฟรี)' : 'End paid features at billing period end, then move to Explorer (free)'}
                   </p>
                   <button onClick={handleCancel} disabled={processing} className="btn-interaction" style={{ width: '100%', padding: '10px', backgroundColor: processing ? '#9CA3AF' : '#DC2626', color: '#FFFFFF', borderRadius: '8px', fontWeight: '600', fontSize: '13px', border: 'none', cursor: processing ? 'not-allowed' : 'pointer', opacity: processing ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                     {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
