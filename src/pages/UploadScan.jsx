@@ -142,28 +142,27 @@ function UploadScanPageContent() {
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'explorer';
 
-  // ✅ SCAN LIMIT ENFORCEMENT (Secure: 50/year, 10/month cap)
+  // ✅ SCAN LIMIT ENFORCEMENT (annual + monthly caps for Secure)
   const getScanLimits = () => {
     switch(userTier) {
-      case 'explorer': return { limit: 1, period: 'lifetime', unlimited: false };
-      case 'lite': return { limit: 6, period: 'year', unlimited: false };
-      case 'protect': return { limit: 12, period: 'year', unlimited: false };
-      case 'secure': return { limit: 50, period: 'year', unlimited: false };
-      default: return { limit: 1, period: 'lifetime', unlimited: false };
+      case 'explorer': return { limit: 1, period: 'lifetime', unlimited: false, monthlyMax: 0 };
+      case 'lite': return { limit: 6, period: 'year', unlimited: false, monthlyMax: 0 };
+      case 'protect': return { limit: 12, period: 'year', unlimited: false, monthlyMax: 0 };
+      case 'secure': return { limit: 50, period: 'year', unlimited: false, monthlyMax: 10 };
+      default: return { limit: 1, period: 'lifetime', unlimited: false, monthlyMax: 0 };
     }
-  };
-  const getMonthlyCapInfo = () => {
-    if (userTier !== 'secure') return { capped: false, used: 0, max: 0 };
-    const cm = new Date().toISOString().slice(0, 7);
-    const u = (user?.usage_month === cm) ? (user?.scans_used_this_month || 0) : 0;
-    return { capped: u >= 10, used: u, max: 10 };
   };
   const canUploadLease = () => {
     const limits = getScanLimits();
     const availableScans = user?.available_scans ?? 0;
     const used = Math.max(0, limits.limit - availableScans);
-    const mc = getMonthlyCapInfo();
-    return { allowed: availableScans > 0 && !mc.capped, remaining: availableScans, used, limit: limits.limit, period: limits.period, monthlyCapped: mc.capped, monthlyUsed: mc.used, monthlyMax: mc.max };
+    let monthlyBlocked = false, monthlyUsed = 0;
+    if (limits.monthlyMax > 0) {
+      const cm = new Date().toISOString().slice(0, 7);
+      monthlyUsed = user?.usage_month === cm ? (user?.scans_used_this_month || 0) : 0;
+      monthlyBlocked = monthlyUsed >= limits.monthlyMax;
+    }
+    return { allowed: availableScans > 0 && !monthlyBlocked, remaining: availableScans, used, limit: limits.limit, period: limits.period, monthlyBlocked, monthlyUsed, monthlyMax: limits.monthlyMax };
   };
 
   const scanStatus = canUploadLease();
