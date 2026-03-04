@@ -187,7 +187,7 @@ export default function RetentionModal({ open, onClose }) {
               </button>
             </div>
           </>
-        ) : (
+        ) : step === 2 ? (
           <>
             <DialogHeader style={{ flexShrink: 0, paddingBottom: '12px' }}>
               <DialogTitle className="text-lg font-bold" style={{ color: colors.textPrimary }}>
