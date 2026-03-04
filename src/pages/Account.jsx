@@ -403,10 +403,8 @@ function AccountContent() {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedInterval, setSelectedInterval] = useState('monthly');
   const [showRetentionModal, setShowRetentionModal] = useState(false);
-  const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
-
+  const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
-  const [exportFormat, setExportFormat] = useState('pdf');
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [confirmDeleteEmail, setConfirmDeleteEmail] = useState('');
   const [confirmDeleteUnderstand, setConfirmDeleteUnderstand] = useState(false);
