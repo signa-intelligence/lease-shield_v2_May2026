@@ -27,8 +27,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
 import ReferralCard from "../components/referral/ReferralCard";
 import RetentionModal from "../components/settings/RetentionModal";
-
-// Centralized pricing config with real Stripe price IDs
+import DeleteAccountModal from "../components/settings/DeleteAccountModal";
 const PRICING = {
   lite: {
     monthly: { amount: 190, priceId: "price_1SbtXQQwol6NhlUxKMIyoEbs" },
