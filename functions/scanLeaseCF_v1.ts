@@ -577,42 +577,43 @@ Deno.serve(async (req) => {
       }
     }
 
-    // CRITICAL FIX: Decrement available_scans for ALL non-unlimited tiers AFTER successful analysis
-    if (userObj && userTier !== 'secure' && result?.ok === true) {
+    // CRITICAL: Decrement available_scans for ALL tiers (including Secure) AFTER successful analysis
+    if (userObj && result?.ok === true) {
       try {
         const currentScans = userObj.available_scans || 0;
-        if (currentScans > 0) {
-          const updatedScans = currentScans - 1;
-          await svc.entities.User.update(userObj.id, { available_scans: updatedScans });
-          
-          // Log to CreditsLedger
-          await svc.entities.CreditsLedger.create({
-            user_id: userObj.id,
-            user_email: userEmail,
-            type: 'scans',
-            delta: -1,
-            reason: 'purchase',
-            source_ref: `lease_scan:${leaseId}`
-          });
-          
-          console.log('SCAN_CF_V1_CREDIT_DECREMENTED', { 
-            userId: userObj.id, 
-            oldScans: currentScans, 
-            newScans: updatedScans,
-            tier: userTier
-          });
-        } else {
-          console.warn('SCAN_CF_V1_CREDIT_ALREADY_ZERO', { 
-            userId: userObj.id, 
-            availableScans: currentScans 
-          });
+        const updateData = { available_scans: Math.max(0, currentScans - 1) };
+
+        // Monthly cap tracking for Secure tier
+        if (userTier === 'secure') {
+          const currentMonth = new Date().toISOString().slice(0, 7);
+          const isNewMonth = userObj.usage_month !== currentMonth;
+          updateData.usage_month = currentMonth;
+          updateData.scans_used_this_month = isNewMonth ? 1 : ((userObj.scans_used_this_month || 0) + 1);
         }
+
+        await svc.entities.User.update(userObj.id, updateData);
+        
+        await svc.entities.CreditsLedger.create({
+          user_id: userObj.id,
+          user_email: userEmail,
+          type: 'scans',
+          delta: -1,
+          reason: 'purchase',
+          source_ref: `lease_scan:${leaseId}`
+        });
+        
+        console.log('SCAN_CF_V1_CREDIT_DECREMENTED', { 
+          userId: userObj.id, 
+          oldScans: currentScans, 
+          newScans: updateData.available_scans,
+          tier: userTier,
+          monthlyUsed: updateData.scans_used_this_month
+        });
       } catch (creditError) {
         console.error('SCAN_CF_V1_CREDIT_DECREMENT_FAILED', { 
           userId: userObj.id, 
           error: creditError.message 
         });
-        // Log error but do not block scan completion
       }
     }
 
