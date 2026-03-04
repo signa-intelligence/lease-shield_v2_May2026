@@ -195,7 +195,8 @@ Deno.serve(async (req) => {
           stripe_subscription_id: session.subscription,
           stripe_customer_id: session.customer,
           available_scans: credits.scans,
-          letter_credits: (subscribedUser.letter_credits || 0) + credits.letters
+          letter_credits: (subscribedUser.letter_credits || 0) + credits.letters,
+          last_credit_refresh: now
         };
 
         console.log('[SUBSCRIPTION_WEBHOOK] 📝 Updating user:', JSON.stringify({
