@@ -26,7 +26,7 @@ import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
 import ReferralCard from "../components/referral/ReferralCard";
-
+import CancellationModal from "../components/settings/CancellationModal";
 // Centralized pricing config with real Stripe price IDs
 const PRICING = {
   lite: {
@@ -411,7 +411,11 @@ function AccountContent() {
   const [pendingDowngradePlan, setPendingDowngradePlan] = useState(null);
   const [pendingDowngradeInterval, setPendingDowngradeInterval] = useState('monthly');
   
+  // New state for two-step downgrade flow
   const [showDowngradeFlow, setShowDowngradeFlow] = useState(false);
+  const [downgradeStep, setDowngradeStep] = useState(1);
+  const [downgradeReason, setDowngradeReason] = useState('');
+  const [downgradeFeedback, setDowngradeFeedback] = useState('');
   const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
 
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -968,7 +972,7 @@ function AccountContent() {
     }
   };
 
-  // Retention modal handles all cancel/downgrade logic now
+  // Cancel/downgrade handlers are now in CancellationModal component
 
   const handleLandlordUpdate = async () => {
     haptic.medium();
@@ -2952,7 +2956,6 @@ function AccountContent() {
                       <Settings className="w-4 h-4" />
                       {language === 'th' ? 'จัดการแผน' : language === 'ru' ? 'Управление планом' : 'Manage Plan'}
                     </button>
-
                   </div>
                 )}
               </CardContent>
@@ -3966,14 +3969,18 @@ function AccountContent() {
           </CardContent>
         </Card>
 
-        {/* RETENTION MODAL - replaces old cancel/downgrade dialogs */}
-        <RetentionModal
+        {/* NEW 2-STEP CANCELLATION MODAL WITH RETENTION + REASON CAPTURE */}
+        <CancellationModal
           isOpen={showCancelDialog || showDowngradeFlow}
           onClose={() => { setShowCancelDialog(false); setShowDowngradeFlow(false); }}
           user={user}
-          onSubscribe={(tierKey, interval) => handleSubscribe(tierKey, interval)}
+          language={language}
           colors={colors}
           isDarkMode={isDarkMode}
+          onDowngrade={(tierKey) => { setShowCancelDialog(false); setShowDowngradeFlow(false); handleSubscribe(tierKey, user?.billing_interval || 'monthly'); }}
+          onCancel={() => { setShowCancelDialog(false); setShowDowngradeFlow(false); }}
+          queryClient={queryClient}
+          refetchUser={refetchUser}
         />
 
         <div style={{
@@ -4414,27 +4421,13 @@ function AccountContent() {
             </div>
           </div>
 
-          {/* Subtle cancel subscription link */}
           {!isFreePlan && (
             <div style={{ marginTop: "16px", textAlign: "center" }}>
               <p style={{ fontSize: "12px", color: colors.textSecondary }}>
-                {language === 'th' ? 'ต้องการยกเลิกการสมัครสมาชิก?' : language === 'zh' ? '需要取消订阅吗？' : language === 'ja' ? 'サブスクリプションをキャンセルする必要がありますか？' : language === 'ko' ? '구독을 취소해야 합니까？' : language === 'ru' ? 'Нужно отменить подписку?' : 'Need to cancel your subscription?'}{" "}
-                <button
-                  type="button"
-                  onClick={() => setShowCancelDialog(true)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    margin: 0,
-                    cursor: "pointer",
-                    color: "#0C3B2E",
-                    textDecoration: "underline",
-                    fontSize: "12px",
-                    fontWeight: 500,
-                  }}
-                >
-                  {language === 'th' ? 'จัดการหรือยกเลิกการสมัครสมาชิก' : language === 'zh' ? '管理或取消订阅' : language === 'ja' ? 'サブスクリプションを管理またはキャンセル' : language === 'ko' ? '구독 관리 또는 취소' : language === 'ru' ? 'Управление или отмена подписки' : 'Manage or cancel subscription'}
+                {language === 'th' ? 'ต้องการยกเลิก?' : 'Need to cancel?'}{" "}
+                <button type="button" onClick={() => { base44.analytics.track({ eventName: "cancellation_initiated", properties: { current_tier: planTier } }); setShowCancelDialog(true); }}
+                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: colors.textSecondary, textDecoration: "underline", fontSize: "12px", fontWeight: 500 }}>
+                  {language === 'th' ? 'จัดการหรือยกเลิก' : 'Manage or cancel subscription'}
                 </button>
               </p>
             </div>
