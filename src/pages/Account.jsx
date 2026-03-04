@@ -4407,7 +4407,7 @@ function AccountContent() {
                 {language === 'th' ? 'ต้องการยกเลิกการสมัครสมาชิก?' : language === 'zh' ? '需要取消订阅吗？' : language === 'ja' ? 'サブスクリプションをキャンセルする必要がありますか？' : language === 'ko' ? '구독을 취소해야 합니까？' : language === 'ru' ? 'Нужно отменить подписку?' : 'Need to cancel your subscription?'}{" "}
                 <button
                   type="button"
-                  onClick={() => setShowCancelDialog(true)}
+                  onClick={() => { base44.analytics.track({ eventName: 'cancellation_initiated', properties: { current_tier: planTier } }); setShowRetentionModal(true); }}
                   style={{
                     background: "none",
                     border: "none",
