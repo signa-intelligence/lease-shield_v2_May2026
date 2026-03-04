@@ -106,10 +106,13 @@ export default function CancellationModal({
 
   const handleContinueToStep2 = () => {
     if (!reason) return;
-    // Track reason submitted
     base44.analytics.track({
       eventName: "cancellation_reason_submitted",
       properties: { reason_category: reason, current_tier: planTier, monthly_value: currentValue }
+    });
+    base44.analytics.track({
+      eventName: "retention_offer_shown",
+      properties: { offers_shown: downgradeOptions.map(o => o.key), reason_given: reason, current_tier: planTier }
     });
     setStep(2);
   };
@@ -270,11 +273,7 @@ export default function CancellationModal({
             </DialogHeader>
             <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
               <div className="space-y-3 py-3">
-                {/* Retention: Track offers shown */}
-                {(() => { 
-                  base44.analytics.track({ eventName: "retention_offer_shown", properties: { offers_shown: downgradeOptions.map(o => o.key), reason_given: reason, current_tier: planTier } });
-                  return null;
-                })()}
+                {/* Retention offers shown - tracked in handleContinueToStep2 */}
 
                 {downgradeOptions.map((tier) => {
                   const Icon = tier.icon;
