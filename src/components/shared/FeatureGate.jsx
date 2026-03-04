@@ -45,9 +45,9 @@ const FEATURE_GATES = {
   // ============================================
   // SECURE TIER (Premium Protection)
   // ============================================
-  unlimited_scans: ['secure'],
+  scans_50_per_year: ['secure'],
   advanced_reminders: ['secure'],
-  letter_credits_10: ['secure'],
+  letter_credits_50_per_year: ['secure'],
   storage_20gb: ['secure'],
   priority_case_queue: ['secure'],
   priority_scanning: ['secure'],
