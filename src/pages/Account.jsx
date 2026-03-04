@@ -406,9 +406,7 @@ function AccountContent() {
   const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
-  const [confirmDeleteEmail, setConfirmDeleteEmail] = useState('');
-  const [confirmDeleteUnderstand, setConfirmDeleteUnderstand] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDeleteEmail, setConfirmDeleteEmail] = useState(''); const [confirmDeleteUnderstand, setConfirmDeleteUnderstand] = useState(false); const [isDeleting, setIsDeleting] = useState(false);
   
   const plansSectionRef = React.useRef(null);
 
