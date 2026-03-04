@@ -1,0 +1,135 @@
+import { Gift, Zap, Shield, Crown } from "lucide-react";
+
+export const PRICING = {
+  lite: {
+    monthly: { amount: 190, priceId: "price_1SbtXQQwol6NhlUxKMIyoEbs" },
+    annual: { amount: 1900, priceId: "price_1SbtXQQwol6NhlUxXqxUROyx" }
+  },
+  protect: {
+    monthly: { amount: 390, priceId: "price_1SbtZ4Qwol6NhlUxxxUML4Un" },
+    annual: { amount: 3900, priceId: "price_1SbtZ4Qwol6NhlUxUwsvYbkS" }
+  },
+  secure: {
+    monthly: { amount: 990, priceId: "price_1SbtaWQwol6NhlUxJboFevsu" },
+    annual: { amount: 9900, priceId: "price_1SbtaWQwol6NhlUxAfPLTDeE" }
+  }
+};
+
+export const PLAN_DETAILS = [
+  {
+    key: 'free',
+    label: 'Explorer',
+    priceMonthly: 0,
+    priceAnnual: 0,
+    savingsAnnual: 0,
+    tagline: 'Explore Features',
+    taglineTh: 'สำรวจฟีเจอร์',
+    taglineRu: 'Изучите возможности',
+    taglineZh: '探索功能',
+    taglineJa: '機能を探索',
+    taglineKo: '기능 탐색',
+    description: 'Preview core features',
+    descriptionTh: 'ดูฟีเจอร์หลักก่อน',
+    descriptionRu: 'Предварительный просмотр функций',
+    descriptionZh: '预览核心功能',
+    descriptionJa: 'コア機能のプレビュー',
+    descriptionKo: '핵심 기능 미리보기',
+    benefits: ['1 Lease Scan (lifetime)', 'Basic Risk Score Preview', '3 Files (100MB storage)', 'Read-only Deposit Tracker', 'Basic Maintenance Tracker'],
+    benefitsTh: ['1 การสแกนสัญญาเช่า (ตลอดชีพ)', 'ดูคะแนนความเสี่ยงเบื้องต้น', '3 ไฟล์ (พื้นที่ 100MB)', 'ติดตามเงินมัดจำแบบอ่านอย่างเดียว', 'ติดตามการซ่อมบำรุงเบื้องต้น'],
+    benefitsRu: ['1 сканирование договора (навсегда)', 'Базовый просмотр рисков', '3 файла (100MB хранилище)', 'Отслеживание депозита (только чтение)', 'Базовое отслеживание обслуживания'],
+    benefitsZh: ['1次租约扫描（终身）', '基本风险评分预览', '3个文件（100MB存储）', '只读押金追踪', '基本维护追踪'],
+    benefitsJa: ['1回のリーススキャン（生涯）', '基本リスクスコアプレビュー', '3ファイル（100MBストレージ）', '読み取り専用敷金トラッカー', '基本メンテナンストラッカー'],
+    benefitsKo: ['1회 임대 계약 스캔（평생）', '기본 위험 점수 미리보기', '3개 파일（100MB 저장소）', '읽기 전용 보증금 추적기', '기본 유지보수 추적기'],
+    bgColor: '#64748b',
+    icon: Gift
+  },
+  {
+    key: 'lite',
+    label: 'Lite',
+    priceMonthly: 190,
+    priceAnnual: 1900,
+    savingsAnnual: 380,
+    tagline: 'Essential Protection',
+    taglineTh: 'การป้องกันที่จำเป็น',
+    taglineRu: 'Базовая защита',
+    taglineZh: '基本保护',
+    taglineJa: '必須保護',
+    taglineKo: '필수 보호',
+    description: 'Core prevention tools for individuals',
+    descriptionTh: 'เครื่องมือป้องกันหลักสำหรับบุคคล',
+    descriptionRu: 'Основные инструменты профилактики для частных арендаторов',
+    descriptionZh: '个人核心预防工具',
+    descriptionJa: '個人向けコア予防ツール',
+    descriptionKo: '개인을 위한 핵심 예방 도구',
+    benefits: ['6 Lease Scans per annum', '5 Risks Reported', 'Email Notifications', '3 Letter Credits', '1GB Document Storage', 'Maintenance Tracker', 'Deposit Tracker'],
+    benefitsTh: ['6 การสแกนสัญญาต่อปี', 'รายงานความเสี่ยง 5 จุด', 'การแจ้งเตือนทางอีเมล', 'เครดิตจดหมาย 3 ใบ', 'พื้นที่จัดเก็บ 1GB', 'ติดตามการซ่อมบำรุง', 'ติดตามเงินมัดจำ'],
+    benefitsRu: ['6 сканирований договора в год', '5 выявленных рисков', 'Уведомления по электронной почте', '3 кредита на письма', '1 ГБ хранилища документов', 'Отслеживание обслуживания', 'Отслеживание депозита'],
+    benefitsZh: ['每年6次租约扫描', '报告5个风险', '电子邮件通知', '3个信件积分', '1GB文档存储', '维护追踪器', '押金追踪器'],
+    benefitsJa: ['年6回のリーススキャン', '5つのリスク報告', 'メール通知', '3つのレタークレジット', '1GBドキュメントストレージ', 'メンテナンストラッカー', '敷金トラッカー'],
+    benefitsKo: ['연간 6회 임대 계약 스캔', '5개 위험 보고', '이메일 알림', '3개 레터 크레딧', '1GB 문서 저장소', '유지보수 추적기', '보증금 추적기'],
+    bgColor: '#0C3B2E',
+    icon: Zap
+  },
+  {
+    key: 'protect',
+    label: 'Protect',
+    priceMonthly: 390,
+    priceAnnual: 3900,
+    savingsAnnual: 780,
+    tagline: 'Complete Prevention Suite',
+    taglineTh: 'ชุดป้องกันครบครัน',
+    taglineRu: 'Полный комплекс профилактической защиты',
+    taglineZh: '完整预防套件',
+    taglineJa: '完全な予防スイート',
+    taglineKo: '완전한 예방 제품군',
+    description: 'Everything you need for full protection',
+    descriptionTh: 'ทุกสิ่งที่คุณต้องการสำหรับการป้องกันแบบเต็มรูปแบบ',
+    descriptionRu: 'Все, что нужно для полной защиты',
+    descriptionZh: '全面保护所需的一切',
+    descriptionJa: '完全な保護に必要なすべて',
+    descriptionKo: '완전한 보호에 필요한 모든 것',
+    benefits: ['Everything in Lite', '12 Lease Scans per annum', 'Full Risk Reports', 'LINE Notifications', '5 Letter Credits', '5GB Document Storage', 'Rent Payment Alerts', 'Automated Reminders', 'Deposit Shield Automation'],
+    benefitsTh: ['ทุกอย่างในแผน Lite', '12 การสแกนสัญญาต่อปี', 'รายงานความเสี่ยงฉบับเต็ม', 'การแจ้งเตือนทาง LINE', 'เครดิตจดหมาย 5 ใบ', 'พื้นที่จัดเก็บ 5GB', 'แจ้งเตือนการชำระค่าเช่า', 'การแจ้งเตือนอัตโนมัติ', 'ระบบอัตโนมัติป้องกันเงินมัดจำ'],
+    benefitsRu: ['Все из тарифа Lite', '12 сканирований договора в год', 'Полные отчёты о рисках', 'Уведомления в LINE', '5 кредитов на письма', '5 ГБ хранилища документов', 'Напоминания об оплате аренды', 'Автоматические напоминания', 'Автоматизация защиты депозита'],
+    benefitsZh: ['包含Lite计划所有内容', '每年12次租约扫描', '完整风险报告', 'LINE通知', '5个信件积分', '5GB文档存储', '租金支付提醒', '自动提醒', '押金保护自动化'],
+    benefitsJa: ['Liteの全て', '年12回のリーススキャン', '完全なリスクレポート', 'LINE通知', '5つのレタークレジット', '5GBドキュメントストレージ', '家賃支払いアラート', '自動リマインダー', '敷金保護自動化'],
+    benefitsKo: ['Lite 플랜의 모든 내용', '연간 12회 임대 계약 스캔', '전체 위험 보고서', 'LINE 알림', '5개 레터 크레딧', '5GB 문서 저장소', '임대료 납부 알림', '자동 알림', '보증금 보호 자동화'],
+    bgColor: '#C7A338',
+    icon: Shield,
+    popular: true
+  },
+  {
+    key: 'secure',
+    label: 'Secure',
+    priceMonthly: 990,
+    priceAnnual: 9900,
+    savingsAnnual: 1980,
+    tagline: 'Premium Protection',
+    taglineTh: 'การป้องกันระดับพรีเมียม',
+    taglineRu: 'Премиальная защита',
+    taglineZh: '高级保护',
+    taglineJa: 'プレミアム保護',
+    taglineKo: '프리미엄 보호',
+    description: 'Maximum prevention with priority support',
+    descriptionTh: 'การป้องกันสูงสุดพร้อมการสนับสนุนลำดับความสำคัญ',
+    descriptionRu: 'Максимальная профилактика с приоритетной поддержкой',
+    descriptionZh: '最大程度预防与优先支持',
+    descriptionJa: '優先サポート付き最大予防',
+    descriptionKo: '우선 지원이 포함된 최대 예방',
+    benefits: ['Everything in Protect', '50 Lease Scans per year', '50 Letter Credits per year', '20GB Document Storage', 'Priority Case Queue', 'Priority Scanning', 'Premium Support', '1 Resolve Case per year', '10 Fast Track Cases per year'],
+    benefitsTh: ['ทุกอย่างในแผน Protect', '50 การสแกนสัญญาต่อปี', '50 เครดิตจดหมายต่อปี', 'พื้นที่จัดเก็บ 20GB', 'คิวคดีลำดับความสำคัญ', 'สแกนลำดับความสำคัญ', 'การสนับสนุนพรีเมียม', '1 คดี Resolve ต่อปี', '10 Fast Track ต่อปี'],
+    benefitsRu: ['Все из тарифа Protect', '50 сканирований договора в год', '50 кредитов писем в год', '20 ГБ хранилища документов', 'Приоритетная очередь по делам', 'Приоритетное сканирование', 'Премиальная поддержка', '1 дело Resolve в год', '10 Fast Track в год'],
+    benefitsZh: ['包含Protect计划所有内容', '每年50次租约扫描', '每年50个信件积分', '20GB文档存储', '优先案件队列', '优先扫描', '高级支持', '每年1个Resolve案件', '每年10个Fast Track案件'],
+    benefitsJa: ['Protectの全て', '年50回のリーススキャン', '年50レタークレジット', '20GBドキュメントストレージ', '優先ケースキュー', '優先スキャン', 'プレミアムサポート', '年1件のResolveケース', '年10件のFast Track'],
+    benefitsKo: ['Protect 플랜의 모든 내용', '연간 50회 임대 계약 스캔', '연간 50개 레터 크레딧', '20GB 문서 저장소', '우선 사례 대기열', '우선 스캔', '프리미엄 지원', '연간 1건 Resolve 케이스', '연간 10건 Fast Track'],
+    bgColor: '#1A1D1F',
+    icon: Crown
+  }
+];
+
+export const CREDIT_PACKAGES = [
+  { id: 'credits_1', credits: 1, price: 99, savings: 0 },
+  { id: 'credits_3', credits: 3, price: 249, savings: 16, popular: false },
+  { id: 'credits_5', credits: 5, price: 399, savings: 20, popular: true },
+  { id: 'credits_10', credits: 10, price: 699, savings: 30, popular: false }
+];
