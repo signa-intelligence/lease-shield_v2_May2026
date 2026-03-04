@@ -128,9 +128,8 @@ Deno.serve(async (req) => {
             if (planTier !== 'explorer') {
               try {
                 await base44.asServiceRole.functions.invoke('sendUpgradeEmail', {
-                  userEmail: user.email,
-                  newTier: planTier,
-                  billingInterval: interval === 'year' ? 'annual' : 'monthly'
+                  user: { ...user, plan_tier: planTier, billing_interval: interval === 'year' ? 'annual' : 'monthly' },
+                  newTier: planTier
                 });
                 console.log('[CHECKOUT_WEBHOOK] ✅ Upgrade email sent to:', user.email);
               } catch (emailErr) {
