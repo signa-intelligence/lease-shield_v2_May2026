@@ -111,16 +111,21 @@ Deno.serve(async (req) => {
           const user = await findUserByCustomerId(customerId);
           if (user) {
             const now = new Date().toISOString();
+            const currentMonth = now.slice(0, 7);
             await base44.asServiceRole.entities.User.update(user.id, {
               plan_tier: planTier,
               subscription_status: 'active',
               available_scans: scans,
-              letter_credits: (user.letter_credits || 0) + credits,
+              letter_credits: credits,
               stripe_subscription_id: subscriptionId,
               billing_interval: interval === 'year' ? 'annual' : 'monthly',
               subscription_started_at: now,
               member_since: user.member_since || now,
-              plan_renews_at: new Date(sub.current_period_end * 1000).toISOString()
+              plan_renews_at: new Date(sub.current_period_end * 1000).toISOString(),
+              usage_month: currentMonth,
+              scans_used_this_month: 0,
+              letters_used_this_month: 0,
+              fasttrack_used_this_month: 0
             });
             console.log('[CHECKOUT_WEBHOOK] ✅ User upgraded:', user.email, 'to', planTier);
 
