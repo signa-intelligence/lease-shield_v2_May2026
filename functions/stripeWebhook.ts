@@ -123,6 +123,20 @@ Deno.serve(async (req) => {
               plan_renews_at: new Date(sub.current_period_end * 1000).toISOString()
             });
             console.log('[CHECKOUT_WEBHOOK] ✅ User upgraded:', user.email, 'to', planTier);
+
+            // Send upgrade confirmation email (non-blocking)
+            if (planTier !== 'explorer') {
+              try {
+                await base44.asServiceRole.functions.invoke('sendUpgradeEmail', {
+                  userEmail: user.email,
+                  newTier: planTier,
+                  billingInterval: interval === 'year' ? 'annual' : 'monthly'
+                });
+                console.log('[CHECKOUT_WEBHOOK] ✅ Upgrade email sent to:', user.email);
+              } catch (emailErr) {
+                console.error('[CHECKOUT_WEBHOOK] ⚠️ Upgrade email failed (non-critical):', emailErr.message);
+              }
+            }
           } else {
             console.error('[CHECKOUT_WEBHOOK] ❌ No user found for customer:', customerId);
           }
