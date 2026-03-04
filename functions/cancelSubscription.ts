@@ -60,6 +60,8 @@ Deno.serve(async (req) => {
     console.log('[CANCEL] ✅ Scheduled cancellation:', canceledSubscription.id);
     console.log('[CANCEL] Cancels at:', new Date(canceledSubscription.current_period_end * 1000).toISOString());
 
+    const { outcome } = await req.clone().json().catch(() => ({}));
+
     // Update user record - mark as canceling (not cancelled - they still have access)
     await base44.auth.updateMe({
       subscription_status: 'canceling',
@@ -67,6 +69,25 @@ Deno.serve(async (req) => {
       cancellation_feedback: feedback,
       cancellation_date: new Date().toISOString()
     });
+
+    // Store cancellation reason in CancellationReason entity for analytics
+    const tierPrices = { secure: 990, protect: 390, lite: 190, free: 0 };
+    try {
+      await base44.asServiceRole.entities.CancellationReason.create({
+        user_email: user.email,
+        user_id: user.id,
+        previous_tier: user.plan_tier || 'unknown',
+        reason: reason || 'not_specified',
+        reason_details: feedback || '',
+        outcome: outcome || 'cancelled',
+        new_tier: outcome?.includes('downgraded') ? outcome.replace('downgraded_to_', '') : null,
+        subscription_value: tierPrices[user.plan_tier] || 0,
+        revenue_retained: 0
+      });
+      console.log('[CANCEL] ✅ Cancellation reason stored');
+    } catch (crErr) {
+      console.error('[CANCEL] ⚠️ Failed to store reason (non-critical):', crErr.message);
+    }
 
     // Send confirmation email (non-blocking)
     const language = user.language || 'en';
