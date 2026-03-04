@@ -1,190 +1,155 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+
 const TIER_CONFIG = {
   lite: {
     label: 'Lite',
-    price: '฿190/month',
-    color: '#047857',
-    features: [
-      { en: '6 Lease Scans per year', th: '6 การสแกนสัญญาเช่าต่อปี' },
-      { en: '2 Letter Credits', th: '2 เครดิตจดหมาย' },
-      { en: 'Email Notifications', th: 'แจ้งเตือนทางอีเมล' },
-      { en: '1GB Document Storage', th: 'พื้นที่เก็บเอกสาร 1GB' },
-      { en: 'Full Risk Reports', th: 'รายงานความเสี่ยงฉบับเต็ม' },
-      { en: 'Deposit Tracking', th: 'ติดตามเงินประกัน' },
-    ],
-    nextSteps: {
-      en: [
-        'Upload your first lease for a full risk scan',
-        'Set up deposit tracking for your property',
-        'Enable email notifications for important dates',
-      ],
-      th: [
-        'อัปโหลดสัญญาเช่าฉบับแรกเพื่อสแกนความเสี่ยง',
-        'ตั้งค่าติดตามเงินประกันสำหรับทรัพย์สินของคุณ',
-        'เปิดการแจ้งเตือนทางอีเมลสำหรับวันสำคัญ',
-      ],
+    labelTh: 'ไลท์',
+    color: '#2563EB',
+    gradient: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
+    price: '฿149',
+    features: {
+      en: ['6 Lease Scans per month', '2 Letter Credits', '500MB Document Storage', 'Email Notifications', 'Deposit Tracker', 'Maintenance Logger'],
+      th: ['สแกนสัญญาเช่า 6 ครั้ง/เดือน', 'เครดิตจดหมาย 2 ฉบับ', 'พื้นที่จัดเก็บ 500MB', 'แจ้งเตือนทางอีเมล', 'ติดตามเงินมัดจำ', 'บันทึกการซ่อมบำรุง']
     },
+    nextSteps: {
+      en: ['Upload your lease for an AI-powered risk scan', 'Set up deposit tracking for your rental', 'Explore the Evidence Vault to store documents'],
+      th: ['อัปโหลดสัญญาเช่าเพื่อสแกนความเสี่ยงด้วย AI', 'ตั้งค่าติดตามเงินมัดจำ', 'สำรวจ Evidence Vault เพื่อจัดเก็บเอกสาร']
+    }
   },
   protect: {
     label: 'Protect',
-    price: '฿390/month',
-    color: '#C7A338',
-    features: [
-      { en: '12 Lease Scans per year', th: '12 การสแกนสัญญาเช่าต่อปี' },
-      { en: '10 Letter Credits', th: '10 เครดิตจดหมาย' },
-      { en: 'LINE + Email Notifications', th: 'แจ้งเตือนทาง LINE + อีเมล' },
-      { en: '5GB Document Storage', th: 'พื้นที่เก็บเอกสาร 5GB' },
-      { en: 'Maintenance Tracker', th: 'ติดตามการซ่อมบำรุง' },
-      { en: 'Priority Support', th: 'การสนับสนุนแบบพิเศษ' },
-    ],
-    nextSteps: {
-      en: [
-        'Upload your lease for a comprehensive risk scan',
-        'Connect LINE for instant notifications',
-        'Use the Evidence Vault to store important documents',
-      ],
-      th: [
-        'อัปโหลดสัญญาเช่าเพื่อสแกนความเสี่ยงอย่างละเอียด',
-        'เชื่อมต่อ LINE เพื่อรับการแจ้งเตือนทันที',
-        'ใช้ห้องนิรภัยหลักฐานเก็บเอกสารสำคัญ',
-      ],
+    labelTh: 'โปรเทค',
+    color: '#7C3AED',
+    gradient: 'linear-gradient(135deg, #7C3AED 0%, #8B5CF6 100%)',
+    price: '฿399',
+    features: {
+      en: ['12 Lease Scans per month', '10 Letter Credits', '2GB Document Storage', 'Email + LINE Notifications', 'Deposit & Rent Tracking', 'Maintenance Logger with Photos', 'Priority Support'],
+      th: ['สแกนสัญญาเช่า 12 ครั้ง/เดือน', 'เครดิตจดหมาย 10 ฉบับ', 'พื้นที่จัดเก็บ 2GB', 'แจ้งเตือนทาง Email + LINE', 'ติดตามเงินมัดจำและค่าเช่า', 'บันทึกซ่อมบำรุงพร้อมรูปภาพ', 'สนับสนุนแบบด่วน']
     },
+    nextSteps: {
+      en: ['Upload your lease for a comprehensive risk scan', 'Connect LINE for instant notifications', 'Set up rent reminders so you never miss a payment'],
+      th: ['อัปโหลดสัญญาเช่าเพื่อสแกนความเสี่ยงอย่างละเอียด', 'เชื่อมต่อ LINE เพื่อรับแจ้งเตือนทันที', 'ตั้งค่าแจ้งเตือนค่าเช่า']
+    }
   },
   secure: {
     label: 'Secure',
-    price: '฿990/month',
-    color: '#7C3AED',
-    features: [
-      { en: 'Unlimited Lease Scans', th: 'สแกนสัญญาเช่าไม่จำกัด' },
-      { en: '50 Letter Credits', th: '50 เครดิตจดหมาย' },
-      { en: 'LINE + Email + SMS Notifications', th: 'แจ้งเตือนทาง LINE + อีเมล + SMS' },
-      { en: '20GB Document Storage', th: 'พื้นที่เก็บเอกสาร 20GB' },
-      { en: 'Free Resolve Cases', th: 'เคส Resolve ฟรี' },
-      { en: 'Dedicated Account Manager', th: 'ผู้จัดการบัญชีส่วนตัว' },
-    ],
-    nextSteps: {
-      en: [
-        'Upload all your leases for unlimited risk scanning',
-        'Open a Resolve case if you have any active disputes',
-        'Connect LINE for instant priority notifications',
-      ],
-      th: [
-        'อัปโหลดสัญญาเช่าทั้งหมดเพื่อสแกนความเสี่ยงไม่จำกัด',
-        'เปิดเคส Resolve หากมีข้อพิพาทที่ยังดำเนินอยู่',
-        'เชื่อมต่อ LINE เพื่อรับการแจ้งเตือนพิเศษทันที',
-      ],
+    labelTh: 'ซีเคียว',
+    color: '#C7A338',
+    gradient: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
+    price: '฿899',
+    features: {
+      en: ['Unlimited Lease Scans', '50 Letter Credits', '10GB Document Storage', 'Email + LINE Notifications', 'Full Deposit, Rent & Lease Tracking', 'Resolve Case Support (Member Pricing)', 'Priority Support & Fast Track', 'Legal Letter Templates'],
+      th: ['สแกนสัญญาเช่าไม่จำกัด', 'เครดิตจดหมาย 50 ฉบับ', 'พื้นที่จัดเก็บ 10GB', 'แจ้งเตือนทาง Email + LINE', 'ติดตามเงินมัดจำ ค่าเช่า และสัญญาเช่า', 'บริการ Resolve Case (ราคาสมาชิก)', 'สนับสนุนด่วนและ Fast Track', 'แม่แบบจดหมายทางกฎหมาย']
     },
-  },
+    nextSteps: {
+      en: ['Upload all your leases for unlimited scanning', 'Set up LINE notifications for real-time alerts', 'Use legal letter templates for landlord communication', 'Open a Resolve Case if you have a dispute'],
+      th: ['อัปโหลดสัญญาเช่าทั้งหมดเพื่อสแกนไม่จำกัด', 'ตั้งค่า LINE เพื่อรับแจ้งเตือนแบบเรียลไทม์', 'ใช้แม่แบบจดหมายเพื่อสื่อสารกับเจ้าของ', 'เปิด Resolve Case หากมีข้อพิพาท']
+    }
+  }
 };
 
-Deno.serve(async (req) => {
-  try {
-    const base44 = createClientFromRequest(req);
-    const { userEmail, newTier, billingInterval } = await req.json();
+function buildUpgradeEmailHtml(user, tier, tierConfig, isTh) {
+  const firstName = (user.display_name || user.full_name || '').split(' ')[0] || user.email.split('@')[0].replace(/[._-]/g, ' ').split(' ')[0] || 'there';
+  const tierLabel = isTh ? tierConfig.labelTh : tierConfig.label;
+  const appUrl = 'https://app.leaseshield.asia';
+  const features = isTh ? tierConfig.features.th : tierConfig.features.en;
+  const nextSteps = isTh ? tierConfig.nextSteps.th : tierConfig.nextSteps.en;
+  const billingInterval = user.billing_interval === 'annual' ? (isTh ? 'รายปี' : 'Annual') : (isTh ? 'รายเดือน' : 'Monthly');
 
-    if (!userEmail || !newTier) {
-      return Response.json({ error: 'Missing userEmail or newTier' }, { status: 400 });
-    }
-
-    const tier = TIER_CONFIG[newTier];
-    if (!tier) {
-      return Response.json({ error: `Unknown tier: ${newTier}` }, { status: 400 });
-    }
-
-    // Fetch user for language and name
-    const allUsers = await base44.asServiceRole.entities.User.list();
-    const user = allUsers.find(u => u.email === userEmail);
-    if (!user) {
-      return Response.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    const language = user.language || 'en';
-    const isTh = language === 'th';
-    const firstName = (user.display_name || user.full_name || '').split(' ')[0] || user.email.split('@')[0].replace(/[._-]/g, ' ').split(' ')[0] || 'there';
-    const appUrl = 'https://app.leaseshield.asia';
-    const intervalLabel = billingInterval === 'annual'
-      ? (isTh ? 'รายปี' : 'Annual')
-      : (isTh ? 'รายเดือน' : 'Monthly');
-
-    const subject = isTh
-      ? `🎉 คุณอยู่ในแผน LeaseShield ${tier.label} แล้ว!`
-      : `🎉 You're now on LeaseShield ${tier.label}!`;
-
-    const featuresHtml = tier.features.map(f =>
-      `<li style="padding:6px 0;font-size:14px;color:#334155"><span style="color:${tier.color};font-weight:bold;margin-right:8px">✓</span>${isTh ? f.th : f.en}</li>`
-    ).join('');
-
-    const nextSteps = (isTh ? tier.nextSteps.th : tier.nextSteps.en);
-    const stepsHtml = nextSteps.map((s, i) =>
-      `<li style="padding:8px 0;font-size:14px;color:#334155;display:flex;align-items:flex-start;gap:10px">
-        <span style="background:${tier.color};color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${i + 1}</span>
-        <span>${s}</span>
-      </li>`
-    ).join('');
-
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#ECEFED;margin:0;padding:0;line-height:1.6">
 <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1)">
 
   <!-- Header -->
-  <div style="background:linear-gradient(135deg,#0C3B2E 0%,#047857 100%);padding:40px 32px;text-align:center">
-    <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" alt="LeaseShield" style="max-width:72px;height:auto;margin-bottom:16px">
-    <h1 style="color:#FFFFFF;font-size:24px;margin:0 0 4px 0">${isTh ? '🎉 ยินดีต้อนรับสู่แผน' : '🎉 Welcome to'} ${tier.label}!</h1>
-    <p style="color:#C7A338;font-size:13px;font-weight:600;letter-spacing:2px;margin:0">${isTh ? 'ยุติธรรม • โปร่งใส • ปลอดภัย' : 'FAIR • TRANSPARENT • PROTECTED'}</p>
+  <div style="background:${tierConfig.gradient};padding:40px 32px;text-align:center">
+    <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" alt="LeaseShield" style="max-width:70px;height:auto;margin-bottom:12px">
+    <h1 style="color:#FFFFFF;font-size:28px;margin:0 0 8px 0;font-weight:800">🎉 ${isTh ? 'ยินดีต้อนรับ!' : 'Welcome Aboard!'}</h1>
+    <p style="color:rgba(255,255,255,0.9);font-size:16px;margin:0;font-weight:600">${isTh ? `คุณอยู่ในแผน ${tierLabel} แล้ว!` : `You're now on ${tierLabel}!`}</p>
   </div>
 
   <!-- Body -->
   <div style="padding:32px;color:#1A1D1F">
-    <h2 style="color:#0C3B2E;font-size:18px;margin:0 0 8px 0">${isTh ? `สวัสดี ${firstName}!` : `Hi ${firstName}!`}</h2>
+    <h2 style="color:#0C3B2E;font-size:20px;margin:0 0 16px 0">${isTh ? `สวัสดี ${firstName},` : `Hi ${firstName},`}</h2>
     <p style="color:#475569;font-size:15px;margin:0 0 24px 0">${isTh
-      ? `ขอบคุณที่อัปเกรดเป็นแผน <strong style="color:${tier.color}">${tier.label}</strong>! ตอนนี้คุณสามารถเข้าถึงฟีเจอร์ระดับพรีเมียมทั้งหมดได้แล้ว`
-      : `Thank you for upgrading to <strong style="color:${tier.color}">${tier.label}</strong>! You now have access to all premium features.`}</p>
+      ? `ขอบคุณที่อัปเกรดเป็นแผน <strong style="color:${tierConfig.color}">${tierLabel}</strong>! ตอนนี้คุณมีสิทธิ์เข้าถึงฟีเจอร์ระดับพรีเมียมทั้งหมดแล้ว`
+      : `Thank you for upgrading to <strong style="color:${tierConfig.color}">${tierLabel}</strong>! You now have access to all premium features included in your plan.`}</p>
 
-    <!-- Plan Badge -->
-    <div style="background:linear-gradient(135deg,${tier.color}15 0%,${tier.color}08 100%);border:2px solid ${tier.color};border-radius:12px;padding:20px;margin-bottom:24px;text-align:center">
-      <p style="font-size:12px;font-weight:600;color:${tier.color};text-transform:uppercase;letter-spacing:1px;margin:0 0 4px 0">${isTh ? 'แผนปัจจุบันของคุณ' : 'YOUR CURRENT PLAN'}</p>
-      <p style="font-size:28px;font-weight:800;color:${tier.color};margin:0 0 4px 0">${tier.label}</p>
-      <p style="font-size:14px;color:#64748B;margin:0">${tier.price} · ${intervalLabel}</p>
+    <!-- Billing Info -->
+    <div style="background:#F8FAFC;border-radius:12px;padding:16px;margin-bottom:24px;border:1px solid #E2E8F0">
+      <h3 style="color:#0C3B2E;font-size:14px;margin:0 0 8px 0;font-weight:700">💳 ${isTh ? 'ข้อมูลการเรียกเก็บเงิน' : 'Billing Summary'}</h3>
+      <table style="width:100%;font-size:13px;color:#475569">
+        <tr><td style="padding:4px 0;font-weight:600">${isTh ? 'แผน' : 'Plan'}</td><td style="padding:4px 0;text-align:right;font-weight:700;color:${tierConfig.color}">${tierLabel}</td></tr>
+        <tr><td style="padding:4px 0;font-weight:600">${isTh ? 'ราคา' : 'Price'}</td><td style="padding:4px 0;text-align:right">${tierConfig.price}/${isTh ? 'เดือน' : 'mo'}</td></tr>
+        <tr><td style="padding:4px 0;font-weight:600">${isTh ? 'รอบการเรียกเก็บเงิน' : 'Billing Cycle'}</td><td style="padding:4px 0;text-align:right">${billingInterval}</td></tr>
+      </table>
     </div>
 
     <!-- Features -->
-    <div style="background:#F8FAFC;border-radius:12px;padding:20px;margin-bottom:24px;border:1px solid #E2E8F0">
-      <h3 style="color:#0C3B2E;font-size:15px;font-weight:700;margin:0 0 12px 0">${isTh ? 'ฟีเจอร์ที่คุณได้รับ:' : 'Your included features:'}</h3>
-      <ul style="list-style:none;padding:0;margin:0">${featuresHtml}</ul>
+    <div style="background:${tier === 'secure' ? '#F0FDF4' : '#EFF6FF'};border-radius:12px;padding:20px;margin-bottom:24px;border:1px solid ${tier === 'secure' ? '#D1FAE5' : '#BFDBFE'}">
+      <h3 style="color:${tierConfig.color};font-size:14px;margin:0 0 12px 0;font-weight:700">✨ ${isTh ? 'ฟีเจอร์ของคุณ' : 'Your Features'}</h3>
+      <ul style="margin:0;padding:0;list-style:none">
+        ${features.map(f => `<li style="padding:6px 0;font-size:13px;color:#334155;display:flex;align-items:center;gap:8px"><span style="color:${tierConfig.color};font-size:16px">✓</span> ${f}</li>`).join('')}
+      </ul>
     </div>
 
     <!-- Next Steps -->
-    <div style="background:#F0FDF4;border-radius:12px;padding:20px;margin-bottom:24px;border:1px solid #D1FAE5">
-      <h3 style="color:#047857;font-size:15px;font-weight:700;margin:0 0 12px 0">${isTh ? '🚀 เริ่มต้นใช้งาน:' : '🚀 Get started:'}</h3>
-      <ul style="list-style:none;padding:0;margin:0">${stepsHtml}</ul>
+    <div style="background:#FFFBEB;border-radius:12px;padding:20px;margin-bottom:24px;border:1px solid #FDE68A">
+      <h3 style="color:#92400E;font-size:14px;margin:0 0 12px 0;font-weight:700">🚀 ${isTh ? 'ขั้นตอนต่อไป' : 'Get Started'}</h3>
+      <ol style="margin:0;padding:0 0 0 20px;color:#78350F;font-size:13px">
+        ${nextSteps.map(s => `<li style="padding:4px 0">${s}</li>`).join('')}
+      </ol>
     </div>
 
     <!-- CTA -->
     <div style="text-align:center;margin:28px 0">
-      <a href="${appUrl}" style="display:inline-block;padding:16px 32px;background:linear-gradient(135deg,#0C3B2E 0%,#047857 100%);color:#C7A338;text-decoration:none;border-radius:12px;font-weight:700;font-size:16px;box-shadow:0 4px 12px rgba(12,59,46,0.3)">${isTh ? 'ไปที่แดชบอร์ด' : 'Go to Dashboard'}</a>
+      <a href="${appUrl}/Dashboard" style="display:inline-block;padding:14px 32px;background:#0C3B2E;color:#C7A338;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;box-shadow:0 4px 12px rgba(12,59,46,0.25)">${isTh ? 'ไปที่แดชบอร์ด' : 'Go to Dashboard'}</a>
     </div>
 
     <!-- Support -->
     <div style="border-top:1px solid #E5E7EB;padding-top:20px;margin-top:20px">
       <p style="color:#475569;font-size:13px;margin:0">${isTh
-        ? 'มีคำถาม? ตอบกลับอีเมลนี้ได้เลย เรายินดีช่วยเหลือ'
-        : 'Questions? Just reply to this email — we\'re happy to help.'}</p>
-      <p style="color:#0C3B2E;font-size:14px;font-weight:600;margin:12px 0 0 0">${isTh ? '— ทีม LeaseShield' : '— The LeaseShield Team'}</p>
+        ? 'มีคำถาม? ตอบกลับอีเมลนี้ได้เลย เราพร้อมช่วยเหลือ!'
+        : 'Questions? Just reply to this email — we\'re here to help!'}</p>
+      <p style="color:#0C3B2E;font-size:14px;font-weight:600;margin:12px 0 4px 0">${isTh ? 'ขอบคุณที่เลือก LeaseShield!' : 'Thank you for choosing LeaseShield!'}</p>
+      <p style="color:#64748B;font-size:13px;margin:0">${isTh ? '— ทีม LeaseShield' : '— The LeaseShield Team'}</p>
     </div>
   </div>
 
   <!-- Footer -->
   <div style="background:#1A1D1F;padding:20px 32px;text-align:center">
     <p style="color:#ECEFED;font-weight:700;font-size:13px;margin:0 0 4px 0">LEASE SHIELD</p>
-    <p style="color:#A8ABAD;font-size:11px;margin:0 0 8px 0">${isTh ? 'ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น' : 'Prevent rental problems before they happen'}</p>
+    <p style="color:#A8ABAD;font-size:11px;margin:0 0 8px 0">${isTh ? 'ยุติธรรม • โปร่งใส • ปลอดภัย' : 'Fair • Transparent • Protected'}</p>
     <p style="color:#6B7280;font-size:10px;margin:0">© ${new Date().getFullYear()} LeaseShield. All rights reserved.</p>
   </div>
 </div>
 </body></html>`;
+}
 
-    // Send via Resend
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+Deno.serve(async (req) => {
+  try {
+    const reqClone = req.clone();
+    const base44 = createClientFromRequest(reqClone);
+
+    const { user, newTier } = await req.json();
+
+    if (!user || !newTier) {
+      return Response.json({ error: 'Missing user or newTier' }, { status: 400 });
+    }
+
+    const tierConfig = TIER_CONFIG[newTier];
+    if (!tierConfig) {
+      return Response.json({ error: `Unknown tier: ${newTier}` }, { status: 400 });
+    }
+
+    const language = user.language || 'en';
+    const isTh = language === 'th';
+    const tierLabel = isTh ? tierConfig.labelTh : tierConfig.label;
+
+    const subject = `🎉 ${isTh ? `คุณอยู่ในแผน LeaseShield ${tierLabel} แล้ว!` : `You're now on LeaseShield ${tierLabel}!`}`;
+    const html = buildUpgradeEmailHtml(user, newTier, tierConfig, isTh);
+
     if (RESEND_API_KEY) {
       const emailRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -192,30 +157,30 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from: 'LeaseShield <hello@leaseshield.asia>',
           reply_to: 'support@leaseshield.asia',
-          to: [userEmail],
+          to: [user.email],
           subject,
           html,
         }),
       });
       const emailData = await emailRes.json();
       if (emailRes.ok) {
-        console.log('[UPGRADE_EMAIL] ✅ Sent via Resend to:', userEmail, 'ID:', emailData.id);
+        console.log('[UPGRADE_EMAIL] ✅ Sent via Resend to:', user.email, 'Tier:', newTier, 'ID:', emailData.id);
         return Response.json({ success: true, emailId: emailData.id });
       } else {
-        console.error('[UPGRADE_EMAIL] Resend error:', emailData);
-        // Fallback to built-in
+        console.error('[UPGRADE_EMAIL] ⚠️ Resend failed:', emailData);
+        // Fallback to built-in email
         await base44.asServiceRole.integrations.Core.SendEmail({
-          to: userEmail,
+          to: user.email,
           subject,
-          body: `Hi ${firstName}, you've been upgraded to LeaseShield ${tier.label}! Visit ${appUrl} to explore your new features.`,
+          body: `${isTh ? 'สวัสดี' : 'Hi'}! ${isTh ? `คุณอัปเกรดเป็นแผน ${tierLabel} เรียบร้อยแล้ว` : `You've been upgraded to ${tierLabel}`}. ${isTh ? 'ไปที่' : 'Visit'} https://app.leaseshield.asia/Dashboard`
         });
         return Response.json({ success: true, fallback: true });
       }
     } else {
       await base44.asServiceRole.integrations.Core.SendEmail({
-        to: userEmail,
+        to: user.email,
         subject,
-        body: `Hi ${firstName}, you've been upgraded to LeaseShield ${tier.label}! Visit ${appUrl} to explore your new features.`,
+        body: `${isTh ? 'สวัสดี' : 'Hi'}! ${isTh ? `คุณอัปเกรดเป็นแผน ${tierLabel} เรียบร้อยแล้ว` : `You've been upgraded to ${tierLabel}`}. ${isTh ? 'ไปที่' : 'Visit'} https://app.leaseshield.asia/Dashboard`
       });
       return Response.json({ success: true, fallback: true });
     }
