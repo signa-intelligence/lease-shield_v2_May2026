@@ -6,11 +6,11 @@ const webhookSecret = Deno.env.get("webhook_stripe");
 
 Deno.serve(async (req) => {
   try {
-    // Clone request before consuming body so base44 SDK can also read headers
-    const base44 = createClientFromRequest(req);
+    // Clone request: one for base44 SDK init, one for body reading
+    const reqClone = req.clone();
+    const base44 = createClientFromRequest(reqClone);
 
-    // For webhooks, we need service role access (no user auth)
-    const body = await req.clone().text();
+    const body = await req.text();
     const signature = req.headers.get('stripe-signature');
 
     // Determine webhook mode
