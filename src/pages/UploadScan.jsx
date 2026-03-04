@@ -853,8 +853,7 @@ function UploadScanPageContent() {
       deviceContext,
       filesCount: selectedFiles.length,
       userTier,
-      currentLeaseCount,
-      scannedCount,
+      availableScans: user?.available_scans ?? 0,
       canScan
     });
 
