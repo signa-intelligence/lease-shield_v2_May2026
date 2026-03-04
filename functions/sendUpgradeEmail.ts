@@ -38,14 +38,14 @@ const TIER_CONFIG = {
     labelTh: 'ซีเคียว',
     color: '#C7A338',
     gradient: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
-    price: '฿899',
+    price: '฿825',
     features: {
-      en: ['Unlimited Lease Scans', '50 Letter Credits', '10GB Document Storage', 'Email + LINE Notifications', 'Full Deposit, Rent & Lease Tracking', 'Resolve Case Support (Member Pricing)', 'Priority Support & Fast Track', 'Legal Letter Templates'],
-      th: ['สแกนสัญญาเช่าไม่จำกัด', 'เครดิตจดหมาย 50 ฉบับ', 'พื้นที่จัดเก็บ 10GB', 'แจ้งเตือนทาง Email + LINE', 'ติดตามเงินมัดจำ ค่าเช่า และสัญญาเช่า', 'บริการ Resolve Case (ราคาสมาชิก)', 'สนับสนุนด่วนและ Fast Track', 'แม่แบบจดหมายทางกฎหมาย']
+      en: ['50 Lease Scans/year (max 10/month)', '50 Letter Credits/year (max 10/month)', '20GB Document Storage', 'Email + LINE Notifications', 'Full Deposit, Rent & Lease Tracking', '1 Resolve Case/year (Member Pricing)', '10 FastTrack/year (max 3/month)', 'Premium Support'],
+      th: ['50 สแกนสัญญา/ปี (สูงสุด 10/เดือน)', '50 เครดิตจดหมาย/ปี (สูงสุด 10/เดือน)', 'พื้นที่จัดเก็บ 20GB', 'แจ้งเตือนทาง Email + LINE', 'ติดตามเงินมัดจำ ค่าเช่า และสัญญา', '1 คดี Resolve/ปี (ราคาสมาชิก)', '10 FastTrack/ปี (สูงสุด 3/เดือน)', 'การสนับสนุนพรีเมียม']
     },
     nextSteps: {
-      en: ['Upload all your leases for unlimited scanning', 'Set up LINE notifications for real-time alerts', 'Use legal letter templates for landlord communication', 'Open a Resolve Case if you have a dispute'],
-      th: ['อัปโหลดสัญญาเช่าทั้งหมดเพื่อสแกนไม่จำกัด', 'ตั้งค่า LINE เพื่อรับแจ้งเตือนแบบเรียลไทม์', 'ใช้แม่แบบจดหมายเพื่อสื่อสารกับเจ้าของ', 'เปิด Resolve Case หากมีข้อพิพาท']
+      en: ['Upload your leases for comprehensive scanning (50/year)', 'Set up LINE notifications for real-time alerts', 'Use legal letter templates for landlord communication', 'Open a Resolve Case if you have a dispute'],
+      th: ['อัปโหลดสัญญาเช่าเพื่อสแกนอย่างครบถ้วน (50/ปี)', 'ตั้งค่า LINE เพื่อรับแจ้งเตือนแบบเรียลไทม์', 'ใช้แม่แบบจดหมายเพื่อสื่อสารกับเจ้าของ', 'เปิด Resolve Case หากมีข้อพิพาท']
     }
   }
 };
