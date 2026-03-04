@@ -48,6 +48,7 @@ export default function RetentionModal({ open, onClose }) {
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [accessUntil, setAccessUntil] = useState('');
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -75,6 +76,7 @@ export default function RetentionModal({ open, onClose }) {
     setReason('');
     setDetails('');
     setProcessing(false);
+    setAccessUntil('');
     onClose();
   };
 
@@ -119,9 +121,10 @@ export default function RetentionModal({ open, onClose }) {
         trackEvent('cancellation_completed', { tier_cancelled: planTier, reason, revenue_lost: currentPrice });
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         haptic.success();
-        const until = response.data.access_until ? new Date(response.data.access_until).toLocaleDateString() : '';
-        alert(isTh ? `ยกเลิกสำเร็จ เข้าถึงได้จนถึง ${until}` : `Cancelled. Access until ${until}.`);
-        handleClose();
+        const until = response.data.access_until ? new Date(response.data.access_until).toLocaleDateString(isTh ? 'th-TH' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+        setAccessUntil(until);
+        setProcessing(false);
+        setStep(3);
       } else {
         haptic.error();
         alert(`${isTh ? 'ยกเลิกล้มเหลว' : 'Cancel failed'}: ${response.data?.error || 'Unknown error'}`);
