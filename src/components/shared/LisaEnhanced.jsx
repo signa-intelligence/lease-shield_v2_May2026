@@ -47,7 +47,7 @@ const LISA_SYSTEM_PROMPT = `You are Lisa, the LeaseShield Assistant. You help us
 
 **Evidence Vault**
 - Secure storage for rental documents, photos, videos
-- Storage limits: 1GB (Lite), 5GB (Protect), 20GB (Secure)
+- Storage limits: 100MB (Explorer), 1GB (Lite), 5GB (Protect), 20GB (Secure)
 - Files stay private unless shared to Resolve case
 - Organised by property and date
 
@@ -563,9 +563,9 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
       
       const tierCapabilities = {
         free: 'Preview scan only (top 5 risks summary), 100MB storage, public case pricing (฿5,000)',
-        lite: 'Full scans with top 5 clause analysis, 1GB storage, deposit tracking, timeline, property tracker, member case pricing (฿3,500 after 30 days), 10 referrals max',
-        protect: 'Full scans with ALL clause analysis, 5GB storage, all Lite features, LINE notifications, member case pricing (฿3,500 after 30 days), 25 referrals max',
-        secure: 'All Protect features, 20GB storage, unlimited scans, priority queue, 1 free Resolve case/year (Annual only), unlimited referrals'
+        lite: 'Full scans with top 5 clause analysis, 1GB storage, 6 scans/year, 3 letter credits, deposit tracking, timeline, property tracker, member case pricing (฿3,500 after 30 days)',
+        protect: 'Full scans with ALL clause analysis, 5GB storage, 12 scans/year, 5 letter credits, all Lite features, LINE notifications, member case pricing (฿3,500 after 30 days)',
+        secure: 'All Protect features, 20GB storage, unlimited scans, 50 letter credits/month (auto-refreshed every 30 days), priority queue, 1 free Resolve case/year (Annual only), unlimited referrals'
       };
 
       const userContext = `\n\nCURRENT USER CONTEXT:
