@@ -750,11 +750,9 @@ function AccountContent() {
     const isUpgrade = targetMonthlyPrice > currentMonthlyPrice;
     const isDowngrade = targetMonthlyPrice < currentMonthlyPrice && !isFreePlan;
 
-    // If downgrading, show confirmation first
+    // If downgrading, show retention modal
     if (isDowngrade) {
-      setPendingDowngradePlan(planKey);
-      setPendingDowngradeInterval(interval || 'monthly');
-      setShowDowngradeConfirm(true);
+      setShowRetentionModal(true);
       return;
     }
 
