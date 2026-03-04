@@ -142,33 +142,28 @@ function UploadScanPageContent() {
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'explorer';
 
-  // ✅ SCAN LIMIT ENFORCEMENT
+  // ✅ SCAN LIMIT ENFORCEMENT (Secure: 50/year, 10/month cap)
   const getScanLimits = () => {
     switch(userTier) {
       case 'explorer': return { limit: 1, period: 'lifetime', unlimited: false };
       case 'lite': return { limit: 6, period: 'year', unlimited: false };
       case 'protect': return { limit: 12, period: 'year', unlimited: false };
-      case 'secure': return { limit: 999, period: 'year', unlimited: true };
+      case 'secure': return { limit: 50, period: 'year', unlimited: false };
       default: return { limit: 1, period: 'lifetime', unlimited: false };
     }
   };
-
+  const getMonthlyCapInfo = () => {
+    if (userTier !== 'secure') return { capped: false, used: 0, max: 0 };
+    const cm = new Date().toISOString().slice(0, 7);
+    const u = (user?.usage_month === cm) ? (user?.scans_used_this_month || 0) : 0;
+    return { capped: u >= 10, used: u, max: 10 };
+  };
   const canUploadLease = () => {
     const limits = getScanLimits();
-    if (limits.unlimited) return { allowed: true, remaining: 999, used: 0, limit: 999, period: limits.period };
-
-    // CRITICAL FIX: Read available_scans from database, don't calculate from leases.length
-    // leases.length decreases when deleted, showing incorrect "more scans available"
     const availableScans = user?.available_scans ?? 0;
     const used = Math.max(0, limits.limit - availableScans);
-
-    return {
-      allowed: availableScans > 0,
-      remaining: availableScans,
-      used: used,
-      limit: limits.limit,
-      period: limits.period
-    };
+    const mc = getMonthlyCapInfo();
+    return { allowed: availableScans > 0 && !mc.capped, remaining: availableScans, used, limit: limits.limit, period: limits.period, monthlyCapped: mc.capped, monthlyUsed: mc.used, monthlyMax: mc.max };
   };
 
   const scanStatus = canUploadLease();
