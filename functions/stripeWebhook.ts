@@ -104,13 +104,14 @@ Deno.serve(async (req) => {
             credits = 10;
           } else {
             planTier = 'secure';
-            scans = 999;
+            scans = 50;
             credits = 50;
           }
 
           const user = await findUserByCustomerId(customerId);
           if (user) {
             const now = new Date().toISOString();
+            const currentMonth = now.slice(0, 7);
             await base44.asServiceRole.entities.User.update(user.id, {
               plan_tier: planTier,
               subscription_status: 'active',
@@ -120,7 +121,12 @@ Deno.serve(async (req) => {
               billing_interval: interval === 'year' ? 'annual' : 'monthly',
               subscription_started_at: now,
               member_since: user.member_since || now,
-              plan_renews_at: new Date(sub.current_period_end * 1000).toISOString()
+              plan_renews_at: new Date(sub.current_period_end * 1000).toISOString(),
+              // Reset monthly caps for new subscription
+              usage_month: currentMonth,
+              scans_used_this_month: 0,
+              letters_used_this_month: 0,
+              fasttrack_used_this_month: 0
             });
             console.log('[CHECKOUT_WEBHOOK] ✅ User upgraded:', user.email, 'to', planTier);
 
@@ -237,18 +243,23 @@ Deno.serve(async (req) => {
             credits = 10;
           } else {
             planTier = 'secure';
-            scans = 999;
+            scans = 50;
             credits = 50;
           }
 
           if (planTier !== user.plan_tier) {
+            const currentMonth = new Date().toISOString().slice(0, 7);
             await base44.asServiceRole.entities.User.update(user.id, {
               plan_tier: planTier,
               subscription_status: 'active',
               available_scans: scans,
               letter_credits: credits,
               billing_interval: interval === 'year' ? 'annual' : 'monthly',
-              plan_renews_at: new Date(subscription.current_period_end * 1000).toISOString()
+              plan_renews_at: new Date(subscription.current_period_end * 1000).toISOString(),
+              usage_month: currentMonth,
+              scans_used_this_month: 0,
+              letters_used_this_month: 0,
+              fasttrack_used_this_month: 0
             });
             console.log('[SUB_UPDATE_WEBHOOK] ✅ Plan changed:', user.email, user.plan_tier, '->', planTier);
           }
