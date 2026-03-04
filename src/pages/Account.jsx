@@ -3952,10 +3952,10 @@ function AccountContent() {
           </CardContent>
         </Card>
 
-        {/* RETENTION MODAL - replaces old cancel/downgrade dialogs */}
+        {/* RETENTION MODAL - 2-step cancel/downgrade with reason capture */}
         <RetentionModal
-          isOpen={showCancelDialog || showDowngradeFlow}
-          onClose={() => { setShowCancelDialog(false); setShowDowngradeFlow(false); }}
+          isOpen={showRetentionModal}
+          onClose={() => setShowRetentionModal(false)}
           user={user}
           onSubscribe={(tierKey, interval) => handleSubscribe(tierKey, interval)}
           colors={colors}
