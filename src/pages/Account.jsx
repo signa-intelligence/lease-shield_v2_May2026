@@ -858,21 +858,10 @@ function AccountContent() {
     hoverBg: '#F1F5F9'
   };
 
-  const t = {
-    en: {
-      pageTitle: "My Account",
-      pageSubtitle: "Manage your profile and subscription",
-      personalInfo: "Personal Information",
-      editProfile: "Edit Profile",
-      fullName: "Full Name",
-      email: "Email",
-      cannotChange: "Cannot be changed",
-      phone: "Phone Number",
-      phonePlaceholder: "+66 XX XXX XXXX",
-      country: "Country",
-      countryPlaceholder: "Thailand",
-      language: "Language",
-      theme: "Theme",
+  const t = { en: getAccountStrings('en'), th: getAccountStrings('th'), zh: getAccountStrings('zh'), ja: getAccountStrings('ja'), ko: getAccountStrings('ko'), ru: getAccountStrings('ru') };
+  // Placeholder to maintain structure - the real strings come from AccountStrings
+  const _unused_inline_strings = {
+    en___: {
       lightMode: "Light Mode",
       darkMode: "Dark Mode",
       tenantAddress: "Your Address",
