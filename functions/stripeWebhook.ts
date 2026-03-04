@@ -104,14 +104,13 @@ Deno.serve(async (req) => {
             credits = 10;
           } else {
             planTier = 'secure';
-            scans = 50;
+            scans = 999;
             credits = 50;
           }
 
           const user = await findUserByCustomerId(customerId);
           if (user) {
             const now = new Date().toISOString();
-            const currentMonth = now.slice(0, 7);
             await base44.asServiceRole.entities.User.update(user.id, {
               plan_tier: planTier,
               subscription_status: 'active',
@@ -121,12 +120,7 @@ Deno.serve(async (req) => {
               billing_interval: interval === 'year' ? 'annual' : 'monthly',
               subscription_started_at: now,
               member_since: user.member_since || now,
-              plan_renews_at: new Date(sub.current_period_end * 1000).toISOString(),
-              // Reset monthly caps for new subscription
-              usage_month: currentMonth,
-              scans_used_this_month: 0,
-              letters_used_this_month: 0,
-              fasttrack_used_this_month: 0
+              plan_renews_at: new Date(sub.current_period_end * 1000).toISOString()
             });
             console.log('[CHECKOUT_WEBHOOK] ✅ User upgraded:', user.email, 'to', planTier);
 
@@ -236,11 +230,11 @@ Deno.serve(async (req) => {
           if (amountTHB <= 200 || (interval === 'year' && amountTHB <= 1900)) {
             planTier = 'lite';
             scans = 6;
-            credits = 2;
+            credits = 3;
           } else if (amountTHB <= 500 || (interval === 'year' && amountTHB <= 5000)) {
             planTier = 'protect';
             scans = 12;
-            credits = 10;
+            credits = 5;
           } else {
             planTier = 'secure';
             scans = 50;
