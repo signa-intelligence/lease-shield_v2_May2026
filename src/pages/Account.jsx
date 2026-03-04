@@ -891,32 +891,27 @@ function AccountContent() {
 
       if (response.data?.ok) {
         haptic.success();
-        alert(language === 'th' 
-          ? 'บัญชีและข้อมูลทั้งหมดของคุณถูกลบอย่างถาวร คุณจะถูกออกจากระบบตอนนี้'
-          : language === 'zh'
-            ? '您的账户和所有数据已被永久删除。您现在将被注销。'
-            : language === 'ja'
-              ? 'アカウントとすべてのデータが完全に削除されました。今すぐログアウトします。'
-              : language === 'ko'
-                ? '계정 및 모든 데이터가 영구적으로 삭제되었습니다. 지금 로그아웃됩니다.'
-                : language === 'ru'
-                  ? 'Ваша учётная запись и все данные были окончательно удалены. Сейчас вы будете выведены из системы.'
-                  : 'Your account and all data have been permanently deleted. You will now be logged out.');
+        setShowDeleteAccountModal(false);
+        toast.success(language === 'th' 
+          ? 'บัญชีและข้อมูลทั้งหมดถูกลบแล้ว กำลังออกจากระบบ...'
+          : 'Account deleted. Logging out...');
         
-        await base44.auth.logout();
-        window.location.href = '/';
+        setTimeout(async () => {
+          await base44.auth.logout();
+          window.location.href = '/';
+        }, 2000);
       } else {
         haptic.error();
-        alert(language === 'th' 
+        toast.error(language === 'th' 
           ? `การลบล้มเหลว: ${response.data?.message || 'ข้อผิดพลาดที่ไม่ทราบสาเหตุ'}`
           : `Deletion failed: ${response.data?.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('[DELETE_ACCOUNT_ERROR]', error);
       haptic.error();
-      alert(language === 'th' 
-        ? 'เกิดข้อผิดพลาดระหว่างการลบบัญชี กรุณาติดต่อฝ่ายสนับสนุน'
-        : 'An error occurred during account deletion. Please contact support.');
+      toast.error(language === 'th' 
+        ? 'เกิดข้อผิดพลาด กรุณาติดต่อฝ่ายสนับสนุน'
+        : 'An error occurred. Please contact support.');
     } finally {
       setIsDeleting(false);
     }
