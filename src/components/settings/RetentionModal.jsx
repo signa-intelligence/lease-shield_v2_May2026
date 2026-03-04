@@ -9,6 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle2, Shield, Zap, XCircle, Crown, ArrowRight } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
 
+const trackEvent = (eventName, properties) => {
+  try {
+    base44.analytics.track({ eventName, properties });
+  } catch (e) {
+    console.log('[Analytics]', eventName, properties);
+  }
+};
+
 const PLAN_PRICES = { lite: 190, protect: 390, secure: 990, explorer: 0, free: 0 };
 
 const DOWNGRADE_OPTIONS = {
@@ -72,7 +80,7 @@ export default function RetentionModal({ open, onClose }) {
 
   const handleContinue = () => {
     if (!reason) return;
-    base44.analytics.track({ eventName: 'cancellation_reason_submitted', properties: { reason, current_tier: planTier, monthly_value: currentPrice } });
+    trackEvent('cancellation_reason_submitted', { reason, current_tier: planTier, monthly_value: currentPrice });
     setStep(2);
   };
 
@@ -87,7 +95,7 @@ export default function RetentionModal({ open, onClose }) {
         reason, reason_details: details, outcome: `downgraded_to_${tierKey}`,
         new_tier: tierKey, subscription_value: currentPrice, revenue_retained: newPrice
       });
-      base44.analytics.track({ eventName: 'retention_success', properties: { from_tier: planTier, to_tier: tierKey, reason, revenue_saved: newPrice } });
+      trackEvent('retention_success', { from_tier: planTier, to_tier: tierKey, reason, revenue_saved: newPrice });
       // Trigger Stripe checkout for new tier (reuse existing handleSubscribe logic via page event)
       window.dispatchEvent(new CustomEvent('retention:downgrade', { detail: { tier: tierKey } }));
       handleClose();
@@ -108,7 +116,7 @@ export default function RetentionModal({ open, onClose }) {
           reason, reason_details: details, outcome: 'cancelled',
           subscription_value: currentPrice, revenue_retained: 0
         });
-        base44.analytics.track({ eventName: 'cancellation_completed', properties: { tier_cancelled: planTier, reason, revenue_lost: currentPrice } });
+        trackEvent('cancellation_completed', { tier_cancelled: planTier, reason, revenue_lost: currentPrice });
         queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         haptic.success();
         const until = response.data.access_until ? new Date(response.data.access_until).toLocaleDateString() : '';
