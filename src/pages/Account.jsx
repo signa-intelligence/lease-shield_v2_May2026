@@ -3033,23 +3033,6 @@ function AccountContent() {
                       <Settings className="w-4 h-4" />
                       {language === 'th' ? 'จัดการแผน' : language === 'ru' ? 'Управление планом' : 'Manage Plan'}
                     </button>
-                    {!isScheduledForCancellation && (
-                      <button
-                        onClick={() => { haptic.light(); handleDowngradeOrCancel(); }}
-                        className="btn-interaction"
-                        style={{ width: '100%', padding: '10px 16px', backgroundColor: 'transparent', color: '#EF4444', borderRadius: '8px', fontWeight: '600', fontSize: '13px', border: '1px solid #FECACA', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '8px' }}
-                      >
-                        {strings.downgradeToFree || 'Downgrade to Free'}
-                      </button>
-                    )}
-                    {!isScheduledForCancellation && (
-                      <button
-                        onClick={() => { haptic.light(); setShowCancelDialog(true); }}
-                        style={{ width: '100%', padding: '8px', backgroundColor: 'transparent', color: colors.textSecondary, border: 'none', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline', marginTop: '4px' }}
-                      >
-                        {strings.cancelPlan || 'Change or Cancel Plan'}
-                      </button>
-                    )}
                   </div>
                 )}
               </CardContent>
