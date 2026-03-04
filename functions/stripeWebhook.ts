@@ -97,14 +97,14 @@ Deno.serve(async (req) => {
           if (amountTHB <= 200 || (interval === 'year' && amountTHB <= 1900)) {
             planTier = 'lite';
             scans = 6;
-            credits = 2;
+            credits = 3;
           } else if (amountTHB <= 500 || (interval === 'year' && amountTHB <= 5000)) {
             planTier = 'protect';
             scans = 12;
-            credits = 10;
+            credits = 5;
           } else {
             planTier = 'secure';
-            scans = 999;
+            scans = 50;
             credits = 50;
           }
 

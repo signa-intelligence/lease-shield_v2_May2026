@@ -70,7 +70,7 @@ NEVER give generic advice without connecting it to a LeaseShield feature.
 - Explorer (Free): 1 lifetime scan, basic risk preview, 100MB storage
 - Lite (฿190/month or ฿1,900/year): 6 scans/year, 3 letter credits, 1GB, email alerts, deposit tracker
 - Protect (฿390/month or ฿3,900/year): 12 scans/year, 5 letter credits, 5GB, LINE alerts, rent reminders
-- Secure (฿990/month or ฿9,900/year): Unlimited scans, 50 letter credits/month, 20GB, priority queue, 1 free Resolve/year
+- Secure (฿990/month or ฿9,900/year): 50 scans/year, 50 letter credits/year, 10 Fast Track/year, 20GB, priority queue, 1 free Resolve/year, premium support
 
 # FEATURE RECOMMENDATION TRIGGERS
 
@@ -485,7 +485,7 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
         free: 'Preview scan only (top 5 risks summary), 100MB storage, public case pricing (฿5,000)',
         lite: 'Full scans with top 5 clause analysis, 1GB storage, 6 scans/year, 3 letter credits, deposit tracking, timeline, property tracker, member case pricing (฿3,500 after 30 days)',
         protect: 'Full scans with ALL clause analysis, 5GB storage, 12 scans/year, 5 letter credits, all Lite features, LINE notifications, member case pricing (฿3,500 after 30 days)',
-        secure: 'All Protect features, 20GB storage, unlimited scans, 50 letter credits/month (auto-refreshed every 30 days), priority queue, 1 free Resolve case/year (Annual only), unlimited referrals'
+        secure: 'All Protect features, 20GB storage, 50 scans/year, 50 letter credits/year, 10 Fast Track cases/year, priority queue, 1 free Resolve case/year (Annual only), premium support'
       };
 
       const userContext = `\n\nCURRENT USER CONTEXT:
@@ -504,10 +504,12 @@ IMPORTANT:
 - When discussing features, acknowledge what user already has on their current tier
 
 SECURE TIER USERS:
-- Already have all features (unlimited scans, 20GB storage, priority queue, etc.)
+- Already have all features (50 scans/year, 50 letters/year, 10 Fast Track/year, 20GB storage, priority queue, etc.)
 - Never suggest upgrades
 - Focus on helping them use existing features
-- Can mention Annual benefits (1 free Resolve case/year) if they're on Monthly`;
+- Can mention Annual benefits (1 free Resolve case/year) if they're on Monthly
+- Secure tier has fair usage policies to maintain service quality. The annual allowances support consistent use throughout the subscription.
+- If asked about monthly limits: "Secure tier has fair usage policies to maintain service quality. The annual allowances (50 scans, 50 letters, 10 Fast Track) support consistent use throughout your subscription."`;
       
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `${LISA_SYSTEM_PROMPT}${userContext}${languageInstruction}\n\nUser question: ${textToSend}`,

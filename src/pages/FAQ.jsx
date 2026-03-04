@@ -124,12 +124,12 @@ const FAQ_DATA = {
         questionJa: 'リーススキャンは何回利用できますか？',
         questionKo: '몇 번의 임대 계약 스캔을 받나요?',
         questionRu: 'Сколько сканирований договора я получаю?',
-        answerEn: 'Lite → 6 scans per year\nProtect → 12 scans per year\nSecure → Unlimited',
-        answerTh: 'Lite → 6 ครั้ง/ปี\nProtect → 12 ครั้ง/ปี\nSecure → ไม่จำกัด',
-        answerZh: 'Lite → 每年6次\nProtect → 每年12次\nSecure → 无限制',
-        answerJa: 'Lite → 年6回\nProtect → 年12回\nSecure → 無制限',
-        answerKo: 'Lite → 연간 6회\nProtect → 연간 12회\nSecure → 무제한',
-        answerRu: 'Lite → 6 раз в год\nProtect → 12 раз в год\nSecure → Неограниченно'
+        answerEn: 'Lite → 6 scans per year\nProtect → 12 scans per year\nSecure → 50 scans per year — very generous for most rental situations',
+        answerTh: 'Lite → 6 ครั้ง/ปี\nProtect → 12 ครั้ง/ปี\nSecure → 50 ครั้ง/ปี — เพียงพอสำหรับการเช่าส่วนใหญ่',
+        answerZh: 'Lite → 每年6次\nProtect → 每年12次\nSecure → 每年50次 — 适合大多数租赁情况',
+        answerJa: 'Lite → 年6回\nProtect → 年12回\nSecure → 年50回 — ほとんどの賃貸状況に十分',
+        answerKo: 'Lite → 연간 6회\nProtect → 연간 12회\nSecure → 연간 50회 — 대부분의 임대 상황에 충분',
+        answerRu: 'Lite → 6 раз в год\nProtect → 12 раз в год\nSecure → 50 раз в год — достаточно для большинства арендных ситуаций'
       }
     ]
   },
@@ -258,8 +258,8 @@ const FAQ_DATA = {
         questionJa: 'どのようなプランがありますか？',
         questionKo: '어떤 플랜이 있나요?',
         questionRu: 'Какие планы доступны?',
-        answerEn: 'Explorer (Free)\n• 1 lifetime lease scan\n• Basic risk score preview\n• 100 MB storage\n\nLite\n฿158/month — 17% OFF (paid annually) or ฿190/month\n• 6 lease scans/year\n• Email alerts\n• 3 letter credits\n• 1GB storage\n\nProtect\n฿325/month — 17% OFF (paid annually) or ฿390/month\n• Everything in Lite\n• 12 scans/year\n• LINE alerts\n• 5 letter credits\n• 5GB storage\n\nSecure\n฿825/month — 17% OFF (paid annually) or ฿990/month\n• Everything in Protect\n• Unlimited scans\n• 50 letter credits/month (auto-refreshed every 30 days)\n• 20GB storage\n• 1 Resolve case/year (included)\n• Unlimited FastTrack (complimentary)',
-        answerTh: 'Explorer (ฟรี)\n• 1 การสแกนตลอดชีพ\n• ดูคะแนนความเสี่ยงเบื้องต้น\n• พื้นที่ 100 MB\n\nLite\n฿158/เดือน — ลด 17% (ชำระรายปี) หรือ ฿190/เดือน\n• 6 การสแกน/ปี\n• อีเมลแจ้งเตือน\n• 3 เครดิตจดหมาย\n• พื้นที่ 1GB\n\nProtect\n฿325/เดือน — ลด 17% (ชำระรายปี) หรือ ฿390/เดือน\n• ทุกอย่างใน Lite\n• 12 การสแกน/ปี\n• LINE แจ้งเตือน\n• 5 เครดิตจดหมาย\n• พื้นที่ 5GB\n\nSecure\n฿825/เดือน — ลด 17% (ชำระรายปี) หรือ ฿990/เดือน\n• ทุกอย่างใน Protect\n• สแกนไม่จำกัด\n• 50 เครดิตจดหมาย/เดือน (เติมอัตโนมัติทุก 30 วัน)\n• พื้นที่ 20GB\n• 1 คดี Resolve/ปี (รวม)\n• FastTrack ไม่จำกัด (ฟรี)',
+        answerEn: 'Explorer (Free)\n• 1 lifetime lease scan\n• Basic risk score preview\n• 100 MB storage\n\nLite\n฿158/month — 17% OFF (paid annually) or ฿190/month\n• 6 lease scans/year\n• Email alerts\n• 3 letter credits\n• 1GB storage\n\nProtect\n฿325/month — 17% OFF (paid annually) or ฿390/month\n• Everything in Lite\n• 12 scans/year\n• LINE alerts\n• 5 letter credits\n• 5GB storage\n\nSecure\n฿825/month — 17% OFF (paid annually) or ฿990/month\n• Everything in Protect\n• 50 lease scans/year\n• 50 letter credits/year\n• 20GB storage\n• 1 Resolve case/year (included)\n• 10 Fast Track cases/year\n• Premium support',
+        answerTh: 'Explorer (ฟรี)\n• 1 การสแกนตลอดชีพ\n• ดูคะแนนความเสี่ยงเบื้องต้น\n• พื้นที่ 100 MB\n\nLite\n฿158/เดือน — ลด 17% (ชำระรายปี) หรือ ฿190/เดือน\n• 6 การสแกน/ปี\n• อีเมลแจ้งเตือน\n• 3 เครดิตจดหมาย\n• พื้นที่ 1GB\n\nProtect\n฿325/เดือน — ลด 17% (ชำระรายปี) หรือ ฿390/เดือน\n• ทุกอย่างใน Lite\n• 12 การสแกน/ปี\n• LINE แจ้งเตือน\n• 5 เครดิตจดหมาย\n• พื้นที่ 5GB\n\nSecure\n฿825/เดือน — ลด 17% (ชำระรายปี) หรือ ฿990/เดือน\n• ทุกอย่างใน Protect\n• 50 การสแกนสัญญา/ปี\n• 50 เครดิตจดหมาย/ปี\n• พื้นที่ 20GB\n• 1 คดี Resolve/ปี (รวม)\n• 10 Fast Track/ปี\n• การสนับสนุนพรีเมียม',
         answerZh: 'Explorer（免费）\n• 1次终身租约扫描\n• 基本风险评分预览\n• 100 MB存储\n\nLite\n฿158/月 — 17% 折扣（按年支付）或 ฿190/月\n• 每年6次租约扫描\n• 电子邮件提醒\n• 3个信件积分\n• 1GB存储\n\nProtect\n฿325/月 — 17% 折扣（按年支付）或 ฿390/月\n• Lite所有功能\n• 每年12次扫描\n• LINE提醒\n• 5个信件积分\n• 5GB存储\n\nSecure\n฿825/月 — 17% 折扣（按年支付）或 ฿990/月\n• Protect所有功能\n• 无限扫描\n• 每月50个信件积分（每30天自动刷新）\n• 20GB存储\n• 每年1个Resolve案件（包含）\n• 无限FastTrack（免费）',
         answerJa: 'Explorer（無料）\n• 1回の生涯リーススキャン\n• 基本リスクスコアプレビュー\n• 100 MBストレージ\n\nLite\n฿158/月 — 17% OFF（年払い）または ฿190/月\n• 年6回リーススキャン\n• メールアラート\n• 3レタークレジット\n• 1GBストレージ\n\nProtect\n฿325/月 — 17% OFF（年払い）または ฿390/月\n• Liteの全機能\n• 年12回スキャン\n• LINE通知\n• 5レタークレジット\n• 5GBストレージ\n\nSecure\n฿825/月 — 17% OFF（年払い）または ฿990/月\n• Protectの全機能\n• 無制限スキャン\n• 月50レタークレジット（30日ごとに自動更新）\n• 20GBストレージ\n• 年1件Resolveケース（含）\n• 無制限FastTrack（無料）',
         answerKo: 'Explorer（무료）\n• 1회 평생 임대 계약 스캔\n• 기본 위험 점수 미리보기\n• 100 MB 저장소\n\nLite\n฿158/월 — 17% OFF（연간 결제）또는 ฿190/월\n• 연간 6회 임대 계약 스캔\n• 이메일 알림\n• 3개 레터 크레딧\n• 1GB 저장소\n\nProtect\n฿325/월 — 17% OFF（연간 결제）또는 ฿390/월\n• Lite 모든 기능\n• 연간 12회 스캔\n• LINE 알림\n• 5개 레터 크레딧\n• 5GB 저장소\n\nSecure\n฿825/월 — 17% OFF（연간 결제）또는 ฿990/월\n• Protect 모든 기능\n• 무제한 스캔\n• 월 50개 레터 크레딧（30일마다 자동 갱신）\n• 20GB 저장소\n• 연간 1건 Resolve 케이스（포함）\n• 무제한 FastTrack（무료）',

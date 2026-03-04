@@ -40,12 +40,12 @@ const TIER_CONFIG = {
     gradient: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)',
     price: '฿825',
     features: {
-      en: ['50 Lease Scans/year (max 10/month)', '50 Letter Credits/year (max 10/month)', '20GB Document Storage', 'Email + LINE Notifications', 'Full Deposit, Rent & Lease Tracking', '1 Resolve Case/year (Member Pricing)', '10 FastTrack/year (max 3/month)', 'Premium Support'],
-      th: ['50 สแกนสัญญา/ปี (สูงสุด 10/เดือน)', '50 เครดิตจดหมาย/ปี (สูงสุด 10/เดือน)', 'พื้นที่จัดเก็บ 20GB', 'แจ้งเตือนทาง Email + LINE', 'ติดตามเงินมัดจำ ค่าเช่า และสัญญา', '1 คดี Resolve/ปี (ราคาสมาชิก)', '10 FastTrack/ปี (สูงสุด 3/เดือน)', 'การสนับสนุนพรีเมียม']
+      en: ['50 Lease Scans per year', '50 Professional Letter Credits per year', '20GB Document Storage', 'Email + LINE Notifications', 'Full Deposit, Rent & Lease Tracking', '1 Free Resolve Case annually', '10 Fast Track Cases per year', 'Premium Support'],
+      th: ['50 การสแกนสัญญาต่อปี', '50 เครดิตจดหมายมืออาชีพต่อปี', 'พื้นที่จัดเก็บ 20GB', 'แจ้งเตือนทาง Email + LINE', 'ติดตามเงินมัดจำ ค่าเช่า และสัญญาเต็มรูปแบบ', '1 คดี Resolve ฟรีต่อปี', '10 Fast Track ต่อปี', 'การสนับสนุนพรีเมียม']
     },
     nextSteps: {
-      en: ['Upload your leases for comprehensive scanning (50/year)', 'Set up LINE notifications for real-time alerts', 'Use legal letter templates for landlord communication', 'Open a Resolve Case if you have a dispute'],
-      th: ['อัปโหลดสัญญาเช่าเพื่อสแกนอย่างครบถ้วน (50/ปี)', 'ตั้งค่า LINE เพื่อรับแจ้งเตือนแบบเรียลไทม์', 'ใช้แม่แบบจดหมายเพื่อสื่อสารกับเจ้าของ', 'เปิด Resolve Case หากมีข้อพิพาท']
+      en: ['Upload your leases for comprehensive AI-powered scanning', 'Set up LINE notifications for real-time alerts', 'Use professional letter templates for landlord communication', 'Open a Resolve Case if you have a dispute'],
+      th: ['อัปโหลดสัญญาเช่าเพื่อสแกนอย่างครบถ้วนด้วย AI', 'ตั้งค่า LINE เพื่อรับแจ้งเตือนแบบเรียลไทม์', 'ใช้แม่แบบจดหมายมืออาชีพเพื่อสื่อสารกับเจ้าของ', 'เปิด Resolve Case หากมีข้อพิพาท']
     }
   }
 };
