@@ -397,10 +397,8 @@ function AccountContent() {
   const [subscribing, setSubscribing] = useState({});
   const [exporting, setExporting] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState('monthly');
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [copiedLink, setCopiedLink] = useState(null);
   const [buyingCredits, setBuyingCredits] = useState({});
-  const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showBillingDialog, setShowBillingDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedInterval, setSelectedInterval] = useState('monthly');
