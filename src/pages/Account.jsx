@@ -290,63 +290,63 @@ const PLAN_DETAILS = [
     descriptionKo: '우선 지원이 포함된 최대 예방',
     benefits: [
       'Everything in Protect',
-      '50 Lease Scans/year (up to 10/month)', '50 Letter Credits/year (up to 10/month)',
+      '50 Lease Scans per year', '50 Letter Credits per year',
       '20GB Document Storage',
       'Priority Case Queue',
       'Priority Scanning',
       'Premium Support',
       '1 Resolve Case per year',
-      '10 Fast Track/year (up to 3/month)'
+      '10 Fast Track Cases per year'
     ],
     benefitsTh: [
       'ทุกอย่างในแผน Protect',
-      '50 การสแกน/ปี (สูงสุด 10/เดือน)', '50 เครดิตจดหมาย/ปี (สูงสุด 10/เดือน)',
+      '50 การสแกนสัญญาต่อปี', '50 เครดิตจดหมายต่อปี',
       'พื้นที่จัดเก็บ 20GB',
       'คิวคดีลำดับความสำคัญ',
       'สแกนลำดับความสำคัญ',
       'การสนับสนุนพรีเมียม',
       '1 คดี Resolve ต่อปี',
-      '10 Fast Track/ปี (สูงสุด 3/เดือน)'
+      '10 Fast Track ต่อปี'
     ],
     benefitsRu: [
       'Все из тарифа Protect',
-      '50 сканирований/год (до 10/месяц)', '50 кредитов писем/год (до 10/месяц)',
+      '50 сканирований договора в год', '50 кредитов писем в год',
       '20 ГБ хранилища документов',
       'Приоритетная очередь по делам',
       'Приоритетное сканирование',
       'Премиальная поддержка',
       '1 дело Resolve в год',
-      '10 Fast Track/год (до 3/месяц)'
+      '10 Fast Track в год'
     ],
     benefitsZh: [
       '包含Protect计划所有内容',
-      '每年50次扫描（每月最多10次）', '每年50个信件积分（每月最多10个）',
+      '每年50次租约扫描', '每年50个信件积分',
       '20GB文档存储',
       '优先案件队列',
       '优先扫描',
       '高级支持',
       '每年1个Resolve案件',
-      '每年10个Fast Track（每月最多3个）'
+      '每年10个Fast Track案件'
     ],
     benefitsJa: [
       'Protectの全て',
-      '年50回スキャン（月最大10回）', '年50レタークレジット（月最大10回）',
+      '年50回のリーススキャン', '年50レタークレジット',
       '20GBドキュメントストレージ',
       '優先ケースキュー',
       '優先スキャン',
       'プレミアムサポート',
       '年1件のResolveケース',
-      '年10件FastTrack（月最大3件）'
+      '年10件のFast Track'
     ],
     benefitsKo: [
       'Protect 플랜의 모든 내용',
-      '연 50회 스캔（월 최대 10회）', '연 50개 레터 크레딧（월 최대 10개）',
+      '연간 50회 임대 계약 스캔', '연간 50개 레터 크레딧',
       '20GB 문서 저장소',
       '우선 사례 대기열',
       '우선 스캔',
       '프리미엄 지원',
       '연간 1건 Resolve 케이스',
-      '연 10건 Fast Track（월 최대 3건）'
+      '연간 10건 Fast Track'
     ],
     bgColor: '#1A1D1F',
     icon: Crown
