@@ -84,7 +84,9 @@ Deno.serve(async (req) => {
   if (pre) return pre;
 
   const origin = req.headers.get('origin') || '';
-  if (!isAllowedOrigin(origin)) {
+  // Only enforce CORS for browser requests (with Origin header)
+  // Server-to-server calls (webhooks, test tool) won't have Origin
+  if (origin && !isAllowedOrigin(origin)) {
     return err(req, 'CORS_FORBIDDEN', 'Origin not allowed', 403);
   }
 
