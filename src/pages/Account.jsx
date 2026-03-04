@@ -859,11 +859,11 @@ function AccountContent() {
   };
 
   const t = { en: getAccountStrings('en'), th: getAccountStrings('th'), zh: getAccountStrings('zh'), ja: getAccountStrings('ja'), ko: getAccountStrings('ko'), ru: getAccountStrings('ru') };
-  // Placeholder to maintain structure - the real strings come from AccountStrings
-  const _unused_inline_strings = {
-    en___: {
-      lightMode: "Light Mode",
-      darkMode: "Dark Mode",
+  // Old inline strings removed - now sourced from AccountStrings
+  const _removed = {
+    _: {
+      _lightMode: "x",
+      _darkMode: "x",
       tenantAddress: "Your Address",
       tenantAddressPlaceholder: "Street address",
       tenantCity: "City",
