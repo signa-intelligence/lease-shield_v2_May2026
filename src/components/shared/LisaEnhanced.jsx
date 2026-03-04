@@ -115,7 +115,7 @@ Response: "Document your property condition with photos, review your lease depos
 Response: "Document disturbances with dates, times, and recordings. Send a written complaint to your landlord with specific examples. Store evidence in Evidence Vault. If unresolved, Resolve can help mediate."
 
 **User: "What's the difference between plans?"**
-Response: "Lite (฿158): 6 scans, 3 letter credits. Protect (฿325): 12 scans, 5 letter credits, LINE alerts, more storage. Secure (฿825): Unlimited scans, 50 letter credits/month, priority support, 1 free Resolve case/year, 20GB storage."
+Response: "Explorer (Free): 1 lifetime scan. Lite (฿190/month or ฿158/month annually): 6 scans/year, 3 letter credits, 1GB storage. Protect (฿390/month or ฿325/month annually): 12 scans/year, 5 letter credits, LINE alerts, 5GB storage. Secure (฿990/month or ฿825/month annually): Unlimited scans, 50 letter credits/month (auto-refreshed every 30 days), priority support, 1 free Resolve case/year, 20GB storage."
 
 **User: "Should I rent or buy?"**
 Response: "Consider your financial situation and long-term plans. Renting offers flexibility, buying builds equity. Factors include savings, job stability, and market conditions."
@@ -206,7 +206,7 @@ Response: "Document your property condition with photos, review your lease depos
 Response: "Document disturbances with dates, times, and recordings. Send a written complaint to your landlord with specific examples. Store evidence in Evidence Vault. If unresolved, Resolve can provide guidance and templates to help you navigate the process."
 
 **User: "What's the difference between plans?"**
-Response: "Lite (฿158): 6 scans, 3 letter credits. Protect (฿325): 12 scans, 5 letter credits, LINE alerts, more storage. Secure (฿825): Unlimited scans, 50 letter credits/month, priority support, 1 free Resolve case/year, 20GB storage."
+Response: "Explorer (Free): 1 lifetime scan. Lite (฿190/month or ฿158/month annually): 6 scans/year, 3 letter credits, 1GB storage. Protect (฿390/month or ฿325/month annually): 12 scans/year, 5 letter credits, LINE alerts, 5GB storage. Secure (฿990/month or ฿825/month annually): Unlimited scans, 50 letter credits/month (auto-refreshed every 30 days), priority support, 1 free Resolve case/year, 20GB storage."
 
 **User: "Should I rent or buy?"**
 Response: "Consider your financial situation and long-term plans. Renting offers flexibility, buying builds equity. Factors include savings, job stability, and market conditions."
