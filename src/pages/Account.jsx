@@ -1025,40 +1025,30 @@ function AccountContent() {
   };
 
   const handleCancelSubscription = async () => {
-    const language = user?.language || 'en';
+    const lang = user?.language || 'en';
     if (!cancelReason) {
-      alert(language === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason for cancellation');
+      alert(lang === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason for cancellation');
       return;
     }
-
     haptic.medium();
     setCancelling(true);
     try {
       const response = await base44.functions.invoke('cancelSubscription', {
-        reason: cancelReason,
-        feedback: cancelFeedback
+        reason: cancelReason, feedback: cancelFeedback
       });
-
       if (response.data?.success) {
-        refetchUser?.();
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-        setShowCancelDialog(false);
-        setCancelReason('');
-        setCancelFeedback('');
+        refetchUser?.(); queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        setShowCancelDialog(false); setCancelReason(''); setCancelFeedback('');
         haptic.success();
-        alert(language === 'th' 
-          ? 'การยกเลิกสำเร็จ คุณจะยังคงสามารถเข้าถึงฟีเจอร์ได้จนถึงวันที่ต่ออายุ' 
-          : 'Cancellation successful. You\'ll keep access until your renewal date.');
+        const until = response.data.access_until ? new Date(response.data.access_until).toLocaleDateString() : '';
+        alert(lang === 'th' ? `ยกเลิกสำเร็จ เข้าถึงได้จนถึง ${until}` : `Cancelled. Access until ${until}.`);
+      } else if (response.data?.error) {
+        haptic.error(); alert(`${lang === 'th' ? 'ยกเลิกล้มเหลว' : 'Cancel failed'}: ${response.data.error}`);
       }
     } catch (error) {
-      console.error('Cancellation error:', error);
-      haptic.error();
-      alert(language === 'th' 
-        ? 'ไม่สามารถยกเลิกได้ กรุณาลองอีกครั้งหรือติดต่อฝ่ายสนับสนุน' 
-        : 'Failed to cancel. Please try again or contact support.');
-    } finally {
-      setCancelling(false);
-    }
+      console.error('[CANCEL]', error); haptic.error();
+      alert(`${lang === 'th' ? 'ยกเลิกล้มเหลว' : 'Cancel failed'}: ${error.response?.data?.error || error.message}`);
+    } finally { setCancelling(false); }
   };
 
   const handleLandlordUpdate = async () => {
