@@ -256,6 +256,66 @@ export default function RetentionModal({ open, onClose }) {
               </button>
             </div>
           </>
+        ) : (
+          /* Step 3: Branded success confirmation */
+          <div className="text-center py-2">
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <CheckCircle2 className="w-8 h-8 text-white" />
+            </div>
+
+            <h3 className="text-lg font-bold mb-2" style={{ color: colors.textPrimary }}>
+              {isTh ? 'ยกเลิกการสมัครเรียบร้อย' : 'Cancellation Scheduled'}
+            </h3>
+
+            <p className="text-sm mb-4" style={{ color: colors.textSecondary }}>
+              {isTh
+                ? <>คุณยังใช้ฟีเจอร์ <strong style={{ color: '#C7A338' }}>{planTier.toUpperCase()}</strong> ได้จนถึง</>
+                : <>You'll keep full <strong style={{ color: '#C7A338' }}>{planTier.toUpperCase()}</strong> access until</>}
+            </p>
+
+            <div style={{ backgroundColor: isDarkMode ? '#1E3A5F' : '#EFF6FF', borderRadius: '12px', padding: '16px', marginBottom: '16px', border: `1px solid ${isDarkMode ? '#2563EB33' : '#BFDBFE'}` }}>
+              <p className="text-xl font-bold" style={{ color: isDarkMode ? '#93C5FD' : '#1D4ED8', margin: 0 }}>
+                {accessUntil}
+              </p>
+            </div>
+
+            <div style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC', borderRadius: '12px', padding: '16px', marginBottom: '16px', textAlign: 'left', border: `1px solid ${colors.borderColor}` }}>
+              <p className="text-sm font-semibold mb-2" style={{ color: colors.textPrimary }}>
+                {isTh ? 'สิ่งที่จะเกิดขึ้น:' : 'What happens next:'}
+              </p>
+              <ul className="space-y-2">
+                {(isTh ? [
+                  `ใช้ฟีเจอร์ทั้งหมดได้จนถึง ${accessUntil}`,
+                  'หลังจากนั้นเปลี่ยนเป็นแผน Explorer (ฟรี)',
+                  'ข้อมูลทั้งหมดจะถูกเก็บไว้',
+                  'เปิดใช้งานอีกครั้งได้ตลอดเวลา'
+                ] : [
+                  `Keep all features until ${accessUntil}`,
+                  'Automatically move to Explorer (free) after',
+                  'All your data will be preserved',
+                  'You can reactivate anytime'
+                ]).map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs" style={{ color: colors.textSecondary }}>
+                    <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: '#047857' }} />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <p className="text-xs mb-4" style={{ color: colors.textSecondary }}>
+              {isTh ? `ส่งอีเมลยืนยันไปที่ ${user?.email}` : `Confirmation email sent to ${user?.email}`}
+            </p>
+
+            <div className="flex gap-3">
+              <button onClick={handleClose} className="btn-interaction" style={{ flex: 1, padding: '12px 16px', borderRadius: '10px', fontWeight: '600', fontSize: '14px', border: `1px solid ${colors.borderColor}`, backgroundColor: 'transparent', color: colors.textPrimary, cursor: 'pointer', minHeight: '44px' }}>
+                {isTh ? 'ปิด' : 'Close'}
+              </button>
+              <button onClick={() => { handleClose(); window.location.reload(); }} className="btn-interaction" style={{ flex: 1, padding: '12px 16px', borderRadius: '10px', fontWeight: '700', fontSize: '14px', border: 'none', background: 'linear-gradient(135deg, #0C3B2E 0%, #047857 100%)', color: '#C7A338', cursor: 'pointer', minHeight: '44px' }}>
+                {isTh ? 'เปิดใช้งานอีกครั้ง' : 'Reactivate'}
+              </button>
+            </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>
