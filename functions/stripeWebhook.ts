@@ -74,7 +74,7 @@ async function safeLog(message, data = {}) {
 function getCreditsForTier(tier) {
   switch (tier) {
     case 'lite': return { scans: 6, letters: 3 };
-    case 'protect': return { scans: 12, letters: 10 };
+    case 'protect': return { scans: 12, letters: 5 };
     case 'secure': return { scans: 999, letters: 50 };
     default: return { scans: 0, letters: 0 };
   }
