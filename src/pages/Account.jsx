@@ -1226,7 +1226,7 @@ function AccountContent() {
   const isLitePlan = planTier === 'lite';
   const isProtectPlan = planTier === 'protect';
   const isSecurePlan = planTier === 'secure';
-  const isScheduledForCancellation = subscriptionStatus === 'cancelled' && user?.plan_renews_at;
+  const isScheduledForCancellation = (subscriptionStatus === 'cancelled' || subscriptionStatus === 'canceling') && user?.plan_renews_at;
   
   // Admin access check
   const userRole = user?.role?.toLowerCase();
