@@ -404,11 +404,7 @@ function AccountContent() {
   const [showBillingDialog, setShowBillingDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedInterval, setSelectedInterval] = useState('monthly');
-  const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
-  const [pendingDowngradePlan, setPendingDowngradePlan] = useState(null);
-  const [pendingDowngradeInterval, setPendingDowngradeInterval] = useState('monthly');
-  
-  const [showDowngradeFlow, setShowDowngradeFlow] = useState(false);
+  const [showRetentionModal, setShowRetentionModal] = useState(false);
   const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
 
   const [showExportDialog, setShowExportDialog] = useState(false);
