@@ -1,4 +1,11 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+
+function getFirstName(user) {
+  if (user.display_name) return user.display_name.split(' ')[0];
+  if (user.full_name) return user.full_name.split(' ')[0];
+  if (user.email) return user.email.split('@')[0].replace(/[._-]/g, ' ').split(' ')[0];
+  return 'there';
+}
 
 Deno.serve(async (req) => {
   try {
@@ -9,7 +16,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if welcome email already sent
     if (user.welcome_email_sent) {
       return Response.json({ message: 'Welcome email already sent' });
     }
@@ -20,361 +26,108 @@ Deno.serve(async (req) => {
     }
 
     const language = user.language || 'en';
-    
-    const emailContent = {
-      en: {
-        subject: 'Welcome to Lease Shield - Your Rental Protection Starts Now',
-        html: `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; 
-            background-color: #ECEFED; 
-            margin: 0; 
-            padding: 0; 
-            line-height: 1.6;
-        }
-        .container { 
-            max-width: 600px; 
-            margin: 40px auto; 
-            background: white; 
-            border-radius: 16px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .header { 
-            background: linear-gradient(135deg, #0C3B2E 0%, #047857 100%); 
-            padding: 48px 32px; 
-            text-align: center; 
-        }
-        .logo { 
-            max-width: 160px; 
-            height: auto; 
-            margin-bottom: 16px;
-        }
-        .header-text {
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            margin: 0;
-        }
-        .content { 
-            padding: 40px 32px; 
-            color: #1A1D1F; 
-        }
-        .content h2 {
-            color: #0C3B2E;
-            font-size: 24px;
-            margin: 0 0 16px 0;
-        }
-        .content p {
-            color: #64748b;
-            font-size: 16px;
-            margin: 0 0 16px 0;
-        }
-        .button { 
-            display: inline-block; 
-            padding: 16px 32px; 
-            background: #C7A338; 
-            color: white !important; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            margin: 24px 0;
-            font-size: 16px;
-        }
-        .features {
-            background: #ECEFED;
-            padding: 24px;
-            border-radius: 12px;
-            margin: 24px 0;
-        }
-        .feature-item {
-            display: flex;
-            align-items: center;
-            margin: 12px 0;
-        }
-        .check-icon {
-            width: 24px;
-            height: 24px;
-            background: #0C3B2E;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            color: white;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-        .footer { 
-            background: #1A1D1F; 
-            padding: 32px; 
-            text-align: center; 
-            color: #A8ABAD;
-        }
-        .footer p {
-            margin: 8px 0;
-            font-size: 14px;
-        }
-        .footer strong {
-            color: #ECEFED;
-        }
-        .disclaimer {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #E5E7EB;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" alt="Lease Shield" class="logo">
-            <p class="header-text">FAIR • TRANSPARENT • PROTECTED</p>
-        </div>
-        
-        <div class="content">
-            <h2>Welcome to Lease Shield, ${user.full_name}! 🛡️</h2>
-            
-            <p>Your rental protection journey starts now. We're here to help you prevent problems before they happen.</p>
-            
-            <div class="features">
-                <div class="feature-item">
-                    <div class="check-icon">✓</div>
-                    <span><strong>AI-Powered Lease Analysis</strong> - Get instant risk assessment</span>
-                </div>
-                <div class="feature-item">
-                    <div class="check-icon">✓</div>
-                    <span><strong>Deposit Protection</strong> - Automated return reminders</span>
-                </div>
-                <div class="feature-item">
-                    <div class="check-icon">✓</div>
-                    <span><strong>Evidence Vault</strong> - Secure document storage</span>
-                </div>
-                <div class="feature-item">
-                    <div class="check-icon">✓</div>
-                    <span><strong>Maintenance Tracker</strong> - Log all repair requests</span>
-                </div>
-            </div>
-            
-            <p><strong>Ready to get started?</strong></p>
-            
-            <a href="${Deno.env.get('BASE44_APP_URL')}" class="button">Open Your Dashboard</a>
-            
-            <p style="margin-top: 32px;">Here's what to do first:</p>
-            <ol style="color: #64748b;">
-                <li>Upload your lease contract for AI analysis</li>
-                <li>Set up deposit tracking with return reminders</li>
-                <li>Take photos of your property's move-in condition</li>
-            </ol>
-            
-            <div class="disclaimer">
-                <p><strong>Need help?</strong> Reply to this email or visit our support page. We typically respond within 24-48 hours.</p>
-                <p style="margin-top: 16px; font-size: 11px; color: #9CA3AF;">
-                    We are not a law firm and do not provide legal advice. Lease Shield is a prevention and documentation tool.
-                </p>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p><strong>LEASE SHIELD</strong></p>
-            <p>Prevent rental problems before they happen</p>
-            <p style="margin-top: 16px; font-size: 12px;">
-                © 2025 Lease Shield. All rights reserved.
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-        `
-      },
-      th: {
-        subject: 'ยินดีต้อนรับสู่ Lease Shield - การปกป้องการเช่าของคุณเริ่มต้นแล้ว',
-        html: `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; 
-            background-color: #ECEFED; 
-            margin: 0; 
-            padding: 0; 
-            line-height: 1.6;
-        }
-        .container { 
-            max-width: 600px; 
-            margin: 40px auto; 
-            background: white; 
-            border-radius: 16px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .header { 
-            background: linear-gradient(135deg, #0C3B2E 0%, #047857 100%); 
-            padding: 48px 32px; 
-            text-align: center; 
-        }
-        .logo { 
-            max-width: 160px; 
-            height: auto; 
-            margin-bottom: 16px;
-        }
-        .header-text {
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            margin: 0;
-        }
-        .content { 
-            padding: 40px 32px; 
-            color: #1A1D1F; 
-        }
-        .content h2 {
-            color: #0C3B2E;
-            font-size: 24px;
-            margin: 0 0 16px 0;
-        }
-        .content p {
-            color: #64748b;
-            font-size: 16px;
-            margin: 0 0 16px 0;
-        }
-        .button { 
-            display: inline-block; 
-            padding: 16px 32px; 
-            background: #C7A338; 
-            color: white !important; 
-            text-decoration: none; 
-            border-radius: 8px; 
-            font-weight: bold; 
-            margin: 24px 0;
-            font-size: 16px;
-        }
-        .features {
-            background: #ECEFED;
-            padding: 24px;
-            border-radius: 12px;
-            margin: 24px 0;
-        }
-        .feature-item {
-            display: flex;
-            align-items: center;
-            margin: 12px 0;
-        }
-        .check-icon {
-            width: 24px;
-            height: 24px;
-            background: #0C3B2E;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            color: white;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-        .footer { 
-            background: #1A1D1F; 
-            padding: 32px; 
-            text-align: center; 
-            color: #A8ABAD;
-        }
-        .footer p {
-            margin: 8px 0;
-            font-size: 14px;
-        }
-        .footer strong {
-            color: #ECEFED;
-        }
-        .disclaimer {
-            font-size: 12px;
-            color: #64748b;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #E5E7EB;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" alt="Lease Shield" class="logo">
-            <p class="header-text">ยุติธรรม • โปร่งใส • ปลอดภัย</p>
-        </div>
-        
-        <div class="content">
-            <h2>ยินดีต้อนรับสู่ Lease Shield, ${user.full_name}! 🛡️</h2>
-            
-            <p>การปกป้องการเช่าของคุณเริ่มต้นแล้ว เราพร้อมช่วยคุณป้องกันปัญหาก่อนที่จะเกิดขึ้น</p>
-            
-            <div class="features">
-                <div class="feature-item">
-                    <div class="check-icon">✓</div>
-                    <span><strong>การวิเคราะห์สัญญาเช่าด้วย AI</strong> - รับการประเมินความเสี่ยงทันที</span>
-                </div>
-                <div class="feature-item">
-                    <div class="check-icon">✓</div>
-                    <span><strong>การปกป้องเงินมัดจำ</strong> - การแจ้งเตือนคืนเงินอัตโนมัติ</span>
-                </div>
-                <div class="feature-item">
-                    <div class="check-icon">✓</div>
-                    <span><strong>ที่เก็บหลักฐาน</strong> - จัดเก็บเอกสารอย่างปลอดภัย</span>
-                </div>
-                <div class="feature-item">
-                    <div class="check-icon">✓</div>
-                    <span><strong>ตัวติดตามการซ่อมบำรุง</strong> - บันทึกคำขอซ่อมแซมทั้งหมด</span>
-                </div>
-            </div>
-            
-            <p><strong>พร้อมที่จะเริ่มต้นหรือยัง?</strong></p>
-            
-            <a href="${Deno.env.get('BASE44_APP_URL')}" class="button">เปิดแดชบอร์ดของคุณ</a>
-            
-            <p style="margin-top: 32px;">สิ่งที่ควรทำก่อน:</p>
-            <ol style="color: #64748b;">
-                <li>อัปโหลดสัญญาเช่าของคุณเพื่อวิเคราะห์ด้วย AI</li>
-                <li>ตั้งค่าการติดตามเงินมัดจำพร้อมการแจ้งเตือนคืนเงิน</li>
-                <li>ถ่ายภาพสภาพทรัพย์สินเมื่อเข้าอยู่</li>
-            </ol>
-            
-            <div class="disclaimer">
-                <p><strong>ต้องการความช่วยเหลือ?</strong> ตอบกลับอีเมลนี้หรือเยี่ยมชมหน้าสนับสนุนของเรา เรามักจะตอบกลับภายใน 24-48 ชั่วโมง</p>
-                <p style="margin-top: 16px; font-size: 11px; color: #9CA3AF;">
-                    เราไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำแนะนำทางกฎหมาย Lease Shield เป็นเครื่องมือป้องกันและจัดทำเอกสาร
-                </p>
-            </div>
-        </div>
-        
-        <div class="footer">
-            <p><strong>LEASE SHIELD</strong></p>
-            <p>Prevent rental problems before they happen</p>
-            <p style="margin-top: 16px; font-size: 12px;">
-                © 2025 Lease Shield. All rights reserved.
-            </p>
-        </div>
-    </div>
-</body>
-</html>
-        `
-      }
+    const firstName = getFirstName(user);
+    const appUrl = 'https://app.leaseshield.asia';
+    const tier = (user.plan_tier || 'explorer').toUpperCase();
+
+    const t = language === 'th' ? {
+      subject: 'ยินดีต้อนรับสู่ LeaseShield! 🏠 การปกป้องของคุณเริ่มต้นแล้ว',
+      tagline: 'ยุติธรรม • โปร่งใส • ปลอดภัย',
+      greeting: `สวัสดี ${firstName}! 👋`,
+      intro: 'ยินดีต้อนรับสู่ LeaseShield — การป้องกันปัญหาการเช่าของคุณเริ่มต้นแล้ว',
+      yourTier: `แผนของคุณ: ${tier}`,
+      stepsTitle: '3 ขั้นตอนเริ่มต้น:',
+      step1Title: '📋 สแกนสัญญาเช่าของคุณ',
+      step1Desc: 'อัปโหลดสัญญาเช่าเพื่อรับการวิเคราะห์ความเสี่ยงด้วย AI',
+      step1Cta: 'สแกนสัญญาเช่า',
+      step2Title: '📸 บันทึกหลักฐาน',
+      step2Desc: 'ถ่ายรูปสภาพห้องเมื่อเข้าอยู่และเก็บเอกสารอย่างปลอดภัย',
+      step2Cta: 'เปิดที่เก็บหลักฐาน',
+      step3Title: '🛡️ ตั้งค่าการติดตามเงินมัดจำ',
+      step3Desc: 'ติดตามเงินมัดจำ ค่าเช่า และกำหนดแจ้งเตือนอัตโนมัติ',
+      step3Cta: 'ติดตามทรัพย์สิน',
+      proTip: '💡 เคล็ดลับ: ถ่ายรูปห้องทุกมุมเมื่อเข้าอยู่ — นี่คือหลักฐานที่ดีที่สุดเพื่อปกป้องเงินมัดจำของคุณ',
+      helpTitle: 'ต้องการความช่วยเหลือ?',
+      helpDesc: 'พูดคุยกับ Lisa ผู้ช่วย AI ของเรา หรือตอบกลับอีเมลนี้',
+      signoff: 'ขอให้โชคดีกับการเช่า!',
+      team: '— ทีม LeaseShield',
+      footer: 'ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น',
+      disclaimer: 'เราไม่ใช่สำนักงานกฎหมาย Lease Shield เป็นเครื่องมือป้องกันและจัดทำเอกสาร',
+    } : {
+      subject: 'Welcome to LeaseShield! 🏠 Your rental protection starts now',
+      tagline: 'FAIR • TRANSPARENT • PROTECTED',
+      greeting: `Hi ${firstName}! 👋`,
+      intro: "Welcome to LeaseShield — your rental protection journey starts now.",
+      yourTier: `Your plan: ${tier}`,
+      stepsTitle: 'Get started in 3 steps:',
+      step1Title: '📋 Scan Your Lease',
+      step1Desc: 'Upload your lease contract for instant AI-powered risk analysis.',
+      step1Cta: 'Scan My Lease',
+      step2Title: '📸 Document Your Property',
+      step2Desc: 'Take move-in photos and store important documents securely.',
+      step2Cta: 'Open Evidence Vault',
+      step3Title: '🛡️ Set Up Deposit Tracking',
+      step3Desc: 'Track your deposit, rent payments, and set automated reminders.',
+      step3Cta: 'Track My Property',
+      proTip: "💡 Pro Tip: Take photos of every room on move-in day — it's the single best thing you can do to protect your deposit.",
+      helpTitle: 'Need help?',
+      helpDesc: 'Chat with Lisa, our AI assistant, or just reply to this email.',
+      signoff: "Here's to a worry-free rental!",
+      team: '— The LeaseShield Team',
+      footer: 'Prevent rental problems before they happen',
+      disclaimer: 'We are not a law firm. LeaseShield is a prevention and documentation tool.',
     };
 
-    const content = emailContent[language] || emailContent.en;
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#ECEFED;margin:0;padding:0;line-height:1.6">
+<div style="max-width:600px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1)">
+  <div style="background:linear-gradient(135deg,#0C3B2E 0%,#047857 100%);padding:40px 32px;text-align:center">
+    <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" alt="LeaseShield" style="max-width:120px;height:auto;margin-bottom:12px">
+    <p style="color:#C7A338;font-size:13px;font-weight:600;letter-spacing:2px;margin:0">${t.tagline}</p>
+  </div>
+  <div style="padding:36px 32px;color:#1A1D1F">
+    <h2 style="color:#0C3B2E;font-size:22px;margin:0 0 8px 0">${t.greeting}</h2>
+    <p style="color:#475569;font-size:15px;margin:0 0 8px 0">${t.intro}</p>
+    <div style="display:inline-block;background:#0C3B2E;color:#C7A338;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;margin:8px 0 24px 0">${t.yourTier}</div>
 
-    // Send via Resend with no-reply@leaseshield.asia
+    <h3 style="color:#0C3B2E;font-size:16px;margin:24px 0 16px 0">${t.stepsTitle}</h3>
+
+    <div style="background:#F0FDF4;border:1px solid #D1FAE5;border-radius:12px;padding:20px;margin-bottom:12px">
+      <h4 style="margin:0 0 4px 0;color:#0C3B2E;font-size:15px">${t.step1Title}</h4>
+      <p style="color:#475569;font-size:13px;margin:0 0 12px 0">${t.step1Desc}</p>
+      <a href="${appUrl}/uploadscan" style="display:inline-block;padding:10px 20px;background:#0C3B2E;color:#C7A338;text-decoration:none;border-radius:8px;font-weight:700;font-size:13px">${t.step1Cta} →</a>
+    </div>
+    <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:20px;margin-bottom:12px">
+      <h4 style="margin:0 0 4px 0;color:#92400E;font-size:15px">${t.step2Title}</h4>
+      <p style="color:#475569;font-size:13px;margin:0 0 12px 0">${t.step2Desc}</p>
+      <a href="${appUrl}/evidencevault" style="display:inline-block;padding:10px 20px;background:#C7A338;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:13px">${t.step2Cta} →</a>
+    </div>
+    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:20px;margin-bottom:24px">
+      <h4 style="margin:0 0 4px 0;color:#1E40AF;font-size:15px">${t.step3Title}</h4>
+      <p style="color:#475569;font-size:13px;margin:0 0 12px 0">${t.step3Desc}</p>
+      <a href="${appUrl}/propertytracker" style="display:inline-block;padding:10px 20px;background:#3B82F6;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:13px">${t.step3Cta} →</a>
+    </div>
+
+    <div style="background:#FFF7ED;border-left:4px solid #C7A338;padding:16px;border-radius:0 8px 8px 0;margin-bottom:24px">
+      <p style="color:#92400E;font-size:13px;margin:0;font-weight:500">${t.proTip}</p>
+    </div>
+
+    <div style="border-top:1px solid #E5E7EB;padding-top:20px;margin-top:8px">
+      <p style="color:#475569;font-size:14px;margin:0 0 4px 0"><strong>${t.helpTitle}</strong></p>
+      <p style="color:#64748B;font-size:13px;margin:0 0 20px 0">${t.helpDesc}</p>
+      <p style="color:#0C3B2E;font-size:15px;font-weight:600;margin:0 0 4px 0">${t.signoff}</p>
+      <p style="color:#64748B;font-size:13px;margin:0">${t.team}</p>
+    </div>
+  </div>
+  <div style="background:#1A1D1F;padding:24px 32px;text-align:center">
+    <p style="color:#ECEFED;font-weight:700;font-size:14px;margin:0 0 4px 0">LEASE SHIELD</p>
+    <p style="color:#A8ABAD;font-size:12px;margin:0 0 12px 0">${t.footer}</p>
+    <p style="color:#6B7280;font-size:11px;margin:0">${t.disclaimer}</p>
+    <p style="color:#6B7280;font-size:11px;margin:8px 0 0 0">© ${new Date().getFullYear()} LeaseShield. All rights reserved.</p>
+  </div>
+</div>
+</body></html>`;
+
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -382,33 +135,27 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Lease Shield <no-reply@leaseshield.asia>',
+        from: 'LeaseShield <hello@leaseshield.asia>',
+        reply_to: 'support@leaseshield.asia',
         to: [user.email],
-        subject: content.subject,
-        html: content.html,
+        subject: t.subject,
+        html,
       }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('❌ Resend API error:', data);
+      console.error('[WELCOME_EMAIL] ❌ Resend error:', data);
       throw new Error(data.message || 'Failed to send welcome email');
     }
 
-    console.log('✅ Welcome email sent via Resend. Message ID:', data.id);
-
-    // Mark as sent
+    console.log('[WELCOME_EMAIL] ✅ Sent to:', user.email, 'ID:', data.id);
     await base44.auth.updateMe({ welcome_email_sent: true });
 
-    return Response.json({ 
-      success: true,
-      message: 'Welcome email sent successfully',
-      messageId: data.id
-    });
-
+    return Response.json({ success: true, messageId: data.id });
   } catch (error) {
-    console.error('Welcome email error:', error);
+    console.error('[WELCOME_EMAIL] ❌ Error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

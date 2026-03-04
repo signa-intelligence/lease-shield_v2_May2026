@@ -68,52 +68,96 @@ Deno.serve(async (req) => {
       cancellation_date: new Date().toISOString()
     });
 
-    // Send confirmation email (non-blocking)
+    // Send branded HTML cancellation email via Resend
     const language = user.language || 'en';
     const cancelDate = new Date(canceledSubscription.current_period_end * 1000);
-    
-    const subject = language === 'th' 
-      ? 'ยืนยันการยกเลิกการสมัครสมาชิก' 
-      : 'Subscription Cancellation Confirmed';
-    
-    const body = language === 'th'
-      ? `สวัสดี ${user.full_name},
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
-การยกเลิกการสมัครสมาชิก ${(user.plan_tier || 'unknown').toUpperCase()} ของคุณได้รับการยืนยันแล้ว
+    const firstName = (user.display_name || user.full_name || '').split(' ')[0] || user.email.split('@')[0].replace(/[._-]/g, ' ').split(' ')[0] || 'there';
+    const tierLabel = (user.plan_tier || 'unknown').toUpperCase();
+    const endDateStr = language === 'th'
+      ? cancelDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
+      : cancelDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const appUrl = 'https://app.leaseshield.asia';
+    const isTh = language === 'th';
 
-คุณจะยังคงสามารถเข้าถึงฟีเจอร์ทั้งหมดได้จนถึง: ${cancelDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+    const cancelSubject = isTh
+      ? `การสมัครสมาชิก LeaseShield ของคุณจะสิ้นสุดในวันที่ ${endDateStr}`
+      : `Your LeaseShield subscription will end on ${endDateStr}`;
 
-หลังจากนั้น คุณจะถูกเปลี่ยนเป็นแผนฟรี
+    const cancelHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#ECEFED;margin:0;padding:0;line-height:1.6">
+<div style="max-width:600px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.1)">
+  <div style="background:linear-gradient(135deg,#0C3B2E 0%,#047857 100%);padding:32px;text-align:center">
+    <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" alt="LeaseShield" style="max-width:80px;height:auto;margin-bottom:8px">
+    <p style="color:#C7A338;font-size:12px;font-weight:600;letter-spacing:2px;margin:0">${isTh ? 'ยุติธรรม • โปร่งใส • ปลอดภัย' : 'FAIR • TRANSPARENT • PROTECTED'}</p>
+  </div>
+  <div style="padding:32px;color:#1A1D1F">
+    <h2 style="color:#0C3B2E;font-size:20px;margin:0 0 16px 0">${isTh ? `สวัสดี ${firstName},` : `Hi ${firstName},`}</h2>
+    <p style="color:#475569;font-size:15px;margin:0 0 16px 0">${isTh
+      ? `เราได้รับคำขอยกเลิกแผน <strong>${tierLabel}</strong> ของคุณแล้ว เราเสียใจที่เห็นคุณจากไป`
+      : `We've received your request to cancel your <strong>${tierLabel}</strong> plan. We're sorry to see you go.`}</p>
 
-เหตุผลในการยกเลิก: ${reason || 'ไม่ได้ระบุ'}
+    <div style="background:#F0FDF4;border:1px solid #D1FAE5;border-radius:12px;padding:20px;margin:20px 0">
+      <h3 style="color:#047857;font-size:14px;margin:0 0 12px 0">✅ ${isTh ? 'คุณยังใช้งานได้จนถึง' : 'You still have access until'}</h3>
+      <p style="color:#0C3B2E;font-size:22px;font-weight:700;margin:0 0 12px 0">${endDateStr}</p>
+      <p style="color:#475569;font-size:13px;margin:0">${isTh
+        ? 'ฟีเจอร์ทั้งหมดจะทำงานตามปกติจนถึงวันนี้'
+        : 'All your current features will continue to work normally until this date.'}</p>
+    </div>
 
-หากคุณเปลี่ยนใจ คุณสามารถเปิดใช้งานการสมัครสมาชิกอีกครั้งได้ตลอดเวลาจากหน้าบัญชีของคุณ
+    <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:20px;margin:20px 0">
+      <h3 style="color:#991B1B;font-size:14px;margin:0 0 8px 0">${isTh ? 'หลังจากวันนั้น' : 'After that date'}</h3>
+      <p style="color:#7F1D1D;font-size:13px;margin:0">${isTh
+        ? 'บัญชีจะเปลี่ยนเป็นแผน Explorer (ฟรี) พร้อม 1 การสแกน, พื้นที่ 100MB และฟีเจอร์พื้นฐาน'
+        : "Your account will move to the Explorer (free) plan with 1 scan, 100MB storage, and basic features."}</p>
+    </div>
 
-ขอบคุณที่ใช้ Lease Shield 🙏
+    <div style="text-align:center;margin:28px 0">
+      <p style="color:#475569;font-size:14px;margin:0 0 12px 0;font-weight:600">${isTh ? 'เปลี่ยนใจ?' : 'Changed your mind?'}</p>
+      <a href="${appUrl}/account" style="display:inline-block;padding:14px 28px;background:#0C3B2E;color:#C7A338;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px">${isTh ? 'เปิดใช้งานอีกครั้ง' : 'Reactivate My Subscription'}</a>
+      <p style="color:#9CA3AF;font-size:12px;margin:10px 0 0 0">${isTh ? 'หรือเปลี่ยนเป็นแผนที่ถูกกว่า' : 'Or switch to a lower-cost plan'}</p>
+    </div>
 
-— ทีม Lease Shield`
-      : `Hi ${user.full_name},
-
-Your ${(user.plan_tier || 'unknown').toUpperCase()} subscription cancellation has been confirmed.
-
-You'll continue to have full access until: ${cancelDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-
-After that, you'll be moved to the Free plan.
-
-Cancellation reason: ${reason || 'Not specified'}
-
-If you change your mind, you can reactivate your subscription anytime from your Account page.
-
-Thank you for using Lease Shield 🙏
-
-— The Lease Shield Team`;
+    <div style="border-top:1px solid #E5E7EB;padding-top:20px;margin-top:20px">
+      <p style="color:#475569;font-size:13px;margin:0 0 12px 0">${isTh
+        ? 'ขอบคุณที่เป็นสมาชิก LeaseShield หากมีสิ่งใดที่เราสามารถทำได้ดีกว่านี้ ตอบกลับอีเมลนี้ได้เลย เราอ่านทุกข้อความ'
+        : "Thank you for being a LeaseShield member. If there's anything we could have done better, just reply to this email — we read every message."}</p>
+      <p style="color:#0C3B2E;font-size:14px;font-weight:600;margin:0 0 4px 0">${isTh ? 'ขอให้โชคดี!' : 'Wishing you all the best!'}</p>
+      <p style="color:#64748B;font-size:13px;margin:0">${isTh ? '— ทีม LeaseShield' : '— The LeaseShield Team'}</p>
+    </div>
+  </div>
+  <div style="background:#1A1D1F;padding:20px 32px;text-align:center">
+    <p style="color:#ECEFED;font-weight:700;font-size:13px;margin:0 0 4px 0">LEASE SHIELD</p>
+    <p style="color:#A8ABAD;font-size:11px;margin:0 0 8px 0">${isTh ? 'ป้องกันปัญหาการเช่าก่อนที่จะเกิดขึ้น' : 'Prevent rental problems before they happen'}</p>
+    <p style="color:#6B7280;font-size:10px;margin:0">© ${new Date().getFullYear()} LeaseShield. All rights reserved.</p>
+  </div>
+</div>
+</body></html>`;
 
     try {
-      await base44.asServiceRole.integrations.Core.SendEmail({
-        to: user.email,
-        subject,
-        body
-      });
+      if (RESEND_API_KEY) {
+        const emailRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'LeaseShield <hello@leaseshield.asia>',
+            reply_to: 'support@leaseshield.asia',
+            to: [user.email],
+            subject: cancelSubject,
+            html: cancelHtml,
+          }),
+        });
+        const emailData = await emailRes.json();
+        if (emailRes.ok) {
+          console.log('[CANCEL] ✅ Branded email sent via Resend. ID:', emailData.id);
+        } else {
+          console.error('[CANCEL] ⚠️ Resend failed, falling back:', emailData);
+          await base44.asServiceRole.integrations.Core.SendEmail({ to: user.email, subject: cancelSubject, body: `Hi ${firstName}, your ${tierLabel} subscription will end on ${endDateStr}. Visit ${appUrl}/account to reactivate.` });
+        }
+      } else {
+        await base44.asServiceRole.integrations.Core.SendEmail({ to: user.email, subject: cancelSubject, body: `Hi ${firstName}, your ${tierLabel} subscription will end on ${endDateStr}. Visit ${appUrl}/account to reactivate.` });
+      }
       console.log('[CANCEL] ✅ Confirmation email sent to:', user.email);
     } catch (emailErr) {
       console.error('[CANCEL] ⚠️ Email failed (non-critical):', emailErr.message);
