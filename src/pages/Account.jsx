@@ -1003,36 +1003,25 @@ function AccountContent() {
       alert(language === 'th' ? 'กรุณาเลือกเหตุผล' : 'Please select a reason');
       return;
     }
-
     haptic.medium();
     setCancelling(true);
     try {
       const response = await base44.functions.invoke('cancelSubscription', {
-        reason: downgradeReason,
-        feedback: downgradeFeedback || 'User chose to downgrade to free plan'
+        reason: downgradeReason, feedback: downgradeFeedback || 'User chose to downgrade to free plan'
       });
-
       if (response.data?.success) {
-        refetchUser?.();
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-        setShowDowngradeFlow(false); // Close the downgrade dialog
-        setDowngradeStep(1); // Reset step
-        setDowngradeReason('');
-        setDowngradeFeedback('');
+        refetchUser?.(); queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        setShowDowngradeFlow(false); setDowngradeStep(1); setDowngradeReason(''); setDowngradeFeedback('');
         haptic.success();
-        alert(language === 'th' 
-          ? 'ลดระดับสำเร็จ คุณจะยังคงสามารถเข้าถึงฟีเจอร์ได้จนถึงวันที่ต่ออายุ' 
-          : 'Downgrade successful. You\'ll keep access until your renewal date.');
+        const until = response.data.access_until ? new Date(response.data.access_until).toLocaleDateString() : '';
+        alert(language === 'th' ? `ลดระดับสำเร็จ เข้าถึงได้จนถึง ${until}` : `Downgrade successful. Access until ${until}.`);
+      } else if (response.data?.error) {
+        haptic.error(); alert(`${language === 'th' ? 'ลดระดับล้มเหลว' : 'Downgrade failed'}: ${response.data.error}`);
       }
     } catch (error) {
-      console.error('Downgrade to free error:', error);
-      haptic.error();
-      alert(language === 'th' 
-        ? 'ไม่สามารถลดระดับได้ กรุณาลองอีกครั้งหรือติดต่อฝ่ายสนับสนุน' 
-        : 'Failed to downgrade. Please try again or contact support.');
-    } finally {
-      setCancelling(false);
-    }
+      console.error('[DOWNGRADE]', error); haptic.error();
+      alert(`${language === 'th' ? 'ลดระดับล้มเหลว' : 'Downgrade failed'}: ${error.response?.data?.error || error.message}`);
+    } finally { setCancelling(false); }
   };
 
   const handleCancelSubscription = async () => {
