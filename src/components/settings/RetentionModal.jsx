@@ -18,6 +18,7 @@ const trackEvent = (eventName, properties) => {
 };
 
 const PLAN_PRICES = { lite: 190, protect: 390, secure: 990, explorer: 0, free: 0 };
+// Secure tier: 50 scans/yr (10/mo), 50 letters/yr (10/mo), 10 FastTrack/yr (3/mo)
 
 const DOWNGRADE_OPTIONS = {
   secure: [
