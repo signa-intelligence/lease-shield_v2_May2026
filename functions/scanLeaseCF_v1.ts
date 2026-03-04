@@ -169,25 +169,27 @@ Deno.serve(async (req) => {
       const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover' || userTier === 'explorer';
       const isLimitedTier = isFreeTier || userTier === 'lite' || userTier === 'protect';
 
-      if (isLimitedTier && userTier !== 'secure') {
-        const currentScans = user?.available_scans ?? 0;
-        if (currentScans <= 0) {
-          console.log('[SCAN_CF_V1_NO_CREDITS_BLOCKED]', { 
-            userId: user.id, 
-            availableScans: currentScans, 
-            tier: userTier 
-          });
+      // Check annual limit for all tiers
+      const currentScans = user?.available_scans ?? 0;
+      if (currentScans <= 0) {
+        console.log('[SCAN_CF_V1_NO_CREDITS_BLOCKED]', { userId: user.id, availableScans: currentScans, tier: userTier });
+        return new Response(JSON.stringify({
+          ok: false, step: 'CREDIT_CHECK', error_code: 'NO_SCAN_CREDITS',
+          message: isFreeTier ? 'You have used your free scan. Upgrade to continue scanning leases.' : 'No scan credits remaining for this year.'
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
+      // Check monthly cap for Secure tier
+      if (userTier === 'secure') {
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        const isNewMonth = user.usage_month !== currentMonth;
+        const monthlyUsed = isNewMonth ? 0 : (user.scans_used_this_month || 0);
+        if (monthlyUsed >= 10) {
+          console.log('[SCAN_CF_V1_MONTHLY_CAP_BLOCKED]', { userId: user.id, monthlyUsed, cap: 10 });
           return new Response(JSON.stringify({
-            ok: false,
-            step: 'CREDIT_CHECK',
-            error_code: 'NO_SCAN_CREDITS',
-            message: isFreeTier
-              ? 'You have used your free scan. Upgrade to continue scanning leases.'
-              : 'No scan credits remaining. Please purchase additional scans.'
-          }), { 
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          });
+            ok: false, step: 'MONTHLY_CAP', error_code: 'MONTHLY_SCAN_CAP',
+            message: 'Monthly scan limit reached (10/month). Your limit resets next month.'
+          }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         }
       }
 
