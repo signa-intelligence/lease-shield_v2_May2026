@@ -25,7 +25,7 @@ import { haptic } from "../components/shared/HapticFeedback";
 import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
-import ReferralCard from "../components/referral/ReferralCard";
+import ReferralCard from "../components/referral/ReferralCard"; import RetentionModal from "../components/settings/RetentionModal";
 
 // Centralized pricing config with real Stripe price IDs
 const PRICING = {
