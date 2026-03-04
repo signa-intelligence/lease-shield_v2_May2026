@@ -411,11 +411,7 @@ function AccountContent() {
   const [pendingDowngradePlan, setPendingDowngradePlan] = useState(null);
   const [pendingDowngradeInterval, setPendingDowngradeInterval] = useState('monthly');
   
-  // New state for two-step downgrade flow
   const [showDowngradeFlow, setShowDowngradeFlow] = useState(false);
-  const [downgradeStep, setDowngradeStep] = useState(1);
-  const [downgradeReason, setDowngradeReason] = useState('');
-  const [downgradeFeedback, setDowngradeFeedback] = useState('');
   const [expandedNotifPrefs, setExpandedNotifPrefs] = useState(false); // New state for Notification Preferences expansion
 
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -972,7 +968,84 @@ function AccountContent() {
     }
   };
 
-  // Cancel/downgrade handlers are now in CancellationModal component
+  // Opens Step 1 of downgrade flow (retention screen)
+  const handleDowngradeOrCancel = () => {
+    haptic.medium();
+    setDowngradeStep(1);
+    setDowngradeReason('');
+    setDowngradeFeedback('');
+    setShowDowngradeFlow(true);
+  };
+
+  // Handler for switching to Lite (immediate, no Step 2)
+  const handleSwitchToLite = async () => {
+    haptic.medium();
+    setShowDowngradeFlow(false); // Close the downgrade dialog
+    
+    // Determine the user's current billing interval for a seamless switch
+    const currentBillingInterval = user?.billing_interval || 'monthly';
+    handleSubscribe('lite', currentBillingInterval); 
+  };
+
+  // Handler for continuing to Free plan (goes to Step 2)
+  const handleContinueToFree = () => {
+    haptic.light();
+    setDowngradeStep(2);
+  };
+
+  // Handler for confirming downgrade to Free (Step 2 confirmation)
+  const handleConfirmDowngradeToFree = async () => {
+    if (!downgradeReason) {
+      alert(language === 'th' ? 'กรุณาเลือกเหตุผล' : 'Please select a reason');
+      return;
+    }
+    haptic.medium();
+    setCancelling(true);
+    try {
+      const response = await base44.functions.invoke('cancelSubscription', {
+        reason: downgradeReason, feedback: downgradeFeedback || 'User chose to downgrade to free plan'
+      });
+      if (response.data?.success) {
+        refetchUser?.(); queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        setShowDowngradeFlow(false); setDowngradeStep(1); setDowngradeReason(''); setDowngradeFeedback('');
+        haptic.success();
+        const until = response.data.access_until ? new Date(response.data.access_until).toLocaleDateString() : '';
+        alert(language === 'th' ? `ลดระดับสำเร็จ เข้าถึงได้จนถึง ${until}` : `Downgrade successful. Access until ${until}.`);
+      } else if (response.data?.error) {
+        haptic.error(); alert(`${language === 'th' ? 'ลดระดับล้มเหลว' : 'Downgrade failed'}: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('[DOWNGRADE]', error); haptic.error();
+      alert(`${language === 'th' ? 'ลดระดับล้มเหลว' : 'Downgrade failed'}: ${error.response?.data?.error || error.message}`);
+    } finally { setCancelling(false); }
+  };
+
+  const handleCancelSubscription = async () => {
+    const lang = user?.language || 'en';
+    if (!cancelReason) {
+      alert(lang === 'th' ? 'กรุณาเลือกเหตุผลในการยกเลิก' : 'Please select a reason for cancellation');
+      return;
+    }
+    haptic.medium();
+    setCancelling(true);
+    try {
+      const response = await base44.functions.invoke('cancelSubscription', {
+        reason: cancelReason, feedback: cancelFeedback
+      });
+      if (response.data?.success) {
+        refetchUser?.(); queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        setShowCancelDialog(false); setCancelReason(''); setCancelFeedback('');
+        haptic.success();
+        const until = response.data.access_until ? new Date(response.data.access_until).toLocaleDateString() : '';
+        alert(lang === 'th' ? `ยกเลิกสำเร็จ เข้าถึงได้จนถึง ${until}` : `Cancelled. Access until ${until}.`);
+      } else if (response.data?.error) {
+        haptic.error(); alert(`${lang === 'th' ? 'ยกเลิกล้มเหลว' : 'Cancel failed'}: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('[CANCEL]', error); haptic.error();
+      alert(`${lang === 'th' ? 'ยกเลิกล้มเหลว' : 'Cancel failed'}: ${error.response?.data?.error || error.message}`);
+    } finally { setCancelling(false); }
+  };
 
   const handleLandlordUpdate = async () => {
     haptic.medium();
@@ -2956,6 +3029,7 @@ function AccountContent() {
                       <Settings className="w-4 h-4" />
                       {language === 'th' ? 'จัดการแผน' : language === 'ru' ? 'Управление планом' : 'Manage Plan'}
                     </button>
+
                   </div>
                 )}
               </CardContent>
@@ -3969,18 +4043,14 @@ function AccountContent() {
           </CardContent>
         </Card>
 
-        {/* NEW 2-STEP CANCELLATION MODAL WITH RETENTION + REASON CAPTURE */}
-        <CancellationModal
+        {/* RETENTION MODAL - replaces old cancel/downgrade dialogs */}
+        <RetentionModal
           isOpen={showCancelDialog || showDowngradeFlow}
           onClose={() => { setShowCancelDialog(false); setShowDowngradeFlow(false); }}
           user={user}
-          language={language}
+          onSubscribe={(tierKey, interval) => handleSubscribe(tierKey, interval)}
           colors={colors}
           isDarkMode={isDarkMode}
-          onDowngrade={(tierKey) => { setShowCancelDialog(false); setShowDowngradeFlow(false); handleSubscribe(tierKey, user?.billing_interval || 'monthly'); }}
-          onCancel={() => { setShowCancelDialog(false); setShowDowngradeFlow(false); }}
-          queryClient={queryClient}
-          refetchUser={refetchUser}
         />
 
         <div style={{
