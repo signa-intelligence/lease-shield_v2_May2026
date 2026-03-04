@@ -142,28 +142,27 @@ function UploadScanPageContent() {
   const isDarkMode = user?.theme === 'dark';
   const userTier = user?.plan_tier || 'explorer';
 
-  // ✅ SCAN LIMIT ENFORCEMENT (Secure: 50/year, 10/month cap)
+  // ✅ SCAN LIMIT ENFORCEMENT (annual + monthly caps for Secure)
   const getScanLimits = () => {
     switch(userTier) {
-      case 'explorer': return { limit: 1, period: 'lifetime', unlimited: false };
-      case 'lite': return { limit: 6, period: 'year', unlimited: false };
-      case 'protect': return { limit: 12, period: 'year', unlimited: false };
-      case 'secure': return { limit: 50, period: 'year', unlimited: false };
-      default: return { limit: 1, period: 'lifetime', unlimited: false };
+      case 'explorer': return { limit: 1, period: 'lifetime', unlimited: false, monthlyMax: 0 };
+      case 'lite': return { limit: 6, period: 'year', unlimited: false, monthlyMax: 0 };
+      case 'protect': return { limit: 12, period: 'year', unlimited: false, monthlyMax: 0 };
+      case 'secure': return { limit: 50, period: 'year', unlimited: false, monthlyMax: 10 };
+      default: return { limit: 1, period: 'lifetime', unlimited: false, monthlyMax: 0 };
     }
-  };
-  const getMonthlyCapInfo = () => {
-    if (userTier !== 'secure') return { capped: false, used: 0, max: 0 };
-    const cm = new Date().toISOString().slice(0, 7);
-    const u = (user?.usage_month === cm) ? (user?.scans_used_this_month || 0) : 0;
-    return { capped: u >= 10, used: u, max: 10 };
   };
   const canUploadLease = () => {
     const limits = getScanLimits();
     const availableScans = user?.available_scans ?? 0;
     const used = Math.max(0, limits.limit - availableScans);
-    const mc = getMonthlyCapInfo();
-    return { allowed: availableScans > 0 && !mc.capped, remaining: availableScans, used, limit: limits.limit, period: limits.period, monthlyCapped: mc.capped, monthlyUsed: mc.used, monthlyMax: mc.max };
+    let monthlyBlocked = false, monthlyUsed = 0;
+    if (limits.monthlyMax > 0) {
+      const cm = new Date().toISOString().slice(0, 7);
+      monthlyUsed = user?.usage_month === cm ? (user?.scans_used_this_month || 0) : 0;
+      monthlyBlocked = monthlyUsed >= limits.monthlyMax;
+    }
+    return { allowed: availableScans > 0 && !monthlyBlocked, remaining: availableScans, used, limit: limits.limit, period: limits.period, monthlyBlocked, monthlyUsed, monthlyMax: limits.monthlyMax };
   };
 
   const scanStatus = canUploadLease();
@@ -802,20 +801,21 @@ function UploadScanPageContent() {
       console.warn('[UPLOAD_RATE_LIMIT_CHECK_FAILED]', rateLimitErr);
     }
     
-    // ✅ CRITICAL: CHECK SCAN LIMIT + MONTHLY CAP
+    // ✅ CRITICAL: CHECK SCAN LIMIT using available_scans from user record (single source of truth)
     const limits = getScanLimits();
     const availableScans = user?.available_scans ?? 0;
-    const mc = getMonthlyCapInfo();
-    const canScan = availableScans > 0 && !mc.capped;
+    const canScan = limits.unlimited || availableScans > 0;
     
     if (!canScan) {
-      if (mc.capped) {
-        const nm = new Date(); nm.setMonth(nm.getMonth() + 1, 1);
-        const rd = nm.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { month: 'long', day: 'numeric' });
-        alert(language === 'th' ? `ถึงขีดจำกัดสแกนรายเดือน (10/เดือน)\n\nรีเซ็ต ${rd}` : `Monthly scan limit reached (10/month).\n\nResets ${rd}.`);
-      } else {
-        alert(language === 'th' ? `คุณใช้ครบโควต้าการสแกนแล้ว\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม` : `You've reached your scan limit (0 remaining)\n\nUpgrade your plan for more scans`);
-      }
+      const periodText = limits.period === 'year'
+        ? (language === 'th' ? 'ปีนี้' : 'this year')
+        : (language === 'th' ? 'ตลอดชีพ' : 'lifetime');
+
+      alert(
+        language === 'th'
+          ? `คุณใช้ครบโควต้าการสแกนแล้ว\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
+          : `You've reached your scan limit (0 remaining)\n\nUpgrade your plan for more scans`
+      );
       return;
     }
     
@@ -2243,27 +2243,12 @@ function UploadScanPageContent() {
             {isLoadingUser || !user ? (
               <div className="h-6 w-48 rounded animate-pulse" style={{ backgroundColor: isDarkMode ? '#374151' : '#E5E7EB' }} />
             ) : (
-              <Badge className={scanStatus.allowed ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}>
-                {scanStatus.allowed
-                  ? (() => {
-                      // For free tier (one-time scan), remove "lifetime" label
-                      const scanLabel = scanStatus.remaining === 1 
-                        ? (language === 'th' ? 'การสแกน' : language === 'zh' ? '扫描' : language === 'ja' ? 'スキャン' : language === 'ko' ? '스캔' : language === 'ru' ? 'сканирование' : 'scan')
-                        : (language === 'th' ? 'การสแกน' : language === 'zh' ? '扫描' : language === 'ja' ? 'スキャン' : language === 'ko' ? '스캔' : language === 'ru' ? 'сканирований' : 'scans');
-                      
-                      const periodSuffix = scanStatus.period === 'year' 
-                        ? ` (${getPeriodText(scanStatus.period)})`
-                        : '';
-                      
-                      return strings.scansRemaining
-                        .replace('{remaining}', scanStatus.remaining)
-                        .replace('{lifetimeLabel}', scanLabel)
-                        .replace('{periodText}', periodSuffix);
-                    })()
-                  : strings.scanLimitMsg
-                      .replace('{used}', scanStatus.used)
-                      .replace('{limit}', scanStatus.limit)
-                      .replace('{periodText}', getPeriodText(scanStatus.period))
+              <Badge className={scanStatus.allowed ? 'bg-blue-100 text-blue-700' : (scanStatus.monthlyBlocked ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700')}>
+                {scanStatus.monthlyBlocked
+                  ? (language === 'th' ? `ถึงขีดจำกัดรายเดือน (${scanStatus.monthlyUsed}/${scanStatus.monthlyMax})` : `Monthly limit reached (${scanStatus.monthlyUsed}/${scanStatus.monthlyMax})`)
+                  : scanStatus.allowed
+                    ? `${scanStatus.remaining} ${scanStatus.remaining === 1 ? (language === 'th' ? 'การสแกน' : 'scan') : (language === 'th' ? 'การสแกน' : 'scans')} ${language === 'th' ? 'คงเหลือ' : 'remaining'}${scanStatus.period === 'year' ? ` (${getPeriodText(scanStatus.period)})` : ''}${scanStatus.monthlyMax > 0 ? ` · ${scanStatus.monthlyUsed}/${scanStatus.monthlyMax} ${language === 'th' ? 'เดือนนี้' : 'this month'}` : ''}`
+                    : strings.scanLimitMsg.replace('{used}', scanStatus.used).replace('{limit}', scanStatus.limit).replace('{periodText}', getPeriodText(scanStatus.period))
                 }
               </Badge>
             )}
