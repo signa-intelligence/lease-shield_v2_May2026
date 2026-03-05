@@ -279,13 +279,24 @@ function RevenueAnalyticsContent() {
   const freeUsers = allUsers.filter(u => !u.plan_tier || u.plan_tier === 'free' || u.plan_tier === 'explorer');
   
   const paidPayments = payments.filter(p => p.status === 'paid');
-  const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const recordedRevenue = paidPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
   
   const subscriptionPayments = paidPayments.filter(p => p.type === 'subscription');
   const creditPayments = paidPayments.filter(p => p.type === 'credits' || p.type === 'addon');
   
   const subscriptionRevenue = subscriptionPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
   const creditRevenue = creditPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  
+  // Compute estimated subscription revenue from active paid users (fallback when Payment records are sparse)
+  const computedSubRevenue = paidUsers.reduce((sum, u) => {
+    const tp = tierPrices[u.plan_tier];
+    if (!tp) return sum;
+    const interval = u.billing_interval || 'monthly';
+    return sum + (tp[interval] || tp.monthly);
+  }, 0);
+  
+  // Use the higher of recorded vs computed to handle backfill gap
+  const totalRevenue = Math.max(recordedRevenue, computedSubRevenue);
 
   // Calculate MRR (Monthly Recurring Revenue)
   const monthlySubscribers = allUsers.filter(u => 
