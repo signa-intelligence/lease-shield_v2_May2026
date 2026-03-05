@@ -369,12 +369,27 @@ function RevenueAnalyticsContent() {
     const monthStart = startOfMonth(monthDate);
     const monthEnd = endOfMonth(monthDate);
     
-    const monthRevenue = paidPayments
+    // Revenue from Payment records
+    const monthRecordedRevenue = paidPayments
       .filter(p => {
         const pDate = new Date(p.created_date);
         return pDate >= monthStart && pDate <= monthEnd;
       })
       .reduce((sum, p) => sum + (p.amount || 0), 0);
+    
+    // Estimated revenue from users who were subscribed during this month
+    const monthEstimatedRevenue = allUsers
+      .filter(u => {
+        if (!u.plan_tier || u.plan_tier === 'free' || u.plan_tier === 'explorer') return false;
+        const subStart = u.subscription_started_at || u.member_since;
+        if (!subStart) return false;
+        return new Date(subStart) <= monthEnd;
+      })
+      .reduce((sum, u) => {
+        const tp = tierPrices[u.plan_tier];
+        if (!tp) return sum;
+        return sum + (tp.monthly || 0);
+      }, 0);
     
     const newUsers = allUsers.filter(u => {
       const uDate = new Date(u.created_date);
@@ -383,7 +398,7 @@ function RevenueAnalyticsContent() {
 
     monthlyData.push({
       month: format(monthDate, 'MMM yy'),
-      revenue: Math.round(monthRevenue),
+      revenue: Math.round(Math.max(monthRecordedRevenue, monthEstimatedRevenue)),
       users: newUsers
     });
   }
