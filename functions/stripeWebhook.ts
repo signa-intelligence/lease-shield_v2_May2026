@@ -175,6 +175,24 @@ Deno.serve(async (req) => {
             paid_at: new Date().toISOString()
           });
           console.log('[CHECKOUT_WEBHOOK] ✅ Case payment recorded:', caseId);
+
+          // Track case payment revenue
+          try {
+            const caseAmount = (session.amount_total || 0) / 100;
+            if (caseAmount > 0) {
+              await base44.asServiceRole.entities.Payment.create({
+                type: 'case',
+                amount: caseAmount,
+                currency: 'THB',
+                provider: 'stripe',
+                status: 'paid',
+                external_id: session.payment_intent || session.id
+              });
+              console.log('[REVENUE] ✅ Case payment tracked: ฿' + caseAmount);
+            }
+          } catch (revErr) {
+            console.error('[REVENUE] ⚠️ Case payment tracking failed:', revErr.message);
+          }
         } catch (e) {
           console.error('[CHECKOUT_WEBHOOK] Case update error:', e.message);
         }
