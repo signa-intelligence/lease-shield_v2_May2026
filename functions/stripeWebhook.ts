@@ -129,6 +129,21 @@ Deno.serve(async (req) => {
             });
             console.log('[CHECKOUT_WEBHOOK] ✅ User upgraded:', user.email, 'to', planTier);
 
+            // Track revenue in Payment entity
+            try {
+              await base44.asServiceRole.entities.Payment.create({
+                type: 'subscription',
+                amount: amountTHB,
+                currency: 'THB',
+                provider: 'stripe',
+                status: 'paid',
+                external_id: session.payment_intent || session.id
+              });
+              console.log('[REVENUE] ✅ Payment recorded:', user.email, planTier, '฿' + amountTHB);
+            } catch (revErr) {
+              console.error('[REVENUE] ⚠️ Payment tracking failed (non-critical):', revErr.message);
+            }
+
             // Send upgrade confirmation email (non-blocking)
             if (planTier !== 'explorer') {
               try {
@@ -321,6 +336,26 @@ Deno.serve(async (req) => {
       }
 
       console.log('[PAYMENT_WEBHOOK] Payment succeeded for subscription:', subscriptionId);
+
+      // Track renewal revenue
+      try {
+        const invoiceAmount = (invoice.amount_paid || 0) / 100;
+        if (invoiceAmount > 0 && invoice.billing_reason !== 'subscription_create') {
+          const custId = invoice.customer;
+          const renewUser = await findUserByCustomerId(custId);
+          await base44.asServiceRole.entities.Payment.create({
+            type: 'subscription',
+            amount: invoiceAmount,
+            currency: 'THB',
+            provider: 'stripe',
+            status: 'paid',
+            external_id: invoice.id
+          });
+          console.log('[REVENUE] ✅ Renewal payment recorded:', renewUser?.email || custId, '฿' + invoiceAmount);
+        }
+      } catch (revErr) {
+        console.error('[REVENUE] ⚠️ Renewal tracking failed (non-critical):', revErr.message);
+      }
 
       try {
         const referrals = await base44.asServiceRole.entities.Referral.filter({

@@ -275,8 +275,8 @@ function RevenueAnalyticsContent() {
   }
 
   // Calculate metrics
-  const paidUsers = allUsers.filter(u => u.plan_tier && u.plan_tier !== 'free');
-  const freeUsers = allUsers.filter(u => !u.plan_tier || u.plan_tier === 'free');
+  const paidUsers = allUsers.filter(u => u.plan_tier && u.plan_tier !== 'free' && u.plan_tier !== 'explorer');
+  const freeUsers = allUsers.filter(u => !u.plan_tier || u.plan_tier === 'free' || u.plan_tier === 'explorer');
   
   const paidPayments = payments.filter(p => p.status === 'paid');
   const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -289,16 +289,16 @@ function RevenueAnalyticsContent() {
 
   // Calculate MRR (Monthly Recurring Revenue)
   const monthlySubscribers = allUsers.filter(u => 
-    u.plan_tier && u.plan_tier !== 'free' && u.billing_interval === 'monthly'
+    u.plan_tier && u.plan_tier !== 'free' && u.plan_tier !== 'explorer' && u.billing_interval === 'monthly'
   );
   const annualSubscribers = allUsers.filter(u => 
-    u.plan_tier && u.plan_tier !== 'free' && u.billing_interval === 'annual'
+    u.plan_tier && u.plan_tier !== 'free' && u.plan_tier !== 'explorer' && u.billing_interval === 'annual'
   );
 
   const tierPrices = {
-    lite: { monthly: 390, annual: 3900 },
-    protect: { monthly: 690, annual: 6900 },
-    secure: { monthly: 1290, annual: 12900 }
+    lite: { monthly: 190, annual: 1900 },
+    protect: { monthly: 390, annual: 3900 },
+    secure: { monthly: 990, annual: 9900 }
   };
 
   let mrr = 0;
@@ -319,7 +319,7 @@ function RevenueAnalyticsContent() {
 
   // Users by tier
   const tierDistribution = {
-    free: freeUsers.length,
+    free: allUsers.filter(u => !u.plan_tier || u.plan_tier === 'free' || u.plan_tier === 'explorer').length,
     lite: allUsers.filter(u => u.plan_tier === 'lite').length,
     protect: allUsers.filter(u => u.plan_tier === 'protect').length,
     secure: allUsers.filter(u => u.plan_tier === 'secure').length,
