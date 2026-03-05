@@ -278,6 +278,12 @@ function RevenueAnalyticsContent() {
   const paidUsers = allUsers.filter(u => u.plan_tier && u.plan_tier !== 'free' && u.plan_tier !== 'explorer');
   const freeUsers = allUsers.filter(u => !u.plan_tier || u.plan_tier === 'free' || u.plan_tier === 'explorer');
   
+  const tierPrices = {
+    lite: { monthly: 190, annual: 1900 },
+    protect: { monthly: 390, annual: 3900 },
+    secure: { monthly: 990, annual: 9900 }
+  };
+
   const paidPayments = payments.filter(p => p.status === 'paid');
   const recordedRevenue = paidPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
   
@@ -305,12 +311,6 @@ function RevenueAnalyticsContent() {
   const annualSubscribers = allUsers.filter(u => 
     u.plan_tier && u.plan_tier !== 'free' && u.plan_tier !== 'explorer' && u.billing_interval === 'annual'
   );
-
-  const tierPrices = {
-    lite: { monthly: 190, annual: 1900 },
-    protect: { monthly: 390, annual: 3900 },
-    secure: { monthly: 990, annual: 9900 }
-  };
 
   let mrr = 0;
   monthlySubscribers.forEach(u => {
