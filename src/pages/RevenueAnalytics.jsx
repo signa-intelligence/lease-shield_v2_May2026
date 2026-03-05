@@ -33,15 +33,15 @@ function RevenueAnalyticsContent() {
       const response = await base44.functions.invoke('getAllUsers');
       return response.data?.users || [];
     },
-    enabled: !!user && user.access_level === 'super_admin',
+    enabled: !!user && (user.access_level === 'super_admin' || user.role === 'admin'),
   });
 
   const { data: payments = [] } = useQuery({
     queryKey: ['allPayments'],
     queryFn: async () => {
-      return await base44.asServiceRole.entities.Payment.filter({});
+      return await base44.entities.Payment.list('-created_date', 500);
     },
-    enabled: !!user && user.access_level === 'super_admin',
+    enabled: !!user && (user.access_level === 'super_admin' || user.role === 'admin'),
   });
 
   const language = user?.language || 'en';
@@ -250,7 +250,7 @@ function RevenueAnalyticsContent() {
 
   const strings = t[language] || t.en;
 
-  if (!user || user.access_level !== 'super_admin') {
+  if (!user || (user.access_level !== 'super_admin' && user.role !== 'admin')) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.bg }}>
         <Card style={{ backgroundColor: colors.cardBg, maxWidth: '400px' }}>
