@@ -559,6 +559,7 @@ REMEMBER: Analyze ALL clauses completely. Return ONLY valid JSON.`;
       },
       key_terms: analysisResult.key_terms || {},
       clauses: clauses,
+      flags: analysisResult.flags || [],
       missingCriticalClauses: analysisResult.missingCriticalClauses || [],
       missingClauseCount: (analysisResult.missingCriticalClauses || []).length,
       preview_mode: isPreviewMode,
