@@ -14,7 +14,8 @@ import {
   Sparkles,
   Trophy,
   ChevronRight,
-  Wrench
+  Wrench,
+  AlertTriangle
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
