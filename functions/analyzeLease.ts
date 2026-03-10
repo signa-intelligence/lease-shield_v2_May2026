@@ -468,6 +468,88 @@ REMEMBER: Analyze ALL clauses completely. Return ONLY valid JSON.`;
       analysisResult.missingCriticalClauses = [];
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // POST-PROCESSING: Agent Deposit Risk Flag
+    // If lease does not explicitly state deposit is held by landlord/owner,
+    // inject a HIGH risk flag about deposit holder ambiguity.
+    // ═══════════════════════════════════════════════════════════════
+    const depositHolderPatterns = [
+      /deposit\s+(?:is\s+)?held\s+by\s+(?:the\s+)?(?:landlord|owner|lessor|property\s+owner)/i,
+      /landlord\s+(?:shall\s+)?(?:hold|retain|keep)\s+(?:the\s+)?(?:security\s+)?deposit/i,
+      /owner\s+(?:shall\s+)?(?:hold|retain|keep)\s+(?:the\s+)?(?:security\s+)?deposit/i,
+      /lessor\s+(?:shall\s+)?(?:hold|retain|keep)\s+(?:the\s+)?(?:security\s+)?deposit/i,
+      /deposit\s+(?:shall\s+be\s+)?(?:paid|remitted)\s+(?:directly\s+)?to\s+(?:the\s+)?(?:landlord|owner|lessor)/i,
+      /เงินประกัน.*(?:ผู้ให้เช่า|เจ้าของ)/i,
+      /ผู้ให้เช่า.*(?:รับ|เก็บ|ถือ).*เงินประกัน/i
+    ];
+
+    const fullTextForCheck = pdfText.toLowerCase();
+    const clauseTexts = (analysisResult.clauses || []).map(c => (c.clause_text || '').toLowerCase()).join(' ');
+    const combinedText = fullTextForCheck + ' ' + clauseTexts;
+
+    const depositHolderSpecified = depositHolderPatterns.some(p => p.test(combinedText));
+
+    if (!depositHolderSpecified) {
+      const agentDepositFlag = {
+        en: {
+          title: 'Deposit Holder Not Specified',
+          description: 'Your lease does not confirm who holds your deposit. If paid to an agent, there is no guarantee the landlord receives it. Ensure your receipt names the landlord as deposit holder before paying.'
+        },
+        th: {
+          title: 'ไม่ระบุผู้ถือเงินประกัน',
+          description: 'สัญญาเช่าของคุณไม่ได้ระบุว่าใครเป็นผู้ถือเงินประกัน หากจ่ายให้ตัวแทน ไม่มีการรับประกันว่าเจ้าของจะได้รับเงิน ตรวจสอบให้ใบเสร็จระบุชื่อเจ้าของเป็นผู้รับเงินประกันก่อนชำระ'
+        },
+        zh: {
+          title: '未指定押金持有人',
+          description: '您的租约未确认谁持有您的押金。如果支付给中介，无法保证房东会收到。付款前请确保收据上注明房东为押金持有人。'
+        },
+        ja: {
+          title: '敷金の保管者が未指定',
+          description: '賃貸契約書に敷金の保管者が明記されていません。仲介業者に支払った場合、大家に届く保証がありません。支払い前に領収書に大家が敷金保管者として記載されていることを確認してください。'
+        },
+        ko: {
+          title: '보증금 보유자 미지정',
+          description: '임대차 계약서에 보증금 보유자가 명시되어 있지 않습니다. 중개인에게 지불한 경우 집주인이 받는다는 보장이 없습니다. 지불 전에 영수증에 집주인이 보증금 보유자로 기재되어 있는지 확인하세요.'
+        },
+        ru: {
+          title: 'Держатель депозита не указан',
+          description: 'В вашем договоре аренды не указано, кто хранит ваш депозит. Если оплата произведена агенту, нет гарантии, что арендодатель его получит. Убедитесь, что в квитанции арендодатель указан как держатель депозита перед оплатой.'
+        }
+      };
+
+      const flagLang = agentDepositFlag[language] || agentDepositFlag['en'];
+
+      // Inject into flags array (used by LeaseScan entity)
+      if (!analysisResult.flags) analysisResult.flags = [];
+      analysisResult.flags.push({
+        severity: 'high',
+        category: 'Deposit',
+        description: flagLang.description,
+        title: flagLang.title
+      });
+
+      // Also inject into top_risks in summary so it appears in report
+      if (analysisResult.summary?.top_risks) {
+        analysisResult.summary.top_risks.push({
+          title: flagLang.title,
+          severity: 'high',
+          why: flagLang.description
+        });
+      }
+
+      console.log('[ANALYZE_LEASE_AGENT_DEPOSIT_FLAG]', {
+        correlationId,
+        flagInjected: true,
+        language
+      });
+    } else {
+      console.log('[ANALYZE_LEASE_AGENT_DEPOSIT_FLAG]', {
+        correlationId,
+        flagInjected: false,
+        reason: 'Deposit holder explicitly specified in lease'
+      });
+    }
+
     // Normalize the scan_full structure
     const scanFull = {
       risk_score: analysisResult.risk_score || 0,
