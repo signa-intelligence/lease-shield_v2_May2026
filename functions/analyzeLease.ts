@@ -276,9 +276,22 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Language support for all 6 app languages
+    const languageMap = {
+      'en': 'English',
+      'th': 'Thai',
+      'zh': 'Chinese',
+      'ja': 'Japanese',
+      'ko': 'Korean',
+      'ru': 'Russian'
+    };
+    const languageName = languageMap[language] || 'English';
+
     // CRITICAL: Different prompts for preview vs full mode
     const systemPrompt = isPreviewMode 
       ? `You are a lease analysis expert. Analyze this lease document and provide a risk assessment with executive summary and top risks.
+
+CRITICAL: Respond entirely in ${languageName}. All analysis text, findings, summaries, risk descriptions, and recommendations must be written in ${languageName}. JSON keys must remain in English.
 
 CRITICAL: You MUST return a valid JSON object with this EXACT structure (include ALL fields, especially key_terms FIRST):
 
