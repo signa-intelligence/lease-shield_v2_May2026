@@ -322,7 +322,9 @@ CRITICAL: You MUST return a valid JSON object with this EXACT structure (include
 
 DO NOT omit key_terms. Extract property address, dates, and financial terms from the lease text.
 Return ONLY valid JSON, no explanatory text.`
-      : `You are a lease analysis expert. 
+      : `You are a lease analysis expert.
+
+CRITICAL: Respond entirely in ${languageName}. All analysis text, findings, summaries, risk descriptions, and recommendations must be written in ${languageName}. JSON keys must remain in English.
 
 CRITICAL REQUIREMENT: Analyze EVERY SINGLE clause in this lease document. You MUST provide detailed analysis for ALL clauses found, including low-risk and standard clauses. Do not skip or selectively analyze clauses based on importance. If the lease contains 25 clauses, you must return 25 clause analyses. If it contains 50 clauses, return 50 analyses. EVERY clause must have analysis, risk assessment, and recommendations.
 
