@@ -62,7 +62,7 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
         trackDeposit: "Track a security deposit",
         trackDepositDesc: "Never lose your money",
         verifyDeposit: "⚠️ Verify who receives your deposit",
-        verifyDepositDesc: "Always ensure your deposit goes to the landlord, not the agent.",
+        verifyDepositDesc: "Confirm your deposit receipt names the landlord directly.",
         reportMaintenance: "Report a maintenance issue",
         reportMaintenanceDesc: "Track repairs and hold landlords accountable",
         uploadDoc: "Upload evidence",
@@ -94,7 +94,7 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
         trackDeposit: "ติดตามเงินมัดจำ",
         trackDepositDesc: "ไม่พลาดเงินของคุณ",
         verifyDeposit: "⚠️ ตรวจสอบว่าใครรับเงินมัดจำ",
-        verifyDepositDesc: "ตรวจสอบให้แน่ใจว่าเงินมัดจำถึงเจ้าของบ้าน ไม่ใช่ตัวแทน",
+        verifyDepositDesc: "ยืนยันว่าใบเสร็จเงินมัดจำระบุชื่อเจ้าของบ้านโดยตรง",
         reportMaintenance: "แจ้งปัญหาการซ่อมบำรุง",
         reportMaintenanceDesc: "ติดตามการซ่อมและทำให้เจ้าของบ้านรับผิดชอบ",
         uploadDoc: "อัปโหลดหลักฐาน",
@@ -126,7 +126,7 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
         trackDeposit: "追踪押金",
         trackDepositDesc: "永不丢失您的钱",
         verifyDeposit: "⚠️ 确认谁收取您的押金",
-        verifyDepositDesc: "务必确保押金交给房东，而非中介。",
+        verifyDepositDesc: "确认押金收据上直接列明房东姓名。",
         reportMaintenance: "报告维护问题",
         reportMaintenanceDesc: "追踪维修并让房东负责",
         uploadDoc: "上传证据",
@@ -158,7 +158,7 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
         trackDeposit: "敷金を追跡",
         trackDepositDesc: "お金を失わないように",
         verifyDeposit: "⚠️ 敷金の受取人を確認",
-        verifyDepositDesc: "敷金は仲介業者ではなく、大家に届くことを必ず確認してください。",
+        verifyDepositDesc: "敷金の領収書に大家の名前が直接記載されていることを確認してください。",
         reportMaintenance: "メンテナンス問題を報告",
         reportMaintenanceDesc: "修理を追跡し、家主に責任を持たせる",
         uploadDoc: "証拠をアップロード",
@@ -190,7 +190,7 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
         trackDeposit: "보증금 추적",
         trackDepositDesc: "돈을 잃지 마세요",
         verifyDeposit: "⚠️ 보증금 수령인 확인",
-        verifyDepositDesc: "보증금이 중개인이 아닌 집주인에게 전달되는지 항상 확인하세요.",
+        verifyDepositDesc: "보증금 영수증에 집주인 이름이 직접 기재되어 있는지 확인하세요.",
         reportMaintenance: "유지보수 문제 보고",
         reportMaintenanceDesc: "수리를 추적하고 집주인에게 책임을 묻기",
         uploadDoc: "증거 업로드",
@@ -222,7 +222,7 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
         trackDeposit: "Отслеживайте залог",
         trackDepositDesc: "Не потеряйте свои деньги",
         verifyDeposit: "⚠️ Проверьте, кто получает ваш залог",
-        verifyDepositDesc: "Убедитесь, что залог идёт арендодателю, а не агенту.",
+        verifyDepositDesc: "Убедитесь, что в квитанции на залог указано имя арендодателя.",
         reportMaintenance: "Сообщите о проблеме",
         reportMaintenanceDesc: "Отслеживайте ремонт и привлекайте арендодателей к ответственности",
         uploadDoc: "Загрузите доказательства",
@@ -389,19 +389,19 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
                 className="flex items-start gap-4 p-4 rounded-xl transition-all"
                 style={{
                   backgroundColor: isWarningItem
-                    ? (isDarkMode ? 'rgba(220, 38, 38, 0.15)' : '#FEF2F2')
+                    ? (isDarkMode ? 'rgba(217, 119, 6, 0.15)' : '#FFFBEB')
                     : task.completed 
                       ? (isDarkMode ? `${theme.iconBg}40` : `${theme.iconBg}80`)
                       : (isDarkMode ? '#374151' : '#F8FAFC'),
                   border: isWarningItem
-                    ? '2px solid #DC2626'
+                    ? '2px solid #D97706'
                     : `2px solid ${task.completed ? theme.borderColor : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)')}`
                 }}
               >
                 <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ 
-                    backgroundColor: isWarningItem ? '#DC2626' : theme.iconBg,
+                    backgroundColor: isWarningItem ? '#D97706' : theme.iconBg,
                     color: isWarningItem ? '#FFFFFF' : theme.iconColor
                   }}
                 >
@@ -416,12 +416,12 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div>
                       <h4 className="font-bold text-sm" style={{
-                        color: isWarningItem ? '#DC2626' : (isDarkMode ? '#F9FAFB' : '#111827')
+                        color: isWarningItem ? '#D97706' : (isDarkMode ? '#F9FAFB' : '#111827')
                       }}>
                         {task.label}
                       </h4>
                       <p className="text-xs" style={{
-                        color: isWarningItem ? (isDarkMode ? '#FCA5A5' : '#991B1B') : (isDarkMode ? '#9CA3AF' : '#4B5563'),
+                        color: isWarningItem ? (isDarkMode ? '#FCD34D' : '#92400E') : (isDarkMode ? '#9CA3AF' : '#4B5563'),
                         lineHeight: '1.5'
                       }}>
                         {task.description}
@@ -431,13 +431,13 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
                       <Badge
                         className="flex-shrink-0"
                         style={{
-                          backgroundColor: '#DC2626',
+                          backgroundColor: '#D97706',
                           color: '#FFFFFF',
                           fontSize: '10px',
                           fontWeight: '700'
                         }}
                       >
-                        HIGH
+                        MEDIUM
                       </Badge>
                     )}
                     {!isWarningItem && task.completed && (
