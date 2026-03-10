@@ -323,8 +323,9 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
     }
   ];
 
-  const completedTasks = tasks.filter(t => t.completed).length;
-  const totalTasks = tasks.length;
+  const actionableTasks = tasks.filter(t => !t.isWarning);
+  const completedTasks = actionableTasks.filter(t => t.completed).length;
+  const totalTasks = actionableTasks.length;
   const progressPercent = Math.round((completedTasks / totalTasks) * 100);
   const isAllComplete = completedTasks === totalTasks;
 
