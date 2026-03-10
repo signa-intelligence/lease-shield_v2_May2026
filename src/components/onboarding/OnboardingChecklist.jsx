@@ -43,6 +43,7 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
   const taskThemeMap = {
     upload_lease: leasesTheme,
     track_deposit: depositsTheme,
+    verify_deposit: depositsTheme,
     report_maintenance: maintenanceTheme,
     upload_doc: depositsTheme,
     setup_profile: notificationsTheme,
@@ -272,6 +273,17 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
       completed: hasDeposits,
       route: "PropertyTracker",
       points: 20
+    },
+    {
+      id: 'verify_deposit',
+      label: strings.tasks.verifyDeposit,
+      description: strings.tasks.verifyDepositDesc,
+      icon: AlertTriangle,
+      completed: false,
+      route: "PropertyTracker",
+      points: 0,
+      isWarning: true,
+      highImportance: true
     },
     {
       id: 'report_maintenance',
