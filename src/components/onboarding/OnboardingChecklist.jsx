@@ -380,23 +380,28 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
           {tasks.map((task) => {
             const TaskIcon = task.icon;
             const theme = taskThemeMap[task.id] || leasesTheme;
+            const isWarningItem = task.isWarning || task.highImportance;
             
             return (
               <div
                 key={task.id}
                 className="flex items-start gap-4 p-4 rounded-xl transition-all"
                 style={{
-                  backgroundColor: task.completed 
-                    ? (isDarkMode ? `${theme.iconBg}40` : `${theme.iconBg}80`)
-                    : (isDarkMode ? '#374151' : '#F8FAFC'),
-                  border: `2px solid ${task.completed ? theme.borderColor : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)')}`
+                  backgroundColor: isWarningItem
+                    ? (isDarkMode ? 'rgba(220, 38, 38, 0.15)' : '#FEF2F2')
+                    : task.completed 
+                      ? (isDarkMode ? `${theme.iconBg}40` : `${theme.iconBg}80`)
+                      : (isDarkMode ? '#374151' : '#F8FAFC'),
+                  border: isWarningItem
+                    ? '2px solid #DC2626'
+                    : `2px solid ${task.completed ? theme.borderColor : (isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(12,59,46,0.08)')}`
                 }}
               >
                 <div
                   className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ 
-                    backgroundColor: theme.iconBg,
-                    color: theme.iconColor
+                    backgroundColor: isWarningItem ? '#DC2626' : theme.iconBg,
+                    color: isWarningItem ? '#FFFFFF' : theme.iconColor
                   }}
                 >
                   {task.completed ? (
@@ -409,14 +414,32 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div>
-                      <h4 className="font-bold text-sm text-gray-900 dark:text-gray-50">
+                      <h4 className="font-bold text-sm" style={{
+                        color: isWarningItem ? '#DC2626' : (isDarkMode ? '#F9FAFB' : '#111827')
+                      }}>
                         {task.label}
                       </h4>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <p className="text-xs" style={{
+                        color: isWarningItem ? (isDarkMode ? '#FCA5A5' : '#991B1B') : (isDarkMode ? '#9CA3AF' : '#4B5563'),
+                        lineHeight: '1.5'
+                      }}>
                         {task.description}
                       </p>
                     </div>
-                    {task.completed && (
+                    {isWarningItem && (
+                      <Badge
+                        className="flex-shrink-0"
+                        style={{
+                          backgroundColor: '#DC2626',
+                          color: '#FFFFFF',
+                          fontSize: '10px',
+                          fontWeight: '700'
+                        }}
+                      >
+                        HIGH
+                      </Badge>
+                    )}
+                    {!isWarningItem && task.completed && (
                       <Badge
                         className="flex-shrink-0"
                         style={{
@@ -432,7 +455,7 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
                     )}
                   </div>
                   
-                  {!task.completed && (
+                  {!task.completed && !isWarningItem && (
                     <Link to={createPageUrl(task.route)}>
                       <button
                         className="mt-2 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all"
