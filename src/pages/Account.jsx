@@ -2968,14 +2968,8 @@ function AccountContent() {
 
         <AppSharingSection language={language} colors={colors} isDarkMode={isDarkMode} onShareApp={handleShareApp} appLinkCopied={appLinkCopied} />
 
-        {false && <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle>OLD_APP_SHARING</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <div
-                onClick={handleInstallApp}
+        {/* Old App & Sharing removed - now uses AppSharingSection */}
+        {false && <div onClick={handleInstallApp}
                 style={{
                   padding: '16px',
                   backgroundColor: colors.fieldBg,
