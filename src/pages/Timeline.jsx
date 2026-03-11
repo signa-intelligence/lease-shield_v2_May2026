@@ -595,7 +595,7 @@ function TimelineContent() {
     });
 
     return events.sort((a, b) => a.date - b.date);
-  }, [leases, deposits, cases, maintenance, timelineEvents, strings]);
+  }, [leases, deposits, cases, maintenance, timelineEvents, strings, user]);
 
   const filteredEvents = useMemo(() => {
     if (selectedTypes.length === 0) return allEvents;
