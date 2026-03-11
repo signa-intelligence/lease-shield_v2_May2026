@@ -1742,7 +1742,7 @@ function AccountContent() {
       save17OnSecure: "Экономия 17% на Secure",
       discountSubtext: "Скидка 17% — годовая оплата",
     }
-  };
+  Old inline strings end here */
 
   const strings = (t && t[language] && typeof t[language] === 'object') ? t[language] : t.en;
   const currentPlan = PLAN_DETAILS.find(p => p.key === planTier);
