@@ -60,7 +60,7 @@ const translations = {
   },
 };
 
-export default function AppSharingSection({ language, colors, isDarkMode, onShareApp, appLinkCopied }) {
+export default function AppSharingSection({ language, colors, isDarkMode }) {
   const t = translations[language] || translations.en;
 
   return (
