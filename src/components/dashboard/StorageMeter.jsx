@@ -14,7 +14,8 @@ export default function StorageMeter({ storageInfo, userTier, colors, language =
   const limitBytes = storageInfo.tier_limit_bytes || (100 * 1024 * 1024);
   const filesCount = storageInfo.files_count || 0;
   
-  const usagePercent = Math.round((totalBytes / limitBytes) * 100);
+  const rawPercent = (totalBytes / limitBytes) * 100;
+  const usagePercent = totalBytes > 0 ? Math.max(1, Math.round(rawPercent)) : 0;
   const usedMB = (totalBytes / (1024 * 1024)).toFixed(1);
   const usedGB = (totalBytes / (1024 * 1024 * 1024)).toFixed(2);
   const limitGB = (limitBytes / (1024 * 1024 * 1024)).toFixed(0);
