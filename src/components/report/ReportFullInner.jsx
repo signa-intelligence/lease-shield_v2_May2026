@@ -119,6 +119,12 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
   const highCount = (clauses || []).filter(c => c.risk_level === 'high').length;
   const mediumCount = (clauses || []).filter(c => c.risk_level === 'medium').length;
   
+  // For non-en/th languages (zh, ja, ko, ru), prefer the AI-generated summary
+  // which is already in the user's language from the OpenAI prompt
+  if (language !== 'en' && language !== 'th' && existingSummary && existingSummary.length > 50) {
+    return existingSummary;
+  }
+  
   const isThaiLang = language === 'th';
   let summary = '';
   
