@@ -2968,8 +2968,8 @@ function AccountContent() {
 
         <AppSharingSection language={language} colors={colors} isDarkMode={isDarkMode} onShareApp={handleShareApp} appLinkCopied={appLinkCopied} />
 
-        {/* Old App & Sharing removed - now uses AppSharingSection */}
-        {false && <div onClick={handleInstallApp}
+        {/* Old App & Sharing section removed - replaced by AppSharingSection component above */
+        /* handleInstallApp
                 style={{
                   padding: '16px',
                   backgroundColor: colors.fieldBg,
