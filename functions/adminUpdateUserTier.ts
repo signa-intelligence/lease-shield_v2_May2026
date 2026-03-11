@@ -24,12 +24,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid tier. Valid: explorer, lite, protect, secure' }, { status: 400 });
     }
 
-    await safeLog('ADMIN_UPDATE_TIER', { userId, tier });
+    // CRITICAL: Provision scan and letter credits when changing tier
+    const scanAllocation = { explorer: 1, lite: 6, protect: 12, secure: 50 };
+    const letterAllocation = { explorer: 0, lite: 3, protect: 10, secure: 50 };
 
-    // Update user using service role
-    const updatedUser = await base44.asServiceRole.entities.User.update(userId, { plan_tier: tier });
+    await safeLog('ADMIN_UPDATE_TIER', { userId, tier, scans: scanAllocation[tier], letters: letterAllocation[tier] });
 
-    await safeLog('ADMIN_UPDATE_TIER_SUCCESS', { userId, newTier: tier });
+    // Update user using service role - include credit provisioning
+    const updatedUser = await base44.asServiceRole.entities.User.update(userId, { 
+      plan_tier: tier,
+      available_scans: scanAllocation[tier],
+      letter_credits: letterAllocation[tier],
+      scans_used_this_month: 0,
+      usage_month: null,
+      manual_tier_override: true
+    });
+
+    await safeLog('ADMIN_UPDATE_TIER_SUCCESS', { userId, newTier: tier, scans: scanAllocation[tier], letters: letterAllocation[tier] });
 
     return Response.json({ 
       success: true,
