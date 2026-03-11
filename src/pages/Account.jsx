@@ -2966,12 +2966,11 @@ function AccountContent() {
 
 
 
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
+        <AppSharingSection language={language} colors={colors} isDarkMode={isDarkMode} onShareApp={handleShareApp} appLinkCopied={appLinkCopied} />
+
+        {false && <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-              <Download className="w-5 h-5 text-ls-forest" />
-              {language === 'th' ? 'แอปและการแชร์' : language === 'zh' ? '应用与分享' : language === 'ja' ? 'アプリと共有' : language === 'ko' ? '앱 및 공유' : language === 'ru' ? 'Приложение и обмен' : 'App & Sharing'}
-            </CardTitle>
+            <CardTitle>OLD_APP_SHARING</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
