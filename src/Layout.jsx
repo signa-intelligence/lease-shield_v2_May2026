@@ -113,12 +113,20 @@ export default function Layout({ children, currentPageName }) {
   React.useEffect(() => {
     if (user && user.available_scans === undefined && !user.plan_tier) {
       console.log('[LAYOUT] New user detected - initializing defaults:', user.email);
+      // Generate referral code for new user
+      const buffer = new Uint8Array(4);
+      crypto.getRandomValues(buffer);
+      const referralCode = Array.from(buffer).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
       base44.auth.updateMe({
         plan_tier: 'explorer',
         available_scans: 1,
         letter_credits: 0,
         is_active: true,
-        subscription_status: 'active'
+        subscription_status: 'active',
+        referral_code: referralCode,
+        referral_credits_thb: 0,
+        referral_credits_total_thb: 0,
+        referral_count: 0
       })
         .then(() => {
           console.log('[LAYOUT] ✅ User initialized: plan_tier=explorer, available_scans=1, letter_credits=0');
