@@ -3147,7 +3147,7 @@ function AccountContent() {
               </Button>
             </div>
           </DialogContent>
-        </Dialog>
+        Old App & Sharing and Install Instructions dialog end here */}
 
         <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
