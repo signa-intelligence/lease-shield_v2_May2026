@@ -844,9 +844,9 @@ function AccountContent() {
   const t = { en: getAccountStrings('en'), th: getAccountStrings('th'), zh: getAccountStrings('zh'), ja: getAccountStrings('ja'), ko: getAccountStrings('ko'), ru: getAccountStrings('ru') };
   // Old inline strings removed - see AccountStrings
   /* _removed: old inline strings deleted - all sourced from AccountStrings now */
-    /* English old strings removed */
-    th_old: {
-      pageTitle: "บัญชีของฉัน",
+    /* All old translation strings removed - see AccountStrings component */
+    _th_removed: {
+      _: "บัญชีของฉัน",
       pageSubtitle: "จัดการโปรไฟล์และการสมัครสมาชิก",
       personalInfo: "ข้อมูลส่วนตัว",
       editProfile: "แก้ไขโปรไฟล์",
