@@ -520,47 +520,30 @@ function AccountContent() {
     setExporting(true);
     try {
       const response = await base44.functions.invoke('exportUserData');
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const exportData = response.data;
+      
+      // Create JSON blob (PDPA-compliant machine-readable format)
+      const jsonString = typeof exportData === 'string' ? exportData : JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const filename = `LeaseShield_Data_Export_${new Date().toISOString().split('T')[0]}.json`;
       const url = window.URL.createObjectURL(blob);
       
-      // Try to use Web Share API first (mobile)
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], `LeaseShield_Data_${new Date().toISOString().split('T')[0]}.pdf`, { type: 'application/pdf' })] })) {
-        const file = new File([blob], `LeaseShield_Data_${new Date().toISOString().split('T')[0]}.pdf`, { type: 'application/pdf' });
-        try {
-          await navigator.share({
-            files: [file],
-            title: language === 'th' ? 'ข้อมูล Lease Shield ของฉัน' : 'My Lease Shield Data'
-          });
-          toast.success(language === 'th' ? 'แชร์ไฟล์สำเร็จ' : 'File shared successfully');
-        } catch (shareError) {
-          if (shareError.name !== 'AbortError') {
-            // Fallback to download
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Lease_Shield_Personal_Data_${new Date().toISOString().split('T')[0]}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            toast.success(language === 'th' ? 'บันทึกไฟล์แล้ว' : 'File saved to Downloads');
-          }
-        }
-      } else {
-        // Fallback to download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Lease_Shield_Personal_Data_${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        toast.success(language === 'th' ? 'บันทึกไฟล์แล้ว' : 'File saved to Downloads');
-      }
-      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
       window.URL.revokeObjectURL(url);
+      
+      const successMsg = { en: 'Data exported successfully', th: 'ส่งออกข้อมูลเรียบร้อยแล้ว', zh: '数据导出成功', ja: 'データのエクスポートが完了しました', ko: '데이터를 성공적으로 내보냈습니다', ru: 'Данные успешно экспортированы' };
+      toast.success(successMsg[language] || successMsg.en);
       haptic.success();
     } catch (error) {
       console.error('❌ Export failed:', error);
       haptic.error();
-      toast.error(language === 'th' ? 'ส่งออกล้มเหลว กรุณาลองอีกครั้ง' : 'Failed to export data. Please try again.');
+      const errorMsg = { en: 'Failed to export data. Please try again.', th: 'ส่งออกล้มเหลว กรุณาลองอีกครั้ง', zh: '导出失败，请重试', ja: 'エクスポートに失敗しました。再試行してください', ko: '내보내기 실패. 다시 시도하세요', ru: 'Не удалось экспортировать. Повторите попытку.' };
+      toast.error(errorMsg[language] || errorMsg.en);
     } finally {
       setExporting(false);
     }
