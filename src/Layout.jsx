@@ -135,6 +135,22 @@ export default function Layout({ children, currentPageName }) {
         })
         .catch(err => console.error('[LAYOUT] Failed to initialize user:', err));
     }
+    // Auto-generate referral code after 7-day grace period
+    if (user && user.plan_tier && !user.referral_code && user.created_date) {
+      const accountAgeMs = Date.now() - new Date(user.created_date).getTime();
+      const accountAgeDays = accountAgeMs / (1000 * 60 * 60 * 24);
+      if (accountAgeDays >= 7) {
+        console.log('[LAYOUT] Account 7+ days old, generating referral code:', user.email);
+        base44.functions.invoke('generateReferralCode')
+          .then(res => {
+            if (res.data?.success) {
+              console.log('[LAYOUT] ✅ Referral code generated:', res.data.code);
+              queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+            }
+          })
+          .catch(err => console.error('[LAYOUT] Referral code generation failed (non-critical):', err));
+      }
+    }
     // Also send welcome email for existing users who never got one
     if (user && user.plan_tier && !user.welcome_email_sent) {
       base44.functions.invoke('sendWelcomeEmail')
