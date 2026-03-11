@@ -847,6 +847,18 @@ function TimelineContent() {
           }
         />
 
+        {/* Manual Lease Date Inputs */}
+        <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
+          <CardContent className="p-4">
+            <ManualLeaseEvents
+              user={user}
+              colors={colors}
+              isDarkMode={isDarkMode}
+              language={language}
+            />
+          </CardContent>
+        </Card>
+
         {viewMode === 'upcoming' && (
           <div className="space-y-6">
             {isLoading ? (
