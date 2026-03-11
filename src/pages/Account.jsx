@@ -2963,7 +2963,7 @@ function AccountContent() {
 
 
 
-        <AppSharingSection language={language} colors={colors} isDarkMode={isDarkMode} onShareApp={handleShareApp} appLinkCopied={appLinkCopied} />
+        <AppSharingSection language={language} colors={colors} isDarkMode={isDarkMode} />
 
         {/* Old App & Sharing section removed - replaced by AppSharingSection component above
         handleInstallApp
