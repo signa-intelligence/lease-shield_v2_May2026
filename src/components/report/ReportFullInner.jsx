@@ -910,18 +910,28 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
     : { bg: "#F8FAFC", cardBg: "#FFFFFF", textPrimary: "#1A1D1F", textSecondary: "#64748b", borderColor: "#E5E7EB" };
 
 
+  const loadingStrings = {
+    en: { materializing: "Preparing report...", loading: "Loading report...", building: "Building report from scan data" },
+    th: { materializing: "กำลังเตรียมรายงาน...", loading: "กำลังโหลดรายงาน...", building: "กำลังสร้างรายงานจากข้อมูลสแกน" },
+    zh: { materializing: "正在准备报告...", loading: "正在加载报告...", building: "正在从扫描数据生成报告" },
+    ja: { materializing: "レポートを準備中...", loading: "レポートを読み込み中...", building: "スキャンデータからレポートを作成中" },
+    ko: { materializing: "보고서 준비 중...", loading: "보고서 로드 중...", building: "스캔 데이터에서 보고서 작성 중" },
+    ru: { materializing: "Подготовка отчёта...", loading: "Загрузка отчёта...", building: "Формирование отчёта из данных сканирования" }
+  };
+  const ls = loadingStrings[language] || loadingStrings.en;
+
   if (loading) {
     return (
       <div className="min-h-screen p-6" style={{ backgroundColor: colors.bg }}>
         <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20">
           <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: "#0C3B2E" }} />
           <p className="text-lg font-semibold" style={{ color: colors.textPrimary }}>
-            {materializing ? "Materializing report..." : "Loading report..."}
+            {materializing ? ls.materializing : ls.loading}
           </p>
           {materializing && (
             <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
               <Wrench className="w-4 h-4" />
-              <span>Building report from scan data</span>
+              <span>{ls.building}</span>
             </div>
           )}
         </div>
