@@ -842,11 +842,8 @@ function AccountContent() {
   };
 
   const t = { en: getAccountStrings('en'), th: getAccountStrings('th'), zh: getAccountStrings('zh'), ja: getAccountStrings('ja'), ko: getAccountStrings('ko'), ru: getAccountStrings('ru') };
-  // Old inline strings removed - now sourced from AccountStrings
-  const _removed = {
-    _: {
-      _lightMode: "x",
-      _darkMode: "x",
+  // Old inline strings removed - see AccountStrings
+  const _removed = { _: { _: "removed" } }; /* was:
       tenantAddress: "Your Address",
       tenantAddressPlaceholder: "Street address",
       tenantCity: "City",
