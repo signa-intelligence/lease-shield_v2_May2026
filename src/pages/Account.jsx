@@ -843,7 +843,7 @@ function AccountContent() {
 
   const t = { en: getAccountStrings('en'), th: getAccountStrings('th'), zh: getAccountStrings('zh'), ja: getAccountStrings('ja'), ko: getAccountStrings('ko'), ru: getAccountStrings('ru') };
   // Old inline strings removed - see AccountStrings
-  const _removed = { _: { _: "removed" } }; /* was:
+  const _removed = null; /* was: old inline strings - see AccountStrings component
       tenantAddress: "Your Address",
       tenantAddressPlaceholder: "Street address",
       tenantCity: "City",
