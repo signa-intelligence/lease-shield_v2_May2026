@@ -843,7 +843,7 @@ function AccountContent() {
 
   const t = { en: getAccountStrings('en'), th: getAccountStrings('th'), zh: getAccountStrings('zh'), ja: getAccountStrings('ja'), ko: getAccountStrings('ko'), ru: getAccountStrings('ru') };
   // Old inline strings removed - see AccountStrings
-  /* All old inline strings removed - sourced from AccountStrings */
+  /* All old inline strings removed - sourced from AccountStrings
       pageSubtitle: "จัดการโปรไฟล์และการสมัครสมาชิก",
       personalInfo: "ข้อมูลส่วนตัว",
       editProfile: "แก้ไขโปรไฟล์",
