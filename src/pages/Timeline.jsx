@@ -45,6 +45,7 @@ import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
+import ManualLeaseEvents from "../components/timeline/ManualLeaseEvents";
 
 function TimelineContent() {
   const navigate = useNavigate();
