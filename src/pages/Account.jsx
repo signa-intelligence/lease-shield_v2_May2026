@@ -4627,25 +4627,20 @@ function AccountContent() {
                   {language === 'th' ? 'รูปแบบ:' : 'Format:'}
                 </p>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setExportFormat('pdf');
-                      haptic.light();
-                    }}
+                  <div
                     style={{
                       flex: 1,
                       padding: '10px',
                       borderRadius: '8px',
-                      border: `2px solid ${exportFormat === 'pdf' ? '#0C3B2E' : colors.borderColor}`,
-                      backgroundColor: exportFormat === 'pdf' ? (isDarkMode ? 'rgba(12,59,46,0.2)' : '#F0FDF4') : 'transparent',
+                      border: `2px solid #0C3B2E`,
+                      backgroundColor: isDarkMode ? 'rgba(12,59,46,0.2)' : '#F0FDF4',
                       color: colors.textPrimary,
-                      fontWeight: exportFormat === 'pdf' ? '700' : '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
+                      fontWeight: '700',
+                      textAlign: 'center'
                     }}
                   >
-                    PDF
-                  </button>
+                    JSON ({language === 'th' ? 'ตาม PDPA' : 'PDPA compliant'})
+                  </div>
                 </div>
               </div>
               <Button
