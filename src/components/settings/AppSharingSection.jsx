@@ -160,61 +160,6 @@ export default function AppSharingSection({ language, colors, isDarkMode }) {
             </div>
           </div>
         </div>
-
-        {/* Share App */}
-        <div
-          onClick={onShareApp}
-          style={{
-            padding: '16px',
-            backgroundColor: colors.fieldBg,
-            borderRadius: '12px',
-            borderLeft: '4px solid #C7A338',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = isDarkMode ? '#374151' : '#F3F4F6';
-            e.currentTarget.style.borderLeftColor = '#0C3B2E';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = colors.fieldBg;
-            e.currentTarget.style.borderLeftColor = '#C7A338';
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div style={{
-                width: '40px',
-                height: '40px',
-                backgroundColor: appLinkCopied ? '#10B981' : '#C7A338',
-                borderRadius: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}>
-                {appLinkCopied ? (
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                ) : (
-                  <Share2 className="w-5 h-5 text-white" />
-                )}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '16px', fontWeight: '700', color: colors.textPrimary, marginBottom: '2px' }}>
-                  {t.shareTitle}
-                </div>
-                <div style={{ fontSize: '13px', fontWeight: '500', color: colors.textSecondary }}>
-                  {t.shareDesc}
-                </div>
-              </div>
-            </div>
-            {appLinkCopied ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            ) : (
-              <ArrowRight className="w-5 h-5" style={{ color: colors.textSecondary }} />
-            )}
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
