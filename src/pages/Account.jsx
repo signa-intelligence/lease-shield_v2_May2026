@@ -26,7 +26,7 @@ import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
 import ReferralCard from "../components/referral/ReferralCard";
-import RetentionModal from "../components/settings/RetentionModal";
+import AppSharingSection from "../components/settings/AppSharingSection";import RetentionModal from "../components/settings/RetentionModal";
 import DeleteAccountModal from "../components/settings/DeleteAccountModal";
 import { PRICING, PLAN_DETAILS, CREDIT_PACKAGES } from "../components/settings/PlanDetails";
 import { getAccountStrings } from "../components/settings/AccountStrings";
