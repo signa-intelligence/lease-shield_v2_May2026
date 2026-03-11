@@ -1774,14 +1774,10 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                     <FileText className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                    {language === 'th' 
-                      ? `ดูการวิเคราะห์ทั้งหมด ${allClauses.length} ข้อ`
-                      : `View All ${allClauses.length} Clause Analyses`}
+                    {`${strings.viewFullAnalysis} (${allClauses.length})`}
                   </h3>
                   <p className="mb-4" style={{ color: colors.textSecondary }}>
-                    {language === 'th'
-                      ? `คุณกำลังดูข้อที่มีความเสี่ยงสูงสุด 5 ข้อ มีอีก ${hiddenClausesCount} ข้อที่ซ่อนอยู่`
-                      : `You're viewing the top 5 highest-risk clauses. ${hiddenClausesCount} additional clause${hiddenClausesCount !== 1 ? 's are' : ' is'} hidden.`}
+                    {`${strings.showing} 5 ${strings.of} ${allClauses.length} ${strings.clauses}. ${hiddenClausesCount} hidden.`}
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4 text-left max-w-md mx-auto">
                     <div className="flex items-center gap-2 text-sm" style={{ color: colors.textPrimary }}>
