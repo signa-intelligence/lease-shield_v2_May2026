@@ -275,17 +275,6 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
       points: 20
     },
     {
-      id: 'verify_deposit',
-      label: strings.tasks.verifyDeposit,
-      description: strings.tasks.verifyDepositDesc,
-      icon: AlertTriangle,
-      completed: false,
-      route: "PropertyTracker",
-      points: 0,
-      isWarning: true,
-      highImportance: true
-    },
-    {
       id: 'report_maintenance',
       label: strings.tasks.reportMaintenance,
       description: strings.tasks.reportMaintenanceDesc,
