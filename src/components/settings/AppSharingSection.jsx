@@ -1,74 +1,62 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Globe, Share2, CheckCircle2, ArrowRight } from "lucide-react";
+import { Download, Globe } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
 
 const translations = {
   en: {
-    title: "App & Sharing",
+    title: "Get the App",
     availableOn: "LeaseShield is available on:",
     android: "Android",
     androidDesc: "Download our mobile app from Google Play Store",
     desktopWeb: "Desktop & Web",
     webDesc: "Access LeaseShield from any browser on your computer or tablet",
     visit: "Visit",
-    shareTitle: "Share App with Friends",
-    shareDesc: "Invite others to protect their deposits",
   },
   th: {
-    title: "แอปและการแชร์",
+    title: "ดาวน์โหลดแอป",
     availableOn: "LeaseShield พร้อมใช้งานบน:",
     android: "Android",
     androidDesc: "ดาวน์โหลดแอปมือถือจาก Google Play Store",
     desktopWeb: "เดสก์ท็อปและเว็บ",
     webDesc: "เข้าใช้ LeaseShield จากเบราว์เซอร์ใดก็ได้บนคอมพิวเตอร์หรือแท็บเล็ตของคุณ",
     visit: "เยี่ยมชม",
-    shareTitle: "แชร์แอปกับเพื่อน",
-    shareDesc: "ชวนคนอื่นมาป้องกันเงินมัดจำของพวกเขา",
   },
   zh: {
-    title: "应用与分享",
+    title: "获取应用",
     availableOn: "LeaseShield 可在以下平台使用:",
     android: "Android",
     androidDesc: "从 Google Play 商店下载我们的移动应用",
     desktopWeb: "桌面和网页版",
     webDesc: "在电脑或平板电脑的任何浏览器上访问 LeaseShield",
     visit: "访问",
-    shareTitle: "与朋友分享应用",
-    shareDesc: "邀请他人保护他们的押金",
   },
   ja: {
-    title: "アプリと共有",
+    title: "アプリを入手",
     availableOn: "LeaseShieldは以下で利用可能です:",
     android: "Android",
     androidDesc: "Google Playストアからモバイルアプリをダウンロード",
     desktopWeb: "デスクトップとウェブ",
     webDesc: "パソコンやタブレットのブラウザからLeaseShieldにアクセス",
     visit: "アクセス",
-    shareTitle: "友達とアプリを共有",
-    shareDesc: "他の人に敷金保護を勧める",
   },
   ko: {
-    title: "앱 및 공유",
+    title: "앱 다운로드",
     availableOn: "LeaseShield는 다음에서 사용 가능합니다:",
     android: "Android",
     androidDesc: "Google Play 스토어에서 모바일 앱 다운로드",
     desktopWeb: "데스크톱 및 웹",
     webDesc: "컴퓨터나 태블릿의 브라우저에서 LeaseShield에 액세스",
     visit: "방문",
-    shareTitle: "친구와 앱 공유",
-    shareDesc: "다른 사람들이 보증금을 보호하도록 초대",
   },
   ru: {
-    title: "Приложение и обмен",
+    title: "Скачать приложение",
     availableOn: "LeaseShield доступен на:",
     android: "Android",
     androidDesc: "Скачайте мобильное приложение из Google Play Store",
     desktopWeb: "Десктоп и веб",
     webDesc: "Получите доступ к LeaseShield через любой браузер на компьютере или планшете",
     visit: "Посетите",
-    shareTitle: "Поделиться приложением с другом",
-    shareDesc: "Пригласите других защитить свои депозиты",
   },
 };
 
