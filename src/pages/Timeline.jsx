@@ -45,7 +45,6 @@ import AuthGuard from "../components/shared/AuthGuard";
 import { haptic } from "../components/shared/HapticFeedback";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
-import ManualLeaseEvents from "../components/timeline/ManualLeaseEvents";
 
 function TimelineContent() {
   const navigate = useNavigate();
@@ -515,36 +514,6 @@ function TimelineContent() {
       }
     });
 
-    // Manual user-set dates
-    if (user?.manual_lease_end_date) {
-      events.push({
-        id: 'manual-lease-end',
-        type: 'lease',
-        subtype: 'end',
-        title: strings.leaseEnd + ' ✎',
-        description: language === 'th' ? 'กำหนดด้วยตนเอง' : language === 'ru' ? 'Установлено вручную' : 'Manually set',
-        date: parseISO(user.manual_lease_end_date),
-        icon: FileText,
-        color: '#EF4444',
-        route: createPageUrl("Timeline"),
-        isPast: isBefore(parseISO(user.manual_lease_end_date), now)
-      });
-    }
-    if (user?.manual_deposit_return_date) {
-      events.push({
-        id: 'manual-deposit-return',
-        type: 'deposit',
-        subtype: 'return',
-        title: strings.depositReturn + ' ✎',
-        description: language === 'th' ? 'กำหนดด้วยตนเอง' : language === 'ru' ? 'Установлено вручную' : 'Manually set',
-        date: parseISO(user.manual_deposit_return_date),
-        icon: Wallet,
-        color: '#C7A338',
-        route: createPageUrl("Timeline"),
-        isPast: isBefore(parseISO(user.manual_deposit_return_date), now)
-      });
-    }
-
     deposits.forEach(deposit => {
       if (deposit.expected_return_date) {
         const daysUntil = differenceInDays(parseISO(deposit.expected_return_date), now);
@@ -595,7 +564,7 @@ function TimelineContent() {
     });
 
     return events.sort((a, b) => a.date - b.date);
-  }, [leases, deposits, cases, maintenance, timelineEvents, strings, user]);
+  }, [leases, deposits, cases, maintenance, timelineEvents, strings]);
 
   const filteredEvents = useMemo(() => {
     if (selectedTypes.length === 0) return allEvents;
@@ -846,18 +815,6 @@ function TimelineContent() {
             </div>
           }
         />
-
-        {/* Manual Lease Date Inputs */}
-        <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
-          <CardContent className="p-4">
-            <ManualLeaseEvents
-              user={user}
-              colors={colors}
-              isDarkMode={isDarkMode}
-              language={language}
-            />
-          </CardContent>
-        </Card>
 
         {viewMode === 'upcoming' && (
           <div className="space-y-6">
