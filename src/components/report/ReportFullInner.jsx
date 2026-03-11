@@ -959,14 +959,14 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
             <CardContent className="p-8 text-center">
               <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
               <h2 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                Error Loading Report
+                {(t[language] || t.en).errorLoading}
               </h2>
               <p className="mb-6" style={{ color: colors.textSecondary }}>
-                Failed to load report data.
+                {(t[language] || t.en).failedLoad}
               </p>
               <Button variant="outline" onClick={() => window.location.reload()}>
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Retry
+                {(t[language] || t.en).retry}
               </Button>
             </CardContent>
           </Card>
@@ -1253,7 +1253,7 @@ const topRisks = topRisksRaw.map((risk, idx) => {
 const topRisksSection = isPreviewMode && topRisks.length > 0 ? (
   <div className="mb-6 p-4 rounded-lg border" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#1F2937' : '#F8FAFC' }}>
     <h4 className="font-semibold mb-3" style={{ color: colors.textPrimary }}>
-      {language === 'th' ? 'ความเสี่ยงหลัก' : 'Top Risks Identified'}
+      {strings.topRisks}
     </h4>
     <ul className="space-y-2">
       {topRisks.slice(0, 5).map((risk, idx) => (
@@ -1433,7 +1433,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
         <div className="flex items-center justify-between mb-6">
           <Button variant="ghost" onClick={() => window.history.back()}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            {strings.back}
           </Button>
           <div className="flex items-center gap-2">
             {!isPreviewMode && (
@@ -1441,12 +1441,12 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 {exportingPdf ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
+                    {strings.generating}
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4 mr-2" />
-                    {language === 'th' ? 'ส่งออกรายงาน' : 'Export Report'}
+                    {strings.exportReport}
                   </>
                 )}
               </Button>
@@ -1455,10 +1455,10 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               <Button 
                 onClick={() => window.location.href = '/account#plans'}
                 style={{ backgroundColor: "#0C3B2E", color: "#fff" }}
-                title={language === 'th' ? 'PDF ส่งออกพร้อมใช้งานสำหรับสมาชิก' : 'PDF export available for members'}
+                title={strings.exportUpgrade}
               >
                 <Download className="w-4 h-4 mr-2" />
-                {language === 'th' ? 'ส่งออก (อัปเกรด)' : 'Export (Upgrade)'}
+                {strings.exportUpgrade}
               </Button>
             )}
           </div>
@@ -1489,7 +1489,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
             }}
           >
             <div className="text-white">
-              <CardTitle className="text-2xl font-bold mb-3">Full Lease Analysis Report</CardTitle>
+              <CardTitle className="text-2xl font-bold mb-3">{strings.reportTitle}</CardTitle>
               <div className="flex flex-wrap items-center gap-3">
                 <Badge
                   className="text-2xl px-4 py-2 font-bold"
@@ -1555,7 +1555,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                  sf?.key_terms?.property_address ||
                  sf?.summary?.property_address ||
                  sf?.meta?.property_address || 
-                 (language === 'th' ? 'ไม่ระบุที่อยู่' : 'Property address not specified')}
+                 strings.addressNotSpecified}
               </p>
             </div>
 
@@ -1587,10 +1587,10 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-semibold" style={{ color: colors.textPrimary }}>
-                    {language === 'th' ? 'เทมเพลตเอกสาร' : 'Document Templates'}
+                    {strings.docTemplates}
                   </h4>
                   <p className="text-sm" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'เข้าถึงเทมเพลตจดหมายและเอกสารสำเร็จรูป' : 'Access ready-made letter and document templates'}
+                    {strings.docTemplatesDesc}
                   </p>
                 </div>
                 <Button
@@ -1603,7 +1603,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                   style={{ borderColor: '#0C3B2E', color: '#0C3B2E' }}
                 >
                   <FileText className="w-4 h-4 mr-2" />
-                  {language === 'th' ? 'ดูเทมเพลต' : 'View Templates'}
+                  {strings.viewTemplates}
                 </Button>
               </div>
             </div>
@@ -1623,19 +1623,17 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                       <FileText className="w-8 h-8 text-white" />
                     </div>
                     <h3 className="text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? 'ดูการวิเคราะห์ทีละข้อฉบับเต็ม' : 'View Full Clause-by-Clause Analysis'}
+                      {strings.viewFullAnalysis}
                     </h3>
                     <p className="mb-4" style={{ color: colors.textSecondary }}>
-                      {language === 'th' 
-                        ? 'อัปเกรดเพื่อดูการวิเคราะห์ทุกข้อสัญญาพร้อมคำแนะนำโดยละเอียด'
-                        : upgradeMessage}
+                      {upgradeMessage}
                     </p>
                     <Button
                       onClick={() => window.location.href = '/account#plans'}
                       style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
                       className="px-8 py-3"
                     >
-                      {language === 'th' ? 'อัปเกรดเลย' : 'Upgrade Now'}
+                      {strings.upgradeNow}
                     </Button>
                     <p className="mt-3 text-xs" style={{ color: colors.textSecondary }}>
                       {language === 'th' 
@@ -1652,16 +1650,16 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               <>
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-bold text-lg" style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'การวิเคราะห์ทีละข้อ' : 'Clause-by-Clause Analysis'}
+                {strings.clauseAnalysis}
               </h3>
               <div className="text-xs" style={{ color: colors.textSecondary }}>
                 {isLiteTier && hiddenClausesCount > 0 ? (
                   <>
-                    {language === 'th' ? 'แสดง' : 'Showing'} <strong>{clauses.length}</strong> {language === 'th' ? 'จาก' : 'of'} <strong>{allClauses.length}</strong> {language === 'th' ? 'ข้อ' : 'clauses'}
+                    {strings.showing} <strong>{clauses.length}</strong> {strings.of} <strong>{allClauses.length}</strong> {strings.clauses}
                   </>
                 ) : (
                   <>
-                    {clauses.length} {language === 'th' ? 'ข้อ' : 'clauses'}
+                    {clauses.length} {strings.clauses}
                   </>
                 )}
               </div>
@@ -1715,7 +1713,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                       borderTop: `2px solid ${colorSet.border}`
                     }}>
                       <div className="text-xs font-semibold mb-2" style={{ color: colors.textSecondary }}>
-                        {language === 'th' ? 'ความหมาย' : 'What This Means'}
+                        {strings.whatThisMeans}
                       </div>
                       <p className="text-sm" style={{ color: colors.textPrimary, lineHeight: '1.6' }}>
                         {c.plain_english}
@@ -1729,7 +1727,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                         borderTop: `1px solid ${colors.borderColor}`
                       }}>
                         <div className="text-xs font-semibold mb-3" style={{ color: colors.textSecondary }}>
-                          {language === 'th' ? 'คำแนะนำ' : 'Recommendations'}
+                          {strings.recommendations}
                         </div>
                         <ul className="space-y-2">
                           {c.recommendations.map((rec, recIdx) => (
@@ -1755,7 +1753,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
               {clauses.length === 0 && !isPreviewMode && (
                 <div className="p-8 text-center rounded-lg" style={{ backgroundColor: isDarkMode ? '#1F2937' : '#F9FAFB' }}>
                   <p style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'ไม่พบข้อสัญญา' : 'No clauses parsed.'}
+                    {strings.noClausesParsed}
                   </p>
                 </div>
               )}
