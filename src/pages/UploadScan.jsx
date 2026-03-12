@@ -84,8 +84,8 @@ function UploadScanPageContent() {
   const isValidPublicUrl = (url) => {
     return (
       typeof url === 'string' &&
-      url.startsWith('https://base44.app/api/apps/') &&
-      url.includes('/files/public/') &&
+      url.startsWith('https://') &&
+      url.length > 20 &&
       !/[\[\]\(\)]/.test(url)
     );
   };
