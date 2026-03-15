@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import AuthGuard from '../components/shared/AuthGuard';
 import { Button } from '@/components/ui/button';
+import PageHeader from '../components/shared/PageHeader';
+import { createPageUrl } from "@/utils";
 
 function download(filename, text) {
   const blob = new Blob([text], { type: 'application/json' });
@@ -20,8 +22,8 @@ function RiskFeedbackAdminContent() {
 
   return (
     <div className="max-w-5xl mx-auto p-4">
+      <PageHeader title="Risk Feedback" showBack backRoute={createPageUrl("AdminConsole")} />
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Risk Feedback</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => download('risk_feedback.json', JSON.stringify(items, null, 2))}>Export JSON</Button>
           <Button variant="outline" onClick={() => {

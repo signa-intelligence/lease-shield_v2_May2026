@@ -10,6 +10,7 @@ import { Search, Plus, Minus, Edit, AlertCircle, User, CreditCard, Clock } from 
 import { haptic } from "../components/shared/HapticFeedback";
 import { useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
+import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
 
 export default function AdminCredits() {
@@ -140,6 +141,8 @@ export default function AdminCredits() {
           icon={CreditCard}
           colors={colors}
           isDarkMode={isDarkMode}
+          showBack
+          backRoute={createPageUrl("AdminConsole")}
         />
 
         {/* Search Section */}

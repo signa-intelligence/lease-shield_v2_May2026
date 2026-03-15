@@ -121,7 +121,7 @@ function AdminUserManagementContent() {
           icon={Users}
           iconColor="#0C3B2E"
           showBack
-          backPath="AdminConsole"
+          backRoute={createPageUrl("AdminConsole")}
         />
 
         {/* Search & Filters */}

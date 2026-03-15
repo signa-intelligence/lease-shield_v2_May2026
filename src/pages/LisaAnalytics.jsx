@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import AuthGuard from '../components/shared/AuthGuard';
 import PageHeader from '../components/shared/PageHeader';
+import { createPageUrl } from "@/utils";
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { BarChart3, MessageCircle, Clock, TrendingUp } from 'lucide-react';
 
@@ -64,7 +65,7 @@ function LisaAnalyticsContent() {
   if (isLoading || !analytics) {
     return (
       <div className="min-h-screen bg-gray-50 pb-20">
-        <PageHeader title="Lisa Analytics" subtitle="Chat performance and insights" />
+        <PageHeader title="Lisa Analytics" subtitle="Chat performance and insights" showBack backRoute={createPageUrl("AdminConsole")} />
         <div className="max-w-6xl mx-auto p-4">
           <div className="text-center py-12">
             <div className="animate-spin w-8 h-8 border-4 border-gray-300 border-t-[#0C3B2E] rounded-full mx-auto"></div>
@@ -77,7 +78,7 @@ function LisaAnalyticsContent() {
   
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <PageHeader title="Lisa Analytics" subtitle="Chat performance and insights" />
+      <PageHeader title="Lisa Analytics" subtitle="Chat performance and insights" showBack backRoute={createPageUrl("AdminConsole")} />
       
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Time Range Selector */}
