@@ -384,6 +384,11 @@ function OpsConsoleContent() {
       id: caseId,
       data: { assignee_id: assigneeEmail, timeline }
     });
+
+    // Send assignment notifications (fire-and-forget)
+    base44.functions.invoke('notifyCaseAssignment', { caseId, assigneeEmail })
+      .then(res => console.log('[OPS] Assignment notifications sent:', res.data?.notifications_sent))
+      .catch(err => console.error('[OPS] Assignment notification failed (non-critical):', err));
   };
 
   const handleRecordSettlement = (caseId, settlementData) => {
@@ -408,6 +413,16 @@ function OpsConsoleContent() {
         timeline
       }
     });
+
+    // Send resolution notification to tenant (fire-and-forget)
+    base44.functions.invoke('notifyCaseResolution', {
+      caseId,
+      settlementAmount: settlementData.amount,
+      settlementMethod: settlementData.method,
+      notes: settlementData.notes
+    })
+      .then(res => console.log('[OPS] Resolution notification sent:', res.data?.sent))
+      .catch(err => console.error('[OPS] Resolution notification failed (non-critical):', err));
   };
 
   const handleGenerateLetter = async (caseItem, subject) => {
