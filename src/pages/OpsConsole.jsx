@@ -661,7 +661,8 @@ function OpsConsoleContent() {
             <CaseKanban
               cases={filteredCases}
               users={users}
-              onUpdateStatus={handleUpdateStatus}
+              onStatusChange={handleUpdateStatus}
+              onAssign={handleAssign}
               language={language}
               colors={colors}
             />
