@@ -1540,95 +1540,7 @@ function AdminConsoleContent() {
           </CardContent>
         </Card>
 
-        {/* USER MANUAL DOWNLOAD */}
-        <Card className="mb-6 border-none shadow-lg" style={{ 
-          backgroundColor: colors.cardBg,
-          borderLeft: '6px solid #8B5CF6'
-        }}>
-          <CardContent className="p-6">
-            <div
-              onClick={async () => {
-                try {
-                  const response = await base44.functions.invoke('generateUserManual');
-                  
-                  // Handle ArrayBuffer response
-                  let blobData;
-                  if (response.data instanceof ArrayBuffer) {
-                    blobData = response.data;
-                  } else if (response.data instanceof Blob) {
-                    blobData = await response.data.arrayBuffer();
-                  } else if (typeof response.data === 'string') {
-                    // Base64 encoded
-                    const binaryString = atob(response.data);
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                      bytes[i] = binaryString.charCodeAt(i);
-                    }
-                    blobData = bytes.buffer;
-                  } else {
-                    // Assume it's already a buffer-like object
-                    blobData = response.data;
-                  }
-                  
-                  const blob = new Blob([blobData], { 
-                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
-                  });
-                  
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = 'LeaseShield_User_Manual_v1.0.docx';
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  window.URL.revokeObjectURL(url);
-                  alert(language === 'th' ? 'ดาวน์โหลดคู่มือผู้ใช้แล้ว' : 'User manual downloaded');
-                } catch (error) {
-                  console.error('Manual download failed:', error);
-                  alert(language === 'th' ? 'ไม่สามารถดาวน์โหลดคู่มือได้' : 'Failed to download manual');
-                }
-              }}
-              className="cursor-pointer transition-all hover:shadow-lg"
-              style={{
-                padding: '20px',
-                backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                borderRadius: '12px',
-                border: `2px solid ${colors.borderColor}`
-              }}
-            >
-              <div className="flex items-center gap-4">
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  backgroundColor: '#8B5CF6',
-                  borderRadius: '14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(139,92,246,0.3)'
-                }}>
-                  <FileText className="w-7 h-7 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold mb-1" style={{ color: colors.textPrimary }}>
-                    {language === 'th' ? 'คู่มือผู้ใช้ Lease Shield' : language === 'zh' ? 'Lease Shield 用户手册' : language === 'ja' ? 'Lease Shield ユーザーマニュアル' : language === 'ko' ? 'Lease Shield 사용자 매뉴얼' : 'Lease Shield User Manual'}
-                  </h3>
-                  <p className="text-sm mb-2" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'คู่มือการใช้งานฉบับเต็ม 50+ หน้า (Word)' : 'Comprehensive 50+ page guide (Word)'}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs" style={{ color: '#8B5CF6', fontWeight: '600' }}>
-                    <FileText className="w-4 h-4" />
-                    <span>Version 1.0 • January 2026 • DOCX</span>
-                  </div>
-                </div>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <FileText className="w-4 h-4 mr-2" />
-                  {language === 'th' ? 'ดาวน์โหลด' : 'Download'}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
 
         {/* CHURN ANALYTICS */}
         {isSuperAdmin && (
@@ -1647,34 +1559,47 @@ function AdminConsoleContent() {
             <CardTitle style={{ color: colors.textPrimary }}>{strings.recentLeases}</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="space-y-3">
-              {leases.slice(0, 5).map((lease) => (
-                <div
-                  key={lease.id}
-                  className="p-3 rounded-lg"
-                  style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                      {lease.property_address || 'No address'}
-                    </p>
-                    <p className="text-xs" style={{ color: colors.textSecondary }}>
-                      {format(new Date(lease.created_date), 'MMM d, yyyy')}
-                    </p>
+            {leases.length === 0 ? (
+              <p className="text-sm text-center py-4" style={{ color: colors.textSecondary }}>
+                {language === 'th' ? 'ยังไม่มีสัญญาเช่า' : 'No leases uploaded yet'}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {leases.slice(0, 5).map((lease) => (
+                  <div
+                    key={lease.id}
+                    className="p-3 rounded-lg"
+                    style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                        {lease.property_address || 'No address'}
+                      </p>
+                      <p className="text-xs" style={{ color: colors.textSecondary }}>
+                        {format(new Date(lease.created_date), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-blue-100 text-blue-800 text-xs">
+                        {lease.created_by}
+                      </Badge>
+                      <p className="text-xs" style={{ color: colors.textSecondary }}>
+                        {lease.status || 'uploaded'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-blue-100 text-blue-800 text-xs">
-                      {lease.created_by}
-                    </Badge>
-                    <p className="text-xs" style={{ color: colors.textSecondary }}>
-                      {lease.status || 'uploaded'}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        {/* 5. RECENT EVENTS */}
+        <ActivityTimeline 
+          activities={recentActivities} 
+          language={language} 
+          colors={colors} 
+        />
 
       </div>
     </div>

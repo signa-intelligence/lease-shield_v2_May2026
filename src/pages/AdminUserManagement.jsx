@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, Shield, Edit, RefreshCw, Loader2, FileText, Scale, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, Search, Shield, Edit, RefreshCw, Loader2, FileText, Scale, ChevronLeft, ChevronRight, Crown } from "lucide-react";
 import AuthGuard from "../components/shared/AuthGuard";
 import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
@@ -205,6 +205,12 @@ function AdminUserManagementContent() {
                         </div>
                       </th>
                       <th className="text-center p-3 font-semibold">Override</th>
+                      <th className="text-center p-3 font-semibold">
+                        <div className="flex items-center justify-center gap-1">
+                          <Crown className="w-3.5 h-3.5 text-purple-600" />
+                          <span>Role</span>
+                        </div>
+                      </th>
                       <th className="text-center p-3 font-semibold">Actions</th>
                     </tr>
                   </thead>
@@ -266,6 +272,43 @@ function AdminUserManagementContent() {
                               checked={isOverride || false}
                               onCheckedChange={() => handleQuickToggleOverride(u)}
                             />
+                          </td>
+                          {/* Role */}
+                          <td className="p-3 text-center">
+                            <Select
+                              value={u.access_level || u.role || 'user'}
+                              onValueChange={async (newRole) => {
+                                if (newRole === (u.access_level || u.role || 'user')) return;
+                                const isSuperAdmin = currentUser?.access_level === 'super_admin';
+                                if (!isSuperAdmin && (newRole === 'super_admin' || newRole === 'admin')) {
+                                  toast.error("Only Super Admins can assign admin roles");
+                                  return;
+                                }
+                                if (u.id === currentUser?.id) {
+                                  toast.error("Cannot change your own role");
+                                  return;
+                                }
+                                try {
+                                  await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role: newRole });
+                                  toast.success(`Role updated to ${newRole}`);
+                                  queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+                                } catch (err) {
+                                  toast.error("Failed to update role");
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-[120px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="va">VA</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                {currentUser?.access_level === 'super_admin' && (
+                                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
                           </td>
                           {/* Actions */}
                           <td className="p-3 text-center">

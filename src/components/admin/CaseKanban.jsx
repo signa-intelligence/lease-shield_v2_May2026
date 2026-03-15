@@ -284,7 +284,7 @@ export default function CaseKanban({ cases = [], onStatusChange, colors, languag
                                         opacity: snapshot.isDragging ? 0.8 : 1,
                                         transform: snapshot.isDragging ? 'rotate(2deg)' : 'none',
                                       }}
-                                      onClick={() => onCaseClick ? onCaseClick(caseItem) : navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}`)}
+                                      onClick={() => onCaseClick ? onCaseClick(caseItem) : navigate(createPageUrl("CaseDetails") + `?caseId=${caseItem.id}&from=ops`)}
                                     >
                                       <CardContent className="p-4">
                                         {/* Drag Handle */}
