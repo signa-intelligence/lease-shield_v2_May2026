@@ -11,6 +11,7 @@ import { Users, Search, Shield, Edit, RefreshCw, Loader2, FileText, Scale, Chevr
 import AuthGuard from "../components/shared/AuthGuard";
 import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
+import { createPageUrl } from "@/utils";
 import EditCreditsModal from "../components/admin/EditCreditsModal";
 
 const USERS_PER_PAGE = 15;
