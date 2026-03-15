@@ -289,11 +289,17 @@ function AdminUserManagementContent() {
                                   return;
                                 }
                                 try {
-                                  await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role: newRole });
-                                  toast.success(`Role updated to ${newRole}`);
-                                  queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+                                  const res = await base44.functions.invoke('adminUpdateUserRole', { userId: u.id, role: newRole });
+                                  if (res.data?.error) {
+                                    toast.error(res.data.error);
+                                  } else {
+                                    toast.success(`Role updated to ${newRole}`);
+                                    queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+                                  }
                                 } catch (err) {
-                                  toast.error("Failed to update role");
+                                  const msg = err?.response?.data?.error || err.message || "Failed to update role";
+                                  console.error('[ROLE_UPDATE_ERROR]', msg);
+                                  toast.error(msg);
                                 }
                               }}
                             >
