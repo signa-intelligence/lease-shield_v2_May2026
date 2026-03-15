@@ -19,7 +19,8 @@ import {
   Filter,
   X,
   Crown,
-  Zap
+  Zap,
+  UserCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -36,7 +37,10 @@ const STATUS_COLUMNS = [
   { id: 'resolved', label: 'Resolved', labelTh: 'แก้ไขแล้ว', color: '#059669', icon: CheckCircle2 },
 ];
 
-export default function CaseKanban({ cases = [], onStatusChange, colors, language = 'en', onCaseClick }) {
+export default function CaseKanban({ cases = [], onStatusChange, onAssign, users = [], colors, language = 'en', onCaseClick }) {
+  const adminUsers = users.filter(u => 
+    u.access_level === 'va' || u.access_level === 'admin' || u.access_level === 'super_admin' || u.role === 'admin'
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const navigate = useNavigate();
@@ -351,6 +355,41 @@ export default function CaseKanban({ cases = [], onStatusChange, colors, languag
                                           <p className="text-xs mt-2 line-clamp-2" style={{ color: colors.textSecondary }}>
                                             {caseItem.summary}
                                           </p>
+                                        )}
+
+                                        {/* Assign Dropdown */}
+                                        {onAssign && adminUsers.length > 0 && (
+                                          <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${colors.borderColor}` }}
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <div className="flex items-center gap-1.5 mb-1.5">
+                                              <UserCheck className="w-3 h-3" style={{ color: colors.textSecondary }} />
+                                              <span className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                                                {language === 'th' ? 'มอบหมาย' : 'Assign'}
+                                              </span>
+                                            </div>
+                                            <select
+                                              value={caseItem.assignee_id || ''}
+                                              onChange={(e) => {
+                                                e.stopPropagation();
+                                                onAssign(caseItem.id, e.target.value);
+                                              }}
+                                              className="w-full text-xs rounded-md px-2 py-1.5"
+                                              style={{
+                                                backgroundColor: colors.fieldBg || colors.bg,
+                                                borderColor: colors.borderColor,
+                                                color: colors.textPrimary,
+                                                border: `1px solid ${colors.borderColor}`,
+                                              }}
+                                            >
+                                              <option value="">{language === 'th' ? 'ยังไม่มอบหมาย' : 'Unassigned'}</option>
+                                              {adminUsers.map(u => (
+                                                <option key={u.id} value={u.email}>
+                                                  {u.full_name || u.email}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
                                         )}
                                       </CardContent>
                                     </Card>
