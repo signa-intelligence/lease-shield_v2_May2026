@@ -454,7 +454,11 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
                           color: theme.buttonText
                         }}
                       >
-                        {strings.actions.start}
+                        {task.id === 'upload_lease' ? (language === 'en' ? 'Start Lease Scan' : strings.actions.start)
+                          : task.id === 'track_deposit' ? (language === 'en' ? 'Start Deposit Tracking' : strings.actions.start)
+                          : task.id === 'report_maintenance' ? (language === 'en' ? 'Start Property Tracking' : strings.actions.start)
+                          : task.id === 'upload_doc' ? (language === 'en' ? 'Start Evidence Upload' : strings.actions.start)
+                          : strings.actions.start}
                         <ChevronRight className="w-3 h-3" />
                       </button>
                     </Link>

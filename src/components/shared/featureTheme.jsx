@@ -39,7 +39,7 @@ export const FEATURE_THEMES = {
       iconColor: 'rgba(37, 99, 235, 0.5)',
       titleColor: 'rgba(30, 58, 138, 0.5)',
       metricColor: 'rgba(30, 64, 175, 0.5)',
-      buttonBg: 'rgba(59, 130, 246, 0.5)',
+      buttonBg: 'rgb(59, 130, 246)',
       buttonText: '#FFFFFF',
       accent: 'rgba(59, 130, 246, 0.5)'
     },
@@ -50,7 +50,7 @@ export const FEATURE_THEMES = {
       iconColor: 'rgba(96, 165, 250, 0.5)',
       titleColor: 'rgba(219, 234, 254, 0.5)',
       metricColor: 'rgba(147, 197, 253, 0.5)',
-      buttonBg: 'rgba(59, 130, 246, 0.5)',
+      buttonBg: 'rgb(59, 130, 246)',
       buttonText: '#FFFFFF',
       accent: 'rgba(59, 130, 246, 0.5)'
     }
@@ -64,7 +64,7 @@ export const FEATURE_THEMES = {
       iconColor: 'rgba(5, 150, 105, 0.5)',
       titleColor: 'rgba(6, 95, 70, 0.5)',
       metricColor: 'rgba(4, 120, 87, 0.5)',
-      buttonBg: 'rgba(16, 185, 129, 0.5)',
+      buttonBg: 'rgb(16, 185, 129)',
       buttonText: '#FFFFFF',
       accent: 'rgba(16, 185, 129, 0.5)'
     },
@@ -75,7 +75,7 @@ export const FEATURE_THEMES = {
       iconColor: 'rgba(110, 231, 183, 0.5)',
       titleColor: 'rgba(209, 250, 229, 0.5)',
       metricColor: 'rgba(110, 231, 183, 0.5)',
-      buttonBg: 'rgba(16, 185, 129, 0.5)',
+      buttonBg: 'rgb(16, 185, 129)',
       buttonText: '#FFFFFF',
       accent: 'rgba(16, 185, 129, 0.5)'
     }
@@ -164,7 +164,7 @@ export const FEATURE_THEMES = {
       iconColor: 'rgba(245, 127, 23, 0.5)',
       titleColor: 'rgba(245, 127, 23, 0.5)',
       metricColor: 'rgba(249, 168, 37, 0.5)',
-      buttonBg: 'rgba(249, 168, 37, 0.5)',
+      buttonBg: 'rgb(249, 168, 37)',
       buttonText: '#FFFFFF',
       accent: 'rgba(249, 168, 37, 0.5)'
     },
@@ -175,7 +175,7 @@ export const FEATURE_THEMES = {
       iconColor: 'rgba(255, 213, 79, 0.5)',
       titleColor: 'rgba(255, 249, 196, 0.5)',
       metricColor: 'rgba(255, 213, 79, 0.5)',
-      buttonBg: 'rgba(249, 168, 37, 0.5)',
+      buttonBg: 'rgb(249, 168, 37)',
       buttonText: '#FFFFFF',
       accent: 'rgba(249, 168, 37, 0.5)'
     }
