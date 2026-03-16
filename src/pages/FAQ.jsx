@@ -950,21 +950,16 @@ function FAQContent() {
               setIsSubmitting(true);
               
               try {
-                const currentUser = await base44.auth.me();
-                
-                await base44.integrations.Core.SendEmail({
-                  to: 'support@leaseshield.asia',
-                  subject: `Support Request: ${formData.get('subject')}`,
-                  body: `
-<h3>New Support Request</h3>
-<p><strong>From:</strong> ${formData.get('name')} (${formData.get('email')})</p>
-<p><strong>User Account:</strong> ${currentUser.email}</p>
-<p><strong>Plan:</strong> ${currentUser.plan_tier || 'free'}</p>
-<p><strong>Subject:</strong> ${formData.get('subject')}</p>
-<p><strong>Message:</strong></p>
-<p style="white-space: pre-wrap;">${formData.get('message').replace(/\n/g, '<br>')}</p>
-                  `
+                const response = await base44.functions.invoke('faqContactForm', {
+                  name: formData.get('name'),
+                  email: formData.get('email'),
+                  subject: formData.get('subject'),
+                  message: formData.get('message'),
                 });
+                
+                if (response.data?.error) {
+                  throw new Error(response.data.error);
+                }
                 
                 alert(language === 'th' ? 'ส่งข้อความสำเร็จ! เราจะตอบกลับภายใน 2-3 วันทำการ' : language === 'zh' ? '消息发送成功！我们将在2-3个工作日内回复' : language === 'ja' ? 'メッセージが正常に送信されました！2-3営業日以内に返信いたします' : language === 'ko' ? '메시지가 성공적으로 전송되었습니다! 2-3영업일 이내에 답변드리겠습니다' : language === 'ru' ? 'Сообщение отправлено успешно! Мы ответим в течение 2-3 рабочих дней' : "Message sent successfully! We'll respond within 2-3 business days.");
                 e.target.reset();
