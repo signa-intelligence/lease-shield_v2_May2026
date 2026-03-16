@@ -33,6 +33,7 @@ import { ToastProvider, useToast } from "../components/shared/Toast";
 import PageHeader from "../components/shared/PageHeader";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
+import CaseMessages from "../components/cases/CaseMessages";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -1118,41 +1119,38 @@ function CaseDetailsContent() {
           </CardContent>
         </Card>
 
+        {/* Messages */}
+        <div className="mb-6">
+          <CaseMessages
+            caseItem={caseItem}
+            caseId={caseId}
+            user={user}
+            isAdmin={fromOps}
+            language={language}
+            isDarkMode={isDarkMode}
+            colors={colors}
+          />
+        </div>
+
         {/* Actions */}
         <Card className="border-none shadow-lg" style={{ backgroundColor: colors.cardBg }}>
           <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
             <CardTitle className="text-base md:text-lg">{strings.actions}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 md:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => navigate(createPageUrl("DocumentVault"))}
-                className="justify-start h-auto py-4"
-              >
-                <FileText className="w-5 h-5 mr-3 text-blue-600" />
-                <div className="text-left">
-                  <div className="font-semibold">{strings.uploadDocument}</div>
-                  <div className="text-xs" style={{ color: colors.textSecondary }}>
-                    {strings.addEvidence}
-                  </div>
+            <Button
+              variant="outline"
+              onClick={() => navigate(createPageUrl("DocumentVault"))}
+              className="justify-start h-auto py-4 w-full"
+            >
+              <FileText className="w-5 h-5 mr-3 text-blue-600" />
+              <div className="text-left">
+                <div className="font-semibold">{strings.uploadDocument}</div>
+                <div className="text-xs" style={{ color: colors.textSecondary }}>
+                  {strings.addEvidence}
                 </div>
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => navigate(createPageUrl("Support"))}
-                className="justify-start h-auto py-4"
-              >
-                <Mail className="w-5 h-5 mr-3 text-emerald-600" />
-                <div className="text-left">
-                  <div className="font-semibold">{strings.contactSupport}</div>
-                  <div className="text-xs" style={{ color: colors.textSecondary }}>
-                    {strings.contactTeam}
-                  </div>
-                </div>
-              </Button>
-            </div>
+              </div>
+            </Button>
           </CardContent>
         </Card>
       </div>
