@@ -638,6 +638,11 @@ export default function Layout({ children, currentPageName }) {
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
                   alt="Lease Shield"
                   className="h-8 w-auto flex-shrink-0"
+                  width="86"
+                  height="32"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                 />
               </div>
             ) : (
@@ -645,6 +650,11 @@ export default function Layout({ children, currentPageName }) {
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
                 alt="Lease Shield"
                 className="h-10 w-auto md:hidden flex-shrink-0"
+                width="108"
+                height="40"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
               />
             )}
             {isDarkMode ? (
@@ -653,6 +663,11 @@ export default function Layout({ children, currentPageName }) {
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
                   alt="Lease Shield"
                   className="h-9 w-9 flex-shrink-0"
+                  width="36"
+                  height="36"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                 />
                 <span className="font-bold text-base truncate" style={{ color: '#F9FAFB' }}>
                   {strings.appName || "LEASE SHIELD"}
@@ -664,6 +679,11 @@ export default function Layout({ children, currentPageName }) {
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
                   alt="Lease Shield"
                   className="hidden md:block h-12 w-12 flex-shrink-0"
+                  width="48"
+                  height="48"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
                 />
                 <span className="font-bold text-base sm:text-lg truncate hidden md:block" style={{ color: '#0C3B2E' }}>
                   {strings.appName || "LEASE SHIELD"}
