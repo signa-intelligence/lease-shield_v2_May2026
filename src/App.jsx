@@ -24,35 +24,11 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, navigateToLogin } = useAuth();
 
-  // Show branded splash screen while checking auth - prevents flash of unauthenticated content
+  // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#0C3B2E',
-        zIndex: 9999
-      }}>
-        <img
-          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-          alt="LeaseShield"
-          width="80"
-          height="80"
-          style={{ marginBottom: '24px', opacity: 0.95 }}
-        />
-        <div style={{
-          width: '32px',
-          height: '32px',
-          border: '3px solid rgba(207, 175, 106, 0.25)',
-          borderTopColor: '#CFAF6A',
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite'
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -62,37 +38,9 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically - show splash while redirecting
+      // Redirect to login automatically
       navigateToLogin();
-      return (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#0C3B2E',
-          zIndex: 9999
-        }}>
-          <img
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-            alt="LeaseShield"
-            width="80"
-            height="80"
-            style={{ marginBottom: '24px', opacity: 0.95 }}
-          />
-          <div style={{
-            width: '32px',
-            height: '32px',
-            border: '3px solid rgba(207, 175, 106, 0.25)',
-            borderTopColor: '#CFAF6A',
-            borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite'
-          }} />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        </div>
-      );
+      return null;
     }
   }
 
