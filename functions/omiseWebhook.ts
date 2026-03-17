@@ -87,6 +87,26 @@ Deno.serve(async (req) => {
                 } catch (notifyErr) {
                     console.error(`Admin notification failed (non-blocking):`, notifyErr.message);
                 }
+            } else if (charge.status === "failed") {
+                console.log(`Payment FAILED for case ${caseId}`);
+
+                try {
+                    await base44.asServiceRole.integrations.Core.SendEmail({
+                        to: charge.metadata.user_email,
+                        subject: 'Payment Failed – Please Try Again',
+                        body: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+                            <h2 style="color:#DC2626;">❌ Payment Failed</h2>
+                            <p>Your PromptPay payment for case <strong>${caseId}</strong> was not successful.</p>
+                            <p>Please return to LeaseShield and try again.</p>
+                            <p style="margin-top:24px;"><a href="https://leaseshield.asia/CaseDetails?id=${caseId}" style="background:#0C3B2E;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;">Retry Payment</a></p>
+                            <p style="color:#64748B;font-size:13px;margin-top:24px;">If you continue to experience issues, please contact us at support@leaseshield.asia</p>
+                        </div>`,
+                        from_name: 'LeaseShield'
+                    });
+                    console.log(`Payment failed email sent to ${charge.metadata.user_email}`);
+                } catch (emailErr) {
+                    console.error(`Payment failed email error (non-blocking):`, emailErr.message);
+                }
             } else {
                 console.log(`Charge completed but status is ${charge.status} for case ${caseId}`);
             }
