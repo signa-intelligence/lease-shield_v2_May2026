@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
         const isValid = await verifyOmiseSignature(rawBodyBytes, signatureHeader);
         if (!isValid) {
             console.error("Invalid Omise webhook signature");
-            return Response.json({ error: "Invalid signature" }, { status: 401 });
+            return Response.json({ received: true, error: "invalid signature" }, { status: 200 });
         }
 
         // Decode bytes to text and parse JSON
