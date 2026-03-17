@@ -823,6 +823,43 @@ function ResolveCaseContent() {
     }
   };
 
+  // Handle Stripe checkout redirect (called from payment method selector)
+  const handleStripeCheckout = async () => {
+    if (!pendingCase) return;
+    try {
+      const response = await base44.functions.invoke('createResolveCheckout', {
+        userId: pendingCase.userId,
+        userEmail: pendingCase.userEmail,
+        caseId: pendingCase.caseId,
+        priceType: pendingCase.priceType,
+        amount: pendingCase.amount
+      });
+      
+      console.log('[RESOLVE_FLOW] 💳 Stripe checkout response:', response.data);
+      
+      if (response.data?.url) {
+        sendConfirmationEmail(
+          { case_number: pendingCase.caseNumber, dispute_amount: pendingCase.amount },
+          pendingCase.authenticatedUser,
+          'paid'
+        );
+        window.location.href = response.data.url;
+      } else {
+        toast.error(
+          language === 'th' ? 'ไม่สามารถสร้างลิงก์ชำระเงินได้'
+          : 'Failed to create payment link. Please try again.'
+        );
+      }
+    } catch (checkoutError) {
+      console.error('[RESOLVE_FLOW] 💳 Checkout error:', checkoutError);
+      const errMsg = checkoutError?.response?.data?.error || checkoutError?.message || 'Payment error';
+      toast.error(
+        language === 'th' ? 'ไม่สามารถดำเนินการชำระเงินได้: ' + errMsg
+        : 'Failed to process payment: ' + errMsg
+      );
+    }
+  };
+
   const str = strings[language] || strings.en;
 
   return (
