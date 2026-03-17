@@ -52,6 +52,21 @@ Deno.serve(async (req) => {
 
                 console.log(`Case ${caseId} updated to intake, Payment record created`);
 
+                // Send case confirmation email to user
+                try {
+                    const confirmedCase = await base44.asServiceRole.entities.Case.get(caseId);
+                    await base44.asServiceRole.functions.invoke('sendCaseConfirmationEmail', {
+                        caseNumber: confirmedCase.case_number,
+                        userName: charge.metadata.user_email,
+                        userEmail: charge.metadata.user_email,
+                        disputeAmount: charge.amount / 100,
+                        paymentType: 'promptpay'
+                    });
+                    console.log(`Case confirmation email sent to ${charge.metadata.user_email} for case ${caseId}`);
+                } catch (confirmErr) {
+                    console.error(`Case confirmation email failed (non-blocking):`, confirmErr.message);
+                }
+
                 // Send admin notification AFTER payment confirmed
                 try {
                     const updatedCase = await base44.asServiceRole.entities.Case.get(caseId);
