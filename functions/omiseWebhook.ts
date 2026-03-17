@@ -30,18 +30,19 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
 
-        // Read raw body for signature verification
-        const rawBody = await req.text();
+        // Read raw body as Uint8Array first for signature verification
+        const rawBodyBytes = new Uint8Array(await req.arrayBuffer());
 
         // Verify Omise webhook signature
         const signatureHeader = req.headers.get("omise-signature");
-        const isValid = await verifyOmiseSignature(rawBody, signatureHeader);
+        const isValid = await verifyOmiseSignature(rawBodyBytes, signatureHeader);
         if (!isValid) {
             console.error("Invalid Omise webhook signature");
             return Response.json({ error: "Invalid signature" }, { status: 401 });
         }
 
-        const body = JSON.parse(rawBody);
+        // Decode bytes to text and parse JSON
+        const body = JSON.parse(new TextDecoder().decode(rawBodyBytes));
         const eventType = body.key;
         const charge = body.data;
 
