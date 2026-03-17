@@ -21,6 +21,9 @@ async function verifyOmiseSignature(rawBodyBytes, signatureHeader) {
     const expectedHex = Array.from(new Uint8Array(signatureBytes))
         .map(b => b.toString(16).padStart(2, '0')).join('');
 
+    console.log('[OMISE_SIG_DEBUG] Received Omise-Signature:', signatureHeader);
+    console.log('[OMISE_SIG_DEBUG] Computed HMAC:', expectedHex);
+
     // Omise may send multiple signatures comma-separated
     const signatures = signatureHeader.split(',');
     return signatures.some(sig => sig.trim() === expectedHex);
