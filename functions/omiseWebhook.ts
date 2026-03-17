@@ -28,7 +28,9 @@ async function verifyOmiseSignature(rawBodyBytes, signatureHeader) {
 
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
+        // Clone request: one for base44 SDK init, one for body reading
+        const reqClone = req.clone();
+        const base44 = createClientFromRequest(reqClone);
 
         // Read raw body as Uint8Array first for signature verification
         const rawBodyBytes = new Uint8Array(await req.arrayBuffer());
