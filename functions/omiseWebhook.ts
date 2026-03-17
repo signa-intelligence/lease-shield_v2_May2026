@@ -13,6 +13,7 @@ async function verifyOmiseSignature(rawBodyBytes, signatureHeader) {
 
     // Decode the base64 webhook secret
     const secretBytes = Uint8Array.from(atob(webhookSecret), c => c.charCodeAt(0));
+    console.log('[OMISE_SIG_DEBUG] Raw secret length:', webhookSecret.length, 'Decoded key length:', secretBytes.length);
     const key = await crypto.subtle.importKey(
         "raw", secretBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
     );
