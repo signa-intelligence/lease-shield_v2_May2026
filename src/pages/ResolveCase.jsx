@@ -16,6 +16,8 @@ import PageHeader from "../components/shared/PageHeader";
 import ProgressBar from "../components/shared/ProgressBar";
 import TrustBadge from "../components/shared/TrustBadge";
 import CaseSuccessModal from "../components/resolve/CaseSuccessModal";
+import PaymentMethodSelector from "../components/resolve/PaymentMethodSelector";
+import PromptPayQR from "../components/resolve/PromptPayQR";
 
 function ResolveCaseContent() {
   const navigate = useNavigate();
@@ -37,6 +39,8 @@ function ResolveCaseContent() {
   const [freeResolveEligible, setFreeResolveEligible] = useState(false);
   const [eligibilityData, setEligibilityData] = useState(null);
   const [successModal, setSuccessModal] = useState({ open: false, caseNumber: '' });
+  const [paymentStep, setPaymentStep] = useState(null); // null | 'choose' | 'promptpay'
+  const [pendingCase, setPendingCase] = useState(null); // { caseId, amount, pricing }
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
