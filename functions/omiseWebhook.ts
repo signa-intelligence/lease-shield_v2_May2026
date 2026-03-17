@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
         const charge = body.data;
 
         console.log(`Omise webhook received: ${eventType}, charge: ${charge?.id}`);
+        console.log(`[OMISE_DEBUG] eventType=${eventType}, charge.status=${charge?.status}, metadata=`, JSON.stringify(charge?.metadata));
 
         if (!charge || !charge.metadata?.case_id) {
             console.log("No case_id in charge metadata, skipping");
