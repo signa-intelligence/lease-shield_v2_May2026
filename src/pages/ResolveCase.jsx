@@ -1564,6 +1564,41 @@ function ResolveCaseContent() {
         </form>
       </div>
 
+      {/* Payment Method Selector */}
+      {paymentStep === 'choose' && pendingCase && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <div className="w-full max-w-md">
+            <PaymentMethodSelector
+              amount={pendingCase.amount}
+              language={language}
+              isDarkMode={isDarkMode}
+              onSelectStripe={handleStripeCheckout}
+              onSelectPromptPay={() => setPaymentStep('promptpay')}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* PromptPay QR Payment */}
+      {paymentStep === 'promptpay' && pendingCase && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+          <div className="w-full max-w-md">
+            <PromptPayQR
+              caseId={pendingCase.caseId}
+              amount={pendingCase.amount}
+              language={language}
+              isDarkMode={isDarkMode}
+              onSuccess={() => {
+                setPaymentStep(null);
+                setPendingCase(null);
+                setSuccessModal({ open: true, caseNumber: pendingCase.caseNumber });
+              }}
+              onCancel={() => setPaymentStep('choose')}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Success Modal */}
       <CaseSuccessModal
         isOpen={successModal.open}
