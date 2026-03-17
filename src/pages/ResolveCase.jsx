@@ -190,22 +190,8 @@ function ResolveCaseContent() {
         throw new Error(`Ownership binding failed`);
       }
       
-      // CRITICAL: Send admin notification IMMEDIATELY after case creation
-      try {
-        await base44.functions.invoke('notifyAdminNewCase', {
-          caseNumber: createdCase.case_number,
-          tenantName: authenticatedUser.full_name,
-          tenantEmail: createdCase.user_email,
-          landlordName: createdCase.landlord_name,
-          propertyAddress: createdCase.property_address,
-          disputeAmount: createdCase.dispute_amount,
-          planTier: authenticatedUser.plan_tier,
-          caseId: createdCase.id
-        });
-        console.log('[RESOLVE_FLOW] ✅ Admin notification sent for', createdCase.case_number);
-      } catch (notifyError) {
-        console.error('[RESOLVE_FLOW] ⚠️ Admin notification failed (non-blocking):', notifyError?.message);
-      }
+      // NOTE: Admin notification moved to AFTER payment confirmation
+      // (omiseWebhook for PromptPay, stripeWebhook for Stripe, createResolveCaseFree for free)
       
       return { 
         createdCase, 
