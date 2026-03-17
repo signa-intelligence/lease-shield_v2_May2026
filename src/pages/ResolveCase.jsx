@@ -263,40 +263,19 @@ function ResolveCaseContent() {
         }
       }
       
-      // Standard paid flow - Create Stripe checkout
+      // Standard paid flow - Show payment method selector
       console.log('[RESOLVE_FLOW] 💳 Starting paid flow for case:', createdCase.id);
-      try {
-        const pricing = getResolvePricingForUser(user);
-        
-        const response = await base44.functions.invoke('createResolveCheckout', {
-          userId: userId,
-          userEmail: userEmail,
-          caseId: createdCase.id,
-          priceType: pricing.priceType,
-          amount: pricing.amount
-        });
-        
-        console.log('[RESOLVE_FLOW] 💳 Checkout response:', response.data);
-        
-        if (response.data?.url) {
-          // Send confirmation email before redirect (non-blocking)
-          sendConfirmationEmail(createdCase, authenticatedUser, 'paid');
-          window.location.href = response.data.url;
-        } else {
-          console.error('[RESOLVE_FLOW] No checkout URL returned:', response.data);
-          toast.error(
-            language === 'th' ? 'ไม่สามารถสร้างลิงก์ชำระเงินได้'
-            : 'Failed to create payment link. Please try again.'
-          );
-        }
-      } catch (checkoutError) {
-        console.error('[RESOLVE_FLOW] 💳 Checkout error:', checkoutError);
-        const errMsg = checkoutError?.response?.data?.error || checkoutError?.message || 'Payment error';
-        toast.error(
-          language === 'th' ? 'ไม่สามารถดำเนินการชำระเงินได้: ' + errMsg
-          : 'Failed to process payment: ' + errMsg
-        );
-      }
+      const pricing = getResolvePricingForUser(user);
+      setPendingCase({
+        caseId: createdCase.id,
+        caseNumber: createdCase.case_number,
+        amount: pricing.amount,
+        priceType: pricing.priceType,
+        userId: userId,
+        userEmail: userEmail,
+        authenticatedUser: authenticatedUser
+      });
+      setPaymentStep('choose');
     },
     onError: (error) => {
       console.error('[RESOLVE_FLOW] Case creation failed:', error);
