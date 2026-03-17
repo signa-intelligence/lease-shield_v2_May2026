@@ -11,19 +11,33 @@ async function verifyOmiseSignature(rawBodyBytes, signatureHeader) {
         return false;
     }
 
-    // Decode the base64 webhook secret
+    // Debug: log body preview
+    const bodyPreview = new TextDecoder().decode(rawBodyBytes).substring(0, 200);
+    console.log('[OMISE_SIG_DEBUG] Body preview (first 200 chars):', bodyPreview);
+
+    // Method 1: base64-decoded secret
     const secretBytes = Uint8Array.from(atob(webhookSecret), c => c.charCodeAt(0));
-    console.log('[OMISE_SIG_DEBUG] Raw secret length:', webhookSecret.length, 'Decoded key length:', secretBytes.length);
+    console.log('[OMISE_SIG_DEBUG] Raw secret length:', webhookSecret.length, 'Base64-decoded key length:', secretBytes.length);
     const key = await crypto.subtle.importKey(
         "raw", secretBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
     );
-    // Sign using the raw Uint8Array directly — no re-encoding needed
     const signatureBytes = await crypto.subtle.sign("HMAC", key, rawBodyBytes);
     const expectedHex = Array.from(new Uint8Array(signatureBytes))
         .map(b => b.toString(16).padStart(2, '0')).join('');
 
+    // Method 2: raw UTF-8 secret (no base64 decoding)
+    const rawSecretBytes = new TextEncoder().encode(webhookSecret);
+    console.log('[OMISE_SIG_DEBUG] Raw UTF-8 key length:', rawSecretBytes.length);
+    const key2 = await crypto.subtle.importKey(
+        "raw", rawSecretBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    );
+    const signatureBytes2 = await crypto.subtle.sign("HMAC", key2, rawBodyBytes);
+    const expectedHexRaw = Array.from(new Uint8Array(signatureBytes2))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+
     console.log('[OMISE_SIG_DEBUG] Received Omise-Signature:', signatureHeader);
-    console.log('[OMISE_SIG_DEBUG] Computed HMAC:', expectedHex);
+    console.log('[OMISE_SIG_DEBUG] Computed HMAC (base64-decoded secret):', expectedHex);
+    console.log('[OMISE_SIG_DEBUG] Computed HMAC (raw UTF-8 secret):', expectedHexRaw);
 
     // Omise may send multiple signatures comma-separated
     const signatures = signatureHeader.split(',');
