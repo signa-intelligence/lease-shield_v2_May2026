@@ -227,6 +227,18 @@ function ResolveCaseContent() {
           if (activateResponse.data?.success) {
             // Send confirmation email (non-blocking)
             sendConfirmationEmail(createdCase, authenticatedUser, 'free');
+            // Send admin notification AFTER free activation confirmed
+            base44.functions.invoke('notifyAdminNewCase', {
+              caseNumber: createdCase.case_number,
+              tenantName: authenticatedUser.full_name,
+              tenantEmail: createdCase.user_email,
+              landlordName: createdCase.landlord_name,
+              propertyAddress: createdCase.property_address,
+              disputeAmount: createdCase.dispute_amount,
+              planTier: authenticatedUser.plan_tier,
+              caseId: createdCase.id,
+              paymentType: 'free_entitlement'
+            }).catch(err => console.error('[RESOLVE_FLOW] Admin notify failed (non-blocking):', err?.message));
             // Show success modal instead of navigating
             setSuccessModal({ open: true, caseNumber: createdCase.case_number });
             return;
