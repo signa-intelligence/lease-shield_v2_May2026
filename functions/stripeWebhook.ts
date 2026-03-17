@@ -219,6 +219,77 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Handle letter credit purchases
+      if (session.metadata?.type === 'credits') {
+        try {
+          const userId = session.metadata.userId;
+          const creditsCount = parseInt(session.metadata.credits || '1', 10);
+          const creditAmount = (session.amount_total || 0) / 100;
+
+          console.log('[CHECKOUT_WEBHOOK] 💳 Credits purchase:', { userId, creditsCount, amount: creditAmount });
+
+          const allUsers = await base44.asServiceRole.entities.User.list();
+          const creditUser = allUsers.find(u => u.id === userId);
+
+          if (creditUser) {
+            const currentCredits = creditUser.letter_credits || 0;
+            await base44.asServiceRole.entities.User.update(creditUser.id, {
+              letter_credits: currentCredits + creditsCount
+            });
+            console.log('[CHECKOUT_WEBHOOK] ✅ Credits added:', creditUser.email, currentCredits, '->', currentCredits + creditsCount);
+
+            await base44.asServiceRole.entities.Payment.create({
+              type: 'addon',
+              amount: creditAmount,
+              currency: 'THB',
+              provider: 'stripe',
+              status: 'paid',
+              external_id: session.payment_intent || session.id
+            });
+            console.log('[REVENUE] ✅ Credits payment tracked: ฿' + creditAmount);
+          } else {
+            console.error('[CHECKOUT_WEBHOOK] ❌ No user found for credits purchase, userId:', userId);
+          }
+        } catch (e) {
+          console.error('[CHECKOUT_WEBHOOK] Credits fulfillment error:', e.message);
+        }
+      }
+
+      // Handle one-time scan purchases
+      if (session.metadata?.type === 'one_time_scan') {
+        try {
+          const userId = session.metadata.userId;
+          const scanAmount = (session.amount_total || 0) / 100;
+
+          console.log('[CHECKOUT_WEBHOOK] 🔍 One-time scan purchase:', { userId, amount: scanAmount });
+
+          const allUsers = await base44.asServiceRole.entities.User.list();
+          const scanUser = allUsers.find(u => u.id === userId);
+
+          if (scanUser) {
+            const currentScans = scanUser.available_scans || 0;
+            await base44.asServiceRole.entities.User.update(scanUser.id, {
+              available_scans: currentScans + 1
+            });
+            console.log('[CHECKOUT_WEBHOOK] ✅ Scan credit added:', scanUser.email, currentScans, '->', currentScans + 1);
+
+            await base44.asServiceRole.entities.Payment.create({
+              type: 'addon',
+              amount: scanAmount,
+              currency: 'THB',
+              provider: 'stripe',
+              status: 'paid',
+              external_id: session.payment_intent || session.id
+            });
+            console.log('[REVENUE] ✅ Scan payment tracked: ฿' + scanAmount);
+          } else {
+            console.error('[CHECKOUT_WEBHOOK] ❌ No user found for scan purchase, userId:', userId);
+          }
+        } catch (e) {
+          console.error('[CHECKOUT_WEBHOOK] Scan fulfillment error:', e.message);
+        }
+      }
+
       return Response.json({ received: true, processed: 'checkout' }, { status: 200 });
     }
 
