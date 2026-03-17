@@ -50,6 +50,27 @@ Deno.serve(async (req) => {
                 });
 
                 console.log(`Case ${caseId} updated to intake, Payment record created`);
+
+                // Send admin notification AFTER payment confirmed
+                try {
+                    const updatedCase = await base44.asServiceRole.entities.Case.get(caseId);
+                    const users = await base44.asServiceRole.entities.User.filter({ email: updatedCase.user_email });
+                    const caseUser = users[0];
+                    await base44.asServiceRole.functions.invoke('notifyAdminNewCase', {
+                        caseNumber: updatedCase.case_number,
+                        tenantName: caseUser?.full_name || updatedCase.user_email,
+                        tenantEmail: updatedCase.user_email,
+                        landlordName: updatedCase.landlord_name,
+                        propertyAddress: updatedCase.property_address,
+                        disputeAmount: updatedCase.dispute_amount,
+                        planTier: caseUser?.plan_tier,
+                        caseId: caseId,
+                        paymentType: 'promptpay'
+                    });
+                    console.log(`Admin notification sent for case ${caseId}`);
+                } catch (notifyErr) {
+                    console.error(`Admin notification failed (non-blocking):`, notifyErr.message);
+                }
             } else {
                 console.log(`Charge completed but status is ${charge.status} for case ${caseId}`);
             }
