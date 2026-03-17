@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
       }
 
       // Handle case/resolve payments
-      if (session.metadata?.case_id) {
+      if (session.metadata?.caseId) {
         try {
           const caseId = session.metadata.case_id;
           await base44.asServiceRole.entities.Case.update(caseId, {
