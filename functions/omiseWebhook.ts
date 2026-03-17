@@ -1,103 +1,47 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
-async function computeHmacHex(keyBytes, dataBytes) {
-    const key = await crypto.subtle.importKey(
-        "raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-    );
-    const sig = await crypto.subtle.sign("HMAC", key, dataBytes);
-    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function verifyOmiseSignature(rawBodyBytes, headers) {
+async function verifyOmiseSignature(rawBodyBytes, signatureHeader) {
     const webhookSecret = Deno.env.get("OMISE_WEBHOOK_SECRET");
     if (!webhookSecret) {
-        console.warn("[OMISE] OMISE_WEBHOOK_SECRET not set — accepting webhook");
+        console.warn("OMISE_WEBHOOK_SECRET not set, skipping signature verification");
         return true;
     }
-
-    // Log ALL headers
-    const allHeaders = {};
-    headers.forEach((value, key) => { allHeaders[key] = value; });
-    console.log('[OMISE_SIG_DEBUG] All headers:', JSON.stringify(allHeaders));
-
-    const signatureHeader = headers.get("omise-signature");
     if (!signatureHeader) {
-        console.warn("[OMISE] No Omise-Signature header — accepting webhook for safety");
-        return true;
+        console.error("Missing Omise-Signature header");
+        return false;
     }
 
-    // Parse received signatures
-    const receivedSigs = signatureHeader.split(',').map(s => s.trim()).filter(Boolean);
-    console.log('[OMISE_SIG_DEBUG] Received signatures:', JSON.stringify(receivedSigs));
+    // Debug: log body preview
+    const bodyPreview = new TextDecoder().decode(rawBodyBytes).substring(0, 200);
+    console.log('[OMISE_SIG_DEBUG] Body preview (first 200 chars):', bodyPreview);
 
-    // Body representations
-    const bodyText = new TextDecoder().decode(rawBodyBytes);
-    console.log('[OMISE_SIG_DEBUG] Body preview (first 200 chars):', bodyText.substring(0, 200));
+    // Method 1: base64-decoded secret
+    const secretBytes = Uint8Array.from(atob(webhookSecret), c => c.charCodeAt(0));
+    console.log('[OMISE_SIG_DEBUG] Raw secret length:', webhookSecret.length, 'Base64-decoded key length:', secretBytes.length);
+    const key = await crypto.subtle.importKey(
+        "raw", secretBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    );
+    const signatureBytes = await crypto.subtle.sign("HMAC", key, rawBodyBytes);
+    const expectedHex = Array.from(new Uint8Array(signatureBytes))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
 
-    const bodyTextBytes = new TextEncoder().encode(bodyText);
-    let jsonStringifiedBytes;
-    try {
-        jsonStringifiedBytes = new TextEncoder().encode(JSON.stringify(JSON.parse(bodyText)));
-    } catch (e) {
-        jsonStringifiedBytes = bodyTextBytes;
-    }
+    // Method 2: raw UTF-8 secret (no base64 decoding)
+    const rawSecretBytes = new TextEncoder().encode(webhookSecret);
+    console.log('[OMISE_SIG_DEBUG] Raw UTF-8 key length:', rawSecretBytes.length);
+    const key2 = await crypto.subtle.importKey(
+        "raw", rawSecretBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    );
+    const signatureBytes2 = await crypto.subtle.sign("HMAC", key2, rawBodyBytes);
+    const expectedHexRaw = Array.from(new Uint8Array(signatureBytes2))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
 
-    // Timestamp for ts.body method
-    const timestamp = headers.get("omise-signature-timestamp") || headers.get("x-omise-signature-timestamp") || "";
-    console.log('[OMISE_SIG_DEBUG] Timestamp header:', timestamp || '(none)');
+    console.log('[OMISE_SIG_DEBUG] Received Omise-Signature:', signatureHeader);
+    console.log('[OMISE_SIG_DEBUG] Computed HMAC (base64-decoded secret):', expectedHex);
+    console.log('[OMISE_SIG_DEBUG] Computed HMAC (raw UTF-8 secret):', expectedHexRaw);
 
-    // Two secret variants
-    let b64DecodedSecret;
-    try {
-        b64DecodedSecret = Uint8Array.from(atob(webhookSecret), c => c.charCodeAt(0));
-    } catch (e) {
-        console.warn('[OMISE_SIG_DEBUG] Secret is not valid base64, skipping b64 methods');
-        b64DecodedSecret = null;
-    }
-    const utf8Secret = new TextEncoder().encode(webhookSecret);
-
-    console.log('[OMISE_SIG_DEBUG] Secret lengths — raw UTF-8:', utf8Secret.length, ', base64-decoded:', b64DecodedSecret?.length ?? 'N/A');
-
-    // Compute ALL HMAC variants
-    const results = {};
-
-    // With base64-decoded secret
-    if (b64DecodedSecret) {
-        results['b64key+rawBody'] = await computeHmacHex(b64DecodedSecret, rawBodyBytes);
-        results['b64key+textBody'] = await computeHmacHex(b64DecodedSecret, bodyTextBytes);
-        results['b64key+jsonStringified'] = await computeHmacHex(b64DecodedSecret, jsonStringifiedBytes);
-        if (timestamp) {
-            const tsBody = new TextEncoder().encode(timestamp + "." + bodyText);
-            results['b64key+ts.body'] = await computeHmacHex(b64DecodedSecret, tsBody);
-        }
-    }
-
-    // With raw UTF-8 secret
-    results['utf8key+rawBody'] = await computeHmacHex(utf8Secret, rawBodyBytes);
-    results['utf8key+textBody'] = await computeHmacHex(utf8Secret, bodyTextBytes);
-    results['utf8key+jsonStringified'] = await computeHmacHex(utf8Secret, jsonStringifiedBytes);
-    if (timestamp) {
-        const tsBody = new TextEncoder().encode(timestamp + "." + bodyText);
-        results['utf8key+ts.body'] = await computeHmacHex(utf8Secret, tsBody);
-    }
-
-    console.log('[OMISE_SIG_DEBUG] All computed HMACs:', JSON.stringify(results));
-
-    // Check if ANY computed HMAC matches ANY received signature
-    const allComputed = Object.values(results);
-    const match = receivedSigs.find(sig => allComputed.includes(sig));
-    if (match) {
-        const method = Object.entries(results).find(([, v]) => v === match)?.[0];
-        console.log(`[OMISE] ✅ Signature MATCHED via method: ${method}`);
-        return true;
-    }
-
-    // No match — log everything but DO NOT block
-    console.warn('[OMISE] ⚠️ NO signature match found. Accepting webhook anyway to not block payments.');
-    console.warn('[OMISE] Received:', JSON.stringify(receivedSigs));
-    console.warn('[OMISE] Computed:', JSON.stringify(results));
-    console.warn('[OMISE] Headers:', JSON.stringify(allHeaders));
-    return true; // ALWAYS accept — never block payments
+    // Omise may send multiple signatures comma-separated
+    const signatures = signatureHeader.split(',');
+    return signatures.some(sig => sig.trim() === expectedHex);
 }
 
 Deno.serve(async (req) => {
