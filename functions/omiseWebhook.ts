@@ -1,10 +1,46 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
+async function verifyOmiseSignature(rawBody, signatureHeader) {
+    const webhookSecret = Deno.env.get("OMISE_WEBHOOK_SECRET");
+    if (!webhookSecret) {
+        console.warn("OMISE_WEBHOOK_SECRET not set, skipping signature verification");
+        return true;
+    }
+    if (!signatureHeader) {
+        console.error("Missing Omise-Signature header");
+        return false;
+    }
+
+    // Decode the base64 webhook secret
+    const secretBytes = Uint8Array.from(atob(webhookSecret), c => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey(
+        "raw", secretBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    );
+    const signatureBytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
+    const expectedHex = Array.from(new Uint8Array(signatureBytes))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+
+    // Omise may send multiple signatures comma-separated
+    const signatures = signatureHeader.split(',');
+    return signatures.some(sig => sig.trim() === expectedHex);
+}
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
 
-        const body = await req.json();
+        // Read raw body for signature verification
+        const rawBody = await req.text();
+
+        // Verify Omise webhook signature
+        const signatureHeader = req.headers.get("omise-signature");
+        const isValid = await verifyOmiseSignature(rawBody, signatureHeader);
+        if (!isValid) {
+            console.error("Invalid Omise webhook signature");
+            return Response.json({ error: "Invalid signature" }, { status: 401 });
+        }
+
+        const body = JSON.parse(rawBody);
         const eventType = body.key;
         const charge = body.data;
 
