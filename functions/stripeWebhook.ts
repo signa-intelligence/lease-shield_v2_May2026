@@ -193,6 +193,27 @@ Deno.serve(async (req) => {
           } catch (revErr) {
             console.error('[REVENUE] ⚠️ Case payment tracking failed:', revErr.message);
           }
+
+          // Send admin notification AFTER case updated to intake
+          try {
+            const updatedCase = await base44.asServiceRole.entities.Case.get(caseId);
+            const allUsers = await base44.asServiceRole.entities.User.list();
+            const caseUser = allUsers.find(u => u.email === updatedCase.user_email);
+            await base44.asServiceRole.functions.invoke('notifyAdminNewCase', {
+              caseNumber: updatedCase.case_number,
+              tenantName: caseUser?.full_name || updatedCase.user_email,
+              tenantEmail: updatedCase.user_email,
+              landlordName: updatedCase.landlord_name,
+              propertyAddress: updatedCase.property_address,
+              disputeAmount: updatedCase.dispute_amount,
+              planTier: caseUser?.plan_tier,
+              caseId: caseId,
+              paymentType: 'stripe'
+            });
+            console.log('[CHECKOUT_WEBHOOK] ✅ Admin notification sent for case:', caseId);
+          } catch (notifyErr) {
+            console.error('[CHECKOUT_WEBHOOK] ⚠️ Admin notification failed (non-blocking):', notifyErr.message);
+          }
         } catch (e) {
           console.error('[CHECKOUT_WEBHOOK] Case update error:', e.message);
         }
