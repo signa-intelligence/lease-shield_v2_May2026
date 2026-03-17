@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
 
         const caseId = charge.metadata.case_id;
 
-        if (eventType === "charge.complete" || eventType === "charge.create") {
+        if (eventType === "charge.complete") {
             if (charge.status === "successful") {
                 console.log(`Payment successful for case ${caseId}, updating to intake`);
 
