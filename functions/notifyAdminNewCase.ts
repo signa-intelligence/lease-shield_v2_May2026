@@ -38,10 +38,8 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Skip user auth check — this function is invoked via asServiceRole from webhooks
+    // The caller (omiseWebhook/stripeWebhook) already validated the request
 
     const { caseNumber, tenantName, tenantEmail, landlordName, propertyAddress, disputeAmount, planTier, caseId, paymentType } = await req.json();
 
