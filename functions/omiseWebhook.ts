@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
-async function verifyOmiseSignature(rawBody, signatureHeader) {
+async function verifyOmiseSignature(rawBodyBytes, signatureHeader) {
     const webhookSecret = Deno.env.get("OMISE_WEBHOOK_SECRET");
     if (!webhookSecret) {
         console.warn("OMISE_WEBHOOK_SECRET not set, skipping signature verification");
@@ -16,7 +16,8 @@ async function verifyOmiseSignature(rawBody, signatureHeader) {
     const key = await crypto.subtle.importKey(
         "raw", secretBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
     );
-    const signatureBytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
+    // Sign using the raw Uint8Array directly — no re-encoding needed
+    const signatureBytes = await crypto.subtle.sign("HMAC", key, rawBodyBytes);
     const expectedHex = Array.from(new Uint8Array(signatureBytes))
         .map(b => b.toString(16).padStart(2, '0')).join('');
 
