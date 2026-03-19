@@ -1,9 +1,11 @@
 /**
  * scanLeaseCF_v1 — Orchestrates lease scanning pipeline.
  * 
- * ASYNC MODEL (2026-03-19): Returns immediately with scanId after dispatching
- * analyzeLease. Frontend polls LeaseScan record for completion.
- * This prevents HTTP timeout when OpenAI takes >60s to respond.
+ * ASYNC MODEL (2026-03-19): Returns immediately with scanId after creating/finding scan record.
+ * analyzeLease runs in background. Frontend polls LeaseScan status for completion.
+ * This eliminates HTTP timeout issues when OpenAI takes >60s.
+ * 
+ * Flow: auth → credit check → find/create scan → return scanId → (background) analyzeLease → credit deduct → populate
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
@@ -103,19 +105,20 @@ Deno.serve(async (req) => {
         created_by: userEmail,
         status: 'initiated'
       });
+      console.log(`[SCAN_CREATED] ${requestId} scanId=${targetScan.id}`);
     }
 
     // Mark scan as processing
     await base44.entities.LeaseScan.update(targetScan.id, { status: 'processing' });
 
     // ═══════════════════════════════════════════════════════════════
-    // ASYNC DISPATCH: Fire analyzeLease WITHOUT awaiting the result
-    // This prevents the frontend HTTP timeout (OpenAI takes 60-120s)
-    // The frontend will poll the LeaseScan record for completion
+    // ASYNC MODEL: Fire off analyzeLease in the background.
+    // Return immediately so frontend doesn't timeout.
+    // Frontend polls LeaseScan.status for 'completed' or 'failed'.
     // ═══════════════════════════════════════════════════════════════
-    console.log(`[SCAN_DISPATCH_ASYNC] ${requestId} scanId=${targetScan.id}`);
+    console.log(`[SCAN_ASYNC_DISPATCH] ${requestId} scanId=${targetScan.id}`);
 
-    // Fire and forget — analyzeLease + post-processing run in background
+    // Background: run analysis, save results, deduct credits, populate
     (async () => {
       try {
         const analyzeResult = await base44.functions.invoke('analyzeLease', {
@@ -125,14 +128,13 @@ Deno.serve(async (req) => {
         const result = analyzeResult?.data;
 
         if (!result || result.ok === false) {
-          console.error(`[SCAN_ANALYZE_FAILED_BG] ${requestId}`, result?.message || 'No result');
+          console.error(`[SCAN_BG_ANALYZE_FAILED] ${requestId}`, result?.message || 'No data');
           await base44.entities.LeaseScan.update(targetScan.id, { status: 'failed' });
-          await base44.entities.Lease.update(leaseId, { status: 'failed' });
           return;
         }
 
         const scanFull = result.scan_full || {};
-        console.log(`[SCAN_ANALYZE_OK_BG] ${requestId} clauses=${scanFull.clauses?.length || 0}`);
+        console.log(`[SCAN_BG_ANALYZE_OK] ${requestId} clauses=${scanFull.clauses?.length || 0}`);
 
         // Normalize
         scanFull.meta = scanFull.meta || {};
@@ -150,18 +152,20 @@ Deno.serve(async (req) => {
           }));
         }
 
-        // Update scan record — status 'completed' signals frontend to stop polling
-        await base44.entities.LeaseScan.update(targetScan.id, {
+        // Update scan record
+        const svc = base44;
+        await svc.entities.LeaseScan.update(targetScan.id, {
           scan_full: scanFull,
           risk_score: scanFull.risk_score || 0,
           summary: scanFull.summary?.executive_summary || "Lease analysis complete.",
           status: 'completed'
         });
+        console.log(`[SCAN_BG_UPDATED] ${requestId} scanId=${targetScan.id}`);
 
-        // Update Lease with extracted key_terms
+        // Update Lease with key_terms
         if (scanFull.key_terms) {
           try {
-            await base44.entities.Lease.update(leaseId, {
+            await svc.entities.Lease.update(leaseId, {
               property_address: scanFull.key_terms.property_address || null,
               start_date: scanFull.key_terms.lease_start_date || null,
               end_date: scanFull.key_terms.lease_end_date || null,
@@ -169,7 +173,7 @@ Deno.serve(async (req) => {
               deposit_amount: scanFull.key_terms.security_deposit || null
             });
           } catch (e) {
-            console.warn(`[SCAN_LEASE_UPDATE_FAIL_BG] ${requestId}`, e.message);
+            console.warn(`[SCAN_BG_LEASE_UPDATE_FAIL] ${requestId}`, e.message);
           }
         }
 
@@ -190,14 +194,15 @@ Deno.serve(async (req) => {
                   updateData.fasttrack_used_this_month = 0;
                 }
               }
-              await base44.entities.User.update(userObj.id, updateData);
-              await base44.entities.CreditsLedger.create({
+              await svc.entities.User.update(userObj.id, updateData);
+              await svc.entities.CreditsLedger.create({
                 user_id: userObj.id, user_email: userEmail, type: 'scans', delta: -1,
                 reason: 'purchase', source_ref: `lease_scan:${leaseId}`
               });
+              console.log(`[SCAN_BG_CREDIT_OK] ${requestId} scans=${cs - 1}`);
             }
           } catch (e) {
-            console.error(`[SCAN_CREDIT_FAIL_BG] ${requestId}`, e.message);
+            console.error(`[SCAN_BG_CREDIT_FAIL] ${requestId}`, e.message);
           }
         }
 
@@ -207,31 +212,30 @@ Deno.serve(async (req) => {
             scanId: targetScan.id, leaseId, scan_full: scanFull,
             userEmail, created_by: userEmail, owner_email: userEmail
           });
+          console.log(`[SCAN_BG_POPULATE_OK] ${requestId}`);
         } catch (e) {
-          console.error(`[SCAN_POPULATE_FAIL_BG] ${requestId}`, e.message);
+          console.error(`[SCAN_BG_POPULATE_FAIL] ${requestId}`, e.message);
         }
 
-        console.log(`[SCAN_COMPLETE_BG] ${requestId} scanId=${targetScan.id}`);
-      } catch (e) {
-        console.error(`[SCAN_BG_CRASH] ${requestId}`, e.message);
+        console.log(`[SCAN_BG_COMPLETE] ${requestId}`);
+
+      } catch (bgErr) {
+        console.error(`[SCAN_BG_CRITICAL_ERROR] ${requestId}`, bgErr.message);
         try {
           await base44.entities.LeaseScan.update(targetScan.id, { status: 'failed' });
-          await base44.entities.Lease.update(leaseId, { status: 'failed' });
         } catch (_) {}
       }
     })();
 
-    // ═══════════════════════════════════════════════════════════════
-    // RETURN IMMEDIATELY — frontend will poll for completion
-    // ═══════════════════════════════════════════════════════════════
-    console.log(`[SCAN_RETURNED_ASYNC] ${requestId} scanId=${targetScan.id}`);
+    // Return immediately — frontend will poll for results
+    console.log(`[SCAN_RETURNED] ${requestId} scanId=${targetScan.id} (async processing started)`);
 
     return Response.json({
       ok: true,
       async: true,
       scanId: targetScan.id,
       leaseId: leaseId,
-      message: 'Scan dispatched. Poll LeaseScan record for status=completed.'
+      message: 'Scan started. Poll LeaseScan status for completion.'
     });
 
   } catch (e) {
