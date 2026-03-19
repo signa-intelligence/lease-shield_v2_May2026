@@ -987,82 +987,41 @@ function UploadScanPageContent() {
           return;
         }
 
-        // Trigger analysis with verified URL only
-        console.log('SCAN_INVOKE', { leaseId: lease.id, scanId: scan.id, hasFileUrl: !!primaryUrl, language });
+        // Dispatch scan (returns immediately, analysis runs in background)
         const resp = await base44.functions.invoke('scanLeaseCF_v1', {
-          leaseId: lease.id,
-          scanId: scan.id,
-          fileUrl: primaryUrl,
-          language
+          leaseId: lease.id, scanId: scan.id, fileUrl: primaryUrl, language
         });
         const out = resp?.data ?? resp;
-        console.log("INVOKE_SCANLEASEEXTERNAL_RAW", resp);
-        console.log("INVOKE_SCANLEASEEXTERNAL_OUT", out);
-        
-        if (!out) {
-          setError({ code: 'EMPTY_FUNCTION_RESULT', step: 'FUNCTION_INVOCATION', message: language === 'th' ? 'ไม่ได้รับผลลัพธ์จากการวิเคราะห์' : 'Did not receive analysis result from function', retryable: true });
-          setUploading(false);
-          setAnalyzing(false);
-          setAnalysisStage('');
+        if (!out || out?.ok !== true) {
+          clearInterval(progressInterval);
+          setError({ code: out?.error_code || 'SCAN_DISPATCH_FAILED', step: out?.step, message: out?.message || 'Scan dispatch failed', retryable: true });
+          setUploading(false); setAnalyzing(false); setAnalysisStage('');
           return;
         }
-        if (out?.ok !== true) {
-          setError({ code: out.error_code, step: out.step, message: out.message, retryable: out.retryable === true });
-          setUploading(false);
-          setAnalyzing(false);
-          setAnalysisStage('');
-          return;
-        }
-        const scanResponse = resp.data;
 
-        if (!scanResponse || scanResponse.ok === false) {
-          const err = new Error(scanResponse?.error?.message || 'Scan failed with no message');
-          err.code = scanResponse?.error?.code || 'UNKNOWN';
-          err.step = scanResponse?.error?.step || 'ANALYSIS';
-          throw err;
-        }
-
-        // Stop smooth progress animation
-        clearInterval(progressInterval);
-        const savingProgress = 96;
-        setCumulativeProgress(prev => Math.max(prev, savingProgress));
-        setUploadProgress(savingProgress);
-        
-        // Update scan status and navigate to report with fresh data
-        setAnalysisStage('finalizing');
-        const finalizingProgress = 95;
-        setCumulativeProgress(prev => Math.max(prev, finalizingProgress));
-        setUploadProgress(finalizingProgress);
-        
-        await base44.entities.LeaseScan.update(scan.id, {
-          status: 'ok',
-          risk_score: scanResponse?.scan_full?.risk_score || 0,
-          summary: scanResponse?.scan_full?.summary?.executive_summary || ''
-        });
-        
-        setUploadProgress(100);
-        
-        if (!scan.id) throw new Error('BUG: scanId missing');
-        if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
-        
-        // Update storage usage after successful upload
-        try {
-          await base44.functions.invoke('updateStorageUsage', {
-            bytesAdded: totalFileSize
-          });
-          console.log('[STORAGE_USAGE_UPDATED]', { bytesAdded: totalFileSize });
-        } catch (storageErr) {
-          console.warn('[STORAGE_UPDATE_FAILED]', storageErr);
-          // Non-blocking - continue even if storage tracking fails
-        }
-        
-        // Pass scan_full directly via navigation state to avoid DB replication lag
-        navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
-          state: { 
-            scan_full: scanResponse?.scan_full,
-            fromUpload: true 
+        // Poll for completion (async model — OpenAI runs in background)
+        setAnalysisStage('scanning');
+        const { pollScanCompletion } = await import("../components/shared/pollScanCompletion");
+        const completedScan = await pollScanCompletion(scan.id, base44, {
+          maxWaitMs: 180000,
+          intervalMs: 3000,
+          onProgress: (elapsed) => {
+            const pct = Math.min(95, 40 + (elapsed / 180000) * 55);
+            setCumulativeProgress(prev => Math.max(prev, pct));
+            setUploadProgress(Math.round(pct));
+            if (elapsed > 60000) setAnalysisStage('extracting');
           }
         });
+
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+
+        // Navigate to report with scan data
+        navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
+          state: { scan_full: completedScan.scan_full, fromUpload: true }
+        });
+        // Update storage non-blocking
+        base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSize }).catch(() => {});
         return;
 
       } catch (err) {
