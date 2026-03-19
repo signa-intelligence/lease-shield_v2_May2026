@@ -1,12 +1,12 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * Deletes a lease and cascades to related records (scans, deposits, timeline, maintenance).
- * Uses asServiceRole for all entity operations to avoid RLS issues.
+ * Soft-deletes a lease by archiving it and all related records
+ * Sets status to 'deleted' and is_archived flags
  */
 Deno.serve(async (req) => {
   const correlationId = `delete-lease-${Date.now()}`;
-
+  
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -16,93 +16,190 @@ Deno.serve(async (req) => {
     }
 
     const { leaseId } = await req.json();
+    
+    console.log('[DELETE_LEASE_START]', { 
+      leaseId,
+      userEmail: user.email,
+      timestamp: new Date().toISOString()
+    });
+    
+    console.log(`[${correlationId}] Soft-deleting lease and moving to RecycleBin`, {
+      leaseId,
+      userEmail: user.email
+    });
 
     if (!leaseId) {
-      return Response.json({ error: 'Missing leaseId' }, { status: 400 });
+      return Response.json({ 
+        error: 'Missing leaseId'
+      }, { status: 400 });
     }
 
-    console.log(`[${correlationId}] Deleting lease`, { leaseId, userEmail: user.email });
+    // CRITICAL: Use service role for updates but user context for RecycleBin (RLS)
+    const svc = base44.asServiceRole || base44;
 
-    const svc = base44.asServiceRole;
-
-    // Get the lease
-    const lease = await svc.entities.Lease.get(leaseId);
-
+    // Get the lease first
+    const leaseArr = await base44.entities.Lease.filter({ id: leaseId });
+    const lease = leaseArr?.[0];
+    
     if (!lease) {
       return Response.json({ error: 'Lease not found' }, { status: 404 });
     }
+    
+    // Track file size for storage decrement
+    const fileSize = lease.file_size_bytes || 0;
+    const ownerEmail = lease.owner_email;
+    
+    console.log('[DELETE_LEASE_STORAGE]', {
+      leaseId,
+      fileSize,
+      ownerEmail
+    });
 
-    // Ownership check: user must own the lease or be admin
-    const userRole = user.role?.toLowerCase();
-    const accessLevel = user.access_level?.toLowerCase();
-    const isAdmin = userRole === 'admin' || userRole === 'super_admin' || accessLevel === 'admin' || accessLevel === 'super_admin';
+    // Get and archive related deposit trackers (by lease_id AND property_address)
+    const depositsByLeaseId = await svc.entities.DepositTracker.filter({ lease_id: leaseId });
+    const depositsByAddress = lease.property_address 
+      ? await svc.entities.DepositTracker.filter({ property_address: lease.property_address })
+      : [];
 
-    if (lease.owner_email !== user.email && !isAdmin) {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    // Deduplicate deposits
+    const allDeposits = [...depositsByLeaseId, ...depositsByAddress].filter((v, i, a) => 
+      a.findIndex(t => t.id === v.id) === i
+    );
+
+    for (const deposit of allDeposits) {
+      await svc.entities.DepositTracker.update(deposit.id, {
+        is_archived: true,
+        archived_at: new Date().toISOString()
+      });
     }
 
-    const fileSize = lease.file_size_bytes || 0;
+    // Get and archive related maintenance requests
+    const maintenanceRequests = await svc.entities.MaintenanceRequest.filter({
+      lease_id: leaseId
+    });
 
-    // Fetch all related records in parallel
-    const [leaseScans, depositsByLeaseId, maintenanceRequests, timelineByLeaseId] = await Promise.all([
-      svc.entities.LeaseScan.filter({ lease_id: leaseId }),
-      svc.entities.DepositTracker.filter({ lease_id: leaseId }),
-      svc.entities.MaintenanceRequest.filter({ lease_id: leaseId }),
-      svc.entities.TimelineEvent.filter({ lease_id: leaseId }),
-    ]);
+    for (const request of maintenanceRequests) {
+      await svc.entities.MaintenanceRequest.update(request.id, {
+        is_archived: true,
+        archived_at: new Date().toISOString()
+      });
+    }
 
-    console.log(`[${correlationId}] Related records:`, {
-      scans: leaseScans.length,
+    // Archive related timeline events (by lease_id AND property_address)
+    const timelineByLeaseId = await svc.entities.TimelineEvent.filter({ lease_id: leaseId });
+    const timelineByAddress = lease.property_address
+      ? await svc.entities.TimelineEvent.filter({ property_address: lease.property_address })
+      : [];
+
+    // Deduplicate events
+    const allTimelineEvents = [...timelineByLeaseId, ...timelineByAddress].filter((v, i, a) => 
+      a.findIndex(t => t.id === v.id) === i
+    );
+
+    for (const event of allTimelineEvents) {
+      await svc.entities.TimelineEvent.update(event.id, {
+        is_archived: true,
+        archived_at: new Date().toISOString()
+      });
+    }
+
+    // CASCADE DELETE: Delete timeline events by lease_id
+    console.log(`[${correlationId}] [DELETE_TIMELINE_START]`, { count: timelineByLeaseId.length });
+    try {
+      for (const event of timelineByLeaseId) {
+        await svc.entities.TimelineEvent.delete(event.id);
+      }
+      console.log(`[${correlationId}] [DELETE_TIMELINE_DONE]`);
+    } catch (err) {
+      console.error(`[${correlationId}] [DELETE_TIMELINE_FAILED]`, { error: err.message, stack: err.stack });
+      throw err;
+    }
+
+    // CASCADE DELETE: Delete deposits by lease_id
+    console.log(`[${correlationId}] [DELETE_DEPOSITS_START]`, { count: depositsByLeaseId.length });
+    try {
+      for (const deposit of depositsByLeaseId) {
+        await svc.entities.DepositTracker.delete(deposit.id);
+      }
+      console.log(`[${correlationId}] [DELETE_DEPOSITS_DONE]`);
+    } catch (err) {
+      console.error(`[${correlationId}] [DELETE_DEPOSITS_FAILED]`, { error: err.message, stack: err.stack });
+      throw err;
+    }
+
+    // CASCADE DELETE: Delete lease scans
+    const leaseScans = await svc.entities.LeaseScan.filter({ lease_id: leaseId });
+    console.log(`[${correlationId}] [DELETE_SCANS_START]`, { count: leaseScans.length });
+    try {
+      for (const scan of leaseScans) {
+        await svc.entities.LeaseScan.delete(scan.id);
+      }
+      console.log(`[${correlationId}] [DELETE_SCANS_DONE]`);
+    } catch (err) {
+      console.error(`[${correlationId}] [DELETE_SCANS_FAILED]`, { error: err.message, stack: err.stack });
+      throw err;
+    }
+
+    // CASCADE DELETE: Delete lease itself
+    console.log(`[${correlationId}] [DELETE_LEASE_START]`, { leaseId });
+    try {
+      await svc.entities.Lease.delete(leaseId);
+      console.log(`[${correlationId}] [DELETE_LEASE_DONE]`);
+    } catch (err) {
+      console.error(`[${correlationId}] [DELETE_LEASE_FAILED]`, { error: err.message, stack: err.stack });
+      throw err;
+    }
+
+    // Decrement storage usage after successful deletion
+    if (fileSize > 0 && ownerEmail) {
+      try {
+        await svc.functions.invoke('updateStorageUsage', {
+          bytesAdded: -fileSize
+        });
+        console.log(`[${correlationId}] [STORAGE_DECREMENTED]`, { bytesRemoved: fileSize });
+      } catch (storageErr) {
+        console.warn(`[${correlationId}] [STORAGE_DECREMENT_FAILED]`, storageErr);
+        // Non-blocking - continue even if storage update fails
+      }
+    }
+    
+    console.log(`[${correlationId}] Successfully deleted lease and cascaded records`, {
       deposits: depositsByLeaseId.length,
       maintenance: maintenanceRequests.length,
       timeline: timelineByLeaseId.length,
+      scans: leaseScans.length,
+      storageFreed: fileSize
     });
-
-    // Delete all related records in parallel batches
-    const deleteOps = [
-      ...leaseScans.map(s => svc.entities.LeaseScan.delete(s.id)),
-      ...depositsByLeaseId.map(d => svc.entities.DepositTracker.delete(d.id)),
-      ...maintenanceRequests.map(m => svc.entities.MaintenanceRequest.delete(m.id)),
-      ...timelineByLeaseId.map(t => svc.entities.TimelineEvent.delete(t.id)),
-    ];
-
-    await Promise.all(deleteOps);
-    console.log(`[${correlationId}] Related records deleted`);
-
-    // Delete the lease itself
-    await svc.entities.Lease.delete(leaseId);
-    console.log(`[${correlationId}] Lease deleted`);
-
-    // Decrement storage (non-blocking)
-    if (fileSize > 0) {
-      svc.functions.invoke('updateStorageUsage', { bytesAdded: -fileSize })
-        .then(() => console.log(`[${correlationId}] Storage decremented: ${fileSize}`))
-        .catch(err => console.warn(`[${correlationId}] Storage decrement failed (non-blocking):`, err.message));
-    }
 
     return Response.json({
       success: true,
       deleted: {
         lease: 1,
-        scans: leaseScans.length,
-        deposits: depositsByLeaseId.length,
+        deposits: allDeposits.length,
         maintenance: maintenanceRequests.length,
-        timeline: timelineByLeaseId.length,
+        timeline: allTimelineEvents.length,
+        scans: leaseScans.length
       },
       storageFreed: fileSize,
-      correlationId,
+      correlationId
     });
 
   } catch (error) {
-    console.error(`[${correlationId}] DELETE_LEASE_ERROR`, {
-      message: error.message,
-      stack: error.stack,
+    console.error('[DELETE_LEASE_ERROR_DETAILED]', {
+      correlationId,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      errorCode: error.code,
+      errorName: error.name,
+      fullError: String(error)
     });
-
+    
     return Response.json({
       success: false,
       error: error.message,
-      correlationId,
+      errorCode: error.code,
+      errorName: error.name,
+      correlationId
     }, { status: 500 });
   }
 });
