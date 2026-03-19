@@ -1255,51 +1255,22 @@ function UploadScanPageContent() {
         });
         createdLeaseId = lease.id;
 
-        // FORENSIC LOG: STEP 1 - Lease Created
-        console.log('[LEASE_CREATED]', {
-          leaseId: lease.id,
-          owner_email: lease.owner_email,
-          created_by: lease.created_by,
-          userEmail: user.email,
-          timestamp: new Date().toISOString()
-        });
-
-        // FORENSIC LOG: STEP 2 - Verify Lease in DB Immediately
-        const verifyLease = await base44.entities.Lease.filter({ id: lease.id });
-        console.log('[LEASE_VERIFY_IMMEDIATE]', {
-          found: verifyLease.length > 0,
-          leaseData: verifyLease[0]
-        });
-        const createdProgressSingle = 50;
-        setCumulativeProgress(prev => Math.max(prev, createdProgressSingle));
-        setUploadProgress(createdProgressSingle);
-
+        setCumulativeProgress(prev => Math.max(prev, 50));
+        setUploadProgress(50);
         setAnalyzing(true);
         setUploading(false);
         setAnalysisStage('scanning');
         
-        // Start smooth continuous progress animation during AI analysis (50-95%)
         let currentProgress = 50;
         progressInterval = setInterval(() => {
           setCumulativeProgress(prev => {
             currentProgress = prev;
-            let increment;
-            
-            if (currentProgress < 70) {
-              increment = 2.5; // Fast progress during early analysis
-            } else if (currentProgress < 85) {
-              increment = 1; // Moderate progress
-            } else if (currentProgress < 95) {
-              increment = 0.5; // Slow but steady - never freeze
-            } else {
-              increment = 0; // Stop at 95% and wait for backend
-            }
-            
+            const increment = currentProgress < 70 ? 2.5 : currentProgress < 85 ? 1 : currentProgress < 95 ? 0.3 : 0;
             const next = Math.min(95, prev + increment);
             setUploadProgress(Math.round(next));
             return next;
           });
-        }, 1500); // Check every 1.5 seconds
+        }, 2000);
 
         // Create LeaseScan FIRST and capture id
         const scan = await base44.entities.LeaseScan.create({
