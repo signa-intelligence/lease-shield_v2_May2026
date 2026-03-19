@@ -1,8 +1,11 @@
 import React from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function ScanErrorDisplay({ error, language, user, onRetry }) {
+  const navigate = useNavigate();
   if (!error) return null;
 
   const isAdmin = user?.role === 'admin' || user?.access_level === 'admin' || user?.access_level === 'super_admin' || user?.access_level === 'va';
@@ -17,6 +20,15 @@ export default function ScanErrorDisplay({ error, language, user, onRetry }) {
       return error.message || (language === 'th' ? 'เกิดข้อผิดพลาดของเซิร์ฟเวอร์ กรุณาลองอีกครั้ง' : 'A server error occurred. Please try again.');
     }
     return String(error);
+  };
+
+  const handleViewReport = () => {
+    const scanId = error.scanId;
+    const leaseId = error.leaseId;
+    if (scanId) {
+      const url = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}${leaseId ? `&leaseId=${encodeURIComponent(leaseId)}` : ''}`;
+      navigate(url);
+    }
   };
 
   return (
@@ -37,13 +49,28 @@ export default function ScanErrorDisplay({ error, language, user, onRetry }) {
           {typeof error === 'object' && error.scanId && (
             <p className="text-red-500 text-xs font-mono">Scan ID: {error.scanId}</p>
           )}
-          {typeof error === 'object' && error.retryable && onRetry && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={onRetry} className="border-red-300 text-red-700 hover:bg-red-100">
-                Try Again
+          <div className="mt-4 flex flex-wrap gap-2">
+            {typeof error === 'object' && error.scanId && (
+              <Button 
+                size="sm" 
+                onClick={handleViewReport}
+                style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}
+              >
+                <FileText className="w-4 h-4 mr-1" />
+                {language === 'th' ? 'ดูรายงานอยู่ดี' : 'View Report Anyway'}
               </Button>
-            </div>
-          )}
+            )}
+            {typeof error === 'object' && error.retryable && onRetry && (
+              <Button variant="outline" size="sm" onClick={onRetry} className="border-red-300 text-red-700 hover:bg-red-100">
+                {language === 'th' ? 'ลองอีกครั้ง' : 'Try Again'}
+              </Button>
+            )}
+            {onRetry && !(typeof error === 'object' && error.retryable) && (
+              <Button variant="outline" size="sm" onClick={onRetry} className="border-red-300 text-red-700 hover:bg-red-100">
+                {language === 'th' ? 'ลองอีกครั้ง' : 'Try Again'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>
