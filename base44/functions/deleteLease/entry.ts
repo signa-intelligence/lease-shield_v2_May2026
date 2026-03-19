@@ -34,15 +34,28 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // CRITICAL: Use service role for updates but user context for RecycleBin (RLS)
+    // CRITICAL: Use service role for updates and deletes
     const svc = base44.asServiceRole || base44;
 
-    // Get the lease first
-    const leaseArr = await base44.entities.Lease.filter({ id: leaseId });
-    const lease = leaseArr?.[0];
+    // Get the lease first (use service role since filter by id doesn't work with user context)
+    let lease;
+    try {
+      lease = await svc.entities.Lease.get(leaseId);
+      console.log(`[${correlationId}] [LEASE_FETCH_OK]`, { leaseId, ownerEmail: lease?.owner_email });
+    } catch (fetchErr) {
+      console.error(`[${correlationId}] [LEASE_FETCH_FAILED]`, { leaseId, error: fetchErr.message });
+      return Response.json({ error: 'Lease not found' }, { status: 404 });
+    }
     
     if (!lease) {
+      console.error(`[${correlationId}] [LEASE_NOT_FOUND]`, { leaseId });
       return Response.json({ error: 'Lease not found' }, { status: 404 });
+    }
+
+    // Ownership check: ensure the lease belongs to the requesting user
+    if (lease.owner_email !== user.email && user.role !== 'admin' && user.role !== 'super_admin') {
+      console.error(`[${correlationId}] [OWNERSHIP_CHECK_FAILED]`, { leaseOwner: lease.owner_email, requestingUser: user.email });
+      return Response.json({ error: 'You do not have permission to delete this lease' }, { status: 403 });
     }
     
     // Track file size for storage decrement
