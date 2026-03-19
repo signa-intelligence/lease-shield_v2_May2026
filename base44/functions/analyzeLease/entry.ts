@@ -65,6 +65,7 @@ Deno.serve(async (req) => {
   const cid = `analyze-${Date.now()}`;
 
   try {
+    const T0 = Date.now();
     const base44 = createClientFromRequest(req);
     const bodyText = await req.text();
     let payload = {};
@@ -102,6 +103,7 @@ Deno.serve(async (req) => {
     // Extract text
     const pdfData = await PDFParser(new Uint8Array(pdfBuffer));
     const pdfText = pdfData.text || '';
+    console.log(`[TIMING] PDF download+parse: ${Date.now() - T0}ms`);
     console.log(`[ANALYZE_PDF] ${cid} textLen=${pdfText.length} pages=${pdfData.numpages}`);
 
     if (pdfText.length < 100) {
@@ -176,7 +178,8 @@ Return a JSON object:
 }
 Analyze ALL clauses. Return ONLY valid JSON.`;
 
-    console.log(`[ANALYZE_OPENAI_START] ${cid}`);
+    console.log(`[TIMING] Pre-OpenAI: ${Date.now() - T0}ms`);
+    const aiStart = Date.now();
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
@@ -198,6 +201,7 @@ Analyze ALL clauses. Return ONLY valid JSON.`;
 
     const completion = await openaiResponse.json();
     const analysisResult = JSON.parse(completion.choices[0].message.content);
+    console.log(`[TIMING] OpenAI: ${Date.now() - aiStart}ms`);
     console.log(`[ANALYZE_OPENAI_OK] ${cid} clauses=${analysisResult.clauses?.length || 0} risk=${analysisResult.risk_score}`);
 
     // Preview mode fallback for key_terms
@@ -283,6 +287,7 @@ Analyze ALL clauses. Return ONLY valid JSON.`;
       status: 'completed'
     });
 
+    console.log(`[TIMING] TOTAL: ${Date.now() - T0}ms`);
     console.log(`[ANALYZE_DONE] ${cid} scanId=${targetScanId}`);
 
     return Response.json({
