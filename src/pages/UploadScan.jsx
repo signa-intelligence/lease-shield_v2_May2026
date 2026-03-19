@@ -1284,169 +1284,41 @@ function UploadScanPageContent() {
         scanId = scan?.id;
         if (!scanId) throw new Error('BUG: scanId missing after LeaseScan.create');
 
-        // STEP 3: Invoke analysis
+        // STEP 3: Dispatch analysis (async — returns immediately)
         logStage('ANALYSIS_START', { fileUrls });
-        const analysisStartTime = Date.now();
-
-        console.log('SCAN_INVOKE', { leaseId: lease.id, scanId, hasFileUrl: !!fileUrls?.[0], language });
         const resp = await base44.functions.invoke('scanLeaseCF_v1', {
-          leaseId: lease.id,
-          scanId: scanId,
-          fileUrl: fileUrls[0],
-          language
+          leaseId: lease.id, scanId, fileUrl: fileUrls[0], language
         });
         const out = resp?.data ?? resp;
-        console.log("INVOKE_SCANLEASEEXTERNAL_RAW", resp);
-        console.log("INVOKE_SCANLEASEEXTERNAL_OUT", out);
-        
-        if (!out) {
-          setError({ code: 'EMPTY_FUNCTION_RESULT', step: 'FUNCTION_INVOCATION', message: language === 'th' ? 'ไม่ได้รับผลลัพธ์จากการวิเคราะห์' : 'Did not receive analysis result from function', retryable: true });
-          setUploading(false);
-          setAnalyzing(false);
-          setAnalysisStage('');
+        if (!out || out?.ok !== true) {
+          clearInterval(progressInterval);
+          setError({ code: out?.error_code || 'SCAN_DISPATCH_FAILED', step: out?.step, message: out?.message || 'Scan dispatch failed', retryable: true });
+          setUploading(false); setAnalyzing(false); setAnalysisStage('');
           return;
         }
-        if (out?.ok !== true) {
-          setError({ code: out.error_code, step: out.step, message: out.message, retryable: out.retryable === true });
-          setUploading(false);
-          setAnalyzing(false);
-          setAnalysisStage('');
-          return;
-        }
-        const scanResponse = resp.data;
-        
-        // CRITICAL: Use scanId from function response if available (for tracking)
-        if (scanResponse?.scanId && !scanId) {
-          scanId = scanResponse.scanId;
-        }
 
-        const analysisDuration = Date.now() - analysisStartTime;
-        
-        logStage('ANALYSIS_RESPONSE', {
-          duration: analysisDuration,
-          success: scanResponse?.success,
-          hasResult: !!scanResponse?.result,
-          hasScanId: !!scanResponse?.scanId,
-          backendRequestId: scanResponse?.diagnostic?.requestId,
-          buildTag: scanResponse?.diagnostic?.buildTag,
-          error: scanResponse?.error
-        });
-        
-        console.log('[ANALYSIS_RESPONSE_DEBUG]', {
-          scanResponse,
-          scanResponseKeys: Object.keys(scanResponse || {}),
-          hasOk: 'ok' in (scanResponse || {}),
-          okValue: scanResponse?.ok
-        });
-
-        if (!scanResponse || scanResponse.ok === false) {
-          const backendError = scanResponse?.error || { code: 'UNKNOWN_BACKEND_ERROR', step: 'ANALYSIS', message: 'Scan failed without specific error' };
-          
-          logStage('ANALYSIS_FAILED', { error: backendError });
-
-          const errorObj = new Error(backendError.message);
-          errorObj.code = backendError.code;
-          errorObj.step = backendError.step;
-          errorObj.stack = backendError.stack;
-          errorObj.requestId = requestId;
-          throw errorObj;
-        }
-        
-        // CRITICAL: Extract scanId from response IMMEDIATELY
-        if (scanResponse?.scanId) {
-          scanId = scanResponse.scanId;
-          console.log('[SCANNED_ID_FROM_RESPONSE]', { scanId });
-        }
-
-        // VERIFY PAYLOAD - NON-BLOCKING (ReportFull will materialize if needed)
-        logStage('VERIFICATION_START', { scanId });
-        try {
-          const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId, requestId });
-          logStage('VERIFICATION_RESULT', { 
-            hasPdfPayload: verifyStatus?.hasPdfPayload,
-            needsMaterialization: scanResponse?.needsMaterialization,
-            isFallback: verifyStatus?.isFallback,
-            canMaterialize: verifyStatus?.diagnostics?.canMaterialize
-          });
-          
-          // Log warning but DON'T throw - ReportFull will handle materialization
-          if (!verifyStatus?.hasPdfPayload) {
-            logStage('VERIFICATION_WARN', { 
-              message: 'pdfPayload missing, ReportFull will trigger materialization',
-              canMaterialize: verifyStatus?.diagnostics?.canMaterialize
-            });
+        // Poll for completion (async model)
+        const { pollScanCompletion } = await import("../components/shared/pollScanCompletion");
+        const completedScan = await pollScanCompletion(scanId, base44, {
+          maxWaitMs: 180000,
+          intervalMs: 3000,
+          onProgress: (elapsed) => {
+            const pct = Math.min(95, 50 + (elapsed / 180000) * 45);
+            setCumulativeProgress(prev => Math.max(prev, pct));
+            setUploadProgress(Math.round(pct));
+            if (elapsed > 60000) setAnalysisStage('extracting');
           }
-        } catch (verifyErr) {
-          // Don't fail the flow on verification error
-          logStage('VERIFICATION_ERROR', { error: verifyErr.message });
-        }
-        
-        // Stop smooth progress animation
+        });
+
         clearInterval(progressInterval);
-        const savingProgressSingle = 96;
-        setCumulativeProgress(prev => Math.max(prev, savingProgressSingle));
-        setUploadProgress(savingProgressSingle);
-        
-        logStage('ANALYSIS_SUCCESS', {
-          riskScore: scanResponse.result?.risk_score,
-          flagsCount: scanResponse.result?.flags?.length
-        });
+        setUploadProgress(100);
+        logStage('ANALYSIS_SUCCESS', { riskScore: completedScan.risk_score });
 
-        // Update LeaseScan status and navigate to report with fresh data
-        setAnalysisStage('finalizing');
-        const finalizingProgressSingle = 95;
-        setCumulativeProgress(prev => Math.max(prev, finalizingProgressSingle));
-        setUploadProgress(finalizingProgressSingle);
-        
-        await base44.entities.LeaseScan.update(scanId, {
-          status: 'ok',
-          risk_score: scanResponse?.scan_full?.risk_score || 0,
-          summary: scanResponse?.scan_full?.summary?.executive_summary || ''
-        });
-        
-        const completeProgressSingle = 100;
-        setCumulativeProgress(prev => Math.max(prev, completeProgressSingle));
-        setUploadProgress(completeProgressSingle);
-        
-        // CRITICAL: Use scanResponse.scanId if scanId wasn't set properly
-        const finalScanId = scanId || scanResponse?.scanId;
-        if (!finalScanId) throw new Error('BUG: scanId missing from both sources');
-        if (finalScanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
-        
-        console.log('[FINAL_SCAN_ID_CHECK]', { scanId, scanResponseId: scanResponse?.scanId, finalScanId });
-        
-        // CRITICAL: Invalidate ALL queries to force UI refresh
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['allScans'] }),
-          queryClient.invalidateQueries({ queryKey: ['deposits'] }),
-          queryClient.invalidateQueries({ queryKey: ['timelineEvents'] }),
-          queryClient.invalidateQueries({ queryKey: ['leases'] }),
-          queryClient.invalidateQueries({ queryKey: ['currentUser'] })
-        ]);
-        
-        // Force refetch deposits immediately to ensure UI shows new data
-        await queryClient.refetchQueries({ queryKey: ['deposits'] });
-        
-        // Update storage usage after successful upload
-        try {
-          await base44.functions.invoke('updateStorageUsage', {
-            bytesAdded: totalFileSizeSingle
-          });
-          console.log('[STORAGE_USAGE_UPDATED]', { bytesAdded: totalFileSizeSingle });
-        } catch (storageErr) {
-          console.warn('[STORAGE_UPDATE_FAILED]', storageErr);
-          // Non-blocking - continue even if storage tracking fails
-        }
-        
-        // Pass scan_full directly via navigation state to avoid DB replication lag
+        const finalScanId = scanId;
         const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(finalScanId)}&leaseId=${encodeURIComponent(lease.id)}`;
-        console.log('[NAVIGATE_REPORT]', { reportUrl, scanId: finalScanId, leaseId: lease.id });
-        navigate(reportUrl, {
-          state: { 
-            scan_full: scanResponse?.scan_full,
-            fromUpload: true 
-          }
-        });
+        navigate(reportUrl, { state: { scan_full: completedScan.scan_full, fromUpload: true } });
+        // Non-blocking storage update
+        base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSizeSingle }).catch(() => {});
         return;
 
       } catch (err) {
