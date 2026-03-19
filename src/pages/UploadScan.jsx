@@ -937,37 +937,52 @@ function UploadScanPageContent() {
         });
         createdLeaseId = lease.id;
 
-        setCumulativeProgress(prev => Math.max(prev, 40));
-        setUploadProgress(40);
+        // FORENSIC LOG: STEP 1 - Lease Created
+        console.log('[LEASE_CREATED]', {
+          leaseId: lease.id,
+          owner_email: lease.owner_email,
+          created_by: lease.created_by,
+          userEmail: user.email,
+          timestamp: new Date().toISOString()
+        });
+
+        // FORENSIC LOG: STEP 2 - Verify Lease in DB Immediately
+        const verifyLease = await base44.entities.Lease.filter({ id: lease.id });
+        console.log('[LEASE_VERIFY_IMMEDIATE]', {
+          found: verifyLease.length > 0,
+          leaseData: verifyLease[0]
+        });
+
+        const createdProgress = 40;
+        setCumulativeProgress(prev => Math.max(prev, createdProgress));
+        setUploadProgress(createdProgress);
         setAnalyzing(true);
         setUploading(false);
         setAnalysisStage('scanning');
         
+        // Start smooth continuous progress animation during AI analysis (40-95%)
+        // Moves faster initially (40-70%), then slows down (70-95%)
         let currentProgress = 40;
         const progressInterval = setInterval(() => {
           setCumulativeProgress(prev => {
             currentProgress = prev;
-            const increment = currentProgress < 70 ? 2.5 : currentProgress < 85 ? 1 : currentProgress < 95 ? 0.3 : 0;
+            let increment;
+            
+            if (currentProgress < 70) {
+              increment = 2.5; // Fast progress during early analysis
+            } else if (currentProgress < 85) {
+              increment = 1; // Moderate progress
+            } else if (currentProgress < 95) {
+              increment = 0.5; // Slow but steady progress - never freeze
+            } else {
+              increment = 0; // Stop at 95% and wait for backend
+            }
+            
             const next = Math.min(95, prev + increment);
             setUploadProgress(Math.round(next));
             return next;
           });
-        }, 2000);
-
-        const scan = await base44.entities.LeaseScan.create({
-          lease_id: lease.id,
-          owner_email: user.email,
-          created_by: user.email,
-          status: 'initiated',
-          request_id: requestId
-        });
-
-        if (!scan.id) {
-          throw new Error('BUG: scanId missing');
-        }
-        if (lease.id === scan.id) {
-          throw new Error('BUG: scanId incorrectly equals leaseId. Aborting.');
-        }
+        }, 1500); // Check every 1.5 seconds for smooth animation
 
         // Validate uploaded URLs array and preflight primary URL
         const urls = Array.isArray(uploadedUrls) ? uploadedUrls.filter(Boolean) : [];
@@ -987,42 +1002,140 @@ function UploadScanPageContent() {
           return;
         }
 
-        // Dispatch scan (returns immediately, analysis runs in background)
+        // ASYNC MODEL: Kick off scan, then poll for completion
+        console.log('SCAN_INVOKE_ASYNC', { leaseId: lease.id, hasFileUrl: !!primaryUrl, language });
         const resp = await base44.functions.invoke('scanLeaseCF_v1', {
-          leaseId: lease.id, scanId: scan.id, fileUrl: primaryUrl, language
+          leaseId: lease.id,
+          fileUrl: primaryUrl,
+          language
         });
         const out = resp?.data ?? resp;
+        
         if (!out || out?.ok !== true) {
-          clearInterval(progressInterval);
-          setError({ code: out?.error_code || 'SCAN_DISPATCH_FAILED', step: out?.step, message: out?.message || 'Scan dispatch failed', retryable: true });
+          setError({ code: out?.error_code, step: out?.step, message: out?.message || 'Scan failed', retryable: true });
           setUploading(false); setAnalyzing(false); setAnalysisStage('');
           return;
         }
 
-        // Poll for completion (async model — OpenAI runs in background)
-        setAnalysisStage('scanning');
-        const { pollScanCompletion } = await import("../components/shared/pollScanCompletion");
-        const completedScan = await pollScanCompletion(scan.id, base44, {
-          maxWaitMs: 180000,
-          intervalMs: 3000,
-          onProgress: (elapsed) => {
-            const pct = Math.min(95, 40 + (elapsed / 180000) * 55);
-            setCumulativeProgress(prev => Math.max(prev, pct));
-            setUploadProgress(Math.round(pct));
-            if (elapsed > 60000) setAnalysisStage('extracting');
+        const scanId = out.scanId;
+        if (!scanId) throw new Error('BUG: scanId missing from response');
+
+        // Poll LeaseScan record until status is 'completed' or 'failed'
+        console.log('[POLL_START]', { scanId });
+        let pollCount = 0;
+        const maxPolls = 60; // 60 * 3s = 3 minutes max
+        let completedScan = null;
+
+        while (pollCount < maxPolls) {
+          await new Promise(r => setTimeout(r, 3000)); // Wait 3 seconds
+          pollCount++;
+          
+          try {
+            const scans = await base44.entities.LeaseScan.filter({ id: scanId });
+            const scan = scans?.[0];
+            
+            if (scan?.status === 'completed') {
+              completedScan = scan;
+              console.log('[POLL_COMPLETE]', { scanId, pollCount, riskScore: scan.risk_score });
+              break;
+            }
+            
+            if (scan?.status === 'failed') {
+              throw new Error('Scan analysis failed. Please try again.');
+            }
+            
+            // Update progress based on poll count
+            const pollProgress = Math.min(94, 45 + pollCount * 1.5);
+            setCumulativeProgress(prev => Math.max(prev, pollProgress));
+            setUploadProgress(Math.round(pollProgress));
+          } catch (pollErr) {
+            if (pollErr.message.includes('failed')) throw pollErr;
+            console.warn('[POLL_ERROR]', pollErr.message);
+          }
+        }
+
+        if (!completedScan) {
+          throw new Error('Analysis is taking longer than expected. Check your scan results in a few minutes.');
+        }
+
+        // Stop smooth progress animation
+        clearInterval(progressInterval);
+        setCumulativeProgress(100);
+        setUploadProgress(100);
+        setAnalysisStage('finalizing');
+        
+        // Update storage usage after successful upload
+        try {
+          await base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSize });
+        } catch (_) {}
+        
+        // Navigate to report
+        navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
+          state: { 
+            scan_full: completedScan.scan_full,
+            fromUpload: true 
           }
         });
-
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-
-        // Navigate to report with scan data
-        navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
-          state: { scan_full: completedScan.scan_full, fromUpload: true }
-        });
-        // Update storage non-blocking
-        base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSize }).catch(() => {});
         return;
+
+
+        
+        const scanResult = scanResponse.result;
+        setAnalysisStage('extracting');
+        setUploadProgress(70);
+
+        await base44.entities.Lease.update(lease.id, {
+          status: 'scanned',
+          property_address: scanResult.property_address || null,
+          start_date: scanResult.start_date || null,
+          end_date: scanResult.end_date || null,
+          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
+          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
+          language_detected: scanResult.language_detected || 'en'
+        });
+        setUploadProgress(90);
+
+        setAnalysisStage('finalizing');
+        setUploadProgress(100);
+        setCurrentStep(2);
+
+        // Prepare data for review (multi-page mode)
+        try {
+          console.log('[AUTO_POPULATE] Preparing data for review...');
+          const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
+            scanResult,
+            leaseId: lease.id,
+            scanId: scan.id
+          });
+          
+          if (populateResponse?.success && populateResponse.review_mode) {
+            console.log('[AUTO_POPULATE] Review data prepared:', populateResponse);
+            setReviewData(populateResponse);
+            setShowReviewScreen(true);
+            setCompletedLeaseId(createdLeaseId);
+          } else {
+            // Fallback: show completion modal
+            setCompletedLeaseId(createdLeaseId);
+            setShowCompletionModal(true);
+          }
+        } catch (populateErr) {
+          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
+          // Show completion modal on error
+          setCompletedLeaseId(createdLeaseId);
+          setShowCompletionModal(true);
+        }
+        
+        if (scanResult.end_date) {
+          setLeaseDetails({
+            end_date: scanResult.end_date,
+            notice_period_days: scanResult.notice_period_days || 30
+          });
+          setPendingLeaseId(createdLeaseId);
+        }
+
+        setSelectedFiles([]);
+        queryClient.invalidateQueries({ queryKey: ['leases'] });
+        queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
@@ -1255,22 +1368,51 @@ function UploadScanPageContent() {
         });
         createdLeaseId = lease.id;
 
-        setCumulativeProgress(prev => Math.max(prev, 50));
-        setUploadProgress(50);
+        // FORENSIC LOG: STEP 1 - Lease Created
+        console.log('[LEASE_CREATED]', {
+          leaseId: lease.id,
+          owner_email: lease.owner_email,
+          created_by: lease.created_by,
+          userEmail: user.email,
+          timestamp: new Date().toISOString()
+        });
+
+        // FORENSIC LOG: STEP 2 - Verify Lease in DB Immediately
+        const verifyLease = await base44.entities.Lease.filter({ id: lease.id });
+        console.log('[LEASE_VERIFY_IMMEDIATE]', {
+          found: verifyLease.length > 0,
+          leaseData: verifyLease[0]
+        });
+        const createdProgressSingle = 50;
+        setCumulativeProgress(prev => Math.max(prev, createdProgressSingle));
+        setUploadProgress(createdProgressSingle);
+
         setAnalyzing(true);
         setUploading(false);
         setAnalysisStage('scanning');
         
+        // Start smooth continuous progress animation during AI analysis (50-95%)
         let currentProgress = 50;
         progressInterval = setInterval(() => {
           setCumulativeProgress(prev => {
             currentProgress = prev;
-            const increment = currentProgress < 70 ? 2.5 : currentProgress < 85 ? 1 : currentProgress < 95 ? 0.3 : 0;
+            let increment;
+            
+            if (currentProgress < 70) {
+              increment = 2.5; // Fast progress during early analysis
+            } else if (currentProgress < 85) {
+              increment = 1; // Moderate progress
+            } else if (currentProgress < 95) {
+              increment = 0.5; // Slow but steady - never freeze
+            } else {
+              increment = 0; // Stop at 95% and wait for backend
+            }
+            
             const next = Math.min(95, prev + increment);
             setUploadProgress(Math.round(next));
             return next;
           });
-        }, 2000);
+        }, 1500); // Check every 1.5 seconds
 
         // Create LeaseScan FIRST and capture id
         const scan = await base44.entities.LeaseScan.create({
@@ -1284,42 +1426,227 @@ function UploadScanPageContent() {
         scanId = scan?.id;
         if (!scanId) throw new Error('BUG: scanId missing after LeaseScan.create');
 
-        // STEP 3: Dispatch analysis (async — returns immediately)
+        // STEP 3: Invoke analysis
         logStage('ANALYSIS_START', { fileUrls });
+        const analysisStartTime = Date.now();
+
+        console.log('SCAN_INVOKE', { leaseId: lease.id, scanId, hasFileUrl: !!fileUrls?.[0], language });
         const resp = await base44.functions.invoke('scanLeaseCF_v1', {
-          leaseId: lease.id, scanId, fileUrl: fileUrls[0], language
+          leaseId: lease.id,
+          scanId: scanId,
+          fileUrl: fileUrls[0],
+          language
         });
         const out = resp?.data ?? resp;
-        if (!out || out?.ok !== true) {
-          clearInterval(progressInterval);
-          setError({ code: out?.error_code || 'SCAN_DISPATCH_FAILED', step: out?.step, message: out?.message || 'Scan dispatch failed', retryable: true });
-          setUploading(false); setAnalyzing(false); setAnalysisStage('');
+        console.log("INVOKE_SCANLEASEEXTERNAL_RAW", resp);
+        console.log("INVOKE_SCANLEASEEXTERNAL_OUT", out);
+        
+        if (!out) {
+          setError({ code: 'EMPTY_FUNCTION_RESULT', step: 'FUNCTION_INVOCATION', message: language === 'th' ? 'ไม่ได้รับผลลัพธ์จากการวิเคราะห์' : 'Did not receive analysis result from function', retryable: true });
+          setUploading(false);
+          setAnalyzing(false);
+          setAnalysisStage('');
           return;
         }
+        if (out?.ok !== true) {
+          setError({ code: out.error_code, step: out.step, message: out.message, retryable: out.retryable === true });
+          setUploading(false);
+          setAnalyzing(false);
+          setAnalysisStage('');
+          return;
+        }
+        const scanResponse = resp.data;
+        
+        // CRITICAL: Use scanId from function response if available (for tracking)
+        if (scanResponse?.scanId && !scanId) {
+          scanId = scanResponse.scanId;
+        }
 
-        // Poll for completion (async model)
-        const { pollScanCompletion } = await import("../components/shared/pollScanCompletion");
-        const completedScan = await pollScanCompletion(scanId, base44, {
-          maxWaitMs: 180000,
-          intervalMs: 3000,
-          onProgress: (elapsed) => {
-            const pct = Math.min(95, 50 + (elapsed / 180000) * 45);
-            setCumulativeProgress(prev => Math.max(prev, pct));
-            setUploadProgress(Math.round(pct));
-            if (elapsed > 60000) setAnalysisStage('extracting');
-          }
+        const analysisDuration = Date.now() - analysisStartTime;
+        
+        logStage('ANALYSIS_RESPONSE', {
+          duration: analysisDuration,
+          success: scanResponse?.success,
+          hasResult: !!scanResponse?.result,
+          hasScanId: !!scanResponse?.scanId,
+          backendRequestId: scanResponse?.diagnostic?.requestId,
+          buildTag: scanResponse?.diagnostic?.buildTag,
+          error: scanResponse?.error
+        });
+        
+        console.log('[ANALYSIS_RESPONSE_DEBUG]', {
+          scanResponse,
+          scanResponseKeys: Object.keys(scanResponse || {}),
+          hasOk: 'ok' in (scanResponse || {}),
+          okValue: scanResponse?.ok
         });
 
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-        logStage('ANALYSIS_SUCCESS', { riskScore: completedScan.risk_score });
+        if (!scanResponse || scanResponse.ok === false) {
+          const backendError = scanResponse?.error || { code: 'UNKNOWN_BACKEND_ERROR', step: 'ANALYSIS', message: 'Scan failed without specific error' };
+          
+          logStage('ANALYSIS_FAILED', { error: backendError });
 
-        const finalScanId = scanId;
+          const errorObj = new Error(backendError.message);
+          errorObj.code = backendError.code;
+          errorObj.step = backendError.step;
+          errorObj.stack = backendError.stack;
+          errorObj.requestId = requestId;
+          throw errorObj;
+        }
+        
+        // CRITICAL: Extract scanId from response IMMEDIATELY
+        if (scanResponse?.scanId) {
+          scanId = scanResponse.scanId;
+          console.log('[SCANNED_ID_FROM_RESPONSE]', { scanId });
+        }
+
+        // VERIFY PAYLOAD - NON-BLOCKING (ReportFull will materialize if needed)
+        logStage('VERIFICATION_START', { scanId });
+        try {
+          const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId, requestId });
+          logStage('VERIFICATION_RESULT', { 
+            hasPdfPayload: verifyStatus?.hasPdfPayload,
+            needsMaterialization: scanResponse?.needsMaterialization,
+            isFallback: verifyStatus?.isFallback,
+            canMaterialize: verifyStatus?.diagnostics?.canMaterialize
+          });
+          
+          // Log warning but DON'T throw - ReportFull will handle materialization
+          if (!verifyStatus?.hasPdfPayload) {
+            logStage('VERIFICATION_WARN', { 
+              message: 'pdfPayload missing, ReportFull will trigger materialization',
+              canMaterialize: verifyStatus?.diagnostics?.canMaterialize
+            });
+          }
+        } catch (verifyErr) {
+          // Don't fail the flow on verification error
+          logStage('VERIFICATION_ERROR', { error: verifyErr.message });
+        }
+        
+        // Stop smooth progress animation
+        clearInterval(progressInterval);
+        const savingProgressSingle = 96;
+        setCumulativeProgress(prev => Math.max(prev, savingProgressSingle));
+        setUploadProgress(savingProgressSingle);
+        
+        logStage('ANALYSIS_SUCCESS', {
+          riskScore: scanResponse.result?.risk_score,
+          flagsCount: scanResponse.result?.flags?.length
+        });
+
+        // Update LeaseScan status and navigate to report with fresh data
+        setAnalysisStage('finalizing');
+        const finalizingProgressSingle = 95;
+        setCumulativeProgress(prev => Math.max(prev, finalizingProgressSingle));
+        setUploadProgress(finalizingProgressSingle);
+        
+        await base44.entities.LeaseScan.update(scanId, {
+          status: 'ok',
+          risk_score: scanResponse?.scan_full?.risk_score || 0,
+          summary: scanResponse?.scan_full?.summary?.executive_summary || ''
+        });
+        
+        const completeProgressSingle = 100;
+        setCumulativeProgress(prev => Math.max(prev, completeProgressSingle));
+        setUploadProgress(completeProgressSingle);
+        
+        // CRITICAL: Use scanResponse.scanId if scanId wasn't set properly
+        const finalScanId = scanId || scanResponse?.scanId;
+        if (!finalScanId) throw new Error('BUG: scanId missing from both sources');
+        if (finalScanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        
+        console.log('[FINAL_SCAN_ID_CHECK]', { scanId, scanResponseId: scanResponse?.scanId, finalScanId });
+        
+        // CRITICAL: Invalidate ALL queries to force UI refresh
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['allScans'] }),
+          queryClient.invalidateQueries({ queryKey: ['deposits'] }),
+          queryClient.invalidateQueries({ queryKey: ['timelineEvents'] }),
+          queryClient.invalidateQueries({ queryKey: ['leases'] }),
+          queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+        ]);
+        
+        // Force refetch deposits immediately to ensure UI shows new data
+        await queryClient.refetchQueries({ queryKey: ['deposits'] });
+        
+        // Update storage usage after successful upload
+        try {
+          await base44.functions.invoke('updateStorageUsage', {
+            bytesAdded: totalFileSizeSingle
+          });
+          console.log('[STORAGE_USAGE_UPDATED]', { bytesAdded: totalFileSizeSingle });
+        } catch (storageErr) {
+          console.warn('[STORAGE_UPDATE_FAILED]', storageErr);
+          // Non-blocking - continue even if storage tracking fails
+        }
+        
+        // Pass scan_full directly via navigation state to avoid DB replication lag
         const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(finalScanId)}&leaseId=${encodeURIComponent(lease.id)}`;
-        navigate(reportUrl, { state: { scan_full: completedScan.scan_full, fromUpload: true } });
-        // Non-blocking storage update
-        base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSizeSingle }).catch(() => {});
+        console.log('[NAVIGATE_REPORT]', { reportUrl, scanId: finalScanId, leaseId: lease.id });
+        navigate(reportUrl, {
+          state: { 
+            scan_full: scanResponse?.scan_full,
+            fromUpload: true 
+          }
+        });
         return;
+
+        const scanResult = scanResponse.result;
+        setAnalysisStage('extracting');
+        setUploadProgress(70);
+
+        await base44.entities.Lease.update(lease.id, {
+          status: 'scanned',
+          property_address: scanResult.property_address || null,
+          start_date: scanResult.start_date || null,
+          end_date: scanResult.end_date || null,
+          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
+          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
+          language_detected: scanResult.language_detected || 'en'
+        });
+        setUploadProgress(80);
+
+        setAnalysisStage('finalizing');
+
+
+        setUploadProgress(100);
+        setCurrentStep(2); // Move to results step
+
+        // Auto-populate trackers and timeline
+        try {
+          console.log('[AUTO_POPULATE] Starting auto-population...');
+          const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
+            scanResult,
+            leaseId: lease.id,
+            scanId
+          });
+          
+          if (populateResponse?.success) {
+            console.log('[AUTO_POPULATE] Success:', populateResponse);
+            // Invalidate relevant queries
+            queryClient.invalidateQueries({ queryKey: ['deposits'] });
+            queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
+          }
+        } catch (populateErr) {
+          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
+          // Don't block user flow if auto-population fails
+        }
+
+        // Show completion modal
+        setCompletedLeaseId(createdLeaseId);
+        setShowCompletionModal(true);
+        
+        if (scanResult.end_date) {
+          setLeaseDetails({
+            end_date: scanResult.end_date,
+            notice_period_days: scanResult.notice_period_days || 30
+          });
+          setPendingLeaseId(createdLeaseId);
+        }
+
+        setSelectedFiles([]);
+        queryClient.invalidateQueries({ queryKey: ['leases'] });
+        queryClient.invalidateQueries({ queryKey: ['allScans'] });
 
       } catch (err) {
         logStage('ERROR_CAUGHT', {
