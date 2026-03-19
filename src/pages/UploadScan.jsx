@@ -502,21 +502,18 @@ import { checkScanRecovery } from "../components/scan/scanRecovery";
       } catch (err) {
         logStage('ERROR_CAUGHT', { error: err.message, stage: analysisStage });
         if (progressInterval) clearInterval(progressInterval);
-        // Recovery: check if scan completed in DB despite timeout
-        if (scanId && createdLeaseId) {
-          const { recovered, scan: rs } = await checkScanRecovery(scanId);
+        if (scanId || createdLeaseId) {
+          const { recovered, scan: rs } = await checkScanRecovery(scanId, createdLeaseId);
           if (recovered) {
-            navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(createdLeaseId)}`, { state: { scan_full: rs.scan_full, fromUpload: true } });
+            navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(rs.id)}&leaseId=${encodeURIComponent(createdLeaseId || rs.lease_id)}`, { state: { scan_full: rs.scan_full, fromUpload: true } });
             return;
           }
         }
         const formattedError = formatErrorForUser(err, requestId, language, { uploadStage: analysisStage });
         formattedError.scanId = scanId || null;
+        formattedError.leaseId = createdLeaseId || null;
         setError(formattedError);
         setDebugLog(createDebugLog(requestId, stages, deviceContext, networkLog));
-        if (createdLeaseId) {
-          try { await base44.entities.Lease.delete(createdLeaseId); } catch (e) { console.error('Cleanup failed:', e); }
-        }
       } finally {
         setUploading(false);
         setAnalyzing(false);
