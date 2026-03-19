@@ -44,14 +44,6 @@ import ScanReviewConfirmation from "../components/scan/ScanReviewConfirmation";
 import ScanErrorDisplay from "../components/scan/ScanErrorDisplay";
 import MissingCriticalClauses from "../components/leases/MissingCriticalClauses";
 import { checkScanRecovery } from "../components/scan/scanRecovery";
-...
-        navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
-          state: { 
-            scan_full: scanResponse?.scan_full,
-            fromUpload: true 
-          }
-        });
-        return;
 
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
