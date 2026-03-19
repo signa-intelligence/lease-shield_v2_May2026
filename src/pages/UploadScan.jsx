@@ -1414,150 +1414,72 @@ function UploadScanPageContent() {
           });
         }, 1500); // Check every 1.5 seconds
 
-        // Create LeaseScan FIRST and capture id
-        const scan = await base44.entities.LeaseScan.create({
-          lease_id: lease.id,
-          owner_email: user.email,
-          created_by: user.email,
-          status: 'initiated',
-          request_id: requestId,
-          created_at: new Date().toISOString()
-        });
-        scanId = scan?.id;
-        if (!scanId) throw new Error('BUG: scanId missing after LeaseScan.create');
-
-        // STEP 3: Invoke analysis
+        // STEP 3: Invoke analysis (ASYNC model - returns immediately)
         logStage('ANALYSIS_START', { fileUrls });
-        const analysisStartTime = Date.now();
 
-        console.log('SCAN_INVOKE', { leaseId: lease.id, scanId, hasFileUrl: !!fileUrls?.[0], language });
+        console.log('SCAN_INVOKE_ASYNC', { leaseId: lease.id, hasFileUrl: !!fileUrls?.[0], language });
         const resp = await base44.functions.invoke('scanLeaseCF_v1', {
           leaseId: lease.id,
-          scanId: scanId,
           fileUrl: fileUrls[0],
           language
         });
         const out = resp?.data ?? resp;
-        console.log("INVOKE_SCANLEASEEXTERNAL_RAW", resp);
-        console.log("INVOKE_SCANLEASEEXTERNAL_OUT", out);
         
-        if (!out) {
-          setError({ code: 'EMPTY_FUNCTION_RESULT', step: 'FUNCTION_INVOCATION', message: language === 'th' ? 'ไม่ได้รับผลลัพธ์จากการวิเคราะห์' : 'Did not receive analysis result from function', retryable: true });
-          setUploading(false);
-          setAnalyzing(false);
-          setAnalysisStage('');
+        if (!out || out?.ok !== true) {
+          setError({ code: out?.error_code, step: out?.step, message: out?.message || 'Scan failed', retryable: true });
+          setUploading(false); setAnalyzing(false); setAnalysisStage('');
           return;
         }
-        if (out?.ok !== true) {
-          setError({ code: out.error_code, step: out.step, message: out.message, retryable: out.retryable === true });
-          setUploading(false);
-          setAnalyzing(false);
-          setAnalysisStage('');
-          return;
-        }
-        const scanResponse = resp.data;
-        
-        // CRITICAL: Use scanId from function response if available (for tracking)
-        if (scanResponse?.scanId && !scanId) {
-          scanId = scanResponse.scanId;
-        }
 
-        const analysisDuration = Date.now() - analysisStartTime;
-        
-        logStage('ANALYSIS_RESPONSE', {
-          duration: analysisDuration,
-          success: scanResponse?.success,
-          hasResult: !!scanResponse?.result,
-          hasScanId: !!scanResponse?.scanId,
-          backendRequestId: scanResponse?.diagnostic?.requestId,
-          buildTag: scanResponse?.diagnostic?.buildTag,
-          error: scanResponse?.error
-        });
-        
-        console.log('[ANALYSIS_RESPONSE_DEBUG]', {
-          scanResponse,
-          scanResponseKeys: Object.keys(scanResponse || {}),
-          hasOk: 'ok' in (scanResponse || {}),
-          okValue: scanResponse?.ok
-        });
+        scanId = out.scanId;
+        if (!scanId) throw new Error('BUG: scanId missing from response');
 
-        if (!scanResponse || scanResponse.ok === false) {
-          const backendError = scanResponse?.error || { code: 'UNKNOWN_BACKEND_ERROR', step: 'ANALYSIS', message: 'Scan failed without specific error' };
+        // Poll LeaseScan record until status is 'completed' or 'failed'
+        console.log('[POLL_START]', { scanId });
+        let pollCount = 0;
+        const maxPolls = 60; // 60 * 3s = 3 minutes max
+        let completedScan = null;
+
+        while (pollCount < maxPolls) {
+          await new Promise(r => setTimeout(r, 3000));
+          pollCount++;
           
-          logStage('ANALYSIS_FAILED', { error: backendError });
-
-          const errorObj = new Error(backendError.message);
-          errorObj.code = backendError.code;
-          errorObj.step = backendError.step;
-          errorObj.stack = backendError.stack;
-          errorObj.requestId = requestId;
-          throw errorObj;
-        }
-        
-        // CRITICAL: Extract scanId from response IMMEDIATELY
-        if (scanResponse?.scanId) {
-          scanId = scanResponse.scanId;
-          console.log('[SCANNED_ID_FROM_RESPONSE]', { scanId });
-        }
-
-        // VERIFY PAYLOAD - NON-BLOCKING (ReportFull will materialize if needed)
-        logStage('VERIFICATION_START', { scanId });
-        try {
-          const { data: verifyStatus } = await base44.functions.invoke('debugScanStatus', { scanId, requestId });
-          logStage('VERIFICATION_RESULT', { 
-            hasPdfPayload: verifyStatus?.hasPdfPayload,
-            needsMaterialization: scanResponse?.needsMaterialization,
-            isFallback: verifyStatus?.isFallback,
-            canMaterialize: verifyStatus?.diagnostics?.canMaterialize
-          });
-          
-          // Log warning but DON'T throw - ReportFull will handle materialization
-          if (!verifyStatus?.hasPdfPayload) {
-            logStage('VERIFICATION_WARN', { 
-              message: 'pdfPayload missing, ReportFull will trigger materialization',
-              canMaterialize: verifyStatus?.diagnostics?.canMaterialize
-            });
+          try {
+            const scans = await base44.entities.LeaseScan.filter({ id: scanId });
+            const scan = scans?.[0];
+            
+            if (scan?.status === 'completed') {
+              completedScan = scan;
+              console.log('[POLL_COMPLETE]', { scanId, pollCount, riskScore: scan.risk_score });
+              break;
+            }
+            
+            if (scan?.status === 'failed') {
+              throw new Error('Scan analysis failed. Please try again.');
+            }
+            
+            // Update progress based on poll count
+            const pollProgress = Math.min(94, 55 + pollCount * 1.5);
+            setCumulativeProgress(prev => Math.max(prev, pollProgress));
+            setUploadProgress(Math.round(pollProgress));
+          } catch (pollErr) {
+            if (pollErr.message.includes('failed')) throw pollErr;
+            console.warn('[POLL_ERROR]', pollErr.message);
           }
-        } catch (verifyErr) {
-          // Don't fail the flow on verification error
-          logStage('VERIFICATION_ERROR', { error: verifyErr.message });
         }
-        
+
+        if (!completedScan) {
+          throw new Error('Analysis is taking longer than expected. Check your scan results in a few minutes.');
+        }
+
         // Stop smooth progress animation
         clearInterval(progressInterval);
-        const savingProgressSingle = 96;
-        setCumulativeProgress(prev => Math.max(prev, savingProgressSingle));
-        setUploadProgress(savingProgressSingle);
+        setCumulativeProgress(100);
+        setUploadProgress(100);
         
-        logStage('ANALYSIS_SUCCESS', {
-          riskScore: scanResponse.result?.risk_score,
-          flagsCount: scanResponse.result?.flags?.length
-        });
-
-        // Update LeaseScan status and navigate to report with fresh data
-        setAnalysisStage('finalizing');
-        const finalizingProgressSingle = 95;
-        setCumulativeProgress(prev => Math.max(prev, finalizingProgressSingle));
-        setUploadProgress(finalizingProgressSingle);
+        logStage('ANALYSIS_SUCCESS', { scanId, riskScore: completedScan.risk_score });
         
-        await base44.entities.LeaseScan.update(scanId, {
-          status: 'ok',
-          risk_score: scanResponse?.scan_full?.risk_score || 0,
-          summary: scanResponse?.scan_full?.summary?.executive_summary || ''
-        });
-        
-        const completeProgressSingle = 100;
-        setCumulativeProgress(prev => Math.max(prev, completeProgressSingle));
-        setUploadProgress(completeProgressSingle);
-        
-        // CRITICAL: Use scanResponse.scanId if scanId wasn't set properly
-        const finalScanId = scanId || scanResponse?.scanId;
-        if (!finalScanId) throw new Error('BUG: scanId missing from both sources');
-        if (finalScanId === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
-        
-        console.log('[FINAL_SCAN_ID_CHECK]', { scanId, scanResponseId: scanResponse?.scanId, finalScanId });
-        
-        // CRITICAL: Invalidate ALL queries to force UI refresh
+        // Invalidate queries
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ['allScans'] }),
           queryClient.invalidateQueries({ queryKey: ['deposits'] }),
@@ -1566,26 +1488,16 @@ function UploadScanPageContent() {
           queryClient.invalidateQueries({ queryKey: ['currentUser'] })
         ]);
         
-        // Force refetch deposits immediately to ensure UI shows new data
-        await queryClient.refetchQueries({ queryKey: ['deposits'] });
-        
-        // Update storage usage after successful upload
+        // Update storage usage
         try {
-          await base44.functions.invoke('updateStorageUsage', {
-            bytesAdded: totalFileSizeSingle
-          });
-          console.log('[STORAGE_USAGE_UPDATED]', { bytesAdded: totalFileSizeSingle });
-        } catch (storageErr) {
-          console.warn('[STORAGE_UPDATE_FAILED]', storageErr);
-          // Non-blocking - continue even if storage tracking fails
-        }
+          await base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSizeSingle });
+        } catch (_) {}
         
-        // Pass scan_full directly via navigation state to avoid DB replication lag
-        const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(finalScanId)}&leaseId=${encodeURIComponent(lease.id)}`;
-        console.log('[NAVIGATE_REPORT]', { reportUrl, scanId: finalScanId, leaseId: lease.id });
+        // Navigate to report
+        const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
         navigate(reportUrl, {
           state: { 
-            scan_full: scanResponse?.scan_full,
+            scan_full: completedScan.scan_full,
             fromUpload: true 
           }
         });
