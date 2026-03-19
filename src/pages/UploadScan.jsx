@@ -43,8 +43,1052 @@ import RetryAnalysis from "../components/shared/RetryAnalysis";
 import ScanReviewConfirmation from "../components/scan/ScanReviewConfirmation";
 import ScanErrorDisplay from "../components/scan/ScanErrorDisplay";
 import MissingCriticalClauses from "../components/leases/MissingCriticalClauses";
-import { checkScanRecovery } from "../components/scan/scanRecovery";
-...
+
+function UploadScanPageContent() {
+  const navigate = useNavigate();
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [error, setError] = useState(null);
+  const [debugLog, setDebugLog] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [cumulativeProgress, setCumulativeProgress] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [leaseDetails, setLeaseDetails] = useState(null);
+  const [pendingLeaseId, setPendingLeaseId] = useState(null);
+  const [analysisStage, setAnalysisStage] = useState('');
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchResults, setBatchResults] = useState([]);
+  const [selectedLease, setSelectedLease] = useState(null);
+  const [editingNotice, setEditingNotice] = useState(false);
+  const [noticeSettings, setNoticeSettings] = useState({ notice_period_days: 30 });
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [documentToView, setDocumentToView] = useState(null);
+  const [showPostScanHint, setShowPostScanHint] = useState(false);
+  const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
+  const [disclaimerCheckboxTicked, setDisclaimerCheckboxTicked] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completedLeaseId, setCompletedLeaseId] = useState(null);
+  const [addingPagesToLease, setAddingPagesToLease] = useState(null);
+  const [additionalFiles, setAdditionalFiles] = useState([]);
+  const [showReviewScreen, setShowReviewScreen] = useState(false);
+  const [reviewData, setReviewData] = useState(null);
+  const [savingConfirmedData, setSavingConfirmedData] = useState(false);
+  const fileInputRef = React.useRef(null);
+
+  const queryClient = useQueryClient();
+
+  // Upload URL validation & preflight helpers
+  const isValidPublicUrl = (url) => {
+    return (
+      typeof url === 'string' &&
+      url.startsWith('https://') &&
+      url.length > 20 &&
+      !/[\[\]\(\)]/.test(url)
+    );
+  };
+  const safeStringify = (obj) => {
+    try { return JSON.stringify(obj).slice(0, 2000); } catch (e) { try { return String(obj).slice(0,2000); } catch { return '[unserializable]'; } }
+  };
+  const preflightUrl = async (url) => {
+    try {
+      let res = await fetch(url, { method: 'HEAD' });
+      if (res.status === 405 || res.status === 501) {
+        res = await fetch(url, { method: 'GET' });
+      }
+      return res.status;
+    } catch {
+      return 0;
+    }
+  };
+
+  const { data: user, isLoading: isLoadingUser } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me(),
+    staleTime: 5 * 60 * 1000
+  });
+
+  const { data: leases = [] } = useQuery({
+    queryKey: ['leases'],
+    queryFn: () => base44.entities.Lease.filter({ 
+      owner_email: user?.email,
+      status: { $ne: 'deleted' }
+    }, '-created_date'),
+    enabled: !!user,
+    initialData: [],
+    refetchInterval: (query) => {
+      // Poll every 5 seconds if any lease is in pending/queued/processing state
+      const data = query.state.data || [];
+      const hasPendingScans = data.some(l => 
+        l.status === 'uploaded' || 
+        l.status === 'queued' || 
+        l.status === 'processing'
+      );
+      return hasPendingScans ? 5000 : false;
+    }
+  });
+
+  const { data: allScans = [] } = useQuery({
+    queryKey: ['allScans'],
+    queryFn: () => base44.entities.LeaseScan.list(),
+    enabled: !!user,
+    refetchOnMount: 'always',
+    staleTime: 0
+  });
+
+  const language = user?.language || 'en';
+  const isDarkMode = user?.theme === 'dark';
+  const userTier = user?.plan_tier || 'explorer';
+
+  // ✅ SCAN LIMIT ENFORCEMENT (annual + monthly caps for Secure)
+  const getScanLimits = () => {
+    switch(userTier) {
+      case 'explorer': return { limit: 1, period: 'lifetime', unlimited: false, monthlyMax: 0 };
+      case 'lite': return { limit: 6, period: 'year', unlimited: false, monthlyMax: 0 };
+      case 'protect': return { limit: 12, period: 'year', unlimited: false, monthlyMax: 0 };
+      case 'secure': return { limit: 50, period: 'year', unlimited: false, monthlyMax: 10 };
+      default: return { limit: 1, period: 'lifetime', unlimited: false, monthlyMax: 0 };
+    }
+  };
+  const canUploadLease = () => {
+    const limits = getScanLimits();
+    const availableScans = user?.available_scans ?? 0;
+    const used = Math.max(0, limits.limit - availableScans);
+    let monthlyBlocked = false, monthlyUsed = 0;
+    if (limits.monthlyMax > 0) {
+      const cm = new Date().toISOString().slice(0, 7);
+      monthlyUsed = user?.usage_month === cm ? (user?.scans_used_this_month || 0) : 0;
+      monthlyBlocked = monthlyUsed >= limits.monthlyMax;
+    }
+    return { allowed: availableScans > 0 && !monthlyBlocked, remaining: availableScans, used, limit: limits.limit, period: limits.period, monthlyBlocked, monthlyUsed, monthlyMax: limits.monthlyMax };
+  };
+
+  const scanStatus = canUploadLease();
+
+  const colors = {
+    bg: isDarkMode ? '#1A1D1F' : '#F9FAFB',
+    cardBg: isDarkMode ? '#2A2D30' : '#FFFFFF',
+    textPrimary: isDarkMode ? '#ECEFED' : '#1A1D1F',
+    textSecondary: isDarkMode ? '#9CA3AF' : '#6B7280',
+    borderColor: isDarkMode ? '#3A3D40' : '#E5E7EB',
+    inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
+  };
+
+  const t = {
+    en: {
+      title: "Scan Your Lease",
+      subtitle: "Upload your lease agreement for automated analysis",
+      uploadArea: "Drop your lease files here or click to browse",
+      supportedFormats: "PDF files only. Max 10MB per file.",
+      selectFiles: "Select Files",
+      uploadAll: "Analyse Files",
+      uploading: "Uploading files...",
+      analyzingTitle: "Analysing Your Lease",
+      analyzingDesc: "Reviewing your lease agreement. This may take up to 30 seconds...",
+      analyzing: {
+        uploading: "Uploading files...",
+        creating: "Creating lease record...",
+        scanning: "Analysing document...",
+        extracting: "Extracting lease details...",
+        finalizing: "Finalising analysis..."
+      },
+      recentScans: "Recent Scans",
+      viewAll: "View All Leases",
+      noScans: "No recent scans",
+      scanDate: "Scanned on",
+      confirmNoticeTitle: "Set Notice Period Reminder",
+      confirmNoticeDesc: "We detected your lease ends on",
+      noticePeriodLabel: "Notice Period (Days)",
+      noticePeriodHelp: "Days before lease end to notify landlord",
+      skipReminder: "Skip",
+      setReminder: "Set Reminder",
+      riskLevels: {
+        low: "Low Risk",
+        medium: "Medium Risk",
+        high: "High Risk",
+        critical: "Critical Risk"
+      },
+      leaseDetails: "Lease Details",
+      basicInfo: "Basic Information",
+      propertyAddress: "Property Address",
+      monthlyRent: "Monthly Rent",
+      securityDeposit: "Security Deposit",
+      leasePeriod: "Lease Period",
+      leaseStart: "Lease Start",
+      leaseEnd: "Lease End",
+      to: "to",
+      noticeSettings: "Notice Settings",
+      noticeAlertsEnabled: "Notice Alerts Enabled",
+      noticePeriod: "Notice Period (Days)",
+      noticeDeadline: "Notice Deadline",
+      edit: "Edit",
+      save: "Save",
+      cancel: "Cancel",
+      days: "days",
+      riskAnalysis: "Risk Analysis",
+      riskScore: "Risk Score",
+      viewFullReport: "View Full Report",
+      viewScanResults: "View Scan Results",
+      viewLease: "View Lease Document",
+      closeDetails: "Close Details",
+      enableAlertsHelp: "Receive reminders 30, 7, and 3 days before notice deadline",
+      deadlineCalculated: "Calculated based on lease end date and notice period",
+      allLeases: "All Leases",
+      scanLimitReached: "Scan Limit Reached",
+      scanLimitMsg: "You've used {used} of {limit} scans {periodText}",
+      upgradeForMore: "Upgrade for More Scans",
+      scansRemaining: "{remaining} {lifetimeLabel} remaining",
+      unlimitedScans: "Unlimited Scans",
+      browseDocuments: "Upload Documents",
+      batchUpload: "Batch Upload",
+      singleUpload: "Single Upload",
+      filesWillBeSeparate: "Each file will be uploaded as a separate lease",
+      stepUpload: "Upload",
+      stepAnalyze: "Analyse",
+      stepResults: "Results",
+      stepTrack: "Track",
+      upgradeHintText: "Upgrade to unlock unlimited scans and advanced lease analysis.",
+      viewPlans: "View plans",
+      disclaimerTitle: "Lease Scan Disclaimer",
+      disclaimerCheckbox: "I have read and agree to the Lease Scan Disclaimer.",
+      agreeAndContinue: "Agree & Continue",
+      disclaimerCancel: "Cancel",
+      disclaimerText: {
+        p1: "Lease Shield provides automated lease analysis, practical guidance, and document templates to help users better understand rental agreements and common risk areas. All information is provided for general informational purposes only.",
+        p2: "Lease Shield is not a law firm and does not provide legal advice or legal representation. Use of this service does not create a lawyer–client relationship.",
+        p3: "While Lease Shield uses structured analysis and up-to-date reference data, results may vary depending on document quality, language, and jurisdiction. Lease Shield does not warrant that scan results, recommendations, or generated documents are complete, error-free, or suitable for every situation.",
+        responsibleTitle: "You remain responsible for:",
+        responsibilities: [
+          "Reviewing and understanding your lease documents",
+          "Confirming the accuracy of all information",
+          "Seeking independent professional or legal advice where appropriate",
+          "Deciding whether and how to rely on any outputs provided"
+        ],
+        p4: "Lease Shield is not a party to any lease agreement and is not responsible for decisions made, disputes arising, or outcomes resulting from use of this service.",
+        p5: "By continuing, you acknowledge that Lease Shield is a support and insight tool, and that you use it at your own discretion and risk."
+      }
+    },
+    th: {
+      title: "สแกนสัญญาเช่า",
+      subtitle: "อัปโหลดสัญญาเช่าเพื่อวิเคราะห์อัตโนมัติ",
+      uploadArea: "วางไฟล์สัญญาเช่าที่นี่ หรือคลิกเพื่อเลือกไฟล์",
+      supportedFormats: "รองรับเฉพาะไฟล์ PDF ไฟล์ละไม่เกิน 10MB",
+      selectFiles: "เลือกไฟล์",
+      uploadAll: "วิเคราะห์ไฟล์",
+      uploading: "กำลังอัปโหลดไฟล์...",
+      analyzingTitle: "กำลังวิเคราะห์สัญญาเช่า",
+      analyzingDesc: "กำลังตรวจสอบสัญญาเช่าของคุณ อาจใช้เวลาประมาณ 30 วินาที...",
+      analyzing: {
+        uploading: "กำลังอัปโหลดไฟล์...",
+        creating: "กำลังสร้างบันทึกสัญญาเช่า...",
+        scanning: "กำลังวิเคราะห์เอกสาร...",
+        extracting: "กำลังดึงข้อมูลสัญญาเช่า...",
+        finalizing: "กำลังสรุปการวิเคราะห์..."
+      },
+      recentScans: "การสแกนล่าสุด",
+      viewAll: "ดูสัญญาเช่าทั้งหมด",
+      noScans: "ยังไม่มีการสแกน",
+      scanDate: "สแกนเมื่อ",
+      confirmNoticeTitle: "ตั้งการแจ้งเตือนระยะเวลาแจ้งล่วงหน้า",
+      confirmNoticeDesc: "เราตรวจพบว่าสัญญาเช่าของคุณสิ้นสุดวันที่",
+      noticePeriodLabel: "ระยะเวลาแจ้งล่วงหน้า (วัน)",
+      noticePeriodHelp: "จำนวนวันก่อนสัญญาหมดอายุที่ต้องแจ้งเจ้าของบ้าน",
+      skipReminder: "ข้าม",
+      setReminder: "ตั้งการแจ้งเตือน",
+      riskLevels: {
+        low: "ความเสี่ยงต่ำ",
+        medium: "ความเสี่ยงปานกลาง",
+        high: "ความเสี่ยงสูง",
+        critical: "ความเสี่ยงวิกฤต"
+      },
+      leaseDetails: "รายละเอียดสัญญาเช่า",
+      basicInfo: "ข้อมูลพื้นฐาน",
+      propertyAddress: "ที่อยู่ทรัพย์สิน",
+      monthlyRent: "ค่าเช่ารายเดือน",
+      securityDeposit: "เงินมัดจำ",
+      leasePeriod: "ระยะเวลาสัญญา",
+      leaseStart: "วันเริ่มสัญญา",
+      leaseEnd: "วันสิ้นสุดสัญญา",
+      to: "ถึง",
+      noticeSettings: "การตั้งค่าการแจ้งเตือน",
+      noticeAlertsEnabled: "เปิดการแจ้งเตือน",
+      noticePeriod: "ระยะเวลาแจ้งล่วงหน้า (วัน)",
+      noticeDeadline: "กำหนดแจ้ง",
+      edit: "แก้ไข",
+      save: "บันทึก",
+      cancel: "ยกเลิก",
+      days: "วัน",
+      riskAnalysis: "การวิเคราะห์ความเสี่ยง",
+      riskScore: "คะแนนความเสี่ยง",
+      viewFullReport: "ดูรายงานฉบับเต็ม",
+      viewScanResults: "ดูผลการสแกน",
+      viewLease: "ดูเอกสารสัญญาเช่า",
+      closeDetails: "ปิดรายละเอียด",
+      enableAlertsHelp: "รับการแจ้งเตือน 30, 7 และ 3 วันก่อนถึงกำหนดแจ้ง",
+      deadlineCalculated: "คำนวณจากวันสิ้นสุดสัญญาและระยะเวลาแจ้งล่วงหน้า",
+      allLeases: "สัญญาเช่าทั้งหมด",
+      scanLimitReached: "ถึงขีดจำกัดการสแกนแล้ว",
+      scanLimitMsg: "คุณใช้ไป {used} จาก {limit} การสแกน{periodText}",
+      upgradeForMore: "อัปเกรดเพื่อเพิ่มการสแกน",
+      scansRemaining: "เหลืออีก {remaining} การสแกน {periodText}",
+      unlimitedScans: "สแกนได้ไม่จำกัด",
+      browseDocuments: "อัปโหลดเอกสาร",
+      batchUpload: "อัปโหลดแบบกลุ่ม",
+      singleUpload: "อัปโหลดแบบเดี่ยว",
+      filesWillBeSeparate: "แต่ละไฟล์จะถูกอัปโหลดเป็นสัญญาเช่าแยกกัน",
+      stepUpload: "อัปโหลด",
+      stepAnalyze: "วิเคราะห์",
+      stepResults: "ผลลัพธ์",
+      stepTrack: "ติดตาม",
+      upgradeHintText: "อัปเกรดเพื่อปลดล็อกการสแกนไม่จำกัดและการวิเคราะห์สัญญาขั้นสูง",
+      viewPlans: "ดูแผน",
+      disclaimerTitle: "ข้อจำกัดความรับผิดชอบการสแกนสัญญาเช่า",
+      disclaimerCheckbox: "ข้าพเจ้าได้อ่านและยอมรับข้อจำกัดความรับผิดชอบการสแกนสัญญาเช่าแล้ว",
+      agreeAndContinue: "ยอมรับและดำเนินการต่อ",
+      disclaimerCancel: "ยกเลิก",
+      disclaimerText: {
+        p1: "Lease Shield ให้บริการวิเคราะห์สัญญาเช่าอัตโนมัติ คำแนะนำเชิงปฏิบัติ และเทมเพลตเอกสารเพื่อช่วยให้ผู้ใช้เข้าใจสัญญาเช่าและจุดเสี่ยงทั่วไปได้ดีขึ้น ข้อมูลทั้งหมดมีไว้เพื่อวัตถุประสงค์ในการให้ข้อมูลทั่วไปเท่านั้น",
+        p2: "Lease Shield ไม่ใช่สำนักงานกฎหมาย และไม่ให้คำปรึกษาด้านกฎหมายหรือการเป็นตัวแทนทางกฎหมาย การใช้บริการนี้ไม่ก่อให้เกิดความสัมพันธ์ทนายความ-ลูกความ",
+        p3: "แม้ว่า Lease Shield ใช้การวิเคราะห์ที่มีโครงสร้างและข้อมูลอ้างอิงที่เป็นปัจจุบัน แต่ผลลัพธ์อาจแตกต่างกันไปตามคุณภาพเอกสาร ภาษา และเขตอำนาจศาล Lease Shield ไม่รับประกันว่าผลการสแกน คำแนะนำ หรือเอกสารที่สร้างขึ้นจะครบถ้วน ปราศจากข้อผิดพลาด หรือเหมาะสมกับทุกสถานการณ์",
+        responsibleTitle: "คุณยังคงมีหน้าที่รับผิดชอบในการ:",
+        responsibilities: [
+          "ตรวจสอบและทำความเข้าใจเอกสารสัญญาเช่าของคุณ",
+          "ยืนยันความถูกต้องของข้อมูลทั้งหมด",
+          "ขอคำปรึกษาจากผู้เชี่ยวชาญหรือทนายความอิสระเมื่อจำเป็น",
+          "ตัดสินใจว่าจะพึ่งพาผลลัพธ์ที่ให้มาหรือไม่ และอย่างไร"
+        ],
+        p4: "Lease Shield ไม่ได้เป็นคู่สัญญาในสัญญาเช่าใด ๆ และไม่รับผิดชอบต่อการตัดสินใจที่ทำ ข้อพิพาทที่เกิดขึ้น หรือผลลัพธ์ที่เกิดจากการใช้บริการนี้",
+        p5: "เมื่อดำเนินการต่อ คุณรับทราบว่า Lease Shield เป็นเครื่องมือช่วยเหลือและให้ข้อมูลเชิงลึก และคุณใช้งานด้วยดุลยพินิจและความเสี่ยงของคุณเอง"
+      }
+    },
+    zh: {
+      title: "扫描租约",
+      subtitle: "上传您的租赁协议进行自动分析",
+      uploadArea: "将租约文件拖放到此处或点击浏览",
+      supportedFormats: "仅支持 PDF 文件，每个文件最大 10MB",
+      selectFiles: "选择文件",
+      uploadAll: "分析文件",
+      uploading: "正在上传文件...",
+      analyzingTitle: "正在分析您的租约",
+      analyzingDesc: "正在审查您的租赁协议。这可能需要30秒...",
+      analyzing: {
+        uploading: "正在上传文件...",
+        creating: "正在创建租约记录...",
+        scanning: "正在分析文档...",
+        extracting: "正在提取租约详情...",
+        finalizing: "正在完成分析..."
+      },
+      recentScans: "最近扫描",
+      viewAll: "查看所有租约",
+      noScans: "暂无扫描记录",
+      scanDate: "扫描于",
+      confirmNoticeTitle: "设置提前通知提醒",
+      noticePeriodLabel: "提前通知期（天数）",
+      confirmNoticeDesc: "我们检测到您的租约结束于",
+      noticePeriodHelp: "租约结束前需要通知房东的天数",
+      skipReminder: "跳过",
+      setReminder: "设置提醒",
+      riskLevels: {
+        low: "低风险",
+        medium: "中等风险",
+        high: "高风险",
+        critical: "严重风险"
+      },
+      leaseDetails: "租约详情",
+      basicInfo: "基本信息",
+      propertyAddress: "物业地址",
+      monthlyRent: "月租金",
+      securityDeposit: "押金",
+      leasePeriod: "租期",
+      leaseStart: "租约开始",
+      leaseEnd: "租约结束",
+      to: "至",
+      noticeSettings: "通知设置",
+      noticeAlertsEnabled: "启用通知提醒",
+      noticePeriod: "提前通知期（天数）",
+      noticeDeadline: "通知截止日期",
+      edit: "编辑",
+      save: "保存",
+      cancel: "取消",
+      days: "天",
+      riskAnalysis: "风险分析",
+      riskScore: "风险评分",
+      viewFullReport: "查看完整报告",
+      viewScanResults: "查看扫描结果",
+      viewLease: "查看租约文档",
+      closeDetails: "关闭详情",
+      enableAlertsHelp: "在通知截止日期前30、7和3天收到提醒",
+      deadlineCalculated: "根据租约结束日期和提前通知期计算",
+      allLeases: "所有租约",
+      scanLimitReached: "已达扫描限制",
+      scanLimitMsg: "您已使用 {used} / {limit} 次扫描{periodText}",
+      upgradeForMore: "升级以获得更多扫描",
+      scansRemaining: "剩余 {remaining} 次扫描{periodText}",
+      unlimitedScans: "无限制扫描",
+      browseDocuments: "上传文档",
+      batchUpload: "批量上传",
+      singleUpload: "单次上传",
+      filesWillBeSeparate: "每个文件将作为单独的租约上传",
+      stepUpload: "上传",
+      stepAnalyze: "分析",
+      stepResults: "结果",
+      stepTrack: "追踪",
+      upgradeHintText: "升级以解锁无限扫描和高级租约分析。",
+      viewPlans: "查看计划",
+      disclaimerTitle: "租约扫描免责声明",
+      disclaimerCheckbox: "我已阅读并同意租约扫描免责声明。",
+      agreeAndContinue: "同意并继续",
+      disclaimerCancel: "取消",
+      disclaimerText: {
+        p1: "Lease Shield 提供自动化租约分析、实用指导和文档模板，帮助用户更好地理解租赁协议和常见风险领域。所有信息仅供一般参考之用。",
+        p2: "Lease Shield 不是律师事务所，不提供法律意见或法律代理服务。使用本服务不会建立律师-客户关系。",
+        p3: "虽然 Lease Shield 使用结构化分析和最新参考数据，但结果可能因文档质量、语言和司法管辖区而异。Lease Shield 不保证扫描结果、建议或生成文档完整、无误或适用于每种情况。",
+        responsibleTitle: "您仍需承担以下责任：",
+        responsibilities: [
+          "审阅并理解您的租赁文件",
+          "确认所有信息的准确性",
+          "在适当情况下寻求独立的专业或法律意见",
+          "决定是否以及如何依赖所提供的任何输出内容"
+        ],
+        p4: "Lease Shield 不是任何租约协议的当事方，对因使用本服务而做出的决定、产生的纠纷或造成的结果不承担责任。",
+        p5: "继续操作即表示您确认 Lease Shield 是一种支持和洞察工具，您自行决定使用并承担风险。"
+      }
+    },
+    ja: {
+      title: "賃貸契約をスキャン",
+      subtitle: "賃貸契約書をアップロードして自動分析",
+      uploadArea: "ここに賃貸契約ファイルをドロップまたはクリックして参照",
+      supportedFormats: "PDFファイルのみ。各ファイル最大10MB",
+      selectFiles: "ファイルを選択",
+      uploadAll: "ファイルを分析",
+      uploading: "ファイルをアップロード中...",
+      analyzingTitle: "賃貸契約を分析中",
+      analyzingDesc: "賃貸契約を確認しています。最大30秒かかる場合があります...",
+      analyzing: {
+        uploading: "ファイルをアップロード中...",
+        creating: "賃貸契約記録を作成中...",
+        scanning: "ドキュメントを分析中...",
+        extracting: "賃貸契約の詳細を抽出中...",
+        finalizing: "分析を完了中..."
+      },
+      recentScans: "最近のスキャン",
+      viewAll: "すべての賃貸契約を表示",
+      noScans: "スキャン記録なし",
+      scanDate: "スキャン日",
+      confirmNoticeTitle: "通知期間リマインダーを設定",
+      confirmNoticeDesc: "賃貸契約の終了日を検出しました",
+      noticePeriodLabel: "通知期間（日数）",
+      noticePeriodHelp: "契約終了前に家主に通知する日数",
+      skipReminder: "スキップ",
+      setReminder: "リマインダーを設定",
+      riskLevels: {
+        low: "低リスク",
+        medium: "中リスク",
+        high: "高リスク",
+        critical: "重大リスク"
+      },
+      leaseDetails: "賃貸契約の詳細",
+      basicInfo: "基本情報",
+      propertyAddress: "物件住所",
+      monthlyRent: "月額家賃",
+      securityDeposit: "敷金",
+      leasePeriod: "契約期間",
+      leaseStart: "契約開始",
+      leaseEnd: "契約終了",
+      to: "から",
+      noticeSettings: "通知設定",
+      noticeAlertsEnabled: "通知アラート有効",
+      noticePeriod: "通知期間（日数）",
+      noticeDeadline: "通知期限",
+      edit: "編集",
+      save: "保存",
+      cancel: "キャンセル",
+      days: "日",
+      riskAnalysis: "リスク分析",
+      riskScore: "リスクスコア",
+      viewFullReport: "完全なレポートを表示",
+      viewScanResults: "スキャン結果を表示",
+      viewLease: "賃貸契約書を表示",
+      closeDetails: "詳細を閉じる",
+      enableAlertsHelp: "通知期限の30日前、7日前、3日前にリマインダーを受け取る",
+      deadlineCalculated: "契約終了日と通知期間に基づいて計算",
+      allLeases: "すべての賃貸契約",
+      scanLimitReached: "スキャン制限に達しました",
+      scanLimitMsg: "{limit}回のスキャンのうち{used}回を使用{periodText}",
+      upgradeForMore: "アップグレードしてさらにスキャン",
+      scansRemaining: "残り{remaining}回のスキャン{periodText}",
+      unlimitedScans: "無制限スキャン",
+      browseDocuments: "ドキュメントをアップロード",
+      batchUpload: "一括アップロード",
+      singleUpload: "単一アップロード",
+      filesWillBeSeparate: "各ファイルは個別の賃貸契約としてアップロードされます",
+      stepUpload: "アップロード",
+      stepAnalyze: "分析",
+      stepResults: "結果",
+      stepTrack: "追跡",
+      upgradeHintText: "無制限スキャンと高度な賃貸契約分析をアンロックするためにアップグレードしてください。",
+      viewPlans: "プランを見る",
+      disclaimerTitle: "賃貸契約スキャン免責事項",
+      disclaimerCheckbox: "賃貸契約スキャン免責事項を読み、同意します。",
+      agreeAndContinue: "同意して続行",
+      disclaimerCancel: "キャンセル",
+      disclaimerText: {
+        p1: "Lease Shield は、ユーザーが賃貸契約書および一般的なリスク領域をよりよく理解できるよう、自動リース分析、実用的なガイダンス、および文書テンプレートを提供します。すべての情報は一般的な情報提供のみを目的として提供されます。",
+        p2: "Lease Shield は法律事務所ではなく、法律助言や法的代理を提供しません。本サービスの利用により弁護士-依頼者関係は成立しません。",
+        p3: "Lease Shield は構造化された分析と最新の参照データを使用していますが、結果は文書の品質、言語、および管轄区域によって異なる場合があります。Lease Shield は、スキャン結果、推奨事項、または生成された文書が完全で、エラーがなく、またはすべての状況に適していることを保証しません。",
+        responsibleTitle: "以下については利用者が責任を負います：",
+        responsibilities: [
+          "賃貸契約書類の確認と理解",
+          "すべての情報の正確性の確認",
+          "必要に応じて独立した専門家または法律助言を求めること",
+          "提供された出力に依拠するかどうか、およびその方法を決定すること"
+        ],
+        p4: "Lease Shield はいかなる賃貸契約の当事者でもなく、本サービスの利用から生じた決定、紛争、または結果について責任を負いません。",
+        p5: "続行することで、Lease Shield がサポートおよび洞察ツールであり、ご自身の裁量とリスクでご利用いただくことを認識したものとします。"
+      }
+    },
+    ko: {
+      title: "임대 계약 스캔",
+      subtitle: "임대 계약서를 업로드하여 자동 분석",
+      uploadArea: "여기에 임대 계약 파일을 드롭하거나 클릭하여 찾아보기",
+      supportedFormats: "PDF 파일만 지원. 파일당 최대 10MB",
+      selectFiles: "파일 선택",
+      uploadAll: "파일 분석",
+      uploading: "파일 업로드 중...",
+      analyzingTitle: "임대 계약 분석 중",
+      analyzingDesc: "임대 계약을 검토하고 있습니다. 최대 30초 소요될 수 있습니다...",
+      analyzing: {
+        uploading: "파일 업로드 중...",
+        creating: "임대 계약 기록 생성 중...",
+        scanning: "문서를 분석 중...",
+        extracting: "임대 계약 세부 정보 추출 중...",
+        finalizing: "분석 완료 중..."
+      },
+      recentScans: "최근 스캔",
+      viewAll: "모든 임대 계약 보기",
+      noScans: "스캔 기록 없음",
+      scanDate: "스캔 날짜",
+      confirmNoticeTitle: "통지 기간 알림 설정",
+      confirmNoticeDesc: "임대 계약 종료일 감지됨",
+      noticePeriodLabel: "통지 기간 (일)",
+      noticePeriodHelp: "임대 종료 전에 집주인에게 통지할 일수",
+      skipReminder: "건너뛰기",
+      setReminder: "알림 설정",
+      riskLevels: {
+        low: "낮은 위험",
+        medium: "중간 위험",
+        high: "높은 위험",
+        critical: "심각한 위험"
+      },
+      leaseDetails: "임대 계약 세부 정보",
+      basicInfo: "기본 정보",
+      propertyAddress: "부동산 주소",
+      monthlyRent: "월 임대료",
+      securityDeposit: "보증금",
+      leasePeriod: "임대 기간",
+      leaseStart: "계약 시작",
+      leaseEnd: "계약 종료",
+      to: "~",
+      noticeSettings: "통지 설정",
+      noticeAlertsEnabled: "통지 알림 활성화",
+      noticePeriod: "통지 기간 (일)",
+      noticeDeadline: "통지 마감일",
+      edit: "편집",
+      save: "저장",
+      cancel: "취소",
+      days: "일",
+      riskAnalysis: "위험 분석",
+      riskScore: "위험 점수",
+      viewFullReport: "전체 보고서 보기",
+      viewScanResults: "스캔 결과 보기",
+      viewLease: "임대 계약서 보기",
+      closeDetails: "세부 정보 닫기",
+      enableAlertsHelp: "통지 마감일 30일, 7일, 3일 전에 알림 받기",
+      deadlineCalculated: "임대 종료일과 통지 기간을 기반으로 계산",
+      allLeases: "모든 임대 계약",
+      scanLimitReached: "스캔 한도 도달",
+      scanLimitMsg: "{limit}회 스캔 중 {used}회 사용{periodText}",
+      upgradeForMore: "더 많은 스캔을 위해 업그레이드",
+      scansRemaining: "{remaining}회 스캔 남음{periodText}",
+      unlimitedScans: "무제한 스캔",
+      browseDocuments: "문서 업로드",
+      batchUpload: "일괄 업로드",
+      singleUpload: "단일 업로드",
+      filesWillBeSeparate: "각 파일은 별도의 임대 계약으로 업로드됩니다",
+      stepUpload: "업로드",
+      stepAnalyze: "분석",
+      stepResults: "결과",
+      stepTrack: "추적",
+      upgradeHintText: "무제한 스캔 및 고급 임대 계약 분석을 잠금 해제하려면 업그레이드하십시오.",
+      viewPlans: "플랜 보기",
+      disclaimerTitle: "임대차 계약 스캔 면책 조항",
+      disclaimerCheckbox: "임대차 계약 스캔 면책 조항을 읽고 이에 동의합니다.",
+      agreeAndContinue: "동의 및 계속",
+      disclaimerCancel: "취소",
+      disclaimerText: {
+        p1: "Lease Shield는 사용자가 임대 계약 및 일반적인 위험 영역을 더 잘 이해할 수 있도록 자동 임대 분석, 실용적인 지침 및 문서 템플릿을 제공합니다. 모든 정보는 일반 정보 제공 목적으로만 제공됩니다.",
+        p2: "Lease Shield는 법률사무소가 아니며 법률 자문 또는 법률 대리를 제공하지 않습니다. 본 서비스 사용으로 변호사-의뢰인 관계가 성립되지 않습니다.",
+        p3: "Lease Shield는 구조화된 분석 및 최신 참조 데이터를 사용하지만, 결과는 문서 품질, 언어 및 관할 구역에 따라 달라질 수 있습니다. Lease Shield는 스캔 결과, 권장 사항 또는 생성된 문서가 완전하거나 오류가 없거나 모든 상황에 적합하다는 것을 보증하지 않습니다.",
+        responsibleTitle: "귀하는 다음에 대한 책임이 있습니다:",
+        responsibilities: [
+          "임대차 계약 문서 검토 및 이해",
+          "모든 정보의 정확성 확인",
+          "적절한 경우 독립적인 전문가 또는 법률 자문 구하기",
+          "제공된 결과물을 신뢰할지 여부 및 방법 결정"
+        ],
+        p4: "Lease Shield는 어떠한 임대 계약의 당사자도 아니며, 본 서비스 사용으로 인해 내린 결정, 발생한 분쟁 또는 초래된 결과에 대해 책임을 지지 않습니다.",
+        p5: "계속 진행하면 Lease Shield가 지원 및 인사이트 도구임을 인정하고 귀하의 재량과 위험 부담으로 사용하는 것에 동의하는 것입니다."
+      }
+    },
+    ru: {
+      title: "Сканировать договор",
+      subtitle: "Загрузите договор аренды для автоматического анализа",
+      uploadArea: "Перетащите файлы договора сюда или нажмите, чтобы выбрать",
+      supportedFormats: "Только PDF файлы. Максимум 10 МБ на файл",
+      selectFiles: "Выбрать файлы",
+      uploadAll: "Анализировать файлы",
+      uploading: "Загрузка файлов...",
+      analyzingTitle: "Анализ вашего договора",
+      analyzingDesc: "Проверка договора аренды. Это может занять до 30 секунд...",
+      analyzing: {
+        uploading: "Загрузка файлов...",
+        creating: "Создание записи договора...",
+        scanning: "Анализ документа...",
+        extracting: "Извлечение деталей договора...",
+        finalizing: "Завершение анализа..."
+      },
+      recentScans: "Последние сканирования",
+      viewAll: "Посмотреть все договоры",
+      noScans: "Сканирований пока нет",
+      scanDate: "Отсканировано",
+      confirmNoticeTitle: "Настроить напоминание о периоде уведомления",
+      confirmNoticeDesc: "Мы обнаружили, что ваш договор заканчивается",
+      noticePeriodLabel: "Период уведомления (дней)",
+      noticePeriodHelp: "За сколько дней до окончания договора уведомить арендодателя",
+      skipReminder: "Пропустить",
+      setReminder: "Установить напоминание",
+      riskLevels: {
+        low: "Низкий риск",
+        medium: "Средний риск",
+        high: "Высокий риск",
+        critical: "Критический риск"
+      },
+      leaseDetails: "Детали договора",
+      basicInfo: "Основная информация",
+      propertyAddress: "Адрес недвижимости",
+      monthlyRent: "Ежемесячная аренда",
+      securityDeposit: "Залоговый депозит",
+      leasePeriod: "Период аренды",
+      leaseStart: "Начало аренды",
+      leaseEnd: "Окончание аренды",
+      to: "до",
+      noticeSettings: "Настройки уведомлений",
+      noticeAlertsEnabled: "Уведомления включены",
+      noticePeriod: "Период уведомления (дней)",
+      noticeDeadline: "Крайний срок уведомления",
+      edit: "Редактировать",
+      save: "Сохранить",
+      cancel: "Отмена",
+      days: "дней",
+      riskAnalysis: "Анализ рисков",
+      riskScore: "Оценка риска",
+      viewFullReport: "Посмотреть полный отчёт",
+      viewScanResults: "Посмотреть результаты сканирования",
+      viewLease: "Посмотреть документ договора",
+      closeDetails: "Закрыть детали",
+      enableAlertsHelp: "Получайте напоминания за 30, 7 и 3 дня до крайнего срока уведомления",
+      deadlineCalculated: "Рассчитывается на основе даты окончания договора и периода уведомления",
+      allLeases: "Все договоры",
+      scanLimitReached: "Лимит сканирований достигнут",
+      scanLimitMsg: "Вы использовали {used} из {limit} сканирований{periodText}",
+      upgradeForMore: "Обновитесь для большего количества сканирований",
+      scansRemaining: "Осталось {remaining} сканирований{periodText}",
+      unlimitedScans: "Неограниченные сканирования",
+      browseDocuments: "Загрузить файлы",
+      batchUpload: "Пакетная загрузка",
+      singleUpload: "Одиночная загрузка",
+      filesWillBeSeparate: "Каждый файл будет загружен как отдельный договор",
+      stepUpload: "Загрузка",
+      stepAnalyze: "Анализ",
+      stepResults: "Результаты",
+      stepTrack: "Отслеживание",
+      upgradeHintText: "Обновитесь для неограниченного сканирования и расширенного анализа договоров.",
+      viewPlans: "Посмотреть планы",
+      disclaimerTitle: "Оговорка о сканировании договора аренды",
+      disclaimerCheckbox: "Я прочитал(а) и соглашаюсь с оговоркой о сканировании договора аренды.",
+      agreeAndContinue: "Согласиться и продолжить",
+      disclaimerCancel: "Отмена",
+      disclaimerText: {
+        p1: "Lease Shield предоставляет автоматизированный анализ договора аренды, практическое руководство и шаблоны документов, чтобы помочь пользователям лучше понимать договоры аренды и общие области риска. Вся информация предоставляется исключительно в общих информационных целях.",
+        p2: "Lease Shield не является юридической фирмой и не предоставляет юридические консультации или юридическое представительство. Использование данного сервиса не создаёт отношений адвокат-клиент.",
+        p3: "Хотя Lease Shield использует структурированный анализ и актуальные справочные данные, результаты могут различаться в зависимости от качества документа, языка и юрисдикции. Lease Shield не гарантирует, что результаты сканирования, рекомендации или сгенерированные документы являются полными, безошибочными или подходящими для каждой ситуации.",
+        responsibleTitle: "Вы несёте ответственность за:",
+        responsibilities: [
+          "Просмотр и понимание ваших документов аренды",
+          "Подтверждение точности всей информации",
+          "Обращение за независимой профессиональной или юридической консультацией при необходимости",
+          "Решение о том, полагаться ли на предоставленные результаты и каким образом"
+        ],
+        p4: "Lease Shield не является стороной какого-либо договора аренды и не несёт ответственности за принятые решения, возникшие споры или последствия, вытекающие из использования данного сервиса.",
+        p5: "Продолжая, вы признаёте, что Lease Shield является инструментом поддержки и аналитики, и что вы используете его по своему усмотрению и на свой риск."
+      }
+    }
+  };
+
+  const strings = t[language] || t.en;
+
+  const updateLeaseMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Lease.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leases'] });
+      setEditingNotice(false);
+    }
+  });
+
+  const handleAcceptDisclaimerAndProceed = async (filesToUpload) => {
+    if (!disclaimerCheckboxTicked) return;
+    
+    haptic.medium();
+    setShowDisclaimerModal(false);
+    setDisclaimerCheckboxTicked(false);
+    
+    // Save acceptance to user profile
+    await base44.auth.updateMe({ scan_disclaimer_accepted: true });
+    queryClient.invalidateQueries({ queryKey: ['user'] });
+    
+    // Immediately proceed with upload
+    proceedWithUpload(filesToUpload);
+  };
+
+  const proceedWithUpload = async (filesToUpload) => {
+    // Reset post-scan hint at the start of a new upload attempt
+    setShowPostScanHint(false);
+    
+    // Validate files
+    if (!filesToUpload || filesToUpload.length === 0) {
+      setError(language === 'th' ? 'กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์' : 'Please select at least one file');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    
+    // ✅ RATE LIMIT CHECK: Prevent spam uploads (max 20 uploads/hour)
+    try {
+      const rateLimitResponse = await base44.functions.invoke('checkRateLimit', {
+        actionType: 'upload',
+        windowMinutes: 60
+      });
+      
+      const rateLimitResult = rateLimitResponse?.data;
+      
+      if (rateLimitResult && !rateLimitResult.allowed) {
+        const retryMinutes = rateLimitResult.retryAfterMinutes || 1;
+        const errorMsg = language === 'th'
+          ? `ถึงขีดจำกัดการอัปโหลดแล้ว\n\nคุณสามารถอัปโหลดได้อีกครั้งใน ${retryMinutes} นาที\n\nขีดจำกัด: ${rateLimitResult.limit} ไฟล์ต่อชั่วโมง`
+          : `Upload limit reached\n\nYou can upload again in ${retryMinutes} minute${retryMinutes !== 1 ? 's' : ''}\n\nLimit: ${rateLimitResult.limit} uploads per hour`;
+        
+        alert(errorMsg);
+        return;
+      }
+      
+      console.log('[UPLOAD_RATE_LIMIT_PASSED]', {
+        remaining: rateLimitResult?.remaining,
+        limit: rateLimitResult?.limit
+      });
+    } catch (rateLimitErr) {
+      // Fail open - don't block on rate limit errors
+      console.warn('[UPLOAD_RATE_LIMIT_CHECK_FAILED]', rateLimitErr);
+    }
+    
+    // ✅ CRITICAL: CHECK SCAN LIMIT (annual + monthly caps)
+    const scanCheck = canUploadLease();
+    
+    if (!scanCheck.allowed) {
+      if (scanCheck.monthlyBlocked) {
+        alert(language === 'th'
+          ? `ถึงขีดจำกัดการสแกนรายเดือนแล้ว (${scanCheck.monthlyUsed}/${scanCheck.monthlyMax})\n\nรีเซ็ตเดือนหน้า`
+          : `Monthly scan limit reached (${scanCheck.monthlyUsed}/${scanCheck.monthlyMax})\n\nResets next month`);
+      } else {
+        alert(language === 'th'
+          ? `คุณใช้ครบโควต้าการสแกนแล้ว\n\nอัปเกรดแผนเพื่อสแกนเพิ่มเติม`
+          : `You've reached your scan limit (0 remaining)\n\nUpgrade your plan for more scans`);
+      }
+      return;
+    }
+    
+    // Update state for UI display
+    setSelectedFiles(filesToUpload);
+    
+    // Reset cumulative progress for new upload
+    setCumulativeProgress(0);
+    
+    // Generate unique request ID for tracking
+    const requestId = generateRequestId();
+    const deviceContext = getDeviceContext();
+    const stages = [];
+    const networkLog = [];
+    
+    const logStage = (stage, data) => {
+      const entry = { stage, timestamp: new Date().toISOString(), ...data };
+      stages.push(entry);
+      console.log(`[${requestId}] ${stage}:`, data);
+    };
+
+    const logNetwork = (stage, data) => {
+      const entry = { stage, timestamp: new Date().toISOString(), ...data };
+      networkLog.push(entry);
+      console.log(`[${requestId}] NETWORK ${stage}:`, data);
+    };
+
+    logStage('INIT', { 
+      deviceContext,
+      filesCount: selectedFiles.length, userTier,
+      availableScans: user?.available_scans ?? 0,
+      canScan: (user?.available_scans ?? 0) > 0
+    });
+
+    haptic.medium();
+
+    // MULTI-FILE MODE: Upload ALL files as ONE lease (pages of the same document)
+    if (filesToUpload.length > 1) {
+      setUploading(true);
+      setAnalyzing(false);
+      setError(null);
+      setUploadProgress(0);
+      setCumulativeProgress(0);
+      
+      let createdLeaseId = null;
+
+      try {
+        // Upload all files first
+        const uploadedUrls = [];
+        
+        for (let i = 0; i < filesToUpload.length; i++) {
+          const file = filesToUpload[i];
+          
+          setAnalysisStage(language === 'th' ? `กำลังอัปโหลดหน้า ${i + 1}/${filesToUpload.length}` : `Uploading page ${i + 1}/${filesToUpload.length}`);
+          const newProgress = Math.round(((i + 1) / filesToUpload.length) * 20);
+          setCumulativeProgress(prev => Math.max(prev, newProgress));
+          setUploadProgress(newProgress);
+
+          console.log('UPLOAD_START', { filename: file?.name, size: file?.size });
+          const uploadResp = await base44.integrations.Core.UploadFile({ file });
+          const file_url = uploadResp?.file_url;
+          console.log('UPLOAD_RESULT', { url_preview: String(file_url || '').slice(0,200) });
+          if (!isValidPublicUrl(file_url)) {
+            setError({ step: 'UPLOAD', code: 'UPLOAD_NO_URL', message: 'Upload did not return a valid public file URL', retryable: false, debugLog: { raw: safeStringify(uploadResp) } });
+            setUploading(false);
+            setAnalyzing(false);
+            setAnalysisStage('');
+            return;
+          }
+          uploadedUrls.push(file_url);
+        }
+
+        setAnalysisStage('creating');
+        const creatingProgress = 30;
+        setCumulativeProgress(prev => Math.max(prev, creatingProgress));
+        setUploadProgress(creatingProgress);
+
+        // Create ONE lease with all file URLs
+        // Extract original filename from first file
+        const originalFilename = filesToUpload[0]?.name || 'Lease Document';
+
+        // CRITICAL: Ensure user is loaded before creating lease
+        if (!user?.email) {
+          throw new Error('USER_NOT_LOADED: Cannot create lease without user email');
+        }
+
+        // Calculate total file size for storage tracking
+        const totalFileSize = filesToUpload.reduce((sum, file) => sum + (file?.size || 0), 0);
+        
+        // Check storage quota BEFORE upload
+        try {
+          const quotaResponse = await base44.functions.invoke('checkStorageQuota', {
+            fileSize: totalFileSize
+          });
+          
+          const quotaResult = quotaResponse?.data;
+          
+          if (quotaResult && !quotaResult.allowed) {
+            const errorMsg = language === 'th'
+              ? `พื้นที่จัดเก็บไม่เพียงพอ\n\nคุณมีพื้นที่เหลือ ${quotaResult.remainingMB}MB แต่ต้องการ ${quotaResult.fileSizeMB}MB\n\nอัปเกรดเพื่อเพิ่มพื้นที่จัดเก็บ`
+              : `Storage limit exceeded\n\nYou have ${quotaResult.remainingMB}MB remaining but need ${quotaResult.fileSizeMB}MB\n\nUpgrade for more storage`;
+            
+            setError(errorMsg);
+            setUploading(false);
+            setAnalyzing(false);
+            return;
+          }
+        } catch (quotaErr) {
+          console.warn('[STORAGE_QUOTA_CHECK_FAILED]', quotaErr);
+          // Fail open - allow upload if quota check fails
+        }
+        
+        const lease = await base44.entities.Lease.create({
+          file_url: uploadedUrls[0], // Primary file
+          file_urls: uploadedUrls, // All pages
+          status: 'queued',
+          owner_email: user.email,
+          created_by: user.email,
+          original_filename: originalFilename,
+          file_size_bytes: totalFileSize
+        });
+        createdLeaseId = lease.id;
+
+        // FORENSIC LOG: STEP 1 - Lease Created
+        console.log('[LEASE_CREATED]', {
+          leaseId: lease.id,
+          owner_email: lease.owner_email,
+          created_by: lease.created_by,
+          userEmail: user.email,
+          timestamp: new Date().toISOString()
+        });
+
+        // FORENSIC LOG: STEP 2 - Verify Lease in DB Immediately
+        const verifyLease = await base44.entities.Lease.filter({ id: lease.id });
+        console.log('[LEASE_VERIFY_IMMEDIATE]', {
+          found: verifyLease.length > 0,
+          leaseData: verifyLease[0]
+        });
+
+        const createdProgress = 40;
+        setCumulativeProgress(prev => Math.max(prev, createdProgress));
+        setUploadProgress(createdProgress);
+        setAnalyzing(true);
+        setUploading(false);
+        setAnalysisStage('scanning');
+        
+        // Start smooth continuous progress animation during AI analysis (40-95%)
+        // Moves faster initially (40-70%), then slows down (70-95%)
+        let currentProgress = 40;
+        const progressInterval = setInterval(() => {
+          setCumulativeProgress(prev => {
+            currentProgress = prev;
+            let increment;
+            
+            if (currentProgress < 70) {
+              increment = 2.5; // Fast progress during early analysis
+            } else if (currentProgress < 85) {
+              increment = 1; // Moderate progress
+            } else if (currentProgress < 95) {
+              increment = 0.5; // Slow but steady progress - never freeze
+            } else {
+              increment = 0; // Stop at 95% and wait for backend
+            }
+            
+            const next = Math.min(95, prev + increment);
+            setUploadProgress(Math.round(next));
+            return next;
+          });
+        }, 1500); // Check every 1.5 seconds for smooth animation
+
+        // Trigger analysis with all pages
+        // Create LeaseScan record before analysis
+        const scan = await base44.entities.LeaseScan.create({
+          lease_id: lease.id,
+          owner_email: user.email,
+          created_by: user.email,
+          status: 'initiated',
+          request_id: requestId
+        });
+
+        if (!scan.id) {
+          throw new Error('BUG: scanId missing');
+        }
+        if (lease.id === scan.id) {
+          throw new Error('BUG: scanId incorrectly equals leaseId. Aborting.');
+        }
+
+        // Validate uploaded URLs array and preflight primary URL
+        const urls = Array.isArray(uploadedUrls) ? uploadedUrls.filter(Boolean) : [];
+        if (!(urls.length >= 1 && isValidPublicUrl(urls[0]))) {
+          setError({ step: 'UPLOAD', code: 'UPLOAD_NO_URL', message: 'Upload did not return a valid public file URL', retryable: false, debugLog: { raw: safeStringify({ urls }) } });
+          await base44.entities.Lease.update(lease.id, { status: 'failed' });
+          setUploading(false); setAnalyzing(false); setAnalysisStage('');
+          return;
+        }
+        const primaryUrl = urls[0];
+        const preStatus = await preflightUrl(primaryUrl);
+        console.log('UPLOAD_PREFLIGHT', { status: preStatus });
+        if (!preStatus || preStatus >= 400) {
+          setError({ step: 'UPLOAD', code: 'UPLOAD_URL_UNREACHABLE', message: `Uploaded URL not reachable (HTTP ${preStatus})`, retryable: false, debugLog: { status: preStatus, url: primaryUrl } });
+          await base44.entities.Lease.update(lease.id, { status: 'failed' });
+          setUploading(false); setAnalyzing(false); setAnalysisStage('');
+          return;
+        }
+
+        // Trigger analysis with verified URL only
+        console.log('SCAN_INVOKE', { leaseId: lease.id, scanId: scan.id, hasFileUrl: !!primaryUrl, language });
+        const resp = await base44.functions.invoke('scanLeaseCF_v1', {
+          leaseId: lease.id,
+          scanId: scan.id,
+          fileUrl: primaryUrl,
+          language
+        });
+        const out = resp?.data ?? resp;
+        console.log("INVOKE_SCANLEASEEXTERNAL_RAW", resp);
+        console.log("INVOKE_SCANLEASEEXTERNAL_OUT", out);
+        
+        if (!out) {
+          setError({ code: 'EMPTY_FUNCTION_RESULT', step: 'FUNCTION_INVOCATION', message: language === 'th' ? 'ไม่ได้รับผลลัพธ์จากการวิเคราะห์' : 'Did not receive analysis result from function', retryable: true });
+          setUploading(false);
+          setAnalyzing(false);
+          setAnalysisStage('');
+          return;
+        }
+        if (out?.ok !== true) {
+          setError({ code: out.error_code, step: out.step, message: out.message, retryable: out.retryable === true });
+          setUploading(false);
+          setAnalyzing(false);
+          setAnalysisStage('');
+          return;
+        }
+        const scanResponse = resp.data;
+
+        if (!scanResponse || scanResponse.ok === false) {
+          const err = new Error(scanResponse?.error?.message || 'Scan failed with no message');
+          err.code = scanResponse?.error?.code || 'UNKNOWN';
+          err.step = scanResponse?.error?.step || 'ANALYSIS';
+          throw err;
+        }
+
+        // Stop smooth progress animation
+        clearInterval(progressInterval);
+        const savingProgress = 96;
+        setCumulativeProgress(prev => Math.max(prev, savingProgress));
+        setUploadProgress(savingProgress);
+        
+        // Update scan status and navigate to report with fresh data
+        setAnalysisStage('finalizing');
+        const finalizingProgress = 95;
+        setCumulativeProgress(prev => Math.max(prev, finalizingProgress));
+        setUploadProgress(finalizingProgress);
+        
+        await base44.entities.LeaseScan.update(scan.id, {
+          status: 'ok',
+          risk_score: scanResponse?.scan_full?.risk_score || 0,
+          summary: scanResponse?.scan_full?.summary?.executive_summary || ''
+        });
+        
+        setUploadProgress(100);
+        
+        if (!scan.id) throw new Error('BUG: scanId missing');
+        if (scan.id === lease.id) throw new Error('BUG: scanId incorrectly equals leaseId');
+        
+        // Update storage usage after successful upload
+        try {
+          await base44.functions.invoke('updateStorageUsage', {
+            bytesAdded: totalFileSize
+          });
+          console.log('[STORAGE_USAGE_UPDATED]', { bytesAdded: totalFileSize });
+        } catch (storageErr) {
+          console.warn('[STORAGE_UPDATE_FAILED]', storageErr);
+          // Non-blocking - continue even if storage tracking fails
+        }
+        
+        // Pass scan_full directly via navigation state to avoid DB replication lag
         navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, {
           state: { 
             scan_full: scanResponse?.scan_full,
@@ -56,17 +1100,18 @@ import { checkScanRecovery } from "../components/scan/scanRecovery";
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
         if (progressInterval) clearInterval(progressInterval);
-        // Recovery: check if scan completed in DB despite timeout
+        // Recovery: check if scan completed in DB despite function timeout
         if (scan?.id && lease?.id) {
-          const { recovered, scan: rs } = await checkScanRecovery(scan.id);
-          if (recovered) {
-            navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, { state: { scan_full: rs.scan_full, fromUpload: true } });
-            return;
-          }
+          try {
+            const rs = (await base44.entities.LeaseScan.filter({ id: scan.id }))?.[0];
+            if (rs && (rs.status === 'completed' || rs.status === 'ok') && rs.scan_full) {
+              console.log('[MULTI_RECOVERY_OK]', scan.id);
+              navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, { state: { scan_full: rs.scan_full, fromUpload: true } });
+              return;
+            }
+          } catch (rc) { console.warn('[MULTI_RECOVERY_FAIL]', rc); }
         }
-        if (createdLeaseId) {
-          try { await base44.entities.Lease.update(createdLeaseId, { status: 'failed' }); } catch (e) { console.error('Cleanup failed:', e); }
-        }
+        if (createdLeaseId) { try { await base44.entities.Lease.update(createdLeaseId, { status: 'failed' }); } catch (ue) {} }
         setError(typeof err === 'string' ? err : err.message);
       } finally {
         setUploading(false);
@@ -507,106 +1552,26 @@ import { checkScanRecovery } from "../components/scan/scanRecovery";
         });
         return;
 
-        const scanResult = scanResponse.result;
-        setAnalysisStage('extracting');
-        setUploadProgress(70);
-
-        await base44.entities.Lease.update(lease.id, {
-          status: 'scanned',
-          property_address: scanResult.property_address || null,
-          start_date: scanResult.start_date || null,
-          end_date: scanResult.end_date || null,
-          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
-          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
-          language_detected: scanResult.language_detected || 'en'
-        });
-        setUploadProgress(80);
-
-        setAnalysisStage('finalizing');
-
-
-        setUploadProgress(100);
-        setCurrentStep(2); // Move to results step
-
-        // Auto-populate trackers and timeline
-        try {
-          console.log('[AUTO_POPULATE] Starting auto-population...');
-          const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
-            scanResult,
-            leaseId: lease.id,
-            scanId
-          });
-          
-          if (populateResponse?.success) {
-            console.log('[AUTO_POPULATE] Success:', populateResponse);
-            // Invalidate relevant queries
-            queryClient.invalidateQueries({ queryKey: ['deposits'] });
-            queryClient.invalidateQueries({ queryKey: ['timelineEvents'] });
-          }
-        } catch (populateErr) {
-          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
-          // Don't block user flow if auto-population fails
-        }
-
-        // Show completion modal
-        setCompletedLeaseId(createdLeaseId);
-        setShowCompletionModal(true);
-        
-        if (scanResult.end_date) {
-          setLeaseDetails({
-            end_date: scanResult.end_date,
-            notice_period_days: scanResult.notice_period_days || 30
-          });
-          setPendingLeaseId(createdLeaseId);
-        }
-
-        setSelectedFiles([]);
-        queryClient.invalidateQueries({ queryKey: ['leases'] });
-        queryClient.invalidateQueries({ queryKey: ['allScans'] });
-
       } catch (err) {
-        logStage('ERROR_CAUGHT', {
-          error: err.message,
-          details: err.details,
-          stage: analysisStage,
-          retryAttempt: currentRetry
-        });
-
-        currentRetry++;
-        setRetryCount(currentRetry);
-
-        if (false) { // RETRY DISABLED
-          // This block is now disabled to show errors immediately.
-        } else {
-          // Final failure after all retries - categorize and format error
-          const formattedError = formatErrorForUser(err, requestId, language, {
-            uploadStage: analysisStage
-          });
-          // Stop progress on error
-          if (progressInterval) clearInterval(progressInterval);
-          
-          formattedError.scanId = scanId || null;
-          const debugData = createDebugLog(requestId, stages, deviceContext, networkLog);
-          
-          logStage('FINAL_FAILURE', {
-            category: formattedError.category,
-            retriesExhausted: true,
-            devicePlatform: deviceContext.platform,
-            isAndroid: deviceContext.isAndroid,
-            uploadStage: analysisStage
-          });
-
-          setError(formattedError);
-          setDebugLog(debugData);
-
-          if (createdLeaseId) {
-            try {
-              await base44.entities.Lease.delete(createdLeaseId);
-            } catch (cleanupErr) {
-              console.error('Failed final cleanup:', cleanupErr);
+        logStage('ERROR_CAUGHT', { error: err.message, stage: analysisStage });
+        if (progressInterval) clearInterval(progressInterval);
+        // Recovery: check if scan completed in DB despite function timeout
+        if (scanId && createdLeaseId) {
+          try {
+            const rs = (await base44.entities.LeaseScan.filter({ id: scanId }))?.[0];
+            if (rs && (rs.status === 'completed' || rs.status === 'ok') && rs.scan_full) {
+              console.log('[SINGLE_RECOVERY_OK]', scanId);
+              navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(createdLeaseId)}`, { state: { scan_full: rs.scan_full, fromUpload: true } });
+              return;
             }
-          }
+          } catch (rc) { console.warn('[SINGLE_RECOVERY_FAIL]', rc); }
         }
+        // Genuine failure — show error
+        const formattedError = formatErrorForUser(err, requestId, language, { uploadStage: analysisStage });
+        formattedError.scanId = scanId || null;
+        setError(formattedError);
+        setDebugLog(createDebugLog(requestId, stages, deviceContext, networkLog));
+        if (createdLeaseId) { try { await base44.entities.Lease.delete(createdLeaseId); } catch (ce) {} }
       } finally {
         setUploading(false);
         setAnalyzing(false);
