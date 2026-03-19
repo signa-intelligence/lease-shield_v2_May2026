@@ -1,0 +1,74 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const { token } = await req.json();
+
+    if (!token) {
+      return Response.json({ error: 'Missing token' }, { status: 400 });
+    }
+
+    // Find maintenance request by token
+    const maintenanceRequests = await base44.asServiceRole.entities.MaintenanceRequest.filter({
+      acknowledgment_token: token
+    });
+
+    if (!maintenanceRequests || maintenanceRequests.length === 0) {
+      return Response.json({ error: 'Invalid or expired link' }, { status: 404 });
+    }
+
+    const request = maintenanceRequests[0];
+
+    // Check if already acknowledged
+    if (request.status !== 'reported') {
+      return Response.json({ 
+        success: true, 
+        message: 'Already acknowledged',
+        currentStatus: request.status 
+      });
+    }
+
+    // Update status to acknowledged
+    await base44.asServiceRole.entities.MaintenanceRequest.update(request.id, {
+      status: 'acknowledged',
+      acknowledged_date: new Date().toISOString()
+    });
+
+    // Send notification to tenant
+    try {
+      const tenantUser = await base44.asServiceRole.entities.User.filter({ email: request.created_by });
+      
+      if (tenantUser && tenantUser.length > 0) {
+        const user = tenantUser[0];
+        const language = user.language || 'en';
+        
+        const subject = language === 'th'
+          ? `✅ เจ้าของบ้านรับทราบคำขอซ่อม: ${request.issue_title}`
+          : `✅ Landlord Acknowledged: ${request.issue_title}`;
+
+        const body = language === 'th'
+          ? `เจ้าของบ้านได้รับทราบคำขอซ่อมของคุณแล้ว\n\nหัวข้อ: ${request.issue_title}\nวันที่รับทราบ: ${new Date().toLocaleDateString('th-TH')}\n\nคุณสามารถติดตามความคืบหน้าได้ที่แอป Lease Shield`
+          : `Your landlord has acknowledged your maintenance request.\n\nIssue: ${request.issue_title}\nAcknowledged: ${new Date().toLocaleDateString('en-US')}\n\nYou can track progress in the Lease Shield app.`;
+
+        await base44.integrations.Core.SendEmail({
+          to: request.created_by,
+          subject: subject,
+          body: body
+        });
+      }
+    } catch (notificationError) {
+      console.error('Failed to notify tenant:', notificationError);
+      // Don't fail the acknowledgment if notification fails
+    }
+
+    return Response.json({ 
+      success: true,
+      message: 'Maintenance request acknowledged successfully'
+    });
+
+  } catch (error) {
+    console.error('Acknowledgment error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
