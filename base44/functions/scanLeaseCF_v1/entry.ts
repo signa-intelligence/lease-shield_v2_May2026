@@ -602,9 +602,9 @@ Deno.serve(async (req) => {
             }
           }
 
-          await svc.entities.User.update(userObj.id, updateData);
+          await base44.asServiceRole.entities.User.update(userObj.id, updateData);
           
-          await svc.entities.CreditsLedger.create({
+          await base44.asServiceRole.entities.CreditsLedger.create({
             user_id: userObj.id, user_email: userEmail, type: 'scans', delta: -1,
             reason: 'purchase', source_ref: `lease_scan:${leaseId}`
           });
