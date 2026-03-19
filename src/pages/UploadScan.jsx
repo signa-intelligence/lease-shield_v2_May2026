@@ -48,16 +48,12 @@ import { checkScanRecovery } from "../components/scan/scanRecovery";
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
         if (progressInterval) clearInterval(progressInterval);
-        // Recovery: check if scan completed in DB despite timeout
-        if (scan?.id && lease?.id) {
-          const { recovered, scan: rs } = await checkScanRecovery(scan.id);
+        if (scan?.id || lease?.id) {
+          const { recovered, scan: rs } = await checkScanRecovery(scan?.id, lease?.id);
           if (recovered) {
-            navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, { state: { scan_full: rs.scan_full, fromUpload: true } });
+            navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(rs.id)}&leaseId=${encodeURIComponent(lease?.id || rs.lease_id)}`, { state: { scan_full: rs.scan_full, fromUpload: true } });
             return;
           }
-        }
-        if (createdLeaseId) {
-          try { await base44.entities.Lease.update(createdLeaseId, { status: 'failed' }); } catch (e) { console.error('Cleanup failed:', e); }
         }
         setError(typeof err === 'string' ? err : err.message);
       } finally {
