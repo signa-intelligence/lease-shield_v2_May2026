@@ -45,28 +45,6 @@ import ScanErrorDisplay from "../components/scan/ScanErrorDisplay";
 import MissingCriticalClauses from "../components/leases/MissingCriticalClauses";
 import { checkScanRecovery } from "../components/scan/scanRecovery";
 
-      } catch (err) {
-        console.error('[MULTI_PAGE_ERROR]', err);
-        if (progressInterval) clearInterval(progressInterval);
-        if (scan?.id || lease?.id) {
-          const { recovered, scan: rs } = await checkScanRecovery(scan?.id, lease?.id);
-          if (recovered) {
-            navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(rs.id)}&leaseId=${encodeURIComponent(lease?.id || rs.lease_id)}`, { state: { scan_full: rs.scan_full, fromUpload: true } });
-            return;
-          }
-        }
-        setError(typeof err === 'string' ? err : err.message);
-      } finally {
-        setUploading(false);
-        setAnalyzing(false);
-        setUploadProgress(0);
-        setCumulativeProgress(0);
-        setAnalysisStage('');
-      }
-      
-      return;
-    }
-
     // SINGLE MODE: Keep existing logic with file normalization
     setUploading(true);
     setError(null);
