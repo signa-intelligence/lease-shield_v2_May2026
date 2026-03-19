@@ -1097,79 +1097,21 @@ function UploadScanPageContent() {
         });
         return;
 
-
-        
-        const scanResult = scanResponse.result;
-        setAnalysisStage('extracting');
-        setUploadProgress(70);
-
-        await base44.entities.Lease.update(lease.id, {
-          status: 'scanned',
-          property_address: scanResult.property_address || null,
-          start_date: scanResult.start_date || null,
-          end_date: scanResult.end_date || null,
-          rent_amount: scanResult.rent_amount > 0 ? scanResult.rent_amount : null,
-          deposit_amount: scanResult.deposit_amount > 0 ? scanResult.deposit_amount : null,
-          language_detected: scanResult.language_detected || 'en'
-        });
-        setUploadProgress(90);
-
-        setAnalysisStage('finalizing');
-        setUploadProgress(100);
-        setCurrentStep(2);
-
-        // Prepare data for review (multi-page mode)
-        try {
-          console.log('[AUTO_POPULATE] Preparing data for review...');
-          const { data: populateResponse } = await base44.functions.invoke('populateTrackersFromScan', {
-            scanResult,
-            leaseId: lease.id,
-            scanId: scan.id
-          });
-          
-          if (populateResponse?.success && populateResponse.review_mode) {
-            console.log('[AUTO_POPULATE] Review data prepared:', populateResponse);
-            setReviewData(populateResponse);
-            setShowReviewScreen(true);
-            setCompletedLeaseId(createdLeaseId);
-          } else {
-            // Fallback: show completion modal
-            setCompletedLeaseId(createdLeaseId);
-            setShowCompletionModal(true);
-          }
-        } catch (populateErr) {
-          console.error('[AUTO_POPULATE] Failed (non-critical):', populateErr);
-          // Show completion modal on error
-          setCompletedLeaseId(createdLeaseId);
-          setShowCompletionModal(true);
-        }
-        
-        if (scanResult.end_date) {
-          setLeaseDetails({
-            end_date: scanResult.end_date,
-            notice_period_days: scanResult.notice_period_days || 30
-          });
-          setPendingLeaseId(createdLeaseId);
-        }
-
-        setSelectedFiles([]);
-        queryClient.invalidateQueries({ queryKey: ['leases'] });
-        queryClient.invalidateQueries({ queryKey: ['allScans'] });
-
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
-        
-        // Stop progress on error
         if (progressInterval) clearInterval(progressInterval);
-
-        if (createdLeaseId) {
+        // Recovery: check if scan completed in DB despite function timeout
+        if (scan?.id && lease?.id) {
           try {
-            await base44.entities.Lease.update(createdLeaseId, { status: 'failed' });
-          } catch (updateErr) {
-            console.error('Failed to mark lease as failed:', updateErr);
-          }
+            const rs = (await base44.entities.LeaseScan.filter({ id: scan.id }))?.[0];
+            if (rs && (rs.status === 'completed' || rs.status === 'ok') && rs.scan_full) {
+              console.log('[MULTI_RECOVERY_OK]', scan.id);
+              navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scan.id)}&leaseId=${encodeURIComponent(lease.id)}`, { state: { scan_full: rs.scan_full, fromUpload: true } });
+              return;
+            }
+          } catch (rc) { console.warn('[MULTI_RECOVERY_FAIL]', rc); }
         }
-
+        if (createdLeaseId) { try { await base44.entities.Lease.update(createdLeaseId, { status: 'failed' }); } catch (ue) {} }
         setError(typeof err === 'string' ? err : err.message);
       } finally {
         setUploading(false);
