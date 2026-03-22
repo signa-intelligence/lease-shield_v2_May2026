@@ -256,38 +256,24 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // CRITICAL: Load from localStorage FIRST when chat opens
+  // Load chat history from database (user-filtered via RLS)
   useEffect(() => {
     if (isOpen) {
-      const stored = localStorage.getItem('lisa_chat_history');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            console.log('[LISA] Restored chat history from localStorage:', parsed.length, 'messages');
-            setMessages(parsed);
-            return; // Skip database load
-          }
-        } catch (e) {
-          console.error('Failed to load chat history:', e);
-        }
-      }
-      
-      // Only load from database if localStorage is empty
+      // SECURITY FIX: Never use localStorage as primary source — it's shared across users.
+      // Always load from the database which is filtered by user_email via RLS.
       if (conversation && conversation.messages && conversation.messages.length > 0) {
         loadPreviousHistory(conversation);
+      } else if (conversation === null && !isLoadingHistory) {
+        // No conversation found for this user — start fresh
+        setMessages([]);
       }
     }
-  }, [isOpen, conversation]);
+  }, [isOpen, conversation, isLoadingHistory]);
 
-  // CRITICAL: Save to localStorage after EVERY message change
+  // Clean up any old shared localStorage on mount (one-time migration)
   useEffect(() => {
-    if (messages.length > 0) {
-      const last10 = messages.slice(-10);
-      localStorage.setItem('lisa_chat_history', JSON.stringify(last10));
-      console.log('[LISA] Saved', last10.length, 'messages to localStorage');
-    }
-  }, [messages]);
+    localStorage.removeItem('lisa_chat_history');
+  }, []);
 
   const loadPreviousHistory = async (currentConv) => {
     try {
@@ -578,7 +564,6 @@ SECURE TIER USERS:
     setIsOpen(false);
     setIsMinimized(false);
     setInputValue('');
-    // Don't clear localStorage - let chat history persist across sessions
     if (onClose) onClose();
   };
 
@@ -603,7 +588,6 @@ SECURE TIER USERS:
 
       setConversationId(newConv.id);
       setMessages([]);
-      localStorage.removeItem('lisa_chat_history'); // Clear localStorage for new conversation
       queryClient.invalidateQueries({ queryKey: ['lisaConversation'] });
     } catch (error) {
       console.error('Failed to start new conversation:', error);
