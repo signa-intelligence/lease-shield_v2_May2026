@@ -23,6 +23,7 @@ function TemplatesContent() {
     during_tenancy: true,
     preparing_moveout: false,
     after_moveout: false,
+    landlord: false,
     disputes: false
   });
   const [showMoreSections, setShowMoreSections] = useState({});
@@ -207,8 +208,9 @@ function TemplatesContent() {
         before_signing: "签署前",
         during_tenancy: "租赁期间",
         preparing_moveout: "准备搬出",
-        after_moveout: "搬出后",
-        disputes: "争议与升级"
+        after_moveout: "租约结束",
+        landlord: "房东",
+        disputes: "升级"
       }
     },
     ja: {
@@ -227,8 +229,9 @@ function TemplatesContent() {
         before_signing: "署名前",
         during_tenancy: "賃貸期間中",
         preparing_moveout: "退去準備",
-        after_moveout: "退去後",
-        disputes: "紛争とエスカレーション"
+        after_moveout: "賃貸終了",
+        landlord: "大家さん",
+        disputes: "エスカレーション"
       }
     },
     ko: {
@@ -267,8 +270,9 @@ function TemplatesContent() {
         before_signing: "До подписания",
         during_tenancy: "Во время аренды",
         preparing_moveout: "Подготовка к выезду",
-        after_moveout: "После выезда",
-        disputes: "Споры и эскалация"
+        after_moveout: "Окончание аренды",
+        landlord: "Арендодатель",
+        disputes: "Эскалация"
       }
     }
   };
@@ -544,7 +548,7 @@ function TemplatesContent() {
                     className="w-full flex items-center justify-between p-4 hover:bg-black/5 transition-all"
                   >
                     <h2 className="text-lg font-bold" style={{ color: colors.textPrimary }}>
-                      {strings.sections[section]}
+                      {strings.sections[section] || section.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                     </h2>
                     {isExpanded ? (
                       <ChevronUp className="w-5 h-5" style={{ color: colors.textSecondary }} />
