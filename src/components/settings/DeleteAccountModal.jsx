@@ -31,7 +31,7 @@ export default function DeleteAccountModal({ open, onClose, user, colors, langua
       if (response.data?.ok) {
         haptic.success();
         handleClose();
-        toast.success(language === 'th' ? 'บัญชีและข้อมูลทั้งหมดถูกลบแล้ว กำลังออกจากระบบ...' : 'Account deleted. Logging out...');
+        toast.success(language === 'th' ? 'บัญชีถูกปิดใช้งานแล้ว กำลังออกจากระบบ...' : 'Account deactivated. Logging out...');
         setTimeout(async () => {
           await base44.auth.logout();
           window.location.href = '/';
@@ -63,7 +63,7 @@ export default function DeleteAccountModal({ open, onClose, user, colors, langua
               <Trash2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              {language === 'th' ? 'ลบบัญชีอย่างถาวร?' : language === 'zh' ? '永久删除账户？' : language === 'ja' ? 'アカウントを完全に削除しますか？' : language === 'ko' ? '계정을 영구 삭제하시겠습니까?' : language === 'ru' ? 'Удалить аккаунт навсегда?' : 'Delete Account Permanently?'}
+              {language === 'th' ? 'ปิดใช้งานบัญชี?' : language === 'zh' ? '停用账户？' : language === 'ja' ? 'アカウントを無効にしますか？' : language === 'ko' ? '계정을 비활성화하시겠습니까?' : language === 'ru' ? 'Деактивировать аккаунт?' : 'Deactivate Account?'}
             </div>
           </DialogTitle>
         </DialogHeader>
@@ -73,13 +73,13 @@ export default function DeleteAccountModal({ open, onClose, user, colors, langua
             {/* Warning */}
             <div className="p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#2A1F1F' : '#FEF2F2', border: '2px solid #FCA5A5' }}>
               <p className="font-bold mb-3" style={{ color: '#DC2626', fontSize: '14px' }}>
-                ⚠️ {language === 'th' ? 'การกระทำนี้ไม่สามารถยกเลิกได้' : language === 'zh' ? '此操作无法撤销' : language === 'ja' ? 'この操作は元に戻せません' : language === 'ko' ? '이 작업은 취소할 수 없습니다' : language === 'ru' ? 'Это действие необратимо' : 'This action cannot be undone'}
+                ⚠️ {language === 'th' ? 'โปรดอ่านก่อนดำเนินการ' : language === 'zh' ? '请在继续之前阅读' : language === 'ja' ? '続行する前にお読みください' : language === 'ko' ? '계속하기 전에 읽어주세요' : language === 'ru' ? 'Пожалуйста, прочитайте перед продолжением' : 'Please read before continuing'}
               </p>
               <ul className="space-y-1.5 text-sm" style={{ color: isDarkMode ? '#FCA5A5' : '#991B1B' }}>
-                <li className="flex items-start gap-2"><span>•</span><span>{language === 'th' ? 'เอกสาร สัญญาเช่า และการสแกนทั้งหมดจะถูกลบ' : 'All documents, leases, and scans will be deleted'}</span></li>
-                <li className="flex items-start gap-2"><span>•</span><span>{language === 'th' ? 'คดีและหลักฐานทั้งหมดจะหายไป' : 'All cases and evidence will be lost'}</span></li>
-                <li className="flex items-start gap-2"><span>•</span><span>{language === 'th' ? 'การสมัครสมาชิกจะถูกยกเลิก' : 'Your subscription will be cancelled'}</span></li>
-                <li className="flex items-start gap-2"><span>•</span><span>{language === 'th' ? 'ไม่สามารถกู้คืนข้อมูลได้' : 'You cannot recover this data'}</span></li>
+                <li className="flex items-start gap-2"><span>•</span><span>{language === 'th' ? 'ข้อมูลทั้งหมดจะถูกเก็บถาวร (สัญญาเช่า, คดี, หลักฐาน)' : 'All your data will be archived (leases, cases, evidence)'}</span></li>
+                <li className="flex items-start gap-2"><span>•</span><span>{language === 'th' ? 'คุณจะถูกออกจากระบบทันที' : 'You will be logged out immediately'}</span></li>
+                <li className="flex items-start gap-2"><span>•</span><span>{language === 'th' ? 'หากคุณกลับมาลงทะเบียนใหม่ด้วยอีเมลเดิม สิทธิ์ฟรีที่ใช้ไปแล้วจะไม่ถูกรีเซ็ต' : 'If you re-register with the same email, previously used free benefits will NOT reset'}</span></li>
+                <li className="flex items-start gap-2"><span>•</span><span>{language === 'th' ? 'คุณสามารถกลับมาเข้าสู่ระบบเพื่อเปิดใช้งานบัญชีอีกครั้งได้ทุกเมื่อ' : 'You can sign back in anytime to reactivate your account'}</span></li>
               </ul>
             </div>
 
@@ -122,7 +122,7 @@ export default function DeleteAccountModal({ open, onClose, user, colors, langua
             <div className="flex items-start gap-3 p-4 rounded-lg" style={{ backgroundColor: colors.fieldBg || colors.inputBg, border: `1px solid ${colors.borderColor}` }}>
               <input type="checkbox" id="deleteUnderstand" checked={confirmUnderstand} onChange={(e) => setConfirmUnderstand(e.target.checked)} className="mt-1" style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
               <label htmlFor="deleteUnderstand" className="text-sm" style={{ color: colors.textPrimary, cursor: 'pointer' }}>
-                {language === 'th' ? 'ฉันเข้าใจว่าการกระทำนี้เป็นการถาวรและไม่สามารถยกเลิกได้' : language === 'zh' ? '我理解此操作是永久性的且无法撤销' : language === 'ja' ? 'この操作は永続的で元に戻せないことを理解しています' : language === 'ko' ? '이 작업이 영구적이며 취소할 수 없음을 이해합니다' : language === 'ru' ? 'Я понимаю, что это действие необратимо' : 'I understand this action is permanent and cannot be undone'}
+                {language === 'th' ? 'ฉันเข้าใจว่าบัญชีจะถูกปิดใช้งานและสิทธิ์ฟรีจะไม่ถูกรีเซ็ตเมื่อกลับมา' : language === 'zh' ? '我理解账户将被停用，免费权益不会在重新注册时重置' : language === 'ja' ? 'アカウントが無効化され、無料特典は再登録時にリセットされないことを理解しています' : language === 'ko' ? '계정이 비활성화되며 무료 혜택이 재등록 시 초기화되지 않음을 이해합니다' : language === 'ru' ? 'Я понимаю, что аккаунт будет деактивирован и бесплатные привилегии не будут сброшены' : 'I understand my account will be deactivated and free benefits will not reset if I return'}
               </label>
             </div>
           </div>
@@ -134,9 +134,9 @@ export default function DeleteAccountModal({ open, onClose, user, colors, langua
           </button>
           <button onClick={handleDelete} disabled={!canDelete} className="btn-interaction" style={{ flex: 1, padding: '12px 16px', borderRadius: '10px', fontWeight: '700', fontSize: '14px', border: 'none', backgroundColor: canDelete ? '#DC2626' : '#9CA3AF', color: '#FFFFFF', cursor: canDelete ? 'pointer' : 'not-allowed', opacity: canDelete ? 1 : 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', minHeight: '48px' }}>
             {isDeleting ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /><span>{language === 'th' ? 'กำลังลบ...' : 'Deleting...'}</span></>
+              <><Loader2 className="w-4 h-4 animate-spin" /><span>{language === 'th' ? 'กำลังปิดใช้งาน...' : 'Deactivating...'}</span></>
             ) : (
-              <><Trash2 className="w-4 h-4" /><span>{language === 'th' ? 'ลบอย่างถาวร' : 'Delete Forever'}</span></>
+              <><Trash2 className="w-4 h-4" /><span>{language === 'th' ? 'ปิดใช้งานบัญชี' : 'Deactivate Account'}</span></>
             )}
           </button>
         </div>

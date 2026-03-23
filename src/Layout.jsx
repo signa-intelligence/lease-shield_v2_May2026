@@ -109,12 +109,42 @@ export default function Layout({ children, currentPageName }) {
   });
 
   // CRITICAL: Initialize new user defaults (free tier + 1 scan) on first load
-  // Entity automations don't support User entity, so we catch it here
+  // Also handles returning soft-deleted users
   React.useEffect(() => {
-    if (user && user.available_scans === undefined && !user.plan_tier) {
+    if (!user) return;
+
+    // Case 1: Returning soft-deleted user — reactivate without resetting benefits
+    if (user.is_deleted === true) {
+      console.log('[LAYOUT] Returning deleted user detected:', user.email, {
+        explorerBenefitsUsed: user.explorer_benefits_used,
+        availableScans: user.available_scans,
+        previousTier: user.previous_plan_tier
+      });
+      const updateData = {
+        is_deleted: false,
+        deleted_at: null,
+        is_active: true,
+        subscription_status: 'active',
+        plan_tier: 'explorer'
+      };
+      // Only grant fresh scan if benefits were never used
+      if (!user.explorer_benefits_used) {
+        updateData.available_scans = 1;
+        updateData.letter_credits = 0;
+      }
+      // If benefits were already used, keep existing (likely 0) values
+      base44.auth.updateMe(updateData)
+        .then(() => {
+          console.log('[LAYOUT] ✅ Returning user reactivated:', user.email, { explorerBenefitsUsed: user.explorer_benefits_used });
+          queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+        })
+        .catch(err => console.error('[LAYOUT] Failed to reactivate user:', err));
+      return;
+    }
+
+    // Case 2: Brand new user — standard initialization
+    if (user.available_scans === undefined && !user.plan_tier) {
       console.log('[LAYOUT] New user detected - initializing defaults:', user.email);
-      // NOTE: referral_code is NOT assigned here — 7-day grace period required.
-      // Code is auto-generated after 7 days via the useEffect below.
       base44.auth.updateMe({
         plan_tier: 'explorer',
         available_scans: 1,
@@ -123,20 +153,22 @@ export default function Layout({ children, currentPageName }) {
         subscription_status: 'active',
         referral_credits_thb: 0,
         referral_credits_total_thb: 0,
-        referral_count: 0
+        referral_count: 0,
+        explorer_benefits_used: false
       })
         .then(() => {
           console.log('[LAYOUT] ✅ User initialized: plan_tier=explorer, available_scans=1, letter_credits=0');
           queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-          // Send welcome email for new users
           base44.functions.invoke('sendWelcomeEmail')
             .then(() => console.log('[LAYOUT] ✅ Welcome email triggered'))
             .catch(err => console.error('[LAYOUT] Welcome email failed (non-critical):', err));
         })
         .catch(err => console.error('[LAYOUT] Failed to initialize user:', err));
+      return;
     }
+
     // Auto-generate referral code after 7-day grace period
-    if (user && user.plan_tier && !user.referral_code && user.created_date) {
+    if (user.plan_tier && !user.referral_code && user.created_date) {
       const accountAgeMs = Date.now() - new Date(user.created_date).getTime();
       const accountAgeDays = accountAgeMs / (1000 * 60 * 60 * 24);
       if (accountAgeDays >= 7) {
@@ -152,13 +184,12 @@ export default function Layout({ children, currentPageName }) {
       }
     }
     // Also send welcome email for existing users who never got one
-    if (user && user.plan_tier && !user.welcome_email_sent) {
+    if (user.plan_tier && !user.welcome_email_sent) {
       base44.functions.invoke('sendWelcomeEmail')
         .then(() => console.log('[LAYOUT] ✅ Welcome email sent (backfill)'))
         .catch(err => console.error('[LAYOUT] Welcome email backfill failed:', err));
     }
-    // Note: Secure tier now has 50 letter credits (not unlimited). No auto-fix needed.
-  }, [user?.id, user?.available_scans, user?.plan_tier, user?.letter_credits, queryClient]);
+  }, [user?.id, user?.available_scans, user?.plan_tier, user?.is_deleted, queryClient]);
 
   // Handle language from URL parameter
   React.useEffect(() => {
