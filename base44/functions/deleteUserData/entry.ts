@@ -1,8 +1,10 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 /**
- * GDPR-compliant user data deletion
- * Permanently deletes all user data for "right to be forgotten"
+ * Soft-delete user account
+ * Marks the account as inactive but retains email, tier, and usage data
+ * so returning users don't get fresh Explorer benefits.
+ * User data (leases, cases, etc.) is kept but hidden from active views.
  */
 
 Deno.serve(async (req) => {
@@ -26,239 +28,196 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
     
-    console.log('[GDPR_DELETE_START]', { 
+    console.log('[SOFT_DELETE_START]', { 
       userEmail, 
       userId: user.id,
+      currentTier: user.plan_tier,
+      availableScans: user.available_scans,
+      letterCredits: user.letter_credits,
       timestamp: new Date().toISOString() 
     });
     
-    const deletionLog = {
-      userEmail,
-      userId: user.id,
-      timestamp: new Date().toISOString(),
-      deletedEntities: {}
-    };
-    
     const svc = base44.asServiceRole || base44;
     
-    // 1. Delete Leases (will cascade to LeaseScan via deleteLease function)
-    const leases = await svc.entities.Lease.filter({
-      owner_email: userEmail
-    });
+    // Determine if explorer benefits have been used
+    // Explorer tier starts with 1 scan and 0 letters
+    const explorerBenefitsUsed = (
+      (user.available_scans !== undefined && user.available_scans < 1) ||
+      (user.letter_credits !== undefined && user.letter_credits > 0) ||
+      (user.plan_tier && user.plan_tier !== 'explorer' && user.plan_tier !== 'free')
+    );
     
-    for (const lease of leases) {
-      try {
-        await svc.functions.invoke('deleteLease', {
-          leaseId: lease.id
-        });
-      } catch (err) {
-        console.warn('[GDPR_DELETE_LEASE_FAILED]', { leaseId: lease.id, error: err.message });
-      }
-    }
-    deletionLog.deletedEntities.Leases = leases.length;
+    // 1. Soft-delete: archive all user data (mark as archived, not hard delete)
+    const archiveLog = {};
     
-    // 2. Delete DepositTrackers
-    const deposits = await svc.entities.DepositTracker.filter({
-      owner_email: userEmail
-    });
-    for (const deposit of deposits) {
-      await svc.entities.DepositTracker.delete(deposit.id);
-    }
-    deletionLog.deletedEntities.DepositTrackers = deposits.length;
-    
-    // 3. Delete TimelineEvents
-    const events = await svc.entities.TimelineEvent.filter({
-      owner_email: userEmail
-    });
-    for (const event of events) {
-      await svc.entities.TimelineEvent.delete(event.id);
-    }
-    deletionLog.deletedEntities.TimelineEvents = events.length;
-    
-    // 4. Delete Cases
-    const cases = await svc.entities.Case.filter({
-      user_email: userEmail
-    });
-    for (const caseItem of cases) {
-      await svc.entities.Case.delete(caseItem.id);
-    }
-    deletionLog.deletedEntities.Cases = cases.length;
-    
-    // 5. Delete MaintenanceRequests
-    const maintenance = await svc.entities.MaintenanceRequest.filter({
-      created_by: userEmail
-    });
-    for (const request of maintenance) {
-      await svc.entities.MaintenanceRequest.delete(request.id);
-    }
-    deletionLog.deletedEntities.MaintenanceRequests = maintenance.length;
-    
-    // 6. Delete UserStorage
-    const storage = await svc.entities.UserStorage.filter({
-      user_email: userEmail
-    });
-    for (const storageRecord of storage) {
-      await svc.entities.UserStorage.delete(storageRecord.id);
-    }
-    deletionLog.deletedEntities.UserStorage = storage.length;
-    
-    // 7. Delete RateLimits
+    // Archive Leases
     try {
-      const rateLimits = await svc.entities.RateLimit.filter({
-        user_id: user.id
-      });
-      for (const limit of rateLimits) {
-        await svc.entities.RateLimit.delete(limit.id);
-      }
-      deletionLog.deletedEntities.RateLimits = rateLimits.length;
-    } catch (e) {
-      deletionLog.deletedEntities.RateLimits = 0;
-    }
-    
-    // 8. Delete NotificationLogs
-    try {
-      const notifications = await svc.entities.NotificationLog.filter({
-        user_email: userEmail
-      });
-      for (const notification of notifications) {
-        await svc.entities.NotificationLog.delete(notification.id);
-      }
-      deletionLog.deletedEntities.NotificationLogs = notifications.length;
-    } catch (e) {
-      deletionLog.deletedEntities.NotificationLogs = 0;
-    }
-    
-    // 9. Delete Documents
-    try {
-      const documents = await svc.entities.Document.filter({
-        created_by: userEmail
-      });
-      for (const doc of documents) {
-        await svc.entities.Document.delete(doc.id);
-      }
-      deletionLog.deletedEntities.Documents = documents.length;
-    } catch (e) {
-      deletionLog.deletedEntities.Documents = 0;
-    }
-    
-    // 10. Anonymize CreditsLedger (keep for audit, anonymize PII)
-    try {
-      const credits = await svc.entities.CreditsLedger.filter({
-        user_email: userEmail
-      });
-      for (const credit of credits) {
-        await svc.entities.CreditsLedger.update(credit.id, {
-          user_email: '[DELETED_USER]',
-          anonymized_at: new Date().toISOString()
+      const leases = await svc.entities.Lease.filter({ owner_email: userEmail });
+      for (const lease of leases) {
+        await svc.entities.Lease.update(lease.id, { 
+          status: 'archived',
+          archived_at: new Date().toISOString(),
+          archived_by: 'account_deletion'
         });
       }
-      deletionLog.deletedEntities.CreditsLedger = `${credits.length} anonymized`;
-    } catch (e) {
-      deletionLog.deletedEntities.CreditsLedger = '0';
-    }
+      archiveLog.Leases = leases.length;
+    } catch (e) { archiveLog.Leases = 0; }
     
-    // 11. Delete LisaConversations
+    // Archive LeasScans
     try {
-      const conversations = await svc.entities.LisaConversation.filter({
-        user_email: userEmail
-      });
+      const scans = await svc.entities.LeaseScan.filter({ owner_email: userEmail });
+      for (const scan of scans) {
+        await svc.entities.LeaseScan.update(scan.id, {
+          is_archived: true,
+          archived_at: new Date().toISOString(),
+          status: 'archived'
+        });
+      }
+      archiveLog.LeaseScans = scans.length;
+    } catch (e) { archiveLog.LeaseScans = 0; }
+    
+    // Archive DepositTrackers
+    try {
+      const deposits = await svc.entities.DepositTracker.filter({ owner_email: userEmail });
+      for (const deposit of deposits) {
+        await svc.entities.DepositTracker.update(deposit.id, {
+          is_archived: true,
+          archived_at: new Date().toISOString(),
+          status: 'archived'
+        });
+      }
+      archiveLog.DepositTrackers = deposits.length;
+    } catch (e) { archiveLog.DepositTrackers = 0; }
+    
+    // Archive TimelineEvents
+    try {
+      const events = await svc.entities.TimelineEvent.filter({ owner_email: userEmail });
+      for (const event of events) {
+        await svc.entities.TimelineEvent.update(event.id, {
+          is_archived: true,
+          archived_at: new Date().toISOString()
+        });
+      }
+      archiveLog.TimelineEvents = events.length;
+    } catch (e) { archiveLog.TimelineEvents = 0; }
+    
+    // Archive Cases
+    try {
+      const cases = await svc.entities.Case.filter({ user_email: userEmail });
+      for (const caseItem of cases) {
+        await svc.entities.Case.update(caseItem.id, {
+          is_deleted: true,
+          deleted_at: new Date().toISOString()
+        });
+      }
+      archiveLog.Cases = cases.length;
+    } catch (e) { archiveLog.Cases = 0; }
+    
+    // Archive MaintenanceRequests
+    try {
+      const maintenance = await svc.entities.MaintenanceRequest.filter({ created_by: userEmail });
+      for (const request of maintenance) {
+        await svc.entities.MaintenanceRequest.update(request.id, {
+          is_archived: true,
+          archived_at: new Date().toISOString()
+        });
+      }
+      archiveLog.MaintenanceRequests = maintenance.length;
+    } catch (e) { archiveLog.MaintenanceRequests = 0; }
+    
+    // Delete LisaConversations (no need to retain chat history)
+    try {
+      const conversations = await svc.entities.LisaConversation.filter({ user_email: userEmail });
       for (const conv of conversations) {
         await svc.entities.LisaConversation.delete(conv.id);
       }
-      deletionLog.deletedEntities.LisaConversations = conversations.length;
-    } catch (e) {
-      deletionLog.deletedEntities.LisaConversations = 0;
-    }
+      archiveLog.LisaConversations = conversations.length;
+    } catch (e) { archiveLog.LisaConversations = 0; }
     
-    // 12. Anonymize User record (keep for auth, remove PII)
+    // Delete NotificationLogs (transient data)
     try {
-      // NOTE: Do NOT set is_active=false — it permanently blocks re-signup on Base44.
-      // Instead, just clear PII and mark as deleted. The user record stays "active" 
-      // at the platform level so they can re-register later if needed.
+      const notifications = await svc.entities.NotificationLog.filter({ user_email: userEmail });
+      for (const notification of notifications) {
+        await svc.entities.NotificationLog.delete(notification.id);
+      }
+      archiveLog.NotificationLogs = notifications.length;
+    } catch (e) { archiveLog.NotificationLogs = 0; }
+    
+    // 2. Soft-delete User: mark as deleted, preserve tier & usage, clear sensitive PII
+    try {
       await svc.auth.updateMe({
-        plan_tier: 'deleted',
-        available_scans: 0,
-        data_deleted_at: new Date().toISOString(),
-        display_name: '[DELETED]',
+        is_deleted: true,
+        deleted_at: new Date().toISOString(),
+        previous_plan_tier: user.plan_tier || 'explorer',
+        explorer_benefits_used: explorerBenefitsUsed,
+        // Clear sensitive PII but keep email (built-in, can't clear) and tier data
+        display_name: null,
         phone: null,
         line_id: null,
         line_connected: false,
         quick_guide_dismissed: true,
         onboarding_completed: true
+        // NOTE: We intentionally do NOT change plan_tier, available_scans, or letter_credits
+        // so they are preserved for re-registration checks
       });
-      deletionLog.userAnonymized = true;
     } catch (e) {
-      console.error('[GDPR_USER_ANONYMIZE_FAILED]', e);
-      deletionLog.userAnonymized = false;
+      console.error('[SOFT_DELETE_USER_UPDATE_FAILED]', e);
     }
     
-    // 13. Create GDPR deletion audit log
+    // 3. Create GDPR audit log
     try {
       await svc.entities.GDPRDeletionLog.create({
         user_email: userEmail,
         user_id: user.id,
         deleted_at: new Date().toISOString(),
         deleted_by: 'self',
-        deletion_summary: deletionLog.deletedEntities,
+        deletion_summary: { ...archiveLog, type: 'soft_delete', explorer_benefits_used: explorerBenefitsUsed },
         reason: 'user_request',
         status: 'completed'
       });
     } catch (e) {
-      console.error('[GDPR_LOG_FAILED]', e);
+      console.error('[SOFT_DELETE_AUDIT_LOG_FAILED]', e);
     }
     
-    console.log('[GDPR_DELETE_COMPLETE]', deletionLog);
+    console.log('[SOFT_DELETE_COMPLETE]', { 
+      userEmail, 
+      archiveLog, 
+      explorerBenefitsUsed,
+      preservedTier: user.plan_tier 
+    });
     
     // Send deletion confirmation email (non-blocking)
     try {
       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
       if (RESEND_API_KEY) {
         const firstName = (user.full_name || userEmail.split('@')[0]).split(' ')[0];
-        const deletionDate = new Date().toLocaleDateString('en-US', {
-          year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-        });
-        const emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;color:#374151;margin:0;padding:0}.container{max-width:600px;margin:0 auto;padding:20px}.header{background:#6b7280;color:white;padding:30px;text-align:center;border-radius:8px 8px 0 0}.content{padding:30px;background:white;border:1px solid #e5e7eb;border-top:none}.info-box{background:#f9fafb;border-left:4px solid #9ca3af;padding:15px;margin:15px 0;border-radius:4px}.footer{text-align:center;padding:20px;color:#6b7280;font-size:14px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px}</style></head><body><div class="container"><div class="header"><h1 style="margin:0;font-size:22px;">Account Deletion Confirmed</h1></div><div class="content"><p>Hi ${firstName},</p><p>This email confirms that your LeaseShield account has been permanently deleted as requested.</p><div class="info-box"><strong>Deletion Details:</strong><br>Account: ${userEmail}<br>Deleted on: ${deletionDate}<br>Status: Permanently removed</div><p><strong>What was deleted:</strong></p><ul><li>All lease scan results and reports</li><li>All documents in Evidence Vault</li><li>Deposit and rent tracking data</li><li>Cases and maintenance requests</li><li>Account settings and preferences</li></ul><p style="margin-top:20px"><strong>Important:</strong> This action cannot be undone. Your data has been permanently removed from our systems in compliance with data protection regulations (PDPA).</p><hr style="border:none;border-top:1px solid #e5e7eb;margin:30px 0"><p style="color:#6b7280;font-size:14px"><strong>Changed your mind?</strong><br>You're always welcome back! You can create a new account anytime at <a href="https://leaseshield.asia" style="color:#2563EB">leaseshield.asia</a></p><p style="color:#6b7280;font-size:14px;margin-top:20px">We're sorry to see you go. If there's anything we could have done better, please reply to this email — we genuinely value your feedback.</p><p style="color:#6b7280;font-size:14px">Thank you for using LeaseShield. We wish you the best with your rental journey! 🏠</p></div><div class="footer"><p style="margin:0"><strong>LeaseShield</strong><br>Protecting renters in Thailand</p><p style="margin:8px 0 0"><a href="https://leaseshield.asia" style="color:#2563EB">leaseshield.asia</a></p></div></div></body></html>`;
+        const emailHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.6;color:#374151;margin:0;padding:0}.container{max-width:600px;margin:0 auto;padding:20px}.header{background:#0C3B2E;color:white;padding:30px;text-align:center;border-radius:8px 8px 0 0}.content{padding:30px;background:white;border:1px solid #e5e7eb;border-top:none}.info-box{background:#f9fafb;border-left:4px solid #0C3B2E;padding:15px;margin:15px 0;border-radius:4px}.footer{text-align:center;padding:20px;color:#6b7280;font-size:14px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px}</style></head><body><div class="container"><div class="header"><h1 style="margin:0;font-size:22px;">Account Deactivated</h1></div><div class="content"><p>Hi ${firstName},</p><p>Your LeaseShield account has been deactivated as requested. Your active data has been archived.</p><div class="info-box"><strong>What this means:</strong><br>• Your lease scans, cases, and documents have been archived<br>• Your email address is retained so you can return anytime<br>• If you sign back in, your account will be reactivated</div><p style="color:#6b7280;font-size:14px;margin-top:20px"><strong>Want to come back?</strong><br>Simply sign in again at <a href="https://leaseshield.asia" style="color:#0C3B2E;font-weight:600">leaseshield.asia</a> and your account will be restored.</p></div><div class="footer"><p style="margin:0"><strong>LeaseShield</strong><br>Protecting renters in Thailand</p></div></div></body></html>`;
         
-        const emailRes = await fetch('https://api.resend.com/emails', {
+        await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: 'LeaseShield <hello@leaseshield.asia>',
             to: userEmail,
             reply_to: 'support@leaseshield.asia',
-            subject: 'Your LeaseShield account has been deleted',
+            subject: 'Your LeaseShield account has been deactivated',
             html: emailHtml
           })
         });
-        const emailResult = await emailRes.json();
-        console.log('[GDPR_DELETE_EMAIL]', emailRes.ok ? 'Sent' : 'Failed', emailResult);
-        deletionLog.confirmationEmailSent = emailRes.ok;
-      } else {
-        // Fallback to built-in email
-        await svc.integrations.Core.SendEmail({
-          to: userEmail,
-          subject: 'Your LeaseShield account has been deleted',
-          body: `Hi,\n\nThis confirms your LeaseShield account (${userEmail}) has been permanently deleted as requested on ${new Date().toLocaleDateString()}.\n\nAll your data including leases, scans, documents, cases, and account settings have been removed.\n\nYou're welcome back anytime at https://leaseshield.asia\n\nThank you for using LeaseShield.\n— The LeaseShield Team`
-        });
-        console.log('[GDPR_DELETE_EMAIL] Sent via fallback');
-        deletionLog.confirmationEmailSent = true;
       }
     } catch (emailErr) {
-      console.error('[GDPR_DELETE_EMAIL_FAILED]', emailErr.message);
-      deletionLog.confirmationEmailSent = false;
-      // Don't fail the deletion if email fails
+      console.error('[SOFT_DELETE_EMAIL_FAILED]', emailErr.message);
     }
     
     return Response.json({
       ok: true,
-      message: 'All user data has been permanently deleted',
-      deletionLog: deletionLog
+      message: 'Account deactivated. Your data has been archived.',
+      archiveLog
     });
     
   } catch (error) {
-    console.error('[GDPR_DELETE_ERROR]', error);
+    console.error('[SOFT_DELETE_ERROR]', error);
     
-    // Log failure
     try {
       const base44 = createClientFromRequest(req);
       const user = await base44.auth.me();
@@ -274,7 +233,7 @@ Deno.serve(async (req) => {
         });
       }
     } catch (logErr) {
-      console.error('[GDPR_ERROR_LOG_FAILED]', logErr);
+      console.error('[SOFT_DELETE_LOG_FAILED]', logErr);
     }
     
     return Response.json({

@@ -1,19 +1,17 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
 
 /**
- * Initialize new user with default tier and credits
- * Triggered automatically via entity automation when User is created
+ * Initialize new user with default tier and credits.
+ * If the user previously deleted their account (soft-delete),
+ * restore them WITHOUT resetting Explorer benefits.
  */
 
 Deno.serve(async (req) => {
   const correlationId = `init-user-${Date.now()}`;
   
   try {
-    // Clone the request so we can read the body AND pass it to createClientFromRequest
     const clonedReq = req.clone();
     const base44 = createClientFromRequest(req);
-    
-    // Get event payload from cloned request
     const payload = await clonedReq.json();
     const { event, data } = payload;
     
@@ -39,20 +37,73 @@ Deno.serve(async (req) => {
     }
     
     // Check if user already has scans configured (e.g. invited with a specific tier)
-    if (data?.plan_tier && data?.available_scans > 0) {
+    if (data?.plan_tier && data.plan_tier !== 'deleted' && data?.available_scans > 0) {
       console.log(`[${correlationId}] User already configured: plan_tier=${data.plan_tier}, scans=${data.available_scans} - skipping`);
       return Response.json({ skipped: true, reason: 'already_configured' });
     }
     
-    // Set default explorer tier with 1 scan
-    console.log(`[${correlationId}] Initializing user with explorer tier + 1 scan`);
-    
     const svc = base44.asServiceRole;
+    
+    // Check if this is a returning soft-deleted user
+    if (data?.is_deleted === true) {
+      console.log(`[${correlationId}] Returning deleted user detected`, {
+        email: userEmail,
+        previousTier: data.previous_plan_tier,
+        explorerBenefitsUsed: data.explorer_benefits_used,
+        availableScans: data.available_scans,
+        letterCredits: data.letter_credits
+      });
+      
+      // Reactivate without granting fresh Explorer benefits
+      const updateData = {
+        is_deleted: false,
+        deleted_at: null,
+        is_active: true,
+        subscription_status: 'active',
+        plan_tier: 'explorer'
+      };
+      
+      if (data.explorer_benefits_used) {
+        // Benefits already consumed — don't reset
+        updateData.available_scans = data.available_scans || 0;
+        // Keep existing letter_credits as-is (they're already 0 or whatever they had)
+        console.log(`[${correlationId}] Explorer benefits previously used — NOT resetting free allocation`);
+      } else {
+        // Benefits never used — grant the standard explorer allocation
+        updateData.available_scans = 1;
+        console.log(`[${correlationId}] Explorer benefits NOT previously used — granting 1 free scan`);
+      }
+      
+      await svc.entities.User.update(userId, updateData);
+      
+      console.log(`[${correlationId}] ✅ Returning user reactivated`, {
+        userId, email: userEmail,
+        plan_tier: 'explorer',
+        available_scans: updateData.available_scans,
+        explorerBenefitsUsed: data.explorer_benefits_used
+      });
+      
+      return Response.json({
+        success: true,
+        returning: true,
+        userId,
+        email: userEmail,
+        plan_tier: 'explorer',
+        available_scans: updateData.available_scans,
+        explorer_benefits_used: data.explorer_benefits_used,
+        correlationId
+      });
+    }
+    
+    // Brand new user — standard initialization
+    console.log(`[${correlationId}] Initializing new user with explorer tier + 1 scan`);
+    
     await svc.entities.User.update(userId, {
       plan_tier: 'explorer',
       available_scans: 1,
       is_active: true,
-      subscription_status: 'active'
+      subscription_status: 'active',
+      explorer_benefits_used: false
     });
     
     console.log(`[${correlationId}] ✅ User initialized`, {
@@ -69,13 +120,13 @@ Deno.serve(async (req) => {
         subject: 'Welcome to Lease Shield',
         body: `<p>Welcome to Lease Shield! Your account is ready with 1 free lease scan.</p>`
       });
-      console.log(`[${correlationId}] Welcome email sent`);
     } catch (emailErr) {
       console.warn(`[${correlationId}] Welcome email failed:`, emailErr.message);
     }
     
     return Response.json({
       success: true,
+      returning: false,
       userId,
       email: userEmail,
       plan_tier: 'explorer',
