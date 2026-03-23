@@ -587,11 +587,21 @@ function TemplatesContent() {
                         return (
                           <Card
                             key={template.id}
-                            className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer"
+                            className="border-none shadow-sm transition-all cursor-pointer"
+                            onClick={() => handleViewTemplate(template)}
                             style={{ 
                               backgroundColor: colors.fieldBg,
                               minHeight: '120px',
                               maxHeight: '120px'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                              e.currentTarget.style.borderColor = '#0C3B2E';
+                              e.currentTarget.style.border = '1px solid #0C3B2E';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.boxShadow = '';
+                              e.currentTarget.style.border = 'none';
                             }}
                           >
                             <CardContent className="p-4 h-full flex items-center gap-4">
@@ -618,18 +628,9 @@ function TemplatesContent() {
                                 </p>
                               </div>
 
-                              {/* Actions */}
-                              <div className="flex-shrink-0 flex items-center gap-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewTemplate(template);
-                                  }}
-                                  className="p-2 rounded-lg hover:bg-black/5 transition-all"
-                                  style={{ border: `1px solid ${colors.borderColor}` }}
-                                >
-                                  <Eye className="w-4 h-4" style={{ color: '#0C3B2E' }} />
-                                </button>
+                              {/* View indicator */}
+                              <div className="flex-shrink-0 flex items-center">
+                                <Eye className="w-4 h-4" style={{ color: colors.textSecondary }} />
                               </div>
                             </CardContent>
                           </Card>
