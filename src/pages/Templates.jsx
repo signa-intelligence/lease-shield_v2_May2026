@@ -80,7 +80,7 @@ function TemplatesContent() {
 
       // Sort by category and sort_order
       uniqueTemplates.sort((a, b) => {
-        const catOrder = { checklists: 1, pre_signing: 2, initial_resolution: 3, professional: 4, final: 5 };
+        const catOrder = { checklists: 1, pre_signing: 2, initial_resolution: 3, professional: 4, final: 5, landlord: 6 };
         const catA = catOrder[a.category] || 99;
         const catB = catOrder[b.category] || 99;
         if (catA !== catB) return catA - catB;
@@ -162,11 +162,12 @@ function TemplatesContent() {
       disputes: "Disputes",
       inventory: "Inventory",
       sections: {
-        before_signing: "Before Signing",
+        before_signing: "Pre-Signing",
         during_tenancy: "During Tenancy",
         preparing_moveout: "Preparing to Move-Out",
-        after_moveout: "After Move-Out",
-        disputes: "Disputes & Escalation"
+        after_moveout: "End of Lease",
+        landlord: "Landlord",
+        disputes: "Escalation"
       }
     },
     th: {
@@ -185,8 +186,9 @@ function TemplatesContent() {
         before_signing: "ก่อนลงนาม",
         during_tenancy: "ระหว่างการเช่า",
         preparing_moveout: "เตรียมย้ายออก",
-        after_moveout: "หลังย้ายออก",
-        disputes: "ข้อพิพาท & การยกระดับ"
+        after_moveout: "สิ้นสุดการเช่า",
+        landlord: "เจ้าของที่พัก",
+        disputes: "การยกระดับ"
       }
     },
     zh: {
@@ -277,16 +279,32 @@ function TemplatesContent() {
   const templateToSection = {
     'pre_signing_checklist': 'before_signing',
     'pre_signing_negotiation': 'before_signing',
+    'clause_modification_request': 'before_signing',
+    'pre_move_in_condition_challenge': 'before_signing',
     'lease_amendment_request': 'during_tenancy',
     'move_in_condition_checklist': 'during_tenancy',
     'asset_register_checklist': 'during_tenancy',
+    'unauthorised_entry_complaint': 'during_tenancy',
+    'quiet_enjoyment_concern': 'during_tenancy',
+    'utility_overcharging_query': 'during_tenancy',
+    'subletting_permission_request': 'during_tenancy',
+    'pet_modification_approval': 'during_tenancy',
+    'rent_reduction_request': 'during_tenancy',
     'notice_to_vacate': 'preparing_moveout',
     'pre_move_out_inspection_request': 'preparing_moveout',
     'move_out_preparation_checklist': 'preparing_moveout',
+    'evidence_preservation_notice': 'preparing_moveout',
     'request_for_evidence': 'after_moveout',
     'deposit_itemised_deductions': 'after_moveout',
+    'deposit_deduction_dispute': 'after_moveout',
     'property_condition_dispute': 'disputes',
-    'deposit_withholding_dispute_formal': 'disputes'
+    'deposit_withholding_dispute_formal': 'disputes',
+    'polite_final_followup': 'disputes',
+    'building_management_complaint': 'disputes',
+    'notice_intent_external_guidance': 'disputes',
+    'response_deposit_dispute': 'landlord',
+    'property_inspection_notice': 'landlord',
+    'property_abandonment_notice': 'landlord'
   };
 
   // Template to type mapping for filtering
@@ -296,11 +314,27 @@ function TemplatesContent() {
     'move_out_preparation_checklist': 'checklists',
     'asset_register_checklist': 'inventory',
     'pre_signing_negotiation': 'letters',
+    'clause_modification_request': 'letters',
+    'pre_move_in_condition_challenge': 'letters',
     'lease_amendment_request': 'letters',
     'notice_to_vacate': 'letters',
     'pre_move_out_inspection_request': 'letters',
     'request_for_evidence': 'letters',
     'deposit_itemised_deductions': 'letters',
+    'unauthorised_entry_complaint': 'letters',
+    'quiet_enjoyment_concern': 'letters',
+    'utility_overcharging_query': 'letters',
+    'subletting_permission_request': 'letters',
+    'pet_modification_approval': 'letters',
+    'rent_reduction_request': 'letters',
+    'deposit_deduction_dispute': 'disputes',
+    'evidence_preservation_notice': 'letters',
+    'polite_final_followup': 'disputes',
+    'response_deposit_dispute': 'letters',
+    'property_inspection_notice': 'letters',
+    'property_abandonment_notice': 'letters',
+    'building_management_complaint': 'disputes',
+    'notice_intent_external_guidance': 'disputes',
     'property_condition_dispute': 'disputes',
     'deposit_withholding_dispute_formal': 'disputes'
   };
@@ -320,7 +354,7 @@ function TemplatesContent() {
   }, {});
 
   // Section order
-  const sectionOrder = ['before_signing', 'during_tenancy', 'preparing_moveout', 'after_moveout', 'disputes'];
+  const sectionOrder = ['before_signing', 'during_tenancy', 'preparing_moveout', 'after_moveout', 'landlord', 'disputes'];
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -436,6 +470,21 @@ function TemplatesContent() {
             </div>
           }
         />
+
+        {/* Platform Disclaimer */}
+        <div className="mb-6 p-4 rounded-xl" style={{
+          backgroundColor: isDarkMode ? '#1E293B' : '#FFFBEB',
+          border: `1px solid ${isDarkMode ? 'rgba(245,158,11,0.3)' : '#FDE68A'}`,
+        }}>
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#F59E0B' }} />
+            <p className="text-xs leading-relaxed" style={{ color: isDarkMode ? '#FDE68A' : '#92400E' }}>
+              {language === 'th'
+                ? 'Lease Shield ไม่ใช่สำนักงานกฎหมายและไม่ได้ให้คำปรึกษาทางกฎหมาย แม่แบบจดหมายเหล่านี้เป็นเครื่องมือสื่อสารเชิงปฏิบัติที่ออกแบบมาเพื่อช่วยให้คุณสามารถอธิบายสถานการณ์ของคุณได้อย่างชัดเจนและเป็นมืออาชีพ ไม่ถือเป็นเอกสารทางกฎหมายหรือคำแนะนำทางกฎหมายแต่อย่างใด Lease Shield ไม่รับผิดชอบต่อผลลัพธ์ใด ๆ ที่เกิดจากการใช้แม่แบบเหล่านี้'
+                : 'Lease Shield is not a law firm and does not provide legal advice. These letter templates are practical communication tools designed to help you express your situation clearly and professionally. They do not constitute legal documents or legal advice, and should not be treated as such. If your situation involves a significant financial dispute or potential legal action, we recommend seeking independent legal advice from a qualified professional. Lease Shield accepts no responsibility for outcomes arising from the use of these templates.'}
+            </p>
+          </div>
+        </div>
 
         {/* Filter Bar */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
