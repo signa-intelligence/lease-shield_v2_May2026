@@ -112,22 +112,10 @@ function DashboardContent() {
 
       console.log('🔍 [DASHBOARD] Fetching cases for user:', user.email);
 
-      // CRITICAL: RLS filters by user_email = {{user.email}}
+      // SECURITY: Always filter by user_email explicitly
       const result = await base44.entities.Case.filter({
+        user_email: user.email,
         is_deleted: { $ne: true }
-      });
-
-      console.log('📊 [DASHBOARD] RLS-filtered cases:', result.length);
-      console.log('📊 [DASHBOARD] Case user binding verification:');
-      result.forEach(c => {
-        console.log({
-          id: c.id.slice(0, 8),
-          case_number: c.case_number,
-          user_email: c.user_email,
-          created_by: c.created_by,
-          matches_user: c.user_email === user.email,
-          status: c.status
-        });
       });
 
       return result;
