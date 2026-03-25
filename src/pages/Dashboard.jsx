@@ -105,12 +105,7 @@ function DashboardContent() {
   const { data: cases = [] } = useQuery({
     queryKey: ['cases', user?.email],
     queryFn: async () => {
-      if (!user?.email) {
-        console.error('🔍 [DASHBOARD] No user email - cannot fetch cases');
-        return [];
-      }
-
-      console.log('🔍 [DASHBOARD] Fetching cases for user:', user.email);
+      if (!user?.email) return [];
 
       // SECURITY: Always filter by user_email explicitly
       const result = await base44.entities.Case.filter({
