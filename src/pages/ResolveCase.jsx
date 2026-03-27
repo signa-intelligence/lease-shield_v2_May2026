@@ -16,8 +16,6 @@ import PageHeader from "../components/shared/PageHeader";
 import ProgressBar from "../components/shared/ProgressBar";
 import TrustBadge from "../components/shared/TrustBadge";
 import CaseSuccessModal from "../components/resolve/CaseSuccessModal";
-import PaymentMethodSelector from "../components/resolve/PaymentMethodSelector";
-import PromptPayQR from "../components/resolve/PromptPayQR";
 
 function ResolveCaseContent() {
   const navigate = useNavigate();
@@ -39,7 +37,6 @@ function ResolveCaseContent() {
   const [freeResolveEligible, setFreeResolveEligible] = useState(false);
   const [eligibilityData, setEligibilityData] = useState(null);
   const [successModal, setSuccessModal] = useState({ open: false, caseNumber: '' });
-  const [paymentStep, setPaymentStep] = useState(null); // null | 'choose' | 'promptpay'
   const [pendingCase, setPendingCase] = useState(null); // { caseId, amount, pricing }
 
   const { data: user } = useQuery({
@@ -273,7 +270,16 @@ function ResolveCaseContent() {
         userEmail: userEmail,
         authenticatedUser: authenticatedUser
       });
-      setPaymentStep('choose');
+      // Auto-proceed to Stripe checkout
+      handleStripeCheckoutForCase({
+        caseId: createdCase.id,
+        caseNumber: createdCase.case_number,
+        amount: pricing.amount,
+        priceType: pricing.priceType,
+        userId: userId,
+        userEmail: userEmail,
+        authenticatedUser: authenticatedUser
+      });
     },
     onError: (error) => {
       console.error('[RESOLVE_FLOW] Case creation failed:', error);
@@ -821,24 +827,25 @@ function ResolveCaseContent() {
     }
   };
 
-  // Handle Stripe checkout redirect (called from payment method selector)
-  const handleStripeCheckout = async () => {
-    if (!pendingCase) return;
+  // Handle Stripe checkout
+  const handleStripeCheckoutForCase = async (caseInfo) => {
+    const info = caseInfo || pendingCase;
+    if (!info) return;
     try {
       const response = await base44.functions.invoke('createResolveCheckout', {
-        userId: pendingCase.userId,
-        userEmail: pendingCase.userEmail,
-        caseId: pendingCase.caseId,
-        priceType: pendingCase.priceType,
-        amount: pendingCase.amount
+        userId: info.userId,
+        userEmail: info.userEmail,
+        caseId: info.caseId,
+        priceType: info.priceType,
+        amount: info.amount
       });
       
       console.log('[RESOLVE_FLOW] 💳 Stripe checkout response:', response.data);
       
       if (response.data?.url) {
         sendConfirmationEmail(
-          { case_number: pendingCase.caseNumber, dispute_amount: pendingCase.amount },
-          pendingCase.authenticatedUser,
+          { case_number: info.caseNumber, dispute_amount: info.amount },
+          info.authenticatedUser,
           'paid'
         );
         window.location.href = response.data.url;
@@ -1561,41 +1568,6 @@ function ResolveCaseContent() {
           </Button>
         </form>
       </div>
-
-      {/* Payment Method Selector */}
-      {paymentStep === 'choose' && pendingCase && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
-          <div className="w-full max-w-md">
-            <PaymentMethodSelector
-              amount={pendingCase.amount}
-              language={language}
-              isDarkMode={isDarkMode}
-              onSelectStripe={handleStripeCheckout}
-              onSelectPromptPay={() => setPaymentStep('promptpay')}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* PromptPay QR Payment */}
-      {paymentStep === 'promptpay' && pendingCase && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
-          <div className="w-full max-w-md">
-            <PromptPayQR
-              caseId={pendingCase.caseId}
-              amount={pendingCase.amount}
-              language={language}
-              isDarkMode={isDarkMode}
-              onSuccess={() => {
-                setPaymentStep(null);
-                setPendingCase(null);
-                setSuccessModal({ open: true, caseNumber: pendingCase.caseNumber });
-              }}
-              onCancel={() => setPaymentStep('choose')}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Success Modal */}
       <CaseSuccessModal

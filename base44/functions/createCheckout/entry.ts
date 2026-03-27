@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
         }];
       }
 
-      sessionConfig.payment_method_types = ['card', 'promptpay'];
+      sessionConfig.payment_method_types = ['card'];
     } 
     // ========================================
     // SUBSCRIPTIONS: Card only (PromptPay not supported)
