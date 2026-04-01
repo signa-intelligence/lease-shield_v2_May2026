@@ -23,6 +23,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid file size' }, { status: 400 });
     }
 
+    // Check if uploads are blocked due to storage over-limit after downgrade
+    if (user.uploads_blocked === true && user.storage_over_limit === true) {
+      const graceEnd = user.storage_grace_period_ends ? new Date(user.storage_grace_period_ends).toLocaleDateString() : 'N/A';
+      return Response.json({
+        allowed: false,
+        exceeded: true,
+        reason: 'uploads_blocked_over_limit',
+        message: `Uploads are blocked because your storage exceeds the ${userTier === 'free' ? 'Explorer' : userTier} plan limit. Delete files or upgrade to resume uploading.`,
+        currentTier: userTier,
+        gracePeriodEnds: user.storage_grace_period_ends || null,
+        upgradeUrl: 'https://app.leaseshield.asia/Account?showPlans=true'
+      });
+    }
+
     const userEmail = user.email;
     const userTier = user.plan_tier || 'free';
     

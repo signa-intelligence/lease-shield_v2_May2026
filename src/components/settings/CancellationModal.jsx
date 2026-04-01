@@ -58,6 +58,7 @@ export default function CancellationModal({
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [storageWarning, setStorageWarning] = useState(null); // { usageMB, limitMB, isOverLimit }
 
   const lang = language || "en";
   const planTier = ((user?.plan_tier || "free").toLowerCase() === "explorer") ? "free" : (user?.plan_tier || "free");
@@ -121,6 +122,27 @@ export default function CancellationModal({
     haptic.medium();
     setProcessing(true);
     const newValue = TIER_MONTHLY_VALUE[tier.key] || 0;
+
+    // Storage check for Explorer downgrade
+    if (tier.key === "explorer" && !storageWarning) {
+      try {
+        const storageRes = await base44.functions.invoke("checkStorageQuota", { fileSize: 1 });
+        const data = storageRes.data;
+        const explorerLimitBytes = 100 * 1024 * 1024;
+        const currentUsage = data?.currentUsage || 0;
+        if (currentUsage > explorerLimitBytes) {
+          const usageMB = (currentUsage / (1024 * 1024)).toFixed(1);
+          setStorageWarning({ usageMB, currentUsage, isOverLimit: true });
+          setProcessing(false);
+          return; // Show warning, don't proceed yet
+        }
+      } catch (e) {
+        console.error("[CANCEL_MODAL] Storage check failed:", e);
+        // Proceed anyway if check fails
+      }
+    }
+    // Reset storage warning if user confirmed
+    setStorageWarning(null);
 
     // Track downgrade from cancel flow
     base44.analytics.track({
@@ -274,6 +296,53 @@ export default function CancellationModal({
             <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
               <div className="space-y-3 py-3">
                 {/* Retention offers shown - tracked in handleContinueToStep2 */}
+
+                {storageWarning && storageWarning.isOverLimit && (
+                  <div className="p-4 rounded-xl border-2" style={{
+                    backgroundColor: isDarkMode ? "#2A2020" : "#FFF7ED",
+                    borderColor: "#F59E0B"
+                  }}>
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#F59E0B" }}>
+                        <Shield className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-sm mb-1" style={{ color: isDarkMode ? "#FCD34D" : "#92400E" }}>
+                          {lang === "th" ? "⚠️ พื้นที่จัดเก็บเกินขีดจำกัด" : "⚠️ Storage Exceeds Explorer Limit"}
+                        </p>
+                        <p className="text-xs mb-2" style={{ color: isDarkMode ? "#FBBF24" : "#B45309" }}>
+                          {lang === "th"
+                            ? `คุณใช้ ${storageWarning.usageMB >= 1024 ? (storageWarning.usageMB / 1024).toFixed(2) + "GB" : storageWarning.usageMB + "MB"} แต่ Explorer มีพื้นที่เพียง 100MB`
+                            : `You're using ${storageWarning.usageMB >= 1024 ? (storageWarning.usageMB / 1024).toFixed(2) + "GB" : storageWarning.usageMB + "MB"} but Explorer only includes 100MB`}
+                        </p>
+                        <div className="text-xs space-y-1 mb-3" style={{ color: isDarkMode ? "#FDE68A" : "#78350F" }}>
+                          <p>✅ {lang === "th" ? "ไฟล์ทั้งหมดยังเข้าถึงได้ 30 วัน" : "All files remain accessible for 30 days"}</p>
+                          <p>❌ {lang === "th" ? "อัปโหลดใหม่จะถูกบล็อก" : "New uploads will be blocked"}</p>
+                          <p>💡 {lang === "th" ? "อัปเกรดหรือลบไฟล์เพื่อคืนค่า" : "Upgrade or delete files to restore access"}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            haptic.medium();
+                            setStorageWarning({ ...storageWarning, confirmed: true });
+                            const explorerTier = downgradeOptions.find(t => t.key === "explorer");
+                            if (explorerTier) handleDowngrade(explorerTier);
+                          }}
+                          disabled={processing}
+                          style={{
+                            width: "100%", padding: "10px", borderRadius: "8px",
+                            backgroundColor: processing ? "#9CA3AF" : "#F59E0B", color: "#FFFFFF",
+                            fontWeight: "600", fontSize: "13px", border: "none",
+                            cursor: processing ? "not-allowed" : "pointer", opacity: processing ? 0.6 : 1
+                          }}
+                        >
+                          {processing
+                            ? t.processing
+                            : (lang === "th" ? "ดำเนินการลดระดับต่อ" : "Proceed with Downgrade")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {downgradeOptions.map((tier) => {
                   const Icon = tier.icon;

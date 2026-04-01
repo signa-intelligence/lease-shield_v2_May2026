@@ -56,14 +56,57 @@ Deno.serve(async (req) => {
     // HELPER: Downgrade user to Explorer
     // ========================================
     async function downgradeToExplorer(user) {
+      const previousTier = user.plan_tier || 'unknown';
+      const EXPLORER_LIMIT_BYTES = 100 * 1024 * 1024; // 100MB
+
+      // Check current storage usage
+      let storageUsageBytes = 0;
+      try {
+        const storageRecords = await base44.asServiceRole.entities.UserStorage.filter({
+          user_email: user.email
+        });
+        if (storageRecords.length > 0) {
+          storageUsageBytes = storageRecords[0].total_bytes || 0;
+        }
+      } catch (e) {
+        console.error('[DOWNGRADE] Storage check failed (non-blocking):', e.message);
+      }
+
+      const isOverLimit = storageUsageBytes > EXPLORER_LIMIT_BYTES;
+      const gracePeriodEnds = isOverLimit
+        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        : null;
+
       await base44.asServiceRole.entities.User.update(user.id, {
         plan_tier: 'explorer',
         subscription_status: 'cancelled',
         available_scans: 1,
         letter_credits: 0,
-        stripe_subscription_id: null
+        stripe_subscription_id: null,
+        previous_plan_tier: previousTier,
+        storage_over_limit: isOverLimit,
+        uploads_blocked: isOverLimit,
+        storage_grace_period_ends: gracePeriodEnds
       });
-      console.log('[DOWNGRADE] ✅ User downgraded to explorer:', user.email);
+
+      console.log('[DOWNGRADE] ✅ User downgraded to explorer:', user.email,
+        isOverLimit ? `(OVER LIMIT: ${(storageUsageBytes / 1024 / 1024).toFixed(1)}MB > 100MB, grace until ${gracePeriodEnds})` : '(within limit)');
+
+      // Send storage warning email if over limit
+      if (isOverLimit) {
+        try {
+          await base44.asServiceRole.functions.invoke('sendStorageWarning', {
+            email: user.email,
+            full_name: user.full_name || user.display_name,
+            current_usage_bytes: storageUsageBytes,
+            grace_period_ends: gracePeriodEnds,
+            previous_tier: previousTier
+          });
+          console.log('[DOWNGRADE] ✅ Storage warning email sent to:', user.email);
+        } catch (emailErr) {
+          console.error('[DOWNGRADE] ⚠️ Storage warning email failed (non-blocking):', emailErr.message);
+        }
+      }
     }
 
     // ========================================
@@ -125,7 +168,11 @@ Deno.serve(async (req) => {
               usage_month: currentMonth,
               scans_used_this_month: 0,
               letters_used_this_month: 0,
-              fasttrack_used_this_month: 0
+              fasttrack_used_this_month: 0,
+              // Clear storage over-limit flags on upgrade
+              storage_over_limit: false,
+              uploads_blocked: false,
+              storage_grace_period_ends: null
             });
             console.log('[CHECKOUT_WEBHOOK] ✅ User upgraded:', user.email, 'to', planTier);
 

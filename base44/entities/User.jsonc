@@ -15,7 +15,7 @@
     "one_time_scan_credits": {
       "type": "integer",
       "default": 0,
-      "description": "Number of one-time scan credits purchased (\u0e3f590 each)"
+      "description": "Number of one-time scan credits purchased"
     },
     "manual_tier_override": {
       "type": "boolean",
@@ -51,22 +51,22 @@
     "scans_used_this_month": {
       "type": "integer",
       "default": 0,
-      "description": "Lease scans used in current month (Secure tier: max 10/month)"
+      "description": "Lease scans used in current month"
     },
     "letters_used_this_month": {
       "type": "integer",
       "default": 0,
-      "description": "Letter credits used in current month (Secure tier: max 10/month)"
+      "description": "Letter credits used in current month"
     },
     "fasttrack_used_this_month": {
       "type": "integer",
       "default": 0,
-      "description": "Fast Track cases used in current month (Secure tier: max 3/month)"
+      "description": "Fast Track cases used in current month"
     },
     "is_deleted": {
       "type": "boolean",
       "default": false,
-      "description": "Soft-delete flag. True = account deactivated by user but data retained for re-registration."
+      "description": "Soft-delete flag"
     },
     "deleted_at": {
       "type": "string",
@@ -76,7 +76,7 @@
     "explorer_benefits_used": {
       "type": "boolean",
       "default": false,
-      "description": "True if user has consumed any Explorer tier free benefits (scan/letters). Prevents re-granting on re-registration."
+      "description": "True if user has consumed any Explorer tier free benefits"
     },
     "previous_plan_tier": {
       "type": "string",
@@ -105,12 +105,12 @@
     "renewal_today_sent": {
       "type": "boolean",
       "default": false,
-      "description": "True if renewal-day confirmation was sent this cycle (resets all reminder flags)"
+      "description": "True if renewal-day confirmation was sent this cycle"
     },
     "subscription_renewal_date": {
       "type": "string",
       "format": "date",
-      "description": "Next subscription renewal date (set by Stripe webhook on invoice.paid)"
+      "description": "Next subscription renewal date"
     },
     "last_login": {
       "type": "string",
@@ -126,6 +126,21 @@
       "type": "string",
       "format": "date-time",
       "description": "When the last inactive reminder was sent (60-day cooldown)"
+    },
+    "storage_over_limit": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if user's storage exceeds their current tier limit (set on downgrade)"
+    },
+    "storage_grace_period_ends": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the storage grace period ends (30 days after downgrade). Files remain accessible until this date."
+    },
+    "uploads_blocked": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if new file uploads are blocked due to being over storage limit"
     }
   },
   "required": []
