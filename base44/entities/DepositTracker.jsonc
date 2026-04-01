@@ -151,6 +151,18 @@
       "default": false,
       "description": "True if overdue deposit return reminder was sent"
     },
+    "rent_reminder_3d_month": {
+      "type": "string",
+      "description": "YYYY-MM of last 3-day rent reminder sent (monthly dedup)"
+    },
+    "rent_reminder_due_month": {
+      "type": "string",
+      "description": "YYYY-MM of last due-date rent reminder sent (monthly dedup)"
+    },
+    "rent_reminder_late_month": {
+      "type": "string",
+      "description": "YYYY-MM of last late rent reminder sent (monthly dedup)"
+    },
     "field_metadata": {
       "type": "object",
       "description": "Provenance and confidence per field",
