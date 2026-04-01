@@ -1,0 +1,88 @@
+{
+  "name": "NotificationLog",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Recipient email"
+    },
+    "notification_type": {
+      "type": "string",
+      "enum": [
+        "30d_deposit",
+        "7d_deposit",
+        "3d_deposit",
+        "overdue_deposit",
+        "30d_notice",
+        "7d_notice",
+        "3d_notice",
+        "0d_notice",
+        "rent_reminder",
+        "credit_warning",
+        "subscription_renewal",
+        "maintenance_update",
+        "test"
+      ],
+      "description": "Type of notification sent"
+    },
+    "channel": {
+      "type": "string",
+      "enum": [
+        "LINE",
+        "Email"
+      ],
+      "description": "Channel used to send"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "failed"
+      ],
+      "default": "sent",
+      "description": "Delivery status"
+    },
+    "related_entity_type": {
+      "type": "string",
+      "enum": [
+        "deposit",
+        "lease",
+        "maintenance",
+        "user"
+      ],
+      "description": "Type of related entity"
+    },
+    "related_entity_id": {
+      "type": "string",
+      "description": "ID of related deposit/lease/etc"
+    },
+    "message_preview": {
+      "type": "string",
+      "description": "First 200 chars of message"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Error details if failed"
+    },
+    "timeline_event_id": {
+      "type": "string",
+      "description": "Linked TimelineEvent ID if created"
+    },
+    "is_read": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user has read this notification"
+    },
+    "is_dismissed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user has dismissed this notification"
+    }
+  },
+  "required": [
+    "user_email",
+    "notification_type",
+    "channel",
+    "status"
+  ]
+}

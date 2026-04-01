@@ -1,0 +1,112 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "available_scans": {
+      "type": "integer",
+      "default": 1,
+      "description": "Number of available lease scans (explorer tier gets 1 free)"
+    },
+    "referral_generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the user's referral code was first generated"
+    },
+    "one_time_scan_credits": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of one-time scan credits purchased (\u0e3f590 each)"
+    },
+    "manual_tier_override": {
+      "type": "boolean",
+      "default": false,
+      "description": "When true, bypass Stripe checks and use manual credit values"
+    },
+    "manual_letter_credits": {
+      "type": "integer",
+      "description": "Manual letter credits (used when manual_tier_override is true)"
+    },
+    "manual_scan_credits": {
+      "type": "integer",
+      "description": "Manual scan credits (used when manual_tier_override is true)"
+    },
+    "manual_case_credits": {
+      "type": "integer",
+      "default": 0,
+      "description": "Manual free case credits (used when manual_tier_override is true)"
+    },
+    "resolve_entitlement_used_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the user used their annual free Resolve case entitlement"
+    },
+    "resolve_entitlement_used_case_id": {
+      "type": "string",
+      "description": "Case ID of the free Resolve case that was used"
+    },
+    "usage_month": {
+      "type": "string",
+      "description": "Current usage tracking month (e.g. '2026-03')"
+    },
+    "scans_used_this_month": {
+      "type": "integer",
+      "default": 0,
+      "description": "Lease scans used in current month (Secure tier: max 10/month)"
+    },
+    "letters_used_this_month": {
+      "type": "integer",
+      "default": 0,
+      "description": "Letter credits used in current month (Secure tier: max 10/month)"
+    },
+    "fasttrack_used_this_month": {
+      "type": "integer",
+      "default": 0,
+      "description": "Fast Track cases used in current month (Secure tier: max 3/month)"
+    },
+    "is_deleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Soft-delete flag. True = account deactivated by user but data retained for re-registration."
+    },
+    "deleted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when user soft-deleted their account"
+    },
+    "explorer_benefits_used": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if user has consumed any Explorer tier free benefits (scan/letters). Prevents re-granting on re-registration."
+    },
+    "previous_plan_tier": {
+      "type": "string",
+      "description": "Plan tier before deletion, stored for audit/restore context"
+    },
+    "credit_low_warning_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if low credit warning email was sent this cycle"
+    },
+    "credit_depleted_warning_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if depleted credit warning email was sent this cycle"
+    },
+    "renewal_7day_reminder_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if 7-day subscription renewal reminder was sent this cycle"
+    },
+    "renewal_1day_reminder_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if 1-day subscription renewal reminder was sent this cycle"
+    },
+    "renewal_today_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if renewal-day confirmation was sent this cycle"
+    }
+  },
+  "required": []
+}
