@@ -183,6 +183,19 @@ export default function Layout({ children, currentPageName }) {
           .catch(err => console.error('[LAYOUT] Referral code generation failed (non-critical):', err));
       }
     }
+    // Track last_login for inactive user re-engagement
+    if (user.plan_tier && !user.is_deleted) {
+      const now = new Date();
+      const lastLogin = user.last_login ? new Date(user.last_login) : null;
+      const hoursSinceLastUpdate = lastLogin ? (now - lastLogin) / (1000 * 60 * 60) : Infinity;
+      // Only update if last_login is older than 1 hour (avoid excessive writes)
+      if (hoursSinceLastUpdate > 1) {
+        base44.auth.updateMe({ last_login: now.toISOString() })
+          .then(() => console.log('[LAYOUT] last_login updated'))
+          .catch(err => console.error('[LAYOUT] last_login update failed:', err));
+      }
+    }
+
     // Also send welcome email for existing users who never got one
     if (user.plan_tier && !user.welcome_email_sent) {
       base44.functions.invoke('sendWelcomeEmail')

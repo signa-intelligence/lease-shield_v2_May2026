@@ -112,10 +112,15 @@
       "format": "date",
       "description": "Next subscription renewal date (set by Stripe webhook on invoice.paid)"
     },
+    "last_login": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of user's most recent login/session"
+    },
     "inactive_reminder_sent": {
       "type": "boolean",
       "default": false,
-      "description": "True if inactive user re-engagement email was sent"
+      "description": "True if inactive re-engagement reminder was sent"
     },
     "inactive_reminder_sent_date": {
       "type": "string",

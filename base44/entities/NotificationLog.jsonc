@@ -20,6 +20,7 @@
         "rent_reminder",
         "credit_warning",
         "subscription_renewal",
+        "inactive_reminder",
         "maintenance_update",
         "test"
       ],
