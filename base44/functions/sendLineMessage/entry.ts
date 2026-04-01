@@ -1,82 +1,75 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
-
 /**
  * Send LINE message via Messaging API
  * Supports text and flex message formats
+ * 
+ * Called by other backend functions via base44.asServiceRole.functions.invoke()
+ * Tier gating is done by the CALLER (e.g. sendMaintenanceNotification)
  * 
  * Required Secrets:
  * - LINE_CHANNEL_ACCESS_TOKEN: LINE Messaging API channel access token
  */
 
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // TIER GATING: LINE notifications require Protect or Secure tier
-    const user = await base44.auth.me();
-    if (user) {
-      const userTier = user.plan_tier || 'free';
-      if (!['protect', 'secure'].includes(userTier)) {
-        console.log('❌ LINE_TIER_REQUIRED:', { userEmail: user.email, tier: userTier });
-        return Response.json({ 
-          error: 'LINE_TIER_REQUIRED',
-          message: 'LINE notifications require Protect or Secure tier. Upgrade at app.leaseshield.asia/account'
-        }, { status: 403 });
-      }
-    }
-    
-    const channelAccessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN'); // LINE Messaging API token
+    const channelAccessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
     
     if (!channelAccessToken) {
-      console.error('❌ LINE_CHANNEL_ACCESS_TOKEN not configured');
-      return Response.json({ error: 'LINE_CHANNEL_ACCESS_TOKEN not configured' }, { status: 500 });
+      console.error('[LINE] LINE_CHANNEL_ACCESS_TOKEN not configured');
+      return Response.json({ 
+        success: false, 
+        error: 'LINE_CHANNEL_ACCESS_TOKEN not configured' 
+      }, { status: 500 });
     }
 
     const body = await req.json();
-    console.log('📥 Request body received:', JSON.stringify(body, null, 2));
-    
     const { userId, message, flexMessage } = body;
     
+    console.log('[LINE] Request received:', { 
+      userId: userId ? `${String(userId).slice(0, 8)}...` : 'MISSING',
+      hasMessage: !!message,
+      hasFlexMessage: !!flexMessage
+    });
+    
     if (!userId) {
-      console.error('❌ Missing userId');
-      return Response.json({ error: 'Missing userId' }, { status: 400 });
+      console.error('[LINE] Missing userId');
+      return Response.json({ success: false, error: 'Missing userId' }, { status: 400 });
     }
 
     if (!message && !flexMessage) {
-      console.error('❌ Missing both message and flexMessage');
-      return Response.json({ error: 'Missing message or flexMessage' }, { status: 400 });
+      console.error('[LINE] Missing both message and flexMessage');
+      return Response.json({ success: false, error: 'Missing message or flexMessage' }, { status: 400 });
     }
 
-    // Construct messages array
+    // Build messages array
     const messages = [];
     
     if (flexMessage) {
-      console.log('✅ Flex message detected!');
-      console.log('📦 flexMessage structure:', JSON.stringify(flexMessage, null, 2));
-      
-      const lineFlexMessage = {
+      messages.push({
         type: 'flex',
-        altText: flexMessage.altText || 'Lease Shield Notification',
+        altText: flexMessage.altText || message || 'Lease Shield Notification',
         contents: flexMessage.contents
-      };
-      
-      messages.push(lineFlexMessage);
-      console.log('📤 Final LINE Flex message to send:', JSON.stringify(lineFlexMessage, null, 2));
+      });
     } else {
-      console.log('📝 Plain text message mode');
       messages.push({
         type: 'text',
         text: message
       });
     }
 
-    // Send via LINE Messaging API
     const linePayload = {
       to: userId,
       messages: messages
     };
     
-    console.log('🚀 Complete LINE API payload:', JSON.stringify(linePayload, null, 2));
+    console.log('[LINE] Sending to LINE API:', { 
+      to: `${String(userId).slice(0, 8)}...`,
+      messageCount: messages.length,
+      messageType: flexMessage ? 'flex' : 'text'
+    });
     
     const response = await fetch('https://api.line.me/v2/bot/message/push', {
       method: 'POST',
@@ -89,31 +82,32 @@ Deno.serve(async (req) => {
 
     const responseText = await response.text();
     
-    console.log('📊 LINE API Response Status:', response.status);
-    console.log('📊 LINE API Response Headers:', JSON.stringify([...response.headers.entries()]));
-    console.log('📊 LINE API Response Body:', responseText);
+    console.log('[LINE] API Response:', { 
+      status: response.status, 
+      body: responseText.slice(0, 200)
+    });
     
     if (!response.ok) {
-      console.error('❌ LINE API error:', response.status, responseText);
-      throw new Error(`LINE API error ${response.status}: ${responseText}`);
+      console.error('[LINE] API error:', response.status, responseText);
+      return Response.json({ 
+        success: false,
+        error: `LINE API ${response.status}: ${responseText}`
+      }, { status: response.status });
     }
 
-    console.log(`✅ LINE message sent successfully!`);
+    console.log('[LINE] Message sent successfully');
 
     return Response.json({ 
       success: true,
       sentAt: new Date().toISOString(),
-      lineResponse: responseText,
-      sentFlexMessage: !!flexMessage,
       messageType: flexMessage ? 'flex' : 'text'
     });
 
   } catch (error) {
-    console.error('❌ LINE message error:', error);
-    console.error('Stack:', error.stack);
+    console.error('[LINE] Error:', error.message);
     return Response.json({ 
-      error: error.message,
-      stack: error.stack 
+      success: false,
+      error: error.message
     }, { status: 500 });
   }
 });
