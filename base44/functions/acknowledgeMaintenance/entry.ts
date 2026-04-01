@@ -1,9 +1,9 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { token, action, status, message, role, completionPhotoUrls, billPhotoUrls } = await req.json();
+    const { token, action, status, message, role, completionPhotoUrls, billPhotoUrls, landlordResponse, actualCost } = await req.json();
 
     console.log('🔍 === ACKNOWLEDGMENT REQUEST START ===');
     console.log('📥 Request payload:', { token, action, status, role, hasMessage: !!message });
@@ -26,8 +26,8 @@ Deno.serve(async (req) => {
     console.log('✅ Found maintenance request:', maintenanceRequest.id);
     console.log('📝 Created by:', maintenanceRequest.created_by || 'undefined');
 
-    // If action is 'view', just return the request
-    if (action === 'view') {
+    // If action is 'view' or 'get', just return the request
+    if (action === 'view' || action === 'get') {
       return Response.json({ 
         success: true,
         maintenanceRequest: maintenanceRequest
@@ -36,9 +36,13 @@ Deno.serve(async (req) => {
 
     // If action is 'update', update the status and add to communication log
     if (action === 'update') {
-      if (!status || !message || !role) {
-        console.error('❌ Missing required fields:', { status, hasMessage: !!message, role });
-        return Response.json({ error: 'Missing required fields' }, { status: 400 });
+      // message and role can come from landlordResponse or direct fields
+      const effectiveMessage = message || landlordResponse || '';
+      const effectiveRole = role || 'landlord';
+      
+      if (!status) {
+        console.error('❌ Missing required fields:', { status, hasMessage: !!effectiveMessage, role: effectiveRole });
+        return Response.json({ error: 'Missing status field' }, { status: 400 });
       }
 
       console.log('📝 === UPDATE ACTION STARTING ===');
@@ -118,10 +122,10 @@ Deno.serve(async (req) => {
       console.log('🌐 language:', tenant.language || 'en');
 
       const language = tenant.language || 'en';
-      const senderName = role === 'landlord' 
+      const senderName = effectiveRole === 'landlord' 
         ? (tenant.landlord_name || 'Landlord')
         : (tenant.juristic_name || 'Juristic Office');
-      const senderEmail = role === 'landlord'
+      const senderEmail = effectiveRole === 'landlord'
         ? (tenant.landlord_email || '')
         : (tenant.juristic_email || '');
 
@@ -130,8 +134,8 @@ Deno.serve(async (req) => {
       // Build new log entry
       const newLogEntry = {
         timestamp: new Date().toISOString(),
-        message: message,
-        sender: role,
+        message: effectiveMessage,
+        sender: effectiveRole,
         sender_name: senderName,
         sender_email: senderEmail,
         action_type: status === maintenanceRequest.status ? 'message' : 'status_change',
@@ -331,7 +335,7 @@ Deno.serve(async (req) => {
                     contents: [
                       {
                         type: 'text',
-                        text: message.length > 200 ? message.substring(0, 200) + '...' : message,
+                        text: (effectiveMessage || 'Status updated').length > 200 ? (effectiveMessage || 'Status updated').substring(0, 200) + '...' : (effectiveMessage || 'Status updated'),
                         size: 'sm',
                         color: '#6B7280',
                         wrap: true

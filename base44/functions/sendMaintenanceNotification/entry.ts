@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
         </div>`;
 
       try {
-        const result = await sendViaResend(user.landlord_email.trim(), landlordSubject, landlordHtml, user.full_name || 'Lease Shield Tenant');
+        const result = await sendViaResend(user.landlord_email.trim(), landlordSubject, landlordHtml, 'LeaseShield Notifications');
         console.log('[MAINT_NOTIFY] ✅ Landlord email sent. ID:', result.id);
         notifications.push({ recipient: 'landlord', method: 'email', status: 'sent', to: user.landlord_email, messageId: result.id });
       } catch (error) {
@@ -214,7 +214,7 @@ Deno.serve(async (req) => {
         </div>`;
 
       try {
-        const result = await sendViaResend(user.juristic_email.trim(), juristicSubject, juristicHtml, user.full_name || 'Lease Shield Tenant');
+        const result = await sendViaResend(user.juristic_email.trim(), juristicSubject, juristicHtml, 'LeaseShield Notifications');
         console.log('[MAINT_NOTIFY] ✅ Juristic email sent. ID:', result.id);
         notifications.push({ recipient: 'juristic', method: 'email', status: 'sent', to: user.juristic_email, messageId: result.id });
       } catch (error) {
@@ -231,6 +231,14 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════
     const userTier = user.plan_tier || 'free';
     const lineAllowed = ['protect', 'secure'].includes(userTier);
+
+    console.log('[MAINT_NOTIFY] LINE check:', {
+      hasLineToken: !!user.line_messaging_token,
+      lineNotificationsEnabled: user.line_notifications !== false,
+      userTier,
+      lineAllowed,
+      lineSkipReason: !user.line_messaging_token ? 'NO_LINE_TOKEN' : !lineAllowed ? `TIER_${userTier}_NOT_ELIGIBLE` : user.line_notifications === false ? 'DISABLED_BY_USER' : 'ELIGIBLE'
+    });
 
     // Tenant LINE
     if (user.line_messaging_token && user.line_notifications !== false && lineAllowed) {

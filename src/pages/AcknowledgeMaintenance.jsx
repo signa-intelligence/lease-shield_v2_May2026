@@ -230,7 +230,7 @@ export default function AcknowledgeMaintenance() {
 
       const response = await base44.functions.invoke('acknowledgeMaintenance', {
         token: token,
-        action: 'get'
+        action: 'view'
       });
 
       if (response.data?.maintenanceRequest) {
@@ -295,10 +295,13 @@ export default function AcknowledgeMaintenance() {
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
 
+      const urlRole = new URLSearchParams(window.location.search).get('role') || 'landlord';
       const response = await base44.functions.invoke('acknowledgeMaintenance', {
         token: token,
         action: 'update',
         status: newStatus,
+        message: landlordResponse || `Status updated to ${newStatus}`,
+        role: urlRole,
         landlordResponse: landlordResponse,
         actualCost: actualCost ? parseFloat(actualCost) : undefined,
         completionPhotoUrls: completionPhotos,
