@@ -69,10 +69,10 @@ Deno.serve(async (req) => {
         let reminderType = null;
         let subject = '';
 
-        if (daysUntilRenewal === 7 && user.renewal_7day_reminder_sent !== true) {
+        if (daysUntilRenewal === 7 && user.renewal_7d_sent !== true) {
           reminderType = '7day';
           subject = 'Subscription Renews in 7 Days';
-        } else if (daysUntilRenewal === 1 && user.renewal_1day_reminder_sent !== true) {
+        } else if (daysUntilRenewal === 1 && user.renewal_1d_sent !== true) {
           reminderType = '1day';
           subject = 'Subscription Renews Tomorrow';
         } else if (daysUntilRenewal <= 0 && user.renewal_today_sent !== true) {
@@ -101,13 +101,13 @@ Deno.serve(async (req) => {
 
         // Update flags
         const updateData = {};
-        if (reminderType === '7day') updateData.renewal_7day_reminder_sent = true;
-        if (reminderType === '1day') updateData.renewal_1day_reminder_sent = true;
+        if (reminderType === '7day') updateData.renewal_7d_sent = true;
+        if (reminderType === '1day') updateData.renewal_1d_sent = true;
         if (reminderType === 'renewed') {
           updateData.renewal_today_sent = true;
           // Reset all flags for next billing cycle
-          updateData.renewal_7day_reminder_sent = false;
-          updateData.renewal_1day_reminder_sent = false;
+          updateData.renewal_7d_sent = false;
+          updateData.renewal_1d_sent = false;
           // Also reset credit warning flags (credits refreshed)
           updateData.credit_low_warning_sent = false;
           updateData.credit_depleted_warning_sent = false;

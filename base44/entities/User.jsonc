@@ -92,12 +92,12 @@
       "default": false,
       "description": "True if depleted credit warning email was sent this cycle"
     },
-    "renewal_7day_reminder_sent": {
+    "renewal_7d_sent": {
       "type": "boolean",
       "default": false,
       "description": "True if 7-day subscription renewal reminder was sent this cycle"
     },
-    "renewal_1day_reminder_sent": {
+    "renewal_1d_sent": {
       "type": "boolean",
       "default": false,
       "description": "True if 1-day subscription renewal reminder was sent this cycle"
@@ -105,7 +105,12 @@
     "renewal_today_sent": {
       "type": "boolean",
       "default": false,
-      "description": "True if renewal-day confirmation was sent this cycle"
+      "description": "True if renewal-day confirmation was sent this cycle (resets all reminder flags)"
+    },
+    "subscription_renewal_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Next subscription renewal date (set by Stripe webhook on invoice.paid)"
     }
   },
   "required": []
