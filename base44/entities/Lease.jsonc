@@ -1,0 +1,165 @@
+{
+  "name": "Lease",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of user who owns this lease",
+      "index": true
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to the uploaded lease document (primary/first file)"
+    },
+    "file_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs to all uploaded lease pages/files"
+    },
+    "original_filename": {
+      "type": "string",
+      "description": "Original filename of the uploaded document"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "uploaded",
+        "queued",
+        "processing",
+        "scanned",
+        "ok",
+        "failed",
+        "archived",
+        "deleted"
+      ],
+      "default": "active",
+      "description": "Lease lifecycle status"
+    },
+    "language_detected": {
+      "type": "string",
+      "enum": [
+        "en",
+        "th",
+        "mixed"
+      ],
+      "description": "Language detected in the lease"
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Property address from lease",
+      "index": true
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Lease start date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Lease end date"
+    },
+    "rent_amount": {
+      "type": "number",
+      "description": "Monthly rent amount"
+    },
+    "deposit_amount": {
+      "type": "number",
+      "description": "Security deposit amount"
+    },
+    "notice_period_days": {
+      "type": "integer",
+      "description": "Days before end to notify landlord (e.g., 30, 45, 60)"
+    },
+    "notice_deadline": {
+      "type": "string",
+      "format": "date",
+      "description": "Calculated deadline to notify landlord"
+    },
+    "notice_alerts_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable lease end notice reminders"
+    },
+    "archived_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When lease was archived"
+    },
+    "archived_by": {
+      "type": "string",
+      "description": "User who archived the lease"
+    },
+    "file_size_bytes": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total size of all uploaded files in bytes"
+    },
+    "reminder_60d_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if 60-day lease expiration reminder was sent"
+    },
+    "reminder_30d_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if 30-day lease expiration reminder was sent"
+    },
+    "reminder_14d_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if 14-day lease expiration reminder was sent"
+    },
+    "reminder_7d_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if 7-day lease expiration reminder was sent"
+    }
+  },
+  "required": [
+    "owner_email",
+    "file_url"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

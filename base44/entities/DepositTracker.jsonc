@@ -1,0 +1,319 @@
+{
+  "name": "DepositTracker",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of user who owns this deposit",
+      "index": true
+    },
+    "lease_id": {
+      "type": "string",
+      "description": "Related lease ID",
+      "index": true
+    },
+    "deposit_amount": {
+      "type": "number",
+      "description": "Amount of security deposit"
+    },
+    "deposit_paid_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When deposit was paid"
+    },
+    "expected_return_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Expected return date"
+    },
+    "deposit_due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When deposit payment is/was due"
+    },
+    "lease_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Lease start date"
+    },
+    "lease_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Lease end date"
+    },
+    "deposit_due_date_is_estimated": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if deposit due date was computed"
+    },
+    "expected_return_date_is_estimated": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if return date was computed"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "tracking",
+        "returned",
+        "disputed",
+        "archived"
+      ],
+      "default": "tracking"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Property address",
+      "index": true
+    },
+    "rent_amount": {
+      "type": "number",
+      "description": "Monthly rent amount"
+    },
+    "rent_due_day": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 31,
+      "description": "Day of month rent is due (1-31)"
+    },
+    "rent_due_day_needs_review": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag if rent due day not found in lease"
+    },
+    "rent_alerts_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable automated rent reminders"
+    },
+    "rent_alert_days_before": {
+      "type": "integer",
+      "default": 3,
+      "minimum": 1,
+      "maximum": 14,
+      "description": "Days before due date to send reminder"
+    },
+    "source_scan_id": {
+      "type": "string",
+      "description": "LeaseScan ID if auto-populated"
+    },
+    "auto_populated": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if created from lease scan"
+    },
+    "user_reviewed": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if user confirmed review of auto-filled data"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When user confirmed review"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if archived (hidden from active views)"
+    },
+    "archived_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When deposit was archived"
+    },
+    "reminder_30d_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if 30-day deposit return reminder was sent"
+    },
+    "reminder_7d_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if 7-day deposit return reminder was sent"
+    },
+    "reminder_3d_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if 3-day deposit return reminder was sent"
+    },
+    "reminder_due_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if due-date deposit return reminder was sent"
+    },
+    "reminder_overdue_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if overdue deposit return reminder was sent"
+    },
+    "field_metadata": {
+      "type": "object",
+      "description": "Provenance and confidence per field",
+      "properties": {
+        "deposit_amount": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string",
+              "enum": [
+                "scan",
+                "user"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "last_updated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "last_updated_by": {
+              "type": "string"
+            }
+          }
+        },
+        "property_address": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string",
+              "enum": [
+                "scan",
+                "user"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "last_updated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "last_updated_by": {
+              "type": "string"
+            }
+          }
+        },
+        "rent_amount": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string",
+              "enum": [
+                "scan",
+                "user"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "last_updated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "last_updated_by": {
+              "type": "string"
+            }
+          }
+        },
+        "rent_due_day": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string",
+              "enum": [
+                "scan",
+                "user"
+              ]
+            },
+            "confidence": {
+              "type": "number"
+            },
+            "last_updated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "last_updated_by": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "audit_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "old_value": {
+            "type": "string"
+          },
+          "new_value": {
+            "type": "string"
+          },
+          "changed_by": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "description": "Audit trail of field changes"
+    }
+  },
+  "required": [
+    "owner_email",
+    "deposit_amount",
+    "deposit_paid_date",
+    "expected_return_date"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
