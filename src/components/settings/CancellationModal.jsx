@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,7 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { haptic } from "../shared/HapticFeedback";
-import { Shield, Zap, Crown, CheckCircle2, XCircle, Loader2, ChevronRight, Gift } from "lucide-react";
+import { Shield, Zap, Crown, CheckCircle2, XCircle, Loader2, ChevronRight, Gift, AlertTriangle, Database, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+
+const EXPLORER_LIMIT_BYTES = 100 * 1024 * 1024; // 100MB
+
+function formatBytes(bytes) {
+  if (!bytes || bytes <= 0) return '0 MB';
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
+  return `${mb.toFixed(1)} MB`;
+}
 
 const TIER_MONTHLY_VALUE = { explorer: 0, free: 0, lite: 190, protect: 390, secure: 990 };
 
@@ -58,7 +69,22 @@ export default function CancellationModal({
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [storageWarning, setStorageWarning] = useState(null); // { usageMB, limitMB, isOverLimit }
+  const [storageUsageBytes, setStorageUsageBytes] = useState(0);
+  const [storageLoading, setStorageLoading] = useState(false);
+  const [pendingExplorerTier, setPendingExplorerTier] = useState(null);
+
+  // Fetch storage usage when modal opens
+  useEffect(() => {
+    if (isOpen && user?.email) {
+      setStorageLoading(true);
+      base44.functions.invoke('checkStorageQuota', { fileSize: 1 })
+        .then(res => {
+          setStorageUsageBytes(res.data?.currentUsage || 0);
+        })
+        .catch(() => setStorageUsageBytes(0))
+        .finally(() => setStorageLoading(false));
+    }
+  }, [isOpen, user?.email]);
 
   const lang = language || "en";
   const planTier = ((user?.plan_tier || "free").toLowerCase() === "explorer") ? "free" : (user?.plan_tier || "free");
@@ -102,8 +128,11 @@ export default function CancellationModal({
     setReason("");
     setDetails("");
     setProcessing(false);
+    setPendingExplorerTier(null);
     onClose();
   };
+
+  const isOverExplorerLimit = storageUsageBytes > EXPLORER_LIMIT_BYTES;
 
   const handleContinueToStep2 = () => {
     if (!reason) return;
@@ -120,29 +149,16 @@ export default function CancellationModal({
 
   const handleDowngrade = async (tier) => {
     haptic.medium();
+
+    // If downgrading to Explorer and over storage limit, show warning step first
+    if (tier.key === "explorer" && isOverExplorerLimit && step !== 3) {
+      setPendingExplorerTier(tier);
+      setStep(3);
+      return;
+    }
+
     setProcessing(true);
     const newValue = TIER_MONTHLY_VALUE[tier.key] || 0;
-
-    // Storage check for Explorer downgrade
-    if (tier.key === "explorer" && !storageWarning) {
-      try {
-        const storageRes = await base44.functions.invoke("checkStorageQuota", { fileSize: 1 });
-        const data = storageRes.data;
-        const explorerLimitBytes = 100 * 1024 * 1024;
-        const currentUsage = data?.currentUsage || 0;
-        if (currentUsage > explorerLimitBytes) {
-          const usageMB = (currentUsage / (1024 * 1024)).toFixed(1);
-          setStorageWarning({ usageMB, currentUsage, isOverLimit: true });
-          setProcessing(false);
-          return; // Show warning, don't proceed yet
-        }
-      } catch (e) {
-        console.error("[CANCEL_MODAL] Storage check failed:", e);
-        // Proceed anyway if check fails
-      }
-    }
-    // Reset storage warning if user confirmed
-    setStorageWarning(null);
 
     // Track downgrade from cancel flow
     base44.analytics.track({
@@ -242,7 +258,136 @@ export default function CancellationModal({
         backgroundColor: colors.cardBg, borderColor: colors.borderColor, color: colors.textPrimary,
         maxHeight: "90vh", width: "95vw", maxWidth: "560px", display: "flex", flexDirection: "column", overflow: "hidden"
       }}>
-        {step === 1 ? (
+        {step === 3 ? (
+          /* STEP 3: STORAGE WARNING */
+          <>
+            <DialogHeader style={{ flexShrink: 0, paddingBottom: "12px" }}>
+              <DialogTitle className="text-center" style={{ color: colors.textPrimary }}>
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: isDarkMode ? "#2A2020" : "#FFF7ED" }}>
+                  <AlertTriangle className="w-8 h-8" style={{ color: "#F59E0B" }} />
+                </div>
+                <div className="text-xl font-bold mb-1">
+                  {lang === "th" ? "พื้นที่จัดเก็บเกินขีดจำกัด" : "Storage Limit Warning"}
+                </div>
+                <p className="text-sm font-normal" style={{ color: colors.textSecondary }}>
+                  {lang === "th"
+                    ? `คุณใช้ ${formatBytes(storageUsageBytes)} แต่แผน Explorer มีพื้นที่เพียง 100MB`
+                    : `You're using ${formatBytes(storageUsageBytes)} but Explorer only includes 100MB`}
+                </p>
+              </DialogTitle>
+            </DialogHeader>
+            <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
+              <div className="space-y-4 py-3">
+                {/* Storage meter */}
+                <div className="p-4 rounded-xl" style={{
+                  backgroundColor: isDarkMode ? "#2A2020" : "#FEF2F2",
+                  border: "2px solid #F59E0B"
+                }}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <Database className="w-5 h-5" style={{ color: "#F59E0B" }} />
+                    <div className="flex-1">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+                          {lang === "th" ? "พื้นที่ปัจจุบัน" : "Current Usage"}
+                        </span>
+                        <span className="text-xs font-bold" style={{ color: "#EF4444" }}>
+                          {formatBytes(storageUsageBytes)} / 100 MB
+                        </span>
+                      </div>
+                      <div className="w-full h-2.5 rounded-full" style={{ backgroundColor: isDarkMode ? "#374151" : "#E5E7EB" }}>
+                        <div className="h-full rounded-full" style={{
+                          width: `${Math.min(100, (storageUsageBytes / EXPLORER_LIMIT_BYTES) * 100)}%`,
+                          backgroundColor: "#EF4444",
+                          maxWidth: "100%"
+                        }} />
+                      </div>
+                      <p className="text-xs mt-1 font-semibold" style={{ color: "#EF4444" }}>
+                        {Math.round(((storageUsageBytes - EXPLORER_LIMIT_BYTES) / (1024 * 1024)))}MB {lang === "th" ? "เกินขีดจำกัด" : "over limit"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* What happens */}
+                <div className="p-4 rounded-xl" style={{
+                  backgroundColor: isDarkMode ? "#1E293B" : "#FFF7ED",
+                  border: `1px solid ${isDarkMode ? "#F59E0B30" : "#FDE68A"}`
+                }}>
+                  <p className="font-bold text-sm mb-2" style={{ color: colors.textPrimary }}>
+                    {lang === "th" ? "หากคุณลดระดับ:" : "If you downgrade:"}
+                  </p>
+                  <ul className="space-y-2 text-xs" style={{ color: colors.textSecondary }}>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-500" />
+                      {lang === "th" ? "ไฟล์ทั้งหมดยังเข้าถึงได้ 30 วัน" : "All files stay accessible for 30 days"}
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-500" />
+                      {lang === "th" ? "การอัปโหลดใหม่จะถูกบล็อก" : "New uploads will be blocked"}
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-500" />
+                      {lang === "th" ? "หลัง 30 วัน ไฟล์เก่าจะถูกเก็บถาวร" : "After 30 days, excess files may be archived"}
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Options */}
+                <div className="space-y-2">
+                  {/* Option 1: Manage files */}
+                  <button
+                    onClick={() => {
+                      haptic.light();
+                      handleClose();
+                      window.location.href = createPageUrl("EvidenceVault");
+                    }}
+                    style={{
+                      width: "100%", padding: "12px 16px", borderRadius: "10px",
+                      backgroundColor: "#0C3B2E", color: "#FFFFFF",
+                      fontWeight: "700", fontSize: "14px", border: "none",
+                      cursor: "pointer", transition: "all 0.2s",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
+                    }}
+                  >
+                    <FileText className="w-4 h-4" />
+                    {lang === "th" ? "จัดการไฟล์เพื่อลดพื้นที่" : "Manage Files to Free Up Space"}
+                  </button>
+
+                  {/* Option 2: Downgrade anyway with grace period */}
+                  <button
+                    onClick={() => {
+                      if (pendingExplorerTier) {
+                        // Re-call handleDowngrade - step is already 3 so it won't loop
+                        handleDowngrade(pendingExplorerTier);
+                      }
+                    }}
+                    disabled={processing}
+                    style={{
+                      width: "100%", padding: "12px 16px", borderRadius: "10px",
+                      backgroundColor: processing ? "#9CA3AF" : "#F59E0B", color: "#FFFFFF",
+                      fontWeight: "600", fontSize: "13px", border: "none",
+                      cursor: processing ? "not-allowed" : "pointer",
+                      opacity: processing ? 0.6 : 1,
+                      transition: "all 0.2s",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "6px"
+                    }}
+                  >
+                    {processing
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> {t.processing}</>
+                      : (lang === "th" ? "ลดระดับต่อไป (30 วันเก็บไฟล์)" : "Downgrade Anyway (30-day grace period)")}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="pt-3" style={{ flexShrink: 0, borderTop: `1px solid ${colors.borderColor}` }}>
+              <button onClick={() => { setStep(2); setPendingExplorerTier(null); }} disabled={processing}
+                style={{ width: "100%", padding: "10px", borderRadius: "8px", backgroundColor: "transparent", color: colors.textSecondary, fontWeight: "500", fontSize: "13px", border: `1px solid ${colors.borderColor}`, cursor: "pointer" }}
+              >
+                {t.goBack}
+              </button>
+            </div>
+          </>
+        ) : step === 1 ? (
           <>
             <DialogHeader style={{ flexShrink: 0, paddingBottom: "12px" }}>
               <DialogTitle className="text-center" style={{ color: colors.textPrimary }}>
@@ -296,53 +441,6 @@ export default function CancellationModal({
             <div style={{ overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>
               <div className="space-y-3 py-3">
                 {/* Retention offers shown - tracked in handleContinueToStep2 */}
-
-                {storageWarning && storageWarning.isOverLimit && (
-                  <div className="p-4 rounded-xl border-2" style={{
-                    backgroundColor: isDarkMode ? "#2A2020" : "#FFF7ED",
-                    borderColor: "#F59E0B"
-                  }}>
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#F59E0B" }}>
-                        <Shield className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-sm mb-1" style={{ color: isDarkMode ? "#FCD34D" : "#92400E" }}>
-                          {lang === "th" ? "⚠️ พื้นที่จัดเก็บเกินขีดจำกัด" : "⚠️ Storage Exceeds Explorer Limit"}
-                        </p>
-                        <p className="text-xs mb-2" style={{ color: isDarkMode ? "#FBBF24" : "#B45309" }}>
-                          {lang === "th"
-                            ? `คุณใช้ ${storageWarning.usageMB >= 1024 ? (storageWarning.usageMB / 1024).toFixed(2) + "GB" : storageWarning.usageMB + "MB"} แต่ Explorer มีพื้นที่เพียง 100MB`
-                            : `You're using ${storageWarning.usageMB >= 1024 ? (storageWarning.usageMB / 1024).toFixed(2) + "GB" : storageWarning.usageMB + "MB"} but Explorer only includes 100MB`}
-                        </p>
-                        <div className="text-xs space-y-1 mb-3" style={{ color: isDarkMode ? "#FDE68A" : "#78350F" }}>
-                          <p>✅ {lang === "th" ? "ไฟล์ทั้งหมดยังเข้าถึงได้ 30 วัน" : "All files remain accessible for 30 days"}</p>
-                          <p>❌ {lang === "th" ? "อัปโหลดใหม่จะถูกบล็อก" : "New uploads will be blocked"}</p>
-                          <p>💡 {lang === "th" ? "อัปเกรดหรือลบไฟล์เพื่อคืนค่า" : "Upgrade or delete files to restore access"}</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            haptic.medium();
-                            setStorageWarning({ ...storageWarning, confirmed: true });
-                            const explorerTier = downgradeOptions.find(t => t.key === "explorer");
-                            if (explorerTier) handleDowngrade(explorerTier);
-                          }}
-                          disabled={processing}
-                          style={{
-                            width: "100%", padding: "10px", borderRadius: "8px",
-                            backgroundColor: processing ? "#9CA3AF" : "#F59E0B", color: "#FFFFFF",
-                            fontWeight: "600", fontSize: "13px", border: "none",
-                            cursor: processing ? "not-allowed" : "pointer", opacity: processing ? 0.6 : 1
-                          }}
-                        >
-                          {processing
-                            ? t.processing
-                            : (lang === "th" ? "ดำเนินการลดระดับต่อ" : "Proceed with Downgrade")}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {downgradeOptions.map((tier) => {
                   const Icon = tier.icon;

@@ -23,22 +23,36 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid file size' }, { status: 400 });
     }
 
+    const userEmail = user.email;
+    const userTier = user.plan_tier || 'free';
+
+    // Auto-clear storage over-limit flags if user upgraded to a paid tier
+    if (user.storage_over_limit === true && userTier !== 'free') {
+      try {
+        await base44.auth.updateMe({
+          storage_over_limit: false,
+          uploads_blocked: false,
+          storage_grace_period_ends: null
+        });
+        console.log('[STORAGE_QUOTA] Cleared over-limit flags after upgrade to:', userTier);
+      } catch (e) {
+        console.error('[STORAGE_QUOTA] Failed to clear flags:', e.message);
+      }
+    }
+
     // Check if uploads are blocked due to storage over-limit after downgrade
-    if (user.uploads_blocked === true && user.storage_over_limit === true) {
-      const graceEnd = user.storage_grace_period_ends ? new Date(user.storage_grace_period_ends).toLocaleDateString() : 'N/A';
+    if (user.uploads_blocked === true && user.storage_over_limit === true && userTier === 'free') {
       return Response.json({
         allowed: false,
         exceeded: true,
         reason: 'uploads_blocked_over_limit',
-        message: `Uploads are blocked because your storage exceeds the ${userTier === 'free' ? 'Explorer' : userTier} plan limit. Delete files or upgrade to resume uploading.`,
+        currentUsage: 0,
+        message: 'Uploads are blocked because your storage exceeds the Explorer plan limit. Delete files or upgrade to resume uploading.',
         currentTier: userTier,
         gracePeriodEnds: user.storage_grace_period_ends || null,
         upgradeUrl: 'https://app.leaseshield.asia/Account?showPlans=true'
       });
     }
-
-    const userEmail = user.email;
-    const userTier = user.plan_tier || 'free';
     
     // Define tier-based storage limits
     const TIER_LIMITS = {
