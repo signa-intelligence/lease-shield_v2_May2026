@@ -24,6 +24,10 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+    if (!RESEND_API_KEY) {
+      return Response.json({ success: false, error: 'RESEND_API_KEY not configured' }, { status: 500 });
+    }
     const allUsers = await base44.asServiceRole.entities.User.filter({});
     results.checked = allUsers.length;
 
@@ -91,12 +95,20 @@ Deno.serve(async (req) => {
 
         const emailBody = generateRenewalEmailBody(user, renewalFormatted, reminderType, planName, amount, isAnnual);
 
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          from_name: 'LeaseShield Notifications',
-          to: user.email,
-          subject: `📋 ${subject}`,
-          body: emailBody
+        const emailRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'LeaseShield Notifications <notifications@leaseshield.asia>',
+            to: [user.email],
+            subject: `📋 ${subject}`,
+            html: emailBody
+          })
         });
+        if (!emailRes.ok) {
+          const errData = await emailRes.text();
+          throw new Error(`Resend failed: ${errData}`);
+        }
         console.log(`[SENT] ${reminderType} renewal reminder to ${user.email}`);
 
         // Update flags

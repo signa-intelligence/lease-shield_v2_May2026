@@ -121,11 +121,7 @@ Deno.serve(async (req) => {
         </div>`;
 
       try {
-        await base44.integrations.Core.SendEmail({
-          to: user.email,
-          subject: tenantSubject,
-          body: tenantHtml
-        });
+        await sendViaResend(user.email, tenantSubject, tenantHtml, 'LeaseShield Notifications');
         console.log('[MAINT_NOTIFY] ✅ Tenant email sent to:', user.email);
         notifications.push({ recipient: 'tenant', method: 'email', status: 'sent', to: user.email });
       } catch (error) {

@@ -83,38 +83,22 @@ Deno.serve(async (req) => {
         const subject = `We miss you, ${u.full_name || 'friend'}! Your LeaseShield account awaits`;
         const emailBody = buildReengagementEmail(u, deposits, leases, daysSinceLogin);
 
-        // Send via Resend with Core.SendEmail fallback
-        let sendOk = false;
-        try {
-          const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-          if (RESEND_API_KEY) {
-            const res = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${RESEND_API_KEY}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                from: 'LeaseShield <notifications@leaseshield.asia>',
-                to: u.email,
-                subject,
-                html: emailBody
-              })
-            });
-            sendOk = res.ok;
-            if (!sendOk) console.log('[RESEND_FAIL]', await res.text());
-          }
-        } catch (e) {
-          console.log('[RESEND_ERROR]', e.message);
-        }
-
-        if (!sendOk) {
-          console.log('[FALLBACK] Using Core.SendEmail for', u.email);
-          await base44.asServiceRole.integrations.Core.SendEmail({
-            to: u.email,
+        // Send via Resend (no unsubscribe footer)
+        const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+        if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY not configured');
+        const emailRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'LeaseShield Notifications <notifications@leaseshield.asia>',
+            to: [u.email],
             subject,
-            body: emailBody
-          });
+            html: emailBody
+          })
+        });
+        if (!emailRes.ok) {
+          const errText = await emailRes.text();
+          throw new Error(`Resend failed: ${errText}`);
         }
 
         // Mark reminder sent

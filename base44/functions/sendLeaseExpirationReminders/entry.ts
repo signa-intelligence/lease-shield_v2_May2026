@@ -22,6 +22,10 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+    if (!RESEND_API_KEY) {
+      return Response.json({ success: false, error: 'RESEND_API_KEY not configured' }, { status: 500 });
+    }
 
     // Fetch all active leases (not archived/deleted)
     const allLeases = await base44.asServiceRole.entities.Lease.filter({
@@ -109,16 +113,25 @@ Deno.serve(async (req) => {
         const emailBody = generateLeaseEmailBody(lease, daysUntilEnd, urgency, user.full_name);
         let sentChannel = null;
 
-        // Send email notification
+        // Send email via Resend (no unsubscribe footer)
         if (user.email_notifications !== false) {
-          await base44.asServiceRole.integrations.Core.SendEmail({
-            from_name: 'LeaseShield Notifications',
-            to: lease.owner_email,
-            subject: `📅 ${subject}`,
-            body: emailBody
+          const emailRes = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'LeaseShield Notifications <notifications@leaseshield.asia>',
+              to: [lease.owner_email],
+              subject: `📅 ${subject}`,
+              html: emailBody
+            })
           });
-          sentChannel = 'Email';
-          console.log(`[SENT] ${reminderType} email to ${lease.owner_email}`);
+          if (!emailRes.ok) {
+            const errData = await emailRes.text();
+            console.error(`[EMAIL_FAIL] ${lease.owner_email}:`, errData);
+          } else {
+            sentChannel = 'Email';
+            console.log(`[SENT] ${reminderType} email to ${lease.owner_email}`);
+          }
         }
 
         // Send LINE if eligible tier
