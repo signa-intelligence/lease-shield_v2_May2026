@@ -111,6 +111,16 @@
       "type": "string",
       "format": "date",
       "description": "Next subscription renewal date (set by Stripe webhook on invoice.paid)"
+    },
+    "inactive_reminder_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if inactive user re-engagement email was sent"
+    },
+    "inactive_reminder_sent_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the last inactive reminder was sent (60-day cooldown)"
     }
   },
   "required": []
