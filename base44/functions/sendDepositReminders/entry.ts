@@ -1,225 +1,303 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 /**
- * Automated deposit return reminders.
- * Runs daily via scheduled automation.
- * Checks all tracking deposits and sends email reminders at:
- *   30 days, 7 days, 3 days, due date, and overdue.
- * Also sends LINE notifications for Protect/Secure tier users.
+ * Automated deposit return reminder system.
+ * Checks all active deposits and sends reminders at 30d, 7d, 3d, due, and overdue milestones.
+ * Uses dedup flags on DepositTracker to prevent duplicate sends.
+ * Logs to NotificationLog and creates TimelineEvents.
+ * Designed to run daily at 9 AM Bangkok time via scheduled automation.
  */
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-const FROM_EMAIL = 'LeaseShield Notifications <notifications@leaseshield.asia>';
-
 Deno.serve(async (req) => {
-  const base44 = createClientFromRequest(req);
-
-  const deposits = await base44.asServiceRole.entities.DepositTracker.filter(
-    { status: 'tracking', is_archived: { $ne: true } }
-  );
-
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10); // YYYY-MM-DD in UTC
-  const todayMs = new Date(todayStr).getTime();
-
+  const startTime = Date.now();
   const results = {
-    checked: deposits.length,
-    reminders_sent: 0,
-    skipped: 0,
+    checked: 0,
+    sent_30d: 0,
+    sent_7d: 0,
+    sent_3d: 0,
+    sent_due: 0,
+    sent_overdue: 0,
+    skipped_prefs: 0,
     errors: []
   };
 
-  for (const deposit of deposits) {
-    try {
-      if (!deposit.expected_return_date) { results.skipped++; continue; }
+  try {
+    const base44 = createClientFromRequest(req);
 
-      const returnMs = new Date(deposit.expected_return_date).getTime();
-      const daysUntil = Math.round((returnMs - todayMs) / 86400000);
+    // Fetch all tracking deposits
+    const deposits = await base44.asServiceRole.entities.DepositTracker.filter({
+      status: 'tracking'
+    });
 
-      // Determine which reminder to send
-      let reminderKey = null;
-      let subject = '';
-      let urgency = '';
+    results.checked = deposits.length;
+    console.log(`[DEPOSIT_REMINDERS] Checking ${deposits.length} active deposits`);
 
-      if (daysUntil === 30 && !deposit.reminder_30d_sent) {
-        reminderKey = 'reminder_30d_sent';
-        subject = '🔔 Deposit Return in 30 Days';
-        urgency = 'info';
-      } else if (daysUntil === 7 && !deposit.reminder_7d_sent) {
-        reminderKey = 'reminder_7d_sent';
-        subject = '⚠️ Deposit Return in 7 Days — Action Needed';
-        urgency = 'urgent';
-      } else if (daysUntil === 3 && !deposit.reminder_3d_sent) {
-        reminderKey = 'reminder_3d_sent';
-        subject = '🚨 Deposit Return in 3 Days';
-        urgency = 'urgent';
-      } else if (daysUntil === 0 && !deposit.reminder_due_sent) {
-        reminderKey = 'reminder_due_sent';
-        subject = '🔴 Deposit Should Be Returned Today';
-        urgency = 'critical';
-      } else if (daysUntil < 0 && !deposit.reminder_overdue_sent) {
-        reminderKey = 'reminder_overdue_sent';
-        subject = `🔴 Deposit Overdue by ${Math.abs(daysUntil)} Days — Take Action`;
-        urgency = 'critical';
-      }
+    // Bangkok midnight for consistent day calculation
+    const now = new Date();
+    const bangkokNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+    const todayStr = bangkokNow.toISOString().split('T')[0]; // YYYY-MM-DD
 
-      if (!reminderKey) { results.skipped++; continue; }
+    // Cache users to avoid repeated lookups
+    const userCache = {};
 
-      const email = deposit.owner_email;
-      const amount = formatTHB(deposit.deposit_amount);
-      const returnDate = formatDate(deposit.expected_return_date);
-      const property = deposit.property_address || 'N/A';
-
-      // ── Fetch user for name + notification prefs + LINE token ──
-      let users = [];
+    for (const deposit of deposits) {
       try {
-        users = await base44.asServiceRole.entities.User.filter({ email });
-      } catch (_e) { /* ignore */ }
-      const user = users[0];
-      const userName = user?.full_name || 'there';
+        if (!deposit.expected_return_date || !deposit.owner_email) continue;
 
-      // ── Check user notification preferences ──
-      const prefs = user?.notification_preferences || {};
-      const prefKey = daysUntil >= 30 ? 'deposit_30d' :
-                      daysUntil >= 7  ? 'deposit_7d'  :
-                      daysUntil >= 3  ? 'deposit_3d'  : 'deposit_overdue';
-      if (prefs[prefKey] === false) {
-        console.log(`[DEPOSIT] Skipped ${email} — preference ${prefKey} disabled`);
-        results.skipped++;
-        continue;
-      }
+        // Calculate days difference using date strings (no timezone issues)
+        const returnDateStr = deposit.expected_return_date.split('T')[0];
+        const returnDate = new Date(returnDateStr + 'T00:00:00Z');
+        const todayDate = new Date(todayStr + 'T00:00:00Z');
+        const daysUntilReturn = Math.round((returnDate - todayDate) / (1000 * 60 * 60 * 24));
 
-      // ── Send email via Resend ──
-      const emailHtml = buildEmailHtml({ userName, subject, amount, returnDate, property, daysUntil, urgency });
+        // Determine which reminder to send (if any)
+        let reminderType = null;
+        let flagField = null;
+        let notificationType = null;
+        let subject = '';
+        let urgency = '';
 
-      if (RESEND_API_KEY) {
-        const emailRes = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject, html: emailHtml })
-        });
-        if (!emailRes.ok) {
-          const errText = await emailRes.text();
-          console.error(`[DEPOSIT] Email failed for ${email}:`, errText);
-          results.errors.push(`Email to ${email}: ${errText}`);
-        } else {
-          console.log(`[DEPOSIT] ✅ Email sent to ${email} (${reminderKey})`);
+        if (daysUntilReturn === 30 && !deposit.reminder_30d_sent) {
+          reminderType = '30d';
+          flagField = 'reminder_30d_sent';
+          notificationType = '30d_deposit';
+          subject = 'Deposit Return in 30 Days';
+          urgency = 'info';
+        } else if (daysUntilReturn === 7 && !deposit.reminder_7d_sent) {
+          reminderType = '7d';
+          flagField = 'reminder_7d_sent';
+          notificationType = '7d_deposit';
+          subject = 'Deposit Return in 7 Days — Action Needed';
+          urgency = 'warning';
+        } else if (daysUntilReturn === 3 && !deposit.reminder_3d_sent) {
+          reminderType = '3d';
+          flagField = 'reminder_3d_sent';
+          notificationType = '3d_deposit';
+          subject = 'Deposit Return in 3 Days — Urgent';
+          urgency = 'urgent';
+        } else if (daysUntilReturn === 0 && !deposit.reminder_due_sent) {
+          reminderType = 'due';
+          flagField = 'reminder_due_sent';
+          notificationType = 'overdue_deposit';
+          subject = 'Deposit Should Be Returned Today';
+          urgency = 'critical';
+        } else if (daysUntilReturn < 0 && !deposit.reminder_overdue_sent) {
+          reminderType = 'overdue';
+          flagField = 'reminder_overdue_sent';
+          notificationType = 'overdue_deposit';
+          subject = `Deposit Overdue by ${Math.abs(daysUntilReturn)} Days — Take Action`;
+          urgency = 'critical';
         }
-      } else {
-        // Fallback to built-in SendEmail
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: email, subject, body: emailHtml, from_name: 'LeaseShield Notifications'
-        });
-        console.log(`[DEPOSIT] ✅ Email sent via Core to ${email}`);
-      }
 
-      // ── Send LINE notification if user has it configured ──
-      const lineToken = user?.line_messaging_token;
-      const lineEnabled = user?.line_notifications !== false;
-      const userTier = user?.plan_tier || 'explorer';
-      if (lineToken && lineEnabled && ['protect', 'secure'].includes(userTier)) {
-        try {
-          await base44.asServiceRole.functions.invoke('sendLineMessage', {
-            userId: lineToken,
-            message: `${subject}\n\n💰 ${amount}\n📍 ${property}\n📅 Return: ${returnDate}\n\nView: https://app.leaseshield.asia/DepositTracker`
+        if (!reminderType) continue;
+
+        // Get user (cached)
+        if (!userCache[deposit.owner_email]) {
+          const users = await base44.asServiceRole.entities.User.filter({ email: deposit.owner_email });
+          userCache[deposit.owner_email] = users[0] || null;
+        }
+        const user = userCache[deposit.owner_email];
+        if (!user) {
+          results.errors.push(`User not found: ${deposit.owner_email}`);
+          continue;
+        }
+
+        // Check notification preferences
+        const prefs = user.notification_preferences || {};
+        const prefKey = reminderType === 'overdue' || reminderType === 'due' ? 'deposit_overdue' :
+                        reminderType === '3d' ? 'deposit_3d' :
+                        reminderType === '7d' ? 'deposit_7d' : 'deposit_30d';
+        if (prefs[prefKey] === false) {
+          results.skipped_prefs++;
+          console.log(`[SKIP] ${deposit.owner_email} has ${prefKey} disabled`);
+          continue;
+        }
+
+        const emailBody = generateDepositEmailBody(deposit, daysUntilReturn, urgency, user.full_name);
+        let sentChannel = null;
+
+        // Send email notification
+        if (user.email_notifications !== false) {
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            from_name: 'LeaseShield Notifications',
+            to: deposit.owner_email,
+            subject: `🔔 ${subject}`,
+            body: emailBody
           });
-          console.log(`[DEPOSIT] ✅ LINE sent to ${email}`);
-        } catch (lineErr) {
-          console.error(`[DEPOSIT] LINE failed for ${email}:`, lineErr.message);
+          sentChannel = 'Email';
+          console.log(`[SENT] ${reminderType} email to ${deposit.owner_email}`);
         }
+
+        // Send LINE if user is on Protect/Secure tier
+        const userTier = user.plan_tier || 'explorer';
+        if (['protect', 'secure'].includes(userTier) && user.line_messaging_token && user.line_notifications) {
+          const lineMsg = generateDepositLinePlainText(deposit, daysUntilReturn, urgency, user.language || 'en');
+          try {
+            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: user.line_messaging_token,
+              message: lineMsg
+            });
+            sentChannel = sentChannel ? 'Email+LINE' : 'LINE';
+            console.log(`[SENT] ${reminderType} LINE to ${deposit.owner_email}`);
+          } catch (lineErr) {
+            console.error(`[LINE_FAIL] ${deposit.owner_email}:`, lineErr.message);
+          }
+        }
+
+        if (!sentChannel) {
+          console.log(`[SKIP] No channel available for ${deposit.owner_email}`);
+          continue;
+        }
+
+        // Mark reminder as sent (dedup flag)
+        await base44.asServiceRole.entities.DepositTracker.update(deposit.id, {
+          [flagField]: true
+        });
+
+        // Log notification
+        await base44.asServiceRole.entities.NotificationLog.create({
+          user_email: deposit.owner_email,
+          notification_type: notificationType,
+          channel: sentChannel.includes('LINE') ? 'LINE' : 'Email',
+          status: 'sent',
+          related_entity_type: 'deposit',
+          related_entity_id: deposit.id,
+          message_preview: subject
+        });
+
+        // Create timeline event
+        const timelineType = reminderType === 'overdue' ? 'notification_overdue_deposit' :
+                             reminderType === 'due' ? 'notification_overdue_deposit' :
+                             reminderType === '3d' ? 'notification_3d_deposit' :
+                             reminderType === '7d' ? 'notification_7d_deposit' : 'notification_30d_deposit';
+
+        await base44.asServiceRole.entities.TimelineEvent.create({
+          owner_email: deposit.owner_email,
+          property_address: deposit.property_address || '',
+          lease_id: deposit.lease_id || '',
+          event_type: timelineType,
+          event_date: new Date().toISOString(),
+          title: subject,
+          description: `Automated reminder sent via ${sentChannel}`,
+          source: 'notification'
+        });
+
+        results[`sent_${reminderType}`] = (results[`sent_${reminderType}`] || 0) + 1;
+
+      } catch (err) {
+        console.error(`[ERROR] Deposit ${deposit.id}:`, err.message);
+        results.errors.push(`${deposit.id}: ${err.message}`);
       }
+    }
 
-      // ── Mark reminder as sent ──
-      await base44.asServiceRole.entities.DepositTracker.update(deposit.id, { [reminderKey]: true });
+    const duration = Date.now() - startTime;
+    console.log(`[DEPOSIT_REMINDERS] Complete in ${duration}ms. Sent: 30d=${results.sent_30d}, 7d=${results.sent_7d}, 3d=${results.sent_3d}, due=${results.sent_due}, overdue=${results.sent_overdue}`);
 
-      // ── Log notification ──
-      const notifType = daysUntil >= 30 ? '30d_deposit' :
-                        daysUntil >= 7  ? '7d_deposit'  :
-                        daysUntil >= 3  ? '3d_deposit'  : 'overdue_deposit';
-      await base44.asServiceRole.entities.NotificationLog.create({
-        user_email: email,
-        notification_type: notifType,
-        channel: 'Email',
-        status: 'sent',
-        related_entity_type: 'deposit',
-        related_entity_id: deposit.id,
-        message_preview: subject.slice(0, 200)
-      });
+    return Response.json({ success: true, duration_ms: duration, results });
 
-      // ── Create timeline event ──
-      await base44.asServiceRole.entities.TimelineEvent.create({
-        owner_email: email,
-        property_address: property,
-        lease_id: deposit.lease_id || '',
-        event_type: notifType === '30d_deposit' ? 'notification_30d_deposit' :
-                    notifType === '7d_deposit'  ? 'notification_7d_deposit'  :
-                    notifType === '3d_deposit'  ? 'notification_3d_deposit'  :
-                                                  'notification_overdue_deposit',
-        event_date: now.toISOString(),
-        title: subject.replace(/[🔔⚠️🚨🔴]/g, '').trim(),
-        description: `Auto-reminder: deposit ${amount} at ${property}`,
-        source: 'notification'
-      });
+  } catch (error) {
+    console.error('[DEPOSIT_REMINDERS] Fatal error:', error.message);
+    return Response.json({ success: false, error: error.message, results }, { status: 500 });
+  }
+});
 
-      results.reminders_sent++;
-    } catch (err) {
-      console.error(`[DEPOSIT] Error for deposit ${deposit.id}:`, err.message);
-      results.errors.push(`${deposit.id}: ${err.message}`);
+function generateDepositLinePlainText(deposit, daysUntil, urgency, language) {
+  const amount = `฿${(deposit.deposit_amount || 0).toLocaleString()}`;
+  const prop = deposit.property_address || 'N/A';
+  const returnDate = deposit.expected_return_date?.split('T')[0] || 'N/A';
+
+  if (daysUntil > 0) {
+    return `🔔 Deposit Reminder\n\nYour deposit of ${amount} is due back in ${daysUntil} days.\n\n🏠 ${prop}\n📅 Return: ${returnDate}\n\n→ app.leaseshield.asia/PropertyTracker`;
+  } else if (daysUntil === 0) {
+    return `⚠️ Deposit Due Today!\n\nYour deposit of ${amount} should be returned TODAY.\n\n🏠 ${prop}\n\n→ app.leaseshield.asia/PropertyTracker`;
+  } else {
+    return `🚨 Deposit Overdue!\n\nYour deposit of ${amount} is ${Math.abs(daysUntil)} days overdue.\n\n🏠 ${prop}\n📅 Was due: ${returnDate}\n\n→ app.leaseshield.asia/PropertyTracker`;
+  }
+}
+
+function generateDepositEmailBody(deposit, daysUntil, urgency, userName) {
+  const amount = `฿${(deposit.deposit_amount || 0).toLocaleString()}`;
+  const returnDate = deposit.expected_return_date ? new Date(deposit.expected_return_date).toLocaleDateString('en-US', {
+    timeZone: 'Asia/Bangkok', year: 'numeric', month: 'long', day: 'numeric'
+  }) : 'N/A';
+
+  let message = '';
+  let actionItems = '';
+  let urgencyColor = '#2196F3';
+
+  if (urgency === 'info') {
+    urgencyColor = '#2196F3';
+    message = `Your security deposit of ${amount} should be returned in 30 days.`;
+    actionItems = `
+      <li>Start preparing move-out documentation</li>
+      <li>Take photos of property condition</li>
+      <li>Review your lease for deposit return terms</li>
+      <li>Keep all receipts and communications</li>`;
+  } else if (urgency === 'warning') {
+    urgencyColor = '#FF9800';
+    message = `Your security deposit of ${amount} should be returned in 7 days.`;
+    actionItems = `
+      <li>Complete move-out photos and videos</li>
+      <li>Upload all evidence to your Evidence Vault</li>
+      <li>Confirm landlord's contact information</li>
+      <li>Review your deposit tracker for any issues</li>`;
+  } else if (urgency === 'urgent') {
+    urgencyColor = '#F44336';
+    message = `Your security deposit of ${amount} should be returned in 3 days.`;
+    actionItems = `
+      <li><strong>Contact your landlord about return status</strong></li>
+      <li>Verify bank account details are correct</li>
+      <li>Complete final property documentation</li>
+      <li>Keep all communications documented</li>`;
+  } else {
+    urgencyColor = '#D32F2F';
+    if (daysUntil === 0) {
+      message = `Your security deposit of ${amount} should be returned <strong>TODAY</strong>.`;
+      actionItems = `
+        <li>Check with your landlord about return status</li>
+        <li>Verify bank account details are correct</li>
+        <li>Keep all communications documented</li>
+        <li>If not received, update deposit status in tracker</li>`;
+    } else {
+      message = `Your security deposit of ${amount} is now <strong>${Math.abs(daysUntil)} days OVERDUE</strong>.`;
+      actionItems = `
+        <li><strong>Contact your landlord immediately</strong></li>
+        <li>Send a formal deposit return request letter</li>
+        <li>Document all communications</li>
+        <li>If no response, consider opening a Resolve case</li>`;
     }
   }
 
-  console.log('[DEPOSIT] Run complete:', JSON.stringify(results));
-  return Response.json({ success: true, results });
-});
-
-// ── Helpers ──
-
-function formatTHB(n) {
-  return new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(n || 0);
-}
-
-function formatDate(d) {
-  return new Date(d).toLocaleDateString('en-US', { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'long', day: 'numeric' });
-}
-
-function buildEmailHtml({ userName, subject, amount, returnDate, property, daysUntil, urgency }) {
-  const color = urgency === 'info' ? '#2196F3' : urgency === 'urgent' ? '#FF9800' : '#F44336';
-
-  let message, actions;
-  if (daysUntil >= 30) {
-    message = `Your security deposit of ${amount} should be returned in ${daysUntil} days.`;
-    actions = '<li>Start preparing move-out documentation</li><li>Take photos of property condition</li><li>Review your lease for deposit return terms</li>';
-  } else if (daysUntil >= 3) {
-    message = `Your security deposit of ${amount} should be returned in ${daysUntil} days.`;
-    actions = '<li>Complete move-out photos and videos</li><li>Upload all evidence to your Evidence Vault</li><li>Confirm landlord\'s contact information</li>';
-  } else if (daysUntil === 0) {
-    message = `Your security deposit of ${amount} should be returned TODAY.`;
-    actions = '<li>Check with your landlord about return status</li><li>Verify bank account details are correct</li><li>Keep all communications documented</li>';
-  } else {
-    message = `Your security deposit of ${amount} is now ${Math.abs(daysUntil)} days OVERDUE.`;
-    actions = '<li><strong>Contact your landlord immediately</strong></li><li>Send formal deposit return request letter</li><li>If no response, consider opening a Resolve case</li>';
-  }
-
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto">
-<div style="background:${color};color:#fff;padding:20px;text-align:center"><h1 style="margin:0;font-size:22px">${subject.replace(/[🔔⚠️🚨🔴]/g, '').trim()}</h1></div>
-<div style="padding:24px 20px">
-<p>Hi ${userName},</p>
-<p style="font-size:17px;font-weight:600;color:${color}">${message}</p>
-<div style="background:#f5f5f5;padding:16px;border-radius:8px;margin:16px 0">
-<p style="margin:0"><strong>Deposit:</strong> ${amount}</p>
-<p style="margin:8px 0 0"><strong>Expected Return:</strong> ${returnDate}</p>
-<p style="margin:8px 0 0"><strong>Property:</strong> ${property}</p>
-</div>
-<h3 style="margin-top:20px">Action Items:</h3>
-<ul style="padding-left:20px">${actions}</ul>
-<div style="text-align:center;margin:24px 0">
-<a href="https://app.leaseshield.asia/DepositTracker" style="display:inline-block;background:#0C3B2E;color:#fff;padding:12px 28px;text-decoration:none;border-radius:6px;font-weight:600">View Deposit Tracker</a>
-</div>
-${urgency === 'critical' ? '<div style="background:#FFF3E0;border-left:4px solid #FF9800;padding:14px;margin:16px 0"><p style="margin:0"><strong>Need Help?</strong> Our Resolve service can help recover your deposit professionally.</p><p style="margin:8px 0 0"><a href="https://app.leaseshield.asia/Cases" style="color:#FF9800;font-weight:600">Open a Case →</a></p></div>' : ''}
-<p style="margin-top:24px;color:#888;font-size:13px">Automated reminder from LeaseShield. Manage preferences in Account Settings.</p>
-</div>
-<div style="background:#f5f5f5;padding:16px;text-align:center;color:#888;font-size:12px">
-<p style="margin:0">LeaseShield — Protecting Your Rental Rights</p>
-</div></body></html>`;
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;background:#f9f9f9;">
+  <div style="background:${urgencyColor};color:white;padding:24px;text-align:center;">
+    <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" alt="LeaseShield" style="width:48px;height:48px;margin-bottom:8px;" />
+    <h1 style="margin:0;font-size:22px;">Deposit Reminder</h1>
+  </div>
+  <div style="padding:30px 24px;background:white;">
+    <p>Hi ${userName || 'there'},</p>
+    <p style="font-size:17px;font-weight:600;color:${urgencyColor};">${message}</p>
+    <div style="background:#f5f5f5;padding:16px 20px;border-radius:8px;margin:20px 0;">
+      <p style="margin:0;"><strong>Deposit Amount:</strong> ${amount}</p>
+      <p style="margin:8px 0 0;"><strong>Expected Return:</strong> ${returnDate}</p>
+      ${deposit.property_address ? `<p style="margin:8px 0 0;"><strong>Property:</strong> ${deposit.property_address}</p>` : ''}
+    </div>
+    <h3 style="margin-top:24px;">Action Items:</h3>
+    <ul style="padding-left:20px;">${actionItems}</ul>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://app.leaseshield.asia/PropertyTracker" style="display:inline-block;background:#0C3B2E;color:white;padding:12px 32px;text-decoration:none;border-radius:6px;font-weight:600;">View Deposit Tracker</a>
+    </div>
+    ${urgency === 'critical' ? `
+    <div style="background:#FFF3E0;border-left:4px solid #FF9800;padding:14px;margin:20px 0;border-radius:4px;">
+      <p style="margin:0;font-weight:600;">Need Help?</p>
+      <p style="margin:8px 0 0;">If your deposit isn't returned, our Resolve service can help recover it professionally.</p>
+      <a href="https://app.leaseshield.asia/Cases" style="color:#E65100;font-weight:600;">Open a Case →</a>
+    </div>` : ''}
+    <p style="margin-top:28px;color:#888;font-size:13px;">This is an automated reminder from your deposit tracker. Manage preferences in <a href="https://app.leaseshield.asia/Account" style="color:#0C3B2E;">Account Settings</a>.</p>
+  </div>
+  <div style="background:#f0f0f0;padding:16px;text-align:center;color:#999;font-size:12px;">
+    <p style="margin:0;">LeaseShield — Protecting Your Rental Rights</p>
+  </div>
+</body></html>`;
 }

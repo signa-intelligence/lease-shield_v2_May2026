@@ -1,223 +1,288 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 /**
- * Automated lease expiration reminders.
- * Runs daily via scheduled automation.
- * Checks all active leases and sends email reminders at:
- *   60 days, 30 days, 14 days, 7 days before end_date.
- * Also sends LINE notifications for Protect/Secure tier users.
+ * Automated lease expiration warning system.
+ * Checks all active leases and sends reminders at 60d, 30d, 14d, and 7d milestones before end_date.
+ * Uses dedup flags on Lease entity to prevent duplicate sends.
+ * Logs to NotificationLog and creates TimelineEvents.
+ * Designed to run daily at 9 AM Bangkok time via scheduled automation.
  */
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-const FROM_EMAIL = 'LeaseShield Notifications <notifications@leaseshield.asia>';
-
 Deno.serve(async (req) => {
-  const base44 = createClientFromRequest(req);
-
-  const leases = await base44.asServiceRole.entities.Lease.filter(
-    { status: 'active' }
-  );
-
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  const todayMs = new Date(todayStr).getTime();
-
+  const startTime = Date.now();
   const results = {
-    checked: leases.length,
-    reminders_sent: 0,
-    skipped: 0,
+    checked: 0,
+    sent_60d: 0,
+    sent_30d: 0,
+    sent_14d: 0,
+    sent_7d: 0,
+    skipped_prefs: 0,
     errors: []
   };
 
-  for (const lease of leases) {
-    try {
-      if (!lease.end_date) { results.skipped++; continue; }
+  try {
+    const base44 = createClientFromRequest(req);
 
-      const endMs = new Date(lease.end_date).getTime();
-      const daysUntil = Math.round((endMs - todayMs) / 86400000);
+    // Fetch all active leases (not archived/deleted)
+    const allLeases = await base44.asServiceRole.entities.Lease.filter({
+      status: 'active'
+    });
+    // Also include scanned leases that are active
+    const scannedLeases = await base44.asServiceRole.entities.Lease.filter({
+      status: 'scanned'
+    });
+    const okLeases = await base44.asServiceRole.entities.Lease.filter({
+      status: 'ok'
+    });
 
-      // Determine which reminder to send
-      let reminderKey = null;
-      let subject = '';
-      let urgency = '';
+    const leases = [...allLeases, ...scannedLeases, ...okLeases];
+    results.checked = leases.length;
+    console.log(`[LEASE_REMINDERS] Checking ${leases.length} leases`);
 
-      if (daysUntil === 60 && !lease.reminder_60d_sent) {
-        reminderKey = 'reminder_60d_sent';
-        subject = '📋 Lease Ends in 60 Days — Start Planning';
-        urgency = 'info';
-      } else if (daysUntil === 30 && !lease.reminder_30d_sent) {
-        reminderKey = 'reminder_30d_sent';
-        subject = '⚠️ Lease Ends in 30 Days — Action Needed';
-        urgency = 'important';
-      } else if (daysUntil === 14 && !lease.reminder_14d_sent) {
-        reminderKey = 'reminder_14d_sent';
-        subject = '🚨 Lease Ends in 14 Days — Urgent';
-        urgency = 'urgent';
-      } else if (daysUntil === 7 && !lease.reminder_7d_sent) {
-        reminderKey = 'reminder_7d_sent';
-        subject = '🔴 Lease Ends in 7 Days — Final Notice';
-        urgency = 'critical';
-      }
+    // Bangkok midnight for consistent day calculation
+    const now = new Date();
+    const bangkokNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+    const todayStr = bangkokNow.toISOString().split('T')[0];
 
-      if (!reminderKey) { results.skipped++; continue; }
+    const userCache = {};
 
-      // Check notice_alerts_enabled preference
-      if (lease.notice_alerts_enabled === false) {
-        console.log(`[LEASE] Skipped ${lease.owner_email} — notice alerts disabled`);
-        results.skipped++;
-        continue;
-      }
-
-      const email = lease.owner_email;
-      const endDate = formatDate(lease.end_date);
-      const property = lease.property_address || 'N/A';
-
-      // Fetch user
-      let users = [];
+    for (const lease of leases) {
       try {
-        users = await base44.asServiceRole.entities.User.filter({ email });
-      } catch (_e) { /* ignore */ }
-      const user = users[0];
-      const userName = user?.full_name || 'there';
+        if (!lease.end_date || !lease.owner_email) continue;
 
-      // Check user notification preferences
-      const prefs = user?.notification_preferences || {};
-      const prefKey = daysUntil >= 30 ? 'lease_30d' :
-                      daysUntil >= 14 ? 'lease_7d'  :
-                      daysUntil >= 7  ? 'lease_3d'  : 'lease_0d';
-      if (prefs[prefKey] === false) {
-        console.log(`[LEASE] Skipped ${email} — preference ${prefKey} disabled`);
-        results.skipped++;
-        continue;
-      }
+        const endDateStr = lease.end_date.split('T')[0];
+        const endDate = new Date(endDateStr + 'T00:00:00Z');
+        const todayDate = new Date(todayStr + 'T00:00:00Z');
+        const daysUntilEnd = Math.round((endDate - todayDate) / (1000 * 60 * 60 * 24));
 
-      // ── Send email via Resend ──
-      const emailHtml = buildEmailHtml({ userName, subject, endDate, property, daysUntil, urgency });
+        let reminderType = null;
+        let flagField = null;
+        let subject = '';
+        let urgency = '';
 
-      if (RESEND_API_KEY) {
-        const emailRes = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject, html: emailHtml })
-        });
-        if (!emailRes.ok) {
-          const errText = await emailRes.text();
-          console.error(`[LEASE] Email failed for ${email}:`, errText);
-          results.errors.push(`Email to ${email}: ${errText}`);
-        } else {
-          console.log(`[LEASE] ✅ Email sent to ${email} (${reminderKey})`);
+        if (daysUntilEnd === 60 && !lease.reminder_60d_sent) {
+          reminderType = '60d';
+          flagField = 'reminder_60d_sent';
+          subject = 'Lease Ends in 60 Days — Start Planning';
+          urgency = 'info';
+        } else if (daysUntilEnd === 30 && !lease.reminder_30d_sent) {
+          reminderType = '30d';
+          flagField = 'reminder_30d_sent';
+          subject = 'Lease Ends in 30 Days — Action Needed';
+          urgency = 'warning';
+        } else if (daysUntilEnd === 14 && !lease.reminder_14d_sent) {
+          reminderType = '14d';
+          flagField = 'reminder_14d_sent';
+          subject = 'Lease Ends in 14 Days — Urgent';
+          urgency = 'urgent';
+        } else if (daysUntilEnd === 7 && !lease.reminder_7d_sent) {
+          reminderType = '7d';
+          flagField = 'reminder_7d_sent';
+          subject = 'Lease Ends in 7 Days — Final Notice';
+          urgency = 'critical';
         }
-      } else {
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: email, subject, body: emailHtml, from_name: 'LeaseShield Notifications'
-        });
-        console.log(`[LEASE] ✅ Email sent via Core to ${email}`);
-      }
 
-      // ── Send LINE notification if available ──
-      const lineToken = user?.line_messaging_token;
-      const lineEnabled = user?.line_notifications !== false;
-      const userTier = user?.plan_tier || 'explorer';
-      if (lineToken && lineEnabled && ['protect', 'secure'].includes(userTier)) {
-        try {
-          await base44.asServiceRole.functions.invoke('sendLineMessage', {
-            userId: lineToken,
-            message: `${subject}\n\n📍 ${property}\n📅 Ends: ${endDate}\n⏳ ${daysUntil} days remaining\n\nView: https://app.leaseshield.asia/Leases`
+        if (!reminderType) continue;
+
+        // Get user (cached)
+        if (!userCache[lease.owner_email]) {
+          const users = await base44.asServiceRole.entities.User.filter({ email: lease.owner_email });
+          userCache[lease.owner_email] = users[0] || null;
+        }
+        const user = userCache[lease.owner_email];
+        if (!user) {
+          results.errors.push(`User not found: ${lease.owner_email}`);
+          continue;
+        }
+
+        // Check notification preferences
+        const prefs = user.notification_preferences || {};
+        const prefKey = reminderType === '7d' ? 'lease_7d' :
+                        reminderType === '14d' ? 'lease_3d' :
+                        reminderType === '30d' ? 'lease_30d' : 'lease_30d';
+        if (prefs[prefKey] === false) {
+          results.skipped_prefs++;
+          console.log(`[SKIP] ${lease.owner_email} has ${prefKey} disabled`);
+          continue;
+        }
+
+        const emailBody = generateLeaseEmailBody(lease, daysUntilEnd, urgency, user.full_name);
+        let sentChannel = null;
+
+        // Send email notification
+        if (user.email_notifications !== false) {
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            from_name: 'LeaseShield Notifications',
+            to: lease.owner_email,
+            subject: `📅 ${subject}`,
+            body: emailBody
           });
-          console.log(`[LEASE] ✅ LINE sent to ${email}`);
-        } catch (lineErr) {
-          console.error(`[LEASE] LINE failed for ${email}:`, lineErr.message);
+          sentChannel = 'Email';
+          console.log(`[SENT] ${reminderType} email to ${lease.owner_email}`);
         }
+
+        // Send LINE if eligible tier
+        const userTier = user.plan_tier || 'explorer';
+        if (['protect', 'secure'].includes(userTier) && user.line_messaging_token && user.line_notifications) {
+          const lineMsg = generateLeaseLinePlainText(lease, daysUntilEnd, user.language || 'en');
+          try {
+            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: user.line_messaging_token,
+              message: lineMsg
+            });
+            sentChannel = sentChannel ? 'Email+LINE' : 'LINE';
+            console.log(`[SENT] ${reminderType} LINE to ${lease.owner_email}`);
+          } catch (lineErr) {
+            console.error(`[LINE_FAIL] ${lease.owner_email}:`, lineErr.message);
+          }
+        }
+
+        if (!sentChannel) {
+          console.log(`[SKIP] No channel for ${lease.owner_email}`);
+          continue;
+        }
+
+        // Mark reminder as sent
+        await base44.asServiceRole.entities.Lease.update(lease.id, {
+          [flagField]: true
+        });
+
+        // Determine notification_type for NotificationLog (using existing enum values)
+        const notifType = reminderType === '60d' ? '30d_notice' :
+                          reminderType === '30d' ? '30d_notice' :
+                          reminderType === '14d' ? '7d_notice' :
+                          '7d_notice';
+
+        // Log notification
+        await base44.asServiceRole.entities.NotificationLog.create({
+          user_email: lease.owner_email,
+          notification_type: notifType,
+          channel: sentChannel.includes('LINE') ? 'LINE' : 'Email',
+          status: 'sent',
+          related_entity_type: 'lease',
+          related_entity_id: lease.id,
+          message_preview: subject
+        });
+
+        // Create timeline event
+        const timelineType = reminderType === '7d' ? 'notification_7d_notice' :
+                             reminderType === '14d' ? 'notification_3d_notice' :
+                             reminderType === '30d' ? 'notification_30d_notice' : 'notification_30d_notice';
+
+        await base44.asServiceRole.entities.TimelineEvent.create({
+          owner_email: lease.owner_email,
+          property_address: lease.property_address || '',
+          lease_id: lease.id,
+          event_type: timelineType,
+          event_date: new Date().toISOString(),
+          title: subject,
+          description: `Automated lease expiration reminder sent via ${sentChannel}. Lease ends ${endDateStr}.`,
+          source: 'notification'
+        });
+
+        results[`sent_${reminderType}`] = (results[`sent_${reminderType}`] || 0) + 1;
+
+      } catch (err) {
+        console.error(`[ERROR] Lease ${lease.id}:`, err.message);
+        results.errors.push(`${lease.id}: ${err.message}`);
       }
-
-      // ── Mark reminder as sent ──
-      await base44.asServiceRole.entities.Lease.update(lease.id, { [reminderKey]: true });
-
-      // ── Log notification ──
-      const notifType = daysUntil >= 60 ? '30d_notice' :
-                        daysUntil >= 30 ? '30d_notice' :
-                        daysUntil >= 14 ? '7d_notice'  :
-                                          '3d_notice';
-      await base44.asServiceRole.entities.NotificationLog.create({
-        user_email: email,
-        notification_type: notifType,
-        channel: 'Email',
-        status: 'sent',
-        related_entity_type: 'lease',
-        related_entity_id: lease.id,
-        message_preview: subject.slice(0, 200)
-      });
-
-      // ── Create timeline event ──
-      await base44.asServiceRole.entities.TimelineEvent.create({
-        owner_email: email,
-        property_address: property,
-        lease_id: lease.id,
-        event_type: daysUntil >= 30 ? 'notification_30d_notice' :
-                    daysUntil >= 14 ? 'notification_7d_notice'  :
-                    daysUntil >= 7  ? 'notification_3d_notice'  :
-                                      'notification_0d_notice',
-        event_date: now.toISOString(),
-        title: subject.replace(/[📋⚠️🚨🔴]/g, '').trim(),
-        description: `Auto-reminder: lease at ${property} ends ${endDate}`,
-        source: 'notification'
-      });
-
-      results.reminders_sent++;
-    } catch (err) {
-      console.error(`[LEASE] Error for lease ${lease.id}:`, err.message);
-      results.errors.push(`${lease.id}: ${err.message}`);
     }
-  }
 
-  console.log('[LEASE] Run complete:', JSON.stringify(results));
-  return Response.json({ success: true, results });
+    const duration = Date.now() - startTime;
+    console.log(`[LEASE_REMINDERS] Complete in ${duration}ms. Sent: 60d=${results.sent_60d}, 30d=${results.sent_30d}, 14d=${results.sent_14d}, 7d=${results.sent_7d}`);
+
+    return Response.json({ success: true, duration_ms: duration, results });
+
+  } catch (error) {
+    console.error('[LEASE_REMINDERS] Fatal error:', error.message);
+    return Response.json({ success: false, error: error.message, results }, { status: 500 });
+  }
 });
 
-// ── Helpers ──
+function generateLeaseLinePlainText(lease, daysUntil, language) {
+  const prop = lease.property_address || 'N/A';
+  const endDate = lease.end_date?.split('T')[0] || 'N/A';
 
-function formatDate(d) {
-  return new Date(d).toLocaleDateString('en-US', { timeZone: 'Asia/Bangkok', year: 'numeric', month: 'long', day: 'numeric' });
+  return `📅 Lease Expiration Notice\n\nYour lease ends in ${daysUntil} days.\n\n🏠 ${prop}\n📆 Ends: ${endDate}\n\n→ app.leaseshield.asia/PropertyTracker`;
 }
 
-function buildEmailHtml({ userName, subject, endDate, property, daysUntil, urgency }) {
-  const color = urgency === 'info' ? '#2196F3' : urgency === 'important' ? '#FF9800' : urgency === 'urgent' ? '#F44336' : '#D32F2F';
+function generateLeaseEmailBody(lease, daysUntil, urgency, userName) {
+  const endDate = lease.end_date ? new Date(lease.end_date).toLocaleDateString('en-US', {
+    timeZone: 'Asia/Bangkok', year: 'numeric', month: 'long', day: 'numeric'
+  }) : 'N/A';
 
-  let message, actions;
-  if (daysUntil >= 60) {
-    message = `Your lease ends in ${daysUntil} days. Time to start planning.`;
-    actions = '<li>Decide: renew or move?</li><li>Review lease for notice requirements</li><li>Check deposit return process</li>';
-  } else if (daysUntil >= 30) {
-    message = `Your lease ends in ${daysUntil} days. Take action soon.`;
-    actions = '<li><strong>Notify landlord if not renewing</strong></li><li>Confirm deposit return procedure</li><li>Schedule move-out inspection</li>';
-  } else if (daysUntil >= 14) {
-    message = `Your lease ends in ${daysUntil} days. Action required now.`;
-    actions = '<li><strong>Confirm move-out date with landlord</strong></li><li>Schedule professional cleaning if needed</li><li>Complete move-out photos/videos</li><li>Arrange utility disconnections</li>';
+  let message = '';
+  let actionItems = '';
+  let urgencyColor = '#2196F3';
+
+  if (urgency === 'info') {
+    urgencyColor = '#2196F3';
+    message = 'Your lease ends in 60 days. Time to start planning your next move.';
+    actionItems = `
+      <li>Decide: renew or move?</li>
+      <li>If moving, start apartment hunting</li>
+      <li>Review lease for notice requirements</li>
+      <li>Check deposit return process</li>`;
+  } else if (urgency === 'warning') {
+    urgencyColor = '#FF9800';
+    message = 'Your lease ends in 30 days. Take action soon.';
+    actionItems = `
+      <li><strong>Notify landlord if not renewing</strong></li>
+      <li>Confirm deposit return procedure</li>
+      <li>Start packing/moving preparations</li>
+      <li>Schedule move-out inspection</li>`;
+  } else if (urgency === 'urgent') {
+    urgencyColor = '#F44336';
+    message = 'Your lease ends in 14 days. Action required now.';
+    actionItems = `
+      <li><strong>Confirm move-out date with landlord</strong></li>
+      <li>Schedule professional cleaning if needed</li>
+      <li>Complete move-out photos/videos</li>
+      <li>Arrange utility disconnections</li>
+      <li>Update address with important contacts</li>`;
   } else {
-    message = `Your lease ends in ${daysUntil} days. Final preparations needed.`;
-    actions = '<li><strong>Complete all move-out preparations</strong></li><li>Take comprehensive property photos</li><li>Upload evidence to Evidence Vault</li><li>Return keys and get receipt</li>';
+    urgencyColor = '#D32F2F';
+    message = 'Your lease ends in 7 days. Final preparations needed.';
+    actionItems = `
+      <li><strong>Complete all move-out preparations</strong></li>
+      <li>Take comprehensive property photos</li>
+      <li>Upload evidence to Evidence Vault</li>
+      <li>Confirm deposit return timeline</li>
+      <li>Return keys and get receipt</li>
+      <li>Keep all documentation safe</li>`;
   }
 
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto">
-<div style="background:${color};color:#fff;padding:20px;text-align:center"><h1 style="margin:0;font-size:22px">${subject.replace(/[📋⚠️🚨🔴]/g, '').trim()}</h1></div>
-<div style="padding:24px 20px">
-<p>Hi ${userName},</p>
-<p style="font-size:17px;font-weight:600;color:${color}">${message}</p>
-<div style="background:#f5f5f5;padding:16px;border-radius:8px;margin:16px 0">
-<p style="margin:0"><strong>Lease End Date:</strong> ${endDate}</p>
-<p style="margin:8px 0 0"><strong>Days Remaining:</strong> ${daysUntil}</p>
-<p style="margin:8px 0 0"><strong>Property:</strong> ${property}</p>
-</div>
-<h3 style="margin-top:20px">Action Checklist:</h3>
-<ul style="padding-left:20px">${actions}</ul>
-<div style="text-align:center;margin:24px 0">
-<a href="https://app.leaseshield.asia/Leases" style="display:inline-block;background:#0C3B2E;color:#fff;padding:12px 28px;text-decoration:none;border-radius:6px;font-weight:600">View Your Leases</a>
-</div>
-${urgency === 'critical' || urgency === 'urgent' ? '<div style="background:#E8F5E9;border-left:4px solid #4CAF50;padding:14px;margin:16px 0"><p style="margin:0"><strong>Pro Tip:</strong> Upload your move-out condition photos to the Evidence Vault now. This protects your deposit claim later.</p></div>' : ''}
-<p style="margin-top:24px;color:#888;font-size:13px">Automated reminder from LeaseShield. Manage preferences in Account Settings.</p>
-</div>
-<div style="background:#f5f5f5;padding:16px;text-align:center;color:#888;font-size:12px">
-<p style="margin:0">LeaseShield — Protecting Your Rental Rights</p>
-</div></body></html>`;
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;background:#f9f9f9;">
+  <div style="background:${urgencyColor};color:white;padding:24px;text-align:center;">
+    <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png" alt="LeaseShield" style="width:48px;height:48px;margin-bottom:8px;" />
+    <h1 style="margin:0;font-size:22px;">Lease Expiration Notice</h1>
+  </div>
+  <div style="padding:30px 24px;background:white;">
+    <p>Hi ${userName || 'there'},</p>
+    <p style="font-size:17px;font-weight:600;color:${urgencyColor};">${message}</p>
+    <div style="background:#f5f5f5;padding:16px 20px;border-radius:8px;margin:20px 0;">
+      <p style="margin:0;"><strong>Lease End Date:</strong> ${endDate}</p>
+      <p style="margin:8px 0 0;"><strong>Days Remaining:</strong> ${daysUntil} days</p>
+      ${lease.property_address ? `<p style="margin:8px 0 0;"><strong>Property:</strong> ${lease.property_address}</p>` : ''}
+      ${lease.notice_period_days ? `<p style="margin:8px 0 0;"><strong>Notice Period:</strong> ${lease.notice_period_days} days</p>` : ''}
+    </div>
+    <h3 style="margin-top:24px;">Action Checklist:</h3>
+    <ul style="padding-left:20px;">${actionItems}</ul>
+    <div style="text-align:center;margin:28px 0;">
+      <a href="https://app.leaseshield.asia/PropertyTracker" style="display:inline-block;background:#0C3B2E;color:white;padding:12px 32px;text-decoration:none;border-radius:6px;font-weight:600;">View Property Tracker</a>
+    </div>
+    ${urgency === 'critical' ? `
+    <div style="background:#E3F2FD;border-left:4px solid #2196F3;padding:14px;margin:20px 0;border-radius:4px;">
+      <p style="margin:0;font-weight:600;">Moving Out?</p>
+      <p style="margin:8px 0 0;">Use our Evidence Vault to document property condition before handing over keys.</p>
+      <a href="https://app.leaseshield.asia/EvidenceVault" style="color:#1565C0;font-weight:600;">Open Evidence Vault →</a>
+    </div>` : ''}
+    <p style="margin-top:28px;color:#888;font-size:13px;">This is an automated reminder. Manage preferences in <a href="https://app.leaseshield.asia/Account" style="color:#0C3B2E;">Account Settings</a>.</p>
+  </div>
+  <div style="background:#f0f0f0;padding:16px;text-align:center;color:#999;font-size:12px;">
+    <p style="margin:0;">LeaseShield — Protecting Your Rental Rights</p>
+  </div>
+</body></html>`;
 }
