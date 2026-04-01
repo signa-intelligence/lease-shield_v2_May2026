@@ -1077,13 +1077,6 @@ function UploadScanPageContent() {
           }
         });
         return;
-
-
-        
-        // Dead code after early return — kept as reference
-        // eslint-disable-next-line no-unreachable
-        void 0;
-
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
         
@@ -1449,11 +1442,6 @@ function UploadScanPageContent() {
           }
         });
         return;
-
-        // Dead code after early return — kept as reference
-        // eslint-disable-next-line no-unreachable
-        void 0;
-
       } catch (err) {
         logStage('ERROR_CAUGHT', {
           error: err.message,

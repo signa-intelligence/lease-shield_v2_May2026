@@ -37,7 +37,6 @@ export default function MissedRiskModal({ open, onClose, onSubmit, taxonomy, cla
     load();
   }, [open, scanId, clauses, leaseId]);
 
-  // Prevent background scroll when modal open
   React.useEffect(() => {
     if (!open) return;
     const original = document.body.style.overflow;
@@ -55,6 +54,8 @@ export default function MissedRiskModal({ open, onClose, onSubmit, taxonomy, cla
       return [];
     }
   }, [cats, catQuery, leaseId, scanId]);
+
+  if (!open) return null;
 
   const isMobile = typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false;
 
