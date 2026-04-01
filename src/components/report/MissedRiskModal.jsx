@@ -8,13 +8,11 @@ export default function MissedRiskModal({ open, onClose, onSubmit, taxonomy, cla
   const [category, setCategory] = React.useState('');
   const [clauseId, setClauseId] = React.useState('');
   const [note, setNote] = React.useState('');
-
-  if (!open) return null;
-  const cats = Array.isArray(taxonomy?.categories) ? taxonomy.categories : [];
-
-  // Attempt to load clauses if not provided
   const [localClauses, setLocalClauses] = React.useState([]);
   const [clausesLoading, setClausesLoading] = React.useState(false);
+  const [catQuery, setCatQuery] = React.useState('');
+
+  const cats = Array.isArray(taxonomy?.categories) ? taxonomy.categories : [];
   const effectiveClauses = Array.isArray(clauses) && clauses.length > 0 ? clauses : localClauses;
 
   React.useEffect(() => {
@@ -47,8 +45,6 @@ export default function MissedRiskModal({ open, onClose, onSubmit, taxonomy, cla
     return () => { document.body.style.overflow = original; };
   }, [open]);
 
-  // Local search for categories
-  const [catQuery, setCatQuery] = React.useState('');
   const filteredCats = React.useMemo(()=>{
     try{
       const list = Array.isArray(cats) ? cats : [];

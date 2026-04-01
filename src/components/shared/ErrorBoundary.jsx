@@ -20,7 +20,7 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      const isDev = process.env.NODE_ENV === 'development';
+      const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV;
       
       const params = new URLSearchParams(window.location.search);
       const scanId = params.get('scanId');

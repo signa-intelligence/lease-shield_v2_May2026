@@ -728,15 +728,19 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
         }
         return;
 
-        // STEP 6: Build normalized report object for rendering (keep rest of file unchanged)
+        // STEP 6: Dead code after early return — kept as reference
+        // eslint-disable-next-line no-unreachable
         logStep("BUILD_REPORT_START");
 
 
         // We will feed downstream logic with a "pdfPayload-like" structure
+        const pdfPayload = {};
+        const derivedFlags = [];
+        const resolvedLedger = [];
         const normalizedPdfPayload = {
           ...pdfPayload,
           flags: derivedFlags,
-          clause_review: [], // not required; downstream unifies using flags anyway
+          clause_review: [],
           clause_ledger: resolvedLedger
         };
 

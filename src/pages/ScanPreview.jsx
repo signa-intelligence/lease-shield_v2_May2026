@@ -51,7 +51,7 @@ function ScanPreviewContent() {
   const leaseId = urlParams.get('leaseId');
 
   // DEV LOGGING: Check params received
-  if (process.env.NODE_ENV === 'development') {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
     console.log('[ScanPreview] Route params:', { scanId, leaseId });
   }
 
@@ -60,7 +60,7 @@ function ScanPreviewContent() {
     queryFn: async () => {
       if (!leaseId) return null;
       const results = await base44.entities.Lease.filter({ id: leaseId });
-      if (process.env.NODE_ENV === 'development') {
+      if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
         console.log('[ScanPreview] Lease fetch result:', { count: results?.length, exists: !!results?.[0] });
       }
       return results;
@@ -73,7 +73,7 @@ function ScanPreviewContent() {
     queryKey: ['scans'],
     queryFn: async () => {
       const allScans = await base44.entities.LeaseScan.list();
-      if (process.env.NODE_ENV === 'development') {
+      if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
         console.log('[ScanPreview] Scans fetched:', { total: allScans?.length });
       }
       return allScans;
@@ -95,7 +95,7 @@ function ScanPreviewContent() {
   const scan = scans?.find(s => s.id === scanId) || scans?.find(s => s.lease_id === leaseId);
 
   // DEV LOGGING: Check data presence
-  if (process.env.NODE_ENV === 'development') {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
     console.log('[ScanPreview] Data resolved:', { 
       hasLease: !!relevantLease, 
       hasScan: !!scan, 

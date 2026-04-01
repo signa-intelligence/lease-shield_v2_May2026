@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 
 import LeaseUploadZone from "../components/leases/LeaseUploadZone";
 import LeaseAnalysisResults from "../components/leases/LeaseAnalysisResults";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // External scanning API base (set your domain here)
 const EXTERNAL_API_BASE = 'https://<my-api-domain>';

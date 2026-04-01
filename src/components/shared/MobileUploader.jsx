@@ -21,7 +21,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 // CRITICAL: Always define timeout with fallback, never rely on env vars
 const UPLOAD_TIMEOUT_MS = (() => {
   try {
-    const envTimeout = typeof process !== 'undefined' ? process.env?.UPLOAD_TIMEOUT_MS : undefined;
+    const envTimeout = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_UPLOAD_TIMEOUT_MS : undefined;
     const parsed = Number(envTimeout);
     if (!isNaN(parsed) && parsed > 0) {
       return parsed;
