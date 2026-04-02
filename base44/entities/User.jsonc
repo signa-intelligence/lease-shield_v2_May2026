@@ -68,6 +68,11 @@
       "default": false,
       "description": "Soft-delete flag"
     },
+    "permanently_deleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if user permanently deleted their account (PDPA). Do NOT reactivate."
+    },
     "deleted_at": {
       "type": "string",
       "format": "date-time",

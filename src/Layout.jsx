@@ -114,7 +114,13 @@ export default function Layout({ children, currentPageName }) {
     if (!user) return;
 
     // Case 1: Returning soft-deleted user — reactivate without resetting benefits
+    // BUT: Do NOT reactivate permanently deleted users (PDPA compliance)
     if (user.is_deleted === true) {
+      if (user.permanently_deleted === true || user.plan_tier === 'deleted') {
+        console.log('[LAYOUT] Permanently deleted user detected — NOT reactivating:', user.email);
+        base44.auth.logout();
+        return;
+      }
       console.log('[LAYOUT] Returning deleted user detected:', user.email, {
         explorerBenefitsUsed: user.explorer_benefits_used,
         availableScans: user.available_scans,
