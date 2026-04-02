@@ -128,7 +128,12 @@ export default function TemplateViewer({ template, isOpen, onClose, colors, lang
 
   const isPaidTier = ['lite', 'protect', 'secure'].includes(userTierForCredits);
   const hasActiveSubscription = isPaidTier 
-    && (user?.subscription_status === 'active' || user?.manual_tier_override === true || !user?.subscription_status);
+    && (
+      user?.subscription_status === 'active' 
+      || user?.manual_tier_override === true 
+      || !user?.subscription_status
+      || (user?.subscription_status === 'canceling' && user?.plan_renews_at && new Date(user.plan_renews_at) > new Date())
+    );
   const isExplorer = userTierForCredits === 'explorer' || userTierForCredits === 'free';
   const subscriptionBlocked = !hasActiveSubscription;
 
