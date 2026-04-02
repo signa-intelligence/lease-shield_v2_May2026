@@ -48,6 +48,24 @@ export default function DowngradeFlowDialog({
     setCancelling(true);
     try {
       const { base44 } = await import("@/api/base44Client");
+
+      // Store cancellation reason for analytics
+      try {
+        await base44.entities.CancellationReason.create({
+          user_email: user?.email,
+          user_id: user?.id,
+          previous_tier: planTier,
+          reason,
+          reason_details: feedback || "User chose to downgrade to free plan",
+          outcome: "downgraded_to_explorer",
+          new_tier: "explorer",
+          subscription_value: planTier === "lite" ? 190 : planTier === "protect" ? 390 : planTier === "secure" ? 990 : 0,
+          revenue_retained: 0,
+        });
+      } catch (e) {
+        console.error("[DOWNGRADE] Failed to store reason:", e);
+      }
+
       const response = await base44.functions.invoke("cancelSubscription", {
         reason,
         feedback: feedback || "User chose to downgrade to free plan",
