@@ -14,6 +14,8 @@ export default function DowngradeFlowDialog({
   handleSubscribe, handleCancelSubscription: cancelSub,
   refetchUser, queryClient,
 }) {
+  const isCancellationPending = user?.subscription_status === 'canceling';
+
   const [step, setStep] = useState(1);
   const [reason, setReason] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -98,6 +100,48 @@ export default function DowngradeFlowDialog({
       setCancelling(false);
     }
   };
+
+  // If cancellation is already pending, show info instead of downgrade flow
+  if (isCancellationPending) {
+    const periodEndDate = user?.plan_renews_at
+      ? new Date(user.plan_renews_at).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+      : null;
+    const tierLabel = (user?.plan_tier || 'explorer').charAt(0).toUpperCase() + (user?.plan_tier || 'explorer').slice(1);
+
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+        <DialogContent className="modal-enter" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor, color: colors.textPrimary, maxWidth: '500px', width: '95vw' }}>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center" style={{ color: colors.textPrimary }}>
+              {language === 'th' ? '⏳ กำลังรอการยกเลิก' : language === 'zh' ? '⏳ 取消处理中' : language === 'ja' ? '⏳ キャンセル保留中' : language === 'ko' ? '⏳ 취소 대기 중' : language === 'ru' ? '⏳ Отмена запланирована' : '⏳ Cancellation Pending'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="p-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#2A2500' : '#FFF8E1', border: '2px solid #F59E0B' }}>
+              <p className="text-sm mb-2" style={{ color: colors.textPrimary }}>
+                {language === 'th'
+                  ? `แผน ${tierLabel} ของคุณจะสิ้นสุดในวันที่`
+                  : `Your ${tierLabel} plan will end on`}{' '}
+                <strong>{periodEndDate || '—'}</strong>.
+              </p>
+              <p className="text-xs" style={{ color: colors.textSecondary }}>
+                {language === 'th'
+                  ? 'คุณยังคงเข้าถึงฟีเจอร์ทั้งหมดได้จนถึงวันนั้น หลังจากนั้นจะเปลี่ยนเป็น Explorer (ฟรี)'
+                  : 'You still have full access to all features until then. After that, you\'ll be moved to Explorer (Free).'}
+              </p>
+            </div>
+            <button
+              onClick={handleClose}
+              className="btn-interaction w-full"
+              style={{ padding: '12px 16px', borderRadius: '10px', fontWeight: '700', fontSize: '14px', border: 'none', backgroundColor: '#0C3B2E', color: '#FFFFFF', cursor: 'pointer', minHeight: '44px' }}
+            >
+              {language === 'th' ? 'เข้าใจแล้ว' : 'Got it'}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>

@@ -49,6 +49,17 @@ Deno.serve(async (req) => {
     const subscription = subscriptions.data[0];
     console.log('[CANCEL] Found subscription:', subscription.id, 'status:', subscription.status);
 
+    // Prevent duplicate cancellation
+    if (subscription.cancel_at_period_end) {
+      console.log('[CANCEL] Already scheduled for cancellation:', subscription.id);
+      return Response.json({
+        success: true,
+        already_pending: true,
+        cancel_at_period_end: true,
+        access_until: new Date(subscription.current_period_end * 1000).toISOString()
+      });
+    }
+
     // Cancel at period end (user keeps access until renewal date)
     const canceledSubscription = await stripe.subscriptions.update(subscription.id, {
       cancel_at_period_end: true,

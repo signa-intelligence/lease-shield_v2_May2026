@@ -6,7 +6,7 @@ import { PLAN_DETAILS, PRICING } from "./PlanDetails";
 
 export default function PlanSelectorGrid({
   planTier, isFreePlan, billingPeriod, subscribing, colors, isDarkMode, language, strings,
-  handleSubscribe, handleDowngradeOrCancel, haptic
+  handleSubscribe, handleDowngradeOrCancel, haptic, isScheduledForCancellation
 }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -136,8 +136,22 @@ export default function PlanSelectorGrid({
                   ✓ {strings.currentPlanBadge}
                 </Button>
               ) : isFreeplanLocal && !isFreePlan ? (
-                <Button onClick={() => { haptic.medium(); handleDowngradeOrCancel(); }} className="w-full h-10 text-sm btn-interaction" style={{ backgroundColor: 'transparent', color: '#EF4444', cursor: 'pointer', border: '2px solid #EF4444', fontWeight: '600' }}>
-                  {strings.downgradeToFree}
+                <Button
+                  onClick={() => { if (!isScheduledForCancellation) { haptic.medium(); handleDowngradeOrCancel(); } }}
+                  disabled={isScheduledForCancellation}
+                  className="w-full h-10 text-sm btn-interaction"
+                  style={{
+                    backgroundColor: isScheduledForCancellation ? (isDarkMode ? '#374151' : '#F3F4F6') : 'transparent',
+                    color: isScheduledForCancellation ? '#F59E0B' : '#EF4444',
+                    cursor: isScheduledForCancellation ? 'not-allowed' : 'pointer',
+                    border: isScheduledForCancellation ? '2px solid #F59E0B' : '2px solid #EF4444',
+                    fontWeight: '600',
+                    opacity: isScheduledForCancellation ? 0.8 : 1
+                  }}
+                >
+                  {isScheduledForCancellation
+                    ? (language === 'th' ? '⏳ รอการยกเลิก' : language === 'zh' ? '⏳ 取消中' : language === 'ja' ? '⏳ キャンセル保留中' : language === 'ko' ? '⏳ 취소 대기 중' : language === 'ru' ? '⏳ Отмена запланирована' : '⏳ Cancellation Pending')
+                    : strings.downgradeToFree}
                 </Button>
               ) : !hasPricing && !isFreeplanLocal ? (
                 <Button disabled className="w-full h-10 text-sm" style={{ backgroundColor: '#9CA3AF', color: '#FFFFFF', cursor: 'not-allowed', opacity: 0.6 }}>
