@@ -23,33 +23,33 @@ function SearchContent() {
   });
 
   const { data: leases = [], isLoading: leasesLoading } = useQuery({
-    queryKey: ['leases'],
-    queryFn: () => base44.entities.Lease.filter({ created_by: user?.email }),
-    enabled: !!user,
+    queryKey: ['search-leases', user?.email],
+    queryFn: () => base44.entities.Lease.filter({ owner_email: user?.email }),
+    enabled: !!user?.email,
   });
 
   const { data: deposits = [], isLoading: depositsLoading } = useQuery({
-    queryKey: ['deposits'],
-    queryFn: () => base44.entities.DepositTracker.filter({ created_by: user?.email }),
-    enabled: !!user,
+    queryKey: ['search-deposits', user?.email],
+    queryFn: () => base44.entities.DepositTracker.filter({ owner_email: user?.email }),
+    enabled: !!user?.email,
   });
 
   const { data: cases = [], isLoading: casesLoading } = useQuery({
-    queryKey: ['cases'],
-    queryFn: () => base44.entities.Case.filter({ user_email: user?.email }),
-    enabled: !!user,
+    queryKey: ['search-cases', user?.email],
+    queryFn: () => base44.entities.Case.filter({ user_email: user?.email, is_deleted: { $ne: true } }),
+    enabled: !!user?.email,
   });
 
   const { data: documents = [], isLoading: documentsLoading } = useQuery({
-    queryKey: ['documents'],
+    queryKey: ['search-documents', user?.email],
     queryFn: () => base44.entities.Document.filter({ created_by: user?.email }),
-    enabled: !!user,
+    enabled: !!user?.email,
   });
 
   const { data: maintenance = [], isLoading: maintenanceLoading } = useQuery({
-    queryKey: ['maintenance'],
+    queryKey: ['search-maintenance', user?.email],
     queryFn: () => base44.entities.MaintenanceRequest.filter({ created_by: user?.email }),
-    enabled: !!user,
+    enabled: !!user?.email,
   });
 
   const language = user?.language || 'en';
