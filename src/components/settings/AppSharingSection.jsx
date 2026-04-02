@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Globe } from "lucide-react";
+import { Download, Globe, X } from "lucide-react";
 import { haptic } from "../shared/HapticFeedback";
+import { isInstalledApp } from "../../utils/detectInstalledApp";
 
 const translations = {
   en: {
@@ -62,14 +63,46 @@ const translations = {
 
 export default function AppSharingSection({ language, colors, isDarkMode }) {
   const t = translations[language] || translations.en;
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const dismissed = localStorage.getItem('app_download_dismissed');
+    const inApp = isInstalledApp();
+    if (!inApp && dismissed !== 'true') {
+      setVisible(true);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    haptic.light();
+    localStorage.setItem('app_download_dismissed', 'true');
+    setVisible(false);
+  };
+
+  if (!visible) return null;
 
   return (
     <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
       <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-        <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-          <Download className="w-5 h-5" style={{ color: '#0C3B2E' }} />
-          {t.title}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
+            <Download className="w-5 h-5" style={{ color: '#0C3B2E' }} />
+            {t.title}
+          </CardTitle>
+          <button
+            onClick={handleDismiss}
+            aria-label="Dismiss"
+            style={{
+              width: '32px', height: '32px', borderRadius: '50%',
+              backgroundColor: isDarkMode ? '#374151' : '#F3F4F6',
+              border: 'none', cursor: 'pointer', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              transition: 'background-color 0.2s'
+            }}
+          >
+            <X className="w-4 h-4" style={{ color: colors.textSecondary }} />
+          </button>
+        </div>
       </CardHeader>
       <CardContent className="p-6">
         <p className="text-sm font-semibold mb-4" style={{ color: colors.textSecondary }}>
