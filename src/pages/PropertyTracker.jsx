@@ -42,6 +42,7 @@ import DebouncedSearch from "../components/shared/DebouncedSearch";
 import AuthGuard from "../components/shared/AuthGuard";
 import MaintenanceRequestCard from "../components/property/MaintenanceRequestCard";
 import RentPaymentTracker from "../components/property/RentPaymentTracker";
+import DepositReturnTracker from "../components/property/DepositReturnTracker";
 
 import {
   CTA_COLOR,
@@ -2006,59 +2007,11 @@ function PropertyTrackerContent() {
                        </p>
                      </div>
                    </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        onClick={() => {
-                          haptic.light();
-                          setDepositForm({
-                            deposit_amount: deposit.deposit_amount?.toString() || '',
-                            deposit_paid_date: deposit.deposit_paid_date || '',
-                            expected_return_date: deposit.expected_return_date || '',
-                            property_address: deposit.property_address || '',
-                            notes: deposit.notes || ''
-                          });
-                          setEditingDeposit(true);
-                        }}
-                        className="flex-1 btn-interaction"
-                        style={{
-                          backgroundColor: '#0C3B2E',
-                          color: '#FFFFFF',
-                          minHeight: '48px'
-                        }}
-                      >
-                        <Edit2 className="w-4 h-4 mr-2" />
-                        {strings.edit}
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="btn-interaction"
-                            style={{ minHeight: '48px' }}
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleDepositAction('returned')}>
-                            <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
-                            {language === 'th' ? 'ทำเครื่องหมายว่าคืนแล้ว' : 'Mark Returned'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDepositAction('disputed')}>
-                            <AlertTriangle className="w-4 h-4 mr-2 text-red-600" />
-                            {language === 'th' ? 'ทำเครื่องหมายว่ามีข้อพิพาท' : 'Mark Disputed'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDepositAction('archive')}>
-                            <Archive className="w-4 h-4 mr-2" />
-                            {language === 'th' ? 'เก็บไว้' : 'Archive'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDepositAction('delete')} className="text-red-600">
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            {language === 'th' ? 'ลบอย่างถาวร' : 'Delete'}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    {deposit.status !== 'returned' && (<div className="flex gap-2 mt-4">
+                      <Button onClick={() => { haptic.light(); setDepositForm({ deposit_amount: deposit.deposit_amount?.toString() || '', deposit_paid_date: deposit.deposit_paid_date || '', expected_return_date: deposit.expected_return_date || '', property_address: deposit.property_address || '', notes: deposit.notes || '' }); setEditingDeposit(true); }} className="flex-1 btn-interaction" style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF', minHeight: '48px' }}><Edit2 className="w-4 h-4 mr-2" />{strings.edit}</Button>
+                      <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" className="btn-interaction" style={{ minHeight: '48px' }}><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleDepositAction('returned')}><CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />{language === 'th' ? 'ทำเครื่องหมายว่าคืนแล้ว' : 'Mark Returned'}</DropdownMenuItem><DropdownMenuItem onClick={() => handleDepositAction('disputed')}><AlertTriangle className="w-4 h-4 mr-2 text-red-600" />{language === 'th' ? 'ทำเครื่องหมายว่ามีข้อพิพาท' : 'Mark Disputed'}</DropdownMenuItem><DropdownMenuItem onClick={() => handleDepositAction('archive')}><Archive className="w-4 h-4 mr-2" />{language === 'th' ? 'เก็บไว้' : 'Archive'}</DropdownMenuItem><DropdownMenuItem onClick={() => handleDepositAction('delete')} className="text-red-600"><Trash2 className="w-4 h-4 mr-2" />{language === 'th' ? 'ลบอย่างถาวร' : 'Delete'}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+                    </div>)}
+                    <DepositReturnTracker deposit={deposit} colors={colors} isDarkMode={isDarkMode} language={language} toast={toast} />
                   </div>
                 ) : (
                   <div className="text-center py-8">
