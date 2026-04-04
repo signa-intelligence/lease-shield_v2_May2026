@@ -153,6 +153,21 @@ Deno.serve(async (req) => {
 
           const user = await findUserByCustomerId(customerId);
           if (user) {
+            // SAFETY NET: Cancel any OTHER active subscriptions for this customer
+            try {
+              const allSubs = await stripe.subscriptions.list({ customer: customerId, status: 'active', limit: 50 });
+              const orphaned = allSubs.data.filter(s => s.id !== subscriptionId);
+              if (orphaned.length > 0) {
+                console.warn(`[WEBHOOK] ⚠️ Found ${orphaned.length} orphaned sub(s) — auto-canceling`);
+                for (const orphan of orphaned) {
+                  await stripe.subscriptions.cancel(orphan.id);
+                  console.log('[WEBHOOK] ✅ Auto-canceled orphaned sub:', orphan.id);
+                }
+              }
+            } catch (cleanupErr) {
+              console.error('[WEBHOOK] Orphan cleanup failed (non-blocking):', cleanupErr.message);
+            }
+
             const now = new Date().toISOString();
             const currentMonth = now.slice(0, 7);
             await base44.asServiceRole.entities.User.update(user.id, {

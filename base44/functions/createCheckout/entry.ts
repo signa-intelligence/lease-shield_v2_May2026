@@ -173,6 +173,41 @@ Deno.serve(async (req) => {
     };
 
     // ========================================
+    // UPGRADE SAFETY: Cancel existing subscriptions before creating new one
+    // ========================================
+    if (mode === 'subscription') {
+      // First try the known subscription from DB
+      if (user.stripe_subscription_id) {
+        try {
+          const existingSub = await stripe.subscriptions.retrieve(user.stripe_subscription_id);
+          if (existingSub.status === 'active' || existingSub.status === 'trialing') {
+            console.log('[UPGRADE] Canceling existing subscription:', existingSub.id);
+            await stripe.subscriptions.cancel(existingSub.id);
+            console.log('[UPGRADE] ✅ Canceled old subscription');
+          }
+        } catch (e) {
+          console.log('[UPGRADE] Could not cancel DB subscription:', e.message);
+        }
+      }
+
+      // Safety net: cancel ALL active subs for this customer
+      if (customerId) {
+        try {
+          const allSubs = await stripe.subscriptions.list({ customer: customerId, status: 'active', limit: 50 });
+          if (allSubs.data.length > 0) {
+            console.log(`[UPGRADE] Found ${allSubs.data.length} active sub(s) — canceling all`);
+            for (const sub of allSubs.data) {
+              await stripe.subscriptions.cancel(sub.id);
+              console.log('[UPGRADE] ✅ Canceled:', sub.id);
+            }
+          }
+        } catch (e) {
+          console.error('[UPGRADE] Safety net cancel failed:', e.message);
+        }
+      }
+    }
+
+    // ========================================
     // PAYMENT: One-time payments (Credits OR One-Time Scan)
     // ========================================
     if (mode === 'payment' && amount) {
