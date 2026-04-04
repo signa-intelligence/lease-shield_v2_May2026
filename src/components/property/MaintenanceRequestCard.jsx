@@ -14,6 +14,8 @@ import { format } from "date-fns";
 import { haptic } from "../shared/HapticFeedback";
 import SwipeToDelete from "../shared/SwipeToDelete";
 import LazyImage from "../shared/LazyImage";
+import MaintenanceCompletionSection from "./MaintenanceCompletionSection";
+import ReimbursementSection from "./ReimbursementSection";
 
 export default function MaintenanceRequestCard({
   request,
@@ -28,7 +30,8 @@ export default function MaintenanceRequestCard({
   handleCloseMaintenance,
   handleDeleteMaintenance,
   expanded,
-  onToggle
+  onToggle,
+  toast
 }) {
   return (
     <SwipeToDelete
@@ -147,7 +150,11 @@ export default function MaintenanceRequestCard({
               {request.videos && request.videos.length > 0 && <span>🎥 {request.videos.length}</span>}
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap pt-3 border-t" style={{ borderColor: colors.borderColor }}>
+            {/* Completion & Reimbursement sections */}
+            <MaintenanceCompletionSection request={request} colors={colors} isDarkMode={isDarkMode} language={language} toast={toast} />
+            <ReimbursementSection request={request} colors={colors} isDarkMode={isDarkMode} language={language} toast={toast} />
+
+            <div className="flex items-center gap-2 flex-wrap pt-3 border-t mt-3" style={{ borderColor: colors.borderColor }}>
               <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); haptic.light(); handleEditMaintenance(request); }} style={{ minHeight: '36px' }}>
                 <Edit2 className="w-3 h-3 mr-1" />{strings.edit}
               </Button>
