@@ -1,0 +1,99 @@
+{
+  "name": "RentPayment",
+  "type": "object",
+  "properties": {
+    "deposit_tracker_id": {
+      "type": "string",
+      "description": "Link to DepositTracker record",
+      "index": true
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of user who owns this payment",
+      "index": true
+    },
+    "month_key": {
+      "type": "string",
+      "description": "YYYY-MM format for deduplication",
+      "index": true
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Payment due date"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Rent amount"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "overdue"
+      ],
+      "default": "pending",
+      "description": "Payment status"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date payment was made"
+    },
+    "proof_url": {
+      "type": "string",
+      "description": "URL to uploaded proof of payment"
+    },
+    "proof_file_name": {
+      "type": "string",
+      "description": "Original filename of proof"
+    }
+  },
+  "required": [
+    "deposit_tracker_id",
+    "owner_email",
+    "month_key",
+    "due_date",
+    "amount"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

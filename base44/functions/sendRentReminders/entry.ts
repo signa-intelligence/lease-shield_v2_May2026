@@ -93,6 +93,22 @@ Deno.serve(async (req) => {
 
         if (!reminderType) continue;
 
+        // Check if this month's rent has already been paid via RentPayment entity
+        try {
+          const monthPayments = await base44.asServiceRole.entities.RentPayment.filter({
+            deposit_tracker_id: deposit.id,
+            month_key: currentMonth
+          });
+          const paidThisMonth = monthPayments.some(p => p.payment_status === 'paid');
+          if (paidThisMonth) {
+            console.log(`[SKIP_PAID] ${deposit.owner_email} - rent already paid for ${currentMonth}`);
+            continue;
+          }
+        } catch (e) {
+          // RentPayment entity may not exist for all deposits yet — continue with reminder
+          console.log(`[RENT_PAYMENT_CHECK] ${deposit.id}: ${e.message}`);
+        }
+
         // Get user (cached)
         if (!userCache[deposit.owner_email]) {
           const users = await base44.asServiceRole.entities.User.filter({ email: deposit.owner_email });
