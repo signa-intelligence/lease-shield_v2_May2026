@@ -1,103 +1,79 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import Stripe from 'npm:stripe@14.14.0';
 
-/**
- * Admin function to reset a test user:
- * - Delete all leases and cascaded records (scans, deposits, timeline events)
- * - Restore available_scans to plan limit
- */
+const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'));
+
 Deno.serve(async (req) => {
-  const correlationId = `reset-user-${Date.now()}`;
-  
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    const caller = await base44.auth.me();
+    if (caller?.role !== 'admin') {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { userEmail, restoreScanCount } = await req.json();
+    const { email } = await req.json();
+    if (!email) return Response.json({ error: 'Email required' }, { status: 400 });
 
-    if (!userEmail) {
-      return Response.json({ 
-        error: 'Missing userEmail' 
-      }, { status: 400 });
+    console.log('\n═══════════════════════════════════════════════════════');
+    console.log('RESET TEST USER TO EXPLORER');
+    console.log(`User: ${email}`);
+    console.log('═══════════════════════════════════════════════════════\n');
+
+    // Find user
+    const allUsers = await base44.asServiceRole.entities.User.filter({ email });
+    if (!allUsers.length) return Response.json({ error: 'User not found' }, { status: 404 });
+    const user = allUsers[0];
+
+    if (!user.stripe_customer_id) {
+      return Response.json({ error: 'User has no Stripe customer ID' }, { status: 400 });
     }
 
-    console.log(`[${correlationId}] Resetting user: ${userEmail}`);
-    const svc = base44.asServiceRole;
-
-    // Find the user
-    const users = await svc.entities.User.filter({ email: userEmail });
-    if (!users || users.length === 0) {
-      return Response.json({ 
-        error: `User not found: ${userEmail}` 
-      }, { status: 404 });
-    }
-
-    const targetUser = users[0];
-    console.log(`[${correlationId}] Found user:`, {
-      id: targetUser.id,
-      email: targetUser.email,
-      tier: targetUser.plan_tier
+    // Get all active subscriptions
+    const subs = await stripe.subscriptions.list({
+      customer: user.stripe_customer_id,
+      status: 'active',
+      limit: 50
     });
 
-    // Delete all leases for this user (cascade deletes deposits, scans, timeline)
-    const leases = await svc.entities.Lease.filter({ owner_email: userEmail });
-    console.log(`[${correlationId}] Found ${leases.length} leases to delete`);
+    console.log(`Found ${subs.data.length} active subscription(s)`);
 
-    let deletedCount = 0;
-    for (const lease of leases) {
-      try {
-        await svc.entities.Lease.delete(lease.id);
-        deletedCount++;
-        console.log(`[${correlationId}] Deleted lease: ${lease.id}`);
-      } catch (err) {
-        console.error(`[${correlationId}] Failed to delete lease ${lease.id}:`, err.message);
-      }
+    // Cancel ALL active subscriptions immediately
+    const canceled = [];
+    for (const sub of subs.data) {
+      const item = sub.items.data[0];
+      const amt = item.price.unit_amount / 100;
+      console.log(`Canceling ${sub.id} — ฿${amt}/${item.price.recurring.interval}`);
+      
+      const result = await stripe.subscriptions.cancel(sub.id);
+      canceled.push({ id: result.id, status: result.status, amount: `฿${amt}` });
+      console.log(`  ✅ Canceled (status: ${result.status})`);
     }
 
-    // Reset available_scans based on plan
-    let scansToRestore = 1; // Default to 1 (free tier)
-    
-    if (restoreScanCount !== undefined) {
-      scansToRestore = restoreScanCount;
-    } else if (targetUser.plan_tier === 'lite') {
-      scansToRestore = 6;
-    } else if (targetUser.plan_tier === 'protect') {
-      scansToRestore = 12;
-    } else if (targetUser.plan_tier === 'secure') {
-      scansToRestore = 999;
-    }
-
-    console.log(`[${correlationId}] Restoring scans to: ${scansToRestore}`);
-    
-    await svc.entities.User.update(targetUser.id, {
-      available_scans: scansToRestore
+    // Reset user to Explorer
+    console.log('\nUpdating user to Explorer tier...');
+    await base44.asServiceRole.entities.User.update(user.id, {
+      plan_tier: 'explorer',
+      subscription_status: 'cancelled',
+      stripe_subscription_id: null,
+      stripe_price_id: null,
+      plan_renews_at: null,
     });
+    console.log('✅ User updated to Explorer tier');
 
-    console.log(`[${correlationId}] Reset complete`);
+    console.log('\n═══════════════════════════════════════════════════════');
+    console.log('RESET COMPLETE');
+    console.log(`Canceled: ${canceled.length} subscription(s)`);
+    console.log(`New tier: explorer`);
+    console.log('═══════════════════════════════════════════════════════\n');
 
     return Response.json({
       success: true,
-      user: {
-        email: userEmail,
-        tier: targetUser.plan_tier
-      },
-      deleted: {
-        leases: deletedCount
-      },
-      restored: {
-        available_scans: scansToRestore
-      },
-      correlationId
+      email: user.email,
+      new_tier: 'explorer',
+      canceled_subscriptions: canceled,
     });
-
   } catch (error) {
-    console.error(`[${correlationId}] Error:`, error.message);
-    return Response.json({
-      error: error.message,
-      correlationId
-    }, { status: 500 });
+    console.error('RESET ERROR:', error.message);
+    return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 });
