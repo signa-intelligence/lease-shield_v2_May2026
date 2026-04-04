@@ -28,10 +28,11 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, error: 'RESEND_API_KEY not configured' }, { status: 500 });
     }
 
-    // Fetch all tracking deposits
-    const deposits = await base44.asServiceRole.entities.DepositTracker.filter({
+    // Fetch all tracking deposits (skip returned ones)
+    const allDeposits = await base44.asServiceRole.entities.DepositTracker.filter({
       status: 'tracking'
     });
+    const deposits = allDeposits.filter(d => d.status !== 'returned');
 
     results.checked = deposits.length;
     console.log(`[DEPOSIT_REMINDERS] Checking ${deposits.length} active deposits`);
@@ -47,6 +48,12 @@ Deno.serve(async (req) => {
     for (const deposit of deposits) {
       try {
         if (!deposit.expected_return_date || !deposit.owner_email) continue;
+
+        // Skip if already returned
+        if (deposit.status === 'returned') {
+          console.log(`[SKIP_RETURNED] ${deposit.owner_email} — deposit already returned`);
+          continue;
+        }
 
         // Calculate days difference using date strings (no timezone issues)
         const returnDateStr = deposit.expected_return_date.split('T')[0];

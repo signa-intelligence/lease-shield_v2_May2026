@@ -128,40 +128,56 @@
     },
     "reminder_30d_sent": {
       "type": "boolean",
-      "default": false,
-      "description": "True if 30-day deposit return reminder was sent"
+      "default": false
     },
     "reminder_7d_sent": {
       "type": "boolean",
-      "default": false,
-      "description": "True if 7-day deposit return reminder was sent"
+      "default": false
     },
     "reminder_3d_sent": {
       "type": "boolean",
-      "default": false,
-      "description": "True if 3-day deposit return reminder was sent"
+      "default": false
     },
     "reminder_due_sent": {
       "type": "boolean",
-      "default": false,
-      "description": "True if due-date deposit return reminder was sent"
+      "default": false
     },
     "reminder_overdue_sent": {
       "type": "boolean",
-      "default": false,
-      "description": "True if overdue deposit return reminder was sent"
+      "default": false
     },
     "rent_reminder_3d_month": {
       "type": "string",
-      "description": "YYYY-MM of last 3-day rent reminder sent (monthly dedup)"
+      "description": "YYYY-MM of last 3-day rent reminder sent"
     },
     "rent_reminder_due_month": {
       "type": "string",
-      "description": "YYYY-MM of last due-date rent reminder sent (monthly dedup)"
+      "description": "YYYY-MM of last due-date rent reminder sent"
     },
     "rent_reminder_late_month": {
       "type": "string",
-      "description": "YYYY-MM of last late rent reminder sent (monthly dedup)"
+      "description": "YYYY-MM of last late rent reminder sent"
+    },
+    "returned_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date deposit was returned"
+    },
+    "return_amount": {
+      "type": "number",
+      "description": "Actual amount returned (may differ from deposit_amount if deductions)"
+    },
+    "return_notes": {
+      "type": "string",
+      "description": "Notes about the return (deductions, etc.)"
+    },
+    "return_proof_url": {
+      "type": "string",
+      "description": "URL to proof of deposit return"
+    },
+    "return_proof_file_name": {
+      "type": "string",
+      "description": "Filename of return proof"
     },
     "field_metadata": {
       "type": "object",

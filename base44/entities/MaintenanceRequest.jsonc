@@ -1,0 +1,320 @@
+{
+  "name": "MaintenanceRequest",
+  "type": "object",
+  "properties": {
+    "request_number": {
+      "type": "string",
+      "description": "Sequential request number (e.g., MR-001)"
+    },
+    "property_id": {
+      "type": "string",
+      "description": "Related property ID"
+    },
+    "lease_id": {
+      "type": "string",
+      "description": "Related lease ID",
+      "index": true
+    },
+    "issue_title": {
+      "type": "string",
+      "description": "Brief title of the maintenance issue"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the issue"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "plumbing",
+        "electrical",
+        "structural",
+        "appliance",
+        "hvac",
+        "pest",
+        "other"
+      ],
+      "default": "other"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "reported",
+        "acknowledged",
+        "in_progress",
+        "completed",
+        "rejected",
+        "archived"
+      ],
+      "default": "reported"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "urgent"
+      ],
+      "default": "medium"
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Property address"
+    },
+    "reported_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date issue was reported"
+    },
+    "acknowledged_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date landlord acknowledged the issue"
+    },
+    "resolved_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date issue was resolved"
+    },
+    "estimated_cost": {
+      "type": "number",
+      "description": "Estimated repair cost"
+    },
+    "actual_cost": {
+      "type": "number",
+      "description": "Actual repair cost"
+    },
+    "photo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Photos of the issue"
+    },
+    "voice_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Voice note recordings"
+    },
+    "videos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Video evidence"
+    },
+    "completion_photo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Photos of completed repair"
+    },
+    "bill_photo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Photos of repair bills/receipts"
+    },
+    "landlord_response": {
+      "type": "string",
+      "description": "Landlord's response or notes"
+    },
+    "communication_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "message": {
+            "type": "string"
+          },
+          "sender": {
+            "type": "string",
+            "enum": [
+              "tenant",
+              "landlord",
+              "juristic",
+              "system"
+            ]
+          },
+          "sender_name": {
+            "type": "string"
+          },
+          "sender_email": {
+            "type": "string"
+          },
+          "action_type": {
+            "type": "string",
+            "enum": [
+              "created",
+              "message",
+              "status_change",
+              "photo_upload",
+              "acknowledged",
+              "completed",
+              "rejected"
+            ]
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      },
+      "description": "Timestamped chat log"
+    },
+    "acknowledgment_token": {
+      "type": "string",
+      "description": "Secure token for landlord to acknowledge without login"
+    },
+    "timeline_event_created_id": {
+      "type": "string"
+    },
+    "timeline_event_followup_id": {
+      "type": "string"
+    },
+    "next_action_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false
+    },
+    "archived_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completion_notes": {
+      "type": "string",
+      "description": "Notes about the completion"
+    },
+    "payment_responsibility": {
+      "type": "string",
+      "enum": [
+        "landlord",
+        "tenant_reimbursable",
+        "tenant_approved",
+        "shared",
+        "tenant_unauthorized",
+        "not_set"
+      ],
+      "default": "not_set",
+      "description": "Who is responsible for repair cost"
+    },
+    "tenant_paid_amount": {
+      "type": "number",
+      "description": "Amount tenant paid out of pocket"
+    },
+    "tenant_payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "When tenant paid"
+    },
+    "tenant_receipt_url": {
+      "type": "string",
+      "description": "URL to tenant's payment receipt"
+    },
+    "tenant_receipt_file_name": {
+      "type": "string",
+      "description": "Filename of tenant receipt"
+    },
+    "reimbursement_status": {
+      "type": "string",
+      "enum": [
+        "not_applicable",
+        "pending",
+        "approved",
+        "paid",
+        "rejected"
+      ],
+      "default": "not_applicable",
+      "description": "Reimbursement workflow status"
+    },
+    "reimbursement_claimed_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reimbursement_approved_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reimbursement_paid_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "reimbursement_amount": {
+      "type": "number",
+      "description": "Approved reimbursement amount"
+    },
+    "reimbursement_notes": {
+      "type": "string"
+    },
+    "landlord_receipt_url": {
+      "type": "string",
+      "description": "URL to landlord's payment receipt"
+    },
+    "landlord_receipt_file_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "issue_title",
+    "reported_date"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$and": [
+        {
+          "is_archived": {
+            "$ne": true
+          }
+        },
+        {
+          "$or": [
+            {
+              "created_by": "{{user.email}}"
+            },
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
