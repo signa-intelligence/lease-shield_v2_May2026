@@ -682,9 +682,29 @@ css
    ACCOUNT PAGE - ANDROID OVERFLOW FIX
    Prevents horizontal scroll on narrow viewports
    ======================================== */
+
+/* Root-level overflow containment */
+.page-transition {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+.page-transition > .max-w-7xl {
+  max-width: 100% !important;
+  overflow-x: hidden;
+}
+
+/* Grid children must shrink */
+.page-transition .grid > * {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Current Plan section */
 #account-current-plan {
   min-width: 0;
   overflow: hidden;
+  max-width: 100%;
 }
 
 #account-current-plan > * {
@@ -692,51 +712,68 @@ css
   max-width: 100%;
 }
 
-/* Force all grid children in Account to respect boundaries */
-.page-transition .grid > * {
-  min-width: 0;
+/* Card overflow containment */
+.page-transition .shadow-xl {
+  max-width: 100%;
   overflow: hidden;
 }
 
-/* Break long emails/text on small screens */
-@media (max-width: 640px) {
-  .page-transition {
-    overflow-x: hidden !important;
-    max-width: 100vw;
-  }
-
-  .page-transition .max-w-7xl {
-    max-width: 100% !important;
-    overflow-x: hidden !important;
-  }
-
-  /* Prevent card content overflow */
-  .page-transition [class*="CardContent"] *,
-  .page-transition .p-6 * {
-    max-width: 100%;
+@media (max-width: 768px) {
+  /* Force all text to wrap on mobile */
+  .page-transition p,
+  .page-transition span,
+  .page-transition h2,
+  .page-transition h3 {
     word-break: break-word;
     overflow-wrap: break-word;
   }
 
-  /* Fix flex rows that may not wrap */
+  /* Flex rows: allow wrapping and prevent push-out */
   .page-transition .flex.items-center.justify-between {
     flex-wrap: wrap;
     gap: 8px;
   }
 
-  /* Ensure inputs don't overflow */
+  /* Ensure all flex-1 children can shrink below content size */
+  .page-transition .flex-1 {
+    min-width: 0 !important;
+  }
+
+  /* Inputs must stay within bounds */
   .page-transition input,
   .page-transition textarea,
   .page-transition select,
   .page-transition [role="combobox"] {
     max-width: 100% !important;
     box-sizing: border-box !important;
+    min-width: 0 !important;
   }
 
-  /* Gradient banner text wrap */
+  /* Theme toggle row: stack vertically on very narrow screens */
+  @media (max-width: 380px) {
+    .page-transition .flex.rounded-lg.p-1 {
+      flex-wrap: wrap;
+    }
+    .page-transition .flex.rounded-lg.p-1 button {
+      padding: 6px 8px !important;
+      font-size: 12px !important;
+    }
+  }
+
+  /* Gradient banner padding reduction */
+  .page-transition [style*="linear-gradient"] {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
   .page-transition [style*="linear-gradient"] p,
   .page-transition [style*="linear-gradient"] h2 {
     word-break: break-word;
     overflow-wrap: break-word;
+  }
+
+  /* CardContent padding tightening for narrow screens */
+  .page-transition .p-6 {
+    padding: 16px !important;
   }
 }
