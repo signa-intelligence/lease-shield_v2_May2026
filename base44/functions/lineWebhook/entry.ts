@@ -10,6 +10,30 @@ import { createHmac } from 'node:crypto';
  * - LINE_CHANNEL_SECRET: LINE webhook signature verification secret
  */
 
+// Helper to create LINE quick reply buttons
+function qr(items) {
+  return {
+    items: items.map(item => ({
+      type: 'action',
+      action: item.uri
+        ? { type: 'uri', label: item.label, uri: item.uri }
+        : { type: 'message', label: item.label, text: item.text }
+    }))
+  };
+}
+
+const QR_MAIN = qr([
+  { label: '🏠 Dashboard', uri: 'https://app.leaseshield.asia' },
+  { label: '💰 Deposits', text: 'deposit' },
+  { label: '📊 Status', text: 'status' },
+  { label: '❓ Help', text: 'help' }
+]);
+
+const QR_CONNECT = qr([
+  { label: '🏠 Dashboard', uri: 'https://app.leaseshield.asia' },
+  { label: '❓ Help', text: 'help' }
+]);
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -94,7 +118,8 @@ Deno.serve(async (req) => {
         try {
           await base44.asServiceRole.functions.invoke('sendLineMessage', {
             userId: userId,
-            message: welcomeMessage
+            message: welcomeMessage,
+            quickReply: connectedUser ? QR_MAIN : QR_CONNECT
           });
           console.log('✅ Welcome message sent');
         } catch (error) {
@@ -138,7 +163,8 @@ Deno.serve(async (req) => {
           if (!email.includes('@')) {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
               userId: userId,
-              message: `❌ Invalid email format.\n\nUsage: connect your@email.com\nExample: connect steve@example.com`
+              message: `❌ Invalid email format.\n\nUsage: connect your@email.com\nExample: connect steve@example.com`,
+              quickReply: QR_CONNECT
             });
           } else {
             const targetUser = users.find(u => u.email?.toLowerCase() === email);
@@ -146,12 +172,14 @@ Deno.serve(async (req) => {
             if (!targetUser) {
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
                 userId: userId,
-                message: `❌ No account found with that email.\n\nCreate account first:\nhttps://app.leaseshield.asia`
+                message: `❌ No account found with that email.\n\n📱 Create account first: app.leaseshield.asia`,
+                quickReply: QR_CONNECT
               });
             } else if (targetUser.line_user_id && targetUser.line_user_id !== userId) {
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
                 userId: userId,
-                message: `⚠️ This email is already connected to another LINE account.\n\nTo switch, disconnect from the other account first in Settings.`
+                message: `⚠️ This email is already connected to another LINE account.\n\nTo switch, disconnect from the other account first in Settings.`,
+                quickReply: QR_CONNECT
               });
             } else {
               // Connect LINE to account
@@ -164,7 +192,8 @@ Deno.serve(async (req) => {
 
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
                 userId: userId,
-                message: `✅ Connected successfully!\n\n📧 ${email}\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\n📱 Open dashboard: app.leaseshield.asia\n\n💡 Type "help" anytime for commands`
+                message: `✅ Connected successfully!\n\n📧 ${email}\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\n💡 Use the buttons below to get started`,
+                quickReply: QR_MAIN
               });
 
               // Create timeline event
@@ -192,7 +221,8 @@ Deno.serve(async (req) => {
           if (!token || token.length < 10) {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
               userId: userId,
-              message: `❌ Invalid link token.\n\nPlease use the exact link from the Lease Shield app.`
+              message: `❌ Invalid link token.\n\nPlease use the exact token from the Lease Shield app.`,
+              quickReply: QR_CONNECT
             });
           } else {
             // Process the connection via the processLineConnection function
@@ -208,28 +238,31 @@ Deno.serve(async (req) => {
                 let successMsg;
 
                 if (connType === 'user') {
-                  successMsg = `✅ Connected successfully!\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\n📱 Open dashboard: app.leaseshield.asia\n\n💡 Type "help" anytime for commands`;
+                  successMsg = `✅ Connected successfully!\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\n💡 Use the buttons below to get started`;
                 } else if (connType === 'landlord') {
-                  successMsg = `✅ Connected as landlord!\n\nProperty: ${addr}\n\nYou'll receive:\n🔧 Maintenance requests\n💰 Payment confirmations\n📝 Tenant communications\n\n📱 Manage property: app.leaseshield.asia\n\n💡 Type "help" for commands`;
+                  successMsg = `✅ Connected as landlord!\n\nProperty: ${addr}\n\nYou'll receive:\n🔧 Maintenance requests\n💰 Payment confirmations\n📝 Tenant communications\n\n💡 Use the buttons below to manage`;
                 } else {
-                  successMsg = `✅ Connected as juristic office!\n\nProperty: ${addr}\n\nYou'll receive:\n🏢 Move-in/out notices\n🔧 Maintenance reports\n📋 Building updates\n\n📱 View dashboard: app.leaseshield.asia\n\n💡 Type "help" for commands`;
+                  successMsg = `✅ Connected as juristic office!\n\nProperty: ${addr}\n\nYou'll receive:\n🏢 Move-in/out notices\n🔧 Maintenance reports\n📋 Building updates\n\n💡 Use the buttons below to manage`;
                 }
 
                 await base44.asServiceRole.functions.invoke('sendLineMessage', {
                   userId: userId,
-                  message: successMsg
+                  message: successMsg,
+                  quickReply: QR_MAIN
                 });
               } else {
                 await base44.asServiceRole.functions.invoke('sendLineMessage', {
                   userId: userId,
-                  message: `❌ ${result.data?.error || 'Connection failed. The link may have expired.'}\n\nPlease request a new link from the Lease Shield app.`
+                  message: `❌ ${result.data?.error || 'Connection failed. The link may have expired.'}\n\nPlease request a new link from the Lease Shield app.`,
+                  quickReply: QR_CONNECT
                 });
               }
             } catch (e) {
               console.error('link command error:', e);
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
                 userId: userId,
-                message: `❌ Connection failed. Please try again or request a new link.`
+                message: `❌ Connection failed. Please try again or request a new link.`,
+                quickReply: QR_CONNECT
               });
             }
           }
@@ -238,23 +271,23 @@ Deno.serve(async (req) => {
         // Simple command handling
         else if (lowerText === 'help' || lowerText === 'ช่วยเหลือ') {
           const helpMsg = language === 'th'
-            ? `📋 คำสั่ง Lease Shield:\n\n• "connect อีเมล" - เชื่อมต่อบัญชี\n• "สถานะ" - ดูสถานะบัญชี\n• "มัดจำ" - ดูเงินมัดจำที่ติดตาม\n• "คดี" - ดูคดีที่เปิดอยู่\n• "ช่วยเหลือ" - แสดงข้อความนี้\n\nเปิดแอป: app.leaseshield.asia`
-            : `📋 Lease Shield Commands:\n\n• "connect email" - Link your account\n• "status" - View account status\n• "deposit" - Check deposits\n• "cases" - View open cases\n• "help" - Show this message\n\nOpen app: app.leaseshield.asia`;
+            ? `📋 Lease Shield\n\nใช้ปุ่มด้านล่างหรือพิมพ์คำสั่ง:\n\n• "สถานะ" — ดูสรุปบัญชี\n• "มัดจำ" — ดูเงินมัดจำ\n• "คดี" — ดูคดีที่เปิดอยู่\n• "link <token>" — เชื่อมต่อผ่าน QR\n• "connect อีเมล" — เชื่อมต่อบัญชี\n\nต้องการช่วยเหลือ? ติดต่อผ่านแอป`
+            : `📋 Lease Shield\n\nUse the buttons below or type a command:\n\n• "status" — Account summary\n• "deposit" — View deposits\n• "cases" — Active cases\n• "link <token>" — Connect via QR\n• "connect email" — Link account\n\nNeed support? Contact us via the app.`;
           
           await base44.asServiceRole.functions.invoke('sendLineMessage', {
             userId: userId,
-            message: helpMsg
+            message: helpMsg,
+            quickReply: QR_MAIN
           });
         }
         else if (lowerText === 'status' || lowerText === 'สถานะ') {
           if (!user) {
-            const notLinkedMsg = language === 'th'
-              ? `⚠️ ยังไม่ได้เชื่อมต่อบัญชี\n\nกรุณาเข้าสู่ระบบที่ app.leaseshield.asia และกดปุ่ม "เชื่อมต่อ LINE"`
-              : `⚠️ Account not linked\n\nPlease log in at app.leaseshield.asia and click "Connect LINE"`;
-            
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
               userId: userId,
-              message: notLinkedMsg
+              message: language === 'th'
+                ? `⚠️ ยังไม่ได้เชื่อมต่อบัญชี\n\nพิมพ์: connect your@email.com`
+                : `⚠️ Account not linked\n\nType: connect your@email.com`,
+              quickReply: QR_CONNECT
             });
           } else {
             const deposits = await base44.asServiceRole.entities.DepositTracker.filter({ created_by: user.email });
@@ -263,24 +296,115 @@ Deno.serve(async (req) => {
             const activeCases = cases.filter(c => !['closed', 'resolved'].includes(c.status)).length;
             
             const statusMsg = language === 'th'
-              ? `📊 สถานะบัญชี Lease Shield\n\n👤 ${user.full_name}\n📧 ${user.email}\n⭐ แผน: ${user.plan_tier || 'free'}\n\n💰 มัดจำที่ติดตาม: ${activeDeposits}\n⚖️ คดีที่เปิด: ${activeCases}\n💳 เครดิตจดหมาย: ${user.letter_credits || 0}\n\nเปิดแอป: app.leaseshield.asia`
-              : `📊 Lease Shield Status\n\n👤 ${user.full_name}\n📧 ${user.email}\n⭐ Plan: ${user.plan_tier || 'free'}\n\n💰 Tracking: ${activeDeposits} deposits\n⚖️ Active: ${activeCases} cases\n💳 Credits: ${user.letter_credits || 0}\n\nOpen app: app.leaseshield.asia`;
+              ? `📊 สถานะบัญชี Lease Shield\n\n👤 ${user.full_name}\n📧 ${user.email}\n⭐ แผน: ${(user.plan_tier || 'explorer').charAt(0).toUpperCase() + (user.plan_tier || 'explorer').slice(1)}\n\n💰 มัดจำที่ติดตาม: ${activeDeposits}\n⚖️ คดีที่เปิด: ${activeCases}\n💳 เครดิตจดหมาย: ${user.letter_credits || 0}`
+              : `📊 Lease Shield Status\n\n👤 ${user.full_name}\n📧 ${user.email}\n⭐ Plan: ${(user.plan_tier || 'explorer').charAt(0).toUpperCase() + (user.plan_tier || 'explorer').slice(1)}\n\n💰 Tracking: ${activeDeposits} deposits\n⚖️ Active: ${activeCases} cases\n💳 Credits: ${user.letter_credits || 0}`;
             
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
               userId: userId,
-              message: statusMsg
+              message: statusMsg,
+              quickReply: QR_MAIN
             });
+          }
+        }
+        // Handle "deposit" / "มัดจำ" command
+        else if (lowerText === 'deposit' || lowerText === 'deposits' || lowerText === 'มัดจำ') {
+          if (!user) {
+            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: userId,
+              message: language === 'th' ? `⚠️ ยังไม่ได้เชื่อมต่อบัญชี\n\nพิมพ์: connect your@email.com` : `⚠️ Account not linked\n\nType: connect your@email.com`,
+              quickReply: QR_CONNECT
+            });
+          } else {
+            const deposits = await base44.asServiceRole.entities.DepositTracker.filter({ owner_email: user.email });
+            const active = deposits.filter(d => !d.is_archived && d.status !== 'archived');
+            
+            if (active.length === 0) {
+              await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                userId: userId,
+                message: language === 'th'
+                  ? `💰 ยังไม่มีเงินมัดจำที่ติดตาม\n\nเพิ่มเงินมัดจำแรกของคุณในแอปเพื่อเริ่มติดตามและรับการแจ้งเตือนอัตโนมัติ!`
+                  : `💰 No deposits tracked yet.\n\nAdd your first deposit in the app to start tracking and get automatic return reminders!`,
+                quickReply: qr([
+                  { label: '🏠 Open App', uri: 'https://app.leaseshield.asia' },
+                  { label: '📊 Status', text: 'status' },
+                  { label: '❓ Help', text: 'help' }
+                ])
+              });
+            } else {
+              let depositText = language === 'th'
+                ? `💰 เงินมัดจำของคุณ (${active.length}):\n\n`
+                : `💰 Your Deposits (${active.length}):\n\n`;
+              
+              for (const d of active.slice(0, 5)) {
+                const amt = d.deposit_amount ? `฿${d.deposit_amount.toLocaleString()}` : '-';
+                const retDate = d.expected_return_date ? new Date(d.expected_return_date).toLocaleDateString('en-GB') : '-';
+                const st = d.status === 'returned' ? '✅' : d.status === 'disputed' ? '⚠️' : '⏳';
+                depositText += `${st} ${d.property_address || 'No address'}\n   💵 ${amt} • 📅 ${retDate}\n\n`;
+              }
+              if (active.length > 5) depositText += `...และอีก ${active.length - 5} รายการ\n\n`;
+              depositText += language === 'th' ? 'ดูรายละเอียดเพิ่มเติมในแอป' : 'View full details in the app';
+              
+              await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                userId: userId,
+                message: depositText,
+                quickReply: QR_MAIN
+              });
+            }
+          }
+        }
+        // Handle "cases" / "คดี" command
+        else if (lowerText === 'case' || lowerText === 'cases' || lowerText === 'คดี') {
+          if (!user) {
+            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: userId,
+              message: language === 'th' ? `⚠️ ยังไม่ได้เชื่อมต่อบัญชี\n\nพิมพ์: connect your@email.com` : `⚠️ Account not linked\n\nType: connect your@email.com`,
+              quickReply: QR_CONNECT
+            });
+          } else {
+            const cases = await base44.asServiceRole.entities.Case.filter({ user_email: user.email });
+            const activeCases = cases.filter(c => !['closed', 'resolved'].includes(c.status));
+            
+            if (activeCases.length === 0) {
+              await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                userId: userId,
+                message: language === 'th'
+                  ? `⚖️ ไม่มีคดีที่เปิดอยู่\n\nต้องการช่วยเหลือเรื่องข้อพิพาทการเช่า? บริการ Resolve ของเราช่วยโดยไม่ต้องจ้างทนายความราคาแพง`
+                  : `⚖️ No active cases.\n\nNeed help with a rental dispute? Our Resolve service provides professional support without expensive lawyers.`,
+                quickReply: qr([
+                  { label: '🏠 Open App', uri: 'https://app.leaseshield.asia' },
+                  { label: '💰 Deposits', text: 'deposit' },
+                  { label: '❓ Help', text: 'help' }
+                ])
+              });
+            } else {
+              let caseText = language === 'th'
+                ? `⚖️ คดีที่เปิดอยู่ (${activeCases.length}):\n\n`
+                : `⚖️ Active Cases (${activeCases.length}):\n\n`;
+              
+              for (const c of activeCases.slice(0, 5)) {
+                const emoji = c.status === 'intake' ? '🟢' : c.status === 'in_progress' || c.status === 'under_review' ? '🟡' : '🟠';
+                caseText += `${emoji} ${c.case_number || 'Case'}\n   📊 ${(c.status || '').replace(/_/g, ' ')}\n\n`;
+              }
+              caseText += language === 'th' ? 'ดูรายละเอียดและข้อความในแอป' : 'View details and messages in the app';
+              
+              await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                userId: userId,
+                message: caseText,
+                quickReply: QR_MAIN
+              });
+            }
           }
         }
         else {
           // Default response
           const defaultMsg = language === 'th'
-            ? `สวัสดี! 👋\n\nส่ง "ช่วยเหลือ" เพื่อดูคำสั่งที่ใช้ได้\n\nหรือเปิดแอป: app.leaseshield.asia`
-            : `Hello! 👋\n\nSend "help" to see available commands\n\nOr open the app: app.leaseshield.asia`;
+            ? `สวัสดี! 👋\n\nใช้ปุ่มด้านล่างหรือพิมพ์ "ช่วยเหลือ" เพื่อดูคำสั่ง`
+            : `Hello! 👋\n\nUse the buttons below or type "help" for commands`;
           
           await base44.asServiceRole.functions.invoke('sendLineMessage', {
             userId: userId,
-            message: defaultMsg
+            message: defaultMsg,
+            quickReply: QR_MAIN
           });
         }
       }

@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { userId, message, flexMessage } = body;
+    const { userId, message, flexMessage, quickReply } = body;
     
     console.log('[LINE] Request received:', { 
       userId: userId ? `${String(userId).slice(0, 8)}...` : 'MISSING',
@@ -48,16 +48,20 @@ Deno.serve(async (req) => {
     const messages = [];
     
     if (flexMessage) {
-      messages.push({
+      const flexMsg = {
         type: 'flex',
         altText: flexMessage.altText || message || 'Lease Shield Notification',
         contents: flexMessage.contents
-      });
+      };
+      if (quickReply) flexMsg.quickReply = quickReply;
+      messages.push(flexMsg);
     } else {
-      messages.push({
+      const textMsg = {
         type: 'text',
         text: message
-      });
+      };
+      if (quickReply) textMsg.quickReply = quickReply;
+      messages.push(textMsg);
     }
 
     const linePayload = {
