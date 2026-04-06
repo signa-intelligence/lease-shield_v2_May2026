@@ -19,6 +19,21 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     return () => window.removeEventListener('openQuickGuide', handleOpenGuide);
   }, []);
 
+  // Lock body scroll when guide is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const isDarkMode = user?.theme === 'dark';
@@ -224,15 +239,26 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 999,
+        zIndex: 9999,
         padding: '16px',
-        animation: 'fadeIn 0.2s ease-out'
+        animation: 'fadeIn 0.2s ease-out',
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation',
+        cursor: 'pointer'
       }}
-      onClick={handleSkip}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleSkip();
+      }}
+      onTouchEnd={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleSkip();
+      }}
     >
       <style>{`
         @keyframes fadeIn {
@@ -285,20 +311,35 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             {currentStep + 1} of {steps.length}
           </div>
           <button
-            onClick={handleSkip}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSkip();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleSkip();
+            }}
             style={{
-              background: 'none',
+              background: isDarkMode ? '#374151' : '#F3F4F6',
               border: 'none',
-              color: isDarkMode ? '#A8ABAD' : '#6B7280',
+              borderRadius: '50%',
+              color: isDarkMode ? '#ECEFED' : '#374151',
               cursor: 'pointer',
-              padding: '4px',
+              width: '40px',
+              height: '40px',
+              minWidth: '40px',
+              minHeight: '40px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'color 0.2s'
+              transition: 'all 0.2s',
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation',
+              zIndex: 10000,
+              flexShrink: 0
             }}
-            onMouseEnter={(e) => e.currentTarget.style.color = isDarkMode ? '#ECEFED' : '#111827'}
-            onMouseLeave={(e) => e.currentTarget.style.color = isDarkMode ? '#A8ABAD' : '#6B7280'}
           >
             <X className="w-5 h-5" />
           </button>
