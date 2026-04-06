@@ -25,10 +25,7 @@ Deno.serve(async (req) => {
     
     let propertyAddress = null;
     
-    if (connection_type !== 'user') {
-      if (!deposit_tracker_id) {
-        return Response.json({ error: 'deposit_tracker_id required for landlord/juristic' }, { status: 400 });
-      }
+    if (connection_type !== 'user' && deposit_tracker_id) {
       const deposits = await base44.entities.DepositTracker.filter({ id: deposit_tracker_id });
       const deposit = deposits?.[0];
       if (!deposit || deposit.owner_email !== user.email) {
