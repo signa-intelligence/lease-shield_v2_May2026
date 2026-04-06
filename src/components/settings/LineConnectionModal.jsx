@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { X, Copy, CheckCircle2, Share2, Loader2, Camera, ExternalLink } from "lucide-react";
+import { X, Copy, CheckCircle2, Share2, Loader2, QrCode, ExternalLink, MessageCircle } from "lucide-react";
 
 export default function LineConnectionModal({ connectionType, propertyAddress, depositId, onClose, language, isDarkMode }) {
   const [connectionUrl, setConnectionUrl] = useState('');
@@ -8,7 +8,7 @@ export default function LineConnectionModal({ connectionType, propertyAddress, d
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState('scan');
+  const [activeTab, setActiveTab] = useState('qr');
 
   const lang = language || 'en';
 
@@ -38,37 +38,39 @@ export default function LineConnectionModal({ connectionType, propertyAddress, d
     }
   };
 
-  const copyLink = async () => {
-    const fullInstructions = `1. Add LeaseShield on LINE: https://line.me/R/ti/p/@leaseshield\n2. Then type: link ${token}`;
+  const copyInstructions = async () => {
+    const steps = connectionType === 'user'
+      ? `Connect your LINE to Lease Shield:\n\n1. Add Lease Shield on LINE:\n${connectionUrl}\n\n2. After adding, type this in the chat:\nlink ${token}`
+      : `Connect to Lease Shield notifications${propertyAddress ? ' for ' + propertyAddress : ''}:\n\n1. Add Lease Shield on LINE:\n${connectionUrl}\n\n2. After adding, type this in the chat:\nlink ${token}`;
     try {
-      await navigator.clipboard.writeText(fullInstructions);
+      await navigator.clipboard.writeText(steps);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 2500);
     } catch {
       const textarea = document.createElement('textarea');
-      textarea.value = fullInstructions;
+      textarea.value = steps;
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand('copy');
       document.body.removeChild(textarea);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 2500);
     }
   };
 
   const shareViaLine = () => {
     const roleLabel = connectionType === 'landlord' ? 'landlord' : connectionType === 'juristic' ? 'juristic office' : 'your account';
-    const message = `Connect ${roleLabel} to Lease Shield notifications${propertyAddress ? ' for ' + propertyAddress : ''}.\n\nAfter adding LeaseShield on LINE, type:\nlink ${token}`;
-    const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message + '\n\nhttps://line.me/R/ti/p/@leaseshield')}`;
+    const message = `Connect ${roleLabel} to Lease Shield notifications${propertyAddress ? ' for ' + propertyAddress : ''}.\n\nStep 1: Add Lease Shield as friend:\n${connectionUrl}\n\nStep 2: Type this in the chat:\nlink ${token}`;
+    const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
     window.open(lineUrl, '_blank');
   };
 
   const shareNative = async () => {
     const roleLabel = connectionType === 'landlord' ? 'landlord' : connectionType === 'juristic' ? 'juristic office' : 'your account';
-    const text = `Connect ${roleLabel} to Lease Shield LINE notifications${propertyAddress ? ' for ' + propertyAddress : ''}.\n\n1. Add LeaseShield on LINE: https://line.me/R/ti/p/@leaseshield\n2. Then type: link ${token}`;
+    const text = `Connect ${roleLabel} to Lease Shield LINE notifications${propertyAddress ? ' for ' + propertyAddress : ''}.\n\nStep 1: Add Lease Shield as friend:\n${connectionUrl}\n\nStep 2: Type this in the chat:\nlink ${token}`;
     if (navigator.share) {
-      try { await navigator.share({ title: 'Lease Shield LINE', text }); } catch (e) { if (e.name !== 'AbortError') copyLink(); }
-    } else { copyLink(); }
+      try { await navigator.share({ title: 'Lease Shield LINE', text }); } catch (e) { if (e.name !== 'AbortError') copyInstructions(); }
+    } else { copyInstructions(); }
   };
 
   const roleTitle = connectionType === 'user'
@@ -78,11 +80,11 @@ export default function LineConnectionModal({ connectionType, propertyAddress, d
       : (lang === 'th' ? 'LINE นิติบุคคล' : 'Juristic LINE');
 
   const colors = isDarkMode
-    ? { bg: '#1F2937', text: '#F9FAFB', textSec: '#D1D5DB', border: 'rgba(255,255,255,0.1)', field: '#374151' }
-    : { bg: '#FFFFFF', text: '#0F172A', textSec: '#475569', border: '#E5E7EB', field: '#F8FAFC' };
+    ? { bg: '#1F2937', text: '#F9FAFB', textSec: '#D1D5DB', border: 'rgba(255,255,255,0.1)', field: '#374151', accent: '#0C3B2E' }
+    : { bg: '#FFFFFF', text: '#0F172A', textSec: '#475569', border: '#E5E7EB', field: '#F8FAFC', accent: '#0C3B2E' };
 
   const tabs = [
-    { key: 'scan', icon: Camera, label: lang === 'th' ? 'สแกน QR' : 'Scan QR' },
+    { key: 'qr', icon: QrCode, label: lang === 'th' ? 'สแกน QR' : 'Scan QR' },
     { key: 'link', icon: Share2, label: lang === 'th' ? 'แชร์ลิงก์' : 'Share Link' },
   ];
 
@@ -163,58 +165,88 @@ export default function LineConnectionModal({ connectionType, propertyAddress, d
             {/* Tab Content */}
             <div style={{ padding: '20px' }}>
 
-              {/* TAB 1: Scan QR */}
-              {activeTab === 'scan' && (
+              {/* TAB 1: Scan QR Code — Opens LINE to add Lease Shield OA */}
+              {activeTab === 'qr' && (
                 <div>
                   <p style={{ fontSize: '13px', color: colors.textSec, marginBottom: '16px', textAlign: 'center' }}>
                     {connectionType === 'user'
-                      ? (lang === 'th' ? 'ใช้กล้อง LINE เพื่อสแกน QR Code และเพิ่ม LeaseShield เป็นเพื่อน' : 'Use LINE\'s camera to scan the QR code and add LeaseShield as friend')
-                      : (lang === 'th' ? `ให้${connectionType === 'landlord' ? 'เจ้าของบ้าน' : 'นิติบุคคล'}สแกน QR Code ด้วย LINE` : `Ask your ${connectionType === 'landlord' ? 'landlord' : 'juristic office'} to scan with LINE`)}
+                      ? (lang === 'th' ? 'เพิ่ม Lease Shield เป็นเพื่อนใน LINE แล้วพิมพ์คำสั่งเชื่อมต่อ' : 'Add Lease Shield as a LINE friend, then type the connection command')
+                      : (lang === 'th' ? `ให้${connectionType === 'landlord' ? 'เจ้าของบ้าน' : 'นิติบุคคล'}เพิ่ม Lease Shield เป็นเพื่อนใน LINE` : `Have your ${connectionType === 'landlord' ? 'landlord' : 'juristic office'} add Lease Shield as a LINE friend`)}
                   </p>
 
+                  {/* Step 1: Add friend */}
                   <div style={{
-                    textAlign: 'center', padding: '24px', background: colors.field,
-                    borderRadius: '12px', border: `2px dashed ${colors.border}`, marginBottom: '16px'
+                    padding: '16px', background: colors.field,
+                    borderRadius: '12px', border: `1px solid ${colors.border}`, marginBottom: '12px'
                   }}>
-                    <Camera style={{ width: '48px', height: '48px', color: '#0C3B2E', margin: '0 auto 12px' }} />
-                    <p style={{ fontSize: '14px', fontWeight: '600', color: colors.text, marginBottom: '8px' }}>
-                      {lang === 'th' ? 'เปิดกล้อง LINE เพื่อสแกน' : 'Open LINE Camera to Scan'}
-                    </p>
-                    <p style={{ fontSize: '12px', color: colors.textSec, marginBottom: '16px' }}>
-                      {lang === 'th' ? 'LINE > แท็บ Home > ไอคอนเพิ่มเพื่อน > QR Code' : 'LINE > Home tab > Add Friend icon > QR Code'}
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#0C3B2E', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '14px', flexShrink: 0 }}>1</div>
+                      <p style={{ fontWeight: '600', fontSize: '14px', color: colors.text, margin: 0 }}>
+                        {lang === 'th' ? 'เพิ่ม Lease Shield เป็นเพื่อน' : 'Add Lease Shield as Friend'}
+                      </p>
+                    </div>
                     <a
-                      href="https://line.me/R/nv/QRCodeReader"
+                      href={connectionUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '8px',
-                        padding: '12px 24px', borderRadius: '10px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                        width: '100%', padding: '14px', borderRadius: '10px',
                         background: '#06C755', color: '#FFFFFF', fontWeight: '700',
-                        fontSize: '14px', textDecoration: 'none',
+                        fontSize: '15px', textDecoration: 'none',
                         boxShadow: '0 4px 12px rgba(6,199,85,0.3)'
                       }}
                     >
-                      <Camera style={{ width: '18px', height: '18px' }} />
-                      {lang === 'th' ? 'เปิดกล้อง LINE' : 'Open LINE Scanner'}
+                      <MessageCircle style={{ width: '20px', height: '20px' }} />
+                      {lang === 'th' ? 'เปิดใน LINE' : 'Open in LINE'}
                     </a>
+                    <p style={{ fontSize: '11px', color: colors.textSec, textAlign: 'center', marginTop: '8px' }}>
+                      {lang === 'th' ? 'หรือค้นหา @leaseshield ใน LINE' : 'Or search @leaseshield in LINE'}
+                    </p>
                   </div>
 
+                  {/* Step 2: Type link command */}
                   <div style={{
-                    padding: '12px', borderRadius: '8px',
+                    padding: '16px', borderRadius: '12px',
                     background: isDarkMode ? '#1E3A2A' : '#F0FDF4',
-                    border: '1px solid #10B981'
+                    border: '2px solid #10B981'
                   }}>
-                    <p style={{ fontSize: '12px', color: colors.text, fontWeight: '600', marginBottom: '4px' }}>
-                      {lang === 'th' ? 'หลังจากเพิ่มเพื่อนแล้ว ให้พิมพ์:' : 'After adding friend, type:'}
-                    </p>
-                    <code style={{
-                      display: 'block', padding: '8px', background: isDarkMode ? '#0C3B2E' : '#ECFDF5',
-                      borderRadius: '6px', fontSize: '13px', fontFamily: 'monospace',
-                      color: '#0C3B2E', fontWeight: '700', wordBreak: 'break-all'
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#10B981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '14px', flexShrink: 0 }}>2</div>
+                      <p style={{ fontWeight: '600', fontSize: '14px', color: colors.text, margin: 0 }}>
+                        {lang === 'th' ? 'พิมพ์คำสั่งนี้ในแชท Lease Shield' : 'Type this command in Lease Shield chat'}
+                      </p>
+                    </div>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      padding: '10px 14px', background: isDarkMode ? '#0C3B2E' : '#ECFDF5',
+                      borderRadius: '8px', marginBottom: '8px'
                     }}>
-                      link {token}
-                    </code>
+                      <code style={{
+                        flex: 1, fontSize: '14px', fontFamily: 'monospace',
+                        color: isDarkMode ? '#A7F3D0' : '#065F46', fontWeight: '700',
+                        wordBreak: 'break-all'
+                      }}>
+                        link {token}
+                      </code>
+                      <button onClick={() => {
+                        navigator.clipboard.writeText(`link ${token}`).then(() => {
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        });
+                      }} style={{
+                        padding: '6px 10px', borderRadius: '6px', border: 'none',
+                        background: copied ? '#10B981' : (isDarkMode ? '#374151' : '#D1FAE5'),
+                        color: copied ? '#fff' : '#065F46', cursor: 'pointer',
+                        fontSize: '12px', fontWeight: '600', whiteSpace: 'nowrap',
+                        transition: 'all 0.2s'
+                      }}>
+                        {copied ? '✓' : (lang === 'th' ? 'คัดลอก' : 'Copy')}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: '11px', color: colors.textSec, margin: 0 }}>
+                      {lang === 'th' ? 'พิมพ์คำสั่งนี้ในแชทกับ Lease Shield หลังจากเพิ่มเพื่อนแล้ว' : 'Type this in the Lease Shield chat after adding as friend'}
+                    </p>
                   </div>
                 </div>
               )}
@@ -224,44 +256,47 @@ export default function LineConnectionModal({ connectionType, propertyAddress, d
                 <div>
                   <p style={{ fontSize: '13px', color: colors.textSec, marginBottom: '16px', textAlign: 'center' }}>
                     {connectionType === 'user'
-                      ? (lang === 'th' ? 'คัดลอกคำสั่งนี้แล้วเปิดใน LINE' : 'Copy these instructions and open in LINE')
-                      : (lang === 'th' ? `ส่งคำสั่งเชื่อมต่อให้${connectionType === 'landlord' ? 'เจ้าของบ้าน' : 'นิติบุคคล'}` : `Send connection instructions to your ${connectionType === 'landlord' ? 'landlord' : 'juristic office'}`)}
+                      ? (lang === 'th' ? 'คัดลอกขั้นตอนเหล่านี้แล้วทำตาม' : 'Copy these steps and follow them')
+                      : (lang === 'th' ? `ส่งขั้นตอนเหล่านี้ให้${connectionType === 'landlord' ? 'เจ้าของบ้าน' : 'นิติบุคคล'}ของคุณ` : `Send these steps to your ${connectionType === 'landlord' ? 'landlord' : 'juristic office'}`)}
                   </p>
 
+                  {/* Instructions card */}
                   <div style={{
-                    padding: '14px', background: colors.field, borderRadius: '10px',
-                    border: `1px solid ${colors.border}`, marginBottom: '12px'
+                    padding: '16px', background: colors.field,
+                    borderRadius: '12px', border: `1px solid ${colors.border}`, marginBottom: '16px'
                   }}>
-                    <p style={{ fontSize: '12px', color: colors.textSec, marginBottom: '6px', fontWeight: '600' }}>
-                      {lang === 'th' ? 'ลิงก์เพิ่มเพื่อน:' : 'Add friend link:'}
+                    <p style={{ fontSize: '13px', fontWeight: '600', color: colors.text, marginBottom: '8px' }}>
+                      {lang === 'th' ? 'ขั้นตอน:' : 'Steps:'}
                     </p>
-                    <p style={{
-                      fontSize: '11px', color: colors.text, wordBreak: 'break-all',
-                      fontFamily: 'monospace', padding: '8px', background: isDarkMode ? '#1F2937' : '#fff',
-                      borderRadius: '6px', border: `1px solid ${colors.border}`
-                    }}>
-                      https://line.me/R/ti/p/@leaseshield
-                    </p>
+                    <div style={{ fontSize: '13px', color: colors.text, lineHeight: '1.8' }}>
+                      <p style={{ margin: '0 0 6px' }}>
+                        <strong>1.</strong> {lang === 'th' ? 'เพิ่ม Lease Shield เป็นเพื่อนใน LINE:' : 'Add Lease Shield as friend on LINE:'}
+                      </p>
+                      <div style={{
+                        padding: '8px', background: isDarkMode ? '#1F2937' : '#fff',
+                        borderRadius: '6px', border: `1px solid ${colors.border}`,
+                        fontSize: '11px', fontFamily: 'monospace', wordBreak: 'break-all',
+                        marginBottom: '10px', color: colors.text
+                      }}>
+                        {connectionUrl}
+                      </div>
+                      <p style={{ margin: '0 0 6px' }}>
+                        <strong>2.</strong> {lang === 'th' ? 'พิมพ์คำสั่งนี้ในแชท:' : 'Type this command in the chat:'}
+                      </p>
+                      <div style={{
+                        padding: '8px', background: isDarkMode ? '#0C3B2E' : '#ECFDF5',
+                        borderRadius: '6px', fontSize: '13px', fontFamily: 'monospace',
+                        color: isDarkMode ? '#A7F3D0' : '#065F46', fontWeight: '700',
+                        wordBreak: 'break-all'
+                      }}>
+                        link {token}
+                      </div>
+                    </div>
                   </div>
 
-                  <div style={{
-                    padding: '14px', background: isDarkMode ? '#1E3A2A' : '#F0FDF4',
-                    borderRadius: '10px', border: '1px solid #10B981', marginBottom: '16px'
-                  }}>
-                    <p style={{ fontSize: '12px', color: colors.text, fontWeight: '600', marginBottom: '4px' }}>
-                      {lang === 'th' ? 'คำสั่งเชื่อมต่อ:' : 'Connection command:'}
-                    </p>
-                    <code style={{
-                      display: 'block', padding: '8px', background: isDarkMode ? '#0C3B2E' : '#ECFDF5',
-                      borderRadius: '6px', fontSize: '13px', fontFamily: 'monospace',
-                      color: '#0C3B2E', fontWeight: '700', wordBreak: 'break-all'
-                    }}>
-                      link {token}
-                    </code>
-                  </div>
-
+                  {/* Action buttons */}
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                    <button onClick={copyLink} style={{
+                    <button onClick={copyInstructions} style={{
                       flex: 1, padding: '12px', borderRadius: '10px', border: 'none',
                       cursor: 'pointer', fontWeight: '700', fontSize: '13px',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
@@ -269,7 +304,7 @@ export default function LineConnectionModal({ connectionType, propertyAddress, d
                       color: copied ? '#fff' : colors.text, transition: 'all 0.2s'
                     }}>
                       {copied ? <CheckCircle2 style={{ width: '16px', height: '16px' }} /> : <Copy style={{ width: '16px', height: '16px' }} />}
-                      {copied ? (lang === 'th' ? 'คัดลอกแล้ว!' : 'Copied!') : (lang === 'th' ? 'คัดลอก' : 'Copy All')}
+                      {copied ? (lang === 'th' ? 'คัดลอกแล้ว!' : 'Copied!') : (lang === 'th' ? 'คัดลอกทั้งหมด' : 'Copy All')}
                     </button>
                     <button onClick={shareViaLine} style={{
                       flex: 1, padding: '12px', borderRadius: '10px', border: 'none',
@@ -294,6 +329,21 @@ export default function LineConnectionModal({ connectionType, propertyAddress, d
                   </button>
                 </div>
               )}
+
+              {/* Info banner */}
+              <div style={{
+                marginTop: '16px', padding: '12px', borderRadius: '10px',
+                background: isDarkMode ? '#1E293B' : '#EFF6FF',
+                border: `1px solid ${isDarkMode ? '#3B82F680' : '#BFDBFE'}`
+              }}>
+                <p style={{ fontSize: '12px', color: isDarkMode ? '#93C5FD' : '#1D4ED8', margin: 0 }}>
+                  ℹ️ {connectionType === 'user'
+                    ? (lang === 'th' ? 'คุณจะเพิ่ม Lease Shield เป็นเพื่อนใน LINE เพื่อรับการแจ้งเตือนของคุณ' : 'You will add Lease Shield as a LINE friend to receive your notifications')
+                    : (lang === 'th'
+                      ? `${connectionType === 'landlord' ? 'เจ้าของบ้าน' : 'นิติบุคคล'}ของคุณจะเพิ่ม Lease Shield เป็นเพื่อนใน LINE การแจ้งเตือนทั้งหมดจะส่งจากบัญชี Lease Shield`
+                      : `Your ${connectionType === 'landlord' ? 'landlord' : 'juristic office'} will add Lease Shield as a LINE friend. All notifications come from the Lease Shield account.`)}
+                </p>
+              </div>
             </div>
 
             {/* Footer */}

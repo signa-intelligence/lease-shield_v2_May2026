@@ -50,9 +50,12 @@ Deno.serve(async (req) => {
       used: false
     });
     
-    const connectionUrl = `https://app.leaseshield.asia/line-connect?token=${token}`;
+    // LINE OA add-friend URL with token encoded in LIFF state
+    const lineOaId = '@leaseshield';
+    const connectionUrl = `https://line.me/R/ti/p/${encodeURIComponent(lineOaId)}?oat_content=qr&token=${token}`;
     
     console.log(`[LINE_LINK] Generated ${connection_type} link for ${user.email}`);
+    console.log(`[LINE_LINK] Token: ${token}`);
     
     return Response.json({
       success: true,

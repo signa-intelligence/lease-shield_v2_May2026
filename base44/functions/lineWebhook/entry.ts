@@ -46,6 +46,10 @@ Deno.serve(async (req) => {
       if (event.type === 'follow') {
         console.log(`👋 New follower: ${userId}`);
 
+        // Check for unused connection tokens for this LINE user
+        // (token passed via "link <token>" command after follow)
+        // For now, just send appropriate welcome based on existing connection
+
         // Smart detection: check if this LINE ID is already connected
         const allUsers = await base44.asServiceRole.entities.User.filter({});
         const connectedUser = allUsers.find(u => u.line_user_id === userId || u.line_messaging_token === userId);
@@ -53,13 +57,12 @@ Deno.serve(async (req) => {
         let welcomeMessage;
 
         if (connectedUser) {
-          // Path C: Already connected user re-followed
+          // Already connected user re-followed
           const lang = connectedUser.language || 'en';
           welcomeMessage = lang === 'th'
             ? `✅ เชื่อมต่อเรียบร้อยแล้ว!\n\nบัญชี Lease Shield ของคุณเชื่อมต่ออยู่\n\nคุณจะได้รับการแจ้งเตือนสำหรับ:\n📅 กำหนดสัญญาเช่า\n💰 การคืนเงินมัดจำ\n🏠 เตือนค่าเช่า\n🔧 อัปเดตซ่อมบำรุง\n\nเปิดแดชบอร์ด: https://app.leaseshield.asia\n\nพิมพ์ 'ช่วยเหลือ' เพื่อดูคำสั่ง`
             : `✅ You're all set!\n\nYour Lease Shield account is connected.\n\nYou'll receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\nView dashboard: https://app.leaseshield.asia\n\nType 'help' for commands`;
 
-          // Re-enable notifications in case they were disabled
           await base44.asServiceRole.entities.User.update(connectedUser.id, {
             line_notifications: true
           });
@@ -69,7 +72,6 @@ Deno.serve(async (req) => {
           const pendingUser = allUsers.find(u => u.pending_line_connection === true);
 
           if (pendingUser) {
-            // Link this LINE user to the pending account
             await base44.asServiceRole.entities.User.update(pendingUser.id, {
               line_messaging_token: userId,
               line_user_id: userId,
@@ -81,11 +83,11 @@ Deno.serve(async (req) => {
 
             const lang = pendingUser.language || 'en';
             welcomeMessage = lang === 'th'
-              ? `✅ เชื่อมต่อสำเร็จ!\n\nบัญชี Lease Shield ของคุณเชื่อมต่อแล้ว\n\n📧 ${pendingUser.email}\n\nคุณจะได้รับการแจ้งเตือนที่สำคัญทาง LINE ตั้งแต่นี้เป็นต้นไป`
-              : `✅ Connected Successfully!\n\nYour Lease Shield account is now linked\n\n📧 ${pendingUser.email}\n\nYou'll receive important alerts via LINE from now on`;
+              ? `✅ เชื่อมต่อสำเร็จ!\n\nบัญชี Lease Shield ของคุณเชื่อมต่อแล้ว\n\n📧 ${pendingUser.email}\n\nคุณจะได้รับการแจ้งเตือนที่สำคัญทาง LINE ตั้งแต่นี้เป็นต้นไป\n\nหากคุณมีโทเค็นเชื่อมต่อ ให้พิมพ์: link <token>`
+              : `✅ Connected Successfully!\n\nYour Lease Shield account is now linked\n\n📧 ${pendingUser.email}\n\nYou'll receive important alerts via LINE from now on\n\nIf you have a connection token, type: link <token>`;
           } else {
-            // Path A: New user — direct to sign up
-            welcomeMessage = `🎉 Welcome to Lease Shield!\n\nThailand's #1 rental protection platform.\n\n🔐 First, create your free account:\nhttps://app.leaseshield.asia\n\nAfter signing up, return here and type:\n'connect your@email.com'\n\nThis connects notifications to LINE.\n\nType 'help' for more info`;
+            // New user without existing account — prompt to connect or use token
+            welcomeMessage = `🎉 Welcome to Lease Shield!\n\nThailand's #1 rental protection platform.\n\n🔐 To connect your account:\n\n1️⃣ If you have a connection link/token:\n   Type: link <your-token>\n\n2️⃣ If you have a Lease Shield account:\n   Type: connect your@email.com\n\n3️⃣ New user? Create your free account:\n   https://app.leaseshield.asia\n\nType 'help' for more info`;
           }
         }
 
