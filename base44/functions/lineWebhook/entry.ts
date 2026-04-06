@@ -60,8 +60,8 @@ Deno.serve(async (req) => {
           // Already connected user re-followed
           const lang = connectedUser.language || 'en';
           welcomeMessage = lang === 'th'
-            ? `✅ เชื่อมต่อเรียบร้อยแล้ว!\n\nบัญชี Lease Shield ของคุณเชื่อมต่ออยู่\n\nคุณจะได้รับการแจ้งเตือนสำหรับ:\n📅 กำหนดสัญญาเช่า\n💰 การคืนเงินมัดจำ\n🏠 เตือนค่าเช่า\n🔧 อัปเดตซ่อมบำรุง\n\nเปิดแดชบอร์ด: https://app.leaseshield.asia\n\nพิมพ์ 'ช่วยเหลือ' เพื่อดูคำสั่ง`
-            : `✅ You're all set!\n\nYour Lease Shield account is connected.\n\nYou'll receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\nView dashboard: https://app.leaseshield.asia\n\nType 'help' for commands`;
+            ? `✅ เชื่อมต่อเรียบร้อยแล้ว!\n\nคุณจะได้รับการแจ้งเตือนที่นี่สำหรับ:\n📅 กำหนดสัญญาเช่า\n💰 การคืนเงินมัดจำ\n🏠 เตือนค่าเช่า\n🔧 อัปเดตซ่อมบำรุง\n\n📱 เปิดแดชบอร์ด: app.leaseshield.asia\n\n💡 พิมพ์ 'ช่วยเหลือ' เมื่อต้องการดูคำสั่ง`
+            : `✅ You're all set!\n\nYou'll receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\n📱 Open dashboard: app.leaseshield.asia\n\n💡 Type "help" anytime for commands`;
 
           await base44.asServiceRole.entities.User.update(connectedUser.id, {
             line_notifications: true
@@ -83,11 +83,11 @@ Deno.serve(async (req) => {
 
             const lang = pendingUser.language || 'en';
             welcomeMessage = lang === 'th'
-              ? `✅ เชื่อมต่อสำเร็จ!\n\nบัญชี Lease Shield ของคุณเชื่อมต่อแล้ว\n\n📧 ${pendingUser.email}\n\nคุณจะได้รับการแจ้งเตือนที่สำคัญทาง LINE ตั้งแต่นี้เป็นต้นไป\n\nหากคุณมีโทเค็นเชื่อมต่อ ให้พิมพ์: link <token>`
-              : `✅ Connected Successfully!\n\nYour Lease Shield account is now linked\n\n📧 ${pendingUser.email}\n\nYou'll receive important alerts via LINE from now on\n\nIf you have a connection token, type: link <token>`;
+              ? `✅ เชื่อมต่อสำเร็จ!\n\n📧 ${pendingUser.email}\n\nคุณจะได้รับการแจ้งเตือนที่สำคัญทาง LINE ตั้งแต่นี้เป็นต้นไป\n\n📱 เปิดแดชบอร์ด: app.leaseshield.asia\n\n💡 พิมพ์ 'ช่วยเหลือ' เมื่อต้องการดูคำสั่ง`
+              : `✅ Connected Successfully!\n\n📧 ${pendingUser.email}\n\nYou'll receive important alerts via LINE from now on\n\n📱 Open dashboard: app.leaseshield.asia\n\n💡 Type "help" anytime for commands`;
           } else {
             // New user without existing account — prompt to connect or use token
-            welcomeMessage = `🎉 Welcome to Lease Shield!\n\nThailand's #1 rental protection platform.\n\n🔐 To connect your account:\n\n1️⃣ If you have a connection link/token:\n   Type: link <your-token>\n\n2️⃣ If you have a Lease Shield account:\n   Type: connect your@email.com\n\n3️⃣ New user? Create your free account:\n   https://app.leaseshield.asia\n\nType 'help' for more info`;
+            welcomeMessage = `🎉 Welcome to Lease Shield!\n\nThailand's #1 rental protection platform.\n\nTo connect your account:\n\n1️⃣ Have a connection token?\n   Type: link <your-token>\n\n2️⃣ Have an account?\n   Type: connect your@email.com\n\n3️⃣ New here?\n   📱 Sign up: app.leaseshield.asia\n\n💡 Type "help" for more commands`;
           }
         }
 
@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
 
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
                 userId: userId,
-                message: `✅ Connected successfully!\n\nAccount: ${email}\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\nView dashboard: https://app.leaseshield.asia`
+                message: `✅ Connected successfully!\n\n📧 ${email}\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\n📱 Open dashboard: app.leaseshield.asia\n\n💡 Type "help" anytime for commands`
               });
 
               // Create timeline event
@@ -208,10 +208,11 @@ Deno.serve(async (req) => {
                 let successMsg;
 
                 if (connType === 'user') {
-                  successMsg = `✅ Connected successfully!\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\nView dashboard: https://app.leaseshield.asia`;
+                  successMsg = `✅ Connected successfully!\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\n📱 Open dashboard: app.leaseshield.asia\n\n💡 Type "help" anytime for commands`;
+                } else if (connType === 'landlord') {
+                  successMsg = `✅ Connected as landlord!\n\nProperty: ${addr}\n\nYou'll receive:\n🔧 Maintenance requests\n💰 Payment confirmations\n📝 Tenant communications\n\n📱 Manage property: app.leaseshield.asia\n\n💡 Type "help" for commands`;
                 } else {
-                  const roleLabel = connType === 'landlord' ? 'Landlord' : 'Juristic Office';
-                  successMsg = `✅ ${roleLabel} LINE Connected!\n\nProperty: ${addr}\n\nYou'll receive relevant notifications for this property.`;
+                  successMsg = `✅ Connected as juristic office!\n\nProperty: ${addr}\n\nYou'll receive:\n🏢 Move-in/out notices\n🔧 Maintenance reports\n📋 Building updates\n\n📱 View dashboard: app.leaseshield.asia\n\n💡 Type "help" for commands`;
                 }
 
                 await base44.asServiceRole.functions.invoke('sendLineMessage', {
