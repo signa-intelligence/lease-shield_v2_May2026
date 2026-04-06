@@ -179,6 +179,24 @@
       "type": "string",
       "description": "Filename of return proof"
     },
+    "landlord_line_id": {
+      "type": "string",
+      "description": "LINE user ID of the landlord for this property"
+    },
+    "landlord_line_connected_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When landlord LINE was connected"
+    },
+    "juristic_line_id": {
+      "type": "string",
+      "description": "LINE user ID of the juristic office for this property"
+    },
+    "juristic_line_connected_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When juristic LINE was connected"
+    },
     "field_metadata": {
       "type": "object",
       "description": "Provenance and confidence per field",

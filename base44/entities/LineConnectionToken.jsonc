@@ -1,0 +1,97 @@
+{
+  "name": "LineConnectionToken",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Tenant who created the link",
+      "index": true
+    },
+    "token": {
+      "type": "string",
+      "description": "Unique connection token (UUID)",
+      "index": true
+    },
+    "connection_type": {
+      "type": "string",
+      "enum": [
+        "user",
+        "landlord",
+        "juristic"
+      ],
+      "description": "Type of LINE connection"
+    },
+    "property_address": {
+      "type": "string",
+      "description": "For context (optional for user type)"
+    },
+    "deposit_tracker_id": {
+      "type": "string",
+      "description": "Link to specific property (optional for user type)"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Token expiry (7 days from creation)"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether link was used"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When link was used"
+    },
+    "connected_line_user_id": {
+      "type": "string",
+      "description": "LINE user ID that got connected"
+    }
+  },
+  "required": [
+    "owner_email",
+    "token",
+    "connection_type",
+    "expires_at"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

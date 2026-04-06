@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import { createHmac } from 'node:crypto';
 
 /**
@@ -179,6 +179,55 @@ Deno.serve(async (req) => {
                 console.warn('Timeline event creation failed (non-critical):', e.message);
               }
               console.log(`✅ Connected LINE ${userId} to ${email}`);
+            }
+          }
+        }
+        
+        // Handle "link <token>" command for landlord/juristic connections
+        else if (lowerText.startsWith('link ')) {
+          const token = messageText.replace(/^link\s+/i, '').trim();
+
+          if (!token || token.length < 10) {
+            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: userId,
+              message: `❌ Invalid link token.\n\nPlease use the exact link from the Lease Shield app.`
+            });
+          } else {
+            // Process the connection via the processLineConnection function
+            try {
+              const result = await base44.asServiceRole.functions.invoke('processLineConnection', {
+                token: token,
+                line_user_id: userId
+              });
+
+              if (result.data?.success) {
+                const connType = result.data.connection_type;
+                const addr = result.data.property_address || '';
+                let successMsg;
+
+                if (connType === 'user') {
+                  successMsg = `✅ Connected successfully!\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\nView dashboard: https://app.leaseshield.asia`;
+                } else {
+                  const roleLabel = connType === 'landlord' ? 'Landlord' : 'Juristic Office';
+                  successMsg = `✅ ${roleLabel} LINE Connected!\n\nProperty: ${addr}\n\nYou'll receive relevant notifications for this property.`;
+                }
+
+                await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                  userId: userId,
+                  message: successMsg
+                });
+              } else {
+                await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                  userId: userId,
+                  message: `❌ ${result.data?.error || 'Connection failed. The link may have expired.'}\n\nPlease request a new link from the Lease Shield app.`
+                });
+              }
+            } catch (e) {
+              console.error('link command error:', e);
+              await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                userId: userId,
+                message: `❌ Connection failed. Please try again or request a new link.`
+              });
             }
           }
         }
