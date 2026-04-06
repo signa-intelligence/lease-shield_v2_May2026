@@ -45,15 +45,49 @@ Deno.serve(async (req) => {
       // Handle FOLLOW event (user adds the OA)
       if (event.type === 'follow') {
         console.log(`👋 New follower: ${userId}`);
-        
-        // Try to link to existing user based on userId parameter
-        const replyToken = event.replyToken;
-        
-        // Send welcome message
-        const language = 'en'; // Default, will be updated based on user preference
-        const welcomeMessage = language === 'th'
-          ? `🎉 ยินดีต้อนรับสู่ Lease Shield!\n\nคุณจะได้รับการแจ้งเตือนอัตโนมัติสำหรับ:\n\n📅 การแจ้งเตือนสัญญาเช่า\n💰 การคืนเงินมัดจำ\n🏠 การชำระค่าเช่า\n🔧 อัปเดตการซ่อมบำรุง\n\nกรุณาเข้าสู่ระบบที่ app.leaseshield.asia เพื่อเชื่อมต่อบัญชีของคุณ`
-          : `🎉 Welcome to Lease Shield!\n\nYou'll receive automated alerts for:\n\n📅 Lease termination notices\n💰 Deposit returns\n🏠 Rent payments\n🔧 Maintenance updates\n\nPlease log in at app.leaseshield.asia to connect your account`;
+
+        // Smart detection: check if this LINE ID is already connected
+        const allUsers = await base44.asServiceRole.entities.User.filter({});
+        const connectedUser = allUsers.find(u => u.line_user_id === userId || u.line_messaging_token === userId);
+
+        let welcomeMessage;
+
+        if (connectedUser) {
+          // Path C: Already connected user re-followed
+          const lang = connectedUser.language || 'en';
+          welcomeMessage = lang === 'th'
+            ? `✅ เชื่อมต่อเรียบร้อยแล้ว!\n\nบัญชี Lease Shield ของคุณเชื่อมต่ออยู่\n\nคุณจะได้รับการแจ้งเตือนสำหรับ:\n📅 กำหนดสัญญาเช่า\n💰 การคืนเงินมัดจำ\n🏠 เตือนค่าเช่า\n🔧 อัปเดตซ่อมบำรุง\n\nเปิดแดชบอร์ด: https://app.leaseshield.asia\n\nพิมพ์ 'ช่วยเหลือ' เพื่อดูคำสั่ง`
+            : `✅ You're all set!\n\nYour Lease Shield account is connected.\n\nYou'll receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\nView dashboard: https://app.leaseshield.asia\n\nType 'help' for commands`;
+
+          // Re-enable notifications in case they were disabled
+          await base44.asServiceRole.entities.User.update(connectedUser.id, {
+            line_notifications: true
+          });
+          console.log(`✅ Re-enabled LINE for existing user: ${connectedUser.email}`);
+        } else {
+          // Check for pending connection
+          const pendingUser = allUsers.find(u => u.pending_line_connection === true);
+
+          if (pendingUser) {
+            // Link this LINE user to the pending account
+            await base44.asServiceRole.entities.User.update(pendingUser.id, {
+              line_messaging_token: userId,
+              line_user_id: userId,
+              line_notifications: true,
+              pending_line_connection: null,
+              line_connected_at: new Date().toISOString()
+            });
+            console.log(`✅ Linked LINE ${userId} to pending user ${pendingUser.email}`);
+
+            const lang = pendingUser.language || 'en';
+            welcomeMessage = lang === 'th'
+              ? `✅ เชื่อมต่อสำเร็จ!\n\nบัญชี Lease Shield ของคุณเชื่อมต่อแล้ว\n\n📧 ${pendingUser.email}\n\nคุณจะได้รับการแจ้งเตือนที่สำคัญทาง LINE ตั้งแต่นี้เป็นต้นไป`
+              : `✅ Connected Successfully!\n\nYour Lease Shield account is now linked\n\n📧 ${pendingUser.email}\n\nYou'll receive important alerts via LINE from now on`;
+          } else {
+            // Path A: New user — direct to sign up
+            welcomeMessage = `🎉 Welcome to Lease Shield!\n\nThailand's #1 rental protection platform.\n\n🔐 First, create your free account:\nhttps://app.leaseshield.asia\n\nAfter signing up, return here and type:\n'connect your@email.com'\n\nThis connects notifications to LINE.\n\nType 'help' for more info`;
+          }
+        }
 
         try {
           await base44.asServiceRole.functions.invoke('sendLineMessage', {
@@ -63,33 +97,6 @@ Deno.serve(async (req) => {
           console.log('✅ Welcome message sent');
         } catch (error) {
           console.error('Failed to send welcome message:', error);
-        }
-
-        // Check if there's a pending user waiting to connect
-        // (user clicked "Connect LINE" button and we're waiting for them to follow)
-        const users = await base44.asServiceRole.entities.User.list();
-        const pendingUser = users.find(u => u.pending_line_connection === true);
-        
-        if (pendingUser) {
-          // Link this LINE user to the pending user account
-          await base44.asServiceRole.entities.User.update(pendingUser.id, {
-            line_messaging_token: userId,
-            line_user_id: userId,
-            line_notifications: true,
-            pending_line_connection: null
-          });
-          
-          console.log(`✅ Linked LINE ${userId} to user ${pendingUser.email}`);
-          
-          // Send confirmation
-          const confirmMsg = pendingUser.language === 'th'
-            ? `✅ เชื่อมต่อสำเร็จ!\n\nบัญชี Lease Shield ของคุณเชื่อมต่อแล้ว\n\n📧 ${pendingUser.email}\n\nคุณจะได้รับการแจ้งเตือนที่สำคัญทาง LINE ตั้งแต่นี้เป็นต้นไป`
-            : `✅ Connected Successfully!\n\nYour Lease Shield account is now linked\n\n📧 ${pendingUser.email}\n\nYou'll receive important alerts via LINE from now on`;
-          
-          await base44.asServiceRole.functions.invoke('sendLineMessage', {
-            userId: userId,
-            message: confirmMsg
-          });
         }
       }
       
@@ -112,27 +119,82 @@ Deno.serve(async (req) => {
       
       // Handle MESSAGE event (user sends a message to the OA)
       else if (event.type === 'message' && event.message.type === 'text') {
-        const messageText = event.message.text.toLowerCase().trim();
+        const messageText = event.message.text.trim();
+        const lowerText = messageText.toLowerCase();
         console.log(`💬 Message from ${userId}: ${messageText}`);
         
         // Find linked user
-        const users = await base44.asServiceRole.entities.User.list();
+        const users = await base44.asServiceRole.entities.User.filter({});
         const user = users.find(u => u.line_messaging_token === userId || u.line_user_id === userId);
         
         const language = user?.language || 'en';
+
+        // Handle "connect email@example.com" command
+        if (lowerText.startsWith('connect ')) {
+          const email = messageText.replace(/^connect\s+/i, '').trim().toLowerCase();
+
+          if (!email.includes('@')) {
+            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: userId,
+              message: `❌ Invalid email format.\n\nUsage: connect your@email.com\nExample: connect steve@example.com`
+            });
+          } else {
+            const targetUser = users.find(u => u.email?.toLowerCase() === email);
+
+            if (!targetUser) {
+              await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                userId: userId,
+                message: `❌ No account found with that email.\n\nCreate account first:\nhttps://app.leaseshield.asia`
+              });
+            } else if (targetUser.line_user_id && targetUser.line_user_id !== userId) {
+              await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                userId: userId,
+                message: `⚠️ This email is already connected to another LINE account.\n\nTo switch, disconnect from the other account first in Settings.`
+              });
+            } else {
+              // Connect LINE to account
+              await base44.asServiceRole.entities.User.update(targetUser.id, {
+                line_user_id: userId,
+                line_messaging_token: userId,
+                line_notifications: true,
+                line_connected_at: new Date().toISOString()
+              });
+
+              await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                userId: userId,
+                message: `✅ Connected successfully!\n\nAccount: ${email}\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\nView dashboard: https://app.leaseshield.asia`
+              });
+
+              // Create timeline event
+              try {
+                await base44.asServiceRole.entities.TimelineEvent.create({
+                  owner_email: email,
+                  event_type: 'lease_scanned',
+                  title: 'LINE Notifications Connected',
+                  description: 'LINE notifications successfully connected via connect command',
+                  event_date: new Date().toISOString(),
+                  source: 'system'
+                });
+              } catch (e) {
+                console.warn('Timeline event creation failed (non-critical):', e.message);
+              }
+              console.log(`✅ Connected LINE ${userId} to ${email}`);
+            }
+          }
+        }
         
         // Simple command handling
-        if (messageText === 'help' || messageText === 'ช่วยเหลือ') {
+        else if (lowerText === 'help' || lowerText === 'ช่วยเหลือ') {
           const helpMsg = language === 'th'
-            ? `📋 คำสั่ง Lease Shield:\n\n• "สถานะ" - ดูสถานะบัญชี\n• "มัดจำ" - ดูเงินมัดจำที่ติดตาม\n• "คดี" - ดูคดีที่เปิดอยู่\n• "ช่วยเหลือ" - แสดงข้อความนี้\n\nเปิดแอป: app.leaseshield.asia`
-            : `📋 Lease Shield Commands:\n\n• "status" - View account status\n• "deposit" - Check deposits\n• "cases" - View open cases\n• "help" - Show this message\n\nOpen app: app.leaseshield.asia`;
+            ? `📋 คำสั่ง Lease Shield:\n\n• "connect อีเมล" - เชื่อมต่อบัญชี\n• "สถานะ" - ดูสถานะบัญชี\n• "มัดจำ" - ดูเงินมัดจำที่ติดตาม\n• "คดี" - ดูคดีที่เปิดอยู่\n• "ช่วยเหลือ" - แสดงข้อความนี้\n\nเปิดแอป: app.leaseshield.asia`
+            : `📋 Lease Shield Commands:\n\n• "connect email" - Link your account\n• "status" - View account status\n• "deposit" - Check deposits\n• "cases" - View open cases\n• "help" - Show this message\n\nOpen app: app.leaseshield.asia`;
           
           await base44.asServiceRole.functions.invoke('sendLineMessage', {
             userId: userId,
             message: helpMsg
           });
         }
-        else if (messageText === 'status' || messageText === 'สถานะ') {
+        else if (lowerText === 'status' || lowerText === 'สถานะ') {
           if (!user) {
             const notLinkedMsg = language === 'th'
               ? `⚠️ ยังไม่ได้เชื่อมต่อบัญชี\n\nกรุณาเข้าสู่ระบบที่ app.leaseshield.asia และกดปุ่ม "เชื่อมต่อ LINE"`
