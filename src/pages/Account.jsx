@@ -26,7 +26,11 @@ import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
 import AuthGuard from "../components/shared/AuthGuard";
 import ReferralCard from "../components/referral/ReferralCard";
-import AppSharingSection from "../components/settings/AppSharingSection";import RetentionModal from "../components/settings/RetentionModal";
+import AppSharingSection from "../components/settings/AppSharingSection";
+import RetentionModal from "../components/settings/RetentionModal";
+import LineConnectionModal from "../components/settings/LineConnectionModal";
+import LandlordInfoSection from "../components/settings/LandlordInfoSection";
+import JuristicInfoSection from "../components/settings/JuristicInfoSection";
 import DowngradeFlowDialog from "../components/settings/DowngradeFlowDialog";
 import CancelSubscriptionDialog from "../components/settings/CancelSubscriptionDialog";
 import DeleteAccountModal from "../components/settings/DeleteAccountModal";
@@ -63,6 +67,7 @@ function AccountContent() {
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [exportFormat, setExportFormat] = useState('pdf');
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [showLineModal, setShowLineModal] = useState(null); // { type: 'user'|'landlord'|'juristic', depositId?, propertyAddress? }
   
   const plansSectionRef = React.useRef(null);
 
@@ -2450,473 +2455,21 @@ function AccountContent() {
 
 
 
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
-                  <User className="w-5 h-5 text-ls-forest" />
-                  {strings.landlordInfo}
-                </CardTitle>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.landlordInfoDesc}</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="mb-6 p-4 rounded-xl border-2 border-dashed" style={{
-              backgroundColor: isDarkMode ? '#2A2D30' : '#F0FDF4',
-              borderColor: isDarkMode ? '#10B981' : '#86EFAC'
-            }}>
-              <div className="flex items-start gap-3 mb-3">
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: '#10B981',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <MessageCircle className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold mb-1" style={{ color: colors.textPrimary }}>{strings.landlordLineConnect}</h4>
-                  <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>{strings.connectLineOADesc}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleCopyLink('landlord')}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: copiedLink === 'landlord' ? '#10B981' : (isDarkMode ? '#353A3D' : '#FFFFFF'),
-                        color: copiedLink === 'landlord' ? '#FFFFFF' : colors.textPrimary,
-                        border: `2px solid ${copiedLink === 'landlord' ? '#10B981' : colors.borderColor}`,
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (copiedLink !== 'landlord') {
-                          e.target.style.borderColor = '#10B981';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (copiedLink !== 'landlord') {
-                          e.target.style.borderColor = colors.borderColor;
-                        }
-                      }}
-                    >
-                      {copiedLink === 'landlord' ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          {strings.linkCopied}
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          {strings.copyLink}
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleShareLink('landlord')}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: '#10B981',
-                        color: '#FFFFFF',
-                        border: '2px solid #10B981',
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#059669';
-                        e.target.style.borderColor = '#059669';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#10B981';
-                        e.target.style.borderColor = '#10B981';
-                      }}
-                    >
-                      <Share2 className="w-4 h-4" />
-                      {strings.shareLink}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <LandlordInfoSection
+          user={user} colors={colors} isDarkMode={isDarkMode} language={language} strings={strings}
+          landlordData={landlordData} setLandlordData={setLandlordData}
+          handleLandlordUpdate={handleLandlordUpdate} updateProfileMutation={updateProfileMutation}
+          copiedLink={copiedLink} handleCopyLink={handleCopyLink} handleShareLink={handleShareLink}
+          onOpenLineModal={setShowLineModal}
+        />
 
-            <div className="mb-4 text-center">
-              <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.orManualEntry}</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="landlord_name" style={{ color: colors.textPrimary }}>{strings.landlordName}</Label>
-                <Input
-                  id="landlord_name"
-                  value={landlordData.landlord_name}
-                  onChange={(e) => setLandlordData({...landlordData, landlord_name: e.target.value})}
-                  placeholder={language === 'th' ? 'ชื่อเจ้าของบ้าน' : language === 'ru' ? 'Имя арендодателя' : 'Landlord name'}
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="landlord_email" style={{ color: colors.textPrimary }}>{strings.landlordEmail}</Label>
-                <Input
-                  id="landlord_email"
-                  type="email"
-                  value={landlordData.landlord_email}
-                  onChange={(e) => setLandlordData({...landlordData, landlord_email: e.target.value})}
-                  placeholder={language === 'th' ? 'landlord@example.com' : 'landlord@example.com'}
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="landlord_phone" style={{ color: colors.textPrimary }}>{strings.landlordPhone}</Label>
-                <Input
-                  id="landlord_phone"
-                  value={landlordData.landlord_phone}
-                  onChange={(e) => setLandlordData({...landlordData, landlord_phone: e.target.value})}
-                  placeholder="+66 XX XXX XXXX"
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="landlord_line" style={{ color: colors.textPrimary }}>{strings.landlordLine}</Label>
-                <Input
-                  id="landlord_line"
-                  value={landlordData.landlord_line}
-                  onChange={(e) => setLandlordData({...landlordData, landlord_line: e.target.value})}
-                  placeholder="@lineid"
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label htmlFor="landlord_address" style={{ color: colors.textPrimary }}>{strings.landlordAddress}</Label>
-                <Textarea
-                  id="landlord_address"
-                  value={landlordData.landlord_address}
-                  onChange={(e) => setLandlordData({...landlordData, landlord_address: e.target.value})}
-                  placeholder={language === 'th' ? 'ที่อยู่เจ้าของบ้าน' : language === 'ru' ? 'Адрес арендодателя' : 'Landlord address'}
-                  className="mt-2"
-                  rows={2}
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={handleLandlordUpdate}
-                disabled={updateProfileMutation.isPending}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  border: 'none',
-                  backgroundColor: updateProfileMutation.isPending ? '#9CA3AF' : '#0C3B2E',
-                  color: '#FFFFFF',
-                  cursor: updateProfileMutation.isPending ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 6px rgba(12, 59, 46, 0.3)',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  opacity: updateProfileMutation.isPending ? 0.6 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!updateProfileMutation.isPending) {
-                    e.target.style.backgroundColor = '#C7A338';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 8px rgba(199, 163, 56, 0.4)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!updateProfileMutation.isPending) {
-                    e.target.style.backgroundColor = '#0C3B2E';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 6px rgba(12, 59, 46, 0.3)';
-                  }
-                }}
-              >
-                {updateProfileMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {language === 'th' ? 'กำลังบันทึก...' : language === 'ru' ? 'Сохранение...' : 'Saving...'}
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    {strings.saveContactInfo}
-                  </>
-                )}
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="mb-6 border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-lg font-bold flex items-center gap-2 mb-1" style={{ color: colors.textPrimary }}>
-                  <Settings className="w-5 h-5 text-ls-gold" />
-                  {strings.juristicInfo}
-                </CardTitle>
-                <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.juristicInfoDesc}</p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="mb-6 p-4 rounded-xl border-2 border-dashed" style={{
-              backgroundColor: isDarkMode ? '#2A2D30' : '#FFFBEB',
-              borderColor: isDarkMode ? '#F59E0B' : '#FDE047'
-            }}>
-              <div className="flex items-start gap-3 mb-3">
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  backgroundColor: '#F59E0B',
-                  borderRadius: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <MessageCircle className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold mb-1" style={{ color: colors.textPrimary }}>{strings.juristicLineConnect}</h4>
-                  <p className="text-xs mb-3" style={{ color: colors.textSecondary }}>{strings.connectLineOADesc}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleCopyLink('juristic')}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: copiedLink === 'juristic' ? '#F59E0B' : (isDarkMode ? '#353A3D' : '#FFFFFF'),
-                        color: copiedLink === 'juristic' ? '#FFFFFF' : colors.textPrimary,
-                        border: `2px solid ${copiedLink === 'juristic' ? '#F59E0B' : colors.borderColor}`,
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (copiedLink !== 'juristic') {
-                          e.target.style.borderColor = '#F59E0B';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (copiedLink !== 'juristic') {
-                          e.target.style.borderColor = colors.borderColor;
-                        }
-                      }}
-                    >
-                      {copiedLink === 'juristic' ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          {strings.linkCopied}
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          {strings.copyLink}
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleShareLink('juristic')}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        backgroundColor: '#F59E0B',
-                        color: '#FFFFFF',
-                        border: '2px solid #F59E0B',
-                        fontWeight: 'bold',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#D97706';
-                        e.target.style.borderColor = '#D97706';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = '#F59E0B';
-                        e.target.style.borderColor = '#F59E0B';
-                      }}
-                    >
-                      <Share2 className="w-4 h-4" />
-                      {strings.shareLink}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-4 text-center">
-              <p className="text-xs font-semibold" style={{ color: colors.textSecondary }}>{strings.orManualEntry}</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="juristic_name" style={{ color: colors.textPrimary }}>{strings.juristicName}</Label>
-                <Input
-                  id="juristic_name"
-                  value={juristicData.juristic_name}
-                  onChange={(e) => setJuristicData({...juristicData, juristic_name: e.target.value})}
-                  placeholder={language === 'th' ? 'ชื่อผู้ติดต่อ' : language === 'ru' ? 'Имя контактного лица' : 'Contact name'}
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="juristic_email" style={{ color: colors.textPrimary }}>{strings.juristicEmail}</Label>
-                <Input
-                  id="juristic_email"
-                  type="email"
-                  value={juristicData.juristic_email}
-                  onChange={(e) => setJuristicData({...juristicData, juristic_email: e.target.value})}
-                  placeholder={language === 'th' ? 'juristic@example.com' : 'juristic@example.com'}
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="juristic_phone" style={{ color: colors.textPrimary }}>{strings.juristicPhone}</Label>
-                <Input
-                  id="juristic_phone"
-                  value={juristicData.juristic_phone}
-                  onChange={(e) => setJuristicData({...juristicData, juristic_phone: e.target.value})}
-                  placeholder="+66 XX XXX XXXX"
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="juristic_line" style={{ color: colors.textPrimary }}>{strings.juristicLine}</Label>
-                <Input
-                  id="juristic_line"
-                  value={juristicData.juristic_line}
-                  onChange={(e) => setJuristicData({...juristicData, juristic_line: e.target.value})}
-                  placeholder="@lineid"
-                  className="mt-2"
-                  style={{
-                    backgroundColor: colors.inputBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={handleJuristicUpdate}
-                disabled={updateProfileMutation.isPending}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '16px',
-                  border: 'none',
-                  backgroundColor: updateProfileMutation.isPending ? '#9CA3AF' : '#C7A338',
-                  color: updateProfileMutation.isPending ? '#FFFFFF' : '#1A1D1F',
-                  cursor: updateProfileMutation.isPending ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 4px 6px rgba(199, 163, 56, 0.3)',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  opacity: updateProfileMutation.isPending ? 0.6 : 1
-                }}
-                onMouseEnter={(e) => {
-                  if (!updateProfileMutation.isPending) {
-                    e.target.style.backgroundColor = '#0C3B2E';
-                    e.target.style.color = '#FFFFFF';
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 6px 8px rgba(12, 59, 46, 0.4)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!updateProfileMutation.isPending) {
-                    e.target.style.backgroundColor = '#C7A338';
-                    e.target.style.color = '#1A1D1F';
-                    e.target.style.transform = 'translateY(0)';
-                    e.target.style.boxShadow = '0 4px 6px rgba(199, 163, 56, 0.3)';
-                  }
-                }}
-              >
-                {updateProfileMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {language === 'th' ? 'กำลังบันทึก...' : language === 'ru' ? 'Сохранение...' : 'Saving...'}
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    {strings.saveContactInfo}
-                  </>
-                )}
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+        <JuristicInfoSection
+          user={user} colors={colors} isDarkMode={isDarkMode} language={language} strings={strings}
+          juristicData={juristicData} setJuristicData={setJuristicData}
+          handleJuristicUpdate={handleJuristicUpdate} updateProfileMutation={updateProfileMutation}
+          copiedLink={copiedLink} handleCopyLink={handleCopyLink} handleShareLink={handleShareLink}
+          onOpenLineModal={setShowLineModal}
+        />
 
 
 
@@ -3302,6 +2855,17 @@ function AccountContent() {
           isScheduledForCancellation={isScheduledForCancellation}
         />
         <CancelSubscriptionDialog open={showCancelDialog} onClose={setShowCancelDialog} user={user} language={language} colors={colors} isDarkMode={isDarkMode} strings={strings} currentPlan={currentPlan} cancelReason={cancelReason} setCancelReason={setCancelReason} cancelFeedback={cancelFeedback} setCancelFeedback={setCancelFeedback} cancelling={cancelling} handleCancelSubscription={handleCancelSubscription} />
+
+        {showLineModal && (
+          <LineConnectionModal
+            connectionType={showLineModal.type}
+            propertyAddress={showLineModal.propertyAddress}
+            depositId={showLineModal.depositId}
+            onClose={() => setShowLineModal(null)}
+            language={language}
+            isDarkMode={isDarkMode}
+          />
+        )}
 
         <div style={{
           background: 'linear-gradient(to right, #0C3B2E, #047857)',
