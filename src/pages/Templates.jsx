@@ -19,6 +19,7 @@ function TemplatesContent() {
   const [viewingTemplate, setViewingTemplate] = useState(null);
   const [filter, setFilter] = useState('all');
   const [expandedSections, setExpandedSections] = useState({
+    lease_agreement: true,
     before_signing: true,
     during_tenancy: true,
     preparing_moveout: false,
@@ -81,7 +82,7 @@ function TemplatesContent() {
 
       // Sort by category and sort_order
       uniqueTemplates.sort((a, b) => {
-        const catOrder = { checklists: 1, pre_signing: 2, initial_resolution: 3, professional: 4, final: 5, landlord: 6 };
+        const catOrder = { checklists: 1, pre_signing: 2, initial_resolution: 3, professional: 4, final: 5, landlord: 6, lease_agreement: 7 };
         const catA = catOrder[a.category] || 99;
         const catB = catOrder[b.category] || 99;
         if (catA !== catB) return catA - catB;
@@ -152,7 +153,7 @@ function TemplatesContent() {
   const t = {
     en: {
       title: "Document Templates",
-      subtitle: "View templates for free. Copy text or download Word (1 credit each).",
+      subtitle: "View templates for free. Copy text or download Word. Credit cost shown on each template.",
       creditsBalance: "Credits:",
       view: "View",
       noTemplates: "No templates available",
@@ -163,6 +164,7 @@ function TemplatesContent() {
       disputes: "Disputes",
       inventory: "Inventory",
       sections: {
+        lease_agreement: "Lease Agreement",
         before_signing: "Pre-Signing",
         during_tenancy: "During Tenancy",
         preparing_moveout: "Preparing to Move-Out",
@@ -173,7 +175,7 @@ function TemplatesContent() {
     },
     th: {
       title: "เทมเพลตเอกสาร",
-      subtitle: "ดูเทมเพลตฟรี คัดลอกข้อความหรือดาวน์โหลด Word (1 เครดิตต่อครั้ง)",
+      subtitle: "ดูเทมเพลตฟรี คัดลอกข้อความหรือดาวน์โหลด Word ค่าเครดิตแสดงในแต่ละเทมเพลต",
       creditsBalance: "เครดิต:",
       view: "ดู",
       noTemplates: "ไม่มีเทมเพลต",
@@ -184,6 +186,7 @@ function TemplatesContent() {
       disputes: "ข้อพิพาท",
       inventory: "ทะเบียนทรัพย์สิน",
       sections: {
+        lease_agreement: "สัญญาเช่า",
         before_signing: "ก่อนลงนาม",
         during_tenancy: "ระหว่างการเช่า",
         preparing_moveout: "เตรียมย้ายออก",
@@ -194,7 +197,7 @@ function TemplatesContent() {
     },
     zh: {
       title: "文档模板",
-      subtitle: "免费查看模板。复制文本或下载Word（每次1积分）。",
+      subtitle: "免费查看模板。复制文本或下载Word。每个模板显示积分费用。",
       creditsBalance: "积分：",
       view: "查看",
       noTemplates: "没有可用的模板",
@@ -205,6 +208,7 @@ function TemplatesContent() {
       disputes: "争议",
       inventory: "清单",
       sections: {
+        lease_agreement: "租赁协议",
         before_signing: "签署前",
         during_tenancy: "租赁期间",
         preparing_moveout: "准备搬出",
@@ -215,7 +219,7 @@ function TemplatesContent() {
     },
     ja: {
       title: "文書テンプレート",
-      subtitle: "無料でテンプレートを表示。テキストをコピーまたはWordをダウンロード（各1クレジット）。",
+      subtitle: "無料でテンプレートを表示。テキストをコピーまたはWordをダウンロード。各テンプレートにクレジットコストが表示されます。",
       creditsBalance: "クレジット：",
       view: "表示",
       noTemplates: "利用可能なテンプレートがありません",
@@ -226,6 +230,7 @@ function TemplatesContent() {
       disputes: "紛争",
       inventory: "目録",
       sections: {
+        lease_agreement: "賃貸契約書",
         before_signing: "署名前",
         during_tenancy: "賃貸期間中",
         preparing_moveout: "退去準備",
@@ -236,7 +241,7 @@ function TemplatesContent() {
     },
     ko: {
       title: "문서 템플릿",
-      subtitle: "무료로 템플릿 보기. 텍스트 복사 또는 Word 다운로드（각 1크레딧）.",
+      subtitle: "무료로 템플릿 보기. 텍스트 복사 또는 Word 다운로드. 각 템플릿에 크레딧 비용이 표시됩니다.",
       creditsBalance: "크레딧：",
       view: "보기",
       noTemplates: "사용 가능한 템플릿이 없습니다",
@@ -247,6 +252,7 @@ function TemplatesContent() {
       disputes: "분쟁",
       inventory: "목록",
       sections: {
+        lease_agreement: "임대 계약서",
         before_signing: "서명 전",
         during_tenancy: "임대 기간",
         preparing_moveout: "이사 준비",
@@ -256,7 +262,7 @@ function TemplatesContent() {
     },
     ru: {
       title: "Шаблоны документов",
-      subtitle: "Просмотр шаблонов бесплатно. Копирование текста или загрузка Word（по 1 кредиту）.",
+      subtitle: "Просмотр шаблонов бесплатно. Копирование текста или загрузка Word. Стоимость кредитов указана на каждом шаблоне.",
       creditsBalance: "Кредиты：",
       view: "Просмотр",
       noTemplates: "Нет доступных шаблонов",
@@ -267,6 +273,7 @@ function TemplatesContent() {
       disputes: "Споры",
       inventory: "Опись",
       sections: {
+        lease_agreement: "Договор аренды",
         before_signing: "До подписания",
         during_tenancy: "Во время аренды",
         preparing_moveout: "Подготовка к выезду",
@@ -281,6 +288,7 @@ function TemplatesContent() {
 
   // Template to lifecycle section mapping
   const templateToSection = {
+    'thailand-standard-lease-agreement': 'lease_agreement',
     'pre_signing_checklist': 'before_signing',
     'pre_signing_negotiation': 'before_signing',
     'clause_modification_request': 'before_signing',
@@ -358,7 +366,7 @@ function TemplatesContent() {
   }, {});
 
   // Section order
-  const sectionOrder = ['before_signing', 'during_tenancy', 'preparing_moveout', 'after_moveout', 'landlord', 'disputes'];
+  const sectionOrder = ['lease_agreement', 'before_signing', 'during_tenancy', 'preparing_moveout', 'after_moveout', 'landlord', 'disputes'];
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({

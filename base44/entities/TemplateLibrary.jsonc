@@ -1,0 +1,136 @@
+{
+  "name": "TemplateLibrary",
+  "type": "object",
+  "properties": {
+    "template_key": {
+      "type": "string",
+      "description": "Unique template identifier (lowercase, no spaces)"
+    },
+    "title_en": {
+      "type": "string",
+      "description": "Template title in English"
+    },
+    "title_th": {
+      "type": "string",
+      "description": "Template title in Thai"
+    },
+    "description_en": {
+      "type": "string",
+      "description": "Template description in English"
+    },
+    "description_th": {
+      "type": "string",
+      "description": "Template description in Thai"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "checklists",
+        "pre_signing",
+        "initial_resolution",
+        "professional",
+        "final",
+        "lease_agreement"
+      ],
+      "description": "Template category"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "Template availability status"
+    },
+    "cost_credits": {
+      "type": "integer",
+      "default": 1,
+      "description": "Credits required to download this template"
+    },
+    "preview_content": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string",
+          "description": "English preview content (short excerpt)"
+        },
+        "th": {
+          "type": "string",
+          "description": "Thai preview content (short excerpt)"
+        }
+      },
+      "description": "Bilingual preview content shown in modal"
+    },
+    "document_content": {
+      "type": "object",
+      "properties": {
+        "en": {
+          "type": "string",
+          "description": "Full English document content for export"
+        },
+        "th": {
+          "type": "string",
+          "description": "Full Thai document content for export"
+        }
+      },
+      "description": "Bilingual full document content for Copy + Word export"
+    },
+    "has_english": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether template has English content"
+    },
+    "has_thai": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether template has Thai content"
+    },
+    "content_status": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "missing_en",
+        "missing_th",
+        "missing_both"
+      ],
+      "default": "missing_both",
+      "description": "Content availability status"
+    },
+    "preview_image_url": {
+      "type": "string",
+      "description": "URL to preview image"
+    },
+    "preview_type": {
+      "type": "string",
+      "enum": [
+        "image",
+        "pdf",
+        "text"
+      ],
+      "default": "text",
+      "description": "Type of preview"
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 100,
+      "description": "Display order within category"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether template is active"
+    },
+    "seed_version": {
+      "type": "string",
+      "description": "Version marker for seeded data"
+    }
+  },
+  "required": [
+    "template_key",
+    "title_en",
+    "title_th",
+    "category",
+    "cost_credits"
+  ]
+}
