@@ -1457,7 +1457,7 @@ function EvidenceVaultContent() {
       className="fixed flex items-center justify-center rounded-full shadow-lg active:scale-95 transition-transform"
       style={{
         right: '20px',
-        bottom: 'calc(80px + env(safe-area-inset-bottom))',
+        bottom: 'calc(150px + env(safe-area-inset-bottom))',
         width: '56px',
         height: '56px',
         backgroundColor: '#0C3B2E',
