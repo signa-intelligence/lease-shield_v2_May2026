@@ -171,7 +171,8 @@ function TemplatesContent() {
         after_moveout: "End of Lease",
         landlord: "Landlord",
         disputes: "Escalation"
-      }
+        },
+        lease_agreement: "Lease Agreement"
     },
     th: {
       title: "เทมเพลตเอกสาร",
@@ -193,7 +194,8 @@ function TemplatesContent() {
         after_moveout: "สิ้นสุดการเช่า",
         landlord: "เจ้าของที่พัก",
         disputes: "การยกระดับ"
-      }
+        },
+        lease_agreement: "สัญญาเช่า"
     },
     zh: {
       title: "文档模板",
@@ -215,7 +217,8 @@ function TemplatesContent() {
         after_moveout: "租约结束",
         landlord: "房东",
         disputes: "升级"
-      }
+      },
+      lease_agreement: "租赁协议"
     },
     ja: {
       title: "文書テンプレート",
@@ -237,7 +240,8 @@ function TemplatesContent() {
         after_moveout: "賃貸終了",
         landlord: "大家さん",
         disputes: "エスカレーション"
-      }
+      },
+      lease_agreement: "賃貸契約書"
     },
     ko: {
       title: "문서 템플릿",
@@ -258,7 +262,8 @@ function TemplatesContent() {
         preparing_moveout: "이사 준비",
         after_moveout: "이사 후",
         disputes: "분쟁 및 에스컬레이션"
-      }
+      },
+      lease_agreement: "임대 계약서"
     },
     ru: {
       title: "Шаблоны документов",
@@ -280,7 +285,8 @@ function TemplatesContent() {
         after_moveout: "Окончание аренды",
         landlord: "Арендодатель",
         disputes: "Эскалация"
-      }
+      },
+      lease_agreement: "Договор аренды"
     }
   };
 
@@ -288,7 +294,6 @@ function TemplatesContent() {
 
   // Template to lifecycle section mapping
   const templateToSection = {
-    'thailand-standard-lease-agreement': 'lease_agreement',
     'pre_signing_checklist': 'before_signing',
     'pre_signing_negotiation': 'before_signing',
     'clause_modification_request': 'before_signing',
@@ -354,6 +359,7 @@ function TemplatesContent() {
   // Filter templates
   const filteredTemplates = templates.filter(t => {
     if (filter === 'all') return true;
+    if (filter === 'lease_agreement') return t.category === 'lease_agreement';
     return templateToType[t.template_key] === filter;
   });
 
@@ -500,7 +506,7 @@ function TemplatesContent() {
 
         {/* Filter Bar */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {['all', 'checklists', 'letters', 'disputes', 'inventory'].map(filterType => (
+          {['all', 'checklists', 'letters', 'disputes', 'inventory', 'lease_agreement'].map(filterType => (
             <button
               key={filterType}
               onClick={() => {
