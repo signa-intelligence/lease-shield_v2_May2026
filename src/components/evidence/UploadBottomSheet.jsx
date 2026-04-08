@@ -67,6 +67,8 @@ export default function UploadBottomSheet({
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
+    // Always reset input value first so same file can be re-selected
+    if (e.target) e.target.value = '';
     if (files.length === 0) return;
 
     const validFiles = files.filter(f => {
@@ -83,9 +85,8 @@ export default function UploadBottomSheet({
     });
 
     console.log(`[EV_SELECT] Accepted ${validFiles.length}/${files.length} files`);
-    if (validFiles.length === 0) { e.target.value = null; return; }
+    if (validFiles.length === 0) return;
     setUploadFiles(prev => [...prev, ...validFiles]);
-    e.target.value = null;
   };
 
   const handleVoiceClick = () => {
@@ -240,6 +241,9 @@ export default function UploadBottomSheet({
       console.error('[EV] UPLOAD FAILED:', err);
       setError(err?.message || strings.uploadFailed);
       haptic.error();
+      // Reset upload-related state on error so user can retry
+      setUploadFiles([]);
+      setVoiceFiles([]);
     } finally {
       setUploading(false);
       setUploadStage('');
@@ -417,7 +421,9 @@ export default function UploadBottomSheet({
 
             {/* File picker */}
             <div>
-              <input type="file" multiple onChange={handleFileSelect} className="hidden" id="upload-sheet-file-input"
+              <input type="file" multiple onChange={handleFileSelect}
+                onClick={(e) => { e.currentTarget.value = ''; }}
+                className="hidden" id="upload-sheet-file-input"
                 accept={isVideoTier ? ".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.heic,.heif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" : ".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
                 disabled={uploading} />
               <label htmlFor="upload-sheet-file-input">

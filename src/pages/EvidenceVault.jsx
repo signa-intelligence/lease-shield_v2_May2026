@@ -156,7 +156,8 @@ function EvidenceVaultContent() {
 
   const canUploadFiles = (fileCount) => {
     const limits = getStorageLimits();
-    const currentFileCount = documents.length;
+    // Exclude optimistic (pending) items from count to prevent false limits
+    const currentFileCount = documents.filter(d => !d.__optimistic).length;
 
     // Check file count limit (Free tier only)
     const effTier = (user?.plan_tier || 'free').toLowerCase().trim();
@@ -197,12 +198,12 @@ function EvidenceVaultContent() {
       return { optimisticItem };
     },
     onSuccess: () => {
+      // Force refetch to replace optimistic items with real data
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       haptic.success();
-      toast.success(strings.uploadSuccess);
     },
     onError: (error, variables, context) => {
-      optimistic.revert(context.optimisticItem.id);
+      optimistic.revert(context?.optimisticItem?.id);
       haptic.error();
       toast.error(strings.uploadFailed);
     }
