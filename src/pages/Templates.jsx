@@ -365,7 +365,7 @@ function TemplatesContent() {
 
   // Group by lifecycle section
   const sectionedTemplates = filteredTemplates.reduce((acc, template) => {
-    const section = templateToSection[template.template_key] || 'disputes';
+    const section = templateToSection[template.template_key] || (template.category === 'lease_agreement' ? 'lease_agreement' : 'disputes');
     if (!acc[section]) acc[section] = [];
     acc[section].push(template);
     return acc;
