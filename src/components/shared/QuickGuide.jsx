@@ -8,8 +8,15 @@ import { haptic } from './HapticFeedback';
 export default function QuickGuide({ user, onDismiss, colors, language = 'en', isOpen, onClose }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const dontShowRef = React.useRef(false);
   const closingRef = React.useRef(false);
+  const lastClickRef = React.useRef(0);
   const navigate = useNavigate();
+
+  // Keep ref in sync with state so handleDismiss always reads current value
+  React.useEffect(() => {
+    dontShowRef.current = dontShowAgain;
+  }, [dontShowAgain]);
 
   // Listen for manual open events from Info button
   useEffect(() => {
@@ -40,11 +47,19 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
   const isDarkMode = user?.theme === 'dark';
 
   const handleDismiss = async () => {
-    // Prevent double-fire from click + touchEnd
+    // Debounce: ignore clicks within 300ms
+    const now = Date.now();
+    if (now - lastClickRef.current < 300) return;
+    lastClickRef.current = now;
+
+    // Prevent concurrent executions
     if (closingRef.current) return;
     closingRef.current = true;
 
-    if (dontShowAgain && user) {
+    // Read from ref (always current) instead of state (may be stale)
+    const shouldDismiss = dontShowRef.current;
+
+    if (shouldDismiss && user) {
       try {
         await base44.auth.updateMe({ quick_guide_dismissed: true });
       } catch (error) {
@@ -54,8 +69,7 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     if (onClose) onClose();
     if (onDismiss) onDismiss();
 
-    // Reset after a tick so it can be opened again later
-    setTimeout(() => { closingRef.current = false; }, 300);
+    setTimeout(() => { closingRef.current = false; }, 500);
   };
 
   const t = {
