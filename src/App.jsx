@@ -8,6 +8,7 @@ import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { setupIframeMessaging } from './lib/iframe-messaging';
 import PageNotFound from './lib/PageNotFound';
+import AppHome from './pages/AppHome';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
@@ -21,10 +22,10 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
 
-const AuthenticatedApp = () => {
+const ProtectedRoutes = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, isAuthenticated, navigateToLogin } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
+  // Show loading spinner while checking auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -33,18 +34,22 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
+  // Handle authentication errors — redirect to public landing page
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
+      window.location.replace('/');
       return null;
     }
   }
 
-  // Render the main app
+  if (!isAuthenticated) {
+    window.location.replace('/');
+    return null;
+  }
+
+  // Render authenticated app
   return (
     <LayoutWrapper currentPageName={mainPageKey}>
       <Routes>
@@ -58,6 +63,37 @@ const AuthenticatedApp = () => {
   );
 };
 
+const AppRouter = () => {
+  const { isAuthenticated, isLoadingAuth, isLoadingPublicSettings } = useAuth();
+
+  // While loading, show spinner
+  if (isLoadingPublicSettings || isLoadingAuth) {
+    return (
+      <Routes>
+        <Route path="/" element={<AppHome />} />
+        <Route path="*" element={
+          <div className="fixed inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+          </div>
+        } />
+      </Routes>
+    );
+  }
+
+  // If authenticated, show protected routes
+  if (isAuthenticated) {
+    return <ProtectedRoutes />;
+  }
+
+  // Not authenticated — show public landing on "/", redirect everything else
+  return (
+    <Routes>
+      <Route path="/" element={<AppHome />} />
+      <Route path="*" element={<AppHome />} />
+    </Routes>
+  );
+};
+
 
 function App() {
 
@@ -66,7 +102,7 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <NavigationTracker />
-          <AuthenticatedApp />
+          <AppRouter />
         </Router>
         <Toaster />
         <VisualEditAgent />
