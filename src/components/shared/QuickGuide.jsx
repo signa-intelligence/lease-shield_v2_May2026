@@ -47,18 +47,28 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
   const isDarkMode = user?.theme === 'dark';
 
   const handleDismiss = async () => {
-    // Debounce: ignore clicks within 300ms
-    const now = Date.now();
-    if (now - lastClickRef.current < 300) return;
-    lastClickRef.current = now;
-
     // Prevent concurrent executions
     if (closingRef.current) return;
     closingRef.current = true;
 
-    // Read from ref (always current) instead of state (may be stale)
-    const shouldDismiss = dontShowRef.current;
+    // Debounce: ignore clicks within 500ms
+    const now = Date.now();
+    if (now - lastClickRef.current < 500) {
+      closingRef.current = false;
+      return;
+    }
+    lastClickRef.current = now;
 
+    // Read from ref (always current) instead of state (may be stale closure)
+    // Also check DOM directly as ultimate fallback
+    const checkboxEl = document.getElementById('qg-dismiss-checkbox');
+    const shouldDismiss = checkboxEl ? checkboxEl.checked : dontShowRef.current;
+
+    // Close UI immediately
+    if (onClose) onClose();
+    if (onDismiss) onDismiss();
+
+    // Then persist in background
     if (shouldDismiss && user) {
       try {
         await base44.auth.updateMe({ quick_guide_dismissed: true });
@@ -66,8 +76,6 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
         console.error('Failed to save Quick Guide preference:', error);
       }
     }
-    if (onClose) onClose();
-    if (onDismiss) onDismiss();
 
     setTimeout(() => { closingRef.current = false; }, 500);
   };
@@ -242,9 +250,9 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     handleDismiss();
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     haptic.medium();
-    handleDismiss();
+    await handleDismiss();
     const dashboardPath = createPageUrl('Dashboard');
     if (window.location.pathname !== dashboardPath) {
       navigate(dashboardPath);
@@ -274,13 +282,18 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
-        handleSkip();
+        // Don't close on overlay click — forces use of X / Skip / Next buttons
       }}
       onMouseDown={(e) => {
         e.preventDefault();
         e.stopPropagation();
       }}
       onTouchStart={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onTouchEnd={(e) => {
+        e.preventDefault();
         e.stopPropagation();
       }}
     >
@@ -459,11 +472,13 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             onClick={(e) => e.stopPropagation()}
           >
             <input
+              id="qg-dismiss-checkbox"
               type="checkbox"
               checked={dontShowAgain}
               onChange={(e) => {
                 e.stopPropagation();
                 setDontShowAgain(e.target.checked);
+                dontShowRef.current = e.target.checked;
               }}
               onClick={(e) => e.stopPropagation()}
               style={{
