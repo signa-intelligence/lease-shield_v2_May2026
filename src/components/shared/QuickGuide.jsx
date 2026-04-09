@@ -8,6 +8,7 @@ import { haptic } from './HapticFeedback';
 export default function QuickGuide({ user, onDismiss, colors, language = 'en', isOpen, onClose }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const closingRef = React.useRef(false);
   const navigate = useNavigate();
 
   // Listen for manual open events from Info button
@@ -39,6 +40,10 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
   const isDarkMode = user?.theme === 'dark';
 
   const handleDismiss = async () => {
+    // Prevent double-fire from click + touchEnd
+    if (closingRef.current) return;
+    closingRef.current = true;
+
     if (dontShowAgain && user) {
       try {
         await base44.auth.updateMe({ quick_guide_dismissed: true });
@@ -48,6 +53,9 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     }
     if (onClose) onClose();
     if (onDismiss) onDismiss();
+
+    // Reset after a tick so it can be opened again later
+    setTimeout(() => { closingRef.current = false; }, 300);
   };
 
   const t = {
@@ -247,17 +255,19 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
         padding: '16px',
         animation: 'fadeIn 0.2s ease-out',
         WebkitTapHighlightColor: 'transparent',
-        touchAction: 'manipulation',
         cursor: 'pointer'
       }}
       onClick={(e) => {
-        e.stopPropagation();
-        handleSkip();
-      }}
-      onTouchEnd={(e) => {
         e.preventDefault();
         e.stopPropagation();
         handleSkip();
+      }}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onTouchStart={(e) => {
+        e.stopPropagation();
       }}
     >
       <style>{`
@@ -282,9 +292,16 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           display: 'flex',
           flexDirection: 'column',
           animation: 'slideIn 0.3s ease-out',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+          cursor: 'default'
         }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div style={{
@@ -312,11 +329,6 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           </div>
           <button
             onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleSkip();
-            }}
-            onTouchEnd={(e) => {
               e.preventDefault();
               e.stopPropagation();
               handleSkip();
@@ -429,14 +441,20 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
             marginBottom: '16px',
             cursor: 'pointer',
             userSelect: 'none'
-          }}>
+          }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <input
               type="checkbox"
               checked={dontShowAgain}
-              onChange={(e) => setDontShowAgain(e.target.checked)}
+              onChange={(e) => {
+                e.stopPropagation();
+                setDontShowAgain(e.target.checked);
+              }}
+              onClick={(e) => e.stopPropagation()}
               style={{
-                width: '16px',
-                height: '16px',
+                width: '18px',
+                height: '18px',
                 cursor: 'pointer',
                 accentColor: isDarkMode ? '#C7A338' : '#063F2C'
               }}
@@ -458,7 +476,11 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
           }}>
             {!isFirstStep && (
               <button
-                onClick={handleBack}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleBack();
+                }}
                 style={{
                   flex: 1,
                   fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -471,7 +493,9 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                   padding: '12px',
                   borderRadius: '12px',
                   transition: 'all 0.2s',
-                  minHeight: '48px'
+                  minHeight: '48px',
+                  WebkitTapHighlightColor: 'transparent',
+                  touchAction: 'manipulation'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#0F4229';
@@ -486,7 +510,11 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
               </button>
             )}
             <button
-              onClick={handleNext}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleNext();
+              }}
               style={{
                 flex: isFirstStep ? 1 : 2,
                 fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -499,7 +527,9 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
                 padding: '12px 24px',
                 borderRadius: '12px',
                 transition: 'background-color 0.2s',
-                minHeight: '48px'
+                minHeight: '48px',
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation'
               }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0a2f1e'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0F4229'}
