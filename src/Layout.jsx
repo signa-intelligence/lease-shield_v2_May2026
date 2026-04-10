@@ -168,6 +168,15 @@ export default function Layout({ children, currentPageName }) {
           base44.functions.invoke('sendWelcomeEmail')
             .then(() => console.log('[LAYOUT] ✅ Welcome email triggered'))
             .catch(err => console.error('[LAYOUT] Welcome email failed (non-critical):', err));
+          // Notify admin of new signup
+          base44.functions.invoke('notifyAdminNewSignup', {
+            user_email: user.email,
+            user_name: user.full_name,
+            plan_tier: 'explorer',
+            signup_source: document.referrer || 'Direct'
+          })
+            .then(() => console.log('[LAYOUT] ✅ Admin signup notification sent'))
+            .catch(err => console.error('[LAYOUT] Admin notification failed (non-critical):', err));
         })
         .catch(err => console.error('[LAYOUT] Failed to initialize user:', err));
       return;
