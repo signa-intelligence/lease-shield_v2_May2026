@@ -1,10 +1,6 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
-import FacebookBrowserBanner, { useIsFacebookBrowser } from "../components/shared/FacebookBrowserBanner";
-
 export default function AppHome() {
-  const isFB = useIsFacebookBrowser();
-
   const handleAuth = () => {
     base44.auth.redirectToLogin(window.location.origin + "/Dashboard");
   };
@@ -14,10 +10,8 @@ export default function AppHome() {
       className="min-h-screen flex flex-col items-center justify-center px-6"
       style={{
         background: "linear-gradient(165deg, #0C3B2E 0%, #145A44 50%, #0C3B2E 100%)",
-        paddingTop: isFB ? "120px" : undefined
       }}
     >
-      <FacebookBrowserBanner />
 
       {/* Logo */}
       <img

@@ -13,7 +13,7 @@ import QuickGuide from "./components/shared/QuickGuide";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import GlobalErrorBoundary from "./components/shared/GlobalErrorBoundary";
 import NotificationPanel from "./components/notifications/NotificationPanel";
-import FacebookBrowserBanner from "./components/shared/FacebookBrowserBanner";
+
 
 
 // Animation utilities inlined
@@ -527,8 +527,6 @@ export default function Layout({ children, currentPageName }) {
       position: 'relative',
       paddingBottom: 'env(safe-area-inset-bottom)'
     }}>
-      <FacebookBrowserBanner />
-
       {/* SECURITY FIX: Add Content Security Policy */}
       <meta 
         httpEquiv="Content-Security-Policy" 
