@@ -1905,39 +1905,17 @@ function AccountContent() {
                   <p className="text-base sm:text-lg font-bold mb-3" style={{ color: '#3B82F6' }}>
                     ฿590 {language === 'th' ? '(ชำระครั้งเดียว)' : language === 'zh' ? '(一次性付款)' : language === 'ja' ? '(一回払い)' : language === 'ko' ? '(일회 결제)' : language === 'ru' ? '(одноразовый платёж)' : '(one-time payment)'}
                   </p>
+                  <p className="text-sm mb-3 italic" style={{ color: colors.textSecondary }}>{language === 'th' ? 'การสแกนสัญญาเช่าแบบครบถ้วนโดยไม่ต้องผูกพันต่อเนื่อง' : language === 'zh' ? '一次完整的租约扫描，无需持续承诺。' : language === 'ja' ? '継続的な契約なしの完全なリーススキャン。' : language === 'ko' ? '지속적인 약정 없이 완전한 임대 계약 스캔.' : language === 'ru' ? 'Полное сканирование договора аренды без постоянных обязательств.' : 'A complete lease scan with no ongoing commitment.'}</p>
                   <ul className="space-y-1.5 text-sm" style={{ color: colors.textPrimary }}>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
-                      <span>{language === 'th' ? 'อัปโหลด 1 ครั้ง + วิเคราะห์ด้วย AI' : language === 'zh' ? '1次上传 + AI分析' : language === 'ja' ? '1アップロード + AI分析' : language === 'ko' ? '1회 업로드 + AI 분석' : language === 'ru' ? '1 загрузка + AI-анализ' : '1 upload + AI scan'}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
-                      <span>{language === 'th' ? 'สรุปโดยผู้เชี่ยวชาญ 1 ฉบับ' : language === 'zh' ? '1份专家审核摘要' : language === 'ja' ? '専門家による1件のレビュー' : language === 'ko' ? '전문가 검토 요약 1건' : language === 'ru' ? '1 экспертный обзор' : '1 human-reviewed summary'}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
-                      <span>{language === 'th' ? 'คะแนนความเสี่ยง 1-100' : language === 'zh' ? '风险评分1-100' : language === 'ja' ? 'リスク評価1-100' : language === 'ko' ? '위험 점수 1-100' : language === 'ru' ? 'Оценка риска 1-100' : 'Risk rating 1-100'}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
-                      <span>{language === 'th' ? 'ความเสี่ยง 5 อันดับแรก' : language === 'zh' ? '前5大风险' : language === 'ja' ? 'トップ5リスク' : language === 'ko' ? '상위 5개 위험' : language === 'ru' ? 'Топ-5 рисков' : 'Top 5 risk highlights'}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
-                      <span>{language === 'th' ? 'ขั้นตอนแนะนำ 5 ข้อ' : language === 'zh' ? '5项建议行动' : language === 'ja' ? '5つの推奨アクション' : language === 'ko' ? '5가지 권장 조치' : language === 'ru' ? '5 рекомендаций' : '5 recommended actions'}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
-                      <span>{language === 'th' ? 'เทมเพลตจดหมาย 1 ฉบับ (ถ้าจำเป็น)' : language === 'zh' ? '1个信件模板（如需）' : language === 'ja' ? '1レターテンプレート（必要時）' : language === 'ko' ? '1개 편지 템플릿（필요시）' : language === 'ru' ? '1 шаблон письма（при необходимости）' : '1 letter template (if needed)'}</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" />
-                      <span>{language === 'th' ? 'ถามชี้แจงเพิ่มเติม 1 คำถาม' : language === 'zh' ? '1次后续澄清问题' : language === 'ja' ? '1件のフォローアップ質問' : language === 'ko' ? '후속 확인 질문 1개' : language === 'ru' ? '1 уточняющий вопрос' : '1 follow-up clarification'}</span>
-                    </li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" /><span>{language === 'th' ? 'สแกนสัญญาเช่าภาษาไทยและภาษาอังกฤษ' : language === 'zh' ? '扫描泰语和英语租约' : language === 'ja' ? 'タイ語と英語のリースをスキャン' : language === 'ko' ? '태국어 및 영어 임대 계약 스캔' : language === 'ru' ? 'Сканирование договоров на тайском и английском языках' : 'Scans Thai and English language leases'}</span></li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" /><span>{language === 'th' ? 'ตรวจสอบตามกฎหมายเช่าไทยและระเบียบคุ้มครองผู้บริโภค 2568' : language === 'zh' ? '根据泰国租赁法和2025年消费者保护法规进行检查' : language === 'ja' ? 'タイの賃貸法および2025年消費者保護規制に基づいて確認' : language === 'ko' ? '태국 임대법 및 2025년 소비자 보호 규정에 따라 검토' : language === 'ru' ? 'Проверка на соответствие тайскому арендному праву и нормам защиты потребителей 2025 года' : 'Checks against Thai rental law and 2025 consumer protection regulations'}</span></li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" /><span>{language === 'th' ? 'การประเมินความเสี่ยงเต็มรูปแบบพร้อมระดับความรุนแรงสำหรับทุกข้อสัญญา' : language === 'zh' ? '全面风险评估，每条条款均有严重程度评级' : language === 'ja' ? 'すべての条項に対する重大度評価付きの完全なリスク評価' : language === 'ko' ? '모든 조항에 대한 심각도 등급이 포함된 전체 위험 평가' : language === 'ru' ? 'Полная оценка рисков с уровнями серьёзности для каждого пункта' : 'Full risk assessment with severity ratings for every clause'}</span></li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" /><span>{language === 'th' ? 'ระบุข้อสัญญาที่ผิดกฎหมาย ไม่เป็นธรรม หรือไม่เป็นไปตามกฎหมาย' : language === 'zh' ? '识别违法、不公平或不合规的条款' : language === 'ja' ? '違法、不公平、または非準拠の条項を特定' : language === 'ko' ? '불법, 불공정 또는 비준수 조항 식별' : language === 'ru' ? 'Выявление незаконных, несправедливых или несоответствующих условий' : 'Identifies illegal, unfair, or non-compliant terms'}</span></li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" /><span>{language === 'th' ? 'คำแนะนำการดำเนินการสำหรับแต่ละข้อสัญญาที่ถูกตั้งค่าสถานะ' : language === 'zh' ? '每个标记条款的建议操作' : language === 'ja' ? 'フラグ付き条項ごとの推奨アクション' : language === 'ko' ? '플래그된 각 조항에 대한 권장 조치' : language === 'ru' ? 'Рекомендуемые действия для каждого отмеченного пункта' : 'Recommended actions for each flagged clause'}</span></li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" /><span>{language === 'th' ? 'ผลลัพธ์แสดงในภาษาที่คุณเลือก' : language === 'zh' ? '以您选择的语言输出结果' : language === 'ja' ? '選択した言語で結果を出力' : language === 'ko' ? '선택한 언어로 결과 출력' : language === 'ru' ? 'Результат на выбранном вами языке' : 'Output delivered in your chosen language'}</span></li>
+                    <li className="flex items-start gap-2"><CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600" /><span>{language === 'th' ? 'คำถามติดตาม 1 ข้อ ตอบโดยทีมงานของเรา' : language === 'zh' ? '由我们的团队回答1个后续问题' : language === 'ja' ? '当チームが回答するフォローアップ質問1件' : language === 'ko' ? '우리 팀이 답변하는 후속 질문 1건' : language === 'ru' ? '1 уточняющий вопрос, на который ответит наша команда' : '1 follow-up question answered by our team'}</span></li>
                   </ul>
-                  <p className="text-xs mt-3 italic" style={{ color: colors.textSecondary }}>
-                    {language === 'th' ? 'ไม่มีการสมัครสมาชิก ไม่มีการแจ้งเตือนอัตโนมัติ ไม่มีพื้นที่จัดเก็บ' : language === 'zh' ? '无订阅，无自动提醒，无存储空间' : language === 'ja' ? 'サブスクなし、自動リマインダーなし、ストレージなし' : language === 'ko' ? '구독 없음, 자동 알림 없음, 저장소 없음' : language === 'ru' ? 'Без подписки, без автоматических напоминаний, без хранилища' : 'No subscription. No reminders. No storage.'}
-                  </p>
+                  <p className="text-xs mt-3 italic" style={{ color: colors.textSecondary }}>{language === 'th' ? 'ไม่ต้องสมัครสมาชิก จำเป็นต้องมีบัญชีฟรีเพื่อเข้าถึงผลการสแกนของคุณ' : language === 'zh' ? '无需订阅。需要免费账户才能访问您的扫描结果。' : language === 'ja' ? 'サブスクリプション不要。スキャン結果にアクセスするには無料アカウントが必要です。' : language === 'ko' ? '구독이 필요 없습니다. 스캔 결과에 액세스하려면 무료 계정이 필요합니다.' : language === 'ru' ? 'Подписка не требуется. Для доступа к результатам сканирования необходим бесплатный аккаунт.' : 'No subscription required. A free account is needed to access your scan.'}</p>
                 </div>
               </div>
               <button
