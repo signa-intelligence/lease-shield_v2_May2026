@@ -116,66 +116,42 @@ function AccountContent() {
     }
   }, [refetchUser]);
 
-  // Handle plan selector scroll + force light mode
+  // Handle plan selector scroll, force light mode, and auto-upgrade
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const showPlans = urlParams.get('showPlans');
     const highlight = urlParams.get('highlight');
     const section = urlParams.get('section');
+    const upgradePlan = urlParams.get('upgrade');
     const hash = window.location.hash;
-    
-    // Force light mode when arriving via ?showPlans=true
-    if (showPlans === 'true') {
-      document.documentElement.classList.remove('dark');
+    if (showPlans === 'true') document.documentElement.classList.remove('dark');
+    // Auto-upgrade: scroll to plans and trigger checkout
+    if (upgradePlan && ['lite','protect','secure'].includes(upgradePlan)) {
+      window.history.replaceState({}, '', '/Account');
+      setTimeout(() => {
+        document.getElementById('plan-selector')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => handleSubscribe(upgradePlan, 'monthly'), 600);
+      }, 400);
+      return;
     }
-    
     if (showPlans === 'true' || highlight === 'plans' || hash === '#plans' || hash === '#plans-section' || hash === '#pricing') {
-      setTimeout(() => {
-        const el = document.getElementById('plan-selector');
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 300);
+      setTimeout(() => document.getElementById('plan-selector')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     } else if (highlight === 'plan') {
-      setTimeout(() => {
-        const el = document.getElementById('account-current-plan');
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 300);
+      setTimeout(() => document.getElementById('account-current-plan')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     }
-    
     if (hash === '#notifications' || section === 'notifications') {
       setTimeout(() => {
-        // Automatically expand notification preferences if hash or section param is present
-        setExpandedNotifPrefs(true); 
-        const notificationSection = document.getElementById('notification-preferences');
-        if (notificationSection) {
-          notificationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        setExpandedNotifPrefs(true);
+        document.getElementById('notification-preferences')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
     }
-
     if (hash === '#letter-credits') {
-      setTimeout(() => {
-        const creditsSection = document.getElementById('letter-credits');
-        if (creditsSection) {
-          creditsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 300);
+      setTimeout(() => document.getElementById('letter-credits')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     }
-
     if (hash === '#refer-friends' || hash === '#referral') {
       setTimeout(() => {
-        const referralSection = document.getElementById('referral-section');
-        if (referralSection) {
-          referralSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          // Highlight for 1s
-          referralSection.style.boxShadow = '0 0 0 4px rgba(199,163,56,0.3)';
-          setTimeout(() => {
-            referralSection.style.boxShadow = '';
-          }, 1000);
-        }
+        const el = document.getElementById('referral-section');
+        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); el.style.boxShadow = '0 0 0 4px rgba(199,163,56,0.3)'; setTimeout(() => { el.style.boxShadow = ''; }, 1000); }
       }, 300);
     }
   }, [location]);
