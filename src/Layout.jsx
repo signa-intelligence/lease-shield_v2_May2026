@@ -677,20 +677,20 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             {isDarkMode ? (
-              <div className="h-10 px-2 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center lg:hidden">
+              <div className="h-10 px-2 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center md:hidden">
                 <div className="flex flex-col items-center leading-tight">
                   <span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Lease</span>
                   <span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Shield</span>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col items-center leading-tight lg:hidden flex-shrink-0">
+              <div className="flex flex-col items-center leading-tight md:hidden flex-shrink-0">
                 <span className="text-sm font-bold" style={{ color: '#0C3B2E' }}>Lease</span>
                 <span className="text-sm font-bold" style={{ color: '#0C3B2E' }}>Shield</span>
               </div>
             )}
             {isDarkMode ? (
-              <div className="hidden lg:flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur-sm rounded-lg">
+              <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur-sm rounded-lg">
                 <img 
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
                   alt="Lease Shield"
@@ -710,14 +710,14 @@ export default function Layout({ children, currentPageName }) {
                 <img 
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
                   alt="Lease Shield crest"
-                  className="hidden lg:block h-12 w-12 flex-shrink-0"
+                  className="hidden md:block h-12 w-12 flex-shrink-0"
                   width="48"
                   height="48"
                   loading="eager"
                   fetchPriority="high"
                   decoding="async"
                 />
-                <span className="font-bold text-base sm:text-lg truncate hidden lg:block" style={{ color: '#0C3B2E' }}>
+                <span className="font-bold text-base sm:text-lg truncate hidden md:block" style={{ color: '#0C3B2E' }}>
                   {strings.appName || "LEASE SHIELD"}
                 </span>
               </>
