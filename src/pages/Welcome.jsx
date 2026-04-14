@@ -1,24 +1,28 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Shield, Calendar, FolderLock, X, Smartphone } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { haptic } from "../components/shared/HapticFeedback";
-import LoadingSpinner from "../components/shared/LoadingSpinner";
+import React, { useEffect } from "react";
 
 export default function Welcome() {
-  const navigate = useNavigate();
+  useEffect(() => {
+    const pendingPlan = sessionStorage.getItem('pendingPlan');
 
-  // Redirect to dashboard - Welcome screen permanently removed
-  React.useEffect(() => {
-    // Check if there's a 'next' param (from login redirect)
-    const urlParams = new URLSearchParams(window.location.search);
-    const nextUrl = urlParams.get('next') || '/dashboard';
-    
-    navigate(nextUrl, { replace: true });
-  }, [navigate]);
+    if (pendingPlan) {
+      sessionStorage.removeItem('pendingPlan');
 
-  return null;
+      if (pendingPlan === 'one-time-scan') {
+        window.location.replace('/UploadScan');
+      } else {
+        window.location.replace(`/Account?upgrade=${pendingPlan}`);
+      }
+    } else {
+      window.location.replace('/Dashboard');
+    }
+  }, []);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "#0C3B2E" }}>
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+        <p className="text-white/60 text-sm">Setting up your account…</p>
+      </div>
+    </div>
+  );
 }

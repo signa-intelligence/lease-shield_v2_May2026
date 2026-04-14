@@ -1,8 +1,23 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
+
+const planNames = {
+  'lite': 'Lite',
+  'protect': 'Protect',
+  'secure': 'Secure',
+  'one-time-scan': 'One-Time Lease Scan'
+};
+
 export default function AppHome() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const selectedPlan = searchParams.get('plan');
+  const planName = selectedPlan ? planNames[selectedPlan] : null;
+
   const handleAuth = () => {
-    base44.auth.redirectToLogin(window.location.origin + "/Dashboard");
+    if (selectedPlan) {
+      sessionStorage.setItem('pendingPlan', selectedPlan);
+    }
+    base44.auth.redirectToLogin(window.location.origin + "/welcome");
   };
 
   return (
@@ -32,12 +47,14 @@ export default function AppHome() {
 
       {/* Headline */}
       <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4 max-w-lg leading-tight">
-        Protect Your Rental in Thailand
+        {planName ? `Get Started with ${planName}` : "Protect Your Rental in Thailand"}
       </h2>
 
       {/* Description */}
       <p className="text-base text-white/70 text-center mb-10 max-w-md">
-        Scan your lease, track your deposit, resolve disputes.
+        {planName
+          ? `Create your account to ${selectedPlan === 'one-time-scan' ? 'purchase' : 'subscribe to'} ${planName}.`
+          : "Scan your lease, track your deposit, resolve disputes."}
       </p>
 
       {/* Buttons */}
@@ -50,7 +67,9 @@ export default function AppHome() {
             color: "#0C3B2E",
           }}
         >
-          Create Free Account
+          {planName
+            ? `Sign Up for ${planName}`
+            : "Create Free Account"}
         </button>
         <button
           onClick={handleAuth}

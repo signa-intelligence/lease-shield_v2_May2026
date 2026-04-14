@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { setupIframeMessaging } from './lib/iframe-messaging';
 import PageNotFound from './lib/PageNotFound';
 import AppHome from './pages/AppHome';
+import Welcome from './pages/Welcome';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
@@ -54,6 +55,7 @@ const ProtectedRoutes = () => {
     <LayoutWrapper currentPageName={mainPageKey}>
       <Routes>
         <Route path="/" element={<MainPage />} />
+        <Route path="/welcome" element={<Welcome />} />
         {Object.entries(Pages).map(([path, Page]) => (
           <Route key={path} path={`/${path}`} element={<Page />} />
         ))}
@@ -88,6 +90,7 @@ const AppRouter = () => {
   return (
     <Routes>
       <Route path="/" element={<AppHome />} />
+      <Route path="/welcome" element={<Welcome />} />
       <Route path="*" element={<AppHome />} />
     </Routes>
   );
