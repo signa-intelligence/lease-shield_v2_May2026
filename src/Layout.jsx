@@ -688,8 +688,8 @@ export default function Layout({ children, currentPageName }) {
                 decoding="async"
               />
               {/* Mobile: Stacked vertically */}
-              <div className="flex flex-col leading-tight lg:hidden">
-                <span className="font-bold text-base" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }}>Lease</span>
+              <div className="flex flex-col leading-none lg:hidden">
+                <span className="font-bold text-base -mb-1" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }}>Lease</span>
                 <span className="font-bold text-base" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }}>Shield</span>
               </div>
               {/* Desktop: Horizontal */}
