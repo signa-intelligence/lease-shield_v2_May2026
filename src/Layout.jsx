@@ -13,6 +13,7 @@ import QuickGuide from "./components/shared/QuickGuide";
 import ErrorBoundary from "./components/shared/ErrorBoundary";
 import GlobalErrorBoundary from "./components/shared/GlobalErrorBoundary";
 import NotificationPanel from "./components/notifications/NotificationPanel";
+import FacebookBrowserBanner from "./components/shared/FacebookBrowserBanner";
 
 
 // Animation utilities inlined
@@ -526,6 +527,8 @@ export default function Layout({ children, currentPageName }) {
       position: 'relative',
       paddingBottom: 'env(safe-area-inset-bottom)'
     }}>
+      <FacebookBrowserBanner />
+
       {/* SECURITY FIX: Add Content Security Policy */}
       <meta 
         httpEquiv="Content-Security-Policy" 
@@ -676,29 +679,17 @@ export default function Layout({ children, currentPageName }) {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
             {isDarkMode ? (
-              <div className="h-10 px-3 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center md:hidden">
-                <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
-                  alt="Lease Shield"
-                  className="h-8 w-auto flex-shrink-0"
-                  width="86"
-                  height="32"
-                  loading="eager"
-                  fetchPriority="high"
-                  decoding="async"
-                />
+              <div className="h-10 px-2 bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center md:hidden">
+                <div className="flex flex-col items-center leading-tight">
+                  <span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Lease</span>
+                  <span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>Shield</span>
+                </div>
               </div>
             ) : (
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/8a29b56f1_LeaseShieldmainlogowobkg.png"
-                alt="Lease Shield"
-                className="h-10 w-auto md:hidden flex-shrink-0"
-                width="108"
-                height="40"
-                loading="eager"
-                fetchPriority="high"
-                decoding="async"
-              />
+              <div className="flex flex-col items-center leading-tight md:hidden flex-shrink-0">
+                <span className="text-sm font-bold" style={{ color: '#0C3B2E' }}>Lease</span>
+                <span className="text-sm font-bold" style={{ color: '#0C3B2E' }}>Shield</span>
+              </div>
             )}
             {isDarkMode ? (
               <div className="hidden md:flex items-center gap-2 px-3 py-2 bg-white/10 backdrop-blur-sm rounded-lg">
