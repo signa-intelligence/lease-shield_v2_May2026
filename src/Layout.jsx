@@ -676,39 +676,21 @@ export default function Layout({ children, currentPageName }) {
       }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            {isDarkMode ? (
-              <div className="flex items-center gap-2 px-2 py-1 bg-white/10 backdrop-blur-sm rounded-lg">
-                <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-                  alt="Lease Shield"
-                  className="h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
-                  width="48"
-                  height="48"
-                  loading="eager"
-                  fetchPriority="high"
-                  decoding="async"
-                />
-                <span className="font-bold text-sm sm:text-base truncate hidden sm:block" style={{ color: '#F9FAFB' }}>
-                  {strings.appName || "LEASE SHIELD"}
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
-                  alt="Lease Shield crest"
-                  className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0"
-                  width="48"
-                  height="48"
-                  loading="eager"
-                  fetchPriority="high"
-                  decoding="async"
-                />
-                <span className="font-bold text-sm sm:text-base truncate hidden sm:block" style={{ color: '#0C3B2E' }}>
-                  {strings.appName || "LEASE SHIELD"}
-                </span>
-              </div>
-            )}
+            <Link to="/" className="flex items-center gap-2">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
+                alt="Lease Shield"
+                className="h-8 w-8 flex-shrink-0"
+                width="32"
+                height="32"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+              />
+              <span className="font-bold text-base whitespace-nowrap" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }}>
+                {strings.appName || "LEASE SHIELD"}
+              </span>
+            </Link>
             {isAdmin && (
               <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
                 {userRole === 'super_admin' || accessLevel === 'super_admin' ? 'SUPER ADMIN' : userRole === 'admin' || accessLevel === 'admin' ? 'ADMIN' : 'VA'}
