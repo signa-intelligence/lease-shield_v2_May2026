@@ -66,11 +66,10 @@ const ProtectedRoutes = () => {
 const AppRouter = () => {
   const { isAuthenticated, isLoadingAuth, isLoadingPublicSettings } = useAuth();
 
-  // While loading, show spinner
+  // While loading, show spinner everywhere (prevents AppHome flash for logged-in users)
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <Routes>
-        <Route path="/" element={<AppHome />} />
         <Route path="*" element={
           <div className="fixed inset-0 flex items-center justify-center">
             <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
