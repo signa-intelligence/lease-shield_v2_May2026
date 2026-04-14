@@ -680,16 +680,17 @@ export default function Layout({ children, currentPageName }) {
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
                 alt="Lease Shield"
-                className="h-8 w-8 flex-shrink-0"
-                width="32"
-                height="32"
+                className="h-10 w-10 flex-shrink-0"
+                width="40"
+                height="40"
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"
               />
-              <span className="font-bold text-base whitespace-nowrap" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }}>
-                {strings.appName || "LEASE SHIELD"}
-              </span>
+              <div className="flex flex-col leading-tight">
+                <span className="font-bold text-base" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }}>Lease</span>
+                <span className="font-bold text-base" style={{ color: isDarkMode ? '#F9FAFB' : '#0C3B2E' }}>Shield</span>
+              </div>
             </Link>
             {isAdmin && (
               <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-ls-gold text-white text-xs font-semibold rounded flex-shrink-0">
