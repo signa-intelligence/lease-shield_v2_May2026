@@ -67,10 +67,10 @@ NEVER give generic advice without connecting it to a LeaseShield feature.
 - Action: "Go to Cases and submit a new case"
 
 ## Subscription Plans
-- Explorer (Free): 1 lifetime scan, basic risk preview, 100MB storage
-- Lite (฿190/month or ฿1,900/year): 6 scans/year, 3 letter credits, 1GB, email alerts, deposit tracker
-- Protect (฿390/month or ฿3,900/year): 12 scans/year, 5 letter credits, 5GB, LINE alerts, rent reminders
-- Secure (฿990/month or ฿9,900/year): 50 scans/year, 50 letter credits/year, 10 Fast Track/year, 20GB, priority queue, 1 free Resolve/year, premium support
+- Explorer (Free): 1 lifetime scan, basic risk preview, 1GB storage
+- Lite (฿158/month or ฿1,896/year): 6 scans/year, 3 letter credits, 1GB, email alerts, deposit tracker
+- Protect (฿325/month or ฿3,900/year): 12 scans/year, 5 letter credits, 5GB, LINE alerts, rent reminders
+- Secure (฿825/month or ฿9,900/year): 50 scans/year, 50 letter credits/year, 10 Fast Track/year, 20GB, priority queue, 1 free Resolve/year, premium support
 
 # FEATURE RECOMMENDATION TRIGGERS
 
@@ -154,7 +154,7 @@ Only suggest upgrades when:
 - User hits a tier limit
 
 Explorer user needing more:
-"You're on Explorer with 1 free scan. For your situation, Lite (฿190/month or ฿1,900/year) gives you 6 scans/year, 3 letter credits, and 1GB storage — perfect for ongoing protection. Want to upgrade?"
+"You're on Explorer with 1 free scan. For your situation, Lite (฿158/month or ฿1,896/year) gives you 6 scans/year, 3 letter credits, and 1GB storage — perfect for ongoing protection. Want to upgrade?"
 
 Never suggest upgrades to Secure tier users (they have everything).
 
@@ -225,6 +225,25 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: deposits } = useQuery({
+    queryKey: ['lisaDeposits', user?.email],
+    queryFn: () => base44.entities.DepositTracker.filter({ owner_email: user.email, status: 'tracking' }),
+    enabled: !!user?.email,
+    staleTime: 5 * 60 * 1000,
+    initialData: [],
+  });
+
+  const { data: activeCases } = useQuery({
+    queryKey: ['lisaCases', user?.email],
+    queryFn: async () => {
+      const cases = await base44.entities.Case.filter({ user_email: user.email });
+      return cases.filter(c => !['resolved', 'closed'].includes(c.status));
+    },
+    enabled: !!user?.email,
+    staleTime: 5 * 60 * 1000,
+    initialData: [],
   });
 
   // Sync with external control
@@ -465,18 +484,30 @@ export default function LisaEnhanced({ language = 'en', isDarkMode = false, isOp
       const userTier = user?.plan_tier || 'free';
       const availableScans = user?.available_scans || 0;
       const storageUsedMB = storageInfo ? Math.round(storageInfo.total_bytes / (1024 * 1024)) : 0;
-      const storageLimitMB = storageInfo ? Math.round(storageInfo.tier_limit_bytes / (1024 * 1024)) : 100;
+      const storageLimitMB = storageInfo ? Math.round(storageInfo.tier_limit_bytes / (1024 * 1024)) : 1024;
+      const protectionScore = user?.protection_score ?? 'N/A';
+      const depositCount = deposits?.length || 0;
+      const nearestReturn = deposits?.length > 0
+        ? deposits
+            .filter(d => d.expected_return_date)
+            .sort((a, b) => new Date(a.expected_return_date) - new Date(b.expected_return_date))[0]?.expected_return_date || 'none'
+        : 'none';
+      const activeCaseCount = activeCases?.length || 0;
       
       const tierCapabilities = {
-        free: 'Preview scan only (top 5 risks summary), 100MB storage, public case pricing (฿5,000)',
+        free: 'Preview scan only (top 5 risks summary), 1GB storage, public case pricing (฿5,000)',
+        explorer: 'Preview scan only (top 5 risks summary), 1GB storage, public case pricing (฿5,000)',
         lite: 'Full scans with top 5 clause analysis, 1GB storage, 6 scans/year, 3 letter credits, deposit tracking, timeline, property tracker, member case pricing (฿3,500 after 30 days)',
         protect: 'Full scans with ALL clause analysis, 5GB storage, 12 scans/year, 5 letter credits, all Lite features, LINE notifications, member case pricing (฿3,500 after 30 days)',
         secure: 'All Protect features, 20GB storage, 50 scans/year, 50 letter credits/year, 10 Fast Track cases/year, priority queue, 1 free Resolve case/year (Annual only), premium support'
       };
 
-      const userContext = `\n\nCURRENT USER CONTEXT:
-- Subscription Tier: ${userTier.toUpperCase()}
-- Available Scans: ${availableScans}
+      const userContext = `\n\nCURRENT USER CONTEXT (use this to personalise every response):
+- Plan: ${userTier.toUpperCase()}
+- Protection Score: ${protectionScore}/100
+- Deposits tracked: ${depositCount}, nearest return: ${nearestReturn}
+- Active cases: ${activeCaseCount}
+- Scans remaining: ${availableScans}
 - Storage Used: ${storageUsedMB}MB / ${storageLimitMB}MB
 - Tier Capabilities: ${tierCapabilities[userTier] || tierCapabilities.free}
 
@@ -499,7 +530,8 @@ SECURE TIER USERS:
       
       const response = await base44.integrations.Core.InvokeLLM({
         prompt: `${LISA_SYSTEM_PROMPT}${userContext}${languageInstruction}\n\nUser question: ${textToSend}`,
-        add_context_from_internet: false
+        add_context_from_internet: false,
+        model: 'claude_sonnet_4_6'
       });
 
       const responseTime = Date.now() - startTime;
