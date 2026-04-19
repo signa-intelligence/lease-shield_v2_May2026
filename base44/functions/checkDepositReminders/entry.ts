@@ -1,4 +1,3 @@
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 Deno.serve(async (req) => {
@@ -133,6 +132,19 @@ Deno.serve(async (req) => {
             subject: subject,
             body: messageText
           });
+        }
+
+        // Send to tenant via User.line_id (if set and different from line_messaging_token)
+        if (user.line_id && user.line_id !== user.line_messaging_token) {
+          try {
+            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: user.line_id,
+              message: messageText
+            });
+            console.log('[DEPOSIT_REMIND] ✅ Tenant LINE (line_id) sent:', deposit.id);
+          } catch (lineIdError) {
+            console.error('[DEPOSIT_REMIND] ❌ Tenant LINE (line_id) failed:', lineIdError.message);
+          }
         }
       }
     }
@@ -290,6 +302,19 @@ Deno.serve(async (req) => {
             subject: subject,
             body: messageText
           });
+        }
+
+        // Send to tenant via User.line_id (if set and different from line_messaging_token)
+        if (user.line_id && user.line_id !== user.line_messaging_token) {
+          try {
+            await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              userId: user.line_id,
+              message: messageText
+            });
+            console.log('[LEASE_REMIND] ✅ Tenant LINE (line_id) sent:', lease.id);
+          } catch (lineIdError) {
+            console.error('[LEASE_REMIND] ❌ Tenant LINE (line_id) failed:', lineIdError.message);
+          }
         }
       }
     }

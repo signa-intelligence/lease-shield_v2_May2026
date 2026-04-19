@@ -281,6 +281,21 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Tenant LINE via User.line_id (if set and different from line_messaging_token)
+    if (user.line_id && user.line_id !== user.line_messaging_token && lineAllowed) {
+      try {
+        await base44.asServiceRole.functions.invoke('sendLineMessage', {
+          userId: user.line_id,
+          message: `🔧 ${language === 'th' ? 'คำขอซ่อมถูกส่งแล้ว' : 'Maintenance request submitted'}: ${maintenanceRequest.issue_title}`
+        });
+        console.log('[MAINT_NOTIFY] ✅ Tenant LINE (line_id) sent');
+        notifications.push({ recipient: 'tenant', method: 'LINE_line_id', status: 'sent' });
+      } catch (error) {
+        console.error('[MAINT_NOTIFY] ❌ Tenant LINE (line_id) failed:', error.message);
+        notifications.push({ recipient: 'tenant', method: 'LINE_line_id', status: 'failed', error: error.message });
+      }
+    }
+
     // ═══════════════════════════════════════
     // 5. TIMELINE EVENT
     // ═══════════════════════════════════════
