@@ -87,7 +87,7 @@ export default function AppHome() {
       {/* "Not sure yet?" link */}
       <a
         href="https://www.leaseshield.asia"
-        className="mt-5 text-base text-white underline underline-offset-4 hover:text-white/80 transition-colors"
+        className="mt-4 w-full max-w-sm py-3.5 rounded-xl font-bold text-base text-center text-white border-2 border-white/40 hover:bg-white/10 transition-all block"
       >
         Not sure yet? See how Lease Shield works
       </a>
