@@ -328,29 +328,23 @@ export default function Layout({ children, currentPageName }) {
 
     // Favicon setup — use a stable cache key (not Date.now()) to avoid re-downloading on every mount
     const faviconUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png';
-    const cacheBust = '?v=2';
+    const cacheBust = '?v=3';
 
-    // Only set favicons once — skip if already set
-    if (!document.querySelector('link[data-ls-favicon]')) {
-      document.querySelectorAll('link[rel*="icon"]').forEach(el => el.remove());
+    // Always set favicons — remove ALL existing ones first to override platform defaults
+    document.querySelectorAll('link[rel*="icon"]').forEach(el => el.remove());
 
-      // Single favicon link (browsers only need one)
-      const favicon = document.createElement('link');
-      favicon.rel = 'icon';
-      favicon.type = 'image/png';
-      favicon.sizes = '32x32';
-      favicon.href = faviconUrl + cacheBust;
-      favicon.setAttribute('data-ls-favicon', 'true');
-      document.head.appendChild(favicon);
+    const favicon = document.createElement('link');
+    favicon.rel = 'icon';
+    favicon.type = 'image/png';
+    favicon.sizes = '32x32';
+    favicon.href = faviconUrl + cacheBust;
+    document.head.appendChild(favicon);
 
-      // Apple touch icon
-      const appleIcon = document.createElement('link');
-      appleIcon.rel = 'apple-touch-icon';
-      appleIcon.sizes = '180x180';
-      appleIcon.href = faviconUrl + cacheBust;
-      appleIcon.setAttribute('data-ls-favicon', 'true');
-      document.head.appendChild(appleIcon);
-    }
+    const appleIcon = document.createElement('link');
+    appleIcon.rel = 'apple-touch-icon';
+    appleIcon.sizes = '180x180';
+    appleIcon.href = faviconUrl + cacheBust;
+    document.head.appendChild(appleIcon);
   }, []);
 
   const language = user?.language || 'en';
