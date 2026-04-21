@@ -165,6 +165,9 @@ export default function Layout({ children, currentPageName }) {
       })
         .then(() => {
           console.log('[LAYOUT] ✅ User initialized: plan_tier=explorer, available_scans=1, letter_credits=0');
+          if (typeof window.gtag === 'function') {
+            window.gtag('event', 'sign_up', { method: 'email' });
+          }
           queryClient.invalidateQueries({ queryKey: ['currentUser'] });
           base44.functions.invoke('sendWelcomeEmail')
             .then(() => console.log('[LAYOUT] ✅ Welcome email triggered'))
