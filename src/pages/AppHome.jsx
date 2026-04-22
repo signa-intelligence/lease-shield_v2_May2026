@@ -54,7 +54,7 @@ export default function AppHome() {
       <p className="text-base text-white/70 text-center mb-10 max-w-md">
         {planName
           ? `Create your account to ${selectedPlan === 'one-time-scan' ? 'purchase' : 'subscribe to'} ${planName}.`
-          : "Scan your lease, track your deposit, resolve disputes."}
+          : "Start free. Scan your lease, track your deposit, resolve disputes. No card required."}
       </p>
 
       {/* Buttons */}
