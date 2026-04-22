@@ -8,7 +8,46 @@ const planNames = {
   'one-time-scan': 'One-Time Lease Scan'
 };
 
+const t = {
+  en: {
+    notSure: "Not sure yet? See how Lease Shield works",
+    startFree: "Start free. Scan your lease, track your deposit, resolve disputes. No card required.",
+  },
+  th: {
+    notSure: "ยังไม่แน่ใจ? ดูวิธีการทำงานของ Lease Shield",
+    startFree: "เริ่มฟรี สแกนสัญญาเช่า ติดตามเงินมัดจำ แก้ไขข้อพิพาท ไม่ต้องใช้บัตร",
+  },
+  ko: {
+    notSure: "아직 확실하지 않으신가요? Lease Shield 작동 방식 보기",
+    startFree: "무료로 시작하세요. 임대 계약 스캔, 보증금 추적, 분쟁 해결. 카드 불필요.",
+  },
+  ja: {
+    notSure: "まだ迷っていますか？Lease Shieldの仕組みを見る",
+    startFree: "無料で始める。リースをスキャンし、敷金を追跡し、紛争を解決。カード不要。",
+  },
+  zh: {
+    notSure: "还不确定？了解 Lease Shield 的运作方式",
+    startFree: "免费开始。扫描租约、追踪押金、解决纠纷。无需信用卡。",
+  },
+  ru: {
+    notSure: "Не уверены? Узнайте, как работает Lease Shield",
+    startFree: "Начните бесплатно. Сканируйте договор, отслеживайте депозит, решайте споры. Карта не нужна.",
+  },
+};
+
+function detectLang() {
+  const nav = (navigator.language || '').toLowerCase();
+  if (nav.startsWith('th')) return 'th';
+  if (nav.startsWith('ko')) return 'ko';
+  if (nav.startsWith('ja')) return 'ja';
+  if (nav.startsWith('zh')) return 'zh';
+  if (nav.startsWith('ru')) return 'ru';
+  return 'en';
+}
+
 export default function AppHome() {
+  const lang = detectLang();
+  const strings = t[lang] || t.en;
   const searchParams = new URLSearchParams(window.location.search);
   const selectedPlan = searchParams.get('plan');
   const planName = selectedPlan ? planNames[selectedPlan] : null;
@@ -54,7 +93,7 @@ export default function AppHome() {
       <p className="text-base text-white/70 text-center mb-10 max-w-md">
         {planName
           ? `Create your account to ${selectedPlan === 'one-time-scan' ? 'purchase' : 'subscribe to'} ${planName}.`
-          : "Start free. Scan your lease, track your deposit, resolve disputes. No card required."}
+          : strings.startFree}
       </p>
 
       {/* Buttons */}
@@ -89,7 +128,7 @@ export default function AppHome() {
         href="https://www.leaseshield.asia"
         className="mt-4 w-full max-w-sm py-3.5 rounded-xl font-bold text-base text-center text-white border-2 border-white/40 hover:bg-white/10 transition-all block"
       >
-        Not sure yet? See how Lease Shield works
+        {strings.notSure}
       </a>
 
       {/* Social Icons */}
