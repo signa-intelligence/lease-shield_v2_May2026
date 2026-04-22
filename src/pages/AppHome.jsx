@@ -10,30 +10,57 @@ const planNames = {
 
 const t = {
   en: {
-    notSure: "Not sure yet? See how Lease Shield works",
+    headline: "Protect Your Rental in Thailand",
     startFree: "Start free. Scan your lease, track your deposit, resolve disputes. No card required.",
+    createAccount: "Create Free Account",
+    logIn: "Log In",
+    notSure: "Not sure yet? See how Lease Shield works",
   },
   th: {
-    notSure: "ยังไม่แน่ใจ? ดูวิธีการทำงานของ Lease Shield",
+    headline: "ปกป้องการเช่าของคุณในประเทศไทย",
     startFree: "เริ่มฟรี สแกนสัญญาเช่า ติดตามเงินมัดจำ แก้ไขข้อพิพาท ไม่ต้องใช้บัตร",
+    createAccount: "สร้างบัญชีฟรี",
+    logIn: "เข้าสู่ระบบ",
+    notSure: "ยังไม่แน่ใจ? ดูวิธีการทำงานของ Lease Shield",
   },
   ko: {
+    headline: "태국에서 임대를 보호하세요",
+    startFree: "무료로 시작. 임대 계약 스캔, 보증금 추적, 분쟁 해결. 카드 불필요.",
+    createAccount: "무료 계정 만들기",
+    logIn: "로그인",
     notSure: "아직 확실하지 않으신가요? Lease Shield 작동 방식 보기",
-    startFree: "무료로 시작하세요. 임대 계약 스캔, 보증금 추적, 분쟁 해결. 카드 불필요.",
   },
   ja: {
+    headline: "タイで賃貸を守りましょう",
+    startFree: "無料で始める。リーススキャン、敷金追跡、紛争解決。カード不要。",
+    createAccount: "無料アカウント作成",
+    logIn: "ログイン",
     notSure: "まだ迷っていますか？Lease Shieldの仕組みを見る",
-    startFree: "無料で始める。リースをスキャンし、敷金を追跡し、紛争を解決。カード不要。",
   },
   zh: {
-    notSure: "还不确定？了解 Lease Shield 的运作方式",
+    headline: "在泰国保护您的租约",
     startFree: "免费开始。扫描租约、追踪押金、解决纠纷。无需信用卡。",
+    createAccount: "创建免费账户",
+    logIn: "登录",
+    notSure: "还不确定？了解 Lease Shield 的运作方式",
   },
   ru: {
+    headline: "Защитите вашу аренду в Таиланде",
+    startFree: "Начните бесплатно. Сканирование договора, отслеживание депозита, решение споров. Карта не нужна.",
+    createAccount: "Создать бесплатный аккаунт",
+    logIn: "Войти",
     notSure: "Не уверены? Узнайте, как работает Lease Shield",
-    startFree: "Начните бесплатно. Сканируйте договор, отслеживайте депозит, решайте споры. Карта не нужна.",
   },
 };
+
+const LANGS = [
+  { code: 'en', flag: '🇬🇧' },
+  { code: 'th', flag: '🇹🇭' },
+  { code: 'ko', flag: '🇰🇷' },
+  { code: 'ja', flag: '🇯🇵' },
+  { code: 'zh', flag: '🇨🇳' },
+  { code: 'ru', flag: '🇷🇺' },
+];
 
 function detectLang() {
   const nav = (navigator.language || '').toLowerCase();
@@ -46,7 +73,7 @@ function detectLang() {
 }
 
 export default function AppHome() {
-  const lang = detectLang();
+  const [lang, setLang] = React.useState(detectLang);
   const strings = t[lang] || t.en;
   const searchParams = new URLSearchParams(window.location.search);
   const selectedPlan = searchParams.get('plan');
@@ -67,6 +94,29 @@ export default function AppHome() {
       }}
     >
 
+      {/* Language Toggle */}
+      <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 6 }}>
+        {LANGS.map(l => (
+          <button
+            key={l.code}
+            onClick={() => setLang(l.code)}
+            style={{
+              fontSize: '20px',
+              lineHeight: 1,
+              padding: '4px',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              backgroundColor: lang === l.code ? 'rgba(255,255,255,0.25)' : 'transparent',
+              transition: 'background-color 0.15s',
+            }}
+            aria-label={l.code}
+          >
+            {l.flag}
+          </button>
+        ))}
+      </div>
+
       {/* Logo */}
       <img
         src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
@@ -86,7 +136,7 @@ export default function AppHome() {
 
       {/* Headline */}
       <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4 max-w-lg leading-tight">
-        {planName ? `Get Started with ${planName}` : "Protect Your Rental in Thailand"}
+        {planName ? `Get Started with ${planName}` : strings.headline}
       </h2>
 
       {/* Description */}
@@ -108,7 +158,7 @@ export default function AppHome() {
         >
           {planName
             ? `Sign Up for ${planName}`
-            : "Create Free Account"}
+            : strings.createAccount}
         </button>
         <button
           onClick={handleAuth}
@@ -119,7 +169,7 @@ export default function AppHome() {
             border: "2px solid rgba(255,255,255,0.4)",
           }}
         >
-          Log In
+          {strings.logIn}
         </button>
       </div>
 
