@@ -12,30 +12,46 @@ const t = {
   en: {
     notSure: "Not sure yet? See how Lease Shield works",
     startFree: "Start free. Scan your lease, track your deposit, resolve disputes. No card required.",
+    createAccount: "Create Free Account",
+    logIn: "Log In",
   },
   th: {
     notSure: "ยังไม่แน่ใจ? ดูวิธีการทำงานของ Lease Shield",
     startFree: "เริ่มฟรี สแกนสัญญาเช่า ติดตามเงินมัดจำ แก้ไขข้อพิพาท ไม่ต้องใช้บัตร",
+    createAccount: "สร้างบัญชีฟรี",
+    logIn: "เข้าสู่ระบบ",
   },
   ko: {
     notSure: "아직 확실하지 않으신가요? Lease Shield 작동 방식 보기",
     startFree: "무료로 시작하세요. 임대 계약 스캔, 보증금 추적, 분쟁 해결. 카드 불필요.",
+    createAccount: "무료 계정 만들기",
+    logIn: "로그인",
   },
   ja: {
     notSure: "まだ迷っていますか？Lease Shieldの仕組みを見る",
     startFree: "無料で始める。リースをスキャンし、敷金を追跡し、紛争を解決。カード不要。",
+    createAccount: "無料アカウント作成",
+    logIn: "ログイン",
   },
   zh: {
     notSure: "还不确定？了解 Lease Shield 的运作方式",
     startFree: "免费开始。扫描租约、追踪押金、解决纠纷。无需信用卡。",
+    createAccount: "创建免费账户",
+    logIn: "登录",
   },
   ru: {
     notSure: "Не уверены? Узнайте, как работает Lease Shield",
     startFree: "Начните бесплатно. Сканируйте договор, отслеживайте депозит, решайте споры. Карта не нужна.",
+    createAccount: "Создать бесплатный аккаунт",
+    logIn: "Войти",
   },
 };
 
 function detectLang() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const langParam = urlParams.get('lang');
+  const supported = ['en', 'th', 'ko', 'ja', 'zh', 'ru'];
+  if (langParam && supported.includes(langParam)) return langParam;
   const nav = (navigator.language || '').toLowerCase();
   if (nav.startsWith('th')) return 'th';
   if (nav.startsWith('ko')) return 'ko';
@@ -108,7 +124,7 @@ export default function AppHome() {
         >
           {planName
             ? `Sign Up for ${planName}`
-            : "Create Free Account"}
+            : strings.createAccount}
         </button>
         <button
           onClick={handleAuth}
@@ -119,7 +135,7 @@ export default function AppHome() {
             border: "2px solid rgba(255,255,255,0.4)",
           }}
         >
-          Log In
+          {strings.logIn}
         </button>
       </div>
 
