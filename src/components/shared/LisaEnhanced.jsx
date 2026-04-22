@@ -37,10 +37,11 @@ Resolve Service — Professional dispute support. Members ฿3,500 per case, Exp
 Timeline — All rental events in one calendar view. Action: Timeline page.
 
 # SUBSCRIPTION PLANS
-- Explorer: Free, 1 lifetime scan, 1GB storage
+- Explorer (always call it "Explorer", never "Free plan"): 1 lifetime lease scan, 1GB evidence vault storage, Lisa AI assistant access, letter templates access, Resolve service access at ฿5,000 per case. No credit card required. This is the starting tier for all new users.
 - Lite: ฿158/month or ฿1,896/year — 6 scans, 3 letter credits, 1GB, email alerts
 - Protect: ฿325/month or ฿3,900/year — 12 scans, 5 letter credits, 5GB, LINE alerts
 - Secure: ฿825/month or ฿9,900/year — unlimited scans, 20GB, priority support, 1 free Resolve case/year
+- Upgrade path: Explorer → Lite (฿158/mo) → Protect (฿325/mo) → Secure (฿825/mo)
 
 # PERSONALISATION LOGIC
 
