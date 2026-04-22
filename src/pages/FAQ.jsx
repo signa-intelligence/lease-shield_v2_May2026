@@ -22,6 +22,20 @@ const FAQ_DATA = {
     titleRu: 'Общий обзор',
     questions: [
       {
+        questionEn: 'Is there a free plan?',
+        questionTh: 'มีแผนฟรีหรือไม่?',
+        questionZh: '有免费计划吗？',
+        questionJa: '無料プランはありますか？',
+        questionKo: '무료 플랜이 있나요?',
+        questionRu: 'Есть ли бесплатный план?',
+        answerEn: 'Yes. The Explorer tier is completely free with no credit card required. It includes one lifetime Lease Scan, Evidence Vault storage, Lisa AI assistant, letter templates, and access to the Resolve dispute service. You can create your free Explorer account in under two minutes.',
+        answerTh: 'ใช่ แผน Explorer ฟรีทั้งหมดโดยไม่ต้องใช้บัตรเครดิต รวมการสแกนสัญญาเช่า 1 ครั้งตลอดชีพ พื้นที่จัดเก็บหลักฐาน ผู้ช่วย Lisa AI เทมเพลตจดหมาย และการเข้าถึงบริการ Resolve คุณสามารถสร้างบัญชี Explorer ฟรีได้ภายในไม่ถึงสองนาที',
+        answerZh: '是的。Explorer层级完全免费，无需信用卡。包括一次终身租约扫描、证据库存储、Lisa AI助手、信件模板以及Resolve争议服务访问权限。您可以在不到两分钟内创建免费的Explorer账户。',
+        answerJa: 'はい。Explorerティアはクレジットカード不要で完全無料です。生涯1回のリーススキャン、証拠保管庫ストレージ、Lisa AIアシスタント、レターテンプレート、およびResolve紛争サービスへのアクセスが含まれます。2分以内に無料のExplorerアカウントを作成できます。',
+        answerKo: '예. Explorer 티어는 신용카드 없이 완전 무료입니다. 평생 1회 임대 계약 스캔, 증거 보관함 저장소, Lisa AI 어시스턴트, 편지 템플릿, Resolve 분쟁 서비스 접근이 포함됩니다. 2분 이내에 무료 Explorer 계정을 만들 수 있습니다.',
+        answerRu: 'Да. Уровень Explorer полностью бесплатный и не требует кредитной карты. Включает одно пожизненное сканирование договора, хранилище доказательств, AI-помощника Lisa, шаблоны писем и доступ к сервису разрешения споров Resolve. Вы можете создать бесплатный аккаунт Explorer менее чем за две минуты.'
+      },
+      {
         questionEn: 'What is Lease Shield?',
         questionTh: 'Lease Shield คืออะไร?',
         questionZh: 'Lease Shield是什么？',
