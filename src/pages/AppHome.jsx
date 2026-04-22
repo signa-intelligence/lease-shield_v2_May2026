@@ -54,12 +54,12 @@ const t = {
 };
 
 const LANGS = [
-  { code: 'en', flag: '🇬🇧' },
-  { code: 'th', flag: '🇹🇭' },
-  { code: 'ko', flag: '🇰🇷' },
-  { code: 'ja', flag: '🇯🇵' },
-  { code: 'zh', flag: '🇨🇳' },
-  { code: 'ru', flag: '🇷🇺' },
+  { code: 'en', label: 'EN', name: 'English' },
+  { code: 'th', label: 'TH', name: 'ไทย' },
+  { code: 'ko', label: 'KO', name: '한국어' },
+  { code: 'ja', label: 'JA', name: '日本語' },
+  { code: 'zh', label: 'ZH', name: '中文' },
+  { code: 'ru', label: 'RU', name: 'Русский' },
 ];
 
 function detectLang() {
@@ -74,7 +74,9 @@ function detectLang() {
 
 export default function AppHome() {
   const [lang, setLang] = React.useState(detectLang);
+  const [langOpen, setLangOpen] = React.useState(false);
   const strings = t[lang] || t.en;
+  const currentLang = LANGS.find(l => l.code === lang) || LANGS[0];
   const searchParams = new URLSearchParams(window.location.search);
   const selectedPlan = searchParams.get('plan');
   const planName = selectedPlan ? planNames[selectedPlan] : null;
@@ -95,41 +97,87 @@ export default function AppHome() {
       }}
     >
 
-      {/* Language Toggle — pinned top-right, safe from mobile browser chrome */}
+      {/* Language Dropdown — pinned top-right */}
       <div style={{
         position: 'absolute',
         top: 0,
         right: 0,
-        paddingTop: 'max(env(safe-area-inset-top, 12px), 12px)',
-        paddingRight: 12,
-        display: 'flex',
-        gap: 4,
-        zIndex: 10,
+        paddingTop: 'max(env(safe-area-inset-top, 14px), 14px)',
+        paddingRight: 14,
+        zIndex: 20,
       }}>
-        {LANGS.map(l => (
-          <button
-            key={l.code}
-            onClick={() => setLang(l.code)}
-            style={{
-              fontSize: '22px',
-              lineHeight: 1,
-              padding: '12px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: lang === l.code ? 'rgba(255,255,255,0.25)' : 'transparent',
-              transition: 'background-color 0.15s',
-              minWidth: '44px',
-              minHeight: '44px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            aria-label={l.code}
-          >
-            {l.flag}
-          </button>
-        ))}
+        <button
+          onClick={() => setLangOpen(!langOpen)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '8px 12px',
+            borderRadius: '8px',
+            border: '1px solid rgba(255,255,255,0.25)',
+            backgroundColor: 'rgba(255,255,255,0.1)',
+            color: '#FFFFFF',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            minHeight: '36px',
+            backdropFilter: 'blur(8px)',
+            transition: 'background-color 0.15s',
+          }}
+        >
+          {currentLang.label}
+          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ marginLeft: 2, transform: langOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+            <path d="M1 1L5 5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        {langOpen && (
+          <>
+            <div
+              style={{ position: 'fixed', inset: 0, zIndex: 15 }}
+              onClick={() => setLangOpen(false)}
+            />
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              right: 0,
+              marginTop: 4,
+              backgroundColor: '#0C3B2E',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+              minWidth: '140px',
+              zIndex: 20,
+            }}>
+              {LANGS.map(l => (
+                <button
+                  key={l.code}
+                  onClick={() => { setLang(l.code); setLangOpen(false); }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    padding: '10px 14px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: lang === l.code ? 700 : 400,
+                    color: lang === l.code ? '#C7A338' : '#FFFFFF',
+                    backgroundColor: lang === l.code ? 'rgba(199,163,56,0.1)' : 'transparent',
+                    transition: 'background-color 0.1s',
+                    textAlign: 'left',
+                  }}
+                  onMouseEnter={e => { if (lang !== l.code) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)'; }}
+                  onMouseLeave={e => { if (lang !== l.code) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                >
+                  <span>{l.name}</span>
+                  <span style={{ opacity: 0.5, fontSize: '11px' }}>{l.label}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Logo */}
