@@ -91,24 +91,39 @@ export default function AppHome() {
       className="min-h-screen flex flex-col items-center justify-center px-6"
       style={{
         background: "linear-gradient(165deg, #0C3B2E 0%, #145A44 50%, #0C3B2E 100%)",
+        position: 'relative',
       }}
     >
 
-      {/* Language Toggle */}
-      <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 6 }}>
+      {/* Language Toggle — pinned top-right, safe from mobile browser chrome */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        paddingTop: 'max(env(safe-area-inset-top, 12px), 12px)',
+        paddingRight: 12,
+        display: 'flex',
+        gap: 4,
+        zIndex: 10,
+      }}>
         {LANGS.map(l => (
           <button
             key={l.code}
             onClick={() => setLang(l.code)}
             style={{
-              fontSize: '20px',
+              fontSize: '22px',
               lineHeight: 1,
-              padding: '4px',
+              padding: '6px',
               borderRadius: '8px',
               border: 'none',
               cursor: 'pointer',
               backgroundColor: lang === l.code ? 'rgba(255,255,255,0.25)' : 'transparent',
               transition: 'background-color 0.15s',
+              minWidth: '36px',
+              minHeight: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
             aria-label={l.code}
           >
