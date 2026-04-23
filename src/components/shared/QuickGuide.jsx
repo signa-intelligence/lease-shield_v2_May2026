@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Shield, Home, Wallet, Camera, FileText } from 'lucide-react';
+import { X, Shield, Home, Wallet, Camera, FileText, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
@@ -84,6 +84,8 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     en: {
       title: 'Quick Guide',
       skipTour: 'Skip Tour',
+      step0: 'Check Your Inbox',
+      step0Desc: "We just sent you a welcome email with tips to get started. Can't find it? Check your spam or junk folder.",
       step1: 'Understand Your Lease',
       step1Desc: 'Get instant AI analysis of your rental agreement. Identify high-risk clauses and important obligations before signing.',
       step2: 'Everything Tracked Automatically',
@@ -102,6 +104,8 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     th: {
       title: 'คู่มือเริ่มต้น',
       skipTour: 'ข้ามทัวร์',
+      step0: 'ตรวจสอบกล่องจดหมาย',
+      step0Desc: 'เราเพิ่งส่งอีเมลต้อนรับพร้อมเคล็ดลับเริ่มต้นให้คุณแล้ว หาไม่เจอ? ลองตรวจสอบในโฟลเดอร์สแปมหรือจดหมายขยะ',
       step1: 'เข้าใจสัญญาเช่าของคุณ',
       step1Desc: 'รับการวิเคราะห์ AI ทันทีของสัญญาเช่าของคุณ ระบุข้อกำหนดที่มีความเสี่ยงสูงและภาระผูกพันสำคัญก่อนลงนาม',
       step2: 'ติดตามทุกอย่างอัตโนมัติ',
@@ -120,6 +124,8 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     zh: {
       title: '快速指南',
       skipTour: '跳过导览',
+      step0: '检查您的收件箱',
+      step0Desc: '我们刚刚向您发送了一封包含入门提示的欢迎邮件。找不到？请检查您的垃圾邮件文件夹。',
       step1: '了解您的租约',
       step1Desc: '获得租赁协议的即时AI分析。在签署前识别高风险条款和重要义务。',
       step2: '自动跟踪所有内容',
@@ -138,6 +144,8 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     ja: {
       title: 'クイックガイド',
       skipTour: 'ツアーをスキップ',
+      step0: '受信トレイを確認',
+      step0Desc: 'スタートガイド付きのウェルカムメールをお送りしました。見つからない場合は、迷惑メールフォルダをご確認ください。',
       step1: 'リースを理解する',
       step1Desc: '賃貸契約のAI分析を即座に取得。署名前に高リスク条項と重要な義務を特定。',
       step2: 'すべて自動追跡',
@@ -156,6 +164,8 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     ko: {
       title: '빠른 가이드',
       skipTour: '투어 건너뛰기',
+      step0: '받은편지함 확인',
+      step0Desc: '시작 팁이 포함된 환영 이메일을 보냈습니다. 찾을 수 없으면 스팸 또는 정크 폴더를 확인하세요.',
       step1: '임대 계약 이해하기',
       step1Desc: '임대 계약의 즉각적인 AI 분석을 받으세요. 서명 전에 고위험 조항과 중요한 의무를 식별하세요.',
       step2: '모든 것이 자동으로 추적됨',
@@ -174,6 +184,8 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
     ru: {
       title: 'Краткое руководство',
       skipTour: 'Пропустить тур',
+      step0: 'Проверьте почту',
+      step0Desc: 'Мы отправили вам приветственное письмо с советами. Не нашли? Проверьте папку «Спам» или «Нежелательная почта».',
       step1: 'Поймите свой договор',
       step1Desc: 'Получите мгновенный AI-анализ договора аренды. Определите рискованные пункты и важные обязательства до подписания.',
       step2: 'Все отслеживается автоматически',
@@ -194,6 +206,12 @@ export default function QuickGuide({ user, onDismiss, colors, language = 'en', i
   const strings = t[language] || t.en;
 
   const steps = [
+    {
+      icon: Mail,
+      title: strings.step0,
+      description: strings.step0Desc,
+      route: null
+    },
     {
       icon: Shield,
       title: strings.step1,

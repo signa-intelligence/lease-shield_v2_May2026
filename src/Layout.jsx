@@ -215,12 +215,8 @@ export default function Layout({ children, currentPageName }) {
       }
     }
 
-    // Also send welcome email for existing users who never got one
-    if (user.plan_tier && !user.welcome_email_sent) {
-      base44.functions.invoke('sendWelcomeEmail')
-        .then(() => console.log('[LAYOUT] ✅ Welcome email sent (backfill)'))
-        .catch(err => console.error('[LAYOUT] Welcome email backfill failed:', err));
-    }
+    // Welcome email backfill REMOVED — was causing duplicate sends due to race condition.
+    // The single trigger in the new-user init block above is sufficient.
   }, [user?.id, user?.available_scans, user?.plan_tier, user?.is_deleted, queryClient]);
 
   // Handle language from URL parameter
