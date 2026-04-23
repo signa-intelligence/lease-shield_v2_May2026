@@ -44,6 +44,7 @@ import ScanReviewConfirmation from "../components/scan/ScanReviewConfirmation";
 import ScanErrorDisplay from "../components/scan/ScanErrorDisplay";
 import MissingCriticalClauses from "../components/leases/MissingCriticalClauses";
 import uploadScanStrings from "../components/scan/uploadScanStrings.jsx";
+import DisclaimerModal from "../components/scan/DisclaimerModal";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ function UploadScanPageContent() {
   const [documentToView, setDocumentToView] = useState(null);
   const [showPostScanHint, setShowPostScanHint] = useState(false);
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
-  const [disclaimerCheckboxTicked, setDisclaimerCheckboxTicked] = useState(false);
+  const [pendingDisclaimerFiles, setPendingDisclaimerFiles] = useState(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completedLeaseId, setCompletedLeaseId] = useState(null);
   const [addingPagesToLease, setAddingPagesToLease] = useState(null);
@@ -187,19 +188,20 @@ function UploadScanPageContent() {
     }
   });
 
-  const handleAcceptDisclaimerAndProceed = async (filesToUpload) => {
-    if (!disclaimerCheckboxTicked) return;
-    
-    haptic.medium();
+  const handleAcceptDisclaimerAndProceed = async () => {
+    const filesToUpload = pendingDisclaimerFiles;
+    setPendingDisclaimerFiles(null);
     setShowDisclaimerModal(false);
-    setDisclaimerCheckboxTicked(false);
     
     // Save acceptance to user profile
-    await base44.auth.updateMe({ scan_disclaimer_accepted: true });
-    queryClient.invalidateQueries({ queryKey: ['user'] });
+    base44.auth.updateMe({ scan_disclaimer_accepted: true })
+      .then(() => queryClient.invalidateQueries({ queryKey: ['user'] }))
+      .catch(() => {});
     
     // Immediately proceed with upload
-    proceedWithUpload(filesToUpload);
+    if (filesToUpload && filesToUpload.length > 0) {
+      proceedWithUpload(filesToUpload);
+    }
   };
 
   const proceedWithUpload = async (filesToUpload) => {
@@ -940,8 +942,9 @@ function UploadScanPageContent() {
       setSelectedFiles(filesToUpload);
     }
     
-    // Check if user needs to see disclaimer first
+    // Check if user needs to see disclaimer first (one-time only)
     if (!user?.scan_disclaimer_accepted) {
+      setPendingDisclaimerFiles(filesToUse);
       setShowDisclaimerModal(true);
       return;
     }
@@ -2090,91 +2093,17 @@ function UploadScanPageContent() {
           </DialogContent>
         </Dialog>
 
-        {/* Disclaimer Modal */}
-        <Dialog open={showDisclaimerModal} onOpenChange={setShowDisclaimerModal}>
-          <DialogContent 
-            className="max-w-2xl w-[95vw] h-[85vh] flex flex-col p-0"
-            style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}
-          >
-            <DialogHeader className="px-6 py-4 border-b flex-shrink-0" style={{ borderBottomColor: colors.borderColor }}>
-              <DialogTitle className="text-xl font-bold flex items-center gap-2" style={{ color: colors.textPrimary }}>
-                <AlertCircle className="w-6 h-6 text-amber-600" />
-                {strings.disclaimerTitle}
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="flex-1 overflow-y-auto px-6 py-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-              <div className="space-y-4 text-sm leading-relaxed" style={{ color: colors.textPrimary }}>
-                <p>{strings.disclaimerText.p1}</p>
-                <p>{strings.disclaimerText.p2}</p>
-                <p>{strings.disclaimerText.p3}</p>
-                <div>
-                  <p className="font-semibold mb-2">{strings.disclaimerText.responsibleTitle}</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {strings.disclaimerText.responsibilities.map((item, idx) => (
-                      <li key={idx}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-                <p>{strings.disclaimerText.p4}</p>
-                <p className="font-semibold">{strings.disclaimerText.p5}</p>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t flex-shrink-0 space-y-4" style={{ borderTopColor: colors.borderColor }}>
-              <div className="flex items-start gap-3 p-3 rounded-lg" style={{
-                backgroundColor: isDarkMode ? '#374151' : '#F3F4F6'
-              }}>
-                <input
-                  type="checkbox"
-                  id="modal-disclaimer-checkbox"
-                  checked={disclaimerCheckboxTicked}
-                  onChange={(e) => {
-                    haptic.light();
-                    setDisclaimerCheckboxTicked(e.target.checked);
-                  }}
-                  className="w-5 h-5 mt-0.5 flex-shrink-0 cursor-pointer"
-                  style={{ accentColor: '#0C3B2E' }}
-                />
-                <label htmlFor="modal-disclaimer-checkbox" className="font-semibold text-sm cursor-pointer" style={{ color: colors.textPrimary }}>
-                  {strings.disclaimerCheckbox}
-                </label>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    haptic.light();
-                    setShowDisclaimerModal(false);
-                    setDisclaimerCheckboxTicked(false);
-                  }}
-                  className="flex-1"
-                  style={{
-                    backgroundColor: colors.cardBg,
-                    borderColor: colors.borderColor,
-                    color: colors.textPrimary
-                  }}
-                >
-                  {strings.disclaimerCancel}
-                </Button>
-                <Button
-                  onClick={() => handleAcceptDisclaimerAndProceed(selectedFiles)}
-                  disabled={!disclaimerCheckboxTicked}
-                  className="flex-1"
-                  style={{
-                    backgroundColor: disclaimerCheckboxTicked ? '#0C3B2E' : '#9CA3AF',
-                    color: '#FFFFFF',
-                    cursor: disclaimerCheckboxTicked ? 'pointer' : 'not-allowed',
-                    opacity: disclaimerCheckboxTicked ? 1 : 0.6
-                  }}
-                >
-                  {strings.agreeAndContinue}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Disclaimer Modal - shows once per user */}
+        <DisclaimerModal
+          isOpen={showDisclaimerModal}
+          onClose={() => {
+            setShowDisclaimerModal(false);
+            setPendingDisclaimerFiles(null);
+          }}
+          onAccept={handleAcceptDisclaimerAndProceed}
+          language={language}
+          isDarkMode={isDarkMode}
+        />
 
         {/* Upload Zone */}
         <Card className="border-none shadow-xl mb-6" style={{ backgroundColor: colors.cardBg }}>
