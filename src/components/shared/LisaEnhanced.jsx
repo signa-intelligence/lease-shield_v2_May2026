@@ -813,6 +813,33 @@ SECURE TIER USERS:
                         ? 'Расскажите, что происходит, и я подскажу лучший следующий шаг'
                         : 'Tell me what\'s going on and I\'ll guide you to the best next step'}
             </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', marginTop: '16px', padding: '0 12px' }}>
+              {[
+                { en: 'Check my lease risk', th: 'ตรวจสอบความเสี่ยงสัญญาเช่า', zh: '检查我的租约风险', ja: '契約リスクを確認', ko: '임대 계약 위험 확인', ru: 'Проверить риски договора' },
+                { en: 'Can I lose my deposit?', th: 'ฉันอาจเสียเงินประกันได้ไหม?', zh: '我可能失去押金吗？', ja: '保証金を失う可能性は？', ko: '보증금을 잃을 수 있나요?', ru: 'Могу ли я потерять депозит?' },
+                { en: 'Explain this clause', th: 'อธิบายข้อสัญญานี้', zh: '解释这个条款', ja: 'この条項を説明して', ko: '이 조항을 설명해 주세요', ru: 'Объясните это условие' },
+                { en: 'Is this contract safe?', th: 'สัญญานี้ปลอดภัยไหม?', zh: '这份合同安全吗？', ja: 'この契約は安全？', ko: '이 계약은 안전한가요?', ru: 'Этот договор безопасен?' }
+              ].map((suggestion, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSend(suggestion[language] || suggestion.en)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '20px',
+                    backgroundColor: isDarkMode ? '#374151' : '#F0FDF4',
+                    border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#0C3B2E20'}`,
+                    color: colors.textPrimary,
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {suggestion[language] || suggestion.en}
+                </button>
+              ))}
+            </div>
             {loadError && (
               <p className="text-xs mt-4 px-4 py-2 rounded-lg mx-4" style={{ 
                 color: isDarkMode ? '#FCA5A5' : '#991B1B',

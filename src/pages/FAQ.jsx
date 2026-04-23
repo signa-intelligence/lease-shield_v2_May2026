@@ -64,6 +64,48 @@ const FAQ_DATA = {
         answerRu: 'Загрузите договор для структурированного анализа、отслеживайте депозиты с напоминаниями、храните доказательства（документы и фото）и получайте помощь при возникновении проблем。\n\nLease Shield поддерживает как арендаторов、так и арендодателей、сохраняя записи ясными и помогая предотвратить споры до их эскалации。'
       },
       {
+        questionEn: 'Can my landlord keep my deposit in Thailand?',
+        questionTh: 'เจ้าของบ้านสามารถยึดเงินประกันของฉันในประเทศไทยได้หรือไม่?',
+        questionZh: '房东可以在泰国扣留我的押金吗？',
+        questionJa: 'タイで大家は保証金を留保できますか？',
+        questionKo: '태국에서 집주인이 보증금을 보유할 수 있나요?',
+        questionRu: 'Может ли арендодатель удержать мой депозит в Таиланде?',
+        answerEn: 'Yes, many contracts allow deductions if clauses are unclear or undefined.',
+        answerTh: 'ได้ สัญญาหลายฉบับอนุญาตให้หักเงินได้หากเงื่อนไขไม่ชัดเจนหรือไม่ได้กำหนดไว้',
+        answerZh: '是的，许多合同允许在条款不明确或未定义的情况下扣除。',
+        answerJa: 'はい、多くの契約では条項が不明確または未定義の場合、控除が許可されています。',
+        answerKo: '예, 많은 계약은 조항이 불명확하거나 정의되지 않은 경우 공제를 허용합니다.',
+        answerRu: 'Да, многие договоры позволяют удержания, если условия неясны или не определены.'
+      },
+      {
+        questionEn: 'Why are Thai and English leases different?',
+        questionTh: 'ทำไมสัญญาเช่าภาษาไทยและอังกฤษถึงต่างกัน?',
+        questionZh: '为什么泰语和英语租约不同？',
+        questionJa: 'なぜタイ語と英語のリース契約は異なるのですか？',
+        questionKo: '왜 태국어와 영어 임대 계약이 다른가요?',
+        questionRu: 'Почему тайские и английские договоры аренды отличаются?',
+        answerEn: 'In many cases, the Thai version is legally binding and may include stricter terms.',
+        answerTh: 'ในหลายกรณี ฉบับภาษาไทยเป็นฉบับที่มีผลบังคับทางกฎหมายและอาจมีเงื่อนไขที่เข้มงวดกว่า',
+        answerZh: '在许多情况下，泰文版本具有法律约束力，可能包含更严格的条款。',
+        answerJa: '多くの場合、タイ語版が法的拘束力を持ち、より厳しい条件を含むことがあります。',
+        answerKo: '많은 경우 태국어 버전이 법적 구속력이 있으며 더 엄격한 조건을 포함할 수 있습니다.',
+        answerRu: 'Во многих случаях тайская версия имеет юридическую силу и может содержать более строгие условия.'
+      },
+      {
+        questionEn: 'What does Lease Shield check?',
+        questionTh: 'Lease Shield ตรวจสอบอะไร?',
+        questionZh: 'Lease Shield检查什么？',
+        questionJa: 'Lease Shieldは何をチェックしますか？',
+        questionKo: 'Lease Shield는 무엇을 확인하나요?',
+        questionRu: 'Что проверяет Lease Shield?',
+        answerEn: 'Hidden clauses, penalties, and risks that could lead to deposit loss.',
+        answerTh: 'เงื่อนไขที่ซ่อนอยู่ ค่าปรับ และความเสี่ยงที่อาจนำไปสู่การสูญเสียเงินประกัน',
+        answerZh: '隐藏条款、罚款和可能导致押金损失的风险。',
+        answerJa: '隠れた条項、罰則、および保証金損失につながる可能性のあるリスク。',
+        answerKo: '숨겨진 조항, 벌금 및 보증금 손실로 이어질 수 있는 위험.',
+        answerRu: 'Скрытые условия, штрафы и риски, которые могут привести к потере депозита.'
+      },
+      {
         questionEn: 'Who is Lease Shield for — tenants or landlords?',
         questionTh: 'Lease Shield เหมาะสำหรับใคร — ผู้เช่าหรือเจ้าของบ้าน?',
         questionZh: 'Lease Shield是为租户还是房东设计的？',
