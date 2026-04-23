@@ -10,46 +10,52 @@ const planNames = {
 
 const t = {
   en: {
-    headline: "Protect Your Rental in Thailand",
-    startFree: "Start free. Scan your lease, track your deposit, resolve disputes. No card required.",
-    createAccount: "Create Free Account",
+    headline: "Your Lease May Say Something Different in Thai",
+    startFree: "Hidden clauses can cost you your full deposit.\nCheck your lease in 60 seconds.",
+    createAccount: "Check My Lease Free",
     logIn: "Log In",
-    notSure: "Not sure yet? See how Lease Shield works",
+    notSure: "See a real lease example",
+    footerTagline: "Built to prevent deposit loss in Thailand",
   },
   th: {
-    headline: "ปกป้องการเช่าของคุณในประเทศไทย",
-    startFree: "เริ่มฟรี สแกนสัญญาเช่า ติดตามเงินมัดจำ แก้ไขข้อพิพาท ไม่ต้องใช้บัตร",
-    createAccount: "สร้างบัญชีฟรี",
+    headline: "สัญญาเช่าของคุณอาจมีความหมายต่างกันในภาษาไทย",
+    startFree: "เงื่อนไขที่ซ่อนอยู่ อาจทำให้คุณเสียเงินประกันทั้งหมด\nตรวจสอบสัญญาภายใน 60 วินาที",
+    createAccount: "ตรวจสอบสัญญาฟรี",
     logIn: "เข้าสู่ระบบ",
-    notSure: "ยังไม่แน่ใจ? ดูวิธีการทำงานของ Lease Shield",
+    notSure: "ดูตัวอย่างสัญญาจริง",
+    footerTagline: "ออกแบบมาเพื่อป้องกันการสูญเสียเงินประกันในประเทศไทย",
   },
   ko: {
-    headline: "태국에서 임대를 보호하세요",
-    startFree: "무료로 시작. 임대 계약 스캔, 보증금 추적, 분쟁 해결. 카드 불필요.",
-    createAccount: "무료 계정 만들기",
+    headline: "임대 계약서가 태국어에서는 다르게 해석될 수 있습니다",
+    startFree: "숨겨진 조항으로 보증금을 전부 잃을 수 있습니다.\n60초 안에 계약서를 확인하세요.",
+    createAccount: "무료로 계약서 확인하기",
     logIn: "로그인",
-    notSure: "아직 확실하지 않으신가요? Lease Shield 작동 방식 보기",
+    notSure: "실제 계약서 예시 보기",
+    footerTagline: "태국에서 보증금 손실을 막기 위해 설계되었습니다",
   },
   ja: {
-    headline: "タイで賃貸を守りましょう",
-    startFree: "無料で始める。リーススキャン、敷金追跡、紛争解決。カード不要。",
-    createAccount: "無料アカウント作成",
+    headline: "あなたの契約書はタイ語では意味が異なる可能性があります",
+    startFree: "隠れた条項により、保証金を全て失う可能性があります。\n60秒で契約書をチェック。",
+    createAccount: "無料で契約をチェック",
     logIn: "ログイン",
-    notSure: "まだ迷っていますか？Lease Shieldの仕組みを見る",
+    notSure: "実際の契約例を見る",
+    footerTagline: "タイでのデポジット損失を防ぐために設計されています",
   },
   zh: {
-    headline: "在泰国保护您的租约",
-    startFree: "免费开始。扫描租约、追踪押金、解决纠纷。无需信用卡。",
-    createAccount: "创建免费账户",
+    headline: "你的租约在泰文中可能含义不同",
+    startFree: "隐藏条款可能让你失去全部押金。\n60秒检查你的合同。",
+    createAccount: "免费检查合同",
     logIn: "登录",
-    notSure: "还不确定？了解 Lease Shield 的运作方式",
+    notSure: "查看真实合同示例",
+    footerTagline: "专为防止在泰国丢失押金而设计",
   },
   ru: {
-    headline: "Защитите вашу аренду в Таиланде",
-    startFree: "Начните бесплатно. Сканирование договора, отслеживание депозита, решение споров. Карта не нужна.",
-    createAccount: "Создать бесплатный аккаунт",
+    headline: "Ваш договор может означать другое на тайском языке",
+    startFree: "Скрытые условия могут стоить вам всего депозита.\nПроверьте договор за 60 секунд.",
+    createAccount: "Проверить договор бесплатно",
     logIn: "Войти",
-    notSure: "Не уверены? Узнайте, как работает Lease Shield",
+    notSure: "Посмотреть реальный пример договора",
+    footerTagline: "Создано, чтобы защитить ваш депозит в Таиланде",
   },
 };
 
@@ -142,7 +148,7 @@ export default function AppHome() {
       </h2>
 
       {/* Description */}
-      <p className="text-base text-white/70 text-center mb-10 max-w-md">
+      <p className="text-base text-white/70 text-center mb-10 max-w-md whitespace-pre-line">
         {planName
           ? `Create your account to ${selectedPlan === 'one-time-scan' ? 'purchase' : 'subscribe to'} ${planName}.`
           : strings.startFree}
@@ -201,7 +207,7 @@ export default function AppHome() {
 
       {/* Footer */}
       <p className="mt-4 text-xs text-white/30">
-        © {new Date().getFullYear()} Lease Shield · Fair. Transparent. Protected.
+        © {new Date().getFullYear()} Lease Shield · {strings.footerTagline || 'Fair. Transparent. Protected.'}
       </p>
     </div>
   );
