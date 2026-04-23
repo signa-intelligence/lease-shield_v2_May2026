@@ -43,7 +43,7 @@ import RetryAnalysis from "../components/shared/RetryAnalysis";
 import ScanReviewConfirmation from "../components/scan/ScanReviewConfirmation";
 import ScanErrorDisplay from "../components/scan/ScanErrorDisplay";
 import MissingCriticalClauses from "../components/leases/MissingCriticalClauses";
-import { getUploadScanStrings } from "@/components/scan/uploadScanStrings";
+import uploadScanStrings from "../components/scan/uploadScanStrings.jsx";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
@@ -177,8 +177,7 @@ function UploadScanPageContent() {
     inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
   };
 
-  const strings = getUploadScanStrings(language);
-  const fromFunnel = typeof window !== 'undefined' && sessionStorage.getItem('scanFromFunnel_shown') !== 'true' && new URLSearchParams(window.location.search).get('from') === 'funnel';
+  const strings = (uploadScanStrings[language] || uploadScanStrings.en);
 
   const updateLeaseMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Lease.update(id, data),
@@ -510,15 +509,12 @@ function UploadScanPageContent() {
           await base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSize });
         } catch (_) {}
         
-        // Set hasUploadedLease flag for routing
+        // Mark user as having uploaded + navigate to report
         base44.auth.updateMe({ hasUploadedLease: true }).catch(() => {});
-        // Navigate to report
         navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, { state: { scan_full: completedScan.scan_full, fromUpload: true } });
         return;
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
-        
-        // Stop progress on error
         if (progressInterval) clearInterval(progressInterval);
 
         if (createdLeaseId) {
@@ -866,7 +862,12 @@ function UploadScanPageContent() {
           queryClient.invalidateQueries({ queryKey: ['currentUser'] })
         ]);
         
-        try { await base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSizeSingle }); } catch (_) {}
+        // Update storage usage
+        try {
+          await base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSizeSingle });
+        } catch (_) {}
+        
+        // Mark user as having uploaded + navigate to report
         base44.auth.updateMe({ hasUploadedLease: true }).catch(() => {});
         navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, { state: { scan_full: completedScan.scan_full, fromUpload: true } });
         return;
@@ -1260,23 +1261,36 @@ function UploadScanPageContent() {
     setSelectedLease(lease);
   };
 
-  const ALLOWED_EXTS = ['pdf', 'jpg', 'jpeg', 'png'];
-  const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-  const isAllowedFile = (file) => ALLOWED_EXTS.includes(file.name.toLowerCase().split('.').pop()) || ALLOWED_TYPES.includes(file.type);
-
-  const validateAndSetFiles = (files, addToExisting = true) => {
-    const valid = [], invalid = [];
-    files.forEach(f => isAllowedFile(f) ? valid.push(f) : invalid.push(f.name));
-    if (invalid.length > 0) {
-      setError(`${strings.supportedFormats}\n\nUnsupported: ${invalid.join(', ')}`);
-      setTimeout(() => setError(null), 5000);
-    }
-    if (valid.length > 0) { setSelectedFiles(addToExisting ? prev => [...prev, ...valid] : valid); setError(null); }
-  };
-
   const handleFileSelect = (e) => {
     if (!scanStatus.allowed) return;
-    validateAndSetFiles(Array.from(e.target.files || e.dataTransfer?.files || []));
+    const files = Array.from(e.target.files || e.dataTransfer?.files || []);
+    
+    const validFiles = [];
+    const invalidFiles = [];
+    
+    files.forEach(file => {
+      const ext = file.name.toLowerCase().split('.').pop();
+      if (ext === 'pdf' || file.type === 'application/pdf') {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(file.name);
+      }
+    });
+    
+    if (invalidFiles.length > 0) {
+      setError(language === 'th'
+        ? `รองรับเฉพาะไฟล์ PDF เท่านั้น 📄\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}\n\nการสแกนรูปภาพจะเปิดให้บริการเร็ว ๆ นี้`
+        : language === 'ru'
+          ? `Поддерживаются только PDF файлы 📄\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}\n\nСканирование изображений скоро будет доступно`
+          : `PDF files only 📄\n\nUnsupported: ${invalidFiles.join(', ')}\n\nImage scanning coming soon.`);
+      setTimeout(() => setError(null), 5000);
+    }
+    
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+      setError(null);
+    }
+    
     setDragActive(false);
   };
 
@@ -1284,7 +1298,33 @@ function UploadScanPageContent() {
     if (!scanStatus.allowed) return;
     e.preventDefault();
     setDragActive(false);
-    validateAndSetFiles(Array.from(e.dataTransfer.files));
+    const files = Array.from(e.dataTransfer.files);
+    
+    const validFiles = [];
+    const invalidFiles = [];
+    
+    files.forEach(file => {
+      const ext = file.name.toLowerCase().split('.').pop();
+      if (ext === 'pdf' || file.type === 'application/pdf') {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(file.name);
+      }
+    });
+    
+    if (invalidFiles.length > 0) {
+      setError(language === 'th'
+        ? `รองรับเฉพาะไฟล์ PDF เท่านั้น 📄\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}\n\nการสแกนรูปภาพจะเปิดให้บริการเร็ว ๆ นี้`
+        : language === 'ru'
+          ? `Поддерживаются только PDF файлы 📄\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}\n\nСканирование изображений скоро будет доступно`
+          : `PDF files only 📄\n\nUnsupported: ${invalidFiles.join(', ')}\n\nImage scanning coming soon.`);
+      setTimeout(() => setError(null), 5000);
+    }
+    
+    if (validFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...validFiles]);
+      setError(null);
+    }
   };
 
   const handleRemoveFile = (index) => {
@@ -1398,9 +1438,6 @@ function UploadScanPageContent() {
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
-          {fromFunnel && (
-            <p className="mt-2 text-sm font-medium" style={{ color: '#0C3B2E' }}>{strings.funnelContext}</p>
-          )}
 
           {/* ✅ SCAN LIMIT INDICATOR */}
           <div className="mt-3">
@@ -2205,8 +2242,8 @@ function UploadScanPageContent() {
                 )}
 
                 {/* Trust Line */}
-                <div className="mb-4 flex items-center justify-center gap-2">
-                  <Shield className="w-4 h-4" style={{ color: '#0C3B2E' }} />
+                <div className="mb-4 flex items-center justify-center gap-2 py-2">
+                  <Shield className="w-4 h-4 flex-shrink-0" style={{ color: '#10B981' }} />
                   <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.trustLine}</p>
                 </div>
 
@@ -2245,21 +2282,12 @@ function UploadScanPageContent() {
                      const validFiles = [];
                      const invalidFiles = [];
 
-                     files.forEach(file => { isAllowedFile(file) ? validFiles.push(file) : invalidFiles.push(file.name); });
-
-                     if (invalidFiles.length > 0) {
-                       const errorMsg = `${strings.supportedFormats}\n\nUnsupported: ${invalidFiles.join(', ')}`;
-
-                       setError(errorMsg);
-                       setTimeout(() => setError(null), 5000);
-                     }
-
-                     if (validFiles.length > 0) {
-                       // Auto-trigger upload immediately with validated files
-                       handleUploadAll(validFiles);
-                     }
-
-                     // Reset input value to allow selecting the same file again
+                     files.forEach(file => {
+                       const ext = file.name.toLowerCase().split('.').pop();
+                       if (['pdf','jpg','jpeg','png'].includes(ext) || ['application/pdf','image/jpeg','image/png'].includes(file.type)) { validFiles.push(file); } else { invalidFiles.push(file.name); }
+                     });
+                     if (invalidFiles.length > 0) { setError(`Supports PDF, JPG, PNG only.\n\nUnsupported: ${invalidFiles.join(', ')}`); setTimeout(() => setError(null), 5000); }
+                     if (validFiles.length > 0) { handleUploadAll(validFiles); }
                      e.target.value = '';
                    }}
                    className="hidden"
@@ -2276,9 +2304,11 @@ function UploadScanPageContent() {
                      disabled={!scanStatus.allowed}
                      className={`inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                      style={{
-                       backgroundColor: '#0C3B2E',
-                       color: '#FFFFFF',
-                       border: 'none'
+                      backgroundColor: '#0C3B2E',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      minHeight: '56px',
+                      fontSize: '16px'
                      }}
                    >
                      <Upload className="w-5 h-5" />
@@ -2389,8 +2419,23 @@ function UploadScanPageContent() {
         )}
 
         {/* Legal Disclaimer */}
-        <div className="mt-8 p-4 rounded-lg text-center max-w-4xl mx-auto" style={{ backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC', border: `1px solid ${colors.borderColor}` }}>
-          <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>{strings.disclaimerText.p1}</p>
+        <div className="mt-8 p-4 rounded-lg text-center max-w-4xl mx-auto" style={{
+          backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC',
+          border: `1px solid ${colors.borderColor}`
+        }}>
+          <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
+            {language === 'th' 
+              ? 'Lease Shield ให้คำแนะนำทั่วไปและเทมเพลตเอกสารเพื่อความสะดวกของคุณ Lease Shield ไม่ใช่สำนักงานกฎหมาย ไม่ให้บริการตัวแทนทางกฎหมาย และไม่ได้เป็นคู่สัญญาในสัญญาเช่าของคุณ คุณมีหน้าที่รับผิดชอบในการตรวจสอบความถูกต้องของข้อมูลและเอกสารทั้งหมดก่อนส่ง'
+              : language === 'zh'
+                ? 'Lease Shield为您提供一般性指导和文档模板以方便使用。Lease Shield不是律师事务所，不提供法律代理，也不是您租约的一方。在发送之前，您有责任检查所有信息和文档的准确性。'
+                : language === 'ja'
+                  ? 'Lease Shieldは、お客様の便宜のために一般的なガイダンスと文書テンプレートを提供します。Lease Shieldは法律事務所ではなく、法的代理を提供せず、お客様のリース契約の当事者でもありません。送信する前に、すべての情報と文書の正確性を確認する責任はお客様にあります。'
+                  : language === 'ko'
+                    ? 'Lease Shield는 귀하의 편의를 위해 일반적인 안내 및 문서 템플릿을 제공합니다。Lease Shield는 법률 회사가 아니며 법적 대리를 제공하지 않으며 귀하의 임대 계약 당사자가 아닙니다。발송하기 전에 모든 정보와 문서의 정확성을 확인할 책임은 귀하에게 있습니다。'
+                    : language === 'ru'
+                      ? 'Lease Shield предоставляет общие рекомендации и шаблоны документов для вашего удобства。Lease Shield не является юридической фирмой、не предоставляет юридическое представительство и не является стороной вашего договора аренды。Вы несёте ответственность за проверку точности всей информации и документов перед отправкой。'
+                      : 'Lease Shield provides general guidance and document templates for your convenience. Lease Shield is not a law firm, does not provide legal representation, and is not a party to your lease. You are responsible for checking the accuracy of all information and documents before sending them.'}
+          </p>
         </div>
         </>
         )}
