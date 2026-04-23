@@ -43,6 +43,7 @@ import RetryAnalysis from "../components/shared/RetryAnalysis";
 import ScanReviewConfirmation from "../components/scan/ScanReviewConfirmation";
 import ScanErrorDisplay from "../components/scan/ScanErrorDisplay";
 import MissingCriticalClauses from "../components/leases/MissingCriticalClauses";
+import { getUploadScanStrings } from "@/components/scan/uploadScanStrings";
 
 function UploadScanPageContent() {
   const navigate = useNavigate();
@@ -176,568 +177,8 @@ function UploadScanPageContent() {
     inputBg: isDarkMode ? '#353A3D' : '#FFFFFF',
   };
 
-  const t = {
-    en: {
-      title: "Scan Your Lease",
-      subtitle: "Upload your lease agreement for automated analysis",
-      uploadArea: "Drop your lease files here or click to browse",
-      supportedFormats: "PDF files only. Max 10MB per file.",
-      selectFiles: "Select Files",
-      uploadAll: "Analyse Files",
-      uploading: "Uploading files...",
-      analyzingTitle: "Analysing Your Lease",
-      analyzingDesc: "Reviewing your lease agreement. This may take up to 30 seconds...",
-      analyzing: {
-        uploading: "Uploading files...",
-        creating: "Creating lease record...",
-        scanning: "Analysing document...",
-        extracting: "Extracting lease details...",
-        finalizing: "Finalising analysis..."
-      },
-      recentScans: "Recent Scans",
-      viewAll: "View All Leases",
-      noScans: "No recent scans",
-      scanDate: "Scanned on",
-      confirmNoticeTitle: "Set Notice Period Reminder",
-      confirmNoticeDesc: "We detected your lease ends on",
-      noticePeriodLabel: "Notice Period (Days)",
-      noticePeriodHelp: "Days before lease end to notify landlord",
-      skipReminder: "Skip",
-      setReminder: "Set Reminder",
-      riskLevels: {
-        low: "Low Risk",
-        medium: "Medium Risk",
-        high: "High Risk",
-        critical: "Critical Risk"
-      },
-      leaseDetails: "Lease Details",
-      basicInfo: "Basic Information",
-      propertyAddress: "Property Address",
-      monthlyRent: "Monthly Rent",
-      securityDeposit: "Security Deposit",
-      leasePeriod: "Lease Period",
-      leaseStart: "Lease Start",
-      leaseEnd: "Lease End",
-      to: "to",
-      noticeSettings: "Notice Settings",
-      noticeAlertsEnabled: "Notice Alerts Enabled",
-      noticePeriod: "Notice Period (Days)",
-      noticeDeadline: "Notice Deadline",
-      edit: "Edit",
-      save: "Save",
-      cancel: "Cancel",
-      days: "days",
-      riskAnalysis: "Risk Analysis",
-      riskScore: "Risk Score",
-      viewFullReport: "View Full Report",
-      viewScanResults: "View Scan Results",
-      viewLease: "View Lease Document",
-      closeDetails: "Close Details",
-      enableAlertsHelp: "Receive reminders 30, 7, and 3 days before notice deadline",
-      deadlineCalculated: "Calculated based on lease end date and notice period",
-      allLeases: "All Leases",
-      scanLimitReached: "Scan Limit Reached",
-      scanLimitMsg: "You've used {used} of {limit} scans {periodText}",
-      upgradeForMore: "Upgrade for More Scans",
-      scansRemaining: "{remaining} {lifetimeLabel} remaining",
-      unlimitedScans: "Unlimited Scans",
-      browseDocuments: "Upload Documents",
-      batchUpload: "Batch Upload",
-      singleUpload: "Single Upload",
-      filesWillBeSeparate: "Each file will be uploaded as a separate lease",
-      stepUpload: "Upload",
-      stepAnalyze: "Analyse",
-      stepResults: "Results",
-      stepTrack: "Track",
-      upgradeHintText: "Upgrade to unlock unlimited scans and advanced lease analysis.",
-      viewPlans: "View plans",
-      disclaimerTitle: "Lease Scan Disclaimer",
-      disclaimerCheckbox: "I have read and agree to the Lease Scan Disclaimer.",
-      agreeAndContinue: "Agree & Continue",
-      disclaimerCancel: "Cancel",
-      disclaimerText: {
-        p1: "Lease Shield provides automated lease analysis, practical guidance, and document templates to help users better understand rental agreements and common risk areas. All information is provided for general informational purposes only.",
-        p2: "Lease Shield is not a law firm and does not provide legal advice or legal representation. Use of this service does not create a lawyer–client relationship.",
-        p3: "While Lease Shield uses structured analysis and up-to-date reference data, results may vary depending on document quality, language, and jurisdiction. Lease Shield does not warrant that scan results, recommendations, or generated documents are complete, error-free, or suitable for every situation.",
-        responsibleTitle: "You remain responsible for:",
-        responsibilities: [
-          "Reviewing and understanding your lease documents",
-          "Confirming the accuracy of all information",
-          "Seeking independent professional or legal advice where appropriate",
-          "Deciding whether and how to rely on any outputs provided"
-        ],
-        p4: "Lease Shield is not a party to any lease agreement and is not responsible for decisions made, disputes arising, or outcomes resulting from use of this service.",
-        p5: "By continuing, you acknowledge that Lease Shield is a support and insight tool, and that you use it at your own discretion and risk."
-      }
-    },
-    th: {
-      title: "สแกนสัญญาเช่า",
-      subtitle: "อัปโหลดสัญญาเช่าเพื่อวิเคราะห์อัตโนมัติ",
-      uploadArea: "วางไฟล์สัญญาเช่าที่นี่ หรือคลิกเพื่อเลือกไฟล์",
-      supportedFormats: "รองรับเฉพาะไฟล์ PDF ไฟล์ละไม่เกิน 10MB",
-      selectFiles: "เลือกไฟล์",
-      uploadAll: "วิเคราะห์ไฟล์",
-      uploading: "กำลังอัปโหลดไฟล์...",
-      analyzingTitle: "กำลังวิเคราะห์สัญญาเช่า",
-      analyzingDesc: "กำลังตรวจสอบสัญญาเช่าของคุณ อาจใช้เวลาประมาณ 30 วินาที...",
-      analyzing: {
-        uploading: "กำลังอัปโหลดไฟล์...",
-        creating: "กำลังสร้างบันทึกสัญญาเช่า...",
-        scanning: "กำลังวิเคราะห์เอกสาร...",
-        extracting: "กำลังดึงข้อมูลสัญญาเช่า...",
-        finalizing: "กำลังสรุปการวิเคราะห์..."
-      },
-      recentScans: "การสแกนล่าสุด",
-      viewAll: "ดูสัญญาเช่าทั้งหมด",
-      noScans: "ยังไม่มีการสแกน",
-      scanDate: "สแกนเมื่อ",
-      confirmNoticeTitle: "ตั้งการแจ้งเตือนระยะเวลาแจ้งล่วงหน้า",
-      confirmNoticeDesc: "เราตรวจพบว่าสัญญาเช่าของคุณสิ้นสุดวันที่",
-      noticePeriodLabel: "ระยะเวลาแจ้งล่วงหน้า (วัน)",
-      noticePeriodHelp: "จำนวนวันก่อนสัญญาหมดอายุที่ต้องแจ้งเจ้าของบ้าน",
-      skipReminder: "ข้าม",
-      setReminder: "ตั้งการแจ้งเตือน",
-      riskLevels: {
-        low: "ความเสี่ยงต่ำ",
-        medium: "ความเสี่ยงปานกลาง",
-        high: "ความเสี่ยงสูง",
-        critical: "ความเสี่ยงวิกฤต"
-      },
-      leaseDetails: "รายละเอียดสัญญาเช่า",
-      basicInfo: "ข้อมูลพื้นฐาน",
-      propertyAddress: "ที่อยู่ทรัพย์สิน",
-      monthlyRent: "ค่าเช่ารายเดือน",
-      securityDeposit: "เงินมัดจำ",
-      leasePeriod: "ระยะเวลาสัญญา",
-      leaseStart: "วันเริ่มสัญญา",
-      leaseEnd: "วันสิ้นสุดสัญญา",
-      to: "ถึง",
-      noticeSettings: "การตั้งค่าการแจ้งเตือน",
-      noticeAlertsEnabled: "เปิดการแจ้งเตือน",
-      noticePeriod: "ระยะเวลาแจ้งล่วงหน้า (วัน)",
-      noticeDeadline: "กำหนดแจ้ง",
-      edit: "แก้ไข",
-      save: "บันทึก",
-      cancel: "ยกเลิก",
-      days: "วัน",
-      riskAnalysis: "การวิเคราะห์ความเสี่ยง",
-      riskScore: "คะแนนความเสี่ยง",
-      viewFullReport: "ดูรายงานฉบับเต็ม",
-      viewScanResults: "ดูผลการสแกน",
-      viewLease: "ดูเอกสารสัญญาเช่า",
-      closeDetails: "ปิดรายละเอียด",
-      enableAlertsHelp: "รับการแจ้งเตือน 30, 7 และ 3 วันก่อนถึงกำหนดแจ้ง",
-      deadlineCalculated: "คำนวณจากวันสิ้นสุดสัญญาและระยะเวลาแจ้งล่วงหน้า",
-      allLeases: "สัญญาเช่าทั้งหมด",
-      scanLimitReached: "ถึงขีดจำกัดการสแกนแล้ว",
-      scanLimitMsg: "คุณใช้ไป {used} จาก {limit} การสแกน{periodText}",
-      upgradeForMore: "อัปเกรดเพื่อเพิ่มการสแกน",
-      scansRemaining: "เหลืออีก {remaining} การสแกน {periodText}",
-      unlimitedScans: "สแกนได้ไม่จำกัด",
-      browseDocuments: "อัปโหลดเอกสาร",
-      batchUpload: "อัปโหลดแบบกลุ่ม",
-      singleUpload: "อัปโหลดแบบเดี่ยว",
-      filesWillBeSeparate: "แต่ละไฟล์จะถูกอัปโหลดเป็นสัญญาเช่าแยกกัน",
-      stepUpload: "อัปโหลด",
-      stepAnalyze: "วิเคราะห์",
-      stepResults: "ผลลัพธ์",
-      stepTrack: "ติดตาม",
-      upgradeHintText: "อัปเกรดเพื่อปลดล็อกการสแกนไม่จำกัดและการวิเคราะห์สัญญาขั้นสูง",
-      viewPlans: "ดูแผน",
-      disclaimerTitle: "ข้อจำกัดความรับผิดชอบการสแกนสัญญาเช่า",
-      disclaimerCheckbox: "ข้าพเจ้าได้อ่านและยอมรับข้อจำกัดความรับผิดชอบการสแกนสัญญาเช่าแล้ว",
-      agreeAndContinue: "ยอมรับและดำเนินการต่อ",
-      disclaimerCancel: "ยกเลิก",
-      disclaimerText: {
-        p1: "Lease Shield ให้บริการวิเคราะห์สัญญาเช่าอัตโนมัติ คำแนะนำเชิงปฏิบัติ และเทมเพลตเอกสารเพื่อช่วยให้ผู้ใช้เข้าใจสัญญาเช่าและจุดเสี่ยงทั่วไปได้ดีขึ้น ข้อมูลทั้งหมดมีไว้เพื่อวัตถุประสงค์ในการให้ข้อมูลทั่วไปเท่านั้น",
-        p2: "Lease Shield ไม่ใช่สำนักงานกฎหมาย และไม่ให้คำปรึกษาด้านกฎหมายหรือการเป็นตัวแทนทางกฎหมาย การใช้บริการนี้ไม่ก่อให้เกิดความสัมพันธ์ทนายความ-ลูกความ",
-        p3: "แม้ว่า Lease Shield ใช้การวิเคราะห์ที่มีโครงสร้างและข้อมูลอ้างอิงที่เป็นปัจจุบัน แต่ผลลัพธ์อาจแตกต่างกันไปตามคุณภาพเอกสาร ภาษา และเขตอำนาจศาล Lease Shield ไม่รับประกันว่าผลการสแกน คำแนะนำ หรือเอกสารที่สร้างขึ้นจะครบถ้วน ปราศจากข้อผิดพลาด หรือเหมาะสมกับทุกสถานการณ์",
-        responsibleTitle: "คุณยังคงมีหน้าที่รับผิดชอบในการ:",
-        responsibilities: [
-          "ตรวจสอบและทำความเข้าใจเอกสารสัญญาเช่าของคุณ",
-          "ยืนยันความถูกต้องของข้อมูลทั้งหมด",
-          "ขอคำปรึกษาจากผู้เชี่ยวชาญหรือทนายความอิสระเมื่อจำเป็น",
-          "ตัดสินใจว่าจะพึ่งพาผลลัพธ์ที่ให้มาหรือไม่ และอย่างไร"
-        ],
-        p4: "Lease Shield ไม่ได้เป็นคู่สัญญาในสัญญาเช่าใด ๆ และไม่รับผิดชอบต่อการตัดสินใจที่ทำ ข้อพิพาทที่เกิดขึ้น หรือผลลัพธ์ที่เกิดจากการใช้บริการนี้",
-        p5: "เมื่อดำเนินการต่อ คุณรับทราบว่า Lease Shield เป็นเครื่องมือช่วยเหลือและให้ข้อมูลเชิงลึก และคุณใช้งานด้วยดุลยพินิจและความเสี่ยงของคุณเอง"
-      }
-    },
-    zh: {
-      title: "扫描租约",
-      subtitle: "上传您的租赁协议进行自动分析",
-      uploadArea: "将租约文件拖放到此处或点击浏览",
-      supportedFormats: "仅支持 PDF 文件，每个文件最大 10MB",
-      selectFiles: "选择文件",
-      uploadAll: "分析文件",
-      uploading: "正在上传文件...",
-      analyzingTitle: "正在分析您的租约",
-      analyzingDesc: "正在审查您的租赁协议。这可能需要30秒...",
-      analyzing: {
-        uploading: "正在上传文件...",
-        creating: "正在创建租约记录...",
-        scanning: "正在分析文档...",
-        extracting: "正在提取租约详情...",
-        finalizing: "正在完成分析..."
-      },
-      recentScans: "最近扫描",
-      viewAll: "查看所有租约",
-      noScans: "暂无扫描记录",
-      scanDate: "扫描于",
-      confirmNoticeTitle: "设置提前通知提醒",
-      noticePeriodLabel: "提前通知期（天数）",
-      confirmNoticeDesc: "我们检测到您的租约结束于",
-      noticePeriodHelp: "租约结束前需要通知房东的天数",
-      skipReminder: "跳过",
-      setReminder: "设置提醒",
-      riskLevels: {
-        low: "低风险",
-        medium: "中等风险",
-        high: "高风险",
-        critical: "严重风险"
-      },
-      leaseDetails: "租约详情",
-      basicInfo: "基本信息",
-      propertyAddress: "物业地址",
-      monthlyRent: "月租金",
-      securityDeposit: "押金",
-      leasePeriod: "租期",
-      leaseStart: "租约开始",
-      leaseEnd: "租约结束",
-      to: "至",
-      noticeSettings: "通知设置",
-      noticeAlertsEnabled: "启用通知提醒",
-      noticePeriod: "提前通知期（天数）",
-      noticeDeadline: "通知截止日期",
-      edit: "编辑",
-      save: "保存",
-      cancel: "取消",
-      days: "天",
-      riskAnalysis: "风险分析",
-      riskScore: "风险评分",
-      viewFullReport: "查看完整报告",
-      viewScanResults: "查看扫描结果",
-      viewLease: "查看租约文档",
-      closeDetails: "关闭详情",
-      enableAlertsHelp: "在通知截止日期前30、7和3天收到提醒",
-      deadlineCalculated: "根据租约结束日期和提前通知期计算",
-      allLeases: "所有租约",
-      scanLimitReached: "已达扫描限制",
-      scanLimitMsg: "您已使用 {used} / {limit} 次扫描{periodText}",
-      upgradeForMore: "升级以获得更多扫描",
-      scansRemaining: "剩余 {remaining} 次扫描{periodText}",
-      unlimitedScans: "无限制扫描",
-      browseDocuments: "上传文档",
-      batchUpload: "批量上传",
-      singleUpload: "单次上传",
-      filesWillBeSeparate: "每个文件将作为单独的租约上传",
-      stepUpload: "上传",
-      stepAnalyze: "分析",
-      stepResults: "结果",
-      stepTrack: "追踪",
-      upgradeHintText: "升级以解锁无限扫描和高级租约分析。",
-      viewPlans: "查看计划",
-      disclaimerTitle: "租约扫描免责声明",
-      disclaimerCheckbox: "我已阅读并同意租约扫描免责声明。",
-      agreeAndContinue: "同意并继续",
-      disclaimerCancel: "取消",
-      disclaimerText: {
-        p1: "Lease Shield 提供自动化租约分析、实用指导和文档模板，帮助用户更好地理解租赁协议和常见风险领域。所有信息仅供一般参考之用。",
-        p2: "Lease Shield 不是律师事务所，不提供法律意见或法律代理服务。使用本服务不会建立律师-客户关系。",
-        p3: "虽然 Lease Shield 使用结构化分析和最新参考数据，但结果可能因文档质量、语言和司法管辖区而异。Lease Shield 不保证扫描结果、建议或生成文档完整、无误或适用于每种情况。",
-        responsibleTitle: "您仍需承担以下责任：",
-        responsibilities: [
-          "审阅并理解您的租赁文件",
-          "确认所有信息的准确性",
-          "在适当情况下寻求独立的专业或法律意见",
-          "决定是否以及如何依赖所提供的任何输出内容"
-        ],
-        p4: "Lease Shield 不是任何租约协议的当事方，对因使用本服务而做出的决定、产生的纠纷或造成的结果不承担责任。",
-        p5: "继续操作即表示您确认 Lease Shield 是一种支持和洞察工具，您自行决定使用并承担风险。"
-      }
-    },
-    ja: {
-      title: "賃貸契約をスキャン",
-      subtitle: "賃貸契約書をアップロードして自動分析",
-      uploadArea: "ここに賃貸契約ファイルをドロップまたはクリックして参照",
-      supportedFormats: "PDFファイルのみ。各ファイル最大10MB",
-      selectFiles: "ファイルを選択",
-      uploadAll: "ファイルを分析",
-      uploading: "ファイルをアップロード中...",
-      analyzingTitle: "賃貸契約を分析中",
-      analyzingDesc: "賃貸契約を確認しています。最大30秒かかる場合があります...",
-      analyzing: {
-        uploading: "ファイルをアップロード中...",
-        creating: "賃貸契約記録を作成中...",
-        scanning: "ドキュメントを分析中...",
-        extracting: "賃貸契約の詳細を抽出中...",
-        finalizing: "分析を完了中..."
-      },
-      recentScans: "最近のスキャン",
-      viewAll: "すべての賃貸契約を表示",
-      noScans: "スキャン記録なし",
-      scanDate: "スキャン日",
-      confirmNoticeTitle: "通知期間リマインダーを設定",
-      confirmNoticeDesc: "賃貸契約の終了日を検出しました",
-      noticePeriodLabel: "通知期間（日数）",
-      noticePeriodHelp: "契約終了前に家主に通知する日数",
-      skipReminder: "スキップ",
-      setReminder: "リマインダーを設定",
-      riskLevels: {
-        low: "低リスク",
-        medium: "中リスク",
-        high: "高リスク",
-        critical: "重大リスク"
-      },
-      leaseDetails: "賃貸契約の詳細",
-      basicInfo: "基本情報",
-      propertyAddress: "物件住所",
-      monthlyRent: "月額家賃",
-      securityDeposit: "敷金",
-      leasePeriod: "契約期間",
-      leaseStart: "契約開始",
-      leaseEnd: "契約終了",
-      to: "から",
-      noticeSettings: "通知設定",
-      noticeAlertsEnabled: "通知アラート有効",
-      noticePeriod: "通知期間（日数）",
-      noticeDeadline: "通知期限",
-      edit: "編集",
-      save: "保存",
-      cancel: "キャンセル",
-      days: "日",
-      riskAnalysis: "リスク分析",
-      riskScore: "リスクスコア",
-      viewFullReport: "完全なレポートを表示",
-      viewScanResults: "スキャン結果を表示",
-      viewLease: "賃貸契約書を表示",
-      closeDetails: "詳細を閉じる",
-      enableAlertsHelp: "通知期限の30日前、7日前、3日前にリマインダーを受け取る",
-      deadlineCalculated: "契約終了日と通知期間に基づいて計算",
-      allLeases: "すべての賃貸契約",
-      scanLimitReached: "スキャン制限に達しました",
-      scanLimitMsg: "{limit}回のスキャンのうち{used}回を使用{periodText}",
-      upgradeForMore: "アップグレードしてさらにスキャン",
-      scansRemaining: "残り{remaining}回のスキャン{periodText}",
-      unlimitedScans: "無制限スキャン",
-      browseDocuments: "ドキュメントをアップロード",
-      batchUpload: "一括アップロード",
-      singleUpload: "単一アップロード",
-      filesWillBeSeparate: "各ファイルは個別の賃貸契約としてアップロードされます",
-      stepUpload: "アップロード",
-      stepAnalyze: "分析",
-      stepResults: "結果",
-      stepTrack: "追跡",
-      upgradeHintText: "無制限スキャンと高度な賃貸契約分析をアンロックするためにアップグレードしてください。",
-      viewPlans: "プランを見る",
-      disclaimerTitle: "賃貸契約スキャン免責事項",
-      disclaimerCheckbox: "賃貸契約スキャン免責事項を読み、同意します。",
-      agreeAndContinue: "同意して続行",
-      disclaimerCancel: "キャンセル",
-      disclaimerText: {
-        p1: "Lease Shield は、ユーザーが賃貸契約書および一般的なリスク領域をよりよく理解できるよう、自動リース分析、実用的なガイダンス、および文書テンプレートを提供します。すべての情報は一般的な情報提供のみを目的として提供されます。",
-        p2: "Lease Shield は法律事務所ではなく、法律助言や法的代理を提供しません。本サービスの利用により弁護士-依頼者関係は成立しません。",
-        p3: "Lease Shield は構造化された分析と最新の参照データを使用していますが、結果は文書の品質、言語、および管轄区域によって異なる場合があります。Lease Shield は、スキャン結果、推奨事項、または生成された文書が完全で、エラーがなく、またはすべての状況に適していることを保証しません。",
-        responsibleTitle: "以下については利用者が責任を負います：",
-        responsibilities: [
-          "賃貸契約書類の確認と理解",
-          "すべての情報の正確性の確認",
-          "必要に応じて独立した専門家または法律助言を求めること",
-          "提供された出力に依拠するかどうか、およびその方法を決定すること"
-        ],
-        p4: "Lease Shield はいかなる賃貸契約の当事者でもなく、本サービスの利用から生じた決定、紛争、または結果について責任を負いません。",
-        p5: "続行することで、Lease Shield がサポートおよび洞察ツールであり、ご自身の裁量とリスクでご利用いただくことを認識したものとします。"
-      }
-    },
-    ko: {
-      title: "임대 계약 스캔",
-      subtitle: "임대 계약서를 업로드하여 자동 분석",
-      uploadArea: "여기에 임대 계약 파일을 드롭하거나 클릭하여 찾아보기",
-      supportedFormats: "PDF 파일만 지원. 파일당 최대 10MB",
-      selectFiles: "파일 선택",
-      uploadAll: "파일 분석",
-      uploading: "파일 업로드 중...",
-      analyzingTitle: "임대 계약 분석 중",
-      analyzingDesc: "임대 계약을 검토하고 있습니다. 최대 30초 소요될 수 있습니다...",
-      analyzing: {
-        uploading: "파일 업로드 중...",
-        creating: "임대 계약 기록 생성 중...",
-        scanning: "문서를 분석 중...",
-        extracting: "임대 계약 세부 정보 추출 중...",
-        finalizing: "분석 완료 중..."
-      },
-      recentScans: "최근 스캔",
-      viewAll: "모든 임대 계약 보기",
-      noScans: "스캔 기록 없음",
-      scanDate: "스캔 날짜",
-      confirmNoticeTitle: "통지 기간 알림 설정",
-      confirmNoticeDesc: "임대 계약 종료일 감지됨",
-      noticePeriodLabel: "통지 기간 (일)",
-      noticePeriodHelp: "임대 종료 전에 집주인에게 통지할 일수",
-      skipReminder: "건너뛰기",
-      setReminder: "알림 설정",
-      riskLevels: {
-        low: "낮은 위험",
-        medium: "중간 위험",
-        high: "높은 위험",
-        critical: "심각한 위험"
-      },
-      leaseDetails: "임대 계약 세부 정보",
-      basicInfo: "기본 정보",
-      propertyAddress: "부동산 주소",
-      monthlyRent: "월 임대료",
-      securityDeposit: "보증금",
-      leasePeriod: "임대 기간",
-      leaseStart: "계약 시작",
-      leaseEnd: "계약 종료",
-      to: "~",
-      noticeSettings: "통지 설정",
-      noticeAlertsEnabled: "통지 알림 활성화",
-      noticePeriod: "통지 기간 (일)",
-      noticeDeadline: "통지 마감일",
-      edit: "편집",
-      save: "저장",
-      cancel: "취소",
-      days: "일",
-      riskAnalysis: "위험 분석",
-      riskScore: "위험 점수",
-      viewFullReport: "전체 보고서 보기",
-      viewScanResults: "스캔 결과 보기",
-      viewLease: "임대 계약서 보기",
-      closeDetails: "세부 정보 닫기",
-      enableAlertsHelp: "통지 마감일 30일, 7일, 3일 전에 알림 받기",
-      deadlineCalculated: "임대 종료일과 통지 기간을 기반으로 계산",
-      allLeases: "모든 임대 계약",
-      scanLimitReached: "스캔 한도 도달",
-      scanLimitMsg: "{limit}회 스캔 중 {used}회 사용{periodText}",
-      upgradeForMore: "더 많은 스캔을 위해 업그레이드",
-      scansRemaining: "{remaining}회 스캔 남음{periodText}",
-      unlimitedScans: "무제한 스캔",
-      browseDocuments: "문서 업로드",
-      batchUpload: "일괄 업로드",
-      singleUpload: "단일 업로드",
-      filesWillBeSeparate: "각 파일은 별도의 임대 계약으로 업로드됩니다",
-      stepUpload: "업로드",
-      stepAnalyze: "분석",
-      stepResults: "결과",
-      stepTrack: "추적",
-      upgradeHintText: "무제한 스캔 및 고급 임대 계약 분석을 잠금 해제하려면 업그레이드하십시오.",
-      viewPlans: "플랜 보기",
-      disclaimerTitle: "임대차 계약 스캔 면책 조항",
-      disclaimerCheckbox: "임대차 계약 스캔 면책 조항을 읽고 이에 동의합니다.",
-      agreeAndContinue: "동의 및 계속",
-      disclaimerCancel: "취소",
-      disclaimerText: {
-        p1: "Lease Shield는 사용자가 임대 계약 및 일반적인 위험 영역을 더 잘 이해할 수 있도록 자동 임대 분석, 실용적인 지침 및 문서 템플릿을 제공합니다. 모든 정보는 일반 정보 제공 목적으로만 제공됩니다.",
-        p2: "Lease Shield는 법률사무소가 아니며 법률 자문 또는 법률 대리를 제공하지 않습니다. 본 서비스 사용으로 변호사-의뢰인 관계가 성립되지 않습니다.",
-        p3: "Lease Shield는 구조화된 분석 및 최신 참조 데이터를 사용하지만, 결과는 문서 품질, 언어 및 관할 구역에 따라 달라질 수 있습니다. Lease Shield는 스캔 결과, 권장 사항 또는 생성된 문서가 완전하거나 오류가 없거나 모든 상황에 적합하다는 것을 보증하지 않습니다.",
-        responsibleTitle: "귀하는 다음에 대한 책임이 있습니다:",
-        responsibilities: [
-          "임대차 계약 문서 검토 및 이해",
-          "모든 정보의 정확성 확인",
-          "적절한 경우 독립적인 전문가 또는 법률 자문 구하기",
-          "제공된 결과물을 신뢰할지 여부 및 방법 결정"
-        ],
-        p4: "Lease Shield는 어떠한 임대 계약의 당사자도 아니며, 본 서비스 사용으로 인해 내린 결정, 발생한 분쟁 또는 초래된 결과에 대해 책임을 지지 않습니다.",
-        p5: "계속 진행하면 Lease Shield가 지원 및 인사이트 도구임을 인정하고 귀하의 재량과 위험 부담으로 사용하는 것에 동의하는 것입니다."
-      }
-    },
-    ru: {
-      title: "Сканировать договор",
-      subtitle: "Загрузите договор аренды для автоматического анализа",
-      uploadArea: "Перетащите файлы договора сюда или нажмите, чтобы выбрать",
-      supportedFormats: "Только PDF файлы. Максимум 10 МБ на файл",
-      selectFiles: "Выбрать файлы",
-      uploadAll: "Анализировать файлы",
-      uploading: "Загрузка файлов...",
-      analyzingTitle: "Анализ вашего договора",
-      analyzingDesc: "Проверка договора аренды. Это может занять до 30 секунд...",
-      analyzing: {
-        uploading: "Загрузка файлов...",
-        creating: "Создание записи договора...",
-        scanning: "Анализ документа...",
-        extracting: "Извлечение деталей договора...",
-        finalizing: "Завершение анализа..."
-      },
-      recentScans: "Последние сканирования",
-      viewAll: "Посмотреть все договоры",
-      noScans: "Сканирований пока нет",
-      scanDate: "Отсканировано",
-      confirmNoticeTitle: "Настроить напоминание о периоде уведомления",
-      confirmNoticeDesc: "Мы обнаружили, что ваш договор заканчивается",
-      noticePeriodLabel: "Период уведомления (дней)",
-      noticePeriodHelp: "За сколько дней до окончания договора уведомить арендодателя",
-      skipReminder: "Пропустить",
-      setReminder: "Установить напоминание",
-      riskLevels: {
-        low: "Низкий риск",
-        medium: "Средний риск",
-        high: "Высокий риск",
-        critical: "Критический риск"
-      },
-      leaseDetails: "Детали договора",
-      basicInfo: "Основная информация",
-      propertyAddress: "Адрес недвижимости",
-      monthlyRent: "Ежемесячная аренда",
-      securityDeposit: "Залоговый депозит",
-      leasePeriod: "Период аренды",
-      leaseStart: "Начало аренды",
-      leaseEnd: "Окончание аренды",
-      to: "до",
-      noticeSettings: "Настройки уведомлений",
-      noticeAlertsEnabled: "Уведомления включены",
-      noticePeriod: "Период уведомления (дней)",
-      noticeDeadline: "Крайний срок уведомления",
-      edit: "Редактировать",
-      save: "Сохранить",
-      cancel: "Отмена",
-      days: "дней",
-      riskAnalysis: "Анализ рисков",
-      riskScore: "Оценка риска",
-      viewFullReport: "Посмотреть полный отчёт",
-      viewScanResults: "Посмотреть результаты сканирования",
-      viewLease: "Посмотреть документ договора",
-      closeDetails: "Закрыть детали",
-      enableAlertsHelp: "Получайте напоминания за 30, 7 и 3 дня до крайнего срока уведомления",
-      deadlineCalculated: "Рассчитывается на основе даты окончания договора и периода уведомления",
-      allLeases: "Все договоры",
-      scanLimitReached: "Лимит сканирований достигнут",
-      scanLimitMsg: "Вы использовали {used} из {limit} сканирований{periodText}",
-      upgradeForMore: "Обновитесь для большего количества сканирований",
-      scansRemaining: "Осталось {remaining} сканирований{periodText}",
-      unlimitedScans: "Неограниченные сканирования",
-      browseDocuments: "Загрузить файлы",
-      batchUpload: "Пакетная загрузка",
-      singleUpload: "Одиночная загрузка",
-      filesWillBeSeparate: "Каждый файл будет загружен как отдельный договор",
-      stepUpload: "Загрузка",
-      stepAnalyze: "Анализ",
-      stepResults: "Результаты",
-      stepTrack: "Отслеживание",
-      upgradeHintText: "Обновитесь для неограниченного сканирования и расширенного анализа договоров.",
-      viewPlans: "Посмотреть планы",
-      disclaimerTitle: "Оговорка о сканировании договора аренды",
-      disclaimerCheckbox: "Я прочитал(а) и соглашаюсь с оговоркой о сканировании договора аренды.",
-      agreeAndContinue: "Согласиться и продолжить",
-      disclaimerCancel: "Отмена",
-      disclaimerText: {
-        p1: "Lease Shield предоставляет автоматизированный анализ договора аренды, практическое руководство и шаблоны документов, чтобы помочь пользователям лучше понимать договоры аренды и общие области риска. Вся информация предоставляется исключительно в общих информационных целях.",
-        p2: "Lease Shield не является юридической фирмой и не предоставляет юридические консультации или юридическое представительство. Использование данного сервиса не создаёт отношений адвокат-клиент.",
-        p3: "Хотя Lease Shield использует структурированный анализ и актуальные справочные данные, результаты могут различаться в зависимости от качества документа, языка и юрисдикции. Lease Shield не гарантирует, что результаты сканирования, рекомендации или сгенерированные документы являются полными, безошибочными или подходящими для каждой ситуации.",
-        responsibleTitle: "Вы несёте ответственность за:",
-        responsibilities: [
-          "Просмотр и понимание ваших документов аренды",
-          "Подтверждение точности всей информации",
-          "Обращение за независимой профессиональной или юридической консультацией при необходимости",
-          "Решение о том, полагаться ли на предоставленные результаты и каким образом"
-        ],
-        p4: "Lease Shield не является стороной какого-либо договора аренды и не несёт ответственности за принятые решения, возникшие споры или последствия, вытекающие из использования данного сервиса.",
-        p5: "Продолжая, вы признаёте, что Lease Shield является инструментом поддержки и аналитики, и что вы используете его по своему усмотрению и на свой риск."
-      }
-    }
-  };
-
-  const strings = t[language] || t.en;
+  const strings = getUploadScanStrings(language);
+  const fromFunnel = typeof window !== 'undefined' && sessionStorage.getItem('scanFromFunnel_shown') !== 'true' && new URLSearchParams(window.location.search).get('from') === 'funnel';
 
   const updateLeaseMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Lease.update(id, data),
@@ -1069,13 +510,10 @@ function UploadScanPageContent() {
           await base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSize });
         } catch (_) {}
         
+        // Set hasUploadedLease flag for routing
+        base44.auth.updateMe({ hasUploadedLease: true }).catch(() => {});
         // Navigate to report
-        navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, {
-          state: { 
-            scan_full: completedScan.scan_full,
-            fromUpload: true 
-          }
-        });
+        navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, { state: { scan_full: completedScan.scan_full, fromUpload: true } });
         return;
       } catch (err) {
         console.error('[MULTI_PAGE_ERROR]', err);
@@ -1428,19 +866,9 @@ function UploadScanPageContent() {
           queryClient.invalidateQueries({ queryKey: ['currentUser'] })
         ]);
         
-        // Update storage usage
-        try {
-          await base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSizeSingle });
-        } catch (_) {}
-        
-        // Navigate to report
-        const reportUrl = createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`;
-        navigate(reportUrl, {
-          state: { 
-            scan_full: completedScan.scan_full,
-            fromUpload: true 
-          }
-        });
+        try { await base44.functions.invoke('updateStorageUsage', { bytesAdded: totalFileSizeSingle }); } catch (_) {}
+        base44.auth.updateMe({ hasUploadedLease: true }).catch(() => {});
+        navigate(createPageUrl("ReportFull") + `?scanId=${encodeURIComponent(scanId)}&leaseId=${encodeURIComponent(lease.id)}`, { state: { scan_full: completedScan.scan_full, fromUpload: true } });
         return;
       } catch (err) {
         logStage('ERROR_CAUGHT', {
@@ -1832,36 +1260,23 @@ function UploadScanPageContent() {
     setSelectedLease(lease);
   };
 
-  const handleFileSelect = (e) => {
-    if (!scanStatus.allowed) return;
-    const files = Array.from(e.target.files || e.dataTransfer?.files || []);
-    
-    const validFiles = [];
-    const invalidFiles = [];
-    
-    files.forEach(file => {
-      const ext = file.name.toLowerCase().split('.').pop();
-      if (ext === 'pdf' || file.type === 'application/pdf') {
-        validFiles.push(file);
-      } else {
-        invalidFiles.push(file.name);
-      }
-    });
-    
-    if (invalidFiles.length > 0) {
-      setError(language === 'th'
-        ? `รองรับเฉพาะไฟล์ PDF เท่านั้น 📄\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}\n\nการสแกนรูปภาพจะเปิดให้บริการเร็ว ๆ นี้`
-        : language === 'ru'
-          ? `Поддерживаются только PDF файлы 📄\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}\n\nСканирование изображений скоро будет доступно`
-          : `PDF files only 📄\n\nUnsupported: ${invalidFiles.join(', ')}\n\nImage scanning coming soon.`);
+  const ALLOWED_EXTS = ['pdf', 'jpg', 'jpeg', 'png'];
+  const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
+  const isAllowedFile = (file) => ALLOWED_EXTS.includes(file.name.toLowerCase().split('.').pop()) || ALLOWED_TYPES.includes(file.type);
+
+  const validateAndSetFiles = (files, addToExisting = true) => {
+    const valid = [], invalid = [];
+    files.forEach(f => isAllowedFile(f) ? valid.push(f) : invalid.push(f.name));
+    if (invalid.length > 0) {
+      setError(`${strings.supportedFormats}\n\nUnsupported: ${invalid.join(', ')}`);
       setTimeout(() => setError(null), 5000);
     }
-    
-    if (validFiles.length > 0) {
-      setSelectedFiles(prev => [...prev, ...validFiles]);
-      setError(null);
-    }
-    
+    if (valid.length > 0) { setSelectedFiles(addToExisting ? prev => [...prev, ...valid] : valid); setError(null); }
+  };
+
+  const handleFileSelect = (e) => {
+    if (!scanStatus.allowed) return;
+    validateAndSetFiles(Array.from(e.target.files || e.dataTransfer?.files || []));
     setDragActive(false);
   };
 
@@ -1869,33 +1284,7 @@ function UploadScanPageContent() {
     if (!scanStatus.allowed) return;
     e.preventDefault();
     setDragActive(false);
-    const files = Array.from(e.dataTransfer.files);
-    
-    const validFiles = [];
-    const invalidFiles = [];
-    
-    files.forEach(file => {
-      const ext = file.name.toLowerCase().split('.').pop();
-      if (ext === 'pdf' || file.type === 'application/pdf') {
-        validFiles.push(file);
-      } else {
-        invalidFiles.push(file.name);
-      }
-    });
-    
-    if (invalidFiles.length > 0) {
-      setError(language === 'th'
-        ? `รองรับเฉพาะไฟล์ PDF เท่านั้น 📄\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}\n\nการสแกนรูปภาพจะเปิดให้บริการเร็ว ๆ นี้`
-        : language === 'ru'
-          ? `Поддерживаются только PDF файлы 📄\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}\n\nСканирование изображений скоро будет доступно`
-          : `PDF files only 📄\n\nUnsupported: ${invalidFiles.join(', ')}\n\nImage scanning coming soon.`);
-      setTimeout(() => setError(null), 5000);
-    }
-    
-    if (validFiles.length > 0) {
-      setSelectedFiles(prev => [...prev, ...validFiles]);
-      setError(null);
-    }
+    validateAndSetFiles(Array.from(e.dataTransfer.files));
   };
 
   const handleRemoveFile = (index) => {
@@ -2009,6 +1398,9 @@ function UploadScanPageContent() {
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: colors.textPrimary }}>{strings.title}</h1>
           <p style={{ color: colors.textSecondary }}>{strings.subtitle}</p>
+          {fromFunnel && (
+            <p className="mt-2 text-sm font-medium" style={{ color: '#0C3B2E' }}>{strings.funnelContext}</p>
+          )}
 
           {/* ✅ SCAN LIMIT INDICATOR */}
           <div className="mt-3">
@@ -2812,9 +2204,10 @@ function UploadScanPageContent() {
                   </div>
                 )}
 
-                {/* Trust Badge */}
-                <div className="mb-4">
-                  <TrustBadge language={language} isDarkMode={isDarkMode} />
+                {/* Trust Line */}
+                <div className="mb-4 flex items-center justify-center gap-2">
+                  <Shield className="w-4 h-4" style={{ color: '#0C3B2E' }} />
+                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.trustLine}</p>
                 </div>
 
                 <div
@@ -2833,21 +2226,14 @@ function UploadScanPageContent() {
                   <h3 className="text-lg md:text-xl font-bold mb-2" style={{ color: colors.textPrimary }}>
                     {strings.uploadArea}
                   </h3>
-                  <p className="mb-2 font-semibold" style={{ color: colors.textPrimary }}>{strings.supportedFormats}</p>
-                  <p className="mb-4 text-xs" style={{ color: colors.textSecondary }}>
-                    {language === 'th' 
-                      ? '⚠️ หากเลือกจาก Google Drive บน Android ไม่สามารถอ่านไฟล์ได้ กรุณาดาวน์โหลดไปยังอุปกรณ์ก่อน'
-                      : language === 'ru'
-                        ? '⚠️ Если выбираете из Google Drive на Android и не можете прочитать, сначала скачайте на устройство'
-                        : '⚠️ If selecting from Google Drive on Android fails, download to device first'}
-                  </p>
+                  <p className="mb-4 font-semibold" style={{ color: colors.textPrimary }}>{strings.supportedFormats}</p>
 
                   {/* Hidden file input */}
                   <input
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".pdf,application/pdf"
+                  accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                    onChange={(e) => {
                      if (!scanStatus.allowed) return;
 
@@ -2859,21 +2245,10 @@ function UploadScanPageContent() {
                      const validFiles = [];
                      const invalidFiles = [];
 
-                     files.forEach(file => {
-                       const ext = file.name.toLowerCase().split('.').pop();
-                       if (ext === 'pdf' || file.type === 'application/pdf') {
-                         validFiles.push(file);
-                       } else {
-                         invalidFiles.push(file.name);
-                       }
-                     });
+                     files.forEach(file => { isAllowedFile(file) ? validFiles.push(file) : invalidFiles.push(file.name); });
 
                      if (invalidFiles.length > 0) {
-                       const errorMsg = language === 'th'
-                         ? `รองรับเฉพาะไฟล์ PDF เท่านั้น 📄\n\nไฟล์ที่ไม่รองรับ: ${invalidFiles.join(', ')}\n\nการสแกนรูปภาพจะเปิดให้บริการเร็ว ๆ นี้`
-                         : language === 'ru'
-                           ? `Поддерживаются только PDF файлы 📄\n\nНеподдерживаемые файлы: ${invalidFiles.join(', ')}\n\nСканирование изображений скоро будет доступно`
-                           : `PDF files only 📄\n\nUnsupported files: ${invalidFiles.join(', ')}\n\nImage scanning coming soon.`;
+                       const errorMsg = `${strings.supportedFormats}\n\nUnsupported: ${invalidFiles.join(', ')}`;
 
                        setError(errorMsg);
                        setTimeout(() => setError(null), 5000);
@@ -2899,7 +2274,7 @@ function UploadScanPageContent() {
                        fileInputRef.current?.click();
                      }}
                      disabled={!scanStatus.allowed}
-                     className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                     className={`inline-flex items-center gap-2 px-8 py-4 rounded-xl text-base font-bold ${!scanStatus.allowed ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                      style={{
                        backgroundColor: '#0C3B2E',
                        color: '#FFFFFF',
@@ -2907,7 +2282,7 @@ function UploadScanPageContent() {
                      }}
                    >
                      <Upload className="w-5 h-5" />
-                     {language === 'th' ? 'อัปโหลดและสแกน' : language === 'ru' ? 'Загрузить и сканировать' : 'Upload & Scan'}
+                     {strings.scanCTA}
                    </button>
                   </div>
                   </div>
@@ -3014,23 +2389,8 @@ function UploadScanPageContent() {
         )}
 
         {/* Legal Disclaimer */}
-        <div className="mt-8 p-4 rounded-lg text-center max-w-4xl mx-auto" style={{
-          backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC',
-          border: `1px solid ${colors.borderColor}`
-        }}>
-          <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>
-            {language === 'th' 
-              ? 'Lease Shield ให้คำแนะนำทั่วไปและเทมเพลตเอกสารเพื่อความสะดวกของคุณ Lease Shield ไม่ใช่สำนักงานกฎหมาย ไม่ให้บริการตัวแทนทางกฎหมาย และไม่ได้เป็นคู่สัญญาในสัญญาเช่าของคุณ คุณมีหน้าที่รับผิดชอบในการตรวจสอบความถูกต้องของข้อมูลและเอกสารทั้งหมดก่อนส่ง'
-              : language === 'zh'
-                ? 'Lease Shield为您提供一般性指导和文档模板以方便使用。Lease Shield不是律师事务所，不提供法律代理，也不是您租约的一方。在发送之前，您有责任检查所有信息和文档的准确性。'
-                : language === 'ja'
-                  ? 'Lease Shieldは、お客様の便宜のために一般的なガイダンスと文書テンプレートを提供します。Lease Shieldは法律事務所ではなく、法的代理を提供せず、お客様のリース契約の当事者でもありません。送信する前に、すべての情報と文書の正確性を確認する責任はお客様にあります。'
-                  : language === 'ko'
-                    ? 'Lease Shield는 귀하의 편의를 위해 일반적인 안내 및 문서 템플릿을 제공합니다。Lease Shield는 법률 회사가 아니며 법적 대리를 제공하지 않으며 귀하의 임대 계약 당사자가 아닙니다。발송하기 전에 모든 정보와 문서의 정확성을 확인할 책임은 귀하에게 있습니다。'
-                    : language === 'ru'
-                      ? 'Lease Shield предоставляет общие рекомендации и шаблоны документов для вашего удобства。Lease Shield не является юридической фирмой、не предоставляет юридическое представительство и не является стороной вашего договора аренды。Вы несёте ответственность за проверку точности всей информации и документов перед отправкой。'
-                      : 'Lease Shield provides general guidance and document templates for your convenience. Lease Shield is not a law firm, does not provide legal representation, and is not a party to your lease. You are responsible for checking the accuracy of all information and documents before sending them.'}
-          </p>
+        <div className="mt-8 p-4 rounded-lg text-center max-w-4xl mx-auto" style={{ backgroundColor: isDarkMode ? '#2A2D30' : '#F8FAFC', border: `1px solid ${colors.borderColor}` }}>
+          <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>{strings.disclaimerText.p1}</p>
         </div>
         </>
         )}

@@ -85,9 +85,12 @@ export default function AppHome() {
   const selectedPlan = searchParams.get('plan');
   const planName = selectedPlan ? planNames[selectedPlan] : null;
 
-  const handleAuth = () => {
+  const handleAuth = (isScanCTA = false) => {
     if (selectedPlan) {
       sessionStorage.setItem('pendingPlan', selectedPlan);
+    }
+    if (isScanCTA && !selectedPlan) {
+      sessionStorage.setItem('scanFromFunnel', 'true');
     }
     base44.auth.redirectToLogin(window.location.origin + "/welcome");
   };
@@ -157,7 +160,7 @@ export default function AppHome() {
       {/* Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
         <button
-          onClick={handleAuth}
+          onClick={() => handleAuth(true)}
           className="flex-1 py-3.5 rounded-xl font-bold text-base transition-all"
           style={{
             backgroundColor: "#C7A338",
@@ -169,7 +172,7 @@ export default function AppHome() {
             : strings.createAccount}
         </button>
         <button
-          onClick={handleAuth}
+          onClick={() => handleAuth(false)}
           className="flex-1 py-3.5 rounded-xl font-bold text-base transition-all"
           style={{
             backgroundColor: "transparent",

@@ -253,12 +253,7 @@ export default function Layout({ children, currentPageName }) {
     return () => window.removeEventListener('openQuickGuide', handleOpenQuickGuide);
   }, []);
 
-  // Auto-show Quick Guide if not dismissed
-  React.useEffect(() => {
-    if (user && !user.quick_guide_dismissed) {
-      setShowQuickGuide(true);
-    }
-  }, [user]);
+  // Quick Guide is only shown via info icon tap - no auto-launch
 
   React.useEffect(() => {
     if (user?.theme === 'dark') {
