@@ -70,7 +70,7 @@ function UploadScanPageContent() {
   const [documentToView, setDocumentToView] = useState(null);
   const [showPostScanHint, setShowPostScanHint] = useState(false);
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
-  const [pendingDisclaimerFiles, setPendingDisclaimerFiles] = useState(null);
+  const pendingDisclaimerFiles = React.useRef(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completedLeaseId, setCompletedLeaseId] = useState(null);
   const [addingPagesToLease, setAddingPagesToLease] = useState(null);
@@ -188,19 +188,18 @@ function UploadScanPageContent() {
     }
   });
 
-  const handleAcceptDisclaimerAndProceed = async () => {
-    const filesToUpload = pendingDisclaimerFiles;
-    setPendingDisclaimerFiles(null);
+  const handleAcceptDisclaimer = async () => {
     setShowDisclaimerModal(false);
     
     // Save acceptance to user profile
-    base44.auth.updateMe({ scan_disclaimer_accepted: true })
-      .then(() => queryClient.invalidateQueries({ queryKey: ['user'] }))
-      .catch(() => {});
+    await base44.auth.updateMe({ scan_disclaimer_accepted: true });
+    queryClient.invalidateQueries({ queryKey: ['user'] });
     
-    // Immediately proceed with upload
-    if (filesToUpload && filesToUpload.length > 0) {
-      proceedWithUpload(filesToUpload);
+    // Immediately proceed with the files that were pending
+    const files = pendingDisclaimerFiles.current;
+    pendingDisclaimerFiles.current = null;
+    if (files && files.length > 0) {
+      proceedWithUpload(files);
     }
   };
 
@@ -942,9 +941,9 @@ function UploadScanPageContent() {
       setSelectedFiles(filesToUpload);
     }
     
-    // Check if user needs to see disclaimer first (one-time only)
+    // Check if user needs to see disclaimer (one-time only)
     if (!user?.scan_disclaimer_accepted) {
-      setPendingDisclaimerFiles(filesToUse);
+      pendingDisclaimerFiles.current = filesToUse;
       setShowDisclaimerModal(true);
       return;
     }
@@ -2093,14 +2092,14 @@ function UploadScanPageContent() {
           </DialogContent>
         </Dialog>
 
-        {/* Disclaimer Modal - shows once per user */}
+        {/* Disclaimer Modal - one-time, simplified */}
         <DisclaimerModal
           isOpen={showDisclaimerModal}
           onClose={() => {
             setShowDisclaimerModal(false);
-            setPendingDisclaimerFiles(null);
+            pendingDisclaimerFiles.current = null;
           }}
-          onAccept={handleAcceptDisclaimerAndProceed}
+          onAccept={handleAcceptDisclaimer}
           language={language}
           isDarkMode={isDarkMode}
         />
