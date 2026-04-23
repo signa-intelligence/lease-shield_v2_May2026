@@ -14,7 +14,7 @@ const t = {
     startFree: "Hidden clauses can cost you your full deposit.\nCheck your lease in 60 seconds.",
     createAccount: "Check My Lease Free",
     logIn: "Log In",
-    notSure: "See a real lease example",
+    notSure: "Learn how Lease Shield works",
     footerTagline: "Built to prevent deposit loss in Thailand",
   },
   th: {
@@ -22,7 +22,7 @@ const t = {
     startFree: "เงื่อนไขที่ซ่อนอยู่ อาจทำให้คุณเสียเงินประกันทั้งหมด\nตรวจสอบสัญญาภายใน 60 วินาที",
     createAccount: "ตรวจสอบสัญญาฟรี",
     logIn: "เข้าสู่ระบบ",
-    notSure: "ดูตัวอย่างสัญญาจริง",
+    notSure: "ดูวิธีการทำงานของ Lease Shield",
     footerTagline: "ออกแบบมาเพื่อป้องกันการสูญเสียเงินประกันในประเทศไทย",
   },
   ko: {
@@ -30,7 +30,7 @@ const t = {
     startFree: "숨겨진 조항으로 보증금을 전부 잃을 수 있습니다.\n60초 안에 계약서를 확인하세요.",
     createAccount: "무료로 계약서 확인하기",
     logIn: "로그인",
-    notSure: "실제 계약서 예시 보기",
+    notSure: "Lease Shield 작동 방식 보기",
     footerTagline: "태국에서 보증금 손실을 막기 위해 설계되었습니다",
   },
   ja: {
@@ -38,7 +38,7 @@ const t = {
     startFree: "隠れた条項により、保証金を全て失う可能性があります。\n60秒で契約書をチェック。",
     createAccount: "無料で契約をチェック",
     logIn: "ログイン",
-    notSure: "実際の契約例を見る",
+    notSure: "Lease Shield の仕組みを見る",
     footerTagline: "タイでのデポジット損失を防ぐために設計されています",
   },
   zh: {
@@ -46,7 +46,7 @@ const t = {
     startFree: "隐藏条款可能让你失去全部押金。\n60秒检查你的合同。",
     createAccount: "免费检查合同",
     logIn: "登录",
-    notSure: "查看真实合同示例",
+    notSure: "了解 Lease Shield 如何运作",
     footerTagline: "专为防止在泰国丢失押金而设计",
   },
   ru: {
@@ -54,7 +54,7 @@ const t = {
     startFree: "Скрытые условия могут стоить вам всего депозита.\nПроверьте договор за 60 секунд.",
     createAccount: "Проверить договор бесплатно",
     logIn: "Войти",
-    notSure: "Посмотреть реальный пример договора",
+    notSure: "Как работает Lease Shield",
     footerTagline: "Создано, чтобы защитить ваш депозит в Таиланде",
   },
 };
@@ -183,7 +183,7 @@ export default function AppHome() {
 
       {/* "Not sure yet?" link */}
       <a
-        href="https://www.leaseshield.asia"
+        href="https://leaseshield.asia"
         className="mt-4 w-full max-w-sm py-3.5 rounded-xl font-bold text-base text-center text-white border-2 border-white/40 hover:bg-white/10 transition-all block"
       >
         {strings.notSure}
