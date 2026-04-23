@@ -181,9 +181,6 @@ export default function AppHome() {
         </button>
       </div>
 
-      {/* Spacer to maintain visual balance */}
-      <div className="mt-8" />
-
       {/* Footer */}
       <p className="mt-4 text-xs text-white/30">
         © {new Date().getFullYear()} Lease Shield · {strings.footerTagline || 'Fair. Transparent. Protected.'}
