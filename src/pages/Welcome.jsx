@@ -21,25 +21,8 @@ export default function Welcome() {
         return;
       }
 
-      // Force to upload if coming from marketing funnel CTA
-      if (scanFromFunnel) {
-        window.location.replace('/UploadScan');
-        return;
-      }
-
-      // Check if new or returning user
-      try {
-        const user = await base44.auth.me();
-        const hasUploaded = user?.hasUploadedLease === true;
-        if (hasUploaded) {
-          window.location.replace('/Dashboard');
-        } else {
-          window.location.replace('/UploadScan');
-        }
-      } catch {
-        // Fallback: send to upload scan for new users
-        window.location.replace('/UploadScan');
-      }
+      // Always go to dashboard after login
+      window.location.replace('/Dashboard');
     };
 
     route();
