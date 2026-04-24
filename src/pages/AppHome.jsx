@@ -10,9 +10,9 @@ const planNames = {
 
 const t = {
   en: {
-    headline: "Your Lease May Say Something Different in Thai",
-    startFree: "Hidden clauses can cost you your full deposit.\nCheck your lease in 60 seconds.",
-    createAccount: "Check My Lease Free",
+    headline: "Renters in Thailand Lose Deposits Every Day. Make Sure You're Not One of Them.",
+    startFree: "Upload your lease in 2 minutes. Get a full risk report.\nFree, no credit card needed.",
+    createAccount: "Start Free. No Credit Card Needed",
     logIn: "Log In",
     notSure: "Learn how Lease Shield works",
     footerTagline: "Built to prevent deposit loss in Thailand",
