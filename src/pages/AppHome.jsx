@@ -11,7 +11,7 @@ const planNames = {
 const t = {
   en: {
     headline: "Renters in Thailand Lose Deposits Every Day. Make Sure You're Not One of Them.",
-    startFree: ["Upload your lease in 2 minutes.", "Get a risk report.", "Free, no credit card required."],
+    startFree: ["Upload your lease in 2 minutes.", "Get a risk report."],
     createAccount: "Start Free. No Credit Card Needed",
     logIn: "Log In",
     notSure: "Learn how Lease Shield works",
@@ -19,7 +19,7 @@ const t = {
   },
   th: {
     headline: "ผู้เช่าในไทยเสียเงินประกันทุกวัน อย่าให้คุณเป็นหนึ่งในนั้น",
-    startFree: ["อัปโหลดสัญญาเช่าใน 2 นาที", "รับรายงานความเสี่ยง", "ฟรี ไม่ต้องใช้บัตรเครดิต"],
+    startFree: ["อัปโหลดสัญญาเช่าใน 2 นาที", "รับรายงานความเสี่ยง"],
     createAccount: "เริ่มต้นฟรี ไม่ต้องใช้บัตรเครดิต",
     logIn: "เข้าสู่ระบบ",
     notSure: "ดูวิธีการทำงานของ Lease Shield",
@@ -27,7 +27,7 @@ const t = {
   },
   ko: {
     headline: "태국에서 매일 세입자들이 보증금을 잃고 있습니다. 당신은 그중 하나가 되지 마세요.",
-    startFree: ["2분 안에 계약서를 업로드하세요.", "위험 보고서를 받으세요.", "무료, 신용카드 불필요."],
+    startFree: ["2분 안에 계약서를 업로드하세요.", "위험 보고서를 받으세요."],
     createAccount: "무료로 시작. 신용카드 불필요",
     logIn: "로그인",
     notSure: "Lease Shield 작동 방식 보기",
@@ -35,7 +35,7 @@ const t = {
   },
   ja: {
     headline: "タイでは毎日入居者がデポジットを失っています。あなたがその一人にならないように。",
-    startFree: ["2分で契約書をアップロード。", "リスクレポートを取得。", "無料、クレジットカード不要。"],
+    startFree: ["2分で契約書をアップロード。", "リスクレポートを取得。"],
     createAccount: "無料で開始。カード不要",
     logIn: "ログイン",
     notSure: "Lease Shield の仕組みを見る",
@@ -43,7 +43,7 @@ const t = {
   },
   zh: {
     headline: "在泰国，租客每天都在失去押金。确保你不是其中之一。",
-    startFree: ["2分钟上传你的租约。", "获取风险报告。", "免费，无需信用卡。"],
+    startFree: ["2分钟上传你的租约。", "获取风险报告。"],
     createAccount: "免费开始，无需信用卡",
     logIn: "登录",
     notSure: "了解 Lease Shield 如何运作",
@@ -51,7 +51,7 @@ const t = {
   },
   ru: {
     headline: "Арендаторы в Таиланде теряют депозиты каждый день. Убедитесь, что вы не один из них.",
-    startFree: ["Загрузите договор за 2 минуты.", "Получите отчёт о рисках.", "Бесплатно, без кредитной карты."],
+    startFree: ["Загрузите договор за 2 минуты.", "Получите отчёт о рисках."],
     createAccount: "Начать бесплатно. Без карты",
     logIn: "Войти",
     notSure: "Как работает Lease Shield",
