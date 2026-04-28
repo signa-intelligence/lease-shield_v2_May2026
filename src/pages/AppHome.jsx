@@ -141,11 +141,11 @@ export default function AppHome() {
           : strings.startFree.map((line, i) => <p key={i}>{line}</p>)}
       </div>
 
-      {/* Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 w-full max-w-sm">
+      {/* CTA Button */}
+      <div className="flex flex-col items-center gap-3 w-full max-w-sm">
         <button
           onClick={() => handleAuth(true)}
-          className="flex-1 py-3.5 rounded-xl font-bold text-base transition-all"
+          className="w-full py-3.5 rounded-xl font-bold text-base transition-all"
           style={{
             backgroundColor: "#C7A338",
             color: "#0C3B2E",
@@ -157,12 +157,18 @@ export default function AppHome() {
         </button>
         <button
           onClick={() => handleAuth(false)}
-          className="flex-1 py-3.5 rounded-xl font-bold text-base transition-all"
           style={{
-            backgroundColor: "transparent",
-            color: "#FFFFFF",
-            border: "2px solid rgba(255,255,255,0.4)",
+            background: 'none',
+            border: 'none',
+            color: '#FFFFFF',
+            fontSize: '14px',
+            cursor: 'pointer',
+            padding: '4px 0',
+            textDecoration: 'none',
+            minHeight: 'auto',
           }}
+          onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+          onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
         >
           {strings.logIn}
         </button>
@@ -175,7 +181,8 @@ export default function AppHome() {
         justifyContent: 'center',
         gap: '12px',
         marginTop: '16px',
-        maxWidth: '400px',
+        width: '100%',
+        maxWidth: '420px',
       }}>
         {['Free to Start', 'No Credit Card', 'Cancel Anytime', 'PDPA Compliant'].map((badge) => (
           <span
@@ -199,11 +206,13 @@ export default function AppHome() {
       {/* Language Selector */}
       <div style={{
         display: 'flex',
-        flexWrap: 'wrap',
+        flexWrap: 'nowrap',
         justifyContent: 'center',
-        gap: '4px',
+        alignItems: 'center',
+        gap: '6px',
         marginTop: '12px',
         fontSize: '13px',
+        width: '100%',
       }}>
         {[
           { code: 'en', flag: '🇬🇧', label: 'EN' },
@@ -213,7 +222,7 @@ export default function AppHome() {
           { code: 'ko', flag: '🇰🇷', label: 'KO' },
           { code: 'ru', flag: '🇷🇺', label: 'RU' },
         ].map((l, i, arr) => (
-          <span key={l.code} style={{ display: 'inline-flex', alignItems: 'center' }}>
+          <React.Fragment key={l.code}>
             <button
               onClick={() => changeLang(l.code)}
               style={{
@@ -227,14 +236,15 @@ export default function AppHome() {
                 textDecoration: lang === l.code ? 'underline' : 'none',
                 textUnderlineOffset: '3px',
                 minHeight: 'auto',
+                whiteSpace: 'nowrap',
               }}
             >
               {l.flag} {l.label}
             </button>
             {i < arr.length - 1 && (
-              <span style={{ color: 'rgba(255,255,255,0.25)', margin: '0 2px' }}>·</span>
+              <span style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>
             )}
-          </span>
+          </React.Fragment>
         ))}
       </div>
 
