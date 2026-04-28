@@ -80,6 +80,11 @@ function detectLang() {
   return 'en';
 }
 
+const responsiveStyles = `
+@media (min-width: 768px) { .apphome-root .mobile-only { display: none; } }
+@media (max-width: 767px) { .apphome-root .desktop-only { display: none; } }
+`;
+
 export default function AppHome() {
   const [lang, setLang] = React.useState(detectLang);
   const changeLang = (code) => {
@@ -103,12 +108,13 @@ export default function AppHome() {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center px-6"
+      className="min-h-screen flex flex-col items-center justify-center px-6 apphome-root"
       style={{
         background: "linear-gradient(165deg, #0C3B2E 0%, #145A44 50%, #0C3B2E 100%)",
         position: 'relative',
       }}
     >
+      <style>{responsiveStyles}</style>
 
 
 
@@ -206,36 +212,26 @@ export default function AppHome() {
         fontSize: '13px',
       }}>
         {[
-          { code: 'en', flag: '🇬🇧', label: 'EN' },
-          { code: 'th', flag: '🇹🇭', label: 'TH' },
-          { code: 'zh', flag: '🇨🇳', label: 'ZH' },
-          { code: 'ja', flag: '🇯🇵', label: 'JA' },
-          { code: 'ko', flag: '🇰🇷', label: 'KO' },
-          { code: 'ru', flag: '🇷🇺', label: 'RU' },
-        ].map((l, i, arr) => (
-          <React.Fragment key={l.code}>
-            <button
-              onClick={() => changeLang(l.code)}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: lang === l.code ? '#C7A338' : 'rgba(255,255,255,0.6)',
-                fontWeight: lang === l.code ? 700 : 400,
-                fontSize: '13px',
-                padding: '2px 4px',
-                textDecoration: lang === l.code ? 'underline' : 'none',
-                textUnderlineOffset: '3px',
-                minHeight: 'auto',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {l.flag} {l.label}
-            </button>
-            {i < arr.length - 1 && (
-              <span style={{ color: 'rgba(255,255,255,0.25)' }}>·</span>
-            )}
-          </React.Fragment>
+          { code: 'en', flag: '🇬🇧', label: 'English' },
+          { code: 'th', flag: '🇹🇭', label: 'ภาษาไทย' },
+          { code: 'zh', flag: '🇨🇳', label: '中文' },
+          { code: 'ja', flag: '🇯🇵', label: '日本語' },
+          { code: 'ko', flag: '🇰🇷', label: '한국어' },
+          { code: 'ru', flag: '🇷🇺', label: 'Русский' },
+        ].map((l) => (
+          <span
+            key={l.code}
+            onClick={() => changeLang(l.code)}
+            style={{
+              cursor: 'pointer',
+              color: lang === l.code ? '#C7A338' : 'rgba(255,255,255,0.6)',
+              fontWeight: lang === l.code ? 'bold' : 'normal',
+              fontSize: '13px',
+            }}
+          >
+            <span className="desktop-only">{l.label}</span>
+            <span className="mobile-only">{l.flag} {l.code.toUpperCase()}</span>
+          </span>
         ))}
       </div>
 
