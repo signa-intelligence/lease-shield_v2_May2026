@@ -69,6 +69,8 @@ const LANGS = [
 ];
 
 function detectLang() {
+  const stored = localStorage.getItem('ls_landing_lang');
+  if (stored && ['en','th','ko','ja','zh','ru'].includes(stored)) return stored;
   const nav = (navigator.language || '').toLowerCase();
   if (nav.startsWith('th')) return 'th';
   if (nav.startsWith('ko')) return 'ko';
@@ -80,6 +82,10 @@ function detectLang() {
 
 export default function AppHome() {
   const [lang, setLang] = React.useState(detectLang);
+  const changeLang = (code) => {
+    setLang(code);
+    localStorage.setItem('ls_landing_lang', code);
+  };
   const strings = t[lang] || t.en;
   const searchParams = new URLSearchParams(window.location.search);
   const selectedPlan = searchParams.get('plan');
@@ -104,29 +110,7 @@ export default function AppHome() {
       }}
     >
 
-      <div style={{position: 'absolute', top: '16px', right: '16px', zIndex: 100}}>
-        <select
-          value={lang}
-          onChange={(e) => setLang(e.target.value)}
-          style={{
-            background: 'rgba(255,255,255,0.15)',
-            color: 'white',
-            border: '1px solid rgba(255,255,255,0.4)',
-            borderRadius: '6px',
-            padding: '6px 10px',
-            fontSize: '14px',
-            cursor: 'pointer',
-            outline: 'none'
-          }}
-        >
-          <option value="en" style={{color: '#000'}}>English</option>
-          <option value="th" style={{color: '#000'}}>ภาษาไทย</option>
-          <option value="ko" style={{color: '#000'}}>한국어</option>
-          <option value="ja" style={{color: '#000'}}>日本語</option>
-          <option value="zh" style={{color: '#000'}}>中文</option>
-          <option value="ru" style={{color: '#000'}}>Русский</option>
-        </select>
-      </div>
+
 
       {/* Logo */}
       <img
@@ -182,6 +166,76 @@ export default function AppHome() {
         >
           {strings.logIn}
         </button>
+      </div>
+
+      {/* Trust Badges */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: '12px',
+        marginTop: '16px',
+        maxWidth: '400px',
+      }}>
+        {['Free to Start', 'No Credit Card', 'Cancel Anytime', 'PDPA Compliant'].map((badge) => (
+          <span
+            key={badge}
+            style={{
+              border: '1px solid #C7A338',
+              color: '#FFFFFF',
+              backgroundColor: 'transparent',
+              fontSize: '12px',
+              fontWeight: 500,
+              padding: '4px 12px',
+              borderRadius: '9999px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {badge}
+          </span>
+        ))}
+      </div>
+
+      {/* Language Selector */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        gap: '4px',
+        marginTop: '12px',
+        fontSize: '13px',
+      }}>
+        {[
+          { code: 'en', flag: '🇬🇧', label: 'EN' },
+          { code: 'th', flag: '🇹🇭', label: 'TH' },
+          { code: 'zh', flag: '🇨🇳', label: 'ZH' },
+          { code: 'ja', flag: '🇯🇵', label: 'JA' },
+          { code: 'ko', flag: '🇰🇷', label: 'KO' },
+          { code: 'ru', flag: '🇷🇺', label: 'RU' },
+        ].map((l, i, arr) => (
+          <span key={l.code} style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <button
+              onClick={() => changeLang(l.code)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: lang === l.code ? '#C7A338' : 'rgba(255,255,255,0.6)',
+                fontWeight: lang === l.code ? 700 : 400,
+                fontSize: '13px',
+                padding: '2px 4px',
+                textDecoration: lang === l.code ? 'underline' : 'none',
+                textUnderlineOffset: '3px',
+                minHeight: 'auto',
+              }}
+            >
+              {l.flag} {l.label}
+            </button>
+            {i < arr.length - 1 && (
+              <span style={{ color: 'rgba(255,255,255,0.25)', margin: '0 2px' }}>·</span>
+            )}
+          </span>
+        ))}
       </div>
 
       {/* Footer */}
