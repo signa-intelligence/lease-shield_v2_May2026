@@ -157,18 +157,9 @@ export default function AppHome() {
         </button>
         <button
           onClick={() => handleAuth(false)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#FFFFFF',
-            fontSize: '14px',
-            cursor: 'pointer',
-            padding: '4px 0',
-            textDecoration: 'none',
-            minHeight: 'auto',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
-          onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+          style={{background:'none', border:'none', color:'#ffffff', fontSize:'14px', cursor:'pointer', textDecoration:'none', marginTop:'8px'}}
+          onMouseEnter={e => e.target.style.textDecoration='underline'}
+          onMouseLeave={e => e.target.style.textDecoration='none'}
         >
           {strings.logIn}
         </button>
@@ -179,10 +170,10 @@ export default function AppHome() {
         display: 'flex',
         flexWrap: 'wrap',
         justifyContent: 'center',
-        gap: '12px',
+        alignItems: 'center',
+        gap: '10px',
         marginTop: '16px',
         width: '100%',
-        maxWidth: '420px',
       }}>
         {['Free to Start', 'No Credit Card', 'Cancel Anytime', 'PDPA Compliant'].map((badge) => (
           <span
@@ -206,13 +197,13 @@ export default function AppHome() {
       {/* Language Selector */}
       <div style={{
         display: 'flex',
-        flexWrap: 'nowrap',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: '6px',
+        gap: '12px',
         marginTop: '12px',
-        fontSize: '13px',
         width: '100%',
+        flexWrap: 'wrap',
+        fontSize: '13px',
       }}>
         {[
           { code: 'en', flag: '🇬🇧', label: 'EN' },
