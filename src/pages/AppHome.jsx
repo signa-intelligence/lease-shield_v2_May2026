@@ -12,7 +12,7 @@ const t = {
   en: {
     headline: "Renters in Thailand Lose Deposits Every Day. Make Sure You're Not One of Them.",
     startFree: ["Protect your deposit before it's too late.", "Free to start. No credit card needed."],
-    createAccount: "Start Free. No Credit Card Needed",
+    createAccount: "Protect My Deposit. Free to Start.",
     logIn: "Log In",
     notSure: "Learn how Lease Shield works",
     footerTagline: "Built to prevent deposit loss in Thailand",
@@ -151,17 +151,17 @@ export default function AppHome() {
       <div style={{
         background: 'white',
         borderRadius: '50%',
-        width: '180px',
-        height: '180px',
+        width: '100px',
+        height: '100px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        margin: '16px auto'
+        margin: '12px auto'
       }}>
         <img 
           src="https://leaseshield.asia/images/trusted-by-renters-badge.webp"
           alt="Trusted by Renters in Thailand"
-          style={{width: '150px'}}
+          style={{width: '80px'}}
         />
       </div>
 
