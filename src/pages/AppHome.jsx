@@ -148,22 +148,11 @@ export default function AppHome() {
       </div>
 
       {/* Trust Badge Image */}
-      <div style={{
-        background: 'white',
-        borderRadius: '50%',
-        width: '100px',
-        height: '100px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: '12px auto'
-      }}>
-        <img 
-          src="https://leaseshield.asia/images/trusted-by-renters-badge.webp"
-          alt="Trusted by Renters in Thailand"
-          style={{width: '80px'}}
-        />
-      </div>
+      <img 
+        src="https://leaseshield.asia/images/trusted-by-renters-badge.webp"
+        alt="Trusted by Renters in Thailand"
+        style={{width: '120px', margin: '12px auto', display: 'block'}}
+      />
 
       {/* CTA Button */}
       <div className="flex flex-col items-center gap-3 w-full max-w-sm">
