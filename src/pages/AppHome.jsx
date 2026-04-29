@@ -147,6 +147,13 @@ export default function AppHome() {
           : strings.startFree.map((line, i) => <p key={i}>{line}</p>)}
       </div>
 
+      {/* Trust Badge Image */}
+      <img 
+        src="https://leaseshield.asia/images/trusted-by-renters-badge.webp"
+        alt="Trusted by Renters in Thailand"
+        style={{width: '160px', marginTop: '16px', marginBottom: '16px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}}
+      />
+
       {/* CTA Button */}
       <div className="flex flex-col items-center gap-3 w-full max-w-sm">
         <button
