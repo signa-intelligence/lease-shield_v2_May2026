@@ -11,7 +11,7 @@ const planNames = {
 const t = {
   en: {
     headline: "Renters in Thailand Lose Deposits Every Day. Make Sure You're Not One of Them.",
-    startFree: ["Upload your lease in 2 minutes.", "Get a risk report."],
+    startFree: ["Protect your deposit before it's too late.", "Free to start. No credit card needed."],
     createAccount: "Start Free. No Credit Card Needed",
     logIn: "Log In",
     notSure: "Learn how Lease Shield works",
@@ -148,11 +148,22 @@ export default function AppHome() {
       </div>
 
       {/* Trust Badge Image */}
-      <img 
-        src="https://leaseshield.asia/images/trusted-by-renters-badge.webp"
-        alt="Trusted by Renters in Thailand"
-        style={{width: '160px', marginTop: '16px', marginBottom: '16px', display: 'block', marginLeft: 'auto', marginRight: 'auto'}}
-      />
+      <div style={{
+        background: 'white',
+        borderRadius: '50%',
+        width: '180px',
+        height: '180px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '16px auto'
+      }}>
+        <img 
+          src="https://leaseshield.asia/images/trusted-by-renters-badge.webp"
+          alt="Trusted by Renters in Thailand"
+          style={{width: '150px'}}
+        />
+      </div>
 
       {/* CTA Button */}
       <div className="flex flex-col items-center gap-3 w-full max-w-sm">
