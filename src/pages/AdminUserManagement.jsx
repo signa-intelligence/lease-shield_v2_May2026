@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Search, Shield, Edit, RefreshCw, Loader2, FileText, Scale, ChevronLeft, ChevronRight, Crown } from "lucide-react";
+import { Users, Search, Shield, Edit, RefreshCw, Loader2, FileText, Scale, ChevronLeft, ChevronRight, Crown, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import AuthGuard from "../components/shared/AuthGuard";
 import PageHeader from "../components/shared/PageHeader";
 import { ToastProvider, useToast } from "../components/shared/Toast";
@@ -23,6 +24,7 @@ function AdminUserManagementContent() {
   const [tierFilter, setTierFilter] = useState("all");
   const [overrideFilter, setOverrideFilter] = useState("all");
   const [editingUser, setEditingUser] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: currentUser } = useQuery({
@@ -320,15 +322,26 @@ function AdminUserManagementContent() {
                           </td>
                           {/* Actions */}
                           <td className="p-3 text-center">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setEditingUser(u)}
-                              className="gap-1"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                              Edit
-                            </Button>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingUser(u)}
+                                className="gap-1"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setDeletingUser(u)}
+                                className="gap-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -379,6 +392,36 @@ function AdminUserManagementContent() {
         user={editingUser}
         onSave={handleSaveCredits}
       />
+
+      <AlertDialog open={!!deletingUser} onOpenChange={(open) => { if (!open) setDeletingUser(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete this user? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={async () => {
+                const userId = deletingUser?.id;
+                setDeletingUser(null);
+                try {
+                  await base44.entities.User.delete(userId);
+                  toast.success("User deleted");
+                  queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+                } catch (err) {
+                  toast.error(err.message || "Failed to delete user");
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
