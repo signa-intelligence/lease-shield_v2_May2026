@@ -406,14 +406,21 @@ function AdminUserManagementContent() {
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
               onClick={async () => {
-                const userId = deletingUser?.id;
+                const userEmail = deletingUser?.email;
                 setDeletingUser(null);
                 try {
-                  await base44.entities.User.delete(userId);
-                  toast.success("User deleted");
+                  const res = await base44.functions.invoke('adminDeleteUserData', {
+                    targetUserEmail: userEmail,
+                    reason: 'admin_manual_delete'
+                  });
+                  if (res.data?.ok) {
+                    toast.success("User deleted");
+                  } else {
+                    toast.error(res.data?.message || "Failed to delete user");
+                  }
                   queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
                 } catch (err) {
-                  toast.error(err.message || "Failed to delete user");
+                  toast.error(err?.response?.data?.message || err.message || "Failed to delete user");
                 }
               }}
             >
