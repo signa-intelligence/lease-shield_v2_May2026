@@ -59,8 +59,8 @@ Deno.serve(async (req) => {
         ? `⚡ ยื่นคดีแบบเร่งด่วน - ${caseNumber}`
         : `ยื่นคดีสำเร็จ - ${caseNumber}`)
       : (isFastTrack
-        ? `⚡ Fast Track Case Submitted - ${caseNumber}`
-        : `Case Submitted - ${caseNumber}`);
+        ? `Action Required: Complete Payment to Activate Case ${caseNumber}`
+        : `Action Required: Complete Payment to Activate Case ${caseNumber}`);
 
     // Dynamic timeframe strings
     const tf = isFastTrack
@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); padding: 30px; border-radius: 16px; text-align: center; margin-bottom: 24px;">
     <div style="font-size: 48px; margin-bottom: 12px;">✅</div>
-    <h1 style="color: #059669; margin: 0 0 8px 0; font-size: 22px;">Case Submitted Successfully!</h1>
+    <h1 style="color: #059669; margin: 0 0 8px 0; font-size: 22px;">Complete Your Payment to Activate Your Case</h1>
     <div style="background: white; display: inline-block; padding: 8px 20px; border-radius: 8px; border: 2px solid #059669;">
       <span style="color: #64748B; font-size: 14px;">Case Number:</span>
       <span style="color: #059669; font-weight: bold; font-size: 18px; margin-left: 6px;">${caseNumber}</span>
@@ -159,6 +159,7 @@ Deno.serve(async (req) => {
     <p style="margin: 4px 0; color: #334155; font-size: 14px;">📅 Submitted: ${submissionDate}</p>
     <p style="margin: 4px 0; color: #334155; font-size: 14px;">${paymentLine}</p>
   </div>
+  <p style="color: #DC2626; font-size: 15px; font-weight: 600;">Your case has been created but is not yet active. Please complete payment at app.leaseshield.asia to activate it.</p>
 
   <h2 style="color: #0F172A; font-size: 18px; margin-top: 28px;">What Happens Next</h2>
 
