@@ -20,7 +20,8 @@ import {
   Loader2,
   ArrowLeft,
   LayoutGrid,
-  List
+  List,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -425,6 +426,15 @@ function OpsConsoleContent() {
       .catch(err => console.error('[OPS] Resolution notification failed (non-critical):', err));
   };
 
+  const handleDeleteCase = async (caseItem) => {
+    if (!confirm(`Delete case ${caseItem.case_number}? This cannot be undone.`)) return;
+    await base44.entities.Case.update(caseItem.id, {
+      is_deleted: true,
+      deleted_at: new Date().toISOString()
+    });
+    queryClient.setQueryData(['allCases'], (prev) => (prev || []).filter(c => c.id !== caseItem.id));
+  };
+
   const handleGenerateLetter = async (caseItem, subject) => {
     setGeneratingLetters(`${caseItem.id}-${subject}`);
     try {
@@ -705,10 +715,20 @@ function OpsConsoleContent() {
                           </p>
                         </div>
                       </div>
-                      <Badge className={`${statusConfig.color} border flex items-center gap-1`}>
-                        <StatusIcon className="w-3 h-3" />
-                        {statusConfig.label}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge className={`${statusConfig.color} border flex items-center gap-1`}>
+                          <StatusIcon className="w-3 h-3" />
+                          {statusConfig.label}
+                        </Badge>
+                        <button
+                          onClick={() => handleDeleteCase(caseItem)}
+                          title="Delete case"
+                          className="p-1.5 rounded hover:bg-red-50 transition-colors"
+                          style={{ color: '#EF4444' }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </CardHeader>
 
