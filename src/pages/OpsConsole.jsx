@@ -688,6 +688,7 @@ function OpsConsoleContent() {
               users={users}
               onStatusChange={handleUpdateStatus}
               onAssign={handleAssign}
+              onDelete={handleDeleteCase}
               language={language}
               colors={colors}
             />

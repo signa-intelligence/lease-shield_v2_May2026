@@ -20,7 +20,8 @@ import {
   X,
   Crown,
   Zap,
-  UserCheck
+  UserCheck,
+  Trash2
 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -37,7 +38,7 @@ const STATUS_COLUMNS = [
   { id: 'resolved', label: 'Resolved', labelTh: 'แก้ไขแล้ว', color: '#059669', icon: CheckCircle2 },
 ];
 
-export default function CaseKanban({ cases = [], onStatusChange, onAssign, users = [], colors, language = 'en', onCaseClick }) {
+export default function CaseKanban({ cases = [], onStatusChange, onAssign, onDelete, users = [], colors, language = 'en', onCaseClick }) {
   const adminUsers = users.filter(u => 
     u.access_level === 'va' || u.access_level === 'admin' || u.access_level === 'super_admin' || u.role === 'admin'
   );
@@ -305,11 +306,28 @@ export default function CaseKanban({ cases = [], onStatusChange, onAssign, users
                                            <span className="font-bold text-sm" style={{ color: colors.textPrimary }}>
                                              {caseItem.case_number}
                                            </span>
-                                           {(caseItem.flags?.urgent || caseItem.flags?.high_risk) && (
-                                             <span className="text-lg">
-                                               {caseItem.flags?.urgent ? '🔥' : '⚠️'}
-                                             </span>
-                                           )}
+                                           <div className="flex items-center gap-1">
+                                             {(caseItem.flags?.urgent || caseItem.flags?.high_risk) && (
+                                               <span className="text-lg">
+                                                 {caseItem.flags?.urgent ? '🔥' : '⚠️'}
+                                               </span>
+                                             )}
+                                             {onDelete && (
+                                               <button
+                                                 onClick={(e) => {
+                                                   e.stopPropagation();
+                                                   if (window.confirm(`Delete case ${caseItem.case_number}? This cannot be undone.`)) {
+                                                     onDelete(caseItem);
+                                                   }
+                                                 }}
+                                                 className="p-1 rounded hover:bg-red-50 transition-colors"
+                                                 style={{ color: '#EF4444' }}
+                                                 title="Delete case"
+                                               >
+                                                 <Trash2 className="w-3 h-3" />
+                                               </button>
+                                             )}
+                                           </div>
                                          </div>
                                          {caseItem.flags?.priority && (
                                            <Badge className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 flex items-center gap-1 w-fit">
