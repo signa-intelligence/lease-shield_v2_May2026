@@ -10,8 +10,8 @@ import Stripe from 'npm:stripe@14.10.0';
 
 // Inlined membership logic (no local imports allowed in Deno functions)
 const RESOLVE_PRICING = {
-  PUBLIC_RATE: 3990,
-  MEMBER_RATE: 2490,
+  PUBLIC_RATE: 5000,
+  MEMBER_RATE: 3500,
 };
 
 function getMembershipInfo(user, now = new Date()) {
