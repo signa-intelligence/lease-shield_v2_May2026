@@ -844,6 +844,7 @@ function ResolveCaseContent() {
     const info = caseInfo || pendingCase;
     if (!info) return;
     try {
+      console.log('[Stripe] Invoking checkout with:', JSON.stringify(info));
       const response = await base44.functions.invoke('createResolveCheckout', {
         userId: info.userId,
         userEmail: info.userEmail,
@@ -868,6 +869,7 @@ function ResolveCaseContent() {
         );
       }
     } catch (checkoutError) {
+      console.error('[Stripe] Full error:', JSON.stringify(checkoutError));
       console.error('[RESOLVE_FLOW] 💳 Checkout error:', checkoutError);
       const errMsg = checkoutError?.response?.data?.error || checkoutError?.message || 'Payment error';
       toast.error(
