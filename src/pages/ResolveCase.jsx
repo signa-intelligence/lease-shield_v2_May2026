@@ -32,6 +32,7 @@ function ResolveCaseContent() {
     evidence_files: []
   });
   const [uploading, setUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoFilledFromDeposit, setAutoFilledFromDeposit] = useState(false);
   const [checkingEligibility, setCheckingEligibility] = useState(false);
   const [freeResolveEligible, setFreeResolveEligible] = useState(false);
@@ -282,6 +283,7 @@ function ResolveCaseContent() {
       });
     },
     onError: (error) => {
+      setIsSubmitting(false);
       console.error('[RESOLVE_FLOW] Case creation failed:', error);
       const errorMessage = error?.response?.data?.error || error?.message || 'Unknown error';
       toast.error(
@@ -424,6 +426,7 @@ function ResolveCaseContent() {
     e.preventDefault();
     
     if (!formData.type || !formData.dispute_amount || !formData.summary) {
+
       toast.error(
         language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน'
         : language === 'zh' ? '请填写所有必填字段'
@@ -450,6 +453,7 @@ function ResolveCaseContent() {
     }
 
     haptic.medium();
+    setIsSubmitting(true);
 
     try {
       const membershipForCase = getMembershipInfo(user);
@@ -511,6 +515,7 @@ function ResolveCaseContent() {
         useFreeEntitlement: freeResolveEligible
       });
     } catch (error) {
+      setIsSubmitting(false);
       toast.error(
         language === 'th' ? 'ไม่สามารถส่งคดีได้: ' + error.message
         : language === 'zh' ? '提交案件失败: ' + error.message
@@ -1531,10 +1536,10 @@ function ResolveCaseContent() {
 
           <Button
             type="submit"
-            disabled={createCaseMutation.isPending || uploading || checkingEligibility}
+            disabled={isSubmitting || createCaseMutation.isPending || uploading || checkingEligibility}
             className="w-full btn-interaction"
             style={{
-              backgroundColor: createCaseMutation.isPending || uploading || checkingEligibility ? '#9CA3AF' : (freeResolveEligible ? '#10B981' : '#DC2626'),
+              backgroundColor: isSubmitting || createCaseMutation.isPending || uploading || checkingEligibility ? '#9CA3AF' : (freeResolveEligible ? '#10B981' : '#DC2626'),
               color: '#FFFFFF',
               padding: '18px',
               fontSize: '18px',
@@ -1544,7 +1549,7 @@ function ResolveCaseContent() {
               border: freeResolveEligible ? '2px solid #059669' : 'none'
             }}
           >
-            {createCaseMutation.isPending ? (
+            {isSubmitting || createCaseMutation.isPending ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 {str.submitting}
