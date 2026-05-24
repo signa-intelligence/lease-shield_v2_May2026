@@ -1,17 +1,57 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import Stripe from 'npm:stripe@14.10.0';
-import { getMembershipInfo, getResolvePricingForUser } from './getMembershipInfo.js';
 
 /**
  * STRIPE RESOLVE CASE CHECKOUT CREATOR
  * 
  * Required Secrets:
- * - SK_TEST_secret_key: Stripe API key (sk_live_... for production)
+ * - STRIPE_SECRET_KEY: Stripe live API key (sk_live_...)
  */
 
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), { // ⚠️ Name is misleading - should contain LIVE key for production
-  apiVersion: '2024-06-20',
-});
+// Inlined membership logic (no local imports allowed in Deno functions)
+const RESOLVE_PRICING = {
+  PUBLIC_RATE: 3990,
+  MEMBER_RATE: 2490,
+};
+
+function getMembershipInfo(user, now = new Date()) {
+  if (!user) {
+    return { plan: 'free', membershipDays: 0, isPaidPlan: false, qualifiesForMemberBenefits: false, reason: 'not_logged_in', daysUntilMemberBenefits: null };
+  }
+  const plan = user.plan_tier || 'free';
+  const isPaidPlan = ['lite', 'protect', 'secure'].includes(plan);
+  let membershipDays = 0;
+  if (user.plan_started_at) {
+    membershipDays = Math.floor((now - new Date(user.plan_started_at)) / (1000 * 60 * 60 * 24));
+  }
+  let qualifiesForMemberBenefits = false;
+  let reason = '';
+  let daysUntilMemberBenefits = null;
+  if (plan === 'secure') {
+    qualifiesForMemberBenefits = true;
+    reason = 'secure_immediate';
+  } else if (plan === 'lite' || plan === 'protect') {
+    if (membershipDays >= 30) {
+      qualifiesForMemberBenefits = true;
+      reason = 'qualified_30_days';
+    } else {
+      reason = 'insufficient_membership_duration';
+      daysUntilMemberBenefits = 30 - membershipDays;
+    }
+  } else {
+    reason = 'not_on_paid_plan';
+  }
+  return { plan, membershipDays, isPaidPlan, qualifiesForMemberBenefits, reason, daysUntilMemberBenefits };
+}
+
+function getResolvePricingForUser(user) {
+  const membership = getMembershipInfo(user);
+  return {
+    priceType: membership.qualifiesForMemberBenefits ? 'member' : 'public',
+    amount: membership.qualifiesForMemberBenefits ? RESOLVE_PRICING.MEMBER_RATE : RESOLVE_PRICING.PUBLIC_RATE,
+    membershipInfo: membership
+  };
+}
 
 Deno.serve(async (req) => {
   console.log('[RESOLVE_CHECKOUT] Entry');
@@ -48,47 +88,45 @@ Deno.serve(async (req) => {
 
     console.log('[RESOLVE_CHECKOUT] Creating session for case:', caseId, '| Amount:', finalAmount);
 
-    // Create Stripe checkout session with SERVER-VALIDATED pricing
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
+      apiVersion: '2024-06-20',
+    });
+
     let session;
     try {
       session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      customer_email: userEmail,
-      line_items: [
-        {
-          price_data: {
-            currency: 'thb',
-            product_data: {
-              name: `Resolve Case Service - ${finalPriceType === 'member' ? 'Member Rate' : 'Public Rate'}`,
-              description: membership.plan === 'secure' 
-                ? 'Professional case handling & legal support (Secure - immediate member rate)'
-                : membership.qualifiesForMemberBenefits
-                  ? `Professional case handling & legal support (${membership.plan.toUpperCase()} - member rate after 30 days)`
-                  : 'Professional case handling & legal support (public rate)',
+        mode: 'payment',
+        customer_email: userEmail,
+        line_items: [
+          {
+            price_data: {
+              currency: 'thb',
+              product_data: {
+                name: `Resolve Case Service - ${finalPriceType === 'member' ? 'Member Rate' : 'Public Rate'}`,
+                description: membership.plan === 'secure' 
+                  ? 'Professional case handling & legal support (Secure - immediate member rate)'
+                  : membership.qualifiesForMemberBenefits
+                    ? `Professional case handling & legal support (${membership.plan.toUpperCase()} - member rate after 30 days)`
+                    : 'Professional case handling & legal support (public rate)',
+              },
+              unit_amount: finalAmount * 100,
             },
-            unit_amount: finalAmount * 100,
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        metadata: {
+          type: 'resolve_case',
+          userId: userId,
+          userEmail: userEmail,
+          priceType: finalPriceType,
+          amount: finalAmount.toString(),
+          caseId: caseId,
+          membershipPlan: membership.plan,
+          membershipDays: membership.membershipDays.toString(),
+          membershipReason: membership.reason
         },
-      ],
-      metadata: {
-        type: 'resolve_case',
-        userId: userId,
-        userEmail: userEmail,
-        priceType: finalPriceType,
-        amount: finalAmount.toString(),
-        caseId: caseId,
-        membershipPlan: membership.plan,
-        membershipDays: membership.membershipDays.toString(),
-        membershipReason: membership.reason
-      },
-      // ✅ Back to the REAL route your app actually has
-      success_url: `${
-        Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
-      }/Cases?resolve_success=true&caseId=${caseId}`,
-      cancel_url: `${
-        Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'
-      }/Cases?resolve_cancelled=true&caseId=${caseId}`,
+        success_url: `${Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'}/Cases?resolve_success=true&caseId=${caseId}`,
+        cancel_url: `${Deno.env.get('APP_URL') || 'https://app.leaseshield.asia'}/Cases?resolve_cancelled=true&caseId=${caseId}`,
       });
       
       console.log('[RESOLVE_CHECKOUT] ✅ Session created:', session.id);
