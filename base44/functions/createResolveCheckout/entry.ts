@@ -54,6 +54,7 @@ function getResolvePricingForUser(user) {
 }
 
 Deno.serve(async (req) => {
+  console.log('[createResolveCheckout] Function hit. Body:', JSON.stringify(await req.clone().json().catch(() => 'parse error')));
   console.log('[RESOLVE_CHECKOUT] Entry');
   
   try {
