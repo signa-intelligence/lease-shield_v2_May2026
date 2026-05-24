@@ -192,7 +192,7 @@ function ResolveCaseContent() {
       base44.integrations.Core.SendEmail({
         to: 'hello@leaseshield.asia',
         subject: `New Case Opened: ${createdCase.case_number}`,
-        body: `Case Number: ${createdCase.case_number}\nUser Email: ${createdCase.user_email}\nType: ${createdCase.type}\nDispute Amount: ${createdCase.dispute_amount}`
+        body: `Case Number: ${createdCase.case_number}\nUser Email: ${createdCase.user_email}\nType: ${createdCase.type}\nDispute Amount: ${createdCase.dispute_amount}\n\nCase ID: ${createdCase.id}`
       }).catch(err => console.error('[CASE_CREATION] Internal alert email failed (non-blocking):', err?.message));
 
       // NOTE: Admin notification moved to AFTER payment confirmation
