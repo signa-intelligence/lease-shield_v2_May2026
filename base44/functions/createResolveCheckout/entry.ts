@@ -9,7 +9,7 @@ import { getMembershipInfo, getResolvePricingForUser } from './getMembershipInfo
  * - SK_TEST_secret_key: Stripe API key (sk_live_... for production)
  */
 
-const stripe = new Stripe(Deno.env.get('SK_TEST_secret_key'), { // ⚠️ Name is misleading - should contain LIVE key for production
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), { // ⚠️ Name is misleading - should contain LIVE key for production
   apiVersion: '2024-06-20',
 });
 
