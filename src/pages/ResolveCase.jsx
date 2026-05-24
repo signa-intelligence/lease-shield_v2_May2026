@@ -187,7 +187,14 @@ function ResolveCaseContent() {
         console.error('[CASE_CREATION] 🚨 CRITICAL: Case created with WRONG user_email!');
         throw new Error(`Ownership binding failed`);
       }
-      
+
+      // Send internal alert email on new case creation
+      base44.integrations.Core.SendEmail({
+        to: 'hello@leaseshield.asia',
+        subject: `New Case Opened: ${createdCase.case_number}`,
+        body: `Case Number: ${createdCase.case_number}\nUser Email: ${createdCase.user_email}\nType: ${createdCase.type}\nDispute Amount: ${createdCase.dispute_amount}`
+      }).catch(err => console.error('[CASE_CREATION] Internal alert email failed (non-blocking):', err?.message));
+
       // NOTE: Admin notification moved to AFTER payment confirmation
       // (omiseWebhook for PromptPay, stripeWebhook for Stripe, createResolveCaseFree for free)
       
