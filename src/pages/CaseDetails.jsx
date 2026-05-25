@@ -41,7 +41,8 @@ const STATUS_CONFIG = {
   active: { label: 'Active', color: 'bg-blue-100 text-blue-800', icon: Scale },
   waiting: { label: 'Waiting', color: 'bg-purple-100 text-purple-800', icon: Clock },
   user_action: { label: 'Action Required', color: 'bg-red-100 text-red-800', icon: AlertCircle },
-  closed: { label: 'Closed', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 }
+  closed: { label: 'Closed', color: 'bg-emerald-100 text-emerald-800', icon: CheckCircle2 },
+  awaiting_payment: { label: 'Awaiting Payment', color: '#C7A338', icon: Clock }
 };
 
 function CaseDetailsContent() {
@@ -550,6 +551,14 @@ function CaseDetailsContent() {
             <StatusIcon className="w-4 h-4" />
             {statusConfig.label}
           </Badge>
+          {caseItem.status === 'awaiting_payment' && (
+            <button
+              onClick={() => { window.location.href = `/resolve-case?repay=true&caseId=${caseItem.id}`; }}
+              style={{ backgroundColor: '#C7A338', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}
+            >
+              Complete Payment
+            </button>
+          )}
         </div>
 
         {/* Case Information */}
@@ -619,7 +628,7 @@ function CaseDetailsContent() {
                   backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
                   border: `1px solid ${colors.borderColor}`
                 }}>
-                  <p className="text-sm whitespace-pre-wrap" style={{ color: colors.textPrimary }}>
+                  <p className="text-sm whitespace-pre-wrap" style={{ color: colors.textPrimary, wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                     {caseItem.summary}
                   </p>
                 </div>
