@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
         </div>
         <div style="padding: 24px; background-color: #F8FAFC; border: 1px solid #E5E7EB; border-top: none; border-radius: 0 0 8px 8px;">
           <p style="color: #475569; font-size: 14px; margin-bottom: 8px;">
-            <strong>${senderLabel}</strong> (${senderEmail}) sent a message:
+            <strong>${senderLabel}</strong> sent a message:
           </p>
           <div style="background-color: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; margin: 12px 0;">
             <p style="color: #1A1D1F; font-size: 14px; white-space: pre-wrap; margin: 0;">${messageText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
