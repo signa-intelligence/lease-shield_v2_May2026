@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
     <p style="margin: 4px 0; color: #334155; font-size: 14px;">📅 วันที่ส่ง: ${submissionDate}</p>
     <p style="margin: 4px 0; color: #334155; font-size: 14px;">${paymentLine}</p>
   </div>
-  <p style="color: #DC2626; font-size: 15px; font-weight: 600;">Your case has been created but is not yet active. Please complete payment at app.leaseshield.asia to activate it.</p>
+  <p style="color: #DC2626; font-size: 15px; font-weight: 600;">Your case has been created but is not yet active. Please log in and go to Cases to complete payment and activate your case: https://app.leaseshield.asia</p>
 
   <h2 style="color: #0F172A; font-size: 18px; margin-top: 28px;">ขั้นตอนต่อไป</h2>
 
@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
     <p style="margin: 4px 0; color: #334155; font-size: 14px;">📅 Submitted: ${submissionDate}</p>
     <p style="margin: 4px 0; color: #334155; font-size: 14px;">${paymentLine}</p>
   </div>
-  <p style="color: #DC2626; font-size: 15px; font-weight: 600;">Your case has been created but is not yet active. Please complete payment at app.leaseshield.asia to activate it.</p>
+  <p style="color: #DC2626; font-size: 15px; font-weight: 600;">Your case has been created but is not yet active. Please log in and go to Cases to complete payment and activate your case: https://app.leaseshield.asia</p>
 
   <h2 style="color: #0F172A; font-size: 18px; margin-top: 28px;">What Happens Next</h2>
 
