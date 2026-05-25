@@ -56,6 +56,7 @@ function CaseDetailsContent() {
 
   const [compilingPack, setCompilingPack] = useState(false);
   const [previewLetter, setPreviewLetter] = useState(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -553,10 +554,31 @@ function CaseDetailsContent() {
           </Badge>
           {caseItem.status === 'awaiting_payment' && (
             <button
-              onClick={() => { window.location.href = `/resolve-case?repay=true&caseId=${caseItem.id}`; }}
-              style={{ backgroundColor: '#C7A338', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}
+              disabled={isProcessingPayment}
+              onClick={async () => {
+                setIsProcessingPayment(true);
+                try {
+                  const response = await base44.functions.invoke('createResolveCheckout', {
+                    userId: user.id,
+                    userEmail: user.email,
+                    caseId: caseItem.id,
+                    priceType: 'public',
+                    amount: 5000
+                  });
+                  if (response.data?.url) {
+                    window.location.href = response.data.url;
+                  } else {
+                    toast.error('Payment initiation failed. Please try again.');
+                    setIsProcessingPayment(false);
+                  }
+                } catch (err) {
+                  toast.error('Payment initiation failed. Please try again.');
+                  setIsProcessingPayment(false);
+                }
+              }}
+              style={{ backgroundColor: isProcessingPayment ? '#9CA3AF' : '#C7A338', color: '#FFFFFF', border: 'none', borderRadius: '8px', padding: '10px 20px', fontWeight: '600', fontSize: '14px', cursor: isProcessingPayment ? 'not-allowed' : 'pointer' }}
             >
-              Complete Payment
+              {isProcessingPayment ? 'Processing...' : 'Complete Payment'}
             </button>
           )}
         </div>
