@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -69,13 +69,6 @@ function CaseDetailsContent() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
 
-  const createDocumentMutation = useMutation({
-    mutationFn: (data) => base44.entities.Document.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
-    },
-  });
-
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles(prev => [...prev, ...files]);
@@ -86,14 +79,22 @@ function CaseDetailsContent() {
     if (selectedFiles.length === 0) return;
     setUploading(true);
     try {
+      const existingEvidence = caseItem.evidence || [];
+      const newEntries = [];
       for (const file of selectedFiles) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        await createDocumentMutation.mutateAsync({
+        newEntries.push({
+          id: crypto.randomUUID(),
+          url: file_url,
           type: uploadType,
-          file_url,
-          label: customLabel || file.name
+          label: customLabel || file.name,
+          uploaded_date: new Date().toISOString()
         });
       }
+      await base44.entities.Case.update(caseItem.id, {
+        evidence: [...existingEvidence, ...newEntries]
+      });
+      queryClient.invalidateQueries({ queryKey: ['case', caseId] });
       setSelectedFiles([]);
       setCustomLabel('');
       setShowUploadModal(false);
