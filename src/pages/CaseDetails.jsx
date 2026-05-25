@@ -1,11 +1,15 @@
 import React, { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ArrowLeft,
   Scale,
@@ -22,7 +26,9 @@ import {
   Loader2,
   ExternalLink,
   Download,
-  Eye
+  Eye,
+  Upload,
+  X
 } from "lucide-react";
 import { format } from "date-fns";
 import LetterPreview from "../components/shared/LetterPreview";
@@ -57,6 +63,56 @@ function CaseDetailsContent() {
   const [compilingPack, setCompilingPack] = useState(false);
   const [previewLetter, setPreviewLetter] = useState(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadType, setUploadType] = useState('photo');
+  const [customLabel, setCustomLabel] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+
+  const createDocumentMutation = useMutation({
+    mutationFn: (data) => base44.entities.Document.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+    },
+  });
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(prev => [...prev, ...files]);
+    e.target.value = null;
+  };
+
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) return;
+    setUploading(true);
+    try {
+      for (const file of selectedFiles) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        await createDocumentMutation.mutateAsync({
+          type: uploadType,
+          file_url,
+          label: customLabel || file.name
+        });
+      }
+      setSelectedFiles([]);
+      setCustomLabel('');
+      setShowUploadModal(false);
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const DOC_TYPE_CONFIG = {
+    lease: { label_en: 'Lease', label_th: 'สัญญาเช่า' },
+    receipt: { label_en: 'Receipt', label_th: 'ใบเสร็จ' },
+    photo: { label_en: 'Photo', label_th: 'รูปภาพ' },
+    video: { label_en: 'Video', label_th: 'วิดีโอ' },
+    letter: { label_en: 'Letter', label_th: 'จดหมาย' },
+    other: { label_en: 'Other', label_th: 'อื่น ๆ' }
+  };
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -504,6 +560,88 @@ function CaseDetailsContent() {
   return (
     <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
+        {/* Upload Modal */}
+        <Dialog open={showUploadModal} onOpenChange={(open) => { if (!uploading) { setShowUploadModal(open); if (!open) { setSelectedFiles([]); setCustomLabel(''); } } }}>
+          <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+            <DialogHeader>
+              <DialogTitle style={{ color: colors.textPrimary }}>
+                {language === 'th' ? 'อัปโหลดเอกสาร' : 'Upload Document'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-2">
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{language === 'th' ? 'ประเภทเอกสาร' : 'Document Type'}</Label>
+                <Select value={uploadType} onValueChange={setUploadType}>
+                  <SelectTrigger className="mt-2" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF', borderColor: colors.borderColor, color: colors.textPrimary }}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                    {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        {language === 'th' ? config.label_th : config.label_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label style={{ color: colors.textPrimary }}>{language === 'th' ? 'ป้ายกำกับ (ไม่บังคับ)' : 'Label (optional)'}</Label>
+                <Input
+                  value={customLabel}
+                  onChange={(e) => setCustomLabel(e.target.value)}
+                  placeholder={language === 'th' ? 'เช่น รูปภาพตอนย้ายเข้า' : 'e.g., Move-in photos'}
+                  className="mt-2"
+                  style={{ backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF', borderColor: colors.borderColor, color: colors.textPrimary }}
+                />
+              </div>
+              <div>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="case-file-upload"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov,.avi"
+                  disabled={uploading}
+                />
+                <label htmlFor="case-file-upload" className={uploading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}>
+                  <div className="border-2 border-dashed rounded-xl p-6 text-center transition-colors" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
+                    <Upload className="w-10 h-10 mx-auto mb-2" style={{ color: colors.textSecondary }} />
+                    <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
+                      {language === 'th' ? 'คลิกเพื่อเลือกไฟล์' : 'Click to browse files'}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>PDF, JPG, PNG, MP4, MOV</p>
+                  </div>
+                </label>
+              </div>
+              {selectedFiles.length > 0 && (
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
+                      <span className="text-sm truncate flex-1" style={{ color: colors.textPrimary }}>{file.name}</span>
+                      <button onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))} disabled={uploading} className="ml-2 p-1 hover:bg-red-100 rounded">
+                        <X className="w-4 h-4 text-red-500" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-3 justify-end pt-2">
+                <Button variant="outline" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setCustomLabel(''); }} disabled={uploading}>
+                  {language === 'th' ? 'ยกเลิก' : 'Cancel'}
+                </Button>
+                <Button onClick={handleUpload} disabled={uploading || selectedFiles.length === 0} style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}>
+                  {uploading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'th' ? 'กำลังอัปโหลด...' : 'Uploading...'}</>
+                  ) : (
+                    <><Upload className="w-4 h-4 mr-2" />{language === 'th' ? 'อัปโหลด' : 'Upload'}</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {previewLetter && (
           <LetterPreview
             open={!!previewLetter}
@@ -1171,7 +1309,7 @@ function CaseDetailsContent() {
           <CardContent className="p-4 md:p-6">
             <Button
               variant="outline"
-              onClick={() => navigate(createPageUrl("DocumentVault"))}
+              onClick={() => { haptic.light(); setShowUploadModal(true); }}
               className="justify-start h-auto py-4 w-full"
             >
               <FileText className="w-5 h-5 mr-3 text-blue-600" />
