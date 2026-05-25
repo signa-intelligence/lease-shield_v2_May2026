@@ -74,7 +74,7 @@ function OpsConsoleContent() {
   const { data: cases = [], isLoading: casesLoading } = useQuery({
     queryKey: ['allCases'],
     queryFn: async () => {
-      const result = await base44.entities.Case.list('-created_date', 100, { is_deleted: { $ne: true } });
+      const result = await base44.entities.Case.list('-created_date', 100);
       // Show all non-deleted cases in Ops (admins need to see everything including awaiting_payment)
       const visibleCases = result.filter(c => !c.is_deleted);
       
