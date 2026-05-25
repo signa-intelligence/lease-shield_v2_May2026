@@ -79,28 +79,26 @@ function CaseDetailsContent() {
     if (selectedFiles.length === 0) return;
     setUploading(true);
     try {
-      const existingEvidence = caseItem.evidence || [];
-      const newEntries = [];
       for (const file of selectedFiles) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file, contentType: file.type });
-        newEntries.push({
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const newEntry = {
           id: crypto.randomUUID(),
           url: file_url,
           type: uploadType,
           label: customLabel || file.name,
           uploaded_date: new Date().toISOString()
+        };
+        const existingEvidence = caseItem.evidence || [];
+        await base44.entities.Case.update(caseItem.id, {
+          evidence: [...existingEvidence, newEntry]
         });
       }
-      await base44.entities.Case.update(caseItem.id, {
-        evidence: [...existingEvidence, ...newEntries]
-      });
-      queryClient.invalidateQueries({ queryKey: ['case', caseId] });
+      queryClient.invalidateQueries({ queryKey: ['case', caseItem.id] });
       setSelectedFiles([]);
       setCustomLabel('');
       setShowUploadModal(false);
     } catch (error) {
-      console.error('Upload failed:', error);
-      alert('Upload failed: ' + (error?.message || JSON.stringify(error)));
+      alert('Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }
