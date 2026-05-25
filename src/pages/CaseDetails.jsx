@@ -28,7 +28,11 @@ import {
   Download,
   Eye,
   Upload,
-  X
+  X,
+  Camera,
+  FileVideo,
+  HelpCircle,
+  ArrowRight
 } from "lucide-react";
 import { format } from "date-fns";
 import LetterPreview from "../components/shared/LetterPreview";
@@ -64,19 +68,29 @@ function CaseDetailsContent() {
   const [previewLetter, setPreviewLetter] = useState(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [uploadType, setUploadType] = useState('photo');
   const [customLabel, setCustomLabel] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
+
+  const DOC_TYPE_CONFIG = {
+    lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
+    receipt: { label_en: 'Receipt', label_th: 'ใบเสร็จ', icon: FileText, color: 'bg-emerald-100 text-emerald-800', bgColor: '#10B981' },
+    photo: { label_en: 'Photo', label_th: 'รูปภาพ', icon: Camera, color: 'bg-purple-100 text-purple-800', bgColor: '#A855F7' },
+    video: { label_en: 'Video', label_th: 'วิดีโอ', icon: FileVideo, color: 'bg-amber-100 text-amber-800', bgColor: '#F59E0B' },
+    letter: { label_en: 'Letter', label_th: 'จดหมาย', icon: Mail, color: 'bg-indigo-100 text-indigo-800', bgColor: '#6366F1' },
+    other: { label_en: 'Other', label_th: 'อื่น ๆ', icon: HelpCircle, color: 'bg-slate-100 text-slate-800', bgColor: '#64748B' }
+  };
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles(prev => [...prev, ...files]);
-    e.target.value = null;
+    e.target.value = null; // Clear input so same file can be selected again
   };
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
+
     setUploading(true);
     try {
       for (const file of selectedFiles) {
@@ -94,23 +108,15 @@ function CaseDetailsContent() {
         });
       }
       queryClient.invalidateQueries({ queryKey: ['case', caseItem.id] });
-      setSelectedFiles([]);
       setCustomLabel('');
+      setSelectedFiles([]);
       setShowUploadModal(false);
     } catch (error) {
-      alert('Upload failed. Please try again.');
+      console.error('Upload failed:', error);
+      alert(language === 'th' ? 'อัปโหลดไม่สำเร็จ โปรดลองอีกครั้ง' : 'Upload failed. Please try again.');
     } finally {
       setUploading(false);
     }
-  };
-
-  const DOC_TYPE_CONFIG = {
-    lease: { label_en: 'Lease', label_th: 'สัญญาเช่า' },
-    receipt: { label_en: 'Receipt', label_th: 'ใบเสร็จ' },
-    photo: { label_en: 'Photo', label_th: 'รูปภาพ' },
-    video: { label_en: 'Video', label_th: 'วิดีโอ' },
-    letter: { label_en: 'Letter', label_th: 'จดหมาย' },
-    other: { label_en: 'Other', label_th: 'อื่น ๆ' }
   };
 
   const { data: user } = useQuery({
@@ -559,22 +565,23 @@ function CaseDetailsContent() {
   return (
     <div className="min-h-screen p-4 md:p-6 page-transition" style={{ backgroundColor: colors.bg }}>
       <div className="max-w-5xl mx-auto">
-        {/* Upload Modal */}
+        {/* Upload Modal - exact form copied from DocumentVault */}
         <Dialog open={showUploadModal} onOpenChange={(open) => { if (!uploading) { setShowUploadModal(open); if (!open) { setSelectedFiles([]); setCustomLabel(''); } } }}>
-          <DialogContent style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <DialogHeader>
-              <DialogTitle style={{ color: colors.textPrimary }}>
-                {language === 'th' ? 'อัปโหลดเอกสาร' : 'Upload Document'}
+              <DialogTitle className="flex items-center gap-2" style={{ color: colors.textPrimary }}>
+                <Upload className="w-5 h-5 text-ls-forest" />
+                {language === 'th' ? 'อัปโหลดไฟล์' : 'Upload Files'}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 mt-2">
+            <div className="space-y-4 mt-4">
               <div>
-                <Label style={{ color: colors.textPrimary }}>{language === 'th' ? 'ประเภทเอกสาร' : 'Document Type'}</Label>
+                <Label htmlFor="doc_type" style={{ color: colors.textPrimary }}>{language === 'th' ? 'ประเภทเอกสาร' : 'Document Type'}</Label>
                 <Select value={uploadType} onValueChange={setUploadType}>
-                  <SelectTrigger className="mt-2" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF', borderColor: colors.borderColor, color: colors.textPrimary }}>
+                  <SelectTrigger id="doc_type" className="mt-2" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF', borderColor: colors.borderColor, color: colors.textPrimary }}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent style={{ backgroundColor: colors.cardBg }}>
+                  <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
                     {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
                       <SelectItem key={key} value={key}>
                         {language === 'th' ? config.label_th : config.label_en}
@@ -583,9 +590,12 @@ function CaseDetailsContent() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div>
-                <Label style={{ color: colors.textPrimary }}>{language === 'th' ? 'ป้ายกำกับ (ไม่บังคับ)' : 'Label (optional)'}</Label>
+                <Label htmlFor="custom_label" style={{ color: colors.textPrimary }}>{language === 'th' ? 'ป้ายกำกับที่กำหนดเอง' : 'Custom Label'}</Label>
                 <Input
+                  id="custom_label"
+                  type="text"
                   value={customLabel}
                   onChange={(e) => setCustomLabel(e.target.value)}
                   placeholder={language === 'th' ? 'เช่น รูปภาพตอนย้ายเข้า' : 'e.g., Move-in photos'}
@@ -593,50 +603,74 @@ function CaseDetailsContent() {
                   style={{ backgroundColor: isDarkMode ? '#353A3D' : '#FFFFFF', borderColor: colors.borderColor, color: colors.textPrimary }}
                 />
               </div>
+
               <div>
                 <input
                   type="file"
                   multiple
                   onChange={handleFileSelect}
                   className="hidden"
-                  id="case-file-upload"
+                  id="file-upload"
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov,.avi"
                   disabled={uploading}
                 />
-                <label htmlFor="case-file-upload" className={uploading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}>
-                  <div className="border-2 border-dashed rounded-xl p-6 text-center transition-colors" style={{ borderColor: colors.borderColor, backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC' }}>
-                    <Upload className="w-10 h-10 mx-auto mb-2" style={{ color: colors.textSecondary }} />
-                    <p className="font-semibold text-sm" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? 'คลิกเพื่อเลือกไฟล์' : 'Click to browse files'}
-                    </p>
-                    <p className="text-xs mt-1" style={{ color: colors.textSecondary }}>PDF, JPG, PNG, MP4, MOV</p>
+                <label htmlFor="file-upload" className={uploading ? 'cursor-not-allowed opacity-70' : ''}>
+                  <div
+                    className="border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-colors"
+                    style={{
+                      borderColor: colors.borderColor,
+                      backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
+                      cursor: uploading ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <Upload className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3" style={{ color: colors.textSecondary }} />
+                    <p className="font-semibold mb-1 text-sm md:text-base" style={{ color: colors.textPrimary }}>{language === 'th' ? 'ลากและวางไฟล์ที่นี่หรือคลิกเพื่อเลือก' : 'Drag & drop files here or click to browse'}</p>
+                    <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>{language === 'th' ? 'PDF, รูปภาพ (JPG, PNG), วิดีโอ (MP4, MOV, AVI)' : 'PDF, Images (JPG, PNG), Videos (MP4, MOV, AVI)'}</p>
                   </div>
                 </label>
               </div>
+
               {selectedFiles.length > 0 && (
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {selectedFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
-                      <span className="text-sm truncate flex-1" style={{ color: colors.textPrimary }}>{file.name}</span>
-                      <button onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))} disabled={uploading} className="ml-2 p-1 hover:bg-red-100 rounded">
-                        <X className="w-4 h-4 text-red-500" />
-                      </button>
-                    </div>
-                  ))}
+                <div>
+                  <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
+                    {language === 'th' ? 'ไฟล์ที่เลือก' : 'Selected Files'} ({selectedFiles.length})
+                  </p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                    {selectedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                          <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
+                        </div>
+                        <button
+                          onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
+                          className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
+                          disabled={uploading}
+                        >
+                          <X className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    className="w-full mt-4 bg-ls-forest hover:bg-ls-forest-dark"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {language === 'th' ? 'กำลังอัปโหลด...' : 'Uploading...'}
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        {language === 'th' ? 'อัปโหลด' : 'Upload'}
+                      </>
+                    )}
+                  </Button>
                 </div>
               )}
-              <div className="flex gap-3 justify-end pt-2">
-                <Button variant="outline" onClick={() => { setShowUploadModal(false); setSelectedFiles([]); setCustomLabel(''); }} disabled={uploading}>
-                  {language === 'th' ? 'ยกเลิก' : 'Cancel'}
-                </Button>
-                <Button onClick={handleUpload} disabled={uploading || selectedFiles.length === 0} style={{ backgroundColor: '#0C3B2E', color: '#FFFFFF' }}>
-                  {uploading ? (
-                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{language === 'th' ? 'กำลังอัปโหลด...' : 'Uploading...'}</>
-                  ) : (
-                    <><Upload className="w-4 h-4 mr-2" />{language === 'th' ? 'อัปโหลด' : 'Upload'}</>
-                  )}
-                </Button>
-              </div>
             </div>
           </DialogContent>
         </Dialog>
