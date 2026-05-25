@@ -82,7 +82,7 @@ function CaseDetailsContent() {
       const existingEvidence = caseItem.evidence || [];
       const newEntries = [];
       for (const file of selectedFiles) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_url } = await base44.integrations.Core.UploadFile({ file, contentType: file.type });
         newEntries.push({
           id: crypto.randomUUID(),
           url: file_url,
