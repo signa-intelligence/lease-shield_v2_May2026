@@ -1322,7 +1322,7 @@ function CaseDetailsContent() {
                   <Button
                     onClick={handleUpload}
                     disabled={uploading}
-                    className="w-full mt-4 bg-ls-forest hover:bg-ls-forest-dark"
+                    className="w-full mt-4 mb-20 bg-ls-forest hover:bg-ls-forest-dark"
                   >
                     {uploading ? (
                       <>
