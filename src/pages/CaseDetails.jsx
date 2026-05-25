@@ -6,9 +6,6 @@ import { createPageUrl } from "@/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft,
   Scale,
@@ -25,12 +22,7 @@ import {
   Loader2,
   ExternalLink,
   Download,
-  Eye,
-  Upload,
-  Camera,
-  FileVideo,
-  HelpCircle,
-  X
+  Eye
 } from "lucide-react";
 import { format } from "date-fns";
 import LetterPreview from "../components/shared/LetterPreview";
@@ -42,15 +34,6 @@ import PageHeader from "../components/shared/PageHeader";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
 import CaseMessages from "../components/cases/CaseMessages";
-
-const DOC_TYPE_CONFIG = {
-  lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
-  receipt: { label_en: 'Receipt', label_th: 'ใบเสร็จ', icon: FileText, color: 'bg-emerald-100 text-emerald-800', bgColor: '#10B981' },
-  photo: { label_en: 'Photo', label_th: 'รูปภาพ', icon: Camera, color: 'bg-purple-100 text-purple-800', bgColor: '#A855F7' },
-  video: { label_en: 'Video', label_th: 'วิดีโอ', icon: FileVideo, color: 'bg-amber-100 text-amber-800', bgColor: '#F59E0B' },
-  letter: { label_en: 'Letter', label_th: 'จดหมาย', icon: Mail, color: 'bg-indigo-100 text-indigo-800', bgColor: '#6366F1' },
-  other: { label_en: 'Other', label_th: 'อื่น ๆ', icon: HelpCircle, color: 'bg-slate-100 text-slate-800', bgColor: '#64748B' }
-};
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -74,50 +57,6 @@ function CaseDetailsContent() {
   const [compilingPack, setCompilingPack] = useState(false);
   const [previewLetter, setPreviewLetter] = useState(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
-  // Upload state — mirrors DocumentVault pattern
-  const [uploading, setUploading] = useState(false);
-  const [uploadType, setUploadType] = useState('photo');
-  const [customLabel, setCustomLabel] = useState('');
-  const [selectedFiles, setSelectedFiles] = useState([]);
-
-  const handleFileSelect = (e) => {
-    const files = Array.from(e.target.files);
-    setSelectedFiles(prev => [...prev, ...files]);
-    e.target.value = null;
-  };
-
-  const handleUpload = async () => {
-    if (selectedFiles.length === 0) return;
-    setUploading(true);
-    try {
-      const newEvidence = [];
-      for (const file of selectedFiles) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        newEvidence.push({
-          id: crypto.randomUUID(),
-          url: file_url,
-          type: uploadType,
-          label: customLabel || file.name,
-          uploaded_date: new Date().toISOString()
-        });
-      }
-      await base44.entities.Case.update(caseItem.id, {
-        evidence: [...(caseItem.evidence || []), ...newEvidence]
-      });
-      queryClient.invalidateQueries({ queryKey: ['case', caseId] });
-      setCustomLabel('');
-      setSelectedFiles([]);
-      toast.success(language === 'th' ? 'อัปโหลดสำเร็จ' : 'Upload successful');
-      haptic.success();
-    } catch (error) {
-      console.error('Upload failed:', error);
-      toast.error(language === 'th' ? 'อัปโหลดไม่สำเร็จ โปรดลองอีกครั้ง' : 'Upload failed. Please try again.');
-      haptic.error();
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -1224,123 +1163,6 @@ function CaseDetailsContent() {
           />
         </div>
 
-        {/* Upload Section — inline always-visible (mirrors DocumentVault) */}
-        <Card className="border-none shadow-xl" style={{ backgroundColor: colors.cardBg }}>
-          <CardHeader style={{ borderBottom: `1px solid ${colors.borderColor}` }} className="p-4 md:p-6">
-            <CardTitle className="flex items-center gap-2 text-base md:text-lg" style={{ color: colors.textPrimary }}>
-              <Upload className="w-5 h-5 text-ls-forest" />
-              {language === 'th' ? 'อัปโหลดไฟล์' : 'Upload Files'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 md:p-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="case_doc_type" style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'ประเภทเอกสาร' : 'Document Type'}
-                </Label>
-                <Select value={uploadType} onValueChange={setUploadType}>
-                  <SelectTrigger id="case_doc_type" className="mt-2" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor, color: colors.textPrimary }}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent style={{ backgroundColor: colors.cardBg, color: colors.textPrimary }}>
-                    {Object.entries(DOC_TYPE_CONFIG).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>
-                        {language === 'th' ? config.label_th : config.label_en}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="case_custom_label" style={{ color: colors.textPrimary }}>
-                  {language === 'th' ? 'ป้ายกำกับที่กำหนดเอง' : 'Custom Label'}
-                </Label>
-                <Input
-                  id="case_custom_label"
-                  type="text"
-                  value={customLabel}
-                  onChange={(e) => setCustomLabel(e.target.value)}
-                  placeholder={language === 'th' ? 'เช่น รูปภาพตอนย้ายเข้า' : 'e.g., Move-in photos'}
-                  className="mt-2"
-                  style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor, color: colors.textPrimary }}
-                />
-              </div>
-
-              <div>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="case-file-upload"
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov,.avi"
-                  disabled={uploading}
-                />
-                <label htmlFor="case-file-upload" className={uploading ? 'cursor-not-allowed opacity-70' : ''}>
-                  <div
-                    className="border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-colors"
-                    style={{
-                      borderColor: colors.borderColor,
-                      backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
-                      cursor: uploading ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    <Upload className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3" style={{ color: colors.textSecondary }} />
-                    <p className="font-semibold mb-1 text-sm md:text-base" style={{ color: colors.textPrimary }}>
-                      {language === 'th' ? 'ลากและวางไฟล์ที่นี่หรือคลิกเพื่อเลือก' : 'Drag & drop files here or click to browse'}
-                    </p>
-                    <p className="text-xs md:text-sm" style={{ color: colors.textSecondary }}>
-                      {language === 'th' ? 'PDF, รูปภาพ (JPG, PNG), วิดีโอ (MP4, MOV, AVI)' : 'PDF, Images (JPG, PNG), Videos (MP4, MOV, AVI)'}
-                    </p>
-                  </div>
-                </label>
-              </div>
-
-              {selectedFiles.length > 0 && (
-                <div>
-                  <p className="font-semibold mb-2 text-sm" style={{ color: colors.textPrimary }}>
-                    {language === 'th' ? 'ไฟล์ที่เลือก' : 'Selected Files'} ({selectedFiles.length})
-                  </p>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                    {selectedFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: isDarkMode ? '#353A3D' : '#F3F4F6' }}>
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <FileText className="w-4 h-4 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                          <span className="text-sm truncate" style={{ color: colors.textPrimary }}>{file.name}</span>
-                        </div>
-                        <button
-                          onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
-                          className="p-1 hover:bg-red-100 rounded flex-shrink-0 ml-2"
-                          disabled={uploading}
-                        >
-                          <X className="w-4 h-4 text-red-600" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <Button
-                    onClick={handleUpload}
-                    disabled={uploading}
-                    className="w-full mt-4 mb-20 bg-ls-forest hover:bg-ls-forest-dark"
-                  >
-                    {uploading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        {language === 'th' ? 'กำลังอัปโหลด...' : 'Uploading...'}
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4 mr-2" />
-                        {language === 'th' ? 'อัปโหลด' : 'Upload'}
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
