@@ -100,7 +100,7 @@ function CaseDetailsContent() {
       setShowUploadModal(false);
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Upload failed. Please try again.');
+      alert('Upload failed: ' + (error?.message || JSON.stringify(error)));
     } finally {
       setUploading(false);
     }
