@@ -19,6 +19,9 @@ Deno.serve(async (req) => {
 
     // Determine recipient
     const recipientEmail = senderRole === "user" ? OPS_EMAIL : tenantEmail;
+    if (senderRole === "admin") {
+      console.log('[sendCaseMessage] Admin sending to:', tenantEmail);
+    }
     const senderLabel = senderRole === "user" ? "Tenant" : "LeaseShield Case Officer";
     const subject = `New message on ${caseNumber || "your case"} — LeaseShield`;
 
@@ -60,6 +63,7 @@ Deno.serve(async (req) => {
     });
 
     const emailResult = await emailResponse.json();
+    console.log('[sendCaseMessage] Resend response:', JSON.stringify(emailResult));
 
     if (!emailResponse.ok) {
       console.error("[sendCaseMessage] Resend error:", emailResult);
