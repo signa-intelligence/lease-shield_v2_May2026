@@ -1171,7 +1171,7 @@ function CaseDetailsContent() {
           <CardContent className="p-4 md:p-6">
             <Button
               variant="outline"
-              onClick={() => { haptic.light(); navigate(createPageUrl("DocumentVault")); }}
+              onClick={() => navigate(createPageUrl("DocumentVault"))}
               className="justify-start h-auto py-4 w-full"
             >
               <FileText className="w-5 h-5 mr-3 text-blue-600" />
