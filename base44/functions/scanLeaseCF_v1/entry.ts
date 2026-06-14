@@ -98,12 +98,16 @@ Deno.serve(async (req) => {
       } catch (_) {}
     }
 
+    const validTiers = ['free', 'lite', 'protect', 'secure', 'one_time'];
+    const scanTier = validTiers.includes(userTier) ? userTier : 'free';
+
     if (!targetScan) {
       targetScan = await base44.entities.LeaseScan.create({
         lease_id: leaseId,
         owner_email: userEmail,
         created_by: userEmail,
-        status: 'initiated'
+        status: 'initiated',
+        scan_tier: scanTier
       });
       console.log(`[SCAN_CREATED] ${requestId} scanId=${targetScan.id}`);
     }
