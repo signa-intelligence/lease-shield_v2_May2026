@@ -208,6 +208,9 @@ function AdminUserManagementContent() {
                           <span>Cases</span>
                         </div>
                       </th>
+                      <th className="text-left p-3 font-semibold">Joined</th>
+                      <th className="text-center p-3 font-semibold">Free Scan</th>
+                      <th className="text-left p-3 font-semibold">Last Login</th>
                       <th className="text-center p-3 font-semibold">Override</th>
                       <th className="text-center p-3 font-semibold">
                         <div className="flex items-center justify-center gap-1">
@@ -269,6 +272,29 @@ function AdminUserManagementContent() {
                               </span>
                               <p className="text-[10px] text-gray-400">free cases</p>
                             </div>
+                          </td>
+                          {/* Joined */}
+                          <td className="p-3 text-xs text-gray-600 whitespace-nowrap">
+                           {u.created_date
+                             ? new Date(u.created_date).toLocaleDateString('en-GB')
+                             : '—'}
+                          </td>
+                          {/* Free Scan */}
+                          <td className="p-3 text-center">
+                           {(u.plan_tier || 'explorer') === 'explorer' || (u.plan_tier || 'explorer') === 'free'
+                             ? (
+                               <span className={`text-xs font-semibold ${(u.free_scans_used ?? 0) >= 1 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                 {(u.free_scans_used ?? 0) >= 1 ? 'Used' : 'Available'}
+                               </span>
+                             )
+                             : <span className="text-xs text-gray-400">—</span>
+                           }
+                          </td>
+                          {/* Last Login */}
+                          <td className="p-3 text-xs text-gray-600 whitespace-nowrap">
+                           {u.last_login
+                             ? new Date(u.last_login).toLocaleDateString('en-GB')
+                             : '—'}
                           </td>
                           {/* Override Toggle */}
                           <td className="p-3 text-center">
