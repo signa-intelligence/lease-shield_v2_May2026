@@ -85,6 +85,7 @@ import ReportFull from './pages/ReportFull';
 import ResolveCase from './pages/ResolveCase';
 import RevenueAnalytics from './pages/RevenueAnalytics';
 import RiskFeedbackAdmin from './pages/RiskFeedbackAdmin';
+import ScanAnalytics from './pages/ScanAnalytics';
 import ScanPreview from './pages/ScanPreview';
 import Search from './pages/Search';
 import Templates from './pages/Templates';
@@ -134,6 +135,7 @@ export const PAGES = {
     "ResolveCase": ResolveCase,
     "RevenueAnalytics": RevenueAnalytics,
     "RiskFeedbackAdmin": RiskFeedbackAdmin,
+    "ScanAnalytics": ScanAnalytics,
     "ScanPreview": ScanPreview,
     "Search": Search,
     "Templates": Templates,
