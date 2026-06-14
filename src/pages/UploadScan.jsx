@@ -2174,7 +2174,10 @@ function UploadScanPageContent() {
                 {/* Trust Block */}
                 <div className="mb-4 flex flex-col items-center text-center">
                   <img src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/6483dea32_ChatGPTImageJun14202607_04_55PM.png" alt="PDPA Alignment Badge" style={{ height: '120px', width: 'auto' }} />
-                  <p className="mt-2 px-4 max-w-sm" style={{ fontSize: '10px', color: colors.textSecondary, opacity: 0.7, lineHeight: '1.5' }}>
+                  <p className="mt-2 font-semibold" style={{ fontSize: '13px', color: colors.textPrimary }}>
+                    Lease Shield | <span style={{ color: '#1A8A6E' }}>Self-Assessed</span>
+                  </p>
+                  <p className="mt-1 px-4 max-w-sm" style={{ fontSize: '10px', color: colors.textSecondary, opacity: 0.7, lineHeight: '1.5' }}>
                     This badge represents Lease Shield's internal privacy and data-protection measures. It is not a government certification, independent legal certification, or third-party endorsement.
                   </p>
                 </div>
