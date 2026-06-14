@@ -2171,20 +2171,26 @@ function UploadScanPageContent() {
                   </div>
                 )}
 
-                {/* Trust Signals */}
-                <div className="mb-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-2">
-                  <div className="flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#10B981' }} />
-                    <span className="text-xs" style={{ color: colors.textSecondary }}>PDPA Compliant</span>
+                {/* Trust Block */}
+                <div className="mb-4">
+                  <div className="flex flex-col sm:flex-row items-center gap-4 py-3 px-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1E2A24' : '#F0F7F4', border: `1px solid ${isDarkMode ? '#2A4A3A' : '#C6DED5'}` }}>
+                    {/* Left: Badge */}
+                    <div className="flex-shrink-0 flex items-center justify-center">
+                      <img src="/pdpa-alignment-badge.png" alt="PDPA Alignment Badge" style={{ height: '80px', width: 'auto' }} />
+                    </div>
+                    {/* Centre: Privacy */}
+                    <div className="flex-1 text-center sm:text-left">
+                      <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>Your document stays private. No staff access without your consent.</p>
+                    </div>
+                    {/* Right: Tip */}
+                    <div className="flex-1 text-center sm:text-left">
+                      <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>Tip: Remove your name and address before uploading. It does not affect the analysis.</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                    <span className="text-xs" style={{ color: colors.textSecondary }}>Your document stays private</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Scissors className="w-3.5 h-3.5 flex-shrink-0" style={{ color: colors.textSecondary }} />
-                    <span className="text-xs" style={{ color: colors.textSecondary }}>Tip: Remove your name and address before uploading. It does not affect the analysis.</span>
-                  </div>
+                  {/* Disclaimer */}
+                  <p className="text-center mt-2 px-2" style={{ fontSize: '10px', color: colors.textSecondary, opacity: 0.7, lineHeight: '1.4' }}>
+                    This badge represents Lease Shield's internal privacy and data-protection measures. It is not a government certification, independent legal certification, or third-party endorsement.
+                  </p>
                 </div>
 
                 <div
