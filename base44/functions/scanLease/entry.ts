@@ -109,8 +109,13 @@ INSTRUCTIONS:
       await base44.auth.updateMe({ free_scans_used: (user.free_scans_used ?? 0) + 1 });
     }
 
+    // Derive scan_tier from user.plan_tier at time of scan
+    const validTiers = ['free', 'lite', 'protect', 'secure', 'one_time'];
+    const scan_tier = validTiers.includes(user.plan_tier) ? user.plan_tier : 'free';
+
     return Response.json({
       success: true,
+      scan_tier,
       result: scanResult
     });
 
