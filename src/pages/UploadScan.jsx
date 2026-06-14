@@ -20,6 +20,8 @@ import {
   Edit2,
   Save,
   Shield,
+  Lock,
+  Scissors,
   Eye,
   ExternalLink,
   Copy,
@@ -2169,10 +2171,20 @@ function UploadScanPageContent() {
                   </div>
                 )}
 
-                {/* Trust Line */}
-                <div className="mb-4 flex items-center justify-center gap-2 py-2">
-                  <Shield className="w-4 h-4 flex-shrink-0" style={{ color: '#10B981' }} />
-                  <p className="text-sm" style={{ color: colors.textSecondary }}>{strings.trustLine}</p>
+                {/* Trust Signals */}
+                <div className="mb-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-2">
+                  <div className="flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#10B981' }} />
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>PDPA Compliant</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>Your document stays private</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Scissors className="w-3.5 h-3.5 flex-shrink-0" style={{ color: colors.textSecondary }} />
+                    <span className="text-xs" style={{ color: colors.textSecondary }}>Tip: Remove your name and address before uploading. It does not affect the analysis.</span>
+                  </div>
                 </div>
 
                 <div
