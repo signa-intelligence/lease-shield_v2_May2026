@@ -2176,7 +2176,7 @@ function UploadScanPageContent() {
                   <div className="flex flex-col sm:flex-row items-center gap-4 py-3 px-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1E2A24' : '#F0F7F4', border: `1px solid ${isDarkMode ? '#2A4A3A' : '#C6DED5'}` }}>
                     {/* Left: Badge */}
                     <div className="flex-shrink-0 flex items-center justify-center">
-                      <img src="/pdpa-alignment-badge.png" alt="PDPA Alignment Badge" style={{ height: '80px', width: 'auto' }} />
+                      <img src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/740ab03b9_pdpa-alignment-badge.png" alt="PDPA Alignment Badge" style={{ height: '80px', width: 'auto' }} />
                     </div>
                     {/* Centre: Privacy */}
                     <div className="flex-1 text-center sm:text-left">
