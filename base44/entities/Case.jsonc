@@ -1,0 +1,457 @@
+{
+  "name": "Case",
+  "type": "object",
+  "properties": {
+    "case_number": {
+      "type": "string",
+      "description": "Human-readable case number (e.g., MF-S-0125-001)"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User's email address for ownership tracking",
+      "index": true
+    },
+    "lease_id": {
+      "type": "string",
+      "description": "Related lease ID"
+    },
+    "property_id": {
+      "type": "string",
+      "description": "Related property ID"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "deposit",
+        "early_termination",
+        "damages",
+        "other"
+      ],
+      "default": "deposit",
+      "description": "Type of dispute case"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "awaiting_payment",
+        "intake",
+        "pending_review",
+        "under_review",
+        "ready_drafts",
+        "client_review",
+        "awaiting_landlord",
+        "in_progress",
+        "resolved",
+        "closed"
+      ],
+      "default": "awaiting_payment",
+      "description": "Current case status"
+    },
+    "dispute_amount": {
+      "type": "number",
+      "description": "Amount in dispute"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Case summary and description"
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Property address for this case"
+    },
+    "assignee_id": {
+      "type": "string",
+      "description": "Assigned ops team member ID or email"
+    },
+    "landlord_name": {
+      "type": "string",
+      "description": "Landlord's name"
+    },
+    "landlord_email": {
+      "type": "string",
+      "description": "Landlord's email address for letter delivery"
+    },
+    "cc_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Additional CC recipients for letter emails"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "photo",
+              "video",
+              "chat",
+              "receipt",
+              "lease",
+              "other"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "uploaded_date": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "description": "Evidence files attached to the case"
+    },
+    "case_messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "sender_email": {
+            "type": "string"
+          },
+          "sender_role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ]
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "description": "In-case messages between user and case officer"
+    },
+    "stripe_session_id": {
+      "type": "string",
+      "description": "Stripe checkout session ID for payment tracking"
+    },
+    "stripe_payment_intent_id": {
+      "type": "string",
+      "description": "Stripe payment intent ID"
+    },
+    "omise_charge_id": {
+      "type": "string",
+      "description": "Omise charge ID for PromptPay payment tracking"
+    },
+    "pricing_type": {
+      "type": "string",
+      "enum": [
+        "member",
+        "public"
+      ],
+      "description": "Pricing tier applied to this case"
+    },
+    "resolve_amount": {
+      "type": "number",
+      "description": "Amount paid for Resolve service"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Payment completion timestamp"
+    },
+    "checklist": {
+      "type": "object",
+      "properties": {
+        "intake_ok": {
+          "type": "boolean",
+          "default": false
+        },
+        "id_verified": {
+          "type": "boolean",
+          "default": false
+        },
+        "evidence_reviewed": {
+          "type": "boolean",
+          "default": false
+        },
+        "letters_drafted": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "description": "Case processing checklist"
+    },
+    "letters": {
+      "type": "object",
+      "properties": {
+        "deposit_url": {
+          "type": "string",
+          "description": "URL to deposit return letter"
+        },
+        "damages_url": {
+          "type": "string",
+          "description": "URL to damages assessment letter"
+        },
+        "early_termination_url": {
+          "type": "string",
+          "description": "URL to early termination letter"
+        },
+        "v1_url": {
+          "type": "string",
+          "description": "Legacy field for first letter"
+        },
+        "v2_url": {
+          "type": "string",
+          "description": "Follow-up letter"
+        },
+        "v3_url": {
+          "type": "string",
+          "description": "Final letter"
+        },
+        "v1_sent_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "v2_sent_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "v3_sent_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "letters_data": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "Stored letter JSON data from LLM for compilation"
+        },
+        "last_sent": {
+          "type": "object",
+          "properties": {
+            "subject": {
+              "type": "string",
+              "enum": [
+                "deposit",
+                "damages",
+                "early_termination"
+              ]
+            },
+            "to": {
+              "type": "string"
+            },
+            "cc": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "messageId": {
+              "type": "string"
+            }
+          },
+          "description": "Audit trail of last email sent"
+        }
+      },
+      "description": "Letter escalation versions, send dates, URLs, and email tracking"
+    },
+    "letter_pack_url": {
+      "type": "string",
+      "description": "URL to compiled PDF pack of all letters"
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "event": {
+            "type": "string"
+          },
+          "meta": {
+            "type": "object"
+          },
+          "actor": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Case activity timeline"
+    },
+    "sla": {
+      "type": "object",
+      "properties": {
+        "ack_due": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "followup_due": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolution_target": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "Service level agreement deadlines"
+    },
+    "settlement": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "currency": {
+          "type": "string",
+          "default": "THB"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "method": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "description": "Settlement details if resolved"
+    },
+    "flags": {
+      "type": "object",
+      "properties": {
+        "needs_lawyer": {
+          "type": "boolean",
+          "default": false
+        },
+        "high_risk": {
+          "type": "boolean",
+          "default": false
+        },
+        "test_case": {
+          "type": "boolean",
+          "default": false
+        },
+        "urgent": {
+          "type": "boolean",
+          "default": false
+        },
+        "priority": {
+          "type": "boolean",
+          "default": false,
+          "description": "Priority handling for member benefit cases"
+        }
+      },
+      "description": "Case flags for special handling"
+    },
+    "is_member_at_creation": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether user was a member when case was created"
+    },
+    "success_fee_rate": {
+      "type": "number",
+      "default": 0,
+      "description": "Success fee percentage (deprecated - now all-inclusive)"
+    },
+    "fast_track": {
+      "type": "boolean",
+      "default": false,
+      "description": "Fast track processing (12 hour review)"
+    },
+    "letter_pack": {
+      "type": "boolean",
+      "default": false,
+      "description": "Legal letter pack add-on purchased"
+    },
+    "is_deleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Soft delete flag for recycle bin"
+    },
+    "deleted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when item was soft deleted"
+    },
+    "timeline_event_created_id": {
+      "type": "string",
+      "description": "ID of timeline creation event"
+    },
+    "timeline_event_followup_id": {
+      "type": "string",
+      "description": "ID of timeline follow-up reminder event"
+    },
+    "next_action_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Next scheduled follow-up date"
+    }
+  },
+  "required": [],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

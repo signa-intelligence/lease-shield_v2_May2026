@@ -1,0 +1,57 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User who performed the action",
+      "index": true
+    },
+    "action": {
+      "type": "string",
+      "description": "Action performed (e.g., 'case.created', 'template.downloaded', 'user.updated')",
+      "index": true
+    },
+    "entity_type": {
+      "type": "string",
+      "description": "Type of entity affected (e.g., 'Case', 'User', 'Template')"
+    },
+    "entity_id": {
+      "type": "string",
+      "description": "ID of the affected entity"
+    },
+    "changes": {
+      "type": "string",
+      "description": "JSON object containing before/after values (sensitive data redacted)"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "IP address of the request"
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "User agent string from the request"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "failure",
+        "error"
+      ],
+      "default": "success",
+      "description": "Status of the action"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the action occurred",
+      "index": true
+    }
+  },
+  "required": [
+    "user_id",
+    "action",
+    "timestamp"
+  ]
+}

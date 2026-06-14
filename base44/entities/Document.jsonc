@@ -1,0 +1,82 @@
+{
+  "name": "Document",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "lease",
+        "receipt",
+        "photo",
+        "video",
+        "letter",
+        "other"
+      ],
+      "description": "Type of document"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to the document or data URL"
+    },
+    "label": {
+      "type": "string",
+      "description": "Custom label for the document"
+    },
+    "html_content": {
+      "type": "string",
+      "description": "Raw HTML content for letters (stored for proper rendering)"
+    },
+    "folder_id": {
+      "type": "string",
+      "description": "ID of the folder this document belongs to (null = root level)"
+    },
+    "file_size": {
+      "type": "integer",
+      "default": 0,
+      "description": "File size in bytes for storage tracking"
+    }
+  },
+  "required": [
+    "type",
+    "file_url"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

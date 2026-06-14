@@ -1,0 +1,104 @@
+{
+  "name": "RecycleBin",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Owner of the deleted item"
+    },
+    "item_type": {
+      "type": "string",
+      "enum": [
+        "case",
+        "maintenance",
+        "evidence",
+        "lease",
+        "deposit"
+      ],
+      "description": "Type of deleted item"
+    },
+    "original_id": {
+      "type": "string",
+      "description": "ID of the original record"
+    },
+    "item_snapshot": {
+      "type": "object",
+      "description": "Full snapshot of the item at deletion time"
+    },
+    "item_label": {
+      "type": "string",
+      "description": "Display label (case number, title, filename)"
+    },
+    "deleted_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When item was deleted"
+    },
+    "size_bytes": {
+      "type": "integer",
+      "description": "Approximate storage size for future usage tracking"
+    }
+  },
+  "required": [
+    "user_email",
+    "item_type",
+    "original_id",
+    "item_snapshot",
+    "deleted_date"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

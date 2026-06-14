@@ -1,0 +1,38 @@
+{
+  "name": "RateLimit",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User ID for rate limiting tracking",
+      "index": true
+    },
+    "action": {
+      "type": "string",
+      "description": "Action being rate limited (e.g., 'login', 'api_call', 'template_download')",
+      "index": true
+    },
+    "requests": {
+      "type": "string",
+      "description": "JSON array of request timestamps in the current window"
+    },
+    "last_request": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the most recent request"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this rate limit record expires",
+      "index": true
+    }
+  },
+  "required": [
+    "user_id",
+    "action",
+    "requests",
+    "last_request",
+    "expires_at"
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "name": "LetterUsage",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User who generated the letter"
+    },
+    "case_id": {
+      "type": "string",
+      "description": "Related case ID (if applicable)"
+    },
+    "template_key": {
+      "type": "string",
+      "description": "Template identifier used"
+    },
+    "recipient_type": {
+      "type": "string",
+      "enum": [
+        "tenant",
+        "landlord",
+        "juristic"
+      ],
+      "description": "Letter recipient type"
+    },
+    "languages_generated": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of languages included in this letter pack (e.g., ['en', 'th', 'ko'])"
+    },
+    "credits_used": {
+      "type": "integer",
+      "default": 1,
+      "description": "Credits consumed (always 1 per pack)"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the letter was generated"
+    },
+    "document_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of saved Document records for this letter"
+    }
+  },
+  "required": [
+    "user_email",
+    "template_key",
+    "recipient_type",
+    "languages_generated",
+    "credits_used"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "user_email": "{{user.email}}"
+    },
+    "update": {
+      "user_email": "{{user.email}}"
+    },
+    "delete": {
+      "user_email": "{{user.email}}"
+    }
+  }
+}

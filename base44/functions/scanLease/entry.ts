@@ -9,6 +9,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Free plan scan gate
+    if (user.plan_tier === 'free') {
+      if (user.free_scan_eligible === false || (user.free_scans_used ?? 0) >= 1) {
+        return Response.json({
+          success: false,
+          code: 'FREE_SCAN_EXHAUSTED',
+          error: 'Your free scan has been used. Please upgrade to continue.'
+        }, { status: 403 });
+      }
+    }
+
     const { fileUrls } = await req.json();
     
     if (!fileUrls || fileUrls.length === 0) {
@@ -92,6 +103,11 @@ INSTRUCTIONS:
 
     console.log('Analysis complete. Risk score:', scanResult.risk_score);
     console.log('Flags found:', scanResult.flags?.length || 0);
+
+    // Increment free scan usage for Explorer plan users
+    if (user.plan_tier === 'free') {
+      await base44.auth.updateMe({ free_scans_used: (user.free_scans_used ?? 0) + 1 });
+    }
 
     return Response.json({
       success: true,

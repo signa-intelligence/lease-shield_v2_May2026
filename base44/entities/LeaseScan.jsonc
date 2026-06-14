@@ -1,0 +1,135 @@
+{
+  "name": "LeaseScan",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of user who owns this scan",
+      "index": true
+    },
+    "lease_id": {
+      "type": "string",
+      "description": "Reference to the lease",
+      "index": true
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Property address extracted from scan"
+    },
+    "scan_preview": {
+      "type": "object",
+      "description": "Preview of scan results"
+    },
+    "scan_full": {
+      "type": "object",
+      "description": "Complete scan analysis"
+    },
+    "risk_score": {
+      "type": "integer",
+      "description": "Risk score from 0-100",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
+          },
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "description": "AI-generated summary"
+    },
+    "version": {
+      "type": "string",
+      "description": "Scan version"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "archived",
+        "initiated",
+        "ok"
+      ],
+      "default": "pending",
+      "description": "Scan processing status"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if scan is archived (hidden from active views)"
+    },
+    "archived_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When scan was archived"
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Request tracking ID for debugging"
+    }
+  },
+  "required": [
+    "lease_id"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

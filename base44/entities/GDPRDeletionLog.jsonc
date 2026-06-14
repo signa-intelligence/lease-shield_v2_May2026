@@ -1,0 +1,59 @@
+{
+  "name": "GDPRDeletionLog",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user whose data was deleted",
+      "index": true
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID of the user (if available)",
+      "index": true
+    },
+    "deleted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the deletion occurred",
+      "index": true
+    },
+    "deleted_by": {
+      "type": "string",
+      "description": "Who initiated deletion: 'self' or admin email"
+    },
+    "deletion_summary": {
+      "type": "object",
+      "description": "Count of entities deleted per type"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "IP address of the request"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "user_request",
+        "admin_gdpr",
+        "admin_cleanup"
+      ],
+      "default": "user_request",
+      "description": "Reason for deletion"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "partial",
+        "failed"
+      ],
+      "default": "completed",
+      "description": "Status of deletion"
+    }
+  },
+  "required": [
+    "user_email",
+    "deleted_at",
+    "deleted_by"
+  ]
+}

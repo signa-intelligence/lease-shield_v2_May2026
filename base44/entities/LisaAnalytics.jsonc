@@ -1,0 +1,57 @@
+{
+  "name": "LisaAnalytics",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User who asked the question"
+    },
+    "question": {
+      "type": "string",
+      "description": "User's question"
+    },
+    "response": {
+      "type": "string",
+      "description": "Lisa's response"
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Session identifier to group related questions"
+    },
+    "action_taken": {
+      "type": "string",
+      "description": "Action user took after response (upgrade, navigate, close, etc.)"
+    },
+    "user_plan_tier": {
+      "type": "string",
+      "description": "User's plan tier at time of interaction"
+    },
+    "response_time_ms": {
+      "type": "number",
+      "description": "Response time in milliseconds"
+    },
+    "user_satisfied": {
+      "type": "boolean",
+      "description": "Optional user feedback on response quality"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "pricing",
+        "lease_scanning",
+        "deposits",
+        "disputes",
+        "support",
+        "evidence",
+        "billing",
+        "general"
+      ],
+      "description": "Auto-categorized question type"
+    }
+  },
+  "required": [
+    "user_email",
+    "question",
+    "category"
+  ]
+}

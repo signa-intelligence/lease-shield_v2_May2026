@@ -1,0 +1,146 @@
+{
+  "name": "Referral",
+  "type": "object",
+  "properties": {
+    "referrer_user_id": {
+      "type": "string",
+      "description": "User ID of the referrer"
+    },
+    "referrer_email": {
+      "type": "string",
+      "description": "Email of the referrer (for lookup)"
+    },
+    "referred_user_id": {
+      "type": "string",
+      "description": "User ID of the referred friend"
+    },
+    "referred_email": {
+      "type": "string",
+      "description": "Email of the referred friend (normalized to prevent plus addressing abuse)"
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "Referral code used"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending_first_payment",
+        "pending_refund_window",
+        "pending_review",
+        "converted",
+        "cancelled",
+        "refunded",
+        "chargeback",
+        "fraud_blocked"
+      ],
+      "default": "pending_first_payment",
+      "description": "Referral conversion status"
+    },
+    "credit_thb": {
+      "type": "integer",
+      "description": "Credit amount awarded in THB"
+    },
+    "referrer_plan_at_conversion": {
+      "type": "string",
+      "description": "Referrer's plan when friend converted"
+    },
+    "referred_plan": {
+      "type": "string",
+      "description": "Friend's subscribed plan"
+    },
+    "converted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When friend paid first subscription"
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "description": "Stripe subscription ID for refund tracking",
+      "index": true
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID for refund tracking",
+      "index": true
+    },
+    "refunded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When refund was issued"
+    },
+    "chargeback_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When chargeback occurred"
+    },
+    "months_paid": {
+      "type": "integer",
+      "default": 0,
+      "description": "Count of consecutive months paid (for 3-month qualification)"
+    },
+    "last_payment_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last successful payment timestamp"
+    },
+    "fraud_risk_score": {
+      "type": "integer",
+      "default": 0,
+      "description": "Automated fraud risk score (0-100)"
+    },
+    "fraud_patterns": {
+      "type": "string",
+      "description": "JSON stringified fraud patterns detected"
+    },
+    "flagged_for_review": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if flagged for manual admin review",
+      "index": true
+    },
+    "reviewed_by_admin": {
+      "type": "string",
+      "description": "Admin email who reviewed this referral"
+    },
+    "review_notes": {
+      "type": "string",
+      "description": "Admin notes from fraud review"
+    },
+    "review_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When admin reviewed and approved/blocked"
+    }
+  },
+  "required": [
+    "referrer_user_id",
+    "referred_user_id",
+    "referral_code"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "referrer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

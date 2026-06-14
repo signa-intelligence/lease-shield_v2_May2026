@@ -1,0 +1,89 @@
+{
+  "name": "Letter",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User who owns this letter"
+    },
+    "lease_id": {
+      "type": "string",
+      "description": "Related lease ID"
+    },
+    "case_id": {
+      "type": "string",
+      "description": "Related case ID (optional)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Letter title/subject"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "en",
+        "th",
+        "zh",
+        "ja",
+        "ko",
+        "ru"
+      ],
+      "default": "en",
+      "description": "Letter language"
+    },
+    "body": {
+      "type": "string",
+      "description": "Letter content (plain text or HTML)"
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "text",
+        "html",
+        "docx",
+        "pdf"
+      ],
+      "default": "text",
+      "description": "Letter format"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready",
+        "failed"
+      ],
+      "default": "draft",
+      "description": "Letter status"
+    },
+    "scan_id": {
+      "type": "string",
+      "description": "Source scan ID for traceability"
+    },
+    "recommendations_used": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of recommendations included in letter"
+    }
+  },
+  "required": [
+    "user_id",
+    "lease_id",
+    "title",
+    "body"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "user_id": "{{user.id}}"
+    },
+    "update": {
+      "user_id": "{{user.id}}"
+    },
+    "delete": {
+      "user_id": "{{user.id}}"
+    }
+  }
+}

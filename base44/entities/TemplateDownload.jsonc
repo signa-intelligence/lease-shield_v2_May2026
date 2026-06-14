@@ -1,0 +1,35 @@
+{
+  "name": "TemplateDownload",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of user who downloaded the template",
+      "index": true
+    },
+    "template_key": {
+      "type": "string",
+      "description": "Template identifier that was downloaded",
+      "index": true
+    },
+    "template_name": {
+      "type": "string",
+      "description": "Human-readable template name"
+    },
+    "downloaded_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the template was downloaded",
+      "index": true
+    },
+    "user_tier": {
+      "type": "string",
+      "description": "User's tier at time of download"
+    }
+  },
+  "required": [
+    "user_email",
+    "template_key",
+    "downloaded_at"
+  ]
+}

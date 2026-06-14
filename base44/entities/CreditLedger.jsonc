@@ -1,0 +1,59 @@
+{
+  "name": "CreditLedger",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User whose credits were modified"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User email for easier querying"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "ADD",
+        "REMOVE",
+        "SET",
+        "USE"
+      ],
+      "description": "Type of credit modification"
+    },
+    "amount": {
+      "type": "integer",
+      "description": "Amount changed (positive for add, negative for use/remove)"
+    },
+    "previous_balance": {
+      "type": "integer",
+      "description": "Credits before change"
+    },
+    "new_balance": {
+      "type": "integer",
+      "description": "Credits after change"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Reason for change (admin note or 'Letter generated')"
+    },
+    "admin_user_id": {
+      "type": "string",
+      "description": "Admin who made the change (if manual)"
+    },
+    "admin_email": {
+      "type": "string",
+      "description": "Admin email for audit"
+    },
+    "related_entity_id": {
+      "type": "string",
+      "description": "Related letter/case ID if applicable"
+    }
+  },
+  "required": [
+    "user_id",
+    "action_type",
+    "amount",
+    "previous_balance",
+    "new_balance"
+  ]
+}

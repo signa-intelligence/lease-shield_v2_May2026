@@ -1,0 +1,41 @@
+{
+  "name": "UserStorage",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "User's email address",
+      "index": true,
+      "unique": true
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User ID for faster lookups",
+      "index": true
+    },
+    "total_bytes": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total storage used in bytes"
+    },
+    "tier_limit_bytes": {
+      "type": "integer",
+      "default": 1073741824,
+      "description": "Storage limit based on tier (1GB default)"
+    },
+    "files_count": {
+      "type": "integer",
+      "default": 0,
+      "description": "Total number of files uploaded"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time storage was updated"
+    }
+  },
+  "required": [
+    "user_email",
+    "user_id"
+  ]
+}

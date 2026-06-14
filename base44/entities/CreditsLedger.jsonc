@@ -1,0 +1,51 @@
+{
+  "name": "CreditsLedger",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User ID this credit transaction belongs to",
+      "index": true
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User email for easier querying",
+      "index": true
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "letters",
+        "scans"
+      ],
+      "description": "Type of credits",
+      "index": true
+    },
+    "delta": {
+      "type": "integer",
+      "description": "Credit change amount (positive for purchase/grant, negative for manual correction only)"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "purchase",
+        "admin_grant",
+        "refund",
+        "correction",
+        "plan_upgrade"
+      ],
+      "description": "Reason for credit change"
+    },
+    "source_ref": {
+      "type": "string",
+      "description": "Payment ID, invoice ID, or admin note"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_email",
+    "type",
+    "delta",
+    "reason"
+  ]
+}

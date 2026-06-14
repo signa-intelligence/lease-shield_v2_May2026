@@ -1,0 +1,158 @@
+{
+  "name": "TimelineEvent",
+  "type": "object",
+  "properties": {
+    "owner_email": {
+      "type": "string",
+      "description": "Email of user who owns this event",
+      "index": true
+    },
+    "property_address": {
+      "type": "string",
+      "description": "Property address",
+      "index": true
+    },
+    "lease_id": {
+      "type": "string",
+      "description": "Related lease ID",
+      "index": true
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "lease_scanned",
+        "lease_start",
+        "lease_end",
+        "deposit_due",
+        "deposit_return",
+        "rent_due",
+        "notice_deadline",
+        "case_created",
+        "case_followup_due",
+        "case_closed",
+        "maintenance_reported",
+        "maintenance_followup_due",
+        "maintenance_closed",
+        "notification_30d_deposit",
+        "notification_7d_deposit",
+        "notification_3d_deposit",
+        "notification_overdue_deposit",
+        "notification_30d_notice",
+        "notification_7d_notice",
+        "notification_3d_notice",
+        "notification_0d_notice",
+        "notification_rent_reminder",
+        "notification_maintenance_update"
+      ],
+      "description": "Type of timeline event"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the event occurs/occurred",
+      "index": true
+    },
+    "title": {
+      "type": "string",
+      "description": "Event title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Event description or notes"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "lease_scan",
+        "manual",
+        "system",
+        "case",
+        "maintenance",
+        "notification"
+      ],
+      "default": "manual",
+      "description": "How this event was created"
+    },
+    "source_scan_id": {
+      "type": "string",
+      "description": "LeaseScan ID if auto-populated"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "Source entity ID (case_id or maintenance_id)"
+    },
+    "reminder_for_event_id": {
+      "type": "string",
+      "description": "Links follow-up reminder to base event"
+    },
+    "is_estimated": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if date was computed/assumed, not explicit"
+    },
+    "needs_review": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag for user to review and confirm"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if related lease/record is archived"
+    },
+    "archived_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When event was archived"
+    },
+    "notification_log_id": {
+      "type": "string",
+      "description": "Linked NotificationLog ID if created from notification"
+    }
+  },
+  "required": [
+    "owner_email",
+    "event_type",
+    "event_date",
+    "title"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.owner_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "name": "CancellationReason",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of user who initiated cancellation",
+      "index": true
+    },
+    "user_id": {
+      "type": "string",
+      "description": "User ID"
+    },
+    "previous_tier": {
+      "type": "string",
+      "description": "Plan tier before cancellation"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Dropdown selection reason"
+    },
+    "reason_details": {
+      "type": "string",
+      "description": "Optional freeform feedback"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "cancelled",
+        "downgraded_to_lite",
+        "downgraded_to_protect",
+        "downgraded_to_explorer",
+        "retained"
+      ],
+      "description": "Final outcome of the cancellation flow"
+    },
+    "new_tier": {
+      "type": "string",
+      "description": "New tier if downgraded"
+    },
+    "subscription_value": {
+      "type": "number",
+      "description": "Monthly value of previous tier in THB"
+    },
+    "revenue_retained": {
+      "type": "number",
+      "description": "Monthly value of new tier if downgraded (0 if cancelled)"
+    }
+  },
+  "required": [
+    "user_email",
+    "reason",
+    "outcome"
+  ]
+}

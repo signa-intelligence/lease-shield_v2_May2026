@@ -1,0 +1,31 @@
+{
+  "name": "EvidenceFolder",
+  "type": "object",
+  "properties": {
+    "folder_name": {
+      "type": "string",
+      "description": "Name of the folder"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the folder owner",
+      "index": true
+    }
+  },
+  "required": [
+    "folder_name",
+    "owner_email"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "data.owner_email": "{{user.email}}"
+    },
+    "update": {
+      "data.owner_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.owner_email": "{{user.email}}"
+    }
+  }
+}

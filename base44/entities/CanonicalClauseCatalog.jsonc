@@ -1,0 +1,57 @@
+{
+  "name": "CanonicalClauseCatalog",
+  "type": "object",
+  "properties": {
+    "catalog_id": {
+      "type": "string",
+      "description": "Unique catalog entry ID (e.g., CAT-001)"
+    },
+    "canonical_name": {
+      "type": "string",
+      "description": "Standard name for this clause type"
+    },
+    "purpose": {
+      "type": "string",
+      "description": "What this clause is meant to accomplish"
+    },
+    "typical_keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Keywords commonly found in this clause type"
+    },
+    "typical_variants": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Alternative names for this clause type"
+    },
+    "risk_triggers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Conditions that make this clause risky"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this catalog entry is active"
+    },
+    "catalog_version": {
+      "type": "string",
+      "description": "Version of the catalog this entry belongs to"
+    },
+    "sort_order": {
+      "type": "integer",
+      "description": "Display order within catalog"
+    }
+  },
+  "required": [
+    "catalog_id",
+    "canonical_name",
+    "purpose"
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "subscription",
+        "case",
+        "addon"
+      ],
+      "description": "Payment type"
+    },
+    "currency": {
+      "type": "string",
+      "default": "THB"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Payment amount"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "stripe",
+        "xendit",
+        "omise"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "external_id": {
+      "type": "string",
+      "description": "External payment provider ID"
+    }
+  },
+  "required": [
+    "type",
+    "amount",
+    "provider"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

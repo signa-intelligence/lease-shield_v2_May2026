@@ -1,0 +1,112 @@
+{
+  "name": "RiskFeedback",
+  "type": "object",
+  "properties": {
+    "lease_id": {
+      "type": "string"
+    },
+    "scan_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "feedback_type": {
+      "type": "string",
+      "enum": [
+        "MISSED_RISK",
+        "WRONG_SEVERITY",
+        "NOT_APPLICABLE",
+        "WRONG_INTERPRETATION"
+      ]
+    },
+    "category_id": {
+      "type": "string"
+    },
+    "clause_ref": {
+      "type": "object",
+      "properties": {
+        "clause_id": {
+          "type": "string"
+        },
+        "page": {
+          "type": "integer"
+        },
+        "snippet": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "clause_id",
+        "snippet"
+      ]
+    },
+    "suggested_severity": {
+      "type": "string",
+      "enum": [
+        "CRITICAL",
+        "HIGH",
+        "MEDIUM",
+        "LOW"
+      ]
+    },
+    "note": {
+      "type": "string"
+    },
+    "related_issue_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "NEW",
+        "REVIEWED",
+        "APPLIED",
+        "TRIAGED",
+        "ADDED_TO_RULES",
+        "IGNORED"
+      ],
+      "default": "NEW"
+    },
+    "app_language": {
+      "type": "string"
+    },
+    "lease_language_detected": {
+      "type": "string"
+    },
+    "admin_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "lease_id",
+    "scan_id",
+    "user_id",
+    "feedback_type"
+  ],
+  "rls": {
+    "create": true,
+    "read": {
+      "$or": [
+        {
+          "created_by": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

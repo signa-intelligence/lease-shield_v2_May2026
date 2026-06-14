@@ -2,150 +2,73 @@
   "name": "User",
   "type": "object",
   "properties": {
-    "available_scans": {
-      "type": "integer",
-      "default": 1,
-      "description": "Number of available lease scans (explorer tier gets 1 free)"
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
     },
-    "referral_generated_at": {
+    "country": {
+      "type": "string",
+      "description": "Country"
+    },
+    "language": {
+      "type": "string",
+      "enum": [
+        "en",
+        "th"
+      ],
+      "default": "en"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "active",
+        "cancelled"
+      ],
+      "default": "none"
+    },
+    "plan_tier": {
+      "type": "string",
+      "enum": [
+        "free",
+        "lite",
+        "protect",
+        "secure"
+      ],
+      "default": "free"
+    },
+    "plan_renews_at": {
       "type": "string",
       "format": "date-time",
-      "description": "When the user's referral code was first generated"
+      "description": "Plan renewal date"
     },
-    "one_time_scan_credits": {
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID"
+    },
+    "line_messaging_token": {
+      "type": "string",
+      "description": "LINE Messaging API user ID"
+    },
+    "email_notifications": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable email notifications"
+    },
+    "line_notifications": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable LINE notifications"
+    },
+    "free_scans_used": {
       "type": "integer",
       "default": 0,
-      "description": "Number of one-time scan credits purchased"
+      "description": "Number of free scans used (Explorer plan)"
     },
-    "manual_tier_override": {
+    "free_scan_eligible": {
       "type": "boolean",
-      "default": false,
-      "description": "When true, bypass Stripe checks and use manual credit values"
-    },
-    "manual_letter_credits": {
-      "type": "integer",
-      "description": "Manual letter credits (used when manual_tier_override is true)"
-    },
-    "manual_scan_credits": {
-      "type": "integer",
-      "description": "Manual scan credits (used when manual_tier_override is true)"
-    },
-    "manual_case_credits": {
-      "type": "integer",
-      "default": 0,
-      "description": "Manual free case credits (used when manual_tier_override is true)"
-    },
-    "resolve_entitlement_used_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Timestamp when the user used their annual free Resolve case entitlement"
-    },
-    "resolve_entitlement_used_case_id": {
-      "type": "string",
-      "description": "Case ID of the free Resolve case that was used"
-    },
-    "usage_month": {
-      "type": "string",
-      "description": "Current usage tracking month (e.g. '2026-03')"
-    },
-    "scans_used_this_month": {
-      "type": "integer",
-      "default": 0,
-      "description": "Lease scans used in current month"
-    },
-    "letters_used_this_month": {
-      "type": "integer",
-      "default": 0,
-      "description": "Letter credits used in current month"
-    },
-    "fasttrack_used_this_month": {
-      "type": "integer",
-      "default": 0,
-      "description": "Fast Track cases used in current month"
-    },
-    "is_deleted": {
-      "type": "boolean",
-      "default": false,
-      "description": "Soft-delete flag"
-    },
-    "permanently_deleted": {
-      "type": "boolean",
-      "default": false,
-      "description": "True if user permanently deleted their account (PDPA). Do NOT reactivate."
-    },
-    "deleted_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Timestamp when user soft-deleted their account"
-    },
-    "explorer_benefits_used": {
-      "type": "boolean",
-      "default": false,
-      "description": "True if user has consumed any Explorer tier free benefits"
-    },
-    "previous_plan_tier": {
-      "type": "string",
-      "description": "Plan tier before deletion, stored for audit/restore context"
-    },
-    "credit_low_warning_sent": {
-      "type": "boolean",
-      "default": false,
-      "description": "True if low credit warning email was sent this cycle"
-    },
-    "credit_depleted_warning_sent": {
-      "type": "boolean",
-      "default": false,
-      "description": "True if depleted credit warning email was sent this cycle"
-    },
-    "renewal_7d_sent": {
-      "type": "boolean",
-      "default": false,
-      "description": "True if 7-day subscription renewal reminder was sent this cycle"
-    },
-    "renewal_1d_sent": {
-      "type": "boolean",
-      "default": false,
-      "description": "True if 1-day subscription renewal reminder was sent this cycle"
-    },
-    "renewal_today_sent": {
-      "type": "boolean",
-      "default": false,
-      "description": "True if renewal-day confirmation was sent this cycle"
-    },
-    "subscription_renewal_date": {
-      "type": "string",
-      "format": "date",
-      "description": "Next subscription renewal date"
-    },
-    "last_login": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Timestamp of user's most recent login/session"
-    },
-    "inactive_reminder_sent": {
-      "type": "boolean",
-      "default": false,
-      "description": "True if inactive re-engagement reminder was sent"
-    },
-    "inactive_reminder_sent_date": {
-      "type": "string",
-      "format": "date-time",
-      "description": "When the last inactive reminder was sent (60-day cooldown)"
-    },
-    "storage_over_limit": {
-      "type": "boolean",
-      "default": false,
-      "description": "True if user's storage exceeds their current tier limit (set on downgrade)"
-    },
-    "storage_grace_period_ends": {
-      "type": "string",
-      "format": "date-time",
-      "description": "When the storage grace period ends (30 days after downgrade). Files remain accessible until this date."
-    },
-    "uploads_blocked": {
-      "type": "boolean",
-      "default": false,
-      "description": "True if new file uploads are blocked due to being over storage limit"
+      "default": true,
+      "description": "Whether user is eligible to use their free scan"
     }
   },
   "required": []

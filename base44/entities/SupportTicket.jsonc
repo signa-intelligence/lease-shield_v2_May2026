@@ -1,0 +1,12 @@
+{
+  "name": "SupportTicket",
+  "type": "object",
+  "properties": {
+    "archived": {
+      "type": "boolean",
+      "default": true,
+      "description": "This entity is deprecated - use Case entity instead"
+    }
+  },
+  "required": []
+}
