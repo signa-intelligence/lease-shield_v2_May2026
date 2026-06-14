@@ -103,6 +103,7 @@ function ScanAnalyticsContent() {
                       <th className="text-left p-3 font-semibold">Created</th>
                       <th className="text-center p-3 font-semibold">Risk Score</th>
                       <th className="text-center p-3 font-semibold">Flags</th>
+                      <th className="text-center p-3 font-semibold">Tier</th>
                       <th className="text-left p-3 font-semibold">Summary</th>
                       <th className="text-left p-3 font-semibold">Lease ID</th>
                     </tr>
@@ -117,6 +118,7 @@ function ScanAnalyticsContent() {
                           {typeof s.risk_score === "number" ? s.risk_score : '—'}
                         </td>
                         <td className="p-3 text-center">{s.scan_full?.flags?.length ?? 0}</td>
+                        <td className="p-3 text-center text-xs font-medium">{s.scan_tier ?? '—'}</td>
                         <td className="p-3 text-xs text-gray-600 max-w-[320px]">
                           {s.summary ? `${s.summary.slice(0, 100)}${s.summary.length > 100 ? '…' : ''}` : '—'}
                         </td>
