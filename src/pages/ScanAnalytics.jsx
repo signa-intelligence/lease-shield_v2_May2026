@@ -116,7 +116,7 @@ function ScanAnalyticsContent() {
                         <td className="p-3 text-center font-mono font-bold">
                           {typeof s.risk_score === "number" ? s.risk_score : '—'}
                         </td>
-                        <td className="p-3 text-center">{s.flags?.length ?? 0}</td>
+                        <td className="p-3 text-center">{s.scan_full?.flags?.length ?? 0}</td>
                         <td className="p-3 text-xs text-gray-600 max-w-[320px]">
                           {s.summary ? `${s.summary.slice(0, 100)}${s.summary.length > 100 ? '…' : ''}` : '—'}
                         </td>
