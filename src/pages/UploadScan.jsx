@@ -2172,23 +2172,9 @@ function UploadScanPageContent() {
                 )}
 
                 {/* Trust Block */}
-                <div className="mb-4">
-                  <div className="flex flex-col sm:flex-row items-center gap-4 py-3 px-4 rounded-xl" style={{ backgroundColor: isDarkMode ? '#1E2A24' : '#F0F7F4', border: `1px solid ${isDarkMode ? '#2A4A3A' : '#C6DED5'}` }}>
-                    {/* Left: Badge */}
-                    <div className="flex-shrink-0 flex items-center justify-center">
-                      <img src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/740ab03b9_pdpa-alignment-badge.png" alt="PDPA Alignment Badge" style={{ height: '80px', width: 'auto' }} />
-                    </div>
-                    {/* Centre: Privacy */}
-                    <div className="flex-1 text-center sm:text-left">
-                      <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>Your document stays private. No staff access without your consent.</p>
-                    </div>
-                    {/* Right: Tip */}
-                    <div className="flex-1 text-center sm:text-left">
-                      <p className="text-xs leading-relaxed" style={{ color: colors.textSecondary }}>Tip: Remove your name and address before uploading. It does not affect the analysis.</p>
-                    </div>
-                  </div>
-                  {/* Disclaimer */}
-                  <p className="text-center mt-2 px-2" style={{ fontSize: '10px', color: colors.textSecondary, opacity: 0.7, lineHeight: '1.4' }}>
+                <div className="mb-4 flex flex-col items-center text-center">
+                  <img src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/740ab03b9_pdpa-alignment-badge.png" alt="PDPA Alignment Badge" style={{ height: '120px', width: 'auto' }} />
+                  <p className="mt-2 px-4 max-w-sm" style={{ fontSize: '10px', color: colors.textSecondary, opacity: 0.7, lineHeight: '1.5' }}>
                     This badge represents Lease Shield's internal privacy and data-protection measures. It is not a government certification, independent legal certification, or third-party endorsement.
                   </p>
                 </div>
@@ -2262,10 +2248,14 @@ function UploadScanPageContent() {
                    </button>
                   </div>
                   </div>
-              </>
-            )}
-          </div>
-        </Card>
+                  {/* Redaction tip */}
+                  <p className="mt-3 text-center px-4" style={{ fontSize: '11px', color: colors.textSecondary }}>
+                   Tip: Remove your name and address before uploading. It does not affect the analysis.
+                  </p>
+                  </>
+                  )}
+                  </div>
+                  </Card>
 
         {/* All Leases List - WITH SWIPE */}
         {leases.length > 0 && (
