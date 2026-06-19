@@ -333,28 +333,35 @@ Deno.serve(async (req) => {
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const file = new File([blob], `letter_pack_${caseId}.html`, { type: 'text/html' });
 
-    // Upload to storage
-    const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+    // Upload to PRIVATE storage
+    const { file_uri } = await base44.asServiceRole.integrations.Core.UploadPrivateFile({ file });
 
-    console.log('Letter pack compiled:', file_url);
+    console.log('Letter pack compiled (private):', file_uri);
 
-    // Update case with pack URL
+    // Immediate-use signed URL (short expiry) for the caller to open now
+    const { signed_url } = await base44.asServiceRole.integrations.Core.CreateFileSignedUrl({
+      file_uri,
+      expires_in: 600
+    });
+
+    // Update case with private pack URI
     const timeline = caseData.timeline || [];
     timeline.push({
       timestamp: new Date().toISOString(),
       event: 'Letter pack compiled',
       actor: user?.email || 'system',
-      meta: { pack_url: file_url, letters_count: letters.length }
+      meta: { letters_count: letters.length }
     });
 
     await base44.asServiceRole.entities.Case.update(caseId, {
-      letter_pack_url: file_url,
+      letter_pack_uri: file_uri,
       timeline
     });
 
     return Response.json({
       success: true,
-      pack_url: file_url,
+      pack_uri: file_uri,
+      pack_url: signed_url,
       letters_included: letters.length
     });
 

@@ -121,17 +121,17 @@ Deno.serve(async (req) => {
     const htmlBlob = new Blob([htmlContent], { type: 'text/html; charset=utf-8' });
     const htmlFile = new File([htmlBlob], `${baseName}.html`, { type: 'text/html' });
 
-    const { file_url: htmlUrl } = await base44.integrations.Core.UploadFile({ file: htmlFile });
+    const { file_uri: htmlUri } = await base44.integrations.Core.UploadPrivateFile({ file: htmlFile });
 
     const docBlob = new Blob([htmlContent], { type: 'application/msword; charset=utf-8' });
     const docFile = new File([docBlob], `${baseName}.doc`, { type: 'application/msword' });
 
-    const { file_url: docUrl } = await base44.integrations.Core.UploadFile({ file: docFile });
+    const { file_uri: docUri } = await base44.integrations.Core.UploadPrivateFile({ file: docFile });
 
-    // Create document entry
+    // Create document entry (private uri; html_content still rendered inline by viewer)
     const docEntry = await base44.entities.Document.create({
       type: 'letter',
-      file_url: docUrl,
+      file_uri: docUri,
       label: `${letterConfig.name_en} / ${letterConfig.name_th}`,
       html_content: htmlContent
     });
@@ -154,15 +154,15 @@ Deno.serve(async (req) => {
 
           const existingLetters = existingCase.letters || {};
 
-          existingLetters[`${subject}_url`] = docUrl;
-          existingLetters[`${subject}_html_url`] = htmlUrl;
+          existingLetters[`${subject}_uri`] = docUri;
+          existingLetters[`${subject}_html_uri`] = htmlUri;
 
           const updatedTimeline = existingCase.timeline || [];
           updatedTimeline.push({
             timestamp: new Date().toISOString(),
             event: `letter_saved_${subject}`,
             actor: user.email,
-            meta: { html_url: htmlUrl, doc_url: docUrl, document_id: docEntry.id, reviewed: true }
+            meta: { document_id: docEntry.id, reviewed: true }
           });
 
           await base44.asServiceRole.entities.Case.update(caseId, {
@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
 
     return Response.json({
       ok: true,
-      urls: { html: htmlUrl, doc: docUrl },
+      uris: { html: htmlUri, doc: docUri },
       docId: docEntry.id,
       case: caseId ? {
         id: caseId,

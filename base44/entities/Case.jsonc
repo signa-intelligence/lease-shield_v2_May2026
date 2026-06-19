@@ -39,6 +39,7 @@
         "under_review",
         "ready_drafts",
         "client_review",
+        "ready_for_review",
         "awaiting_landlord",
         "in_progress",
         "resolved",
@@ -193,15 +194,67 @@
       "properties": {
         "deposit_url": {
           "type": "string",
-          "description": "URL to deposit return letter"
+          "description": "Legacy/public URL to deposit return letter (fallback)"
         },
         "damages_url": {
           "type": "string",
-          "description": "URL to damages assessment letter"
+          "description": "Legacy/public URL to damages letter (fallback)"
         },
         "early_termination_url": {
           "type": "string",
-          "description": "URL to early termination letter"
+          "description": "Legacy/public URL to early termination letter (fallback)"
+        },
+        "lease_negotiation_url": {
+          "type": "string",
+          "description": "Legacy/public URL to lease negotiation letter (fallback)"
+        },
+        "deposit_uri": {
+          "type": "string",
+          "description": "Private URI for deposit letter (preferred)"
+        },
+        "damages_uri": {
+          "type": "string",
+          "description": "Private URI for damages letter (preferred)"
+        },
+        "early_termination_uri": {
+          "type": "string",
+          "description": "Private URI for early termination letter (preferred)"
+        },
+        "lease_negotiation_uri": {
+          "type": "string",
+          "description": "Private URI for lease negotiation letter (preferred)"
+        },
+        "deposit_html_uri": {
+          "type": "string",
+          "description": "Private URI for deposit letter HTML preview (preferred)"
+        },
+        "damages_html_uri": {
+          "type": "string",
+          "description": "Private URI for damages letter HTML preview (preferred)"
+        },
+        "early_termination_html_uri": {
+          "type": "string",
+          "description": "Private URI for early termination letter HTML preview (preferred)"
+        },
+        "lease_negotiation_html_uri": {
+          "type": "string",
+          "description": "Private URI for lease negotiation letter HTML preview (preferred)"
+        },
+        "deposit_html_url": {
+          "type": "string",
+          "description": "Legacy/public URL to deposit letter HTML (fallback)"
+        },
+        "damages_html_url": {
+          "type": "string",
+          "description": "Legacy/public URL to damages letter HTML (fallback)"
+        },
+        "early_termination_html_url": {
+          "type": "string",
+          "description": "Legacy/public URL to early termination letter HTML (fallback)"
+        },
+        "lease_negotiation_html_url": {
+          "type": "string",
+          "description": "Legacy/public URL to lease negotiation letter HTML (fallback)"
         },
         "v1_url": {
           "type": "string",
@@ -265,11 +318,15 @@
           "description": "Audit trail of last email sent"
         }
       },
-      "description": "Letter escalation versions, send dates, URLs, and email tracking"
+      "description": "Letter escalation versions, send dates, URLs/URIs, and email tracking"
     },
     "letter_pack_url": {
       "type": "string",
-      "description": "URL to compiled PDF pack of all letters"
+      "description": "Legacy/public URL to compiled letter pack (fallback)"
+    },
+    "letter_pack_uri": {
+      "type": "string",
+      "description": "Private URI for compiled letter pack (preferred)"
     },
     "timeline": {
       "type": "array",

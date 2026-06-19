@@ -177,13 +177,20 @@ Deno.serve(async (req) => {
       type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
     });
     
-    const { file_url: docxUrl } = await base44.integrations.Core.UploadFile({ file: docFile });
+    const { file_uri: docxUri } = await base44.integrations.Core.UploadPrivateFile({ file: docFile });
 
-    console.log(`✅ DOCX generated: ${fileName}`);
+    // Immediate-use signed URL so the caller can download right away (short expiry)
+    const { signed_url: docxUrl } = await base44.integrations.Core.CreateFileSignedUrl({
+      file_uri: docxUri,
+      expires_in: 600
+    });
+
+    console.log(`✅ DOCX generated (private): ${fileName}`);
     console.log(`📦 Languages: ${languagePack.allLanguages.join(', ')}`);
 
     return Response.json({
       ok: true,
+      docx_uri: docxUri,
       docx_url: docxUrl,
       filename: fileName,
       languages: languagePack.allLanguages

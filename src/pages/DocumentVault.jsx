@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +15,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LetterPreview from "../components/shared/LetterPreview";
+import SignedMedia from "../components/documents/SignedMedia";
+import { resolveUrlNow } from "@/hooks/useSignedUrl";
 
 const DOC_TYPE_CONFIG = {
   lease: { label_en: 'Lease', label_th: 'สัญญาเช่า', icon: FileText, color: 'bg-blue-100 text-blue-800', bgColor: '#3B82F6' },
@@ -152,10 +153,10 @@ export default function DocumentVault() {
     setUploading(true);
     try {
       for (const file of selectedFiles) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_uri } = await base44.integrations.Core.UploadPrivateFile({ file });
         await createDocumentMutation.mutateAsync({
           type: uploadType,
-          file_url,
+          file_uri,
           label: customLabel || file.name
         });
       }
@@ -259,27 +260,46 @@ export default function DocumentVault() {
     }
   };
 
-  const handleView = (doc) => {
-    // For letter type with html_content, use LetterPreview component
+  const handleView = async (doc) => {
+    // For letter type with html_content, use LetterPreview component (renders inline)
     if (doc.type === 'letter' && doc.html_content) {
       setViewingDoc(doc);
-    } else {
-      // For all other document types, open in new tab
-      window.open(doc.file_url, '_blank', 'noopener,noreferrer');
+      return;
     }
+    // Photo/video render inside the view dialog (SignedMedia handles signing)
+    if (doc.type === 'photo' || doc.type === 'video') {
+      setViewingDoc(doc);
+      return;
+    }
+    // Other types: resolve a signed URL and open in a new tab
+    const url = await resolveUrlNow({
+      entity: 'Document', id: doc.id, field: 'file_uri',
+      fallbackUrl: doc.file_url, hasUri: !!doc.file_uri
+    });
+    if (!url) {
+      alert(language === 'th' ? 'ไม่พบไฟล์ที่จะเปิด' : 'No file found to open.');
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const handleDownload = (doc) => {
-    if (!doc.file_url) {
-      console.error("Document has no file_url to download:", doc);
+  const handleDownload = async (doc) => {
+    if (!doc.file_uri && !doc.file_url) {
+      console.error("Document has no file to download:", doc);
       alert(language === 'th' ? 'ไม่พบไฟล์ที่จะดาวน์โหลด' : 'No file found to download.');
       return;
     }
-
+    const url = await resolveUrlNow({
+      entity: 'Document', id: doc.id, field: 'file_uri',
+      fallbackUrl: doc.file_url, hasUri: !!doc.file_uri
+    });
+    if (!url) {
+      alert(language === 'th' ? 'ไม่พบไฟล์ที่จะดาวน์โหลด' : 'No file found to download.');
+      return;
+    }
     const link = document.createElement('a');
-    link.href = doc.file_url;
-    const filename = doc.file_url.substring(doc.file_url.lastIndexOf('/') + 1);
-    link.download = doc.label || filename || 'document';
+    link.href = url;
+    link.download = doc.label || 'document';
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();
@@ -360,10 +380,17 @@ export default function DocumentVault() {
       // Format final email with footer
       body = `${letterContent}\n\n---\n\n${language === 'th' ? 'สร้างโดย' : 'Created by'} Lease Shield - https://www.leaseshield.asia`;
     } else {
-      // For other document types, keep existing format
+      // For other document types: do NOT embed a file link.
+      // Files are now private and served via short-lived signed URLs that would
+      // expire before the recipient opens them. Instead, tell them to log in.
+      const appUrl = 'https://app.leaseshield.asia';
       body = language === 'th'
-        ? `เอกสาร: ${docLabel}\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}\n\n${doc.file_url}`
-        : `Document: ${docLabel}\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}\n\n${doc.file_url}`;
+        ? `เอกสาร: ${docLabel}\nวันที่: ${format(new Date(doc.created_date), 'dd/MM/yyyy')}\n\n` +
+          `ไฟล์นี้ถูกจัดเก็บอย่างปลอดภัยใน Lease Shield เพื่อความเป็นส่วนตัว ` +
+          `กรุณาเข้าสู่ระบบเพื่อดูหรือดาวน์โหลด:\n${appUrl}`
+        : `Document: ${docLabel}\nDate: ${format(new Date(doc.created_date), 'MMM d, yyyy')}\n\n` +
+          `For your privacy, this file is stored securely in Lease Shield. ` +
+          `Please log in to view or download it:\n${appUrl}`;
     }
     
     const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -556,23 +583,19 @@ export default function DocumentVault() {
                 </DialogTitle>
               </DialogHeader>
               <div className="mt-4 overflow-auto max-h-[70vh]">
-                {viewingDoc?.file_url ? (
-                  <>
-                    {viewingDoc?.type === 'photo' && (
-                      <img src={viewingDoc.file_url} alt={viewingDoc.label} className="w-full h-auto rounded-lg object-contain max-h-[60vh]" />
-                    )}
-                    {viewingDoc?.type === 'video' && (
-                      <video src={viewingDoc.file_url} controls className="w-full h-auto rounded-lg max-h-[60vh]" />
-                    )}
-                    {(!['photo', 'video', 'letter'].includes(viewingDoc?.type)) && (
-                      <iframe
-                        src={viewingDoc.file_url}
-                        className="w-full h-[60vh] rounded-lg border"
-                        style={{ borderColor: colors.borderColor }}
-                        title={viewingDoc.label}
-                      />
-                    )}
-                  </>
+                {viewingDoc && (viewingDoc.file_uri || viewingDoc.file_url) ? (
+                  <SignedMedia
+                    doc={viewingDoc}
+                    colors={colors}
+                    className={
+                      viewingDoc.type === 'photo'
+                        ? 'w-full h-auto rounded-lg object-contain max-h-[60vh]'
+                        : viewingDoc.type === 'video'
+                        ? 'w-full h-auto rounded-lg max-h-[60vh]'
+                        : 'w-full h-[60vh] rounded-lg border'
+                    }
+                    style={(!['photo', 'video', 'letter'].includes(viewingDoc?.type)) ? { borderColor: colors.borderColor } : undefined}
+                  />
                 ) : (
                   <p className="text-center" style={{ color: colors.textSecondary }}>{language === 'th' ? 'ไม่พบเนื้อหาเอกสาร' : 'No document content found.'}</p>
                 )}
@@ -900,11 +923,11 @@ export default function DocumentVault() {
                               {language === 'th' ? config.label_th : config.label_en}
                             </Badge>
                           </div>
-                          {doc.type === 'photo' && doc.file_url && (
+                          {doc.type === 'photo' && (doc.file_uri || doc.file_url) && (
                             <div className="mb-3">
-                              <img
-                                src={doc.file_url}
-                                alt={doc.label}
+                              <SignedMedia
+                                doc={doc}
+                                colors={colors}
                                 className="w-full h-32 object-cover rounded-lg"
                                 style={{ border: `1px solid ${colors.borderColor}` }}
                               />

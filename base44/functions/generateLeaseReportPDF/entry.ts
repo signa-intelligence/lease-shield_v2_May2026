@@ -862,9 +862,14 @@ Deno.serve(async (req) => {
     const filename = `Lease_Shield_Report_${propertyIdentifier}_${today}.pdf`;
     
     const pdfFile = new File([pdfBytes], filename, { type: "application/pdf" });
-    const upload = await svc.integrations.Core.UploadFile({ file: pdfFile });
+    const upload = await svc.integrations.Core.UploadPrivateFile({ file: pdfFile });
+    // Immediate-use signed URL (short expiry); pdf_uri is the durable private reference
+    const { signed_url: pdfUrl } = await svc.integrations.Core.CreateFileSignedUrl({
+      file_uri: upload.file_uri,
+      expires_in: 600
+    });
 
-    return json(200, debug ? { ok: true, pdf_url: upload.file_url, filename, correlationId, debug_trace: debugTrace } : { success: true, pdf_url: upload.file_url, filename, correlationId }, headers);
+    return json(200, debug ? { ok: true, pdf_uri: upload.file_uri, pdf_url: pdfUrl, filename, correlationId, debug_trace: debugTrace } : { success: true, pdf_uri: upload.file_uri, pdf_url: pdfUrl, filename, correlationId }, headers);
   } catch (e) {
     console.error("[PDF_ERROR]", correlationId, e?.message || e, e?.stack);
     return json(500, { error: "PDF_FAILED", message: String(e?.message || "PDF generation failed"), correlationId }, headers);

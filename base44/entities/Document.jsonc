@@ -16,7 +16,11 @@
     },
     "file_url": {
       "type": "string",
-      "description": "URL to the document or data URL"
+      "description": "Legacy/public URL to the document (fallback for pre-migration records)"
+    },
+    "file_uri": {
+      "type": "string",
+      "description": "Private storage URI (preferred). Served via short-lived signed URLs."
     },
     "label": {
       "type": "string",
@@ -37,8 +41,7 @@
     }
   },
   "required": [
-    "type",
-    "file_url"
+    "type"
   ],
   "rls": {
     "create": true,

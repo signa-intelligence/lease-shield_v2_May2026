@@ -34,6 +34,7 @@ import PageHeader from "../components/shared/PageHeader";
 import SkeletonLoader from "../components/shared/SkeletonLoader";
 import EmptyState from "../components/shared/EmptyState";
 import CaseMessages from "../components/cases/CaseMessages";
+import { resolveUrlNow } from "@/hooks/useSignedUrl";
 
 const STATUS_CONFIG = {
   intake: { label: 'Intake', color: 'bg-slate-100 text-slate-800', icon: Clock },
@@ -132,32 +133,41 @@ function CaseDetailsContent() {
     }
   };
 
-  // New function to handle Word document downloads
-  const handleDownloadWord = (subject) => {
+  // Handle Word document downloads — resolve private uri to a signed URL, fallback to legacy url
+  const handleDownloadWord = async (subject) => {
     haptic.light();
-    const urlKey = `${subject}_url`;
-    const url = caseItem?.letters?.[urlKey];
+    const L = caseItem?.letters || {};
+    const hasUri = !!L[`${subject}_uri`];
+    const fallbackUrl = L[`${subject}_url`];
 
-    if (!url) {
+    if (!hasUri && !fallbackUrl) {
       toast.error(language === 'th'
         ? `ไม่พบไฟล์ Word สำหรับ ${subject}`
         : `No Word file found for ${subject}`);
       return;
     }
 
+    const url = await resolveUrlNow({
+      entity: 'Case', id: caseItem.id, field: `letters.${subject}_uri`,
+      fallbackUrl, hasUri
+    });
+    if (!url) {
+      toast.error(language === 'th' ? 'ไม่สามารถเปิดไฟล์ได้' : 'Could not open file');
+      return;
+    }
     window.open(url, "_blank", "noopener,noreferrer");
     toast.success(language === 'th' ? 'เริ่มดาวน์โหลดแล้ว' : 'Download started');
   };
 
   const handlePreviewHtml = (subject) => {
     haptic.light();
-    const htmlKey = `${subject}_html_url`;
-    const docKey = `${subject}_url`;
+    const L = caseItem?.letters || {};
+    const hasHtmlUri = !!L[`${subject}_html_uri`];
+    const hasDocUri = !!L[`${subject}_uri`];
+    const htmlUrl = L[`${subject}_html_url`];
+    const docUrl = L[`${subject}_url`];
 
-    const htmlUrl = caseItem?.letters?.[htmlKey];
-    const docUrl = caseItem?.letters?.[docKey];
-
-    if (!htmlUrl && !docUrl) {
+    if (!hasHtmlUri && !hasDocUri && !htmlUrl && !docUrl) {
       toast.error(language === 'th'
         ? `ไม่พบไฟล์สำหรับ ${subject}`
         : `No file found for ${subject}`);
@@ -165,9 +175,11 @@ function CaseDetailsContent() {
     }
 
     setPreviewLetter({
-      htmlUrl: htmlUrl,
-      docUrl: docUrl,
-      subject: subject
+      htmlUrl,
+      docUrl,
+      htmlResolve: { entity: 'Case', id: caseItem.id, field: `letters.${subject}_html_uri`, hasUri: hasHtmlUri },
+      docResolve: { entity: 'Case', id: caseItem.id, field: `letters.${subject}_uri`, hasUri: hasDocUri },
+      subject
     });
   };
 

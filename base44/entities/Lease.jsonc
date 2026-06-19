@@ -9,14 +9,25 @@
     },
     "file_url": {
       "type": "string",
-      "description": "URL to the uploaded lease document (primary/first file)"
+      "description": "Legacy/public URL to the primary lease file (fallback for pre-migration records)"
     },
     "file_urls": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "description": "URLs to all uploaded lease pages/files"
+      "description": "Legacy/public URLs to all lease pages (fallback)"
+    },
+    "file_uri": {
+      "type": "string",
+      "description": "Private storage URI for the primary lease file (preferred)"
+    },
+    "file_uris": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Private storage URIs for all lease pages, order-aligned 1:1 with file_urls (preferred)"
     },
     "original_filename": {
       "type": "string",
@@ -120,8 +131,7 @@
     }
   },
   "required": [
-    "owner_email",
-    "file_url"
+    "owner_email"
   ],
   "rls": {
     "create": true,

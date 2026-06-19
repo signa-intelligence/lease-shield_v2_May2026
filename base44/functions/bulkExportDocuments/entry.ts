@@ -31,21 +31,33 @@ Deno.serve(async (req) => {
     const zip = new JSZip();
     const folder = zip.folder('LeaseShield_Documents');
 
-    // Download and add each document to ZIP
+    // Download and add each document to ZIP.
+    // Private files (file_uri) are resolved to a short-lived signed URL first;
+    // legacy public file_url is used as a fallback for pre-migration records.
     for (let i = 0; i < selectedDocs.length; i++) {
       const doc = selectedDocs[i];
-      
+
       try {
-        const fileResponse = await fetch(doc.file_url);
+        let downloadUrl = doc.file_url;
+        if (doc.file_uri) {
+          const { signed_url } = await base44.integrations.Core.CreateFileSignedUrl({
+            file_uri: doc.file_uri,
+            expires_in: 600
+          });
+          downloadUrl = signed_url;
+        }
+        if (!downloadUrl) continue;
+
+        const fileResponse = await fetch(downloadUrl);
         if (!fileResponse.ok) continue;
-        
+
         const fileBlob = await fileResponse.blob();
         const arrayBuffer = await fileBlob.arrayBuffer();
-        
-        // Generate filename
-        const extension = doc.file_url.split('.').pop().split('?')[0];
+
+        // Generate filename (strip query string from extension detection)
+        const extension = (downloadUrl.split('?')[0].split('.').pop() || 'bin');
         const filename = `${i + 1}_${doc.label || doc.type}_${doc.id.slice(0, 8)}.${extension}`;
-        
+
         folder.file(filename, arrayBuffer);
       } catch (err) {
         console.error(`Failed to add document ${doc.id}:`, err);

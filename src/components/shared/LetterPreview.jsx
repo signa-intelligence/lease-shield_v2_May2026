@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Download, X, Loader2, ExternalLink } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { resolveUrlNow } from "@/hooks/useSignedUrl";
 
-export default function LetterPreview({ open, onOpenChange, htmlUrl, htmlContent, docUrl, title }) {
+// docResolve / htmlResolve (optional): { entity, id, field, index } descriptors used to
+// fetch a short-lived signed URL on demand for private files. Falls back to docUrl/htmlUrl.
+export default function LetterPreview({ open, onOpenChange, htmlUrl, htmlContent, docUrl, title, docResolve, htmlResolve }) {
   const [fetchedHtmlContent, setFetchedHtmlContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -80,16 +83,20 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, htmlContent
       return;
     }
 
-    // Otherwise fetch from htmlUrl
-    if (open && htmlUrl) {
+    // Otherwise fetch from a signed URL (private) or htmlUrl (legacy)
+    if (open && (htmlResolve?.hasUri || htmlUrl)) {
       setLoading(true);
       setError(null);
-      
-      fetch(htmlUrl)
-        .then(res => {
-          if (!res.ok) throw new Error('Failed to fetch');
-          return res.text();
-        })
+
+      (async () => {
+        const target = htmlResolve?.hasUri
+          ? await resolveUrlNow({ ...htmlResolve, fallbackUrl: htmlUrl })
+          : htmlUrl;
+        if (!target) throw new Error('Failed to resolve');
+        const res = await fetch(target);
+        if (!res.ok) throw new Error('Failed to fetch');
+        return res.text();
+      })()
         .then(html => {
           setFetchedHtmlContent(html);
           setLoading(false);
@@ -100,18 +107,20 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, htmlContent
           setLoading(false);
         });
     }
-  }, [open, htmlUrl, htmlContent, strings.error]);
+  }, [open, htmlUrl, htmlContent, htmlResolve, strings.error]);
 
-  const handleDownload = () => {
-    if (docUrl) {
-      window.open(docUrl, '_blank', 'noopener,noreferrer');
-    }
+  const handleDownload = async () => {
+    const target = docResolve?.hasUri
+      ? await resolveUrlNow({ ...docResolve, fallbackUrl: docUrl })
+      : docUrl;
+    if (target) window.open(target, '_blank', 'noopener,noreferrer');
   };
 
-  const handleOpenNew = () => {
-    if (htmlUrl) {
-      window.open(htmlUrl, '_blank', 'noopener,noreferrer');
-    }
+  const handleOpenNew = async () => {
+    const target = htmlResolve?.hasUri
+      ? await resolveUrlNow({ ...htmlResolve, fallbackUrl: htmlUrl })
+      : htmlUrl;
+    if (target) window.open(target, '_blank', 'noopener,noreferrer');
   };
 
   const displayContent = htmlContent || fetchedHtmlContent;
@@ -132,7 +141,7 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, htmlContent
             {title || (language === 'th' ? 'ตัวอย่างจดหมาย' : language === 'zh' ? '信件预览' : language === 'ja' ? 'レタープレビュー' : language === 'ko' ? '편지 미리보기' : 'Letter Preview')}
           </DialogTitle>
           <div className="flex items-center gap-2">
-            {htmlUrl && (
+            {(htmlUrl || htmlResolve?.hasUri) && (
               <Button
                 size="sm"
                 variant="outline"
@@ -143,7 +152,7 @@ export default function LetterPreview({ open, onOpenChange, htmlUrl, htmlContent
                 <span className="hidden sm:inline">{strings.openNew}</span>
               </Button>
             )}
-            {docUrl && (
+            {(docUrl || docResolve?.hasUri) && (
               <Button
                 size="sm"
                 onClick={handleDownload}
