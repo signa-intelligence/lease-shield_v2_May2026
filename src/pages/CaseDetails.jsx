@@ -183,6 +183,19 @@ function CaseDetailsContent() {
     });
   };
 
+  // Resolve a private uri (with legacy url fallback) and open it.
+  // field is a top-level Case field (e.g. 'letter_pack_uri'); hasUri checks that field.
+  const openResolved = async (field, fallbackUrl) => {
+    haptic.light();
+    const hasUri = !!caseItem?.[field];
+    const url = await resolveUrlNow({ entity: 'Case', id: caseItem.id, field, fallbackUrl, hasUri });
+    if (!url) {
+      toast.error(language === 'th' ? 'ไม่สามารถเปิดไฟล์ได้' : 'Could not open file');
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   const getLetterTitle = (subject) => {
     const titles = {
       lease_negotiation: strings.leaseNegotiationRequest,
@@ -525,6 +538,8 @@ function CaseDetailsContent() {
             }}
             htmlUrl={previewLetter.htmlUrl}
             docUrl={previewLetter.docUrl}
+            htmlResolve={previewLetter.htmlResolve}
+            docResolve={previewLetter.docResolve}
             title={getLetterTitle(previewLetter.subject)}
           />
         )}
@@ -752,7 +767,7 @@ function CaseDetailsContent() {
         </Card>
 
         {/* Letters Section */}
-        {caseItem.letters && (caseItem.letters.v1_url || caseItem.letters.v2_url || caseItem.letters.v3_url || caseItem.letter_pack_url || caseItem.letters.deposit_url || caseItem.letters.damages_url || caseItem.letters.early_termination_url || caseItem.letters.lease_negotiation_url) && (
+        {((caseItem.letters && (caseItem.letters.v1_url || caseItem.letters.v2_url || caseItem.letters.v3_url || caseItem.letters.deposit_url || caseItem.letters.damages_url || caseItem.letters.early_termination_url || caseItem.letters.lease_negotiation_url || caseItem.letters.deposit_uri || caseItem.letters.damages_uri || caseItem.letters.early_termination_uri || caseItem.letters.lease_negotiation_uri)) || caseItem.letter_pack_url || caseItem.letter_pack_uri) && (
           <Card
             className="mb-6 border-none shadow-lg"
             style={{
@@ -767,7 +782,7 @@ function CaseDetailsContent() {
                   {strings.generatedLetters}
                 </CardTitle>
                 {/* Letter Pack Compile Button */}
-                {!caseItem.letter_pack_url && (
+                {!caseItem.letter_pack_url && !caseItem.letter_pack_uri && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -792,7 +807,7 @@ function CaseDetailsContent() {
             </CardHeader>
             <CardContent className="p-4 md:p-6">
               {/* Letter Pack - Full Compilation */}
-              {caseItem.letter_pack_url && (
+              {(caseItem.letter_pack_url || caseItem.letter_pack_uri) && (
                 <div className="mb-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -808,12 +823,14 @@ function CaseDetailsContent() {
                         </p>
                       </div>
                     </div>
-                    <a href={caseItem.letter_pack_url} target="_blank" rel="noopener noreferrer">
-                      <Button size="sm" className="ls-cta-primary">
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        {strings.download}
-                      </Button>
-                    </a>
+                    <Button
+                      size="sm"
+                      className="ls-cta-primary"
+                      onClick={() => openResolved('letter_pack_uri', caseItem.letter_pack_url)}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      {strings.download}
+                    </Button>
                   </div>
                 </div>
               )}
@@ -821,7 +838,7 @@ function CaseDetailsContent() {
               {/* Individual Letters - Phase 1 (Subject-based) */}
               <div className="space-y-3">
                 {/* Lease Negotiation Letter - PRE-SIGNING */}
-                {caseItem.letters.lease_negotiation_url && (
+                {(caseItem.letters.lease_negotiation_url || caseItem.letters.lease_negotiation_uri) && (
                   <div className="flex items-center justify-between p-3 rounded-lg border-2" style={{
                     backgroundColor: isDarkMode ? '#1F2937' : '#FEF3C7',
                     borderColor: '#F59E0B',
@@ -876,7 +893,7 @@ function CaseDetailsContent() {
                 )}
 
                 {/* Deposit Letter */}
-                {caseItem.letters.deposit_url && (
+                {(caseItem.letters.deposit_url || caseItem.letters.deposit_uri) && (
                   <div className="flex items-center justify-between p-3 rounded-lg" style={{
                     backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
                     border: `1px solid ${colors.borderColor}`
@@ -927,7 +944,7 @@ function CaseDetailsContent() {
                 )}
 
                 {/* Damages Letter */}
-                {caseItem.letters.damages_url && (
+                {(caseItem.letters.damages_url || caseItem.letters.damages_uri) && (
                   <div className="flex items-center justify-between p-3 rounded-lg" style={{
                     backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
                     border: `1px solid ${colors.borderColor}`
@@ -978,7 +995,7 @@ function CaseDetailsContent() {
                 )}
 
                 {/* Early Termination Letter */}
-                {caseItem.letters.early_termination_url && (
+                {(caseItem.letters.early_termination_url || caseItem.letters.early_termination_uri) && (
                   <div className="flex items-center justify-between p-3 rounded-lg" style={{
                     backgroundColor: isDarkMode ? '#353A3D' : '#F8FAFC',
                     border: `1px solid ${colors.borderColor}`
