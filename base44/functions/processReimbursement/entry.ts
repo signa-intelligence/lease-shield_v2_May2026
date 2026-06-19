@@ -86,6 +86,10 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'mark_paid') {
+      // OWNERSHIP CHECK: caller must own the maintenance request (or be admin)
+      if (maintenance.created_by !== user.email && user.role !== 'admin') {
+        return Response.json({ error: 'Forbidden: not your request' }, { status: 403 });
+      }
       if (maintenance.reimbursement_status !== 'approved') {
         return Response.json({ error: 'Claim must be approved before marking as paid' }, { status: 400 });
       }

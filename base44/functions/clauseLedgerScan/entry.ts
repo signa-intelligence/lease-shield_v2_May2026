@@ -70,6 +70,17 @@ Deno.serve(async (req) => {
     if (!fileUrls || fileUrls.length === 0) {
       return Response.json({ success: false, error: 'No file URLs provided' }, { status: 400 });
     }
+
+    // OWNERSHIP CHECK: if updating an existing scan, caller must own it (or be admin)
+    if (scanId) {
+      const role = (user.role || user.access_level || '').toLowerCase();
+      const isAdminLike = ['admin', 'super_admin', 'va'].includes(role);
+      const ownArr = await base44.asServiceRole.entities.LeaseScan.filter({ id: scanId });
+      const ownScan = ownArr?.[0];
+      if (ownScan && !isAdminLike && ownScan.owner_email !== user.email && ownScan.created_by !== user.email) {
+        return Response.json({ success: false, error: 'Forbidden: not your scan' }, { status: 403 });
+      }
+    }
     
     log('START', { leaseId, scanId, fileCount: Array.isArray(fileUrls) ? fileUrls.length : 1 });
     

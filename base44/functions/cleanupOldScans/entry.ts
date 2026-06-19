@@ -2,7 +2,20 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
+    // INTERNAL-ONLY: cron/maintenance endpoint. Require shared secret OR admin.
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const providedSecret = req.headers.get('x-internal-secret');
     const base44 = createClientFromRequest(req);
+
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      // Not an internal call — fall back to requiring an authenticated admin
+      const user = await base44.auth.me().catch(() => null);
+      const role = (user?.role || user?.access_level || '').toLowerCase();
+      if (!user || !['admin', 'super_admin'].includes(role)) {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
+
     const svc = base44.asServiceRole || base44;
     
     // Get ALL scans

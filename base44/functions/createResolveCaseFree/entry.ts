@@ -37,6 +37,14 @@ Deno.serve(async (req) => {
 
     // Step 2: Update case status to intake and mark as paid via free entitlement
     const existingCase = (await base44.entities.Case.filter({ id: caseId }))[0];
+
+    // OWNERSHIP CHECK: caller must own the case
+    if (!existingCase) {
+      return Response.json({ success: false, error: 'Case not found' }, { status: 404 });
+    }
+    if (existingCase.user_email !== user.email && existingCase.created_by !== user.email) {
+      return Response.json({ success: false, error: 'Forbidden: not your case' }, { status: 403 });
+    }
     
     console.log('📎 [FREE_RESOLVE] Case evidence before update:', {
       evidence_count: existingCase?.evidence?.length || 0,

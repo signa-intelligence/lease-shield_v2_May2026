@@ -26,6 +26,13 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const args = await req.json();
 
+    // INTERNAL-ONLY: invoked by ops/server flows. Require shared secret (header or body).
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const providedSecret = req.headers.get('x-internal-secret') || args._internalSecret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ ok: false, error: 'Forbidden: internal endpoint' }, { status: 403 });
+    }
+
     // Validate inputs
     if (!args.caseId) {
       return Response.json({ 

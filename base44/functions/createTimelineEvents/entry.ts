@@ -37,6 +37,23 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    // OWNERSHIP CHECK: caller must own the source Case/MaintenanceRequest (or be admin)
+    const role = (user.role || user.access_level || '').toLowerCase();
+    const isAdminLike = ['admin', 'super_admin', 'va'].includes(role);
+    if (!isAdminLike) {
+      if (entityType === 'case') {
+        const c = (await base44.asServiceRole.entities.Case.filter({ id: entityId }))?.[0];
+        if (c && c.user_email !== user.email && c.created_by !== user.email) {
+          return Response.json({ error: 'Forbidden: not your case' }, { status: 403 });
+        }
+      } else if (entityType === 'maintenance') {
+        const m = (await base44.asServiceRole.entities.MaintenanceRequest.filter({ id: entityId }))?.[0];
+        if (m && m.created_by !== user.email) {
+          return Response.json({ error: 'Forbidden: not your request' }, { status: 403 });
+        }
+      }
+    }
+
     // Check if timeline events already exist (idempotency)
     const existingEvents = await base44.entities.TimelineEvent.filter({
       source_id: entityId

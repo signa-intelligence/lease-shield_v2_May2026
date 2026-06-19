@@ -286,9 +286,9 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Validate user authentication
+    // Validate user authentication (no URL-param bypass)
     const user = await base44.auth.me();
-    if (!user && !req.url.includes('service_role=true')) {
+    if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -302,11 +302,18 @@ Deno.serve(async (req) => {
     console.log('Compiling letter pack for case:', caseId);
 
     // Fetch the case
-    const cases = await base44.asServiceRole.entities.Case.list();
-    const caseData = cases.find(c => c.id === caseId);
+    const caseArr = await base44.asServiceRole.entities.Case.filter({ id: caseId });
+    const caseData = caseArr?.[0];
 
     if (!caseData) {
       return Response.json({ error: 'Case not found' }, { status: 404 });
+    }
+
+    // OWNERSHIP CHECK: caller must own the case (or be admin/ops)
+    const role = (user.role || user.access_level || '').toLowerCase();
+    const isAdminLike = ['admin', 'super_admin', 'va'].includes(role);
+    if (!isAdminLike && caseData.user_email !== user.email && caseData.created_by !== user.email) {
+      return Response.json({ error: 'Forbidden: not your case' }, { status: 403 });
     }
 
     // Check if letters data exists (from generateLetters function)

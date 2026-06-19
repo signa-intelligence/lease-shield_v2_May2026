@@ -37,11 +37,17 @@ async function sendViaResend({ to, subject, html, fromName = 'LeaseShield Ops' }
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    
-    // Skip user auth check — this function is invoked via asServiceRole from webhooks
-    // The caller (omiseWebhook/stripeWebhook) already validated the request
 
-    const { caseNumber, tenantName, tenantEmail, landlordName, propertyAddress, disputeAmount, planTier, caseId, paymentType } = await req.json();
+    const body = await req.json();
+
+    // INTERNAL-ONLY: invoked from webhooks. Require shared secret (header or body).
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const providedSecret = req.headers.get('x-internal-secret') || body._internalSecret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ success: false, error: 'Forbidden: internal endpoint' }, { status: 403 });
+    }
+
+    const { caseNumber, tenantName, tenantEmail, landlordName, propertyAddress, disputeAmount, planTier, caseId, paymentType } = body;
 
     // Detect Fast Track vs Standard from case number position 2
     const caseTrack = caseNumber ? caseNumber.charAt(1) : 'S';

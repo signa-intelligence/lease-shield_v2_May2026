@@ -27,11 +27,17 @@ async function sendViaResend({ to, subject, html, fromName = 'LeaseShield' }) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    
-    // Skip user auth check — this function is invoked via asServiceRole from webhooks
-    // The caller (omiseWebhook/stripeWebhook) already validated the request
 
-    const { caseNumber, userName, userEmail, disputeAmount, paymentType, language } = await req.json();
+    const body = await req.json();
+
+    // INTERNAL-ONLY: invoked from webhooks. Require shared secret (header or body).
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const providedSecret = req.headers.get('x-internal-secret') || body._internalSecret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden: internal endpoint' }, { status: 403 });
+    }
+
+    const { caseNumber, userName, userEmail, disputeAmount, paymentType, language } = body;
 
     if (!caseNumber || !userEmail) {
       return Response.json({ error: 'caseNumber and userEmail are required' }, { status: 400 });

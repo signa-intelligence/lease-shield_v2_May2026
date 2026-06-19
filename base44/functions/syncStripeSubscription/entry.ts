@@ -18,7 +18,10 @@ Deno.serve(async (req) => {
     }
 
     const { userId } = await req.json();
-    const targetUserId = userId || user.id;
+    // SECURITY: only admins may sync another user; everyone else is forced to self
+    const role = (user.role || user.access_level || '').toLowerCase();
+    const isAdmin = ['admin', 'super_admin'].includes(role);
+    const targetUserId = (isAdmin && userId) ? userId : user.id;
 
     console.log('🔄 [SYNC_STRIPE] Starting sync for user:', targetUserId);
 

@@ -261,7 +261,9 @@ Deno.serve(async (req) => {
             const updatedCase = await base44.asServiceRole.entities.Case.get(caseId);
             const allUsers = await base44.asServiceRole.entities.User.list();
             const caseUser = allUsers.find(u => u.email === updatedCase.user_email);
-            await base44.asServiceRole.functions.invoke('notifyAdminNewCase', {
+            // Pass internal secret in body so notifyAdminNewCase accepts the call
+            await base44.functions.invoke('notifyAdminNewCase', {
+              _internalSecret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               caseNumber: updatedCase.case_number,
               tenantName: caseUser?.full_name || updatedCase.user_email,
               tenantEmail: updatedCase.user_email,

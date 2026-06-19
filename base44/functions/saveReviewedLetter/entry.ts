@@ -144,6 +144,14 @@ Deno.serve(async (req) => {
         const caseData = await base44.asServiceRole.entities.Case.filter({ id: caseId });
         if (caseData && caseData.length > 0) {
           const existingCase = caseData[0];
+
+          // OWNERSHIP CHECK: caller must own the case (or be admin/ops)
+          const role = (user.role || user.access_level || '').toLowerCase();
+          const isAdminLike = ['admin', 'super_admin', 'va'].includes(role);
+          if (!isAdminLike && existingCase.user_email !== user.email && existingCase.created_by !== user.email) {
+            return Response.json({ ok: false, error: 'Forbidden: not your case' }, { status: 403 });
+          }
+
           const existingLetters = existingCase.letters || {};
 
           existingLetters[`${subject}_url`] = docUrl;

@@ -24,7 +24,10 @@ Deno.serve(async (req) => {
     }
 
     const { userId } = await req.json();
-    const targetUserId = userId || currentUser.id;
+    // SECURITY: only admins may query another user's balance; everyone else is forced to self
+    const role = (currentUser.role || currentUser.access_level || '').toLowerCase();
+    const isAdmin = ['admin', 'super_admin'].includes(role);
+    const targetUserId = (isAdmin && userId) ? userId : currentUser.id;
 
     // Fetch user
     const targetUser = await base44.asServiceRole.entities.User.filter({ id: targetUserId });
