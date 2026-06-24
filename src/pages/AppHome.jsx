@@ -155,8 +155,8 @@ export default function AppHome() {
           <img
             src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
             alt="Trusted by Renters in Thailand"
-            className="w-32 h-32 object-contain"
-            style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
+            className="object-contain"
+            style={{ width: '154px', height: '154px', filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
           />
           <span className="text-xs" style={{ color: '#0F4229' }}>Real users • Real cases • Thailand</span>
         </div>
