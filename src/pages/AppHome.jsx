@@ -141,28 +141,24 @@ export default function AppHome() {
       </h2>
 
       {/* Certification Badges */}
-      <div className="flex flex-wrap justify-center items-start gap-8 mb-8">
+      <div className="flex flex-wrap justify-center items-center gap-6 mb-8">
         <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center justify-center" style={{ width: '160px', height: '160px' }}>
-            <img
-              src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
-              alt="PDPA Alignment Programme"
-              className="w-full h-full object-contain"
-              style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
-            />
-          </div>
-          <span className="text-xs text-center" style={{ color: '#C7A338' }}>Lease Shield | Self-Assessed</span>
+          <img
+            src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
+            alt="PDPA Alignment Programme"
+            className="w-32 h-32 object-contain"
+            style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
+          />
+          <span className="text-xs" style={{ color: '#C7A338' }}>Lease Shield | Self-Assessed</span>
         </div>
         <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center justify-center" style={{ width: '160px', height: '160px' }}>
-            <img
-              src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
-              alt="Trusted by Renters in Thailand"
-              className="w-full h-full object-contain"
-              style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
-            />
-          </div>
-          <span className="text-xs text-center" style={{ color: '#0F4229' }}>Real users • Real cases • Thailand</span>
+          <img
+            src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
+            alt="Trusted by Renters in Thailand"
+            className="object-contain"
+            style={{ width: '188px', height: '188px', filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
+          />
+          <span className="text-xs" style={{ color: '#0F4229' }}>Real users • Real cases • Thailand</span>
         </div>
       </div>
 
