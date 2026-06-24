@@ -162,7 +162,7 @@ export default function AppHome() {
               style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
             />
           </div>
-          <span className="text-[10px] text-center whitespace-nowrap mt-2" style={{ color: '#0F4229' }}>Real users • Real cases • Thailand</span>
+          <span className="text-[10px] text-center whitespace-nowrap mt-2" style={{ color: '#0F4229', marginTop: '-25px' }}>Real users • Real cases • Thailand</span>
         </div>
       </div>
 
