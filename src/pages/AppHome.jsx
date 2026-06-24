@@ -110,7 +110,7 @@ export default function AppHome() {
     <div
       className="min-h-screen flex flex-col items-center justify-center px-6 apphome-root"
       style={{
-        background: "linear-gradient(165deg, #0C3B2E 0%, #145A44 50%, #0C3B2E 100%)",
+        backgroundColor: "rgba(16, 185, 129, 0.04)",
         position: 'relative',
       }}
     >
@@ -136,7 +136,7 @@ export default function AppHome() {
       </h1>
 
       {/* Headline */}
-      <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-4 max-w-lg leading-tight">
+      <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 max-w-lg leading-tight" style={{ color: "#0F4229" }}>
         {planName ? `Get Started with ${planName}` : strings.headline}
       </h2>
 
@@ -158,12 +158,12 @@ export default function AppHome() {
             className="w-24 h-24 object-contain"
             style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
           />
-          <span className="text-xs text-white">Real users • Real cases • Thailand</span>
+          <span className="text-xs" style={{ color: '#0F4229' }}>Real users • Real cases • Thailand</span>
         </div>
       </div>
 
       {/* Description */}
-      <div className="text-base text-white/70 text-center mb-10 max-w-md">
+      <div className="text-base text-center mb-10 max-w-md" style={{ color: "#475569" }}>
         {planName
           ? <p>{`Create your account to ${selectedPlan === 'one-time-scan' ? 'purchase' : 'subscribe to'} ${planName}.`}</p>
           : strings.startFree.map((line, i) => <p key={i}>{line}</p>)}
@@ -187,7 +187,7 @@ export default function AppHome() {
         </button>
         <button
           onClick={() => handleAuth(false)}
-          style={{background:'none', border:'none', color:'#ffffff', fontSize:'14px', cursor:'pointer', textDecoration:'none', marginTop:'8px'}}
+          style={{background:'none', border:'none', color:'#0F4229', fontSize:'14px', cursor:'pointer', textDecoration:'none', marginTop:'8px'}}
           onMouseEnter={e => e.target.style.textDecoration='underline'}
           onMouseLeave={e => e.target.style.textDecoration='none'}
         >
@@ -209,8 +209,8 @@ export default function AppHome() {
           <span
             key={badge}
             style={{
-              border: '1px solid #C7A338',
-              color: '#FFFFFF',
+              border: '1px solid #0F4229',
+              color: '#0F4229',
               backgroundColor: 'transparent',
               fontSize: '12px',
               fontWeight: 500,
@@ -248,7 +248,7 @@ export default function AppHome() {
             onClick={() => changeLang(l.code)}
             style={{
               cursor: 'pointer',
-              color: lang === l.code ? '#C7A338' : 'rgba(255,255,255,0.6)',
+              color: lang === l.code ? '#0F4229' : 'rgba(15,66,41,0.5)',
               fontWeight: lang === l.code ? 'bold' : 'normal',
               fontSize: '13px',
             }}
@@ -260,7 +260,7 @@ export default function AppHome() {
       </div>
 
       {/* Footer */}
-      <p className="mt-4 text-xs text-white/30">
+      <p className="mt-4 text-xs" style={{ color: "#94A3B8" }}>
         © {new Date().getFullYear()} Lease Shield · {strings.footerTagline || 'Fair. Transparent. Protected.'}
       </p>
     </div>
