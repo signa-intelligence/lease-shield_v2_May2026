@@ -147,7 +147,7 @@ export default function AppHome() {
             <img
               src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
               alt="PDPA Alignment Programme"
-              className="w-28 h-28 object-contain"
+              className="w-[95px] h-[95px] object-contain"
               style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
             />
           </div>
