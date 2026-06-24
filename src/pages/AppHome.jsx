@@ -110,7 +110,7 @@ export default function AppHome() {
     <div
       className="min-h-screen flex flex-col items-center justify-center px-6 apphome-root"
       style={{
-        backgroundColor: "rgba(16, 185, 129, 0.25)",
+        backgroundColor: "rgba(16, 185, 129, 0.04)",
         position: 'relative',
       }}
     >
