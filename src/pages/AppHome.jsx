@@ -143,23 +143,21 @@ export default function AppHome() {
       {/* Certification Badges */}
       <div className="flex flex-wrap justify-center items-start gap-6 mb-8">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-24 h-24 rounded-full p-2" style={{ backgroundColor: '#C7A338' }}>
-            <img
-              src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
-              alt="PDPA Alignment Programme"
-              className="w-full h-full object-contain"
-            />
-          </div>
+          <img
+            src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
+            alt="PDPA Alignment Programme"
+            className="w-24 h-24 object-contain"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.6))' }}
+          />
           <span className="text-xs" style={{ color: '#C7A338' }}>Lease Shield | Self-Assessed</span>
         </div>
         <div className="flex flex-col items-center gap-2">
-          <div className="w-24 h-24 rounded-full p-2" style={{ backgroundColor: '#C7A338' }}>
-            <img
-              src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
-              alt="Trusted by Renters in Thailand"
-              className="w-full h-full object-contain"
-            />
-          </div>
+          <img
+            src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
+            alt="Trusted by Renters in Thailand"
+            className="w-24 h-24 object-contain"
+            style={{ filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.6))' }}
+          />
           <span className="text-xs text-white">Real users • Real cases • Thailand</span>
         </div>
       </div>
