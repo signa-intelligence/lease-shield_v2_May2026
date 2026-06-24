@@ -140,6 +140,30 @@ export default function AppHome() {
         {planName ? `Get Started with ${planName}` : strings.headline}
       </h2>
 
+      {/* Certification Badges */}
+      <div className="flex flex-wrap justify-center items-start gap-6 mb-8">
+        <div className="flex flex-col items-center gap-2">
+          <div className="bg-white rounded-full p-2">
+            <img
+              src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
+              alt="PDPA Alignment Programme"
+              style={{ height: '80px', width: 'auto', display: 'block' }}
+            />
+          </div>
+          <span className="text-xs" style={{ color: '#C7A338' }}>Lease Shield | Self-Assessed</span>
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <div className="bg-white rounded-full p-2">
+            <img
+              src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
+              alt="Trusted by Renters in Thailand"
+              style={{ height: '80px', width: 'auto', display: 'block' }}
+            />
+          </div>
+          <span className="text-xs text-white">Real users • Real cases • Thailand</span>
+        </div>
+      </div>
+
       {/* Description */}
       <div className="text-base text-white/70 text-center mb-10 max-w-md">
         {planName
@@ -200,28 +224,6 @@ export default function AppHome() {
             {badge}
           </span>
         ))}
-      </div>
-
-      {/* Certification Badges */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '20px',
-        marginTop: '20px',
-        width: '100%',
-      }}>
-        <img
-          src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
-          alt="PDPA Alignment Programme"
-          style={{ height: '80px', width: 'auto' }}
-        />
-        <img
-          src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
-          alt="Trusted by Renters in Thailand"
-          style={{ height: '80px', width: 'auto' }}
-        />
       </div>
 
       {/* Language Selector */}
