@@ -141,7 +141,7 @@ export default function AppHome() {
       </h2>
 
       {/* Certification Badges */}
-      <div className="flex flex-wrap justify-center items-start gap-6 mb-8">
+      <div className="flex flex-wrap justify-center items-center gap-6 mb-8">
         <div className="flex flex-col items-center gap-2">
           <img
             src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
