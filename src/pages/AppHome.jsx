@@ -158,7 +158,7 @@ export default function AppHome() {
             <img
               src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
               alt="Trusted by Renters in Thailand"
-              className="w-[134px] h-[134px] object-contain"
+              className="w-[148px] h-[148px] object-contain"
               style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
             />
           </div>
