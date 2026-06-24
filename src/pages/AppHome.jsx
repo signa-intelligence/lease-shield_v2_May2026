@@ -141,24 +141,28 @@ export default function AppHome() {
       </h2>
 
       {/* Certification Badges */}
-      <div className="flex flex-row flex-nowrap justify-center items-center gap-4 sm:gap-16 mb-8">
-        <div className="flex flex-col items-center gap-2">
-          <img
-            src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
-            alt="PDPA Alignment Programme"
-            className="max-w-[120px] sm:max-w-none w-full sm:w-32 sm:h-32 object-contain"
-            style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
-          />
-          <span className="text-xs whitespace-nowrap" style={{ color: '#C7A338' }}>Lease Shield | Self-Assessed</span>
+      <div className="flex flex-row flex-nowrap justify-center items-end gap-4 sm:gap-16 mb-8 w-full max-w-md">
+        <div className="flex flex-col items-center w-1/2">
+          <div className="min-h-[112px] flex items-center justify-center">
+            <img
+              src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
+              alt="PDPA Alignment Programme"
+              className="w-28 h-28 object-contain"
+              style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
+            />
+          </div>
+          <span className="text-xs text-center whitespace-nowrap mt-2" style={{ color: '#C7A338' }}>Lease Shield | Self-Assessed</span>
         </div>
-        <div className="flex flex-col items-center gap-2">
-          <img
-            src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
-            alt="Trusted by Renters in Thailand"
-            className="max-w-[120px] sm:max-w-none w-full object-contain"
-            style={{ width: '188px', filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
-          />
-          <span className="text-xs whitespace-nowrap" style={{ color: '#0F4229' }}>Real users • Real cases • Thailand</span>
+        <div className="flex flex-col items-center w-1/2">
+          <div className="min-h-[112px] flex items-center justify-center">
+            <img
+              src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
+              alt="Trusted by Renters in Thailand"
+              className="w-28 h-28 object-contain"
+              style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
+            />
+          </div>
+          <span className="text-xs text-center whitespace-nowrap mt-2" style={{ color: '#0F4229' }}>Real users • Real cases • Thailand</span>
         </div>
       </div>
 
