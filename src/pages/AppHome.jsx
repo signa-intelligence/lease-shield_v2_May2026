@@ -159,7 +159,7 @@ export default function AppHome() {
               src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
               alt="Trusted by Renters in Thailand"
               className="w-[148px] h-[148px] object-contain"
-              style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
+              style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))', marginTop: '-25px' }}
             />
           </div>
           <span className="text-[10px] text-center whitespace-nowrap mt-2" style={{ color: '#0F4229', marginTop: '-25px' }}>Real users • Real cases • Thailand</span>
