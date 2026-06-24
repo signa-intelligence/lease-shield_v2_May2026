@@ -202,6 +202,28 @@ export default function AppHome() {
         ))}
       </div>
 
+      {/* Certification Badges */}
+      <div style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '20px',
+        marginTop: '20px',
+        width: '100%',
+      }}>
+        <img
+          src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
+          alt="PDPA Alignment Programme"
+          style={{ height: '80px', width: 'auto' }}
+        />
+        <img
+          src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
+          alt="Trusted by Renters in Thailand"
+          style={{ height: '80px', width: 'auto' }}
+        />
+      </div>
+
       {/* Language Selector */}
       <div style={{
         display: 'flex',
