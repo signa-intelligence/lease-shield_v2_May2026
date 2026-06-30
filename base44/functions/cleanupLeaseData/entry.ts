@@ -2,10 +2,18 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
+    const reqClone = req.clone();
     const base44 = createClientFromRequest(req);
+
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    const body = await reqClone.json().catch(() => ({}));
+    const providedSecret = headerSecret || body.internal_secret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const svc = base44.asServiceRole || base44;
-    
-    const body = await req.json();
     const { leaseId } = body;
     
     console.log('[CLEANUP_START]', { leaseId });

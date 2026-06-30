@@ -3,7 +3,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    
+
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    let guardBody = {};
+    try { guardBody = await req.clone().json(); } catch (_e) { guardBody = {}; }
+    const providedSecret = headerSecret || guardBody.internal_secret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // This should be called by a cron job (daily)
     const deposits = await base44.asServiceRole.entities.DepositTracker.list();
     const leases = await base44.asServiceRole.entities.Lease.list();

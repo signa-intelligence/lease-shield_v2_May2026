@@ -163,6 +163,14 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     
     const body = await req.json().catch(() => ({}));
+
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    const providedSecret = headerSecret || body.internal_secret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const { scanId, leaseId, scan_full, userEmail } = body;
     
     // Get user - prefer passed userEmail (from scanLease.js), fallback to auth.me()

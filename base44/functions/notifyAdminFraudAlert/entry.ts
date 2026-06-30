@@ -9,6 +9,15 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    const reqBody = await req.json();
+    const providedSecret = headerSecret || reqBody.internal_secret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     const ADMIN_ALERT_EMAIL = Deno.env.get('ADMIN_ALERT_EMAIL') || 'steve.l@signa-consultants.com';
 
@@ -17,7 +26,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Email service not configured' }, { status: 500 });
     }
 
-    const { referralId, referrerEmail, riskScore, patterns } = await req.json();
+    const { referralId, referrerEmail, riskScore, patterns } = reqBody;
 
     if (!referralId || !referrerEmail) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });

@@ -22,6 +22,16 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
+
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    let guardBody = {};
+    try { guardBody = await req.clone().json(); } catch (_e) { guardBody = {}; }
+    const providedSecret = headerSecret || guardBody.internal_secret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     if (!RESEND_API_KEY) {
       return Response.json({ success: false, error: 'RESEND_API_KEY not configured' }, { status: 500 });

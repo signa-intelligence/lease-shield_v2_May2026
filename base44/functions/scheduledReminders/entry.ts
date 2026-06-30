@@ -31,7 +31,16 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
-    
+
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    let guardBody = {};
+    try { guardBody = await req.clone().json(); } catch (_e) { guardBody = {}; }
+    const providedSecret = headerSecret || guardBody.internal_secret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     console.log('🚀 Starting scheduled reminders check...');
 
     // Fetch ALL users

@@ -3,7 +3,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { email, full_name, current_usage_bytes, grace_period_ends, previous_tier } = await req.json();
+
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    const reqBody = await req.json();
+    const providedSecret = headerSecret || reqBody.internal_secret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { email, full_name, current_usage_bytes, grace_period_ends, previous_tier } = reqBody;
 
     if (!email) {
       return Response.json({ error: 'Missing email' }, { status: 400 });

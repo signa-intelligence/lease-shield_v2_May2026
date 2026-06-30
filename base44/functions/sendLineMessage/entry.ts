@@ -15,6 +15,14 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
+    const body = await req.json();
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    const providedSecret = headerSecret || body.internal_secret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const channelAccessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN');
     
     if (!channelAccessToken) {
@@ -25,7 +33,6 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    const body = await req.json();
     const { userId, message, flexMessage, quickReply } = body;
     
     console.log('[LINE] Request received:', { 

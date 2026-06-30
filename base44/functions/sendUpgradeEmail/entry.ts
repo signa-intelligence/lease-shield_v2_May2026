@@ -132,7 +132,15 @@ Deno.serve(async (req) => {
     const reqClone = req.clone();
     const base44 = createClientFromRequest(reqClone);
 
-    const { user, newTier } = await req.json();
+    const reqBody = await req.json();
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    const providedSecret = headerSecret || reqBody.internal_secret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { user, newTier } = reqBody;
 
     if (!user || !newTier) {
       return Response.json({ error: 'Missing user or newTier' }, { status: 400 });

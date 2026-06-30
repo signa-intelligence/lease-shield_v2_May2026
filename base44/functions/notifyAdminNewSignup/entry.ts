@@ -8,7 +8,16 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { user_email, user_name, plan_tier, signup_source } = await req.json();
+
+    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    const reqBody = await req.json();
+    const providedSecret = headerSecret || reqBody.internal_secret;
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { user_email, user_name, plan_tier, signup_source } = reqBody;
 
     console.log(`[ADMIN_NOTIFY] New signup: ${user_email}`);
 
