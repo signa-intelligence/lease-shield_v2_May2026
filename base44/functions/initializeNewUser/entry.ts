@@ -10,17 +10,10 @@ Deno.serve(async (req) => {
   const correlationId = `init-user-${Date.now()}`;
   
   try {
+    console.log('[initializeNewUser headers]', JSON.stringify(Object.fromEntries(req.headers.entries())));
     const clonedReq = req.clone();
     const base44 = createClientFromRequest(req);
-
-    const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
-    const headerSecret = req.headers.get('x-internal-secret');
     const payload = await clonedReq.json();
-    const providedSecret = headerSecret || payload.internal_secret;
-    if (!expectedSecret || providedSecret !== expectedSecret) {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const { event, data } = payload;
     
     console.log(`[${correlationId}] User automation triggered`, {
