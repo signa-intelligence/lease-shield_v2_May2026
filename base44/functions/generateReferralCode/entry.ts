@@ -10,17 +10,25 @@ Deno.serve(async (req) => {
     }
 
     // Rate limit: 1 per day
-    const rateLimitCheck = await base44.functions.invoke('checkRateLimit', {
-      userId: user.id,
-      action: 'referral_generate',
-      limit: 1,
-      windowMs: 86400000 // 24 hours
-    });
+    let rateLimitCheck;
+    try {
+      rateLimitCheck = await base44.functions.invoke('checkRateLimit', {
+        userId: user.id,
+        actionType: 'referral_generate',
+        limit: 1,
+        windowMinutes: 1440 // 24 hours
+      });
+    } catch (rateLimitError) {
+      // If the rate-limit check itself errors, fail open and continue (do not 500)
+      console.error('[RATE_LIMIT] checkRateLimit invoke failed, failing open:', rateLimitError);
+      rateLimitCheck = { data: { allowed: true } };
+    }
 
-    if (!rateLimitCheck.data.allowed) {
+    if (rateLimitCheck?.data?.allowed === false) {
       return Response.json({
         error: 'Rate limit exceeded. You can only generate a referral code once per day.',
-        retry_after_seconds: rateLimitCheck.data.retry_after_seconds
+        retryAfterMinutes: rateLimitCheck.data.retryAfterMinutes,
+        retry_after_seconds: rateLimitCheck.data.retryAfter
       }, { status: 429 });
     }
 
