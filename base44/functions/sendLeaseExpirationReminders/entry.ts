@@ -150,6 +150,7 @@ Deno.serve(async (req) => {
           const lineMsg = generateLeaseLinePlainText(lease, daysUntilEnd, user.language || 'en');
           try {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: user.line_messaging_token,
               message: lineMsg
             });

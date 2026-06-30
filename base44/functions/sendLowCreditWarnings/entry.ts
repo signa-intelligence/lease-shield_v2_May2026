@@ -11,6 +11,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
  */
 
 Deno.serve(async (req) => {
+  console.log('[DIAG headers]', JSON.stringify(Object.fromEntries(req.headers.entries())));
+  try { const b = await req.clone().json(); console.log('[DIAG body]', JSON.stringify(b)); } catch (e) { console.log('[DIAG body] no json body', String(e)); }
+
   const startTime = Date.now();
   const results = {
     checked: 0,
@@ -135,6 +138,7 @@ Deno.serve(async (req) => {
         if (['protect'].includes(tier) && user.line_messaging_token && user.line_notifications) {
           try {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: user.line_messaging_token,
               message: `⚠️ ${subject}\n\nYou have ${totalCredits} scan credit${totalCredits === 1 ? '' : 's'} left.\n\nTop up → app.leaseshield.asia/Account`
             });

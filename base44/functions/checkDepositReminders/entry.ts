@@ -122,6 +122,7 @@ Deno.serve(async (req) => {
         if (user.line_messaging_token && user.line_notifications) {
           try {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: user.line_messaging_token,
               message: messageText
             });
@@ -147,6 +148,7 @@ Deno.serve(async (req) => {
         if (user.line_id && user.line_id !== user.line_messaging_token) {
           try {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: user.line_id,
               message: messageText
             });
@@ -292,6 +294,7 @@ Deno.serve(async (req) => {
         if (user.line_messaging_token && user.line_notifications) {
           try {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: user.line_messaging_token,
               message: messageText
             });
@@ -317,6 +320,7 @@ Deno.serve(async (req) => {
         if (user.line_id && user.line_id !== user.line_messaging_token) {
           try {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: user.line_id,
               message: messageText
             });

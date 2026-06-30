@@ -154,6 +154,7 @@ Deno.serve(async (req) => {
               ? `✅ Subscription Renewed!\n\nYour ${planName} plan has been renewed. Credits refreshed.\n\n→ app.leaseshield.asia/Account`
               : `📋 ${subject}\n\nPlan: ${planName}\nAmount: ฿${amount.toLocaleString()}\nDate: ${renewalFormatted}\n\n→ app.leaseshield.asia/Account`;
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: user.line_messaging_token,
               message: lineMsg
             });
