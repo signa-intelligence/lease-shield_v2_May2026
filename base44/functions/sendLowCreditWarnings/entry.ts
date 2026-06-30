@@ -11,9 +11,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
  */
 
 Deno.serve(async (req) => {
-  console.log('[DIAG headers]', JSON.stringify(Object.fromEntries(req.headers.entries())));
-  try { const b = await req.clone().json(); console.log('[DIAG body]', JSON.stringify(b)); } catch (e) { console.log('[DIAG body] no json body', String(e)); }
-
   const startTime = Date.now();
   const results = {
     checked: 0,
@@ -32,7 +29,8 @@ Deno.serve(async (req) => {
     let guardBody = {};
     try { guardBody = await req.clone().json(); } catch (_e) { guardBody = {}; }
     const providedSecret = headerSecret || guardBody.internal_secret;
-    if (!expectedSecret || providedSecret !== expectedSecret) {
+    const serviceAuth = req.headers.get('base44-service-authorization');
+    if (!serviceAuth && (!expectedSecret || providedSecret !== expectedSecret)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 

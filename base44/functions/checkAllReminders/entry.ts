@@ -60,7 +60,8 @@ Deno.serve(async (req) => {
     let guardBody = {};
     try { guardBody = await req.clone().json(); } catch (_e) { guardBody = {}; }
     const providedSecret = headerSecret || guardBody.internal_secret;
-    if (!expectedSecret || providedSecret !== expectedSecret) {
+    const serviceAuth = req.headers.get('base44-service-authorization');
+    if (!serviceAuth && (!expectedSecret || providedSecret !== expectedSecret)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 

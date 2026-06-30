@@ -136,7 +136,8 @@ Deno.serve(async (req) => {
     const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
     const headerSecret = req.headers.get('x-internal-secret');
     const providedSecret = headerSecret || reqBody.internal_secret;
-    if (!expectedSecret || providedSecret !== expectedSecret) {
+    const serviceAuth = req.headers.get('base44-service-authorization');
+    if (!serviceAuth && (!expectedSecret || providedSecret !== expectedSecret)) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
