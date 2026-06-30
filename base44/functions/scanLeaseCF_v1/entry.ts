@@ -213,6 +213,7 @@ Deno.serve(async (req) => {
         // Populate trackers
         try {
           await base44.functions.invoke('populateFromScan', {
+            internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
             scanId: targetScan.id, leaseId, scan_full: scanFull,
             userEmail, created_by: userEmail, owner_email: userEmail
           });

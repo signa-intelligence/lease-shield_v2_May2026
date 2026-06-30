@@ -37,6 +37,7 @@ Deno.serve(async (req) => {
     // Send it
     console.log('📤 Sending Flex message to LINE...');
     const response = await base44.functions.invoke('sendLineMessage', {
+      internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
       userId: user.line_messaging_token,
       flexMessage: flexMessage
     });

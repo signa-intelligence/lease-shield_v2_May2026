@@ -424,6 +424,7 @@ Deno.serve(async (req) => {
           };
 
           const lineResponse = await base44.asServiceRole.functions.invoke('sendLineMessage', {
+            internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
             userId: lineToken,
             flexMessage: updateFlexMessage
           });

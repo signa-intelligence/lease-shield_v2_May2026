@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
         console.log('🔄 Calling base44.functions.invoke(sendLineMessage)...');
         
         const lineResponse = await base44.functions.invoke('sendLineMessage', {
+          internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
           userId: user.line_messaging_token,
           flexMessage: flexMessage
         });

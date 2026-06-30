@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
       if (isOverLimit) {
         try {
           await base44.asServiceRole.functions.invoke('sendStorageWarning', {
+            internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
             email: user.email,
             full_name: user.full_name || user.display_name,
             current_usage_bytes: storageUsageBytes,
@@ -210,6 +211,7 @@ Deno.serve(async (req) => {
             if (planTier !== 'explorer') {
               try {
                 await base44.asServiceRole.functions.invoke('sendUpgradeEmail', {
+                  internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                   user: { ...user, plan_tier: planTier, billing_interval: interval === 'year' ? 'annual' : 'monthly' },
                   newTier: planTier
                 });

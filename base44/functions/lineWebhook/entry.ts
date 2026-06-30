@@ -117,6 +117,7 @@ Deno.serve(async (req) => {
 
         try {
           await base44.asServiceRole.functions.invoke('sendLineMessage', {
+            internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
             userId: userId,
             message: welcomeMessage,
             quickReply: connectedUser ? QR_MAIN : QR_CONNECT
@@ -162,6 +163,7 @@ Deno.serve(async (req) => {
 
           if (!email.includes('@')) {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: userId,
               message: `❌ Invalid email format.\n\nUsage: connect your@email.com\nExample: connect steve@example.com`,
               quickReply: QR_CONNECT
@@ -171,12 +173,14 @@ Deno.serve(async (req) => {
 
             if (!targetUser) {
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                 userId: userId,
                 message: `❌ No account found with that email.\n\n📱 Create account first: app.leaseshield.asia`,
                 quickReply: QR_CONNECT
               });
             } else if (targetUser.line_user_id && targetUser.line_user_id !== userId) {
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                 userId: userId,
                 message: `⚠️ This email is already connected to another LINE account.\n\nTo switch, disconnect from the other account first in Settings.`,
                 quickReply: QR_CONNECT
@@ -191,6 +195,7 @@ Deno.serve(async (req) => {
               });
 
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                 userId: userId,
                 message: `✅ Connected successfully!\n\n📧 ${email}\n\nYou'll now receive notifications here for:\n📅 Lease deadlines\n💰 Deposit returns\n🏠 Rent reminders\n🔧 Maintenance updates\n\n💡 Use the buttons below to get started`,
                 quickReply: QR_MAIN
@@ -220,6 +225,7 @@ Deno.serve(async (req) => {
 
           if (!token || token.length < 10) {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: userId,
               message: `❌ Invalid link token.\n\nPlease use the exact token from the Lease Shield app.`,
               quickReply: QR_CONNECT
@@ -246,12 +252,14 @@ Deno.serve(async (req) => {
                 }
 
                 await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                  internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                   userId: userId,
                   message: successMsg,
                   quickReply: QR_MAIN
                 });
               } else {
                 await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                  internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                   userId: userId,
                   message: `❌ ${result.data?.error || 'Connection failed. The link may have expired.'}\n\nPlease request a new link from the Lease Shield app.`,
                   quickReply: QR_CONNECT
@@ -260,6 +268,7 @@ Deno.serve(async (req) => {
             } catch (e) {
               console.error('link command error:', e);
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                 userId: userId,
                 message: `❌ Connection failed. Please try again or request a new link.`,
                 quickReply: QR_CONNECT
@@ -275,6 +284,7 @@ Deno.serve(async (req) => {
             : `📋 Lease Shield\n\nUse the buttons below or type a command:\n\n• "status" — Account summary\n• "deposit" — View deposits\n• "cases" — Active cases\n• "link <token>" — Connect via QR\n• "connect email" — Link account\n\nNeed support? Contact us via the app.`;
           
           await base44.asServiceRole.functions.invoke('sendLineMessage', {
+            internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
             userId: userId,
             message: helpMsg,
             quickReply: QR_MAIN
@@ -283,6 +293,7 @@ Deno.serve(async (req) => {
         else if (lowerText === 'status' || lowerText === 'สถานะ') {
           if (!user) {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: userId,
               message: language === 'th'
                 ? `⚠️ ยังไม่ได้เชื่อมต่อบัญชี\n\nพิมพ์: connect your@email.com`
@@ -300,6 +311,7 @@ Deno.serve(async (req) => {
               : `📊 Lease Shield Status\n\n👤 ${user.full_name}\n📧 ${user.email}\n⭐ Plan: ${(user.plan_tier || 'explorer').charAt(0).toUpperCase() + (user.plan_tier || 'explorer').slice(1)}\n\n💰 Tracking: ${activeDeposits} deposits\n⚖️ Active: ${activeCases} cases\n💳 Credits: ${user.letter_credits || 0}`;
             
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: userId,
               message: statusMsg,
               quickReply: QR_MAIN
@@ -310,6 +322,7 @@ Deno.serve(async (req) => {
         else if (lowerText === 'deposit' || lowerText === 'deposits' || lowerText === 'มัดจำ') {
           if (!user) {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: userId,
               message: language === 'th' ? `⚠️ ยังไม่ได้เชื่อมต่อบัญชี\n\nพิมพ์: connect your@email.com` : `⚠️ Account not linked\n\nType: connect your@email.com`,
               quickReply: QR_CONNECT
@@ -320,6 +333,7 @@ Deno.serve(async (req) => {
             
             if (active.length === 0) {
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                 userId: userId,
                 message: language === 'th'
                   ? `💰 ยังไม่มีเงินมัดจำที่ติดตาม\n\nเพิ่มเงินมัดจำแรกของคุณในแอปเพื่อเริ่มติดตามและรับการแจ้งเตือนอัตโนมัติ!`
@@ -345,6 +359,7 @@ Deno.serve(async (req) => {
               depositText += language === 'th' ? 'ดูรายละเอียดเพิ่มเติมในแอป' : 'View full details in the app';
               
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                 userId: userId,
                 message: depositText,
                 quickReply: QR_MAIN
@@ -356,6 +371,7 @@ Deno.serve(async (req) => {
         else if (lowerText === 'case' || lowerText === 'cases' || lowerText === 'คดี') {
           if (!user) {
             await base44.asServiceRole.functions.invoke('sendLineMessage', {
+              internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
               userId: userId,
               message: language === 'th' ? `⚠️ ยังไม่ได้เชื่อมต่อบัญชี\n\nพิมพ์: connect your@email.com` : `⚠️ Account not linked\n\nType: connect your@email.com`,
               quickReply: QR_CONNECT
@@ -366,6 +382,7 @@ Deno.serve(async (req) => {
             
             if (activeCases.length === 0) {
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                 userId: userId,
                 message: language === 'th'
                   ? `⚖️ ไม่มีคดีที่เปิดอยู่\n\nต้องการช่วยเหลือเรื่องข้อพิพาทการเช่า? บริการ Resolve ของเราช่วยโดยไม่ต้องจ้างทนายความราคาแพง`
@@ -388,6 +405,7 @@ Deno.serve(async (req) => {
               caseText += language === 'th' ? 'ดูรายละเอียดและข้อความในแอป' : 'View details and messages in the app';
               
               await base44.asServiceRole.functions.invoke('sendLineMessage', {
+                internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
                 userId: userId,
                 message: caseText,
                 quickReply: QR_MAIN
@@ -402,6 +420,7 @@ Deno.serve(async (req) => {
             : `Hello! 👋\n\nUse the buttons below or type "help" for commands`;
           
           await base44.asServiceRole.functions.invoke('sendLineMessage', {
+            internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
             userId: userId,
             message: defaultMsg,
             quickReply: QR_MAIN

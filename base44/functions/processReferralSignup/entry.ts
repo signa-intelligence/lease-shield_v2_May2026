@@ -228,6 +228,7 @@ Deno.serve(async (req) => {
     
     try {
       const fraudResponse = await base44.asServiceRole.functions.invoke('checkReferralFraudPatterns', {
+        internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
         referrerUserId: referrer.id,
         referredUserEmail: user.email
       });
@@ -273,6 +274,7 @@ Deno.serve(async (req) => {
     if (fraudCheck.riskLevel === 'critical') {
       try {
         await base44.asServiceRole.functions.invoke('notifyAdminFraudAlert', {
+          internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
           referralId: referrer.id, // Will be created ID
           referrerEmail: referrer.email,
           riskScore: fraudCheck.riskScore,

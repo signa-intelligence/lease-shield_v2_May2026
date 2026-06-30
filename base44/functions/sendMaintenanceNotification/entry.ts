@@ -240,6 +240,7 @@ Deno.serve(async (req) => {
     if (user.line_messaging_token && user.line_notifications !== false && lineAllowed) {
       try {
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
+          internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
           userId: user.line_messaging_token,
           message: `🔧 ${language === 'th' ? 'คำขอซ่อมถูกส่งแล้ว' : 'Maintenance request submitted'}: ${maintenanceRequest.issue_title}`
         });
@@ -255,6 +256,7 @@ Deno.serve(async (req) => {
     if (user.landlord_line && user.landlord_line.trim()) {
       try {
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
+          internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
           userId: user.landlord_line.trim(),
           message: `🔧 New maintenance request from ${user.full_name || user.email}: ${maintenanceRequest.issue_title}\n\nAcknowledge: ${landlordAckLink}`
         });
@@ -270,6 +272,7 @@ Deno.serve(async (req) => {
     if (user.juristic_line && user.juristic_line.trim()) {
       try {
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
+          internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
           userId: user.juristic_line.trim(),
           message: `🔧 แจ้งซ่อม / Maintenance: ${maintenanceRequest.issue_title}\nTenant: ${user.full_name || user.email}\n\nAcknowledge: ${juristicAckLink}`
         });
@@ -285,6 +288,7 @@ Deno.serve(async (req) => {
     if (user.line_id && user.line_id !== user.line_messaging_token && lineAllowed) {
       try {
         await base44.asServiceRole.functions.invoke('sendLineMessage', {
+          internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
           userId: user.line_id,
           message: `🔧 ${language === 'th' ? 'คำขอซ่อมถูกส่งแล้ว' : 'Maintenance request submitted'}: ${maintenanceRequest.issue_title}`
         });
