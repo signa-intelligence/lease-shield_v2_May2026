@@ -17,7 +17,9 @@
     "owner_email"
   ],
   "rls": {
-    "create": true,
+    "create": {
+      "data.owner_email": "{{user.email}}"
+    },
     "read": {
       "data.owner_email": "{{user.email}}"
     },

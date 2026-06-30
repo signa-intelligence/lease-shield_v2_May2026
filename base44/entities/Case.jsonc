@@ -464,12 +464,11 @@
   },
   "required": [],
   "rls": {
-    "create": true,
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
     "read": {
       "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
         {
           "data.user_email": "{{user.email}}"
         },
@@ -483,9 +482,6 @@
     "update": {
       "$or": [
         {
-          "created_by": "{{user.email}}"
-        },
-        {
           "data.user_email": "{{user.email}}"
         },
         {
@@ -497,9 +493,6 @@
     },
     "delete": {
       "$or": [
-        {
-          "created_by": "{{user.email}}"
-        },
         {
           "data.user_email": "{{user.email}}"
         },

@@ -33,7 +33,9 @@
     "downloaded_at"
   ],
   "rls": {
-    "create": true,
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
     "read": {
       "$or": [
         {

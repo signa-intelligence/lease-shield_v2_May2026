@@ -324,7 +324,9 @@
     "expected_return_date"
   ],
   "rls": {
-    "create": true,
+    "create": {
+      "data.owner_email": "{{user.email}}"
+    },
     "read": {
       "$or": [
         {

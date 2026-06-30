@@ -75,15 +75,44 @@
     "body"
   ],
   "rls": {
-    "create": true,
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
     "read": {
-      "user_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "update": {
-      "user_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
-      "user_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }
