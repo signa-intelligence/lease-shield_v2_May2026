@@ -10,10 +10,14 @@ Deno.serve(async (req) => {
   const correlationId = `init-user-${Date.now()}`;
   
   try {
-    console.log('[initializeNewUser headers]', JSON.stringify(Object.fromEntries(req.headers.entries())));
     const clonedReq = req.clone();
     const base44 = createClientFromRequest(req);
     const payload = await clonedReq.json();
+
+    if (!payload?.event || typeof payload.event.type !== 'string' || payload.event.type.trim() === '') {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const { event, data } = payload;
     
     console.log(`[${correlationId}] User automation triggered`, {
