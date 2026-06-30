@@ -330,32 +330,6 @@ function DashboardContent() {
     }
   };
 
-  const [runningScheduled, setRunningScheduled] = useState(false);
-
-  const runScheduledReminders = async () => {
-    setRunningScheduled(true);
-    try {
-      const response = await base44.functions.invoke('scheduledReminders');
-      console.log('📊 Scheduled reminders result:', response.data);
-
-      if (response.data?.success) {
-        const { diagnostics } = response.data;
-        toast.success(
-          language === 'th'
-            ? `ส่งแล้ว ${diagnostics.notifications_sent} การแจ้งเตือน (ตรวจสอบ ${diagnostics.users_checked} ผู้ใช้)`
-            : `Sent ${diagnostics.notifications_sent} notifications (${diagnostics.users_checked} users checked)`
-        );
-      } else {
-        toast.error(language === 'th' ? 'การตรวจสอบล้มเหลว' : 'Check failed');
-      }
-    } catch (error) {
-      console.error('Scheduled reminders error:', error);
-      toast.error(language === 'th' ? 'เกิดข้อผิดพลาด' : 'Error occurred');
-    } finally {
-      setRunningScheduled(false);
-    }
-  };
-
   const [testingOverdue, setTestingOverdue] = useState(false);
   const [testingSettings, setTestingSettings] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
