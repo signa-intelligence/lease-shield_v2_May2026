@@ -69,6 +69,36 @@
       "type": "boolean",
       "default": true,
       "description": "Whether user is eligible to use their free scan"
+    },
+    "onboarding_lease_done": {
+      "type": "boolean",
+      "default": false,
+      "description": "Permanent flag: user has uploaded a lease at least once"
+    },
+    "onboarding_deposit_done": {
+      "type": "boolean",
+      "default": false,
+      "description": "Permanent flag: user has tracked a deposit at least once"
+    },
+    "onboarding_maintenance_done": {
+      "type": "boolean",
+      "default": false,
+      "description": "Permanent flag: user has reported a maintenance issue at least once"
+    },
+    "onboarding_evidence_done": {
+      "type": "boolean",
+      "default": false,
+      "description": "Permanent flag: user has uploaded evidence at least once"
+    },
+    "onboarding_profile_done": {
+      "type": "boolean",
+      "default": false,
+      "description": "Permanent flag: user has completed their profile at least once"
+    },
+    "onboarding_notifications_done": {
+      "type": "boolean",
+      "default": false,
+      "description": "Permanent flag: user has enabled notifications at least once"
     }
   },
   "required": []

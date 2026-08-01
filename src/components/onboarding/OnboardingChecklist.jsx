@@ -20,6 +20,7 @@ import {
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getFeatureCardStyles } from "@/components/shared/featureTheme";
+import { base44 } from "@/api/base44Client";
 
 const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [], cases = [], maintenanceRequests = [], isDarkMode = false, language = 'en' }) => {
 
@@ -247,13 +248,38 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
 
   const strings = t[language] || t.en;
 
-  // Safely check array lengths with fallbacks
-  const hasLeases = Array.isArray(leases) && leases.length > 0;
-  const hasDeposits = Array.isArray(deposits) && deposits.length > 0;
-  const hasMaintenanceRequests = Array.isArray(maintenanceRequests) && maintenanceRequests.length > 0;
-  const hasDocuments = Array.isArray(documents) && documents.length >= 3;
-  const hasProfile = !!(user?.phone && user?.tenant_address);
-  const hasNotifications = !!(user?.email_notifications || user?.line_notifications);
+  // Live conditions (real-time data checks)
+  const liveLeases = Array.isArray(leases) && leases.length > 0;
+  const liveDeposits = Array.isArray(deposits) && deposits.length > 0;
+  const liveMaintenanceRequests = Array.isArray(maintenanceRequests) && maintenanceRequests.length > 0;
+  const liveDocuments = Array.isArray(documents) && documents.length >= 1;
+  const liveProfile = !!(user?.phone && user?.tenant_address);
+  const liveNotifications = !!(user?.email_notifications || user?.line_notifications);
+
+  // Permanent one-way flags: once set true, completion never reverts even if data is deleted.
+  // On each render, if the live condition is met but the flag isn't set yet, persist the flag.
+  React.useEffect(() => {
+    if (!user?.id) return;
+    const updates = {};
+    if (liveLeases && !user.onboarding_lease_done) updates.onboarding_lease_done = true;
+    if (liveDeposits && !user.onboarding_deposit_done) updates.onboarding_deposit_done = true;
+    if (liveMaintenanceRequests && !user.onboarding_maintenance_done) updates.onboarding_maintenance_done = true;
+    if (liveDocuments && !user.onboarding_evidence_done) updates.onboarding_evidence_done = true;
+    if (liveProfile && !user.onboarding_profile_done) updates.onboarding_profile_done = true;
+    if (liveNotifications && !user.onboarding_notifications_done) updates.onboarding_notifications_done = true;
+    if (Object.keys(updates).length > 0) {
+      base44.auth.updateMe(updates).catch(err => console.error('[ONBOARDING_FLAG] update failed:', err));
+    }
+  }, [user?.id, liveLeases, liveDeposits, liveMaintenanceRequests, liveDocuments, liveProfile, liveNotifications]);
+
+  // Display completion is based on the permanent flag OR the current live condition (so it
+  // shows complete immediately in the same session the flag is being persisted).
+  const hasLeases = !!user?.onboarding_lease_done || liveLeases;
+  const hasDeposits = !!user?.onboarding_deposit_done || liveDeposits;
+  const hasMaintenanceRequests = !!user?.onboarding_maintenance_done || liveMaintenanceRequests;
+  const hasDocuments = !!user?.onboarding_evidence_done || liveDocuments;
+  const hasProfile = !!user?.onboarding_profile_done || liveProfile;
+  const hasNotifications = !!user?.onboarding_notifications_done || liveNotifications;
 
   const tasks = [
     {
