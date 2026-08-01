@@ -81,7 +81,7 @@ function AdminUserManagementContent() {
   );
 
   const handleSaveCredits = async (userId, data) => {
-    await base44.entities.User.update(userId, data);
+    await base44.functions.invoke('adminUpdateUserCredits', { userId, updates: data });
     toast.success("User credits updated");
     queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
   };
