@@ -211,14 +211,7 @@ DEPOSIT CLAUSES: If a deposit clause specifies a 30-day return window, prohibits
 OVERALL RISK SCORE (0-100): The score must reflect the net tenant risk after accounting for protections. A well-drafted balanced lease should score below 35. A lease with no critical or high clauses should not score above 40.
 
 RECOMMENDATIONS — mandatory rule:
-Each clause's recommendations must reference the specific terms in that clause's clause_text, quote or paraphrase the actual number, date, condition, or party named. Generic advice is a failure, do not output it.
-
-BANNED PHRASES, never use these or close variants: "Negotiate this clause - view our recommended letter templates", "Use our Letter Templates to request modifications", "Request written clarification of landlord's interpretation". If your first draft recommendation resembles any of these, discard it and write a specific one instead.
-
-Example of a BAD recommendation for a late payment penalty clause: "Negotiate this clause - view our recommended letter templates"
-Example of a GOOD recommendation for the same clause: "Ask the landlord to cap the late fee at a fixed percentage (e.g. 5%) of monthly rent instead of allowing termination, and request a 7-day cure period before any lockout action"
-
-For LOW risk clauses only, recommendations may state no action is needed.
+Each clause's recommendations must be specific to that clause's actual terms, not generic advice. Reference the specific number, timeframe, party, or condition named in the clause_text where relevant. Do not suggest "negotiate this clause" or "request written clarification" as a first-choice recommendation unless no more specific action exists. Prefer concrete tenant actions: what to ask for, what number/term to propose instead, what document to request, or what to verify before signing. For LOW risk clauses, recommendations may simply confirm no action is needed rather than inventing generic advice. Each clause must have between 1 and 3 recommendations, avoid padding to reach a count.
 
 Return this JSON object:
 {
