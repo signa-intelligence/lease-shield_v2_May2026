@@ -318,6 +318,9 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
   const progressPercent = Math.round((completedTasks / totalTasks) * 100);
   const isAllComplete = completedTasks === totalTasks;
 
+  // Hide the entire card once all steps are complete
+  if (isAllComplete) return null;
+
   return (
     <Card 
       className="border-none shadow-xl overflow-hidden bg-white dark:bg-gray-800"
@@ -367,7 +370,7 @@ const OnboardingChecklist = ({ user, leases = [], deposits = [], documents = [],
 
       <CardContent className="p-6">
         <div className="space-y-3">
-          {tasks.map((task) => {
+          {tasks.filter((task) => !task.completed).map((task) => {
             const TaskIcon = task.icon;
             const theme = taskThemeMap[task.id] || leasesTheme;
             const isWarningItem = task.isWarning || task.highImportance;
