@@ -8,24 +8,29 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const adminUser = await base44.auth.me();
 
-    if (!adminUser) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // --- Mandatory auth guard: internal secret OR admin/super_admin session ---
+    const INTERNAL_SECRET = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+    const headerSecret = req.headers.get('x-internal-secret');
+    const isInternalCall = !!INTERNAL_SECRET && headerSecret === INTERNAL_SECRET;
 
-    // Check admin role
-    const isAdmin = 
-      adminUser.role === 'admin' || 
-      adminUser.role === 'super_admin' ||
-      adminUser.access_level === 'admin' ||
-      adminUser.access_level === 'super_admin';
-    
-    if (!isAdmin) {
-      return Response.json({ 
-        error: 'Forbidden: Admin access required' 
-      }, { status: 403 });
+    let adminUser = null;
+    if (!isInternalCall) {
+      adminUser = await base44.auth.me();
+
+      const isAdmin = adminUser &&
+        (adminUser.role === 'admin' ||
+         adminUser.role === 'super_admin' ||
+         adminUser.access_level === 'admin' ||
+         adminUser.access_level === 'super_admin');
+
+      if (!isAdmin) {
+        return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    } else {
+      adminUser = { email: 'internal-function' };
     }
+    // --- End auth guard ---
 
     const { confirmed } = await req.json();
     
