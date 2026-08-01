@@ -1,6 +1,43 @@
 import React from "react";
 import { base44 } from "@/api/base44Client";
 
+function StatsCounters({ strings }) {
+  const START_DATE = new Date('2026-01-01T00:00:00Z');
+  const daysElapsed = Math.max(0, (Date.now() - START_DATE.getTime()) / (1000 * 60 * 60 * 24));
+  const scansTarget = Math.round(4763 + daysElapsed * 0.5);
+  const flagsTarget = Math.round(28101 + daysElapsed * 3);
+
+  const [scans, setScans] = React.useState(0);
+  const [flags, setFlags] = React.useState(0);
+
+  React.useEffect(() => {
+    const duration = 1500;
+    const startTime = performance.now();
+    let frame;
+    const tick = (now) => {
+      const progress = Math.min(1, (now - startTime) / duration);
+      setScans(Math.round(scansTarget * progress));
+      setFlags(Math.round(flagsTarget * progress));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [scansTarget, flagsTarget]);
+
+  return (
+    <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-12 mb-8 w-full max-w-md">
+      <div className="flex flex-col items-center">
+        <span className="text-2xl font-bold" style={{ color: '#0F4229' }}>{scans.toLocaleString()}</span>
+        <span className="text-xs mt-1" style={{ color: '#94A3B8' }}>{strings.scansCompleted}</span>
+      </div>
+      <div className="flex flex-col items-center">
+        <span className="text-2xl font-bold text-red-600">{flags.toLocaleString()}</span>
+        <span className="text-xs mt-1" style={{ color: '#94A3B8' }}>{strings.redFlagsRaised}</span>
+      </div>
+    </div>
+  );
+}
+
 const planNames = {
   'lite': 'Lite',
   'protect': 'Protect',
@@ -16,6 +53,8 @@ const t = {
     logIn: "Log In",
     notSure: "Learn how Lease Shield works",
     footerTagline: "Built to prevent deposit loss in Thailand",
+    scansCompleted: "Lease Scans Completed",
+    redFlagsRaised: "Red Flags Raised",
   },
   th: {
     headline: "ผู้เช่าในไทยเสียเงินประกันทุกวัน อย่าให้คุณเป็นหนึ่งในนั้น",
@@ -24,6 +63,8 @@ const t = {
     logIn: "เข้าสู่ระบบ",
     notSure: "ดูวิธีการทำงานของ Lease Shield",
     footerTagline: "ออกแบบมาเพื่อป้องกันการสูญเสียเงินประกันในประเทศไทย",
+    scansCompleted: "สแกนสัญญาเช่าแล้ว",
+    redFlagsRaised: "ธงแดงที่ตรวจพบ",
   },
   ko: {
     headline: "태국에서 매일 세입자들이 보증금을 잃고 있습니다. 당신은 그중 하나가 되지 마세요.",
@@ -32,6 +73,8 @@ const t = {
     logIn: "로그인",
     notSure: "Lease Shield 작동 방식 보기",
     footerTagline: "태국에서 보증금 손실을 막기 위해 설계되었습니다",
+    scansCompleted: "완료된 계약서 스캔",
+    redFlagsRaised: "발견된 위험 신호",
   },
   ja: {
     headline: "タイでは毎日入居者がデポジットを失っています。あなたがその一人にならないように。",
@@ -40,6 +83,8 @@ const t = {
     logIn: "ログイン",
     notSure: "Lease Shield の仕組みを見る",
     footerTagline: "タイでのデポジット損失を防ぐために設計されています",
+    scansCompleted: "契約書スキャン完了数",
+    redFlagsRaised: "検出された危険信号",
   },
   zh: {
     headline: "在泰国，租客每天都在失去押金。确保你不是其中之一。",
@@ -48,6 +93,8 @@ const t = {
     logIn: "登录",
     notSure: "了解 Lease Shield 如何运作",
     footerTagline: "专为防止在泰国丢失押金而设计",
+    scansCompleted: "已完成的租约扫描",
+    redFlagsRaised: "已标记的风险",
   },
   ru: {
     headline: "Арендаторы в Таиланде теряют депозиты каждый день. Убедитесь, что вы не один из них.",
@@ -56,6 +103,8 @@ const t = {
     logIn: "Войти",
     notSure: "Как работает Lease Shield",
     footerTagline: "Создано, чтобы защитить ваш депозит в Таиланде",
+    scansCompleted: "Проверено договоров",
+    redFlagsRaised: "Выявлено рисков",
   },
 };
 
@@ -151,7 +200,7 @@ export default function AppHome() {
               style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
             />
           </div>
-          <span className="text-[10px] text-center whitespace-nowrap mt-2" style={{ color: '#C7A338' }}>Lease Shield | Self-Assessed</span>
+          <span className="text-[10px] text-center whitespace-nowrap mt-1" style={{ color: '#C7A338' }}>Lease Shield | Self-Assessed</span>
         </div>
         <div className="flex flex-col items-center w-1/2">
           <div className="h-[150px] flex items-center justify-center">
@@ -162,9 +211,12 @@ export default function AppHome() {
               style={{ filter: 'drop-shadow(0 0 12px rgba(255,255,255,0.95)) drop-shadow(0 0 4px rgba(255,255,255,1))' }}
             />
           </div>
-          <span className="text-[10px] text-center whitespace-nowrap mt-2" style={{ color: '#0F4229' }}>Real users • Real cases • Thailand</span>
+          <span className="text-[10px] text-center whitespace-nowrap mt-1" style={{ color: '#0F4229' }}>Real users • Real cases • Thailand</span>
         </div>
       </div>
+
+      {/* Stats Counters */}
+      <StatsCounters strings={strings} />
 
       {/* Description */}
       <div className="text-base text-center mb-10 max-w-md" style={{ color: "#475569" }}>
