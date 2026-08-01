@@ -211,9 +211,14 @@ DEPOSIT CLAUSES: If a deposit clause specifies a 30-day return window, prohibits
 OVERALL RISK SCORE (0-100): The score must reflect the net tenant risk after accounting for protections. A well-drafted balanced lease should score below 35. A lease with no critical or high clauses should not score above 40.
 
 RECOMMENDATION — mandatory rule:
-Give exactly ONE recommendation per clause, a single sentence of specific, actionable advice grounded in that clause's actual terms, referencing the specific number, date, condition, or party named in the clause_text. Do not pad with multiple generic points. For LOW risk clauses, state that no action is needed rather than inventing advice.
+Give exactly ONE recommendation per clause. It must be a single, information-dense sentence that does three things: (1) states the specific action to take, (2) references the exact number, date, term, or condition from clause_text that justifies the action, and (3) states what outcome or replacement term to ask for. Do not write vague single-clause advice like "negotiate for lower deposits" without the actual figures involved. If clause_text contains a number, date, or named condition, the recommendation must reference it directly.
+
+Example of a WEAK recommendation (too generic, avoid this level of detail): "Negotiate for lower deposits and clarify the terms for refundable amounts."
+Example of a STRONG recommendation (target this level of detail): "Given the 3-month non-refundable deposit stated in this clause, request it be reduced to 1-2 months and made fully refundable barring documented damage, in line with standard Bangkok rental terms."
 
 BANNED PHRASES, never use these or close variants: "Negotiate this clause - view our recommended letter templates", "Use our Letter Templates to request modifications", "Request written clarification of landlord's interpretation".
+
+For LOW risk clauses, state that no action is needed rather than inventing advice.
 
 Return this JSON object:
 {
