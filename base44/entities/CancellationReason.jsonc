@@ -53,7 +53,9 @@
     "outcome"
   ],
   "rls": {
-    "create": true,
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
     "read": {
       "user_condition": {
         "role": "admin"
