@@ -26,11 +26,11 @@ function StatsCounters({ strings }) {
 
   return (
     <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-12 mb-8 w-full max-w-md">
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center rounded-xl border border-gray-200 shadow-sm px-6 py-4 bg-white">
         <span className="text-2xl font-bold" style={{ color: '#0F4229' }}>{scans.toLocaleString()}</span>
         <span className="text-xs mt-1" style={{ color: '#94A3B8' }}>{strings.scansCompleted}</span>
       </div>
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center rounded-xl border border-gray-200 shadow-sm px-6 py-4 bg-white">
         <span className="text-2xl font-bold text-red-600">{flags.toLocaleString()}</span>
         <span className="text-xs mt-1" style={{ color: '#94A3B8' }}>{strings.redFlagsRaised}</span>
       </div>
