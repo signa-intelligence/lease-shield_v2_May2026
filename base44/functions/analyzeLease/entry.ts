@@ -6,7 +6,7 @@
  * v1.0.0: Initial version
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
-import PDFParser from 'npm:pdf-parse@1.1.1';
+import PDFParser from 'npm:pdf-parse@1.1.1/lib/pdf-parse.js';
 
 function extractAddressFromText(text) {
   const patterns = [
@@ -67,6 +67,15 @@ Deno.serve(async (req) => {
   try {
     const T0 = Date.now();
     const base44 = createClientFromRequest(req);
+
+    // GUARD 1: Require authenticated session
+    let user = null;
+    try { user = await base44.auth.me(); } catch (_) { user = null; }
+    if (!user) {
+      return Response.json({ ok: false, step: 'AUTH', error_code: 'UNAUTHORIZED', message: 'Authentication required' }, { status: 401 });
+    }
+    const isAdmin = (user.role || '').toLowerCase() === 'admin';
+
     const bodyText = await req.text();
     let payload = {};
     try { payload = JSON.parse(bodyText || '{}'); } catch (_) { payload = {}; }
@@ -78,6 +87,38 @@ Deno.serve(async (req) => {
 
     if (!fileUrl || !leaseId) {
       return Response.json({ ok: false, step: 'INPUT_VALIDATION', error_code: 'MISSING_PARAMS', message: 'fileUrl and leaseId are required' });
+    }
+
+    // GUARD 2: Ownership validation — lease and (if provided) scan must belong to the caller (or caller is admin)
+    const svcGuard = base44.asServiceRole || base44;
+    const lease = await svcGuard.entities.Lease.get(leaseId).catch(() => null);
+    if (!lease) {
+      return Response.json({ ok: false, step: 'OWNERSHIP', error_code: 'LEASE_NOT_FOUND', message: 'Lease not found' }, { status: 404 });
+    }
+    const ownsLease = lease.created_by_id === user.id || lease.owner_email === user.email;
+    if (!ownsLease && !isAdmin) {
+      return Response.json({ ok: false, step: 'OWNERSHIP', error_code: 'FORBIDDEN', message: 'You do not have access to this lease' }, { status: 403 });
+    }
+    if (inputScanId) {
+      const scanRecord = await svcGuard.entities.LeaseScan.get(inputScanId).catch(() => null);
+      if (!scanRecord) {
+        return Response.json({ ok: false, step: 'OWNERSHIP', error_code: 'SCAN_NOT_FOUND', message: 'Scan not found' }, { status: 404 });
+      }
+      const ownsScan = scanRecord.created_by_id === user.id || scanRecord.owner_email === user.email;
+      if (!ownsScan && !isAdmin) {
+        return Response.json({ ok: false, step: 'OWNERSHIP', error_code: 'FORBIDDEN', message: 'You do not have access to this scan' }, { status: 403 });
+      }
+    }
+
+    // GUARD 3: Restrict fileUrl to trusted storage domain (SSRF protection)
+    let parsedUrl;
+    try { parsedUrl = new URL(fileUrl); } catch (_) {
+      return Response.json({ ok: false, step: 'URL_VALIDATION', error_code: 'INVALID_URL', message: 'fileUrl is not a valid URL' }, { status: 400 });
+    }
+    const TRUSTED_FILE_HOSTS = ['qtrypzzcjebvfcihiynt.supabase.co', 'base44.app'];
+    const hostOk = parsedUrl.protocol === 'https:' && TRUSTED_FILE_HOSTS.some(h => parsedUrl.hostname === h || parsedUrl.hostname.endsWith('.' + h));
+    if (!hostOk) {
+      return Response.json({ ok: false, step: 'URL_VALIDATION', error_code: 'UNTRUSTED_FILE_SOURCE', message: 'fileUrl must point to app storage' }, { status: 403 });
     }
 
     // File type check — reject images
