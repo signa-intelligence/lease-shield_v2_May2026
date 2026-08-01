@@ -31,7 +31,10 @@ export default function NotificationPanel({ language = 'en', isDarkMode = false 
     enabled: isOpen
   });
   
-  const unreadCount = notifications.filter(n => !n.is_read && !n.is_dismissed).length;
+  // Only show notifications that are neither read nor dismissed (read/dismissed rows auto-hide but remain in DB)
+  const visibleNotifications = notifications.filter(n => !n.is_read && !n.is_dismissed);
+  
+  const unreadCount = visibleNotifications.length;
   
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId) => {
@@ -60,7 +63,7 @@ export default function NotificationPanel({ language = 'en', isDarkMode = false 
   
   const deleteMutation = useMutation({
     mutationFn: async (notificationId) => {
-      await base44.entities.NotificationLog.delete(notificationId);
+      await base44.entities.NotificationLog.update(notificationId, { is_dismissed: true });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -215,13 +218,13 @@ export default function NotificationPanel({ language = 'en', isDarkMode = false 
                   <div className="animate-spin w-6 h-6 border-2 border-gray-300 border-t-[#0C3B2E] rounded-full mx-auto mb-2"></div>
                   {language === 'th' ? 'กำลังโหลด...' : 'Loading...'}
                 </div>
-              ) : notifications.length === 0 ? (
+              ) : visibleNotifications.length === 0 ? (
                 <div className="p-8 text-center" style={{ color: colors.textSecondary }}>
                   <Bell className="w-12 h-12 mx-auto mb-2 opacity-30" />
                   <p>{strings.noNotifications}</p>
                 </div>
               ) : (
-                notifications.map((notification) => (
+                visibleNotifications.map((notification) => (
                   <div
                     key={notification.id}
                     className="p-4 border-b transition cursor-pointer"
@@ -316,7 +319,7 @@ export default function NotificationPanel({ language = 'en', isDarkMode = false 
               )}
             </div>
             
-            {notifications.length > 10 && (
+            {visibleNotifications.length > 10 && (
               <div className="p-3 border-t text-center" style={{ 
                 borderTopColor: colors.borderColor,
                 backgroundColor: isDarkMode ? '#1F2937' : '#F9FAFB'
