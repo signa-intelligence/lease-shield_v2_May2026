@@ -14,6 +14,28 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing userEmail or updates' }, { status: 400 });
     }
 
+    // Restrict updates to fields the admin panel is actually allowed to edit
+    const ALLOWED_FIELDS = [
+      'full_name',
+      'phone',
+      'plan_tier',
+      'role',
+      'access_level',
+      'manual_tier_override',
+      'manual_scan_credits',
+      'manual_letter_credits',
+      'manual_case_credits',
+      'available_scans',
+      'letter_credits'
+    ];
+
+    const invalidFields = Object.keys(updates).filter(f => !ALLOWED_FIELDS.includes(f));
+    if (invalidFields.length > 0) {
+      return Response.json({
+        error: `Field(s) not allowed: ${invalidFields.join(', ')}`
+      }, { status: 400 });
+    }
+
     const svc = base44.asServiceRole;
     const users = await svc.entities.User.filter({ email: userEmail });
     if (!users?.length) {
