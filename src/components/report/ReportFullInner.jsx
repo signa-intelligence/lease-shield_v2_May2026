@@ -50,65 +50,12 @@ const SEVERITY_CONFIG = {
 };
 
 
-function defaultRecsFor(category, riskLevel) {
-  const rl = String(riskLevel || 'medium').toLowerCase();
-  const c = category || "clause";
-  
-  const defaults = {
-    critical: [
-      "Use Lease Shield's negotiation letter templates to address this clause",
-      "Draft a negotiation request using our Letter Templates",
-      "Document all communications about this clause in writing"
-    ],
-    high: [
-      "Negotiate this clause - view our recommended letter templates",
-      "Use our Letter Templates to request modifications",
-      "Request written clarification of landlord's interpretation"
-    ],
-    medium: [
-      `Request clarification of ${c} terms in writing`,
-      "Propose mutual safeguards to balance both parties' interests",
-      "Set clear expectations and document agreements upfront"
-    ],
-    low: [
-      `Review this ${c} to ensure you understand your obligations`,
-      "Keep records of any related communications",
-      "Monitor for any issues during the tenancy"
-    ],
-    none: [
-      "Standard clause - no action required",
-      "Maintain documentation for reference",
-      "Review periodically during tenancy"
-    ]
-  };
-  
-  return defaults[rl] || defaults.medium;
-}
-
-// Parse recommendation string into array of 3 recommendations
-function parseRecommendations(recString, riskLevel, category) {
-  let recs = [];
-  
-  if (recString) {
-    recs = String(recString)
-      .split(/[\n•\-–]|\d+\.\s+/g)
-      .map(s => s.trim())
-      .filter(s => s.length > 5);
+// Single recommendation per clause — no padding, no generic defaults
+function resolveRecommendation(recValue) {
+  if (Array.isArray(recValue)) {
+    return String(recValue[0] || '').trim();
   }
-  
-  const defaultRecs = defaultRecsFor(category, riskLevel);
-  
-  // Ensure exactly 3 recommendations
-  while (recs.length < 3) {
-    const nextDefault = defaultRecs[recs.length];
-    if (nextDefault && !recs.includes(nextDefault)) {
-      recs.push(nextDefault);
-    } else {
-      break;
-    }
-  }
-  
-  return recs.slice(0, 3);
+  return String(recValue || '').trim();
 }
 
 // Build detailed executive summary with next steps and timeline
@@ -484,14 +431,6 @@ function issuesValidatedToFlags(issuesValidated, clauseLedger) {
     const category = i?.taxonomy_code || "Other Risks";
 
 
-    const ensureRecs = [...recs];
-    while (ensureRecs.length < 2) {
-      defaultRecsFor(category).forEach((x) => {
-        if (ensureRecs.length < 2) ensureRecs.push(x);
-      });
-    }
-
-
     return {
       clause_id: i?.clause_id || `unknown-${Math.random().toString(36).slice(2, 9)}`,
       severity: sev === "no_risk" ? "none" : sev,
@@ -499,7 +438,7 @@ function issuesValidatedToFlags(issuesValidated, clauseLedger) {
       title: i?.title || "Issue detected",
       description: i?.rationale || "Review required",
       explanation: "",
-      recommendation: ensureRecs.join("\n"),
+      recommendation: recs.join("\n"),
       evidence
     };
   });
@@ -901,7 +840,7 @@ export default function ReportFullInner({ scanId, leaseId, showDebug, forensicDa
       clauseCoverage: "Clause Coverage",
       reportTitle: "Full Lease Analysis Report",
       whatThisMeans: "What This Means",
-      recommendations: "Recommendations",
+      recommendations: "Recommendation",
       back: "Back",
       generating: "Generating...",
       errorLoading: "Error Loading Report",
@@ -1131,8 +1070,7 @@ const topRisksSection = isPreviewMode && topRisks.length > 0 ? (
 const clausesRaw = Array.isArray(sf.clauses) ? sf.clauses : [];
 const allClauses = clausesRaw.map((c, idx) => {
   const riskLevel = c.risk_level || 'none';
-  const category = c.canonical_name || c.original_clause_title || c.title || 'clause';
-  const recs = parseRecommendations(c.recommended_action || c.recommendation, riskLevel, category);
+  const recommendation = resolveRecommendation(c.recommendation || c.recommended_action || c.recommendations);
   
   return {
     clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
@@ -1142,7 +1080,7 @@ const allClauses = clausesRaw.map((c, idx) => {
     risk_level: riskLevel,
     plain_english: c.analysis || c.explanation || c.plain_english || c.risk_summary || '—',
     text: c.clause_text || c.text || c.full_text || '',
-    recommendations: recs
+    recommendation
   };
 });
 
@@ -1579,8 +1517,8 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                       </p>
                     </div>
                     
-                    {/* 3 Recommendations */}
-                    {c.risk_level !== 'none' && (
+                    {/* Single Recommendation */}
+                    {c.risk_level !== 'none' && c.recommendation && (
                       <div className="p-4" style={{ 
                         backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
                         borderTop: `1px solid ${colors.borderColor}`
@@ -1588,21 +1526,9 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                         <div className="text-xs font-semibold mb-3" style={{ color: colors.textSecondary }}>
                           {strings.recommendations}
                         </div>
-                        <ul className="space-y-2">
-                          {c.recommendations.map((rec, recIdx) => (
-                            <li key={recIdx} className="flex items-start gap-2">
-                              <span className="text-xs font-bold mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{
-                                backgroundColor: colorSet.bg,
-                                color: colorSet.text
-                              }}>
-                                {recIdx + 1}
-                              </span>
-                              <span className="text-sm" style={{ color: colors.textPrimary, lineHeight: '1.5' }}>
-                                {rec}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
+                        <p className="text-sm" style={{ color: colors.textPrimary, lineHeight: '1.5' }}>
+                          {c.recommendation}
+                        </p>
                       </div>
                     )}
                   </div>
