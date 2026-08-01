@@ -35,9 +35,12 @@ Deno.serve(async (req) => {
     console.log('[ADMIN_LIST_USERS] Authorized:', user.email, 'role:', role, 'access_level:', accessLevel);
 
     // Fetch all users using service role to bypass RLS
-    const users = await base44.asServiceRole.entities.User.list('-created_date');
+    const allUsers = await base44.asServiceRole.entities.User.list('-created_date');
 
-    console.log('[ADMIN_LIST_USERS] Success, count:', users.length);
+    // Exclude permanently deleted users entirely (soft-deleted users remain visible with DELETED badge)
+    const users = allUsers.filter(u => u.permanently_deleted !== true);
+
+    console.log('[ADMIN_LIST_USERS] Success, count:', users.length, '(excluded permanently deleted:', allUsers.length - users.length, ')');
 
     return Response.json({ 
       success: true,
