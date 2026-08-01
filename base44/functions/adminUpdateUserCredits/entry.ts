@@ -6,7 +6,8 @@ const ALLOWED_FIELDS = [
   'manual_letter_credits',
   'manual_case_credits',
   'available_scans',
-  'letter_credits'
+  'letter_credits',
+  'plan_tier'
 ];
 
 Deno.serve(async (req) => {
