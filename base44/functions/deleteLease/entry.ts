@@ -157,8 +157,14 @@ Deno.serve(async (req) => {
       throw err;
     }
 
-    // CASCADE DELETE: Delete notification logs by lease_id
-    const notifications = await svc.entities.NotificationLog.filter({ lease_id: leaseId });
+    // CASCADE DELETE: Delete notification logs (NotificationLog links polymorphically via related_entity_type + related_entity_id, not lease_id)
+    const leaseNotifications = await svc.entities.NotificationLog.filter({ related_entity_type: "lease", related_entity_id: leaseId });
+    let depositNotifications = [];
+    for (const deposit of allDeposits) {
+      const depNotifs = await svc.entities.NotificationLog.filter({ related_entity_type: "deposit", related_entity_id: deposit.id });
+      depositNotifications = [...depositNotifications, ...depNotifs];
+    }
+    const notifications = [...leaseNotifications, ...depositNotifications];
     console.log(`[${correlationId}] [DELETE_NOTIFICATIONS_START]`, { count: notifications.length });
     try {
       for (const notification of notifications) {
