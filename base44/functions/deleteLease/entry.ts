@@ -103,10 +103,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // CASCADE DELETE: Delete timeline events by lease_id
-    console.log(`[${correlationId}] [DELETE_TIMELINE_START]`, { count: timelineByLeaseId.length });
+    // CASCADE DELETE: Delete ALL related timeline events (by lease_id AND property_address)
+    console.log(`[${correlationId}] [DELETE_TIMELINE_START]`, { count: allTimelineEvents.length });
     try {
-      for (const event of timelineByLeaseId) {
+      for (const event of allTimelineEvents) {
         await svc.entities.TimelineEvent.delete(event.id);
       }
       console.log(`[${correlationId}] [DELETE_TIMELINE_DONE]`);
@@ -115,10 +115,10 @@ Deno.serve(async (req) => {
       throw err;
     }
 
-    // CASCADE DELETE: Delete deposits by lease_id
-    console.log(`[${correlationId}] [DELETE_DEPOSITS_START]`, { count: depositsByLeaseId.length });
+    // CASCADE DELETE: Delete ALL related deposits (by lease_id AND property_address)
+    console.log(`[${correlationId}] [DELETE_DEPOSITS_START]`, { count: allDeposits.length });
     try {
-      for (const deposit of depositsByLeaseId) {
+      for (const deposit of allDeposits) {
         await svc.entities.DepositTracker.delete(deposit.id);
       }
       console.log(`[${correlationId}] [DELETE_DEPOSITS_DONE]`);
@@ -137,6 +137,36 @@ Deno.serve(async (req) => {
       console.log(`[${correlationId}] [DELETE_SCANS_DONE]`);
     } catch (err) {
       console.error(`[${correlationId}] [DELETE_SCANS_FAILED]`, { error: err.message, stack: err.stack });
+      throw err;
+    }
+
+    // CASCADE DELETE: Delete rent payments linked to the deleted deposits (RentPayment links via deposit_tracker_id, not lease_id)
+    let rentPayments = [];
+    for (const deposit of allDeposits) {
+      const payments = await svc.entities.RentPayment.filter({ deposit_tracker_id: deposit.id });
+      rentPayments = [...rentPayments, ...payments];
+    }
+    console.log(`[${correlationId}] [DELETE_RENT_PAYMENTS_START]`, { count: rentPayments.length });
+    try {
+      for (const payment of rentPayments) {
+        await svc.entities.RentPayment.delete(payment.id);
+      }
+      console.log(`[${correlationId}] [DELETE_RENT_PAYMENTS_DONE]`);
+    } catch (err) {
+      console.error(`[${correlationId}] [DELETE_RENT_PAYMENTS_FAILED]`, { error: err.message, stack: err.stack });
+      throw err;
+    }
+
+    // CASCADE DELETE: Delete notification logs by lease_id
+    const notifications = await svc.entities.NotificationLog.filter({ lease_id: leaseId });
+    console.log(`[${correlationId}] [DELETE_NOTIFICATIONS_START]`, { count: notifications.length });
+    try {
+      for (const notification of notifications) {
+        await svc.entities.NotificationLog.delete(notification.id);
+      }
+      console.log(`[${correlationId}] [DELETE_NOTIFICATIONS_DONE]`);
+    } catch (err) {
+      console.error(`[${correlationId}] [DELETE_NOTIFICATIONS_FAILED]`, { error: err.message, stack: err.stack });
       throw err;
     }
 
@@ -164,10 +194,12 @@ Deno.serve(async (req) => {
     }
     
     console.log(`[${correlationId}] Successfully deleted lease and cascaded records`, {
-      deposits: depositsByLeaseId.length,
+      deposits: allDeposits.length,
       maintenance: maintenanceRequests.length,
-      timeline: timelineByLeaseId.length,
+      timeline: allTimelineEvents.length,
       scans: leaseScans.length,
+      rentPayments: rentPayments.length,
+      notifications: notifications.length,
       storageFreed: fileSize
     });
 
@@ -178,7 +210,9 @@ Deno.serve(async (req) => {
         deposits: allDeposits.length,
         maintenance: maintenanceRequests.length,
         timeline: allTimelineEvents.length,
-        scans: leaseScans.length
+        scans: leaseScans.length,
+        rentPayments: rentPayments.length,
+        notifications: notifications.length
       },
       storageFreed: fileSize,
       correlationId

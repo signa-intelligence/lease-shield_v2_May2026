@@ -550,8 +550,8 @@ export default function Leases() {
               </div>
               <p className="text-sm mb-6" style={{ color: colors.textSecondary }}>
                 {language === 'th' 
-                  ? 'ข้อมูลจะถูกย้ายไปถังรีไซเคิล คุณแน่ใจหรือไม่?'
-                  : 'Data will be moved to Recycle Bin. Are you sure?'}
+                  ? 'สัญญาเช่า การสแกน เงินมัดจำ ค่าเช่า และไทม์ไลน์ที่เชื่อมโยงกับสัญญาเช่านี้จะถูกลบอย่างถาวรและไม่สามารถยกเลิกได้'
+                  : 'The lease, scan results, deposit, rent, and timeline data linked to this lease will be permanently deleted and cannot be undone.'}
               </p>
               <div className="flex gap-3">
                 <Button
