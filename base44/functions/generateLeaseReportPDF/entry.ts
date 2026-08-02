@@ -112,12 +112,61 @@ async function ensureThaiFont(doc){
   } catch(_) { return false; }
 }
 
-// Single recommendation per clause — no padding, no generic defaults
-function resolveRecommendation(recValue) {
-  if (Array.isArray(recValue)) {
-    return String(recValue[0] || '').trim();
+// Parse recommendation string into array of 3 recommendations
+function parseRecommendations(recString, riskLevel) {
+  const rl = String(riskLevel || 'medium').toLowerCase();
+  let recs = [];
+  
+  if (recString) {
+    // Split by newlines, bullets, or numbered items
+    recs = String(recString)
+      .split(/[\n•\-–]|\d+\.\s+/g)
+      .map(s => s.trim())
+      .filter(s => s.length > 5);
   }
-  return String(recValue || '').trim();
+  
+  // Default recommendations by risk level
+  const defaults = {
+    critical: [
+      "Use Lease Shield's negotiation letter templates to address this clause",
+      "Draft a negotiation request using our Letter Templates",
+      "Document all communications about this clause in writing"
+    ],
+    high: [
+      "Negotiate this clause - view our recommended letter templates",
+      "Use our Letter Templates to request modifications",
+      "Request written clarification of landlord's interpretation"
+    ],
+    medium: [
+      "Request clarification of this clause in writing",
+      "Propose mutual safeguards to balance both parties' interests",
+      "Set clear expectations and document agreements upfront"
+    ],
+    low: [
+      "Review this clause to ensure you understand your obligations",
+      "Keep records of any related communications",
+      "Monitor for any issues during the tenancy"
+    ],
+    none: [
+      "Standard clause - no action required",
+      "Maintain documentation for reference",
+      "Review periodically during tenancy"
+    ]
+  };
+  
+  const defaultRecs = defaults[rl] || defaults.medium;
+  
+  // Ensure exactly 3 recommendations
+  while (recs.length < 3) {
+    const nextDefault = defaultRecs[recs.length];
+    if (nextDefault && !recs.includes(nextDefault)) {
+      recs.push(nextDefault);
+    } else {
+      break;
+    }
+  }
+  
+  return recs.slice(0, 3);
 }
 
 // Build detailed executive summary
@@ -183,7 +232,7 @@ function transformCloudflareData(rawData) {
   const flags = clausesRaw
     .filter(c => c.risk_level && c.risk_level !== 'none')
     .map((c, idx) => {
-      const recommendation = resolveRecommendation(c.recommendation || c.recommended_action || c.recommendations);
+      const recs = parseRecommendations(c.recommended_action || c.recommendation, c.risk_level);
       return {
         clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
         severity: String(c.risk_level || 'medium').toLowerCase(),
@@ -191,7 +240,7 @@ function transformCloudflareData(rawData) {
         title: c.canonical_name || c.title || `Clause ${idx + 1}`,
         description: c.explanation || c.risk_summary || '',
         explanation: c.explanation || '',
-        recommendation,
+        recommendation: recs.join("\n"),
         evidence: (c.clause_text || c.text || '').slice(0, 240)
       };
     });
@@ -209,7 +258,6 @@ function transformCloudflareData(rawData) {
     clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
     heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
     full_text: c.clause_text || c.text || '',
-    recommendation: resolveRecommendation(c.recommendation || c.recommended_action || c.recommendations),
     page: 1
   }));
 
@@ -456,7 +504,10 @@ Deno.serve(async (req) => {
         // Build flags from issues_validated
         const flags = issues_validated_rows.map((r) => {
           const src = clauses_extracted_rows.find(c => c?.clause_id === r.clause_id);
-          const recommendation = resolveRecommendation(r.recommendation || r.recommended_action || r.recommended_actions);
+          const recs = parseRecommendations(
+            Array.isArray(r.recommended_actions) ? r.recommended_actions.join("\n") : '',
+            r.risk_level
+          );
           return {
             clause_id: r.clause_id,
             severity: String(r.risk_level || 'LOW').toLowerCase(),
@@ -464,7 +515,7 @@ Deno.serve(async (req) => {
             title: r.title || (src?.title) || `Clause ${r.clause_number}`,
             description: r.rationale || '',
             explanation: r.rationale || '',
-            recommendation,
+            recommendation: recs.join("\n"),
             evidence: (src?.text || '').slice(0, 240)
           };
         });
@@ -482,7 +533,6 @@ Deno.serve(async (req) => {
             clause_id: r.clause_id,
             heading: src?.title || r.title || `Clause ${r.clause_number}`,
             full_text: src?.text || '',
-            recommendation: resolveRecommendation(r.recommendation || r.recommended_action || r.recommended_actions),
             page: src?.page_number || 1
           };
         });
@@ -560,7 +610,6 @@ Deno.serve(async (req) => {
           clause_id: c.clause_id || `clause-${idx + 1}`,
           heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
           full_text: c.clause_text || c.text || '',
-          recommendation: resolveRecommendation(c.recommendation || c.recommended_action || c.recommendations),
           page: c.page_number || 1
         }));
       } else {
@@ -762,17 +811,23 @@ Deno.serve(async (req) => {
         addText(r.risk_summary, 16, 8);
       }
       
-      // Single recommendation carried on the ledger row (no cross-array join)
-      const recommendation = resolveRecommendation(c.recommendation);
-      if (recommendation) {
-        doc.setTextColor(40, 40, 40);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(7);
-        doc.text("RECOMMENDATION:", 16, y);
-        y += 4;
-        doc.setFont("helvetica", "normal");
-        if (y > pageHeight - 20) { doc.addPage(); y = 20; }
-        addText(normalizeBullet(recommendation), 16, 7);
+      // Recommendations (parse from clause data)
+      const flag = data.flags?.find(f => f.clause_id === c.clause_id);
+      if (flag?.recommendation) {
+        const recs = parseRecommendations(flag.recommendation, sev);
+        if (recs.length > 0) {
+          doc.setTextColor(40, 40, 40);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7);
+          doc.text("RECOMMENDATIONS:", 16, y);
+          y += 4;
+          doc.setFont("helvetica", "normal");
+          recs.forEach((rec, recIdx) => {
+            if (y > pageHeight - 20) { doc.addPage(); y = 20; }
+            const recText = normalizeBullet(rec);
+            addText(`  • ${recText}`, 16, 7);
+          });
+        }
       }
       
       y += 4;
