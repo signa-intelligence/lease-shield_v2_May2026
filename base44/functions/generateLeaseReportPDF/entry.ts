@@ -209,6 +209,7 @@ function transformCloudflareData(rawData) {
     clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
     heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
     full_text: c.clause_text || c.text || '',
+    recommendation: resolveRecommendation(c.recommendation || c.recommended_action || c.recommendations),
     page: 1
   }));
 
@@ -481,6 +482,7 @@ Deno.serve(async (req) => {
             clause_id: r.clause_id,
             heading: src?.title || r.title || `Clause ${r.clause_number}`,
             full_text: src?.text || '',
+            recommendation: resolveRecommendation(r.recommendation || r.recommended_action || r.recommended_actions),
             page: src?.page_number || 1
           };
         });
@@ -558,6 +560,7 @@ Deno.serve(async (req) => {
           clause_id: c.clause_id || `clause-${idx + 1}`,
           heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
           full_text: c.clause_text || c.text || '',
+          recommendation: resolveRecommendation(c.recommendation || c.recommended_action || c.recommendations),
           page: c.page_number || 1
         }));
       } else {
@@ -759,9 +762,8 @@ Deno.serve(async (req) => {
         addText(r.risk_summary, 16, 8);
       }
       
-      // Single recommendation from clause data
-      const flag = data.flags?.find(f => f.clause_id === c.clause_id);
-      const recommendation = resolveRecommendation(flag?.recommendation);
+      // Single recommendation carried on the ledger row (no cross-array join)
+      const recommendation = resolveRecommendation(c.recommendation);
       if (recommendation) {
         doc.setTextColor(40, 40, 40);
         doc.setFont("helvetica", "bold");
