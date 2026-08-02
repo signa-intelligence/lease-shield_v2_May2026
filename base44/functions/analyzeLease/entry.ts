@@ -220,6 +220,16 @@ BANNED PHRASES, never use these or close variants: "Negotiate this clause - view
 
 For LOW risk clauses, state that no action is needed rather than inventing advice.
 
+ADDITIONAL RECOMMENDATION CONSTRAINTS:
+
+1. "No action is needed" may ONLY be used for LOW risk clauses. If risk_level is MEDIUM, HIGH, or CRITICAL, the recommendation must contain an actionable request. If you are about to write "no action needed" for a non-LOW clause, re-evaluate the risk_level instead, it is likely misassigned.
+
+2. When proposing an alternative number, date, or term, state BOTH the current figure from clause_text AND the proposed replacement. Example: not "reduce the late fee to THB 100/day" but "reduce the late fee from THB 500/day (capped at THB 7,500) to THB 100/day."
+
+3. Before finalizing recommendations, cross-check all clauses against each other. If a recommendation would ask for something that another clause in the same lease already provides, do not recommend it, instead note in the analysis that the protection already exists elsewhere and reference that clause by name.
+
+4. If clause_text contains internally contradictory or ambiguous language (e.g. stating an action is "not permitted" then describing terms for when it IS permitted), the analysis must explicitly flag the contradiction as a risk in itself, since ambiguous drafting can be interpreted either way in a dispute.
+
 Return this JSON object:
 {
   "key_terms": {
