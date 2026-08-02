@@ -230,6 +230,8 @@ ADDITIONAL RECOMMENDATION CONSTRAINTS:
 
 4. If clause_text contains internally contradictory or ambiguous language (e.g. stating an action is "not permitted" then describing terms for when it IS permitted), the analysis must explicitly flag the contradiction as a risk in itself, since ambiguous drafting can be interpreted either way in a dispute.
 
+5. Daily-accumulating late fees are unusual and often excessive, even when capped. If clause_text describes a late fee that accrues per day (e.g. "THB X/day"), do not simply propose a lower daily rate as if the structure itself is fine. Instead, recommend replacing the daily-accumulation structure with a single flat late fee (a fixed one-time charge for late payment), noting that excessive penalty clauses can be challenged as unreasonable under general Thai contract law principles (Civil and Commercial Code provisions on penalty clauses). Do not state that daily late fees are illegal or prohibited, this is not confirmed. Frame it as a negotiation point, not a legal violation.
+
 Return this JSON object:
 {
   "key_terms": {
