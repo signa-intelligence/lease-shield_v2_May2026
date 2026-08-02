@@ -211,26 +211,9 @@ DEPOSIT CLAUSES: If a deposit clause specifies a 30-day return window, prohibits
 OVERALL RISK SCORE (0-100): The score must reflect the net tenant risk after accounting for protections. A well-drafted balanced lease should score below 35. A lease with no critical or high clauses should not score above 40.
 
 RECOMMENDATION — mandatory rule:
-Give exactly ONE recommendation per clause. It must be a single, information-dense sentence that does three things: (1) states the specific action to take, (2) references the exact number, date, term, or condition from clause_text that justifies the action, and (3) states what outcome or replacement term to ask for. Do not write vague single-clause advice like "negotiate for lower deposits" without the actual figures involved. If clause_text contains a number, date, or named condition, the recommendation must reference it directly.
-
-Example of a WEAK recommendation (too generic, avoid this level of detail): "Negotiate for lower deposits and clarify the terms for refundable amounts."
-Example of a STRONG recommendation (target this level of detail): "Given the 3-month non-refundable deposit stated in this clause, request it be reduced to 1-2 months and made fully refundable barring documented damage, in line with standard Bangkok rental terms."
+Give exactly ONE recommendation per clause, a single sentence of specific, actionable advice grounded in that clause's actual terms, referencing the specific number, date, condition, or party named in the clause_text. Do not pad with multiple generic points. For LOW risk clauses, state that no action is needed rather than inventing advice.
 
 BANNED PHRASES, never use these or close variants: "Negotiate this clause - view our recommended letter templates", "Use our Letter Templates to request modifications", "Request written clarification of landlord's interpretation".
-
-For LOW risk clauses, state that no action is needed rather than inventing advice.
-
-ADDITIONAL RECOMMENDATION CONSTRAINTS:
-
-1. "No action is needed" may ONLY be used for LOW risk clauses. If risk_level is MEDIUM, HIGH, or CRITICAL, the recommendation must contain an actionable request. If you are about to write "no action needed" for a non-LOW clause, re-evaluate the risk_level instead, it is likely misassigned.
-
-2. When proposing an alternative number, date, or term, state BOTH the current figure from clause_text AND the proposed replacement. Example: not "reduce the late fee to THB 100/day" but "reduce the late fee from THB 500/day (capped at THB 7,500) to THB 100/day."
-
-3. Before finalizing recommendations, cross-check all clauses against each other. If a recommendation would ask for something that another clause in the same lease already provides, do not recommend it, instead note in the analysis that the protection already exists elsewhere and reference that clause by name.
-
-4. If clause_text contains internally contradictory or ambiguous language (e.g. stating an action is "not permitted" then describing terms for when it IS permitted), the analysis must explicitly flag the contradiction as a risk in itself, since ambiguous drafting can be interpreted either way in a dispute.
-
-5. Daily-accumulating late fees are unusual and often excessive, even when capped. If clause_text describes a late fee that accrues per day (e.g. "THB X/day"), do not simply propose a lower daily rate as if the structure itself is fine. Instead, recommend replacing the daily-accumulation structure with a single flat late fee (a fixed one-time charge for late payment), noting that excessive penalty clauses can be challenged as unreasonable under general Thai contract law principles (Civil and Commercial Code provisions on penalty clauses). Do not state that daily late fees are illegal or prohibited, this is not confirmed. Frame it as a negotiation point, not a legal violation.
 
 Return this JSON object:
 {
