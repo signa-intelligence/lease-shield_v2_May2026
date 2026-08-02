@@ -200,6 +200,7 @@ function transformCloudflareData(rawData) {
     clause_id: c.clause_id || c.catalog_id || `clause-${idx}`,
     heading: c.canonical_name || c.title || `Clause ${idx + 1}`,
     full_text: c.clause_text || c.text || '',
+    recommendation: c.recommendation || c.recommended_action || '',
     page: 1
   }));
 
@@ -471,6 +472,7 @@ Deno.serve(async (req) => {
             clause_id: r.clause_id,
             heading: src?.title || r.title || `Clause ${r.clause_number}`,
             full_text: src?.text || '',
+            recommendation: Array.isArray(r.recommended_actions) ? r.recommended_actions.join("\n") : '',
             page: src?.page_number || 1
           };
         });
@@ -749,16 +751,15 @@ Deno.serve(async (req) => {
         addText(r.risk_summary, 16, 8);
       }
       
-      // Recommendation (single line, same source as on-screen report)
-      const flag = data.flags?.find(f => f.clause_id === c.clause_id);
-      if (flag?.recommendation) {
+      // Recommendation (carried directly on clause_ledger row, no cross-array join)
+      if (c.recommendation) {
         doc.setTextColor(40, 40, 40);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(7);
         doc.text("RECOMMENDATION:", 16, y);
         y += 4;
         doc.setFont("helvetica", "normal");
-        addText(normalizeBullet(flag.recommendation), 16, 7);
+        addText(normalizeBullet(c.recommendation), 16, 7);
       }
       
       y += 4;
