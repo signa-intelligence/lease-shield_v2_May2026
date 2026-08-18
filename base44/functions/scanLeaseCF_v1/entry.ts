@@ -69,18 +69,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Monthly cap for Secure tier
-    if (userTier === 'secure') {
-      const currentMonth = new Date().toISOString().slice(0, 7);
-      const monthlyUsed = (user.usage_month === currentMonth) ? (user.scans_used_this_month || 0) : 0;
-      if (monthlyUsed >= 10) {
-        return Response.json({
-          ok: false, step: 'MONTHLY_CAP', error_code: 'MONTHLY_SCAN_LIMIT',
-          message: `Monthly scan limit reached (${monthlyUsed}/10). Resets next month.`
-        });
-      }
-    }
-
     // Find or create scan record
     let targetScan = null;
 
@@ -189,11 +177,8 @@ Deno.serve(async (req) => {
               const updateData = { available_scans: cs - 1 };
               if (userTier === 'secure') {
                 const cm = new Date().toISOString().slice(0, 7);
-                if (userObj.usage_month === cm) {
-                  updateData.scans_used_this_month = (userObj.scans_used_this_month || 0) + 1;
-                } else {
+                if (userObj.usage_month !== cm) {
                   updateData.usage_month = cm;
-                  updateData.scans_used_this_month = 1;
                   updateData.letters_used_this_month = 0;
                   updateData.fasttrack_used_this_month = 0;
                 }
