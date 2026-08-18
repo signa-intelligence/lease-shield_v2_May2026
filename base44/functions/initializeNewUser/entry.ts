@@ -127,7 +127,10 @@ Deno.serve(async (req) => {
     
     // Welcome email (non-blocking) — same function the client calls
     try {
-      await base44.functions.invoke('sendWelcomeEmail');
+      await base44.functions.invoke('sendWelcomeEmail', {
+        user_id: userId,
+        internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET')
+      });
     } catch (emailErr) {
       console.warn(`[${correlationId}] Welcome email failed:`, emailErr.message);
     }
@@ -138,7 +141,8 @@ Deno.serve(async (req) => {
         user_email: userEmail,
         user_name: data?.full_name,
         plan_tier: 'explorer',
-        signup_source: 'Server'
+        signup_source: 'Server',
+        internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET')
       });
     } catch (notifyErr) {
       console.warn(`[${correlationId}] Admin notification failed:`, notifyErr.message);
