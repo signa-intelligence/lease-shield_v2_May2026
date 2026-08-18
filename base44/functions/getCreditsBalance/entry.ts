@@ -1,14 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-/**
- * Plan Allowances - Single Source of Truth
- */
-const PLAN_ALLOWANCES = {
-  free: { letters: 0, scans: 1 },
-  lite: { letters: 3, scans: 6 },
-  protect: { letters: 5, scans: 12 },
-  secure: { letters: 10, scans: 999999 } // unlimited scans
-};
+import { getAllowance } from '../../shared/planAllowances.ts';
 
 /**
  * Get Credits Balance for a User
@@ -39,7 +31,7 @@ Deno.serve(async (req) => {
     const planTier = user.plan_tier || 'free';
 
     // Get plan allowance
-    const allowance = PLAN_ALLOWANCES[planTier] || PLAN_ALLOWANCES.free;
+    const allowance = getAllowance(planTier);
 
     // Get purchased credits from ledger
     const ledger = await base44.asServiceRole.entities.CreditsLedger.filter({ user_id: targetUserId });
@@ -52,13 +44,9 @@ Deno.serve(async (req) => {
       .filter(l => l.type === 'scans' && l.delta > 0)
       .reduce((sum, l) => sum + l.delta, 0);
 
-    // Get used credits from user record
-    const usedLetters = user.credits_used_letters || 0;
-    const usedScans = user.credits_used_scans || 0;
-
-    // Compute remaining
-    const remainingLetters = Math.max(0, allowance.letters + purchasedLetters - usedLetters);
-    const remainingScans = Math.max(0, allowance.scans + purchasedScans - usedScans);
+    // Live remaining balances live on the User record (set by stripeWebhook, decremented on use)
+    const remainingLetters = user.letter_credits || 0;
+    const remainingScans = user.available_scans || 0;
 
     return Response.json({
       success: true,
@@ -66,17 +54,18 @@ Deno.serve(async (req) => {
         letters: {
           allowance: allowance.letters,
           purchased: purchasedLetters,
-          used: usedLetters,
+          used: Math.max(0, allowance.letters - remainingLetters),
           remaining: remainingLetters
         },
         scans: {
           allowance: allowance.scans,
           purchased: purchasedScans,
-          used: usedScans,
+          used: Math.max(0, allowance.scans - remainingScans),
           remaining: remainingScans
         }
       },
-      plan_tier: planTier
+      plan_tier: planTier,
+      credits_reset_at: user.credits_reset_at || null
     });
 
   } catch (error) {
