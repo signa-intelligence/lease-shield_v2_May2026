@@ -127,22 +127,9 @@ export default function Layout({ children, currentPageName }) {
         availableScans: user.available_scans,
         previousTier: user.previous_plan_tier
       });
-      const updateData = {
-        is_deleted: false,
-        deleted_at: null,
-        is_active: true,
-        subscription_status: 'active',
-        plan_tier: 'explorer'
-      };
-      // Only grant fresh scan if benefits were never used
-      if (!user.explorer_benefits_used) {
-        updateData.available_scans = 1;
-        updateData.letter_credits = 0;
-      }
-      // If benefits were already used, keep existing (likely 0) values
-      base44.auth.updateMe(updateData)
+      base44.functions.invoke('initializeNewUser', { user_id: user.id })
         .then(() => {
-          console.log('[LAYOUT] ✅ Returning user reactivated:', user.email, { explorerBenefitsUsed: user.explorer_benefits_used });
+          console.log('[LAYOUT] ✅ Returning user reactivated:', user.email);
           queryClient.invalidateQueries({ queryKey: ['currentUser'] });
         })
         .catch(err => console.error('[LAYOUT] Failed to reactivate user:', err));
@@ -152,35 +139,13 @@ export default function Layout({ children, currentPageName }) {
     // Case 2: Brand new user — standard initialization
     if (user.available_scans === undefined && !user.plan_tier) {
       console.log('[LAYOUT] New user detected - initializing defaults:', user.email);
-      base44.auth.updateMe({
-        plan_tier: 'explorer',
-        available_scans: 1,
-        letter_credits: 0,
-        is_active: true,
-        subscription_status: 'active',
-        referral_credits_thb: 0,
-        referral_credits_total_thb: 0,
-        referral_count: 0,
-        explorer_benefits_used: false
-      })
+      base44.functions.invoke('initializeNewUser', { user_id: user.id })
         .then(() => {
-          console.log('[LAYOUT] ✅ User initialized: plan_tier=explorer, available_scans=1, letter_credits=0');
+          console.log('[LAYOUT] ✅ User initialized');
           if (typeof window.gtag === 'function') {
             window.gtag('event', 'sign_up', { method: 'email' });
           }
           queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-          base44.functions.invoke('sendWelcomeEmail')
-            .then(() => console.log('[LAYOUT] ✅ Welcome email triggered'))
-            .catch(err => console.error('[LAYOUT] Welcome email failed (non-critical):', err));
-          // Notify admin of new signup
-          base44.functions.invoke('notifyAdminNewSignup', {
-            user_email: user.email,
-            user_name: user.full_name,
-            plan_tier: 'explorer',
-            signup_source: document.referrer || 'Direct'
-          })
-            .then(() => console.log('[LAYOUT] ✅ Admin signup notification sent'))
-            .catch(err => console.error('[LAYOUT] Admin notification failed (non-critical):', err));
         })
         .catch(err => console.error('[LAYOUT] Failed to initialize user:', err));
       return;
