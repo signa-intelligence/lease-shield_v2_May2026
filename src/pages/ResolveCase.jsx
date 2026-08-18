@@ -468,9 +468,10 @@ function ResolveCaseContent() {
       const planTier = user?.plan_tier?.toLowerCase() || 'free';
       const tierLevel = planTier === 'lite' ? 'L' : planTier === 'protect' ? 'P' : planTier === 'secure' ? 'S' : 'F';
       
+      const isFastTrack = planTier === 'secure';
       const caseNumberResponse = await base44.functions.invoke('generateCaseNumber', {
         isMember: isMember,
-        fastTrack: false,
+        fastTrack: isFastTrack,
         tierLevel: tierLevel
       });
       
@@ -499,6 +500,7 @@ function ResolveCaseContent() {
         property_address: formData.property_address || '',
         evidence: evidenceData,
         status: 'awaiting_payment',
+        fast_track: isFastTrack,
         is_member_at_creation: membershipForCase.qualifiesForMemberBenefits,
         flags: {
           priority: membershipForCase.qualifiesForMemberBenefits
