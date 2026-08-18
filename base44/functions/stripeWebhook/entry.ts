@@ -1,5 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 import Stripe from 'npm:stripe@14.14.0';
+import { getAllowance } from '../../shared/planAllowances.ts';
+
+function plusTwelveMonthsISO(from = new Date()) {
+  const d = new Date(from);
+  d.setMonth(d.getMonth() + 12);
+  return d.toISOString();
+}
 
 const stripe = new Stripe(Deno.env.get("SK_TEST_secret_key"));
 const webhookSecret = Deno.env.get("webhook_stripe");
@@ -174,8 +181,9 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.entities.User.update(user.id, {
               plan_tier: planTier,
               subscription_status: 'active',
-              available_scans: scans,
-              letter_credits: credits,
+              available_scans: getAllowance(planTier).scans,
+              letter_credits: getAllowance(planTier).letters,
+              credits_reset_at: plusTwelveMonthsISO(),
               stripe_subscription_id: subscriptionId,
               billing_interval: interval === 'year' ? 'annual' : 'monthly',
               subscription_started_at: now,
@@ -442,8 +450,9 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.entities.User.update(user.id, {
               plan_tier: planTier,
               subscription_status: 'active',
-              available_scans: scans,
-              letter_credits: credits,
+              available_scans: getAllowance(planTier).scans,
+              letter_credits: getAllowance(planTier).letters,
+              credits_reset_at: plusTwelveMonthsISO(),
               billing_interval: interval === 'year' ? 'annual' : 'monthly',
               plan_renews_at: new Date(subscription.current_period_end * 1000).toISOString(),
               usage_month: currentMonth,
@@ -531,6 +540,25 @@ Deno.serve(async (req) => {
         }
       } catch (revErr) {
         console.error('[REVENUE] ⚠️ Renewal tracking failed (non-critical):', revErr.message);
+      }
+
+      // Annual credit top-up on renewal (SET to allowance, never increment)
+      try {
+        const renewalUser = await findUserByCustomerId(invoice.customer);
+        if (renewalUser) {
+          const resetAt = renewalUser.credits_reset_at ? new Date(renewalUser.credits_reset_at) : null;
+          if (!resetAt || Date.now() >= resetAt.getTime()) {
+            const allowance = getAllowance(renewalUser.plan_tier);
+            await base44.asServiceRole.entities.User.update(renewalUser.id, {
+              available_scans: allowance.scans,
+              letter_credits: allowance.letters,
+              credits_reset_at: plusTwelveMonthsISO()
+            });
+            console.log('[RENEWAL_CREDITS] ✅ Credits reset:', renewalUser.email, renewalUser.plan_tier, allowance);
+          }
+        }
+      } catch (creditErr) {
+        console.error('[RENEWAL_CREDITS] ⚠️ Credit top-up failed (non-critical):', creditErr.message);
       }
 
       try {
