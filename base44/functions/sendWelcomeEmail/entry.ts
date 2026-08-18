@@ -10,10 +10,27 @@ function getFirstName(user) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const body = await req.json().catch(() => ({}));
+    const targetUserId = body?.user_id;
+    const isInternal = !!targetUserId;
 
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    let user;
+    if (isInternal) {
+      // Server-side / automation path — caller must prove it is internal
+      const expectedSecret = Deno.env.get('INTERNAL_FUNCTION_SECRET');
+      const serviceAuth = req.headers.get('base44-service-authorization');
+      if (!serviceAuth && (!expectedSecret || body?.internal_secret !== expectedSecret)) {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      user = await base44.asServiceRole.entities.User.get(targetUserId);
+      if (!user) {
+        return Response.json({ error: 'User not found' }, { status: 404 });
+      }
+    } else {
+      user = await base44.auth.me();
+      if (!user) {
+        return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     if (user.welcome_email_sent) {
@@ -151,7 +168,11 @@ Deno.serve(async (req) => {
     }
 
     console.log('[WELCOME_EMAIL] ✅ Sent to:', user.email, 'ID:', data.id);
-    await base44.auth.updateMe({ welcome_email_sent: true });
+    if (isInternal) {
+      await base44.asServiceRole.entities.User.update(targetUserId, { welcome_email_sent: true });
+    } else {
+      await base44.auth.updateMe({ welcome_email_sent: true });
+    }
 
     return Response.json({ success: true, messageId: data.id });
   } catch (error) {
