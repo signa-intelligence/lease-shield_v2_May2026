@@ -87,8 +87,9 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.User.update(user.id, {
         plan_tier: 'explorer',
         subscription_status: 'cancelled',
-        available_scans: 1,
-        letter_credits: 0,
+        available_scans: getAllowance('explorer').scans,
+        letter_credits: getAllowance('explorer').letters,
+        credits_reset_at: null,
         stripe_subscription_id: null,
         previous_plan_tier: previousTier,
         storage_over_limit: isOverLimit,
