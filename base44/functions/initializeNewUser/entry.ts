@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.21';
+import { getAllowance } from '../../shared/planAllowances.ts';
 
 /**
  * Initialize new user with default tier and credits.
@@ -68,15 +69,14 @@ Deno.serve(async (req) => {
         plan_tier: 'explorer'
       };
       
+      // Only grant fresh allocation if benefits were never used (matches Layout.jsx)
       if (data.explorer_benefits_used) {
-        // Benefits already consumed — don't reset
-        updateData.available_scans = data.available_scans || 0;
-        // Keep existing letter_credits as-is (they're already 0 or whatever they had)
         console.log(`[${correlationId}] Explorer benefits previously used — NOT resetting free allocation`);
       } else {
-        // Benefits never used — grant the standard explorer allocation
-        updateData.available_scans = 1;
-        console.log(`[${correlationId}] Explorer benefits NOT previously used — granting 1 free scan`);
+        const explorer = getAllowance('explorer');
+        updateData.available_scans = explorer.scans;
+        updateData.letter_credits = explorer.letters;
+        console.log(`[${correlationId}] Explorer benefits NOT previously used — granting free allocation`);
       }
       
       await svc.entities.User.update(userId, updateData);
@@ -103,30 +103,45 @@ Deno.serve(async (req) => {
     // Brand new user — standard initialization
     console.log(`[${correlationId}] Initializing new user with explorer tier + 1 scan`);
     
+    const explorer = getAllowance('explorer');
+
     await svc.entities.User.update(userId, {
       plan_tier: 'explorer',
-      available_scans: 1,
+      available_scans: explorer.scans,
+      letter_credits: explorer.letters,
       is_active: true,
       subscription_status: 'active',
-      explorer_benefits_used: false
+      explorer_benefits_used: false,
+      referral_credits_thb: 0,
+      referral_credits_total_thb: 0,
+      referral_count: 0
     });
     
     console.log(`[${correlationId}] ✅ User initialized`, {
       userId,
       email: userEmail,
       plan_tier: 'explorer',
-      available_scans: 1
+      available_scans: explorer.scans,
+      letter_credits: explorer.letters
     });
     
-    // Send welcome email (non-blocking)
+    // Welcome email (non-blocking) — same function the client calls
     try {
-      await svc.integrations.Core.SendEmail({
-        to: userEmail,
-        subject: 'Welcome to Lease Shield',
-        body: `<p>Welcome to Lease Shield! Your account is ready with 1 free lease scan.</p>`
-      });
+      await base44.functions.invoke('sendWelcomeEmail');
     } catch (emailErr) {
       console.warn(`[${correlationId}] Welcome email failed:`, emailErr.message);
+    }
+
+    // Admin signup notification (non-blocking)
+    try {
+      await base44.functions.invoke('notifyAdminNewSignup', {
+        user_email: userEmail,
+        user_name: data?.full_name,
+        plan_tier: 'explorer',
+        signup_source: 'Server'
+      });
+    } catch (notifyErr) {
+      console.warn(`[${correlationId}] Admin notification failed:`, notifyErr.message);
     }
     
     return Response.json({
@@ -135,7 +150,8 @@ Deno.serve(async (req) => {
       userId,
       email: userEmail,
       plan_tier: 'explorer',
-      available_scans: 1,
+      available_scans: explorer.scans,
+      letter_credits: explorer.letters,
       correlationId
     });
     
