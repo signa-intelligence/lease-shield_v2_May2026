@@ -15,32 +15,63 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const payload = await clonedReq.json();
 
-    if (!payload?.event || typeof payload.event.type !== 'string' || payload.event.type.trim() === '') {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    let userId;
+    let data;
+
+    if (payload?.user_id) {
+      // Direct invocation shape: { user_id, internal_secret }
+      const hasServiceAuth = !!req.headers.get('base44-service-authorization');
+      const secretOk = payload.internal_secret &&
+        payload.internal_secret === Deno.env.get('INTERNAL_FUNCTION_SECRET');
+
+      if (!hasServiceAuth && !secretOk) {
+        console.warn(`[${correlationId}] Direct invocation rejected — unauthorized`);
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      const record = await base44.asServiceRole.entities.User.get(payload.user_id);
+      if (!record) {
+        console.error(`[${correlationId}] User not found: ${payload.user_id}`);
+        return Response.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      userId = payload.user_id;
+      data = record;
+
+      console.log(`[${correlationId}] Direct invocation`, {
+        userId,
+        email: data?.email
+      });
+    } else {
+      if (!payload?.event || typeof payload.event.type !== 'string' || payload.event.type.trim() === '') {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      const event = payload.event;
+      data = payload.data;
+
+      console.log(`[${correlationId}] User automation triggered`, {
+        eventType: event?.type,
+        entityName: event?.entity_name,
+        userId: data?.id,
+        email: data?.email
+      });
+
+      // Only process create events for User entity
+      if (event?.type !== 'create' || event?.entity_name !== 'User') {
+        console.log(`[${correlationId}] Skipping - not a user creation event`);
+        return Response.json({ skipped: true });
+      }
+
+      userId = event?.entity_id || data?.id;
+
+      if (!userId) {
+        console.error(`[${correlationId}] Missing user ID`);
+        return Response.json({ error: 'Missing user ID' }, { status: 400 });
+      }
     }
 
-    const { event, data } = payload;
-    
-    console.log(`[${correlationId}] User automation triggered`, {
-      eventType: event?.type,
-      entityName: event?.entity_name,
-      userId: data?.id,
-      email: data?.email
-    });
-    
-    // Only process create events for User entity
-    if (event?.type !== 'create' || event?.entity_name !== 'User') {
-      console.log(`[${correlationId}] Skipping - not a user creation event`);
-      return Response.json({ skipped: true });
-    }
-    
-    const userId = event?.entity_id || data?.id;
     const userEmail = data?.email;
-    
-    if (!userId) {
-      console.error(`[${correlationId}] Missing user ID`);
-      return Response.json({ error: 'Missing user ID' }, { status: 400 });
-    }
     
     // Check if user already has scans configured (e.g. invited with a specific tier)
     if (data?.plan_tier && data.plan_tier !== 'deleted' && data?.available_scans > 0) {
