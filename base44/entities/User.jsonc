@@ -42,6 +42,14 @@
       "format": "date-time",
       "description": "Plan renewal date"
     },
+    "credits_reset_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null,
+      "description": "ISO date when the user's plan credits next reset"
+    },
     "stripe_customer_id": {
       "type": "string",
       "description": "Stripe customer ID"
