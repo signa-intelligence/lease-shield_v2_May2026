@@ -25,13 +25,13 @@ function StatsCounters({ strings }) {
   }, [scansTarget, flagsTarget]);
 
   return (
-    <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-12 mb-8 w-full max-w-md">
-      <div className="flex flex-col items-center rounded-xl border border-gray-200 shadow-sm px-6 py-4 bg-white">
-        <span className="text-2xl font-bold" style={{ color: '#0F4229' }}>{scans.toLocaleString()}</span>
+    <div className="flex flex-row justify-center items-stretch gap-3 sm:gap-12 mb-4 sm:mb-8 w-full max-w-md">
+      <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-gray-200 shadow-sm px-3 py-3 sm:px-6 sm:py-4 bg-white">
+        <span className="text-xl sm:text-2xl font-bold" style={{ color: '#0F4229' }}>{scans.toLocaleString()}</span>
         <span className="text-xs mt-1" style={{ color: '#94A3B8' }}>{strings.scansCompleted}</span>
       </div>
-      <div className="flex flex-col items-center rounded-xl border border-gray-200 shadow-sm px-6 py-4 bg-white">
-        <span className="text-2xl font-bold text-red-600">{flags.toLocaleString()}</span>
+      <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-gray-200 shadow-sm px-3 py-3 sm:px-6 sm:py-4 bg-white">
+        <span className="text-xl sm:text-2xl font-bold text-red-600">{flags.toLocaleString()}</span>
         <span className="text-xs mt-1" style={{ color: '#94A3B8' }}>{strings.redFlagsRaised}</span>
       </div>
     </div>
@@ -171,28 +171,28 @@ export default function AppHome() {
       <img
         src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68fd84b6c148652a5512a0a0/9df84f495_LeaseShieldcrestlogonobkg.png"
         alt="Lease Shield"
-        className="w-20 h-20 mb-4"
+        className="w-14 h-14 mb-2 sm:w-20 sm:h-20 sm:mb-4"
         width="80"
         height="80"
       />
 
       {/* App Name */}
       <h1
-        className="text-2xl font-bold tracking-wider mb-8"
+        className="text-xl sm:text-2xl font-bold tracking-wider mb-3 sm:mb-8"
         style={{ color: "#C7A338" }}
       >
         LEASE SHIELD
       </h1>
 
       {/* Headline */}
-      <h2 className="text-3xl md:text-4xl font-bold text-center mb-4 max-w-lg leading-tight" style={{ color: "#0F4229" }}>
+      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-3 sm:mb-4 max-w-lg leading-tight" style={{ color: "#0F4229" }}>
         {planName ? `Get Started with ${planName}` : strings.headline}
       </h2>
 
       {/* Certification Badges */}
-      <div className="flex flex-row flex-nowrap justify-center items-start gap-4 sm:gap-16 mb-8 w-full max-w-md">
+      <div className="flex flex-row flex-nowrap justify-center items-start gap-4 sm:gap-16 mb-4 sm:mb-8 w-full max-w-md">
         <div className="flex flex-col items-center w-1/2">
-          <div className="h-[110px] flex items-center justify-center">
+          <div className="h-[76px] sm:h-[110px] flex items-center justify-center">
             <img
               src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/9c749c92e_pdpa-alignment-badge2.png"
               alt="PDPA Alignment Programme"
@@ -203,7 +203,7 @@ export default function AppHome() {
           <span className="text-[10px] text-center whitespace-nowrap mt-1" style={{ color: '#C7A338' }}>Lease Shield | Self-Assessed</span>
         </div>
         <div className="flex flex-col items-center w-1/2">
-          <div className="h-[110px] flex items-center justify-center">
+          <div className="h-[76px] sm:h-[110px] flex items-center justify-center">
             <img
               src="https://media.base44.com/images/public/68fd84b6c148652a5512a0a0/d77c80858_TheTrustedbyRentersinThailandbadge.png"
               alt="Trusted by Renters in Thailand"
@@ -219,7 +219,7 @@ export default function AppHome() {
       <StatsCounters strings={strings} />
 
       {/* Description */}
-      <div className="text-base text-center mb-10 max-w-md" style={{ color: "#475569" }}>
+      <div className="text-sm sm:text-base text-center mb-5 sm:mb-10 max-w-md" style={{ color: "#475569" }}>
         {planName
           ? <p>{`Create your account to ${selectedPlan === 'one-time-scan' ? 'purchase' : 'subscribe to'} ${planName}.`}</p>
           : strings.startFree.map((line, i) => <p key={i}>{line}</p>)}
