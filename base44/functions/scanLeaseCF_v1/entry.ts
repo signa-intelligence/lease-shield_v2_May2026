@@ -57,7 +57,13 @@ Deno.serve(async (req) => {
 
     // Credit check
     const isFreeTier = !userTier || userTier === 'free' || userTier === 'discover' || userTier === 'explorer';
-    const scanMode = isFreeTier ? 'preview' : 'full';
+    // Promotional free full scan: a free-tier user who has not yet used their
+    // one free scan receives a full-depth analysis, not a preview.
+    const hasUnusedFreeScan = isFreeTier
+      && user?.free_scan_eligible !== false
+      && (user?.free_scans_used ?? 0) < 1;
+    const scanMode = (!isFreeTier || hasUnusedFreeScan) ? 'full' : 'preview';
+    console.log(`[SCAN_MODE_DECISION] ${requestId}`, { userTier, isFreeTier, hasUnusedFreeScan, scanMode });
     const currentScans = user?.available_scans ?? 0;
 
     if (currentScans <= 0) {
@@ -175,6 +181,10 @@ Deno.serve(async (req) => {
             const cs = userObj.available_scans || 0;
             if (cs > 0) {
               const updateData = { available_scans: cs - 1 };
+              // Mark the promotional free full scan as consumed.
+              if (isFreeTier && (userObj.free_scans_used ?? 0) < 1) {
+                updateData.free_scans_used = (userObj.free_scans_used ?? 0) + 1;
+              }
               if (userTier === 'secure') {
                 const cm = new Date().toISOString().slice(0, 7);
                 if (userObj.usage_month !== cm) {
