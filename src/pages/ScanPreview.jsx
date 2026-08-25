@@ -303,6 +303,10 @@ function ScanPreviewContent() {
 
   const riskLevel = scan ? getRiskLevel(scan.risk_score) : null;
 
+  // A scan run at full depth (including the promotional free full scan) is not
+  // truncated for free tier. Lite remains capped at 5 by tier entitlement.
+  const isFullScan = scan?.scan_full?.preview_mode === false;
+
   const getDisplayFlags = () => {
     const allFlags = scan?.flags || [];
     
@@ -310,7 +314,7 @@ function ScanPreviewContent() {
       return allFlags.slice(0, 5);
     }
     
-    if (userTier === 'free') {
+    if (userTier === 'free' && !isFullScan) {
       return allFlags.slice(0, 4);
     }
     
@@ -718,7 +722,7 @@ function ScanPreviewContent() {
               <AlertTriangle className="w-6 h-6 text-orange-600" />
               {userTier === 'lite' 
                 ? `${language === 'th' ? 'ปัญหาสำคัญ 5 อันดับแรก' : 'Top 5 Issues'} (${Math.min(5, totalFlags)})`
-                : (hasFullReportAccess 
+                : ((hasFullReportAccess || isFullScan)
                     ? `${strings.allIssues} (${displayFlags.length})`
                     : `${strings.topIssues} (${displayFlags.length})`)}
             </CardTitle>
