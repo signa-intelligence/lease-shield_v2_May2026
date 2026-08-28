@@ -111,6 +111,58 @@ Deno.serve(async (req) => {
     await base44.entities.LeaseScan.update(targetScan.id, { status: 'processing' });
 
     // ═══════════════════════════════════════════════════════════════
+    // CREDIT DEDUCTION — runs synchronously BEFORE dispatch.
+    // Previously this sat inside the background task and never executed,
+    // so scans were never counted. Refunded below if the analysis fails.
+    // ═══════════════════════════════════════════════════════════════
+    const consumingFreeScan = isFreeTier && hasUnusedFreeScan;
+    const creditUpdate = { available_scans: currentScans - 1 };
+    if (consumingFreeScan) {
+      creditUpdate.free_scans_used = (userObj?.free_scans_used ?? 0) + 1;
+      creditUpdate.free_scan_eligible = false;
+    }
+    if (userTier === 'secure') {
+      const cm = new Date().toISOString().slice(0, 7);
+      if (userObj?.usage_month !== cm) {
+        creditUpdate.usage_month = cm;
+        creditUpdate.letters_used_this_month = 0;
+        creditUpdate.fasttrack_used_this_month = 0;
+      }
+    }
+
+    let creditDeducted = false;
+    try {
+      await svc.entities.User.update(userObj.id, creditUpdate);
+      creditDeducted = true;
+    } catch (e1) {
+      console.warn(`[SCAN_CREDIT_SVC_FAIL] ${requestId}`, e1.message);
+      try {
+        await base44.auth.updateMe(creditUpdate);
+        creditDeducted = true;
+      } catch (e2) {
+        console.error(`[SCAN_CREDIT_CRITICAL] ${requestId}`, e2.message);
+      }
+    }
+
+    if (!creditDeducted) {
+      return Response.json({
+        ok: false, step: 'CREDIT_DEDUCT', error_code: 'CREDIT_DEDUCT_FAILED',
+        message: 'Could not reserve your scan credit. Please try again.'
+      });
+    }
+
+    console.log(`[SCAN_CREDIT_OK] ${requestId} remaining=${currentScans - 1} freeScanConsumed=${consumingFreeScan} mode=${scanMode}`);
+
+    try {
+      await svc.entities.CreditsLedger.create({
+        user_id: userObj.id, user_email: userEmail, type: 'scans', delta: -1,
+        reason: 'purchase', source_ref: `lease_scan:${leaseId}`
+      });
+    } catch (e) {
+      console.warn(`[SCAN_LEDGER_FAIL] ${requestId}`, e.message);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // ASYNC MODEL: Fire off analyzeLease in the background.
     // Return immediately so frontend doesn't timeout.
     // Frontend polls LeaseScan.status for 'completed' or 'failed'.
