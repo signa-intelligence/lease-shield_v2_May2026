@@ -222,31 +222,39 @@ Deno.serve(async (req) => {
           }));
         }
 
-        // Update scan record
+        // ─────────────────────────────────────────────────────────────
+        // ORDER MATTERS. The scan payload is written first, then the
+        // Lease and trackers are populated, and ONLY THEN is the status
+        // flipped to 'completed'. The frontend stops polling on
+        // 'completed', so flipping it early meant any work lost after
+        // that point was invisible. Status is now a true finish signal.
+        // ─────────────────────────────────────────────────────────────
+
+        // 1. Persist the analysis payload (status stays 'processing')
         await svc.entities.LeaseScan.update(targetScan.id, {
           scan_full: scanFull,
           risk_score: scanFull.risk_score || 0,
-          summary: scanFull.summary?.executive_summary || "Lease analysis complete.",
-          status: 'completed'
+          summary: scanFull.summary?.executive_summary || "Lease analysis complete."
         });
-        console.log(`[SCAN_BG_UPDATED] ${requestId} scanId=${targetScan.id}`);
+        console.log(`[SCAN_BG_PAYLOAD_SAVED] ${requestId} scanId=${targetScan.id}`);
 
-        // Update Lease with key_terms
-        if (scanFull.key_terms) {
-          try {
-            await svc.entities.Lease.update(leaseId, {
-              property_address: scanFull.key_terms.property_address || null,
-              start_date: scanFull.key_terms.lease_start_date || null,
-              end_date: scanFull.key_terms.lease_end_date || null,
-              rent_amount: scanFull.key_terms.monthly_rent || null,
-              deposit_amount: scanFull.key_terms.security_deposit || null
-            });
-          } catch (e) {
-            console.warn(`[SCAN_BG_LEASE_UPDATE_FAIL] ${requestId}`, e.message);
-          }
+        // 2. Update Lease with key_terms
+        const kt = scanFull.key_terms || {};
+        try {
+          const leasePatch = {};
+          if (kt.property_address) leasePatch.property_address = kt.property_address;
+          if (kt.lease_start_date) leasePatch.start_date = kt.lease_start_date;
+          if (kt.lease_end_date) leasePatch.end_date = kt.lease_end_date;
+          if (kt.monthly_rent) leasePatch.rent_amount = kt.monthly_rent;
+          if (kt.security_deposit) leasePatch.deposit_amount = kt.security_deposit;
+          leasePatch.status = 'scanned';
+          await svc.entities.Lease.update(leaseId, leasePatch);
+          console.log(`[SCAN_BG_LEASE_UPDATED] ${requestId}`, Object.keys(leasePatch));
+        } catch (e) {
+          console.error(`[SCAN_BG_LEASE_UPDATE_FAIL] ${requestId}`, e.message);
         }
 
-        // Populate trackers
+        // 3. Populate trackers and timeline
         try {
           await base44.functions.invoke('populateFromScan', {
             internal_secret: Deno.env.get('INTERNAL_FUNCTION_SECRET'),
@@ -258,6 +266,8 @@ Deno.serve(async (req) => {
           console.error(`[SCAN_BG_POPULATE_FAIL] ${requestId}`, e.message);
         }
 
+        // 4. Finish line — only now does the frontend stop polling
+        await svc.entities.LeaseScan.update(targetScan.id, { status: 'completed' });
         console.log(`[SCAN_BG_COMPLETE] ${requestId}`);
 
       } catch (bgErr) {
