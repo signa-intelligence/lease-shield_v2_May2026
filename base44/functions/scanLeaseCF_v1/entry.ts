@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
+    const svc = base44.asServiceRole || base44;
 
     const bodyText = await req.text();
     let payload = {};
@@ -151,7 +152,6 @@ Deno.serve(async (req) => {
         }
 
         // Update scan record
-        const svc = base44;
         await svc.entities.LeaseScan.update(targetScan.id, {
           scan_full: scanFull,
           risk_score: scanFull.risk_score || 0,
@@ -172,36 +172,6 @@ Deno.serve(async (req) => {
             });
           } catch (e) {
             console.warn(`[SCAN_BG_LEASE_UPDATE_FAIL] ${requestId}`, e.message);
-          }
-        }
-
-        // Credit deduction
-        if (userObj) {
-          try {
-            const cs = userObj.available_scans || 0;
-            if (cs > 0) {
-              const updateData = { available_scans: cs - 1 };
-              // Mark the promotional free full scan as consumed.
-              if (isFreeTier && (userObj.free_scans_used ?? 0) < 1) {
-                updateData.free_scans_used = (userObj.free_scans_used ?? 0) + 1;
-              }
-              if (userTier === 'secure') {
-                const cm = new Date().toISOString().slice(0, 7);
-                if (userObj.usage_month !== cm) {
-                  updateData.usage_month = cm;
-                  updateData.letters_used_this_month = 0;
-                  updateData.fasttrack_used_this_month = 0;
-                }
-              }
-              await svc.entities.User.update(userObj.id, updateData);
-              await svc.entities.CreditsLedger.create({
-                user_id: userObj.id, user_email: userEmail, type: 'scans', delta: -1,
-                reason: 'purchase', source_ref: `lease_scan:${leaseId}`
-              });
-              console.log(`[SCAN_BG_CREDIT_OK] ${requestId} scans=${cs - 1}`);
-            }
-          } catch (e) {
-            console.error(`[SCAN_BG_CREDIT_FAIL] ${requestId}`, e.message);
           }
         }
 
