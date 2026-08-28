@@ -162,6 +162,24 @@ Deno.serve(async (req) => {
       console.warn(`[SCAN_LEDGER_FAIL] ${requestId}`, e.message);
     }
 
+    const refundScanCredit = async (why) => {
+      const undo = { available_scans: currentScans };
+      if (consumingFreeScan) {
+        undo.free_scans_used = (userObj?.free_scans_used ?? 0);
+        undo.free_scan_eligible = true;
+      }
+      try {
+        await svc.entities.User.update(userObj.id, undo);
+        await svc.entities.CreditsLedger.create({
+          user_id: userObj.id, user_email: userEmail, type: 'scans', delta: 1,
+          reason: 'refund', source_ref: `lease_scan_failed:${leaseId}`
+        });
+        console.log(`[SCAN_CREDIT_REFUNDED] ${requestId} reason=${why}`);
+      } catch (e) {
+        console.error(`[SCAN_REFUND_FAIL] ${requestId}`, e.message);
+      }
+    };
+
     // ═══════════════════════════════════════════════════════════════
     // ASYNC MODEL: Fire off analyzeLease in the background.
     // Return immediately so frontend doesn't timeout.
@@ -180,7 +198,8 @@ Deno.serve(async (req) => {
 
         if (!result || result.ok === false) {
           console.error(`[SCAN_BG_ANALYZE_FAILED] ${requestId}`, result?.message || 'No data');
-          await base44.entities.LeaseScan.update(targetScan.id, { status: 'failed' });
+          await svc.entities.LeaseScan.update(targetScan.id, { status: 'failed' });
+          await refundScanCredit('analyze_failed');
           return;
         }
 
@@ -244,8 +263,9 @@ Deno.serve(async (req) => {
       } catch (bgErr) {
         console.error(`[SCAN_BG_CRITICAL_ERROR] ${requestId}`, bgErr.message);
         try {
-          await base44.entities.LeaseScan.update(targetScan.id, { status: 'failed' });
+          await svc.entities.LeaseScan.update(targetScan.id, { status: 'failed' });
         } catch (_) {}
+        await refundScanCredit('bg_critical_error');
       }
     })();
 
