@@ -1693,10 +1693,12 @@ function UploadScanPageContent() {
 
                 {/* Risk Summary Section */}
                 {selectedScan && (() => {
-                  const riskLevel = selectedScan.risk_score >= 61 
-                    ? { level: 'high', label: language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий' : 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' }
+                  const riskLevel = selectedScan.risk_score >= 80
+                    ? { level: 'critical', label: language === 'th' ? 'ความเสี่ยงวิกฤต' : language === 'ru' ? 'Критический' : 'CRITICAL RISK', color: '#991B1B', bg: '#FECACA' }
+                    : selectedScan.risk_score >= 61 
+                    ? { level: 'high', label: language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий' : 'HIGH RISK', color: '#DC2626', bg: '#FEE2E2' }
                     : selectedScan.risk_score >= 31
-                      ? { level: 'medium', label: language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний' : 'MEDIUM RISK', color: '#F59E0B', bg: '#FEF3C7' }
+                      ? { level: 'medium', label: language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний' : 'MEDIUM RISK', color: '#F97316', bg: '#FFEDD5' }
                       : { level: 'low', label: language === 'th' ? 'ความเสี่ยงต่ำ' : language === 'ru' ? 'Низкий' : 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
                   
                   return (
