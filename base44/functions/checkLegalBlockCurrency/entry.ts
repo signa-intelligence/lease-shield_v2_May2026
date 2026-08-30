@@ -19,7 +19,7 @@ const LAW_BLOCK_VERSION = '2568-2025-r1';
 const CURRENT_NOTIFICATION = 'B.E. 2568 (2025)';
 const CURRENT_GAZETTED = '2025-06-06';
 const CURRENT_IN_FORCE = '2025-09-04';
-const OPS_EMAIL = 'ops@leaseshield.asia';
+const OPS_EMAIL = 'support@leaseshield.asia';
 
 // The framework has been replaced three times since 2018 (2561 -> 2562 -> 2568),
 // roughly every 3-4 years, so this is a live maintenance risk rather than a
