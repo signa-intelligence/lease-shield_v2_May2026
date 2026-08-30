@@ -113,7 +113,7 @@ async function ensureThaiFont(doc){
 }
 
 // Build detailed executive summary
-function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
+function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, isTemplate = false) {
   const score = riskScore || 0;
   const riskyClausesCount = (clauses || []).filter(c => c.risk_level && c.risk_level !== 'none').length;
   const criticalCount = (clauses || []).filter(c => c.risk_level === 'critical').length;
@@ -215,7 +215,7 @@ function transformCloudflareData(rawData) {
   }));
 
   // Build detailed executive summary
-  const execSummary = buildExecutiveSummary(rawData.risk_score, topRisks, clausesRaw, rawData.summary?.executive_summary);
+  const execSummary = buildExecutiveSummary(rawData.risk_score, topRisks, clausesRaw, rawData.summary?.executive_summary, rawData.template_status === 'unexecuted_template');
 
   const transformed = {
     lease_address: rawData.key_terms?.property_address || rawData.lease_address || "Lease Agreement",
