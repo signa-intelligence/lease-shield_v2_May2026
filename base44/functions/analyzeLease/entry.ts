@@ -265,7 +265,9 @@ Before assigning severity to any clause, identify BOTH (a) any tenant risks and 
 HOWEVER, this rule NEVER reduces severity below CRITICAL where the ESCALATION RULES below apply. Offsetting protections elsewhere in a clause do not cure a term that conflicts with the notification above.
 
 ESCALATION RULES — these OVERRIDE the bidirectional rule and any guidance below:
-1. Any clause that conflicts with a threshold in the Thai Law Reference Block is CRITICAL, regardless of protections elsewhere in the same clause.
+1. Any clause that conflicts with a threshold in the Thai Law Reference Block is CRITICAL, regardless of protections elsewhere in the same clause. CONSISTENCY CHECK: if your own "analysis" text says a term exceeds, breaches, is longer than, is above, or is out of step with the standard, the severity MUST be critical. Writing "exceeds the cap" and then rating it high is a contradiction and is not permitted.
+1b. Specifically CRITICAL, not high: deposit plus advance rent beyond the combined cap; a deposit return window several times longer than the norm; any term making the landlord's assessment of damages final or non-disputable; automatic deductions taken without proof of fault; entry without prior notice; tenant liability for normal wear and tear; unilateral rent or term changes during the fixed period; waiver of the tenant's right to go to court; and utility unit rates above the state authority tariff.
+1c. Compare stated utility unit rates against the authority tariff. Rates materially above it are CRITICAL, and the recommendation must name the rate, not just any administrative fee.
 2. Any clause removing a statutory tenant right entirely (early termination, notice before termination, deposit return, protection from wear and tear charges) is CRITICAL.
 3. Any penalty failing the PENALTY PROPORTIONALITY test is CRITICAL.
 4. Where two or more clauses combine to remove the tenant's practical remedy, each contributing clause is at least HIGH (see CLAUSE INTERACTION PASS).
@@ -327,6 +329,7 @@ Return this JSON object:
   "clause_interactions": [
     {"clauses": ["clause-N", "clause-M"], "combined_effect": "string", "severity": "low|medium|high|critical"}
   ],
+  // "clauses" above MUST contain clause_id values such as "clause-4", never clause names.
   "clauses": [
     {
       "clause_id": "clause-N",
@@ -378,9 +381,12 @@ Return this JSON object:
       const nCritical = analysisResult.clauses.filter(c => lv(c) === 'critical').length;
       const nHigh = analysisResult.clauses.filter(c => lv(c) === 'high').length;
 
+      // Scale above the floor so severity count is visible in the headline
+      // number. A flat floor made a lease with ten critical clauses score the
+      // same as one with two.
       let floor = 0;
-      if (nCritical > 0) floor = 80;
-      else if (nHigh >= 2) floor = 65;
+      if (nCritical > 0) floor = Math.min(99, 80 + (nCritical - 1) * 4 + Math.floor(nHigh / 2));
+      else if (nHigh >= 2) floor = Math.min(79, 65 + (nHigh - 2) * 2);
       else if (nHigh === 1) floor = 50;
 
       const raw = Number(analysisResult.risk_score) || 0;
