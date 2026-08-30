@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { openDocument } from "@/components/shared/openDocument";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
@@ -918,7 +919,7 @@ function LeaseDetailsContent() {
               {lease.file_url && (
                 <Button
                   variant="outline"
-                  onClick={() => window.open(lease.file_url, '_blank')}
+                  onClick={() => openDocument(lease.file_url)}
                   className="justify-start h-auto py-4"
                 >
                   <ExternalLink className="w-5 h-5 mr-3 text-blue-600" />

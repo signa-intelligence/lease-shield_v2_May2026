@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { openDocument } from "@/components/shared/openDocument";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -911,7 +912,7 @@ function ScanPreviewContent() {
               </button>
               {lease.file_url && (
                 <button
-                  onClick={() => window.open(lease.file_url, '_blank')}
+                  onClick={() => openDocument(lease.file_url)}
                   style={{
                     flex: 1,
                     backgroundColor: isDarkMode ? '#2A2D30' : '#FFFFFF',
