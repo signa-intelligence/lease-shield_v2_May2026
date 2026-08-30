@@ -119,16 +119,26 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
   const criticalCount = (clauses || []).filter(c => c.risk_level === 'critical').length;
   const highCount = (clauses || []).filter(c => c.risk_level === 'high').length;
   
+  // An unexecuted template must be flagged before anything else, whichever
+  // summary path we take below. Terms tied to blank values cannot be assessed
+  // and the reader needs to know that up front.
+  const templateBanner = isTemplate
+    ? `UNSIGNED TEMPLATE: this document still contains blank fields, so any term that depends on the missing figures could not be fully assessed.\n\n`
+    : '';
+
   // If we have an existing good summary, use it
-  if (existingSummary && existingSummary.length > 100) {
-    return existingSummary;
+  if (existingSummary && existingSummary.length > 60) {
+    return templateBanner + existingSummary;
   }
   
   // Build comprehensive summary based on risk level
-  let summary = '';
+  let summary = templateBanner;
   
-  if (score >= 61) {
-    summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+  if (criticalCount > 0) {
+    summary += `CRITICAL RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+    summary += `This lease agreement is CRITICAL RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
+  } else if (score >= 61) {
+    summary += `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
     summary += `This lease agreement is HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
     if (criticalCount > 0) {
       summary += `${criticalCount} clause(s) are rated CRITICAL and may be legally problematic or heavily favor the landlord. `;
@@ -142,7 +152,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
     }
     summary += `\n\nRECOMMENDATION: Do NOT sign this lease in its current form. Use Lease Shield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
   } else if (score >= 31) {
-    summary = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+    summary += `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
     summary += `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. `;
     summary += `While not immediately dangerous, several provisions could impact your rights during the tenancy. `;
     if (topRisks && topRisks.length > 0) {
@@ -150,7 +160,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
     }
     summary += `\n\nRECOMMENDATION: Review the flagged clauses carefully and consider negotiating modifications before signing. Document all verbal agreements in writing.`;
   } else {
-    summary = `LOW RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
+    summary += `LOW RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
     summary += `This lease agreement appears to be relatively balanced with ${riskyClausesCount || 'few'} clauses requiring attention. `;
     summary += `The terms are generally standard for rental agreements in this market. `;
     summary += `\n\nRECOMMENDATION: Review all clauses to ensure you understand your obligations. Keep a copy of all documents and maintain records throughout your tenancy.`;
