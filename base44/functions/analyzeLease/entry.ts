@@ -391,13 +391,26 @@ Return this JSON object:
       };
     }
 
-    // Validate clause IDs
+    // Validate clause IDs.
+    // The previous check only validated the FORMAT, so duplicates passed
+    // through (clause-6 and clause-11 were each returned twice, and some
+    // numbers were skipped entirely). Renumber sequentially and remap any
+    // clause_interactions references so they still point at the right rows.
     const clauses = analysisResult.clauses || [];
+    const idRemap = {};
     clauses.forEach((c, idx) => {
-      if (!c.clause_id || !/^clause-\d+$/.test(c.clause_id)) {
-        c.clause_id = `clause-${idx + 1}`;
-      }
+      const oldId = c.clause_id;
+      const newId = `clause-${idx + 1}`;
+      if (oldId && oldId !== newId && !idRemap[oldId]) idRemap[oldId] = newId;
+      c.clause_id = newId;
     });
+    if (Array.isArray(analysisResult.clause_interactions)) {
+      analysisResult.clause_interactions.forEach((ix) => {
+        if (Array.isArray(ix?.clauses)) {
+          ix.clauses = ix.clauses.map((cid) => idRemap[cid] || cid);
+        }
+      });
+    }
 
     if (!analysisResult.missingCriticalClauses) {
       analysisResult.missingCriticalClauses = [];
@@ -441,6 +454,8 @@ Return this JSON object:
       flags: analysisResult.flags || [],
       missingCriticalClauses: analysisResult.missingCriticalClauses || [],
       missingClauseCount: (analysisResult.missingCriticalClauses || []).length,
+      template_status: analysisResult.template_status || 'executed_lease',
+      clause_interactions: Array.isArray(analysisResult.clause_interactions) ? analysisResult.clause_interactions : [],
       preview_mode: isPreviewMode,
       upgrade_message: isPreviewMode ? analysisResult.upgrade_message : undefined,
       meta: { text_length: pdfText.length, chunks: 1, warnings: [] }
