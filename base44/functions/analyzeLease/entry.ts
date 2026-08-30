@@ -283,6 +283,14 @@ TERMINATION CLAUSES: A termination clause may be MEDIUM or LOW only if it provid
 
 DEPOSIT CLAUSES: Assess the AMOUNT, the RETURN WINDOW and the DEDUCTION TERMS separately. A deposit clause may be LOW only if ALL of: deposit plus advance rent is within the three month combined cap, the return window is immediate or within 14 days, normal wear and tear is excluded, and deductions must be itemised. A return window materially longer than 14 days is at least HIGH. Never rate a deposit clause LOW on return terms alone while ignoring the amount.
 
+BILINGUAL MISMATCH DETECTION — mandatory, run FIRST, before grading anything:
+If the document contains the same clause in two languages (commonly English and Thai, but any pair), you must compare the two versions of EVERY clause against each other before assigning any severity.
+For each clause, extract the substantive terms from BOTH versions: amounts, percentages, day counts, notice periods, penalties, who bears a cost, who holds a right, and any prohibition. Then compare them.
+If the two versions differ on ANY substantive term, that clause is CRITICAL, regardless of how reasonable either version looks on its own. Set "bilingual_mismatch" to true on the clause, and put BOTH figures in the analysis so the reader can see the gap, for example: the English version states a 30 day deposit return while the Thai version states 180 days.
+ALWAYS grade against the version that is WORSE for the tenant, because that is the one that will be enforced. Thai contract practice generally treats the Thai text as governing, and a clause stating that the Thai version prevails makes this certain.
+If mismatches are found in two or more clauses, treat the document as a probable deliberate mismatch: set "bilingual_mismatch_detected" to true, make this the FIRST thing stated in the executive summary in plain words, and say clearly that the English text cannot be relied on and the document must be professionally translated before signing. This finding OUTRANKS every other risk in the report and must not be buried among the clause list.
+Never assume the two versions agree because the clause headings match. Headings routinely match while the terms underneath do not.
+
 CLAUSE INTERACTION PASS — mandatory, run AFTER grading every clause individually:
 You MUST populate "clause_interactions" whenever two or more clauses compound. Returning an empty array when compounds exist is a failure.
 Re-read the graded clauses together and identify where terms compound. Check at minimum:
@@ -292,7 +300,9 @@ Re-read the graded clauses together and identify where terms compound. Check at 
 Raise the severity of each contributing clause to reflect the compound effect, and state the interaction explicitly in the executive summary.
 
 UNFILLED TEMPLATE DETECTION — mandatory:
-If the document contains unfilled placeholders such as [address], [amount], [date], [full name], or blank signature lines, it is an unexecuted template, not a signed lease. In that case: set "template_status" to "unexecuted_template"; do NOT invent or infer values for key_terms, return null; open the executive summary by saying plainly that this is an unfilled template and that terms depending on the missing figures could not be fully assessed. Never assign a LOW severity merely because a value was missing.
+A document is an unexecuted template ONLY IF the substantive TERMS are unfilled: the property address, rent, deposit, dates or party names still appear as bracketed placeholders such as [address], [amount], [date] or [full name].
+Blank signature or witness lines alone do NOT make a document a template. A fully completed lease with named parties, a real address and real figures is an executed lease even if the witness block is empty and even if nobody has signed yet. Do not flag it as a template.
+If in doubt, check whether you were able to extract a real property address and a real rent figure. If you were, it is NOT an unfilled template. In that case: set "template_status" to "unexecuted_template"; do NOT invent or infer values for key_terms, return null; open the executive summary by saying plainly that this is an unfilled template and that terms depending on the missing figures could not be fully assessed. Never assign a LOW severity merely because a value was missing.
 CRITICAL: the template note is the OPENING of the executive summary, never the whole of it. After that sentence you must still give the full risk overview: how many clauses are critical and high, what the worst terms are, how they compound, and what the reader should do. An executive summary shorter than 400 characters is a failure.
 
 EXECUTIVE SUMMARY — mandatory in all cases:
@@ -309,6 +319,7 @@ BANDS, for consistency with published guidance: 0-30 low, 31-60 medium, 61-100 h
 RECOMMENDATION — mandatory rule:
 Give exactly ONE recommendation per clause, a single sentence. Do not return multiple points or a list.
 NEVER write "No action needed" for a clause that contains ANY monetary penalty, fine, forfeiture, deposit deduction, waiver of rights, or immediate termination trigger. If money or a lost right appears anywhere in the clause, the reader needs an action.
+Each recommendation must be SPECIFIC to its clause and name the actual term to change, including the figure where there is one, for example: ask for the 180 day deposit return to be brought down to 14 days. Do NOT repeat the same generic sentence across multiple clauses. If more than three recommendations in your output share the same wording, rewrite them. A reader facing twenty identical instructions cannot tell what matters most.
 
 Return this JSON object:
 {
@@ -322,6 +333,7 @@ Return this JSON object:
   },
   "risk_score": number (0-100),
   "template_status": "executed_lease" or "unexecuted_template",
+  "bilingual_mismatch_detected": true or false,
   "summary": {
     "executive_summary": "string",
     "top_risks": [{"title": "string", "severity": "low|medium|high|critical", "why": "string"}]
@@ -336,6 +348,7 @@ Return this JSON object:
       "canonical_name": "string",
       "clause_text": "string",
       "risk_level": "low|medium|high|critical",
+      "bilingual_mismatch": true or false,
       "analysis": "string",
       "recommendation": "string",
       "page_number": number
