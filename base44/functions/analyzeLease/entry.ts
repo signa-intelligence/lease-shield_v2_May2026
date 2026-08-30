@@ -190,6 +190,8 @@ DO NOT omit key_terms. Return ONLY valid JSON.`
 CRITICAL: Respond entirely in ${langName}. JSON keys must remain in English.
 CRITICAL: Analyse EVERY clause. Do not skip any.
 CRITICAL: Return ONLY valid JSON. No commentary outside the JSON object.
+CRITICAL: "clause_text" must be the COMPLETE, VERBATIM text of the clause, every sentence of it. Never abridge, summarise, paraphrase or truncate it, and never stop at the first sentence. Clauses commonly state a rule in sentence one and the penalty, forfeiture, waiver or consequence in sentence two or three, and those later sentences usually carry the real risk. Grade the WHOLE clause. If you shorten a clause you will grade the wrong thing.
+CRITICAL: Before assigning severity, scan the full clause for: money amounts, percentages, forfeitures, waivers of rights, "final", "non-disputable", "immediate", "without notice", "at any time", "regardless of cause", "sole discretion". Any of these must be reflected in the severity.
 
 SEVERITY DEFINITIONS — apply these consistently:
 
@@ -268,8 +270,12 @@ ESCALATION RULES — these OVERRIDE the bidirectional rule and any guidance belo
 3. Any penalty failing the PENALTY PROPORTIONALITY test is CRITICAL.
 4. Where two or more clauses combine to remove the tenant's practical remedy, each contributing clause is at least HIGH (see CLAUSE INTERACTION PASS).
 
-PENALTY PROPORTIONALITY — mandatory for every fee, penalty, forfeiture or late charge:
-Express the penalty as a percentage of monthly rent and annualise it. A per-day charge of 500 THB against a 20,000 THB rent is 2.5% of monthly rent per day, which is grossly disproportionate. A cap on the total does not cure a disproportionate daily rate; state how many days it takes to reach the cap. Under CCC section 383 a Thai court may reduce a penalty that is disproportionately high, so describe such a term as potentially unenforceable and disproportionate rather than merely negotiable. If monthly rent is unknown, say the penalty cannot be assessed without the rent figure and rate it no lower than HIGH.
+PENALTY PROPORTIONALITY — mandatory for EVERY fee, penalty, fine, forfeiture, deposit confiscation or late charge, whether it is a per-day rate, a percentage, or a ONE-OFF FIXED SUM:
+First list every monetary consequence in the clause. Then express EACH as a multiple of monthly rent.
+Worked example, fixed sum: rent 45,000 and a 200,000 penalty is 4.4 months' rent for a single breach. That is grossly disproportionate and is CRITICAL. A 100,000 penalty on the same rent is 2.2 months and is CRITICAL. A 50,000 penalty is 1.1 months and is at least HIGH.
+Rule of thumb: any single penalty at or above one month's rent is at least HIGH; at or above two months' rent it is CRITICAL. Forfeiture of the entire deposit on top of a penalty is CRITICAL on its own.
+A restriction that looks ordinary (no pets, no smoking, no subletting) is NOT low risk when breaching it triggers a penalty of this size. Grade the consequence, not the restriction.
+For per-day charges, also express the penalty as a percentage of monthly rent and annualise it. A per-day charge of 500 THB against a 20,000 THB rent is 2.5% of monthly rent per day, which is grossly disproportionate. A cap on the total does not cure a disproportionate daily rate; state how many days it takes to reach the cap. Under CCC section 383 a Thai court may reduce a penalty that is disproportionately high, so describe such a term as potentially unenforceable and disproportionate rather than merely negotiable. If monthly rent is unknown, say the penalty cannot be assessed without the rent figure and rate it no lower than HIGH.
 
 TERMINATION CLAUSES: A termination clause may be MEDIUM or LOW only if it provides ALL of: a cure period of at least 30 days before landlord termination, a tenant early termination right on no more than 30 days' notice, and no forfeiture beyond the deposit. If any of these is missing, it is HIGH. If early termination is banned outright, or termination is immediate with no cure period, it is CRITICAL.
 
@@ -300,6 +306,7 @@ BANDS, for consistency with published guidance: 0-30 low, 31-60 medium, 61-100 h
 
 RECOMMENDATION — mandatory rule:
 Give exactly ONE recommendation per clause, a single sentence. Do not return multiple points or a list.
+NEVER write "No action needed" for a clause that contains ANY monetary penalty, fine, forfeiture, deposit deduction, waiver of rights, or immediate termination trigger. If money or a lost right appears anywhere in the clause, the reader needs an action.
 
 Return this JSON object:
 {
