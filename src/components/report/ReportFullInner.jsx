@@ -67,7 +67,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
   const isThaiLang = language === 'th';
   let summary = '';
   
-  if (score >= 70) {
+  if (score >= 61) {
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงสูง (คะแนน: ${score}/100)\n\n`;
       summary += `สัญญาเช่านี้มีความเสี่ยงสูงและมีข้อที่ต้องพิจารณาอย่างรอบคอบก่อนลงนาม `;
@@ -1360,7 +1360,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 {detailedSummary.split('\n').map((paragraph, idx) => (
                   <p key={idx} className={idx > 0 ? 'mt-3' : ''} style={{ 
                     color: paragraph.includes('RECOMMENDATION') || paragraph.includes('คำแนะนำ') || paragraph.includes('⚠️')
-                      ? (sf.risk_score >= 70 ? '#B91C1C' : sf.risk_score >= 40 ? '#92400E' : '#065F46')
+                      ? (sf.risk_score >= 61 ? '#B91C1C' : sf.risk_score >= 31 ? '#92400E' : '#065F46')
                       : colors.textPrimary,
                     fontWeight: paragraph.includes('RECOMMENDATION') || paragraph.includes('คำแนะนำ') || paragraph.includes('HIGH RISK') || paragraph.includes('ความเสี่ยงสูง') ? '600' : '400',
                     lineHeight: '1.6'

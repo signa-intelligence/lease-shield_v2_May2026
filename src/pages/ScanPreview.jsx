@@ -296,8 +296,8 @@ function ScanPreviewContent() {
   const strings = t[language] || t.en;
 
   const getRiskLevel = (score) => {
-    if (score >= 70) return { level: 'high', label: language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий риск' : 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' };
-    if (score >= 40) return { level: 'medium', label: language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний риск' : 'MEDIUM RISK', color: '#F59E0B', bg: '#FEF3C7' };
+    if (score >= 61) return { level: 'high', label: language === 'th' ? 'ความเสี่ยงสูง' : language === 'ru' ? 'Высокий риск' : 'HIGH RISK', color: '#EF4444', bg: '#FEE2E2' };
+    if (score >= 31) return { level: 'medium', label: language === 'th' ? 'ความเสี่ยงปานกลาง' : language === 'ru' ? 'Средний риск' : 'MEDIUM RISK', color: '#F59E0B', bg: '#FEF3C7' };
     return { level: 'low', label: language === 'th' ? 'ความเสี่ยงต่ำ' : language === 'ru' ? 'Низкий риск' : 'LOW RISK', color: '#10B981', bg: '#D1FAE5' };
   };
 

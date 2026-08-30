@@ -127,7 +127,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
   // Build comprehensive summary based on risk level
   let summary = '';
   
-  if (score >= 70) {
+  if (score >= 61) {
     summary = `HIGH RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
     summary += `This lease agreement is HIGH RISK and contains ${riskyClausesCount} clauses that require careful attention before signing. `;
     if (criticalCount > 0) {
@@ -141,7 +141,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary) {
       summary += topRisks.slice(0, 3).map(r => typeof r === 'string' ? r : r.title).join('; ') + '. ';
     }
     summary += `\n\nRECOMMENDATION: Do NOT sign this lease in its current form. Use Lease Shield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
-  } else if (score >= 40) {
+  } else if (score >= 31) {
     summary = `MEDIUM RISK LEASE AGREEMENT (Score: ${score}/100)\n\n`;
     summary += `This lease agreement contains ${riskyClausesCount} clauses that warrant review and possible negotiation. `;
     summary += `While not immediately dangerous, several provisions could impact your rights during the tenancy. `;

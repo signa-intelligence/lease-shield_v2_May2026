@@ -2,11 +2,11 @@ export function riskTheme(risk_score = 0, overall_risk = '') {
   const overall = String(overall_risk).toUpperCase();
   const score = Math.max(0, Math.min(100, Number(risk_score) || 0));
   // Color bands per new rule
-  // 70–100 Red, 40–69 Orange, 20–39 Yellow, 0–19 Green
-  if (score >= 70 || overall === 'HIGH') {
+  // Bands aligned to published guidance: 61-100 Red, 31-60 Orange, 20-30 Yellow, 0-19 Green
+  if (score >= 61 || overall === 'HIGH') {
     return { key: 'high', color: '#EF4444', bg: '#FEE2E2', border: '#DC2626' };
   }
-  if (score >= 40 || overall === 'MEDIUM') {
+  if (score >= 31 || overall === 'MEDIUM') {
     return { key: 'medium', color: '#F97316', bg: '#FFEDD5', border: '#EA580C' }; // orange
   }
   if (score >= 20) {
