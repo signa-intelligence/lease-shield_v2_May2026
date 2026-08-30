@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RefreshCw, Loader2, AlertCircle } from "lucide-react";
 import { haptic } from "./HapticFeedback";
+import { pollScanCompletion } from "./pollScanCompletion";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -136,8 +137,20 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
         return;
       }
       // Handle the response from scanLeaseCF_v1
-      if (out?.ok === true && out?.scan_full) {
-        const scanFull = out.scan_full;
+      let scanFullResult = out?.scan_full;
+      let resolvedScanId = out?.scanId || existingScanId;
+
+      if (out?.ok === true && out?.async === true && !scanFullResult) {
+        console.log("[RETRY] Async dispatch, polling for completion", resolvedScanId);
+        const completed = await pollScanCompletion(resolvedScanId, base44);
+        scanFullResult = completed?.scan_full;
+        if (!scanFullResult) {
+          throw new Error('Analysis completed but returned no result');
+        }
+      }
+
+      if (out?.ok === true && scanFullResult) {
+        const scanFull = scanFullResult;
         
         // Extract key terms from scan_full
         const keyTerms = scanFull.key_terms || {};
@@ -150,7 +163,7 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
           end_date: keyTerms.lease_end_date || keyTerms.end_date || null,
           rent_amount: keyTerms.monthly_rent || keyTerms.rent_amount || null,
           deposit_amount: keyTerms.security_deposit || keyTerms.deposit_amount || null,
-          language_detected: language || 'en'
+          ...(['en', 'th', 'mixed'].includes(language) ? { language_detected: language } : {})
         });
         
         console.log('[RETRY] Lease updated with extracted data:', {
@@ -160,8 +173,8 @@ export default function RetryAnalysis({ lease, onSuccess, language = 'en', color
         });
 
         // Update or create scan record
-        if (existingScanId) {
-          await base44.entities.LeaseScan.update(existingScanId, {
+        if (resolvedScanId) {
+          await base44.entities.LeaseScan.update(resolvedScanId, {
             risk_score: scanFull.risk_score || 0,
             flags: (scanFull.clauses || []).filter(c => c.risk_level !== 'none').map(c => ({
               severity: c.risk_level,
