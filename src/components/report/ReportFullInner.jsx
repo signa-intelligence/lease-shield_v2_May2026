@@ -37,7 +37,7 @@ import {
   Wrench
 } from "lucide-react";
 import ErrorPanel from "./ErrorPanel";
-import { severityPalette, highestSeverity } from "../shared/severityPalette";
+import { severityPalette, highestSeverity, riskScoreToSeverity } from "../shared/severityPalette";
 import MissingCriticalClauses from "../leases/MissingCriticalClauses";
 
 
@@ -1272,7 +1272,11 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
           <CardHeader
             style={{
               backgroundColor: (() => {
-                const sev = highestSeverity((reportData.flags || []).map((f) => f.severity));
+                const sev = highestSeverity([
+                  ...(reportData.clauses || []).map((c) => c.risk_level),
+                  ...(reportData.flags || []).map((f) => f.severity),
+                  riskScoreToSeverity(reportData.risk_score)
+                ].filter(Boolean));
                 return SEVERITY_CONFIG[sev]?.palette?.border || "#0C3B2E";
               })()
             }}
@@ -1460,7 +1464,7 @@ Materialized Status: ${scan?.scan_full?.materialized_status || "(none)"}`}
                 const riskColors = {
                   critical: { bg: '#991B1B', border: '#991B1B', text: '#FFFFFF', badgeText: 'CRITICAL' },
                   high: { bg: '#DC2626', border: '#DC2626', text: '#FFFFFF', badgeText: 'HIGH' },
-                  medium: { bg: '#F97316', border: '#F97316', text: '#1A1D1F', badgeText: 'MEDIUM' },
+                  medium: { bg: '#F97316', border: '#F97316', text: '#FFFFFF', badgeText: 'MEDIUM' },
                   low: { bg: '#3B82F6', border: '#3B82F6', text: '#FFFFFF', badgeText: 'LOW' },
                   none: { bg: '#10B981', border: '#10B981', text: '#FFFFFF', badgeText: '✓ BALANCED' }
                 };
