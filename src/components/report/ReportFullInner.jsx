@@ -116,7 +116,7 @@ function buildExecutiveSummary(riskScore, topRisks, clauses, existingSummary, la
       
       summary += `⚠️ RECOMMENDATION: Do NOT sign this lease in its current form. Use Lease Shield's Letter Templates to negotiate removal or modification of high-risk clauses before proceeding.`;
     }
-  } else if (score >= 40) {
+  } else if (score >= 31) {
     if (isThaiLang) {
       summary = `สัญญาเช่าความเสี่ยงปานกลาง (คะแนน: ${score}/100)\n\n`;
       summary += `สัญญาเช่านี้มีข้อที่ควรตรวจสอบและอาจต้องเจรจา `;
