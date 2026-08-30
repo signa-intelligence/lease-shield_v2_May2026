@@ -281,10 +281,14 @@ Return this JSON object:
     "rent_due_day": number or null
   },
   "risk_score": number (0-100),
+  "template_status": "executed_lease" or "unexecuted_template",
   "summary": {
     "executive_summary": "string",
     "top_risks": [{"title": "string", "severity": "low|medium|high|critical", "why": "string"}]
   },
+  "clause_interactions": [
+    {"clauses": ["clause-N", "clause-M"], "combined_effect": "string", "severity": "low|medium|high|critical"}
+  ],
   "clauses": [
     {
       "clause_id": "clause-N",
@@ -310,7 +314,7 @@ Return this JSON object:
           { role: 'user', content: `Analyze this lease document:\n\n${pdfText.substring(0, 50000)}` }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.7
+        temperature: 0.1
       })
     });
 
