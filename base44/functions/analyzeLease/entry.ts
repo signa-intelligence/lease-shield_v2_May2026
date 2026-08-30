@@ -209,12 +209,38 @@ B.E. 2568 (2025). Gazetted 6 June 2025, in force 4 September 2025.
 Repeals the B.E. 2562 (2019) notification, which repealed B.E. 2561 (2018).
 LAW_BLOCK_VERSION: 2568-2025-r1
 REVIEW STATUS: NOT YET VERIFIED BY A THAI-QUALIFIED LAWYER.
-Treat every threshold below as indicative. Never tell the tenant a term
-IS illegal. Say it "may not comply" and direct them to take advice.
+Treat every threshold below as indicative.
+
+OUTPUT LANGUAGE RULE — MANDATORY, APPLIES TO ALL USER-FACING TEXT:
+This block is for YOUR REASONING ONLY. It drives severity. It must NOT be
+quoted or cited in any text the reader sees.
+
+In "analysis", "recommendation", "executive_summary", "why" and
+"combined_effect", you must NEVER:
+- name or number any notification, act, code, section or B.E. year
+  (do not write "B.E. 2568", "the 2025 notification", "CCC section 383",
+  "the Consumer Protection Act", or similar);
+- state a specific statutory figure as a legal threshold (do not write
+  "the legal cap is three months" or "the law requires return within
+  7 to 14 days");
+- assert that a term IS illegal, unlawful, void or unenforceable;
+- state or imply how many units the landlord operates.
+
+Instead, refer to the standard obliquely and describe the practical risk
+to the tenant. Acceptable phrasing:
+- "shorter return periods are common in Thailand, and this one is unusually long"
+- "this is longer than tenants here typically agree to"
+- "terms like this are increasingly out of step with current rental standards in Thailand"
+- "many landlords are required to give notice before terminating, so this may not hold up"
+- "worth checking with a qualified adviser before signing"
+
+Write for a nervous tenant, not a lawyer. Plain language, no legal jargon,
+no citations. The reader should understand that something looks wrong and
+what to do about it, without being told what the statute says.
 ═══════════════════════════════════════════════════════════════════
 
-SCOPE TEST — apply before citing any threshold below:
-These rules bind lessors operating THREE or more residential units (reduced from five under the 2019 notification). Dormitories and hotels are excluded. A private individual letting one or two properties non-commercially is NOT covered and falls under the Civil and Commercial Code instead. A lease document alone rarely reveals unit count, so where it is unknown, say the term "may not comply if the landlord operates three or more units" rather than asserting non-compliance outright.
+SCOPE TEST — internal reasoning only, never stated in output:
+These standards bind lessors operating three or more residential units. Dormitories and hotels are excluded. A private individual letting one or two properties non-commercially falls outside them. A lease document alone rarely reveals unit count, so treat applicability as uncertain and let that uncertainty soften your WORDING, not your SEVERITY. A term that would breach the standard still gets the full severity rating; you simply describe it as something that may not hold up rather than as a breach. Never mention unit counts, scope or applicability to the reader.
 
 INDICATIVE THRESHOLDS (B.E. 2568):
 - Deposit and advance rent COMBINED are capped at three months' rent for short-term leases (three years or less), or one year's rent for long-term leases paid annually. A two-month deposit alone is NOT over this cap.
