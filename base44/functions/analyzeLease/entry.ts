@@ -328,6 +328,31 @@ Return this JSON object:
     console.log(`[TIMING] OpenAI: ${Date.now() - aiStart}ms`);
     console.log(`[ANALYZE_OPENAI_OK] ${cid} clauses=${analysisResult.clauses?.length || 0} risk=${analysisResult.risk_score}`);
 
+    // ─────────────────────────────────────────────────────────────────
+    // SEVERITY FLOOR ENFORCEMENT
+    // The prompt states these floors, but a model can still return an
+    // averaged score that buries a small number of severe clauses under
+    // a pile of boilerplate ones. Enforce them deterministically here so
+    // the headline number cannot understate the worst clause present.
+    // ─────────────────────────────────────────────────────────────────
+    if (!isPreviewMode && Array.isArray(analysisResult.clauses) && analysisResult.clauses.length > 0) {
+      const lv = (c) => String(c?.risk_level || '').toLowerCase();
+      const nCritical = analysisResult.clauses.filter(c => lv(c) === 'critical').length;
+      const nHigh = analysisResult.clauses.filter(c => lv(c) === 'high').length;
+
+      let floor = 0;
+      if (nCritical > 0) floor = 80;
+      else if (nHigh >= 2) floor = 65;
+      else if (nHigh === 1) floor = 50;
+
+      const raw = Number(analysisResult.risk_score) || 0;
+      if (floor > raw) {
+        analysisResult.risk_score = floor;
+        console.log(`[ANALYZE_SCORE_FLOORED] ${cid} raw=${raw} floored=${floor} critical=${nCritical} high=${nHigh}`);
+      }
+      console.log(`[ANALYZE_SEVERITY] ${cid} critical=${nCritical} high=${nHigh} final=${analysisResult.risk_score} template=${analysisResult.template_status || 'unknown'}`);
+    }
+
     // Preview mode fallback for key_terms
     if (isPreviewMode && (!analysisResult.key_terms || Object.keys(analysisResult.key_terms).length === 0)) {
       analysisResult.key_terms = {
