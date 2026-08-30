@@ -402,6 +402,15 @@ Return this JSON object:
       else if (nHigh >= 2) floor = Math.min(79, 65 + (nHigh - 2) * 2);
       else if (nHigh === 1) floor = 50;
 
+      // A dual-language document whose two versions disagree is a fraud
+      // indicator in its own right, independent of clause severity.
+      const mismatch = analysisResult.bilingual_mismatch_detected === true
+        || analysisResult.clauses.some(c => c.bilingual_mismatch === true);
+      if (mismatch) {
+        floor = Math.max(floor, 95);
+        console.log(`[ANALYZE_BILINGUAL_MISMATCH] ${cid} detected=true`);
+      }
+
       const raw = Number(analysisResult.risk_score) || 0;
       if (floor > raw) {
         analysisResult.risk_score = floor;
@@ -486,6 +495,8 @@ Return this JSON object:
       missingCriticalClauses: analysisResult.missingCriticalClauses || [],
       missingClauseCount: (analysisResult.missingCriticalClauses || []).length,
       template_status: analysisResult.template_status || 'executed_lease',
+      bilingual_mismatch_detected: analysisResult.bilingual_mismatch_detected === true
+        || (analysisResult.clauses || []).some(c => c.bilingual_mismatch === true),
       clause_interactions: Array.isArray(analysisResult.clause_interactions) ? analysisResult.clause_interactions : [],
       preview_mode: isPreviewMode,
       upgrade_message: isPreviewMode ? analysisResult.upgrade_message : undefined,
