@@ -1,0 +1,44 @@
+{
+  "name": "Weekly Inactive User Re-engagement (69ccd20682f4e6890415faa4)",
+  "description": "Sends re-engagement emails to users inactive for 30+ days. Runs every Sunday at 10:00 AM Bangkok time (01:00 UTC). 60-day cooldown between reminders per user.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 1 * * 0",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "weekly_inactive_user_re_engagement_69ccd20682f4e6890415faa4",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendInactiveUserReminders",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "sendInactiveUserReminders"
+  }
+}
